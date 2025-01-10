@@ -2,8 +2,8 @@ TOP_MODULE = double1
 OBJ_DIR = obj_dir
 VERLATOR_FLAGS = --cc --exe --build -trace -trace-fst -j 0 -Wall
 SIM_SRC = sim_main.cpp
-VERILOG_SRC = $(TOP_MADULE).v
-SIM_EXE = $(OBJ_DIR)/V$(TOP_MADULE)
+VERILOG_SRC = $(TOP_MODULE).v
+SIM_EXE = $(OBJ_DIR)/V$(TOP_MODULE)
 all:sim
 
 sim:

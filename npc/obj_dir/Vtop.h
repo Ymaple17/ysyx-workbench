@@ -5,20 +5,20 @@
 // The class here is then constructed to instantiate the design.
 // See the Verilator manual for examples.
 
-#ifndef VERILATED_VDOUBLE1_H_
-#define VERILATED_VDOUBLE1_H_  // guard
+#ifndef VERILATED_VTOP_H_
+#define VERILATED_VTOP_H_  // guard
 
 #include "verilated.h"
 
-class Vdouble1__Syms;
-class Vdouble1___024root;
-class VerilatedFstC;
+class Vtop__Syms;
+class Vtop___024root;
+class VerilatedVcdC;
 
 // This class is the main interface to the Verilated model
-class Vdouble1 VL_NOT_FINAL : public VerilatedModel {
+class Vtop VL_NOT_FINAL : public VerilatedModel {
   private:
     // Symbol table holding complete model state (owned by this class)
-    Vdouble1__Syms* const vlSymsp;
+    Vtop__Syms* const vlSymsp;
 
   public:
 
@@ -35,19 +35,19 @@ class Vdouble1 VL_NOT_FINAL : public VerilatedModel {
 
     // Root instance pointer to allow access to model internals,
     // including inlined /* verilator public_flat_* */ items.
-    Vdouble1___024root* const rootp;
+    Vtop___024root* const rootp;
 
     // CONSTRUCTORS
     /// Construct the model; called by application code
     /// If contextp is null, then the model will use the default global context
     /// If name is "", then makes a wrapper with a
     /// single model invisible with respect to DPI scope names.
-    explicit Vdouble1(VerilatedContext* contextp, const char* name = "TOP");
-    explicit Vdouble1(const char* name = "TOP");
+    explicit Vtop(VerilatedContext* contextp, const char* name = "TOP");
+    explicit Vtop(const char* name = "TOP");
     /// Destroy the model; called (often implicitly) by application code
-    virtual ~Vdouble1();
+    virtual ~Vtop();
   private:
-    VL_UNCOPYABLE(Vdouble1);  ///< Copying not allowed
+    VL_UNCOPYABLE(Vtop);  ///< Copying not allowed
 
   public:
     // API METHODS
@@ -65,7 +65,7 @@ class Vdouble1 VL_NOT_FINAL : public VerilatedModel {
     /// Returns time at next time slot. Aborts if !eventsPending()
     uint64_t nextTimeSlot();
     /// Trace signals in the model; called by application code
-    void trace(VerilatedFstC* tfp, int levels, int options = 0);
+    void trace(VerilatedVcdC* tfp, int levels, int options = 0);
     /// Retrieve name of this model instance (as passed to constructor).
     const char* name() const;
 

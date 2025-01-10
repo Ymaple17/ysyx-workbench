@@ -1,12 +1,12 @@
 TOP_MODULE = double1
 OBJ_DIR = obj_dir
-VERLATOR_FLAGS = --cc --exe --build -trace -trace-fst -j 0 -Wall
+VERILATOR_FLAGS = --cc --exe --build -trace -trace-fst -j 0 -Wall
 SIM_SRC = sim_main.cpp
 VERILOG_SRC = $(TOP_MODULE).v
 SIM_EXE = $(OBJ_DIR)/V$(TOP_MODULE)
 all:sim
 
-sim:
+sim:$(SIM_EXE)
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 	$(SIM_EXE)
 

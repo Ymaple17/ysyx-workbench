@@ -1,5 +1,5 @@
-TOPNAME = light
-NXDC_FILES = constr/light.nxdc	
+TOPNAME = top
+NXDC_FILES = constr/top.nxdc	
 INC_PATH ?=	
 VERILATOR = verilator
 VERILATOR_CFLAGS += -MMD --build -cc  \

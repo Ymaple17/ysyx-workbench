@@ -15,6 +15,7 @@
 
 #include <isa.h>
 #include <cpu/cpu.h>
+#include <memory/paddr.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
@@ -53,6 +54,38 @@ static int cmd_q(char *args) {
   return -1;
 }
 
+static int cmd_si(char *args){
+	int step=0;
+	if(args==NULL){
+		step=1;
+	}
+	else sscanf(args,"%d",&step);
+	cpu_exec(step);
+	return 0;
+}
+		
+static int cmd_info(char *args){
+    if(args ==NULL) printf("NO ARGS");
+    else if (strcmp(args,"r")==0)  isa_reg_display();
+    return 0;
+}
+	
+
+static int cmd_x(char *args){
+    char* n = strtok(args," ");
+    char* baseaddr = strtok(NULL," ");
+    int length=0;
+    paddr_t addr=0;
+    sscanf(n,"%d",&length);
+    sscanf(baseaddr,"%x",&addr);
+    for(int i=0;i<length;i++){
+      printf("%x\n",paddr_read(addr,length));
+      addr  = addr+4;
+    }
+    return 0;
+}
+    
+
 static int cmd_help(char *args);
 
 static struct {
@@ -62,7 +95,7 @@ static struct {
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },
+  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x}
 
   /* TODO: Add more commands */
 

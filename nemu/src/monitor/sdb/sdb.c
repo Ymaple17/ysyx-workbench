@@ -79,8 +79,9 @@ static int cmd_x(char *args){
     sscanf(n,"%d",&length);
     sscanf(baseaddr,"%x",&addr);
     for(int i=0;i<length;i++){
-      printf("%x\n",paddr_read(addr,4));
-      addr=addr+4;
+      word_t value = paddr_read(addr, 4);
+        printf("0x%08x: 0x%08x\n", addr, value);
+        addr += 4;
     }
     return 0;
 }

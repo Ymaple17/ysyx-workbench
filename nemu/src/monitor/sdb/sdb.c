@@ -72,8 +72,8 @@ static int cmd_info(char *args){
 	
 
 static int cmd_x(char *args){
-    char* n = strtok(args," ");
-    char* baseaddr = strtok(NULL," ");
+    char *n = strtok(args," ");
+    char *baseaddr = n+strlen(n)+1;
     int length=0;
     paddr_t addr=0;
     sscanf(n,"%d",&length);

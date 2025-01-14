@@ -21,18 +21,7 @@
 #include <regex.h>
 
 enum {
-  TK_NOTYPE = 256, 
-  NUM = 1,
-  RESGISTER = 2,
-  HEX = 3,
-  TK_EQ = 4,
-  NOTEQ = 5,
-  OR = 6,
-  AND = 7,
-  LEFT = 8,
-  RIGHT = 9,
-  LEQ = 10,
-  POINT = 11  
+  TK_NOTYPE = 256,TK_HEX_NUM,TK_REG,TK_EQ,TK_NUM,TK_UEQ
 
   /* TODO: Add more token types */
 };
@@ -46,23 +35,19 @@ static struct rule {
    * Pay attention to the precedence level of different rules.
    */
 
-  {" +", TK_NOTYPE},    // spaces
-  {"\\+", '+'}, // plus
-  {"\\-", '-'},
-  {"\\*", '*'},
-  {"\\/", '/'},        
-  {"==", TK_EQ},        // equal
-  {"[0-9]*",NUM},
-  {"\\$[a-zA-Z]*[0-9]*",RESGISTER},
-  {"\\(",LEFT},
-  {"\\)",RIGHT},
-  {"\\!",'!'},
-  {"!=",NOTEQ},
-  {"\\&\\&",AND},
-  {"\\<\\=",LEQ},
-  {"\\.",POINT},
-  {"\\|\\|",OR},
-  {"0[xX][0-9a-fA-F]+",HEX}
+  {"0x[0-9a-zA-Z]+", TK_HEX_NUM},
+  {"\\$[0-0a-z]+", TK_REG},
+  {" +", TK_NOTYPE},    
+  {"\\+", '+'},         
+  {"==", TK_EQ},   
+  {"!=", TK_UEQ},
+  {"[0-9]+", TK_NUM},	
+  {"-", '-'},	
+  {"\\*", '*'},	
+  {"/", '/'}, 	
+  {"[(]", '('},
+  {"[)]", ')'},
+  {"$$", '$'},
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -117,83 +102,13 @@ static bool make_token(char *e) {
          * to record the token in the array `tokens'. For certain types
          * of tokens, some extra actions should be performed.
          */
-	Token  temp_token;
         switch (rules[i].token_type) {
-          case '+':
-          	temp_token.type  = '+';
-          	tokens[nr_token++] = temp_token;
-          	break;
-          case '-':
-          	temp_token.type  = '-';
-          	tokens[nr_token++] = temp_token;
-          	break;
-          case '*':
-          	temp_token.type  = '*';
-          	tokens[nr_token++] = temp_token;
-          	break;
-          case '/':
-          	temp_token.type  = '/';
-          	tokens[nr_token++] = temp_token;
-          	break;
-          case '!':
-          	temp_token.type  = '!';
-          	tokens[nr_token++] = temp_token;
-          	break;
-          case 1:
-          	temp_token.type  = 1;
-          	strncpy(tokens[nr_token].str, &e[position - substr_len], substr_len);
-                nr_token ++;
-          	break;
-          case 3:
-          	temp_token.type  = 3;
-          	strncpy(tokens[nr_token].str, &e[position - substr_len], substr_len);
-                nr_token ++;
-          	break;
-          case 2:
-          	temp_token.type  = 2;
-          	strncpy(tokens[nr_token].str, &e[position - substr_len], substr_len);
-                nr_token ++;
-          	break;
-          case 4:
-          	temp_token.type  = 4;
-          	strcpy(tokens[nr_token].str, "==");
-                nr_token++;
-          	break;
-          case 5:
-          	temp_token.type  = 5;
-          	strcpy(tokens[nr_token].str, "!=");
-                nr_token++;
-                break;
-          case 6:
-          	temp_token.type  = 6;
-          	strcpy(tokens[nr_token].str, "&&");
-                nr_token++;
-          	break;
-          case 7:
-          	temp_token.type  = 7;
-          	strcpy(tokens[nr_token].str, "||");
-                nr_token++;
-          	break;	
-          case 8:
-          	temp_token.type  = '(';
-          	tokens[nr_token++] = temp_token;
-          	break;
-          case 9:
-          	temp_token.type  = ')';
-          	tokens[nr_token++] = temp_token;
-          	break;
-          case 10:
-          	temp_token.type  = 10;
-          	strcpy(tokens[nr_token].str, "<=");
-                nr_token++;
-          	break;	
-          case 11:
-          	temp_token.type  = 11;
-          	strcpy(tokens[nr_token].str, ".");
-                nr_token++;
-          	break;		
-          	
-          default: printf("i = %d isn't match",i);
+          case TK_NOTYPE: break;
+          default: 
+          	strncpy(tokens[nr_token].str, substr_start, substr_len);
+		tokens[nr_token].type = rules[i].token_type;
+		nr_token++;
+		break;
         }
         break;
       }

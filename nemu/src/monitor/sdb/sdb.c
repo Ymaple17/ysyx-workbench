@@ -70,13 +70,11 @@ static int cmd_info(char *args){
     return 0;
 }
 	
-static int cmd_p(char *args){
-	if(args==NULL){
-		printf("NO ARGS");
-	}
+static int cmd_p(char *args) {
+	if(args==NULL) printf("NO ARGS");
 	else{
-	bool success=false;
-	expr(args,&success);
+	    bool success = false;
+	    printf("exp_val = %x\n", expr(args, &success));
 	}
 	return 0;
 }

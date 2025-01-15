@@ -28,10 +28,10 @@ int main(int argc, char *argv[]) {
 #else
   init_monitor(argc, argv);
 #endif
-
+  test_cmd_p();
   /* Start engine. */
   engine_start();
-  //test_cmd_p();
+  
   return is_exit_status_bad();
 }
 

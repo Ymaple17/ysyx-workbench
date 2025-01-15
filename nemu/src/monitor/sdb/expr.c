@@ -21,7 +21,7 @@
 #include <regex.h>
 
 enum {
-  TK_NOTYPE = 256,TK_HEX_NUM,TK_REG,TK_EQ,TK_NUM,TK_UEQ
+  TK_NOTYPE = 256,TK_HEX_NUM,TK_REG,TK_EQ,TK_NUM,TK_UEQ, TK_MINUS
 
   /* TODO: Add more token types */
 };
@@ -123,7 +123,84 @@ static bool make_token(char *e) {
   return true;
 }
 
+bool check_parentheses(int p,int q){
+    if(tokens[p].type != '('||tokens[q].type!=')') return false;
+    int num=0;
+    for(int i=p+1;i<=q-1;i++){
+	if(tokens[i].type=='(') num++;
+	else if(tokens[i].type==')') num--;
+	if(num<1) return false;
+    }
+    if(num==0) return true;
+    else return false;
+    }
+    
+int get_position(int p,int q){
+	int num=0;
+	int re=0;
+	bool add_and_sub =false;
+	//bool mul_and_div =false;
+	//bool mius= false;
+	for(int i=p;i<=q;i++){
+		if(tokens[i].type=='(') num++;
+		if(tokens[i].type==')') num--;
+		if(num!=0) continue;
+		if(tokens[i].type==TK_EQ) return i;
+		if(tokens[i].type=='+'||tokens[i].type=='-'){
+			re=i;
+			add_and_sub=true;
+			continue;
+		}
+		if((tokens[i].type=='*'||tokens[i].type=='/')&&!add_and_sub){
+			re=i;
+			//mul_and_div=true;
+			continue;
+		}
+		/*if(tokens[i].type== TK_MINUS&&!add_and_sub&&!mul_and_div&&!minus){
+			re=i;
+			mius =true;*/
+	}
+	return re;
+}		
+			 
+	
+    
+uint32_t eval(int p,int q){
+	if(p>q) return 0;
+	else if(p==q){
+	uint32_t num = 0;
+	if(tokens[p].type==TK_NUM) sscanf(tokens[p].str,"%d",&num);
+	if(tokens[p].type==TK_HEX_NUM) sscanf(tokens[p].str,"%x",&num);
+	if(tokens[p].type==TK_REG ){
+	   bool success=false;
+	   num = isa_reg_str2val(tokens[p].str, &success);
+	   if(!success) {
+		printf("The register name is incorrect.\n");
+		return 0;
+	   }
+	}
+	return num;
+       }
+       else if(check_parentheses(p,q) == true){
+	  return eval(p + 1, q - 1);
+       }
+       else {
+          int op = get_position(p,q);
+          uint32_t val1 = eval(p, op - 1);
+          uint32_t val2 = eval(op + 1, q);
 
+       switch (tokens[p].type) {
+          case '+': return val1 + val2;
+          case '-': return val1 - val2;
+          case '*': return val1 * val2;
+          case '/': return val1 / val2;
+          case TK_EQ: return val1==val2;
+          //case TK_MINUS: return -1*val2;
+          default: assert(0);
+       }
+     }
+}	
+	
 word_t expr(char *e, bool *success) {
   if (!make_token(e)) {
     *success = false;
@@ -132,6 +209,5 @@ word_t expr(char *e, bool *success) {
 
   /* TODO: Insert codes to evaluate the expression. */
   TODO();
-
-  return 0;
+  return eval(0,nr_token-1);
 }

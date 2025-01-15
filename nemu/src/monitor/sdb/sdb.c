@@ -70,6 +70,17 @@ static int cmd_info(char *args){
     return 0;
 }
 	
+static int cmd_p(char *args){
+	if(args==NULL){
+		printf("NO ARGS");
+	}
+	else{
+	bool success=false;
+	expr(args,&success);
+	}
+	return 0;
+}
+	 
 
 static int cmd_x(char *args){
     char *n = strtok(args," ");
@@ -96,7 +107,7 @@ static struct {
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x}
+  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x},{"p","Expression Evaluation",cmd_p}
 
   /* TODO: Add more commands */
 

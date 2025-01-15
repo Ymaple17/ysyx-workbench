@@ -74,7 +74,7 @@ static int cmd_p(char *args) {
 	if(args==NULL) printf("NO ARGS");
 	else{
 	    bool success = false;
-	    printf("exp_val = %x\n", expr(args, &success));
+	    printf("exp_val = %u\n", expr(args, &success));
 	}
 	return 0;
 }

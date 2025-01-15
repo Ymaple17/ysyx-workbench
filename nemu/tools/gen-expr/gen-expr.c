@@ -31,8 +31,48 @@ static char *code_format =
 "  return 0; "
 "}";
 
+static void gen_num() {
+	char num_buf[4];
+	num_buf[0] = '\0';
+	int num = rand()%100 + 1;
+	sprintf(num_buf, "%d", num);
+	strcat(buf, num_buf);
+}
+
+static void gen(char c) {
+	char ch_buf[2] = { c, '\0'};
+	strcat(buf, ch_buf);
+}
+
+static void gen_op(){
+	char op;
+	switch (rand()%4){
+		case 0: gen('+'）; break;
+		case 1: gen('-'); break;
+		case 2: gen('*'); break;
+		case 3: gen('/'); break;
+	}
+}
+
 static void gen_rand_expr() {
-  buf[0] = '\0';
+  buf[0] = '\0';//清空缓存区
+  if(strlen(buf) > 500) {
+		gen('(');gen_num();gen(')');
+		return;
+	}
+  switch(rand()%3){
+  	case 0: gen_num(); break;
+  	case 1:
+  		gen('(');
+  		gen_rand_expr();
+  		gen(')');
+  		break;
+  	default:
+  		gen_rand_expr();
+  		gen_rand_op();
+  		gen_rand_expr();
+  		break; 
+  	}
 }
 
 int main(int argc, char *argv[]) {

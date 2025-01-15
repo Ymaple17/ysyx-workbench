@@ -21,59 +21,74 @@
 #include <string.h>
 
 // this should be enough
-static char buf[65536] = {};
-static char code_buf[65536 + 128] = {}; // a little larger than `buf`
+static char buf[65536];
+
+/*
+ * inline expansion, or inlining, is a manual or compiler optimization that
+ * replaces a function call site with the body of the called function
+ * 
+ * it's faster than call function
+ */
+uint32_t choose(uint32_t n) {
+	return rand() % n;	
+}
+
+static inline void gen_num() {
+	char s[4];
+	uint32_t n = choose(99);
+	
+	/* send the formatted data to string */
+	sprintf(s, "%u", n);
+	strcat(buf, s);		
+}
+
+static inline void gen(char str) {
+	/* generate random white space */
+	uint32_t left = choose(4);
+	uint32_t right = choose(4);
+	
+	char s[left + 1 + right];
+
+	uint32_t i;
+
+	for (i = 0; i < lfet; i++) s[i] = ' ';
+	s[i++] = str;
+	for (;i < left + 1 + right; i++) s[i] = ' ';
+    s[left + 1 + right] = '\0';	
+	strcat(buf, s);
+
+}
+
+static inline void gen_rand_op() {
+
+	switch (choose(4)) {
+		case 0: gen('+'); break;
+		case 1: gen('-'); break;
+		case 2: gen('*'); break;
+		case 3: gen('/'); break;
+	}	
+}
+
+static inline void gen_rand_expr() {
+  
+  switch(choose(3)) {
+	case 0: gen_num(); break;
+	case 1: gen('('); gen_rand_expr(); gen(')'); break;
+	default:  gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break; 
+  
+  }
+
+}
+
+static char code_buf[65536];
 static char *code_format =
 "#include <stdio.h>\n"
 "int main() { "
+"_Bool flag;"
 "  unsigned result = %s; "
 "  printf(\"%%u\", result); "
 "  return 0; "
 "}";
-
-static void gen_num() {
-	char num_buf[4];
-	num_buf[0] = '\0';
-	int num = rand()%100 + 1;
-	sprintf(num_buf, "%d", num);
-	strcat(buf, num_buf);
-}
-
-static void gen(char c) {
-	char ch_buf[2] = { c, '\0'};
-	strcat(buf, ch_buf);
-}
-
-static void gen_op(){
-	char op;
-	switch (rand()%4){
-		case 0: gen('+'）; break;
-		case 1: gen('-'); break;
-		case 2: gen('*'); break;
-		case 3: gen('/'); break;
-	}
-}
-
-static void gen_rand_expr() {
-  buf[0] = '\0';//清空缓存区
-  if(strlen(buf) > 500) {
-		gen('(');gen_num();gen(')');
-		return;
-	}
-  switch(rand()%3){
-  	case 0: gen_num(); break;
-  	case 1:
-  		gen('(');
-  		gen_rand_expr();
-  		gen(')');
-  		break;
-  	default:
-  		gen_rand_expr();
-  		gen_rand_op();
-  		gen_rand_expr();
-  		break; 
-  	}
-}
 
 int main(int argc, char *argv[]) {
   int seed = time(0);
@@ -100,10 +115,14 @@ int main(int argc, char *argv[]) {
     assert(fp != NULL);
 
     int result;
-    ret = fscanf(fp, "%d", &result);
+    int fsn = fscanf(fp, "%d", &result);
+	printf("[loop %d] fsn = %d\t ", i, fsn); /* TODO: delete fsn and printf it */
     pclose(fp);
 
-    printf("%u %s\n", result, buf);
+    printf("%u\t %s\n", result, buf);
+  
+	memset(buf, '\0', 65536);
   }
   return 0;
 }
+

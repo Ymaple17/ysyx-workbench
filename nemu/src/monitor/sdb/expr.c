@@ -170,7 +170,7 @@ uint32_t eval(int p,int q){
 	else if(p==q){
 	uint32_t num = 0;
 	if(tokens[p].type==TK_NUM) sscanf(tokens[p].str,"%d",&num);
-	if(tokens[p].type==TK_HEX_NUM) sscanf(tokens[p].str,"%d",&num);
+	if(tokens[p].type==TK_HEX_NUM) sscanf(tokens[p].str,"%x",&num);
 	if(tokens[p].type==TK_REG ){
 	   bool success=false;
 	   num = isa_reg_str2val(tokens[p].str, &success);

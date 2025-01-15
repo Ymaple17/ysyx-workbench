@@ -189,7 +189,7 @@ uint32_t eval(int p,int q){
           uint32_t val1 = eval(p, op - 1);
           uint32_t val2 = eval(op + 1, q);
 
-       switch (tokens[p].type) {
+       switch (tokens[op].type) {
           case '+': return val1 + val2;
           case '-': return val1 - val2;
           case '*': return val1 * val2;

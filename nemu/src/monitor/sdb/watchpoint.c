@@ -88,7 +88,7 @@ void create_watchpoint(char* args){
     int temp = expr(p -> expr,&success);
    if(success) p -> old_value = temp;
    else 
-    printf("Create watchpoint No.%d success.\n", (p -> NO)+1);
+    printf("Create watchpoint No.%d success.\n", (p -> NO));
 }
 
 void sdb_watchpoint_display(){

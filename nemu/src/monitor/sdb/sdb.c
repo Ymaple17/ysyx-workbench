@@ -44,7 +44,7 @@ static char* rl_gets() {
   return line_read;
 }
 
-void delete_watchpoint(int no){
+/*void delete_watchpoint(int no){
     for(int i = 0 ; i < NR_WP ; i ++)
         if(wp_pool[i].NO == no){
             free_wp(&wp_pool[i]);
@@ -71,7 +71,7 @@ void sdb_watchpoint_display(){
         }
     }
     if(flag) printf("No watchpoint.");
-}
+}*/
 static int cmd_c(char *args) {
   cpu_exec(-1);
   return 0;

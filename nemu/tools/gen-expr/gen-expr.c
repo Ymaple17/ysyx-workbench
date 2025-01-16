@@ -19,104 +19,119 @@
 #include <time.h>
 #include <assert.h>
 #include <string.h>
+#include <stdbool.h>
+#include <ctype.h>
 
-// this should be enough
+
 static char buf[65536];
+int count;
 
-/*
- * inline expansion, or inlining, is a manual or compiler optimization that
- * replaces a function call site with the body of the called function
- * 
- * it's faster than call function
- */
 uint32_t choose(uint32_t n) {
-	return rand() % n;	
+    return rand() % n;
+}
+
+bool is_previous_operator_division() {
+    int len = strlen(buf);
+    if (len == 0) {
+        return false;
+    }
+    for (int i = len - 1; i >= 0; i--) {
+        if (!isspace(buf[i])) {
+            return buf[i] == '/';
+        }
+    }
+    return false;
 }
 
 static inline void gen_num() {
-	char s[4];
-	uint32_t n = choose(99);
-	sprintf(s, "%u", n);
-	strcat(buf, s);		
+    char s[4];
+    uint32_t n;
+    bool is_division = is_previous_operator_division();
+    do {
+        n = choose(100);
+        sprintf(s, "%u", n);
+    } while (is_division && n == 0);
+    strcat(buf, s);
+    count++;
 }
-
 static inline void gen(char str) {
-	uint32_t left = choose(4);
-	uint32_t right = choose(4);
-	char s[left + 1 + right];
-	uint32_t i;
-	for (i = 0; i < lfet; i++) s[i] = ' ';
-	s[i++] = str;
-	for (;i < left + 1 + right; i++) s[i] = ' ';
-    s[left + 1 + right] = '\0';	
-	strcat(buf, s);
-
+    uint32_t left = choose(4);
+    uint32_t right = choose(4); 
+    char s[left + 1 + right + 1];
+    uint32_t i;
+    for (i = 0; i < left; i++) { s[i] = ' '; count++; }
+    s[i++] = str;
+    for (; i < left + 1 + right; i++) { s[i] = ' '; count++; }
+    s[left + 1 + right] = '\0';
+    strcat(buf, s);
 }
-
 static inline void gen_rand_op() {
-
-	switch (choose(4)) {
-		case 0: gen('+'); break;
-		case 1: gen('-'); break;
-		case 2: gen('*'); break;
-		case 3: gen('/'); break;
-	}	
+    switch (choose(4)) {
+        case 0: gen('+'); break;
+        case 1: gen('-'); break;
+        case 2: gen('*'); break;
+        case 3: gen('/'); break;
+    }
+    count++;
 }
-
 static inline void gen_rand_expr() {
-  
-  switch(choose(3)) {
-	case 0: gen_num(); break;
-	case 1: gen('('); gen_rand_expr(); gen(')'); break;
-	default:  gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break; 
-  
-  }
-
+    int a = choose(3);
+    if (count > 600) a = 0;
+    switch (a) {
+        case 0: gen_num(); break;
+        case 1: gen('('); gen_rand_expr(); gen(')'); break;
+        default: gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break;
+    }
 }
-
 static char code_buf[65536];
 static char *code_format =
-"#include <stdio.h>\n"
-"int main() { "
-"_Bool flag;"
-"  unsigned result = %s; "
-"  printf(\"%%u\", result); "
-"  return 0; "
-"}";
+    "#include <stdio.h>\n"
+    "int main() { "
+    "_Bool flag;"
+    "  unsigned result = %s; "
+    "  printf(\"%%u\", result); "
+    "  return 0; "
+    "}";
 
 int main(int argc, char *argv[]) {
-  int seed = time(0);
-  srand(seed);
-  int loop = 1;
-  if (argc > 1) {
-    sscanf(argv[1], "%d", &loop);
-  }
-  int i;
-  for (i = 0; i < loop; i ++) {
-    gen_rand_expr();
+    int seed = time(0);
+    srand(seed);
+    int loop = 1;
+    if (argc > 1) {
+        sscanf(argv[1], "%d", &loop);
+    }
+    int i;
+    for (i = 0; i < loop; i++) {
+        count = 0;
+        memset(buf, '\0', sizeof(buf));
+        gen_rand_expr();
+        bool has_division_by_zero = false;
+        char *div_pos = strstr(buf, "/ 0");
+        if (div_pos != NULL) {
+            has_division_by_zero = true;
+        }
+        if (has_division_by_zero) {
+            i--; 
+            continue;
+        }
+        sprintf(code_buf, code_format, buf);
 
-    sprintf(code_buf, code_format, buf);
-
-    FILE *fp = fopen("/tmp/.code.c", "w");
-    assert(fp != NULL);
-    fputs(code_buf, fp);
-    fclose(fp);
-
-    int ret = system("gcc /tmp/.code.c -o /tmp/.expr");
-    if (ret != 0) continue;
-
-    fp = popen("/tmp/.expr", "r");
-    assert(fp != NULL);
-
-    int result;
-    int fsn = fscanf(fp, "%d", &result);
-	printf("[loop %d] fsn = %d\t ", i, fsn); /* TODO: delete fsn and printf it */
-    pclose(fp);
-
-    printf("%u\t %s\n", result, buf);
-  
-	memset(buf, '\0', 65536);
-  }
-  return 0;
+        FILE *fp = fopen("/tmp/.code.c", "w");
+        assert(fp != NULL);
+        fputs(code_buf, fp);
+        fclose(fp);
+        int ret = system("gcc /tmp/.code.c -o /tmp/.expr");
+        if (ret != 0) continue;
+        fp = popen("/tmp/.expr", "r");
+        assert(fp != NULL);
+        int result;
+        int fsn = fscanf(fp, "%d", &result);
+        pclose(fp);
+        if (fsn == -1) {
+            continue;
+        }
+        printf("[loop %d] fsn = %d\t ", i, fsn);
+        printf("%u\t %s\n", result, buf);
+    }
+    return 0;
 }
-

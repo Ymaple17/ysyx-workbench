@@ -103,7 +103,7 @@ bool check_all() {
     return check;
 }
 
-/*void delete_watchpoint(int no){
+void delete_watchpoint(int no){
     for(int i = 0 ; i < NR_WP ; i ++)
         if(wp_pool[i].NO == no){
             free_wp(&wp_pool[i]);
@@ -130,4 +130,4 @@ void sdb_watchpoint_display(){
         }
     }
     if(flag) printf("No watchpoint.");
-    }*/
+    }

@@ -26,5 +26,8 @@ void init_wp_pool();
 WP* new_wp();
 void free_wp(WP *wp);
 bool check_all();
+void delete_watchpoint(int no);
+void sdb_watchpoint_display();
+void create_watchpoint(char* args);
 
 #endif

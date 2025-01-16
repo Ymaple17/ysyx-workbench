@@ -14,9 +14,9 @@
 ***************************************************************************************/
 
 #include "sdb.h"
-
 #define NR_WP 32
-
+#include "watchpoint.h"
+/*
 typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
@@ -24,13 +24,15 @@ typedef struct watchpoint {
   char expr[105];
   int new_value;
   int old_value;
-  /* TODO: Add more members if necessary */
+  TODO: Add more members if necessary 
 
 } WP;
 
+
 static WP wp_pool[NR_WP] = {};
 static WP *head = NULL, *free_ = NULL;
-
+*/
+WP wp_pool[NR_WP] = {};
 void init_wp_pool() {
   int i;
   for (i = 0; i < NR_WP; i ++) {
@@ -74,7 +76,34 @@ void free_wp(WP *wp){
 	}
 }
 
-void delete_watchpoint(int no){
+bool check_all() {
+    bool check = false;
+    bool success = false;
+    uint32_t temp = 0;
+
+    for (int i = 0; i < NR_WP; i++) {
+        if (wp_pool[i].expr[0] != '\0') {
+            temp = expr(wp_pool[i].expr, &success);
+
+            if (!success) {
+                printf("Error evaluating expression for watchpoint %d: %s\n", wp_pool[i].NO, wp_pool[i].expr);
+                continue;
+            }
+
+            if (temp != wp_pool[i].old_value) {
+                printf("Watchpoint %d: %s\n", wp_pool[i].NO, wp_pool[i].expr);
+                printf("old value: %d\n", wp_pool[i].old_value);
+                printf("new value: %d\n\n", temp);
+                wp_pool[i].old_value = temp; 
+                check = true; 
+            }
+        }
+    }
+
+    return check;
+}
+
+/*void delete_watchpoint(int no){
     for(int i = 0 ; i < NR_WP ; i ++)
         if(wp_pool[i].NO == no){
             free_wp(&wp_pool[i]);
@@ -101,4 +130,4 @@ void sdb_watchpoint_display(){
         }
     }
     if(flag) printf("No watchpoint.");
-}
+    }*/

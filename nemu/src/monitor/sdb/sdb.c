@@ -19,7 +19,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
-#include "watchpoint.h"
+#include "/home/qiu/ysyx-workbench/nemu/src/monitor/sdb/watchpoint.h"
 
 static int is_batch_mode = false;
 
@@ -44,6 +44,34 @@ static char* rl_gets() {
   return line_read;
 }
 
+void delete_watchpoint(int no){
+    for(int i = 0 ; i < NR_WP ; i ++)
+        if(wp_pool[i].NO == no){
+            free_wp(&wp_pool[i]);
+            return ;
+        }
+}
+void create_watchpoint(char* args){
+    WP* p =  new_wp();
+    strcpy(p -> expr, args);
+    bool success = false;
+    int temp = expr(p -> expr,&success);
+   if(success) p -> old_value = temp;
+   else 
+    printf("Create watchpoint No.%d success.\n", (p -> NO));
+}
+
+void sdb_watchpoint_display(){
+    bool flag = true;
+    for(int i = 0 ; i < NR_WP ; i ++){
+        if(wp_pool[i].used){
+            printf("Watchpoint.No: %d, expr = \"%s\", old_value = %d, new_value = %d\n",
+                    wp_pool[i].NO, wp_pool[i].expr,wp_pool[i].old_value, wp_pool[i].new_value);
+                flag = false;
+        }
+    }
+    if(flag) printf("No watchpoint.");
+}
 static int cmd_c(char *args) {
   cpu_exec(-1);
   return 0;

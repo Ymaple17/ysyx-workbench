@@ -17,6 +17,9 @@
 #include <cpu/decode.h>
 #include <cpu/difftest.h>
 #include <locale.h>
+#include "isa.h"
+#include "/home/qiu/ysyx-workbench/nemu/src/monitor/sdb/watchpoint.h"
+
 
 /* The assembly code of instructions executed is only output to the screen
  * when the number of instructions executed is less than this value.
@@ -31,6 +34,7 @@ static uint64_t g_timer = 0; // unit: us
 static bool g_print_step = false;
 
 void device_update();
+bool check_all();
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
@@ -39,25 +43,8 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 #ifdef CONFIG_WATCHPOINT
-  for(int i = 0 ; i < NR_WP; i ++){
-        if(wp_pool[i].flag)
-        {
-            bool success = false;
-            int temp = expr(wp_pool[i].expr,&success);
-            if(success){
-                if(temp != wp_pool[i].old_value)
-                {
-                    nemu_state.state = NEMU_STOP;
-                    printf("NO EQ\n");
-                    return ;
-                }
-            }
-            else{
-                printf("expr error.\n");
-                assert(0);
-            }
-        }
-    }
+  bool check=check_all();
+  if(check) nemu_state.state = NEMU_STOP;
 #endif
 }
 

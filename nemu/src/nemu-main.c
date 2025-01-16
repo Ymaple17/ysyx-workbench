@@ -35,23 +35,42 @@ int main(int argc, char *argv[]) {
   return is_exit_status_bad();
 }
 
-void test_cmd_p(){
-	bool success =false;
-	char buf[2048];
-	FILE* fp = fopen("./tools/gen-expr/input.txt","r");
-	if(!fp){
-		perror("read failed");
-		exit(1);
-	}
-	while(fgets(buf,2048,fp)!=NULL){
-		buf[strlen(buf)-1] ='\0';
-		char *res_str = strtok(buf," ");
-		char *exp = strtok(NULL," ");
-		uint32_t res =0;
-		sscanf(res_str,"%d",&res);
-		if(res == expr(exp, &success)) printf("match");
-		else printf("Not match");
-		}
-	fclose(fp);
+void test_cmd_p() {
+    bool success = false;
+    char buf[2048];
+    const char *file_path = "./tools/gen-expr/input.txt";
+    FILE *fp = fopen(file_path, "r");
+    if (!fp) {
+        perror("Failed to open file");
+        exit(1);
+    }
+    while (fgets(buf, sizeof(buf), fp) != NULL) {
+        size_t len = strlen(buf);
+        if (len > 0 && buf[len - 1] == '\n') {
+            buf[len - 1] = '\0';
+        }
+        char *res_str = strtok(buf, " ");
+        char *exp = strtok(NULL, "");
+
+        if (res_str == NULL || exp == NULL) {
+            fprintf(stderr, "Invalid input format: %s\n", buf);
+            continue;
+        }
+        uint32_t res = 0;
+        if (sscanf(res_str, "%u", &res) != 1) {
+            fprintf(stderr, "Failed to parse result: %s\n", res_str);
+            continue;
+        }
+        uint32_t expr_result = expr(exp, &success);
+        if (!success) {
+            fprintf(stderr, "Expression evaluation failed: %s\n", exp);
+            continue;
+        }
+        if (res == expr_result) {
+            printf("Match: %s -> %u\n", exp, res);
+        } else {
+            printf("Not match: %s -> expected %u, got %u\n", exp, res, expr_result);
+        }
+    }
+    fclose(fp);
 }
-		

@@ -36,21 +36,15 @@ uint32_t choose(uint32_t n) {
 static inline void gen_num() {
 	char s[4];
 	uint32_t n = choose(99);
-	
-	/* send the formatted data to string */
 	sprintf(s, "%u", n);
 	strcat(buf, s);		
 }
 
 static inline void gen(char str) {
-	/* generate random white space */
 	uint32_t left = choose(4);
 	uint32_t right = choose(4);
-	
 	char s[left + 1 + right];
-
 	uint32_t i;
-
 	for (i = 0; i < lfet; i++) s[i] = ' ';
 	s[i++] = str;
 	for (;i < left + 1 + right; i++) s[i] = ' ';

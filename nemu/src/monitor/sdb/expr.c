@@ -14,14 +14,14 @@
 ***************************************************************************************/
 
 #include <isa.h>
-
+#include <memory/paddr.h>
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
  */
 #include <regex.h>
 
 enum {
-  TK_NOTYPE = 256,TK_HEX_NUM,TK_REG,TK_EQ,TK_NUM,TK_UEQ, TK_MINUS
+  TK_NOTYPE = 256,TK_HEX_NUM,TK_REG,TK_EQ,TK_NUM,TK_UEQ, TK_MINUS,TK_AND,TK_DEREF
 
   /* TODO: Add more token types */
 };
@@ -48,6 +48,7 @@ static struct rule {
   {"[(]", '('},
   {"[)]", ')'},
   {"$$", '$'},
+  {"&&", TK_AND}
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -139,8 +140,9 @@ int get_position(int p,int q){
 	int num=0;
 	int re=0;
 	bool add_and_sub =false;
-	//bool mul_and_div =false;
-	//bool mius= false;
+	bool mul_and_div =false;
+	bool minus= false;
+	bool pointer = false;
 	for(int i=p;i<=q;i++){
 		if(tokens[i].type=='(') num++;
 		if(tokens[i].type==')') num--;
@@ -153,13 +155,18 @@ int get_position(int p,int q){
 		}
 		if((tokens[i].type=='*'||tokens[i].type=='/')&&!add_and_sub){
 			re=i;
-			//mul_and_div=true;
+			mul_and_div=true;
 			continue;
 		}
-		/*if(tokens[i].type== TK_MINUS&&!add_and_sub&&!mul_and_div&&!minus){
+		if(tokens[i].type== TK_MINUS&&!add_and_sub&&!mul_and_div&&!minus){
 			re=i;
-			mius =true;*/
+			minus =true;
 	}
+		if(tokens[i].type==TK_DEREF&&!add_and_sub&&!mul_and_div&&!pointer){
+			re=i;
+			pointer=true;
+	}
+      }
 	return re;
 }		
 			 
@@ -194,8 +201,11 @@ uint32_t eval(int p,int q){
           case '-': return val1 - val2;
           case '*': return val1 * val2;
           case '/': return val1 / val2;
-          case TK_EQ: return val1==val2;
-          //case TK_MINUS: return -1*val2;
+          case TK_EQ: return val1==val2 ?1 :0;
+          case TK_AND: return val1&&val2 ?1 :0;
+          case TK_UEQ: return val1!=val2 ?1 :0;
+          case TK_MINUS: return -1*val2;
+          case TK_DEREF: return paddr_read(val2,4);
           default: assert(0);
        }
      }
@@ -209,5 +219,13 @@ word_t expr(char *e, bool *success) {
 
   /* TODO: Insert codes to evaluate the expression. */
   //TODO();
+  for (int i = 0; i < nr_token; i ++) {
+  if (tokens[i].type == '*' && (i == 0 || (tokens[i - 1].type !=TK_NUM&&tokens[i - 1].type !=')' ) )) {
+    tokens[i].type = TK_DEREF;
+  }
+  if (tokens[i].type == '-' && (i == 0 ||( tokens[i - 1].type !=TK_NUM &&tokens[i - 1].type !=')')) ) {
+    tokens[i].type = TK_MINUS;
+  } 
+}
   return eval(0,nr_token-1);
 }

@@ -121,13 +121,14 @@ static int cmd_w(char* args){
 }
 
 static int cmd_x(char *args){
-    //bool success = false; 
+    bool success = false; 
     char *n = strtok(args," ");
     char *baseaddr=strtok(args," ");
     int length=0;
-    paddr_t addr=0;
+    //paddr_t addr=0;
     sscanf(n,"%d",&length);
-    sscanf(baseaddr,"%x",&addr);
+    word_t addr = expr(baseaddr, &success);
+    //sscanf(baseaddr,"%x",&addr);
     for(int i=0;i<length;i++){
       word_t value = paddr_read(addr, 4);
         printf("0x%08x: 0x%08x\n", addr, value);

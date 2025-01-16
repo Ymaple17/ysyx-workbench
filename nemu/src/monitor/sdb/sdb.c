@@ -125,9 +125,9 @@ static int cmd_x(char *args){
     char *n = strtok(args," ");
     char *baseaddr=strtok(args," ");
     int length=0;
-    //paddr_t addr=0;
+    paddr_t addr=0;
     sscanf(n,"%d",&length);
-    word_t addr = expr(baseaddr, &success);
+    addr = expr(baseaddr, &success);
     //sscanf(baseaddr,"%x",&addr);
     for(int i=0;i<length;i++){
       word_t value = paddr_read(addr, 4);

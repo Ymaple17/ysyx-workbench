@@ -121,8 +121,9 @@ static int cmd_w(char* args){
 }
 
 static int cmd_x(char *args){
+    //bool success = false; 
     char *n = strtok(args," ");
-    char *baseaddr = n+strlen(n)+1;
+    char *baseaddr=strtok(args," ");
     int length=0;
     paddr_t addr=0;
     sscanf(n,"%d",&length);

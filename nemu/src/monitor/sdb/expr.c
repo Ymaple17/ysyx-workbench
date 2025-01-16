@@ -74,7 +74,7 @@ void init_regex() {
 
 typedef struct token {
   int type;
-  char str[32];
+  char str[1024];
 } Token;
 
 static Token tokens[32] __attribute__((used)) = {};
@@ -216,7 +216,7 @@ uint32_t eval(int p,int q){
           case TK_EQ: return val1==val2 ?1 :0;
           case TK_AND: return val1&&val2 ?1 :0;
           case TK_NEQ: return val1!=val2 ?1 :0;
-          //case TK_MINUS: return -1*val2;
+          case TK_MINUS: return -1*val2;
           case TK_DEREF: return paddr_read(val2,4);
           default: assert(0);
        }
@@ -235,9 +235,9 @@ word_t expr(char *e, bool *success) {
   if (tokens[i].type == '*' && (i == 0 || (tokens[i - 1].type !=TK_NUM&&tokens[i - 1].type !=')' ) )) {
     tokens[i].type = TK_DEREF;
   }
-  /*if (tokens[i].type == '-' && (i == 0 ||( tokens[i - 1].type !=TK_NUM &&tokens[i - 1].type !=')')) ) {
+  if (tokens[i].type == '-' && (i == 0 ||( tokens[i - 1].type !=TK_NUM &&tokens[i - 1].type !=')')) ) {
     tokens[i].type = TK_MINUS;
-  } */
+  } 
 }
   return eval(0,nr_token-1);
 }

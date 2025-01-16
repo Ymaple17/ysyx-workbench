@@ -34,7 +34,6 @@ static uint64_t g_timer = 0; // unit: us
 static bool g_print_step = false;
 
 void device_update();
-bool check_all();
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
@@ -43,8 +42,22 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 #ifdef CONFIG_WATCHPOINT
-  bool check=check_all();
-  if(check) nemu_state.state = NEMU_STOP;
+  /*for(int i=0;i<NR_WP;i++){
+	if(wp_pool[i].used){
+		bool success = false;
+		int temp = expr(wp_pool[i].expr,&success);
+		if(success){
+			if(temp != wp_pool[i].old_value){
+				nemu_state.state = NEMU_STOP;
+				return ;
+			}
+		}
+		else{
+			printf("expr error.");
+			
+		}
+	}
+}	*/	
 #endif
 }
 

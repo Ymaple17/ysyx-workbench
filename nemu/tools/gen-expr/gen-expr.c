@@ -130,7 +130,6 @@ int main(int argc, char *argv[]) {
         if (fsn == -1) {
             continue;
         }
-        printf("[loop %d] fsn = %d\t ", i, fsn);
         printf("%u\t %s\n", result, buf);
     }
     return 0;

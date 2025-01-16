@@ -62,7 +62,7 @@ void free_wp(WP *wp){
 	if(head->NO ==wp ->NO){
 		head->used = false;
 		head = NULL;
-		printf("Delete watchpoint.");
+		printf("Delete watchpoint.\n");
 		return ;
 	}
 	for(WP* p = head;p->next !=NULL; p =p->next){
@@ -88,7 +88,7 @@ void create_watchpoint(char* args){
     int temp = expr(p -> expr,&success);
    if(success) p -> old_value = temp;
    else 
-    printf("Create watchpoint No.%d success.\n", p -> NO);
+    printf("Create watchpoint No.%d success.\n", (p -> NO)+1);
 }
 
 void sdb_watchpoint_display(){

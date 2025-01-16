@@ -19,6 +19,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
+#include "watchpoint.h"
 
 static int is_batch_mode = false;
 
@@ -67,6 +68,7 @@ static int cmd_si(char *args){
 static int cmd_info(char *args){
     if(args ==NULL) printf("NO ARGS");
     else if (strcmp(args,"r")==0)  isa_reg_display();
+    else if(strcmp(args,"w")==0) sdb_watchpoint_display();
     return 0;
 }
 	
@@ -79,6 +81,16 @@ static int cmd_p(char *args) {
 	return 0;
 }
 	 
+static int cmd_d(char *args){
+	if(args==NULL) printf("NO ARGS.");
+	else delete_watchpoint(atoi(args));
+	return 0;
+}
+
+static int cmd_w(char* args){
+		create_watchpoint(args);
+		return 0;
+}
 
 static int cmd_x(char *args){
     char *n = strtok(args," ");
@@ -105,7 +117,7 @@ static struct {
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x},{"p","Expression Evaluation",cmd_p}
+  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x},{"p","Expression Evaluation",cmd_p},{"d","delete watchpoint",cmd_d},{"w","create watchpoint",cmd_w}
 
   /* TODO: Add more commands */
 

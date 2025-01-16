@@ -21,7 +21,7 @@
 #include <regex.h>
 
 enum {
-  TK_NOTYPE = 256,TK_HEX_NUM,TK_REG,TK_EQ,TK_NUM,TK_UEQ, TK_MINUS,TK_AND,TK_DEREF
+  TK_NOTYPE = 256,TK_HEX_NUM,TK_REG,TK_EQ,TK_NUM,TK_NEQ, TK_MINUS,TK_AND,TK_DEREF
 
   /* TODO: Add more token types */
 };
@@ -40,7 +40,7 @@ static struct rule {
   {" +", TK_NOTYPE},    
   {"\\+", '+'},         
   {"==", TK_EQ},   
-  {"!=", TK_UEQ},
+  {"!=", TK_NEQ},
   {"[0-9]+", TK_NUM},	
   {"-", '-'},	
   {"\\*", '*'},	
@@ -143,6 +143,8 @@ int get_position(int p,int q){
 	bool mul_and_div =false;
 	bool minus= false;
 	bool pointer = false;
+	bool neq=false;
+	bool add=false;
 	for(int i=p;i<=q;i++){
 		if(tokens[i].type=='(') num++;
 		if(tokens[i].type==')') num--;
@@ -165,6 +167,14 @@ int get_position(int p,int q){
 		if(tokens[i].type==TK_DEREF&&!add_and_sub&&!mul_and_div&&!pointer){
 			re=i;
 			pointer=true;
+	}
+		if(tokens[i].type==TK_NEQ&&!add_and_sub&&!mul_and_div&&!neq){
+			re=i;
+			neq=true;
+	}
+		if(tokens[i].type==TK_AND&&!add_and_sub&&!mul_and_div&&!add){
+			re=i;
+			add=true;
 	}
       }
 	return re;
@@ -193,7 +203,9 @@ uint32_t eval(int p,int q){
        }
        else {
           int op = get_position(p,q);
-          uint32_t val1 = eval(p, op - 1);
+          uint32_t val1=0;
+          if(tokens[op].type != TK_DEREF&&tokens[op].type != TK_MINUS)
+          	val1 = eval(p, op - 1);
           uint32_t val2 = eval(op + 1, q);
 
        switch (tokens[op].type) {
@@ -203,7 +215,7 @@ uint32_t eval(int p,int q){
           case '/': return val1 / val2;
           case TK_EQ: return val1==val2 ?1 :0;
           case TK_AND: return val1&&val2 ?1 :0;
-          case TK_UEQ: return val1!=val2 ?1 :0;
+          case TK_NEQ: return val1!=val2 ?1 :0;
           case TK_MINUS: return -1*val2;
           case TK_DEREF: return paddr_read(val2,4);
           default: assert(0);

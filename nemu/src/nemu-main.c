@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
 void test_cmd_p() {
     bool success = false;
     char buf[2048];
-    const char *file_path = "./tools/gen-expr/input.txt";
+    const char *file_path = "/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input.txt";
     FILE *fp = fopen(file_path, "r");
     if (!fp) {
         perror("Failed to open file");

@@ -53,7 +53,7 @@ WP* new_wp(){
 		return p;
 		}
 	}
-	printf("no watchpoint");
+	printf("no watchpoint\n");
 	assert(0);
 	return NULL;
 }

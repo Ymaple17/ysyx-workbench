@@ -76,7 +76,7 @@ static inline void gen_rand_op() {
 }
 static inline void gen_rand_expr() {
     int a = choose(3);
-    if (count > 600) a = 0;
+    if (count > 60) a = 0;
     switch (a) {
         case 0: gen_num(); break;
         case 1: gen('('); gen_rand_expr(); gen(')'); break;

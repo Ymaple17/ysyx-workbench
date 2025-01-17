@@ -121,3 +121,8 @@ void create_watchpoint(char* args){
     printf("Create watchpoint No.%d success.\n", p -> NO);
 }
 
+/*void set_breakpoint(vaddr_t addr) {
+    char expr_str[32];
+    snprintf(expr_str, sizeof(expr_str), "$pc == 0x%08x", addr);
+    create_watchpoint(expr_str);
+}*/

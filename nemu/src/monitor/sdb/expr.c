@@ -180,64 +180,77 @@ int get_position(int p,int q){
 	return re;
 }		
 			 
-	
-    
-uint32_t eval(int p,int q){
-	if(p>q) return 0;
-	else if(p==q){
-	uint32_t num = 0;
-	if(tokens[p].type==TK_NUM) sscanf(tokens[p].str,"%d",&num);
-	if(tokens[p].type==TK_HEX_NUM) sscanf(tokens[p].str,"%x",&num);
-	if(tokens[p].type==TK_REG ){
-	   bool success=false;
-	   num = isa_reg_str2val(tokens[p].str, &success);
-	   if(!success) {
-		printf("The register name is incorrect.\n");
-		return 0;
-	   }
-	}
-	return num;
-       }
-       else if(check_parentheses(p,q) == true){
-	  return eval(p + 1, q - 1);
-       }
-       else {
-          int op = get_position(p,q);
-          uint32_t val1=0;
-          if(tokens[op].type != TK_DEREF&&tokens[op].type != TK_MINUS)
-          	val1 = eval(p, op - 1);
-          uint32_t val2 = eval(op + 1, q);
+bool is_valid_address(uint32_t addr) {
+    if (addr < 0xffffffff || addr >= 0x80000000) {
+        return false;
+    }
+    if (addr % 4 != 0) {
+        return false;
+    }
 
-       switch (tokens[op].type) {
-          case '+': return val1 + val2;
-          case '-': return val1 - val2;
-          case '*': return val1 * val2;
-          case '/': return val1 / val2;
-          case TK_EQ: return val1==val2 ?1 :0;
-          case TK_AND: return val1&&val2 ?1 :0;
-          case TK_NEQ: return val1!=val2 ?1 :0;
-          case TK_MINUS: return -1*val2;
-          case TK_DEREF: return paddr_read(val2,4);
-          default: assert(0);
-       }
-     }
+    return true;
+}	
+    
+uint32_t eval(int p, int q) {
+    if (p > q) return 0;
+    else if (p == q) {
+        uint32_t num = 0;
+        if (tokens[p].type == TK_NUM) sscanf(tokens[p].str, "%d", &num);
+        if (tokens[p].type == TK_HEX_NUM) sscanf(tokens[p].str, "%x", &num);
+        if (tokens[p].type == TK_REG) {
+            bool success = false;
+            num = isa_reg_str2val(tokens[p].str, &success);
+            if (!success) {
+                printf("The register name is incorrect.\n");
+                return 0;
+            }
+        }
+        return num;
+    }
+    else if (check_parentheses(p, q) == true) {
+        return eval(p + 1, q - 1);
+    }
+    else {
+        int op = get_position(p, q);
+        uint32_t val1 = 0;
+        if (tokens[op].type != TK_DEREF && tokens[op].type != TK_MINUS)
+            val1 = eval(p, op - 1);
+        uint32_t val2 = eval(op + 1, q);
+
+        switch (tokens[op].type) {
+            case '+': return val1 + val2;
+            case '-': return val1 - val2;
+            case '*': return val1 * val2;
+            case '/': return val1 / val2;
+            case TK_EQ: return val1 == val2 ? 1 : 0;
+            case TK_AND: return val1 && val2 ? 1 : 0;
+            case TK_NEQ: return val1 != val2 ? 1 : 0;
+            case TK_MINUS: return -1 * val2;
+            case TK_DEREF: {
+                if (!is_valid_address(val2)) {
+                    printf("Invalid address: 0x%08x\n", val2);
+                    return 0;
+                }
+                return paddr_read(val2, 4);
+            }
+            default: assert(0);
+        }
+    }
 }	
 	
 word_t expr(char *e, bool *success) {
-  if (!make_token(e)) {
-    *success = false;
-    return 0;
-  }
+    if (!make_token(e)) {
+        *success = false;
+        return 0;
+    }
+    for (int i = 0; i < nr_token; i++) {
+        if (tokens[i].type == '*' && (i == 0 || (tokens[i - 1].type != TK_NUM && tokens[i - 1].type != ')'))) {
+            tokens[i].type = TK_DEREF;
+        }
+        if (tokens[i].type == '-' && (i == 0 || (tokens[i - 1].type != TK_NUM && tokens[i - 1].type != ')'))) {
+            tokens[i].type = TK_MINUS;
+        }
+    }
 
-  /* TODO: Insert codes to evaluate the expression. */
-  //TODO();
-  for (int i = 0; i < nr_token; i ++) {
-  if (tokens[i].type == '*' && (i == 0 || (tokens[i - 1].type !=TK_NUM&&tokens[i - 1].type !=')' ) )) {
-    tokens[i].type = TK_DEREF;
-  }
-  if (tokens[i].type == '-' && (i == 0 ||( tokens[i - 1].type !=TK_NUM &&tokens[i - 1].type !=')')) ) {
-    tokens[i].type = TK_MINUS;
-  } 
-}
-  return eval(0,nr_token-1);
+    return eval(0, nr_token - 1);
 }

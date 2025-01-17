@@ -24,7 +24,6 @@ const char *regs[] = {
   "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
 };
 
-vaddr_t pc;
 void isa_reg_display() {
 	int length=sizeof(regs)/sizeof(regs[0]);
 	for(int i=0;i<length;i++){
@@ -35,7 +34,7 @@ word_t isa_reg_str2val(const char *s, bool *success) {
 	int length=sizeof(regs) / sizeof((regs)[0]);
 	if(strcmp("$pc",s)==0) {
 	   *success=true;
-	   return pc;
+	   return cpu.pc;
 	}
 	if(strcmp(regs[0],s)==0) {
 	   *success = true;

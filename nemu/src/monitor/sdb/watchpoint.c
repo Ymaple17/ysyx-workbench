@@ -79,6 +79,7 @@ void free_wp(WP *wp){
     if(head -> NO == wp -> NO){
     	head -> flag = false;
 	head = NULL;
+	head -> count = false;
 	printf("Delete watchpoint  success.\n");
 	return ;
     }
@@ -87,7 +88,7 @@ void free_wp(WP *wp){
 	{
 	    p -> next = p -> next -> next;
 	    p -> next -> flag = false; 
-	    p->count = 0;
+	    p->count = false;
 	    printf("free succes.\n");
 	    return ;
 	}

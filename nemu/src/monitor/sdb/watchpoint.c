@@ -121,8 +121,17 @@ void create_watchpoint(char* args){
     printf("Create watchpoint No.%d success.\n", p -> NO);
 }
 
-/*void set_breakpoint(vaddr_t addr) {
+void set_breakpoint(vaddr_t addr) {
     char expr_str[32];
     snprintf(expr_str, sizeof(expr_str), "$pc == 0x%08x", addr);
-    create_watchpoint(expr_str);
-}*/
+    WP* p =  new_wp();
+    strcpy(p -> expr, expr_str);
+    bool success = false;
+    int tmp = expr(p -> expr,&success);
+    if(success) {
+    	p -> old_value = tmp;
+    	p -> count=true;
+    }
+    else printf("error\n");
+    printf("Create watchpoint No.%d success.\n", p -> NO);   
+}

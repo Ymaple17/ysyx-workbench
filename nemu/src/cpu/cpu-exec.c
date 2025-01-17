@@ -45,30 +45,29 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
      /*if(update_watchpoint()>0){
 		nemu_state.state = NEMU_STOP;
 	}*/
-	for (int i = 0; i < NR_WP; i++) {
-    	if (wp_pool[i].flag) {
-        bool success = false;
-        int tmp = expr(wp_pool[i].expr, &success);
-        if (success) {
-            if (strstr(wp_pool[i].expr, "$pc") != NULL) {
-                    nemu_state.state = NEMU_STOP;
-                    printf("Breakpoint hit at address 0x%08x\n", tmp);
-                    return;
-                }
-             else if (tmp != wp_pool[i].old_value) {
-                nemu_state.state = NEMU_STOP; 
-                printf("Watchpoint %d: %s\n", wp_pool[i].NO, wp_pool[i].expr);
-                printf("Old value = 0x%08x(%d)\n", wp_pool[i].old_value, wp_pool[i].old_value);
-                printf("New value = 0x%08x(%d)\n", tmp, tmp);
-                wp_pool[i].old_value = tmp; 
-                return;
-            }
-        } else {
-            printf("Error: Invalid expression '%s' in watchpoint %d\n", wp_pool[i].expr, wp_pool[i].NO);
-            assert(0);
-        }
+	for(int i = 0 ; i < NR_WP; i ++){
+	if(wp_pool[i].count){
+		nemu_state.state = NEMU_STOP;
+		return ;
+	}
+	else if(wp_pool[i].flag)
+	{
+	    bool success = false;
+	    int tmp = expr(wp_pool[i].expr,&success);
+	    if(success){
+		if(tmp != wp_pool[i].old_value)
+		{
+		    nemu_state.state = NEMU_STOP;
+		    printf("NO EQ\n");
+		    return ;
+		}
+	    }
+	    else{
+		printf("expr error.\n");
+		assert(0);
+	    }
+	}
     }
-}
 #endif
 }
 

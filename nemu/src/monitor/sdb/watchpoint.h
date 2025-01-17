@@ -15,6 +15,7 @@ typedef struct watchpoint {
     char expr[100];
     int new_value;
     int old_value;
+    bool  count;
 
 } WP;
     
@@ -28,7 +29,7 @@ void free_wp(WP *wp);
 void sdb_watchpoint_display();
 void delete_watchpoint(int no);
 void create_watchpoint(char* args);
-
+void set_breakpoint(vaddr_t addr);
 
 
 #endif

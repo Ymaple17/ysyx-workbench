@@ -126,7 +126,7 @@ void create_watchpoint(char* args){
 
 void set_breakpoint(vaddr_t addr) {
     char expr_str[32];
-    snprintf(expr_str, sizeof(expr_str), "%08x", addr);
+    snprintf(expr_str, sizeof(expr_str), "0x%08x", addr);
     WP* p =  new_wp();
     strcpy(p -> expr, expr_str);
     bool success = false;

@@ -295,12 +295,10 @@ word_t eval_expr(int p, int q, bool *success) {
 
 
 word_t expr(char *e, bool *success) {
-  if (strstr(e,"pc") != NULL) {
-        *success = true;
-         word_t hex_value;
-        sscanf(e, "%*[^0-9xX]0x%x", &hex_value);
-        return hex_value;
-    }
+  if(strcmp("$pc",e)==0) {
+	   	*success=true;
+	   	return cpu.pc;
+	}
   if (!make_token(e)) {
     *success = false;
     return 0;

@@ -38,7 +38,7 @@ void init_wp_pool() {
   for (i = 0; i < NR_WP; i ++) {
     wp_pool[i].NO = i;
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
-    wp_pool[i].count = 0;
+    //wp_pool[i].count = 0;
   }
 
   head = NULL;
@@ -79,7 +79,7 @@ void free_wp(WP *wp){
     if(head -> NO == wp -> NO){
     	head -> flag = false;
 	head = NULL;
-	head -> count = false;
+	//head -> count = false;
 	printf("Delete watchpoint  success.\n");
 	return ;
     }
@@ -88,7 +88,7 @@ void free_wp(WP *wp){
 	{
 	    p -> next = p -> next -> next;
 	    p -> next -> flag = false; 
-	    p->count = false;
+	    //p->count = false;
 	    printf("free succes.\n");
 	    return ;
 	}
@@ -124,7 +124,7 @@ void create_watchpoint(char* args){
     printf("Create watchpoint No.%d success.\n", p -> NO);
 }
 
-void set_breakpoint(vaddr_t addr) {
+/*void set_breakpoint(vaddr_t addr) {
     char expr_str[32];
     snprintf(expr_str, sizeof(expr_str), "0x%08x", addr);
     WP* p =  new_wp();
@@ -137,4 +137,4 @@ void set_breakpoint(vaddr_t addr) {
     }
     else printf("error\n");
     printf("Create watchpoint No.%d success.\n", p -> NO);   
-}
+}*/

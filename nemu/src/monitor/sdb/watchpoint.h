@@ -15,7 +15,7 @@ typedef struct watchpoint {
     char expr[100];
     int new_value;
     int old_value;
-    bool  count;
+    //bool  count;
 
 } WP;
     

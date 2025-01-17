@@ -116,12 +116,8 @@ static int cmd_d(char *args){
 }
 
 static int cmd_w(char* args){
-		bool success = false;
-		if(strstr(args,"$pc") != NULL){
-		    vaddr_t addr = expr(args,&success);
-		    set_breakpoint(addr);
-		   }
-		else create_watchpoint(args);
+		//bool success = false;
+		create_watchpoint(args);
 		return 0;
 }
 

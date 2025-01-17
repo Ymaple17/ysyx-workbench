@@ -46,17 +46,16 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 		nemu_state.state = NEMU_STOP;
 	}*/
 	for (int i = 0; i < NR_WP; i++) {
-    if (wp_pool[i].flag) {
+    	if (wp_pool[i].flag) {
         bool success = false;
         int tmp = expr(wp_pool[i].expr, &success);
         if (success) {
             if (strstr(wp_pool[i].expr, "$pc") != NULL) {
-                if (tmp == wp_pool[i].old_value) {
                     nemu_state.state = NEMU_STOP;
                     printf("Breakpoint hit at address 0x%08x\n", tmp);
                     return;
                 }
-            } else if (tmp != wp_pool[i].old_value) {
+             else if (tmp != wp_pool[i].old_value) {
                 nemu_state.state = NEMU_STOP; 
                 printf("Watchpoint %d: %s\n", wp_pool[i].NO, wp_pool[i].expr);
                 printf("Old value = 0x%08x(%d)\n", wp_pool[i].old_value, wp_pool[i].old_value);

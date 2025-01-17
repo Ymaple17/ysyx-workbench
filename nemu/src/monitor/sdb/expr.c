@@ -295,14 +295,14 @@ word_t eval_expr(int p, int q, bool *success) {
 
 
 word_t expr(char *e, bool *success) {
+  if (strcmp(e, "$pc") == 0) {
+        *success = true;
+        return cpu.pc;
+    }
   if (!make_token(e)) {
     *success = false;
     return 0;
   }
-   if (strcmp(e, "$pc") == 0) {
-        *success = true;
-        return cpu.pc;
-    }
 
   /* TODO: Insert codes to evaluate the expression. */
   return eval_expr(0, nr_token-1, success);

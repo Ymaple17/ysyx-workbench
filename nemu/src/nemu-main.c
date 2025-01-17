@@ -20,7 +20,7 @@ void am_init_monitor();
 void engine_start();
 int is_exit_status_bad();
 word_t expr(char *e, bool *success);
-void test_cmd_p();
+
 int main(int argc, char *argv[]) {
   /* Initialize the monitor. */
 #ifdef CONFIG_TARGET_AM
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
   return is_exit_status_bad();
 }
 
-void test_cmd_p() {
+/*void test_cmd_p() {
     bool success = false;
     char buf[2048];
     const char *file_path = "/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input";
@@ -73,4 +73,4 @@ void test_cmd_p() {
         }
     }
     fclose(fp);
-}
+}*/

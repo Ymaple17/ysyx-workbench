@@ -92,6 +92,43 @@ static int cmd_si(char *args){
 	cpu_exec(step);
 	return 0;
 }
+
+static int cmd_test(char *args){
+  int ans = 0;
+  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input", "r");
+    if (input_file == NULL) {
+        perror("Error open file");
+        return 1;
+    }
+    char record[1024];
+    unsigned real_val;
+    char buf[1024];
+    for (int i = 0; i < 100; i++) {
+        if (fgets(record, sizeof(record), input_file) == NULL) {
+            perror("Error read file");
+            break;
+        }
+        char *token = strtok(record, " ");
+        if (token == NULL) {
+            printf("Invalid record format\n");
+            continue;
+        }
+        real_val = atoi(token);
+        strcpy(buf, "");
+        while ((token = strtok(NULL, "\n")) != NULL) {
+            strcat(buf, token);
+            strcat(buf, " ");
+        }
+        printf("Real Value: %u, Expression: %s\n", real_val, buf);
+        bool flag = false;
+        unsigned res = expr(buf,&flag);
+        if(res == real_val)  ans ++;
+
+    }
+    printf("test 100 expressions,the accuracy is %d/100\n",ans);
+    fclose(input_file);
+    return 0;
+}
 		
 static int cmd_info(char *args){
     if(args ==NULL) printf("NO ARGS");
@@ -149,7 +186,7 @@ static struct {
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x},{"p","Expression Evaluation",cmd_p},{"d","delete watchpoint",cmd_d},{"w","create watchpoint",cmd_w}
+  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x},{"p","Expression Evaluation",cmd_p},{"d","delete watchpoint",cmd_d},{"w","create watchpoint",cmd_w},{"test","test input file",cmd_test}
 
   /* TODO: Add more commands */
 
@@ -179,6 +216,8 @@ static int cmd_help(char *args) {
   }
   return 0;
 }
+
+
 
 void sdb_set_batch_mode() {
   is_batch_mode = true;

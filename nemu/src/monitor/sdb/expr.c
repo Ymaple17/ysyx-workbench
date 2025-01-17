@@ -247,6 +247,7 @@ word_t eval_expr(int p, int q, bool *success) {
 				sscanf(tokens[p].str, "%d", &result);
 				return result;
 			case TK_REG:
+				Assert(false,"0x%08x\n",cpu.pc);
 				return isa_reg_str2val(tokens[p].str + 1, success);
 			default:
 				Assert(false, "error token type %d", tokens[p].type);

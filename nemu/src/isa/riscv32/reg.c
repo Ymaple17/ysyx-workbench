@@ -21,16 +21,16 @@ const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
   "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
   "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
-  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6"
+  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6","pc"
 };
 
 void isa_reg_display() {
 	int length=sizeof(regs)/sizeof(regs[0]);
-	for(int i=0;i<length;i++){
+	for(int i=0;i<length-1;i++){
 	    printf("reg%s : 0x%08x\n",regs[i],cpu.gpr[i]);
 }
 }
-word_t isa_reg_str2val(const char *s, bool *success) {
+/*word_t isa_reg_str2val(const char *s, bool *success) {
 	int length=sizeof(regs) / sizeof((regs)[0]);
 	if(strstr(s,"$pc") != NULL) {
 	   *success=true;
@@ -48,13 +48,16 @@ word_t isa_reg_str2val(const char *s, bool *success) {
 	}
 	*success = false;
 	return -1;
-}
-/*word_t isa_reg_str2val(const char *s, bool *success) {
-    for(int i = 0 ; i < 32 ; i ++){
+}*/
+word_t isa_reg_str2val(const char *s, bool *success) {
+    for(int i = 0 ; i <33 ; i ++){
+    	if(strcmp(regs[32],s)==0){
+    		return cpu.pc;
+    	}
    	if(strcmp(regs[i], s) == 0){
 		return cpu.gpr[i];
 	}
     }
     success = false;
     return 0;
-}*/
+}

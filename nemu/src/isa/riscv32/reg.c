@@ -29,7 +29,7 @@ void isa_reg_display() {
 	    printf("reg%s : 0x%08x\n",regs[i],cpu.gpr[i]);
 }
 }
-word_t isa_reg_str2val(const char *s, bool *success) {
+long long isa_reg_str2val(const char *s, bool *success) {
 	int length=sizeof(regs) / sizeof((regs)[0]);
 	if(strcmp("$pc",s)==0) {
 	   *success=true;

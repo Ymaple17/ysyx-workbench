@@ -91,7 +91,7 @@ void add_watchpoint(char *str) {
     free_ = free_->next;
 
     strncpy(ptr->str, str, 31);
-    ptr->str[31] = '\0';
+    ptr->str[600] = '\0';
     ptr->old_value = value;
 
     ptr->next = head;

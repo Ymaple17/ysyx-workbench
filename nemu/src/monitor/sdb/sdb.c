@@ -123,6 +123,7 @@ static int cmd_test(char *args){
         bool flag = false;
         unsigned res = expr(buf,&flag);
         if(res == real)  count++;
+        else assert(0);
 
     }
     printf("test 100 expressions,the accuracy is %d/100\n",count);

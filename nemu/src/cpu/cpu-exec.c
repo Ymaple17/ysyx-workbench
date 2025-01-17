@@ -46,12 +46,12 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 		nemu_state.state = NEMU_STOP;
 	}*/
 	for(int i = 0 ; i < NR_WP; i ++){
-	if(wp_pool[i].count){
+	if(wp_pool[i].flag)
+	{
+	    if(wp_pool[i].count){
 		nemu_state.state = NEMU_STOP;
 		return ;
 	}
-	else if(wp_pool[i].flag)
-	{
 	    bool success = false;
 	    int tmp = expr(wp_pool[i].expr,&success);
 	    if(success){

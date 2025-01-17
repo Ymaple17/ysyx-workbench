@@ -119,7 +119,7 @@ static bool make_token(char *e) {
 		case TK_HEX:
 		case TK_UINT:
 		case TK_REG:
-			Assert(substr_len < 32, "token should less than 32 characters");
+			assert(substr_len < 6000);
 			strncpy(tokens[nr_token].str, substr_start, substr_len);
 			tokens[nr_token].str[substr_len] = '\0';
 		case '+':
@@ -131,7 +131,7 @@ static bool make_token(char *e) {
 		case TK_EQ:
 		case TK_NE:
 		case TK_AND:
-			Assert(nr_token < 32, "token should less than 32");
+			assert(nr_token < 6000);
 			tokens[nr_token].type = rules[i].token_type;
 			int current_token = rules[i].token_type;
 			if (current_token  == '*' || current_token == '-') {

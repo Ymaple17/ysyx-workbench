@@ -45,7 +45,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
      /*if(update_watchpoint()>0){
 		nemu_state.state = NEMU_STOP;
 	}*/
-	for(int i = 0 ; i < NR_WP; i ++){
+	/*for(int i = 0 ; i < NR_WP; i ++){
 	if(wp_pool[i].flag)
 	{
 	    bool success = false;
@@ -63,7 +63,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 		assert(0);
 	    }
 	}
-    }
+    }*/
 #endif
 }
 

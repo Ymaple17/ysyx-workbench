@@ -94,18 +94,18 @@ static int cmd_si(char *args){
 }
 
 static int cmd_test(char *args){
-  int ans = 0;
-  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input", "r");
+  int count = 0;
+  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input1", "r");
     if (input_file == NULL) {
-        perror("Error open file");
+        perror("Error open file\n");
         return 1;
     }
     char record[1024];
-    unsigned real_val;
+    unsigned real;
     char buf[1024];
     for (int i = 0; i < 100; i++) {
         if (fgets(record, sizeof(record), input_file) == NULL) {
-            perror("Error read file");
+            perror("Error read file\n");
             break;
         }
         char *token = strtok(record, " ");
@@ -113,19 +113,19 @@ static int cmd_test(char *args){
             printf("Invalid record format\n");
             continue;
         }
-        real_val = atoi(token);
+        real = atoi(token);
         strcpy(buf, "");
         while ((token = strtok(NULL, "\n")) != NULL) {
             strcat(buf, token);
             strcat(buf, " ");
         }
-        printf("Real Value: %u, Expression: %s\n", real_val, buf);
+        printf("Real Value: %u, Expression: %s\n", real, buf);
         bool flag = false;
         unsigned res = expr(buf,&flag);
-        if(res == real_val)  ans ++;
+        if(res == real)  count++;
 
     }
-    printf("test 100 expressions,the accuracy is %d/100\n",ans);
+    printf("test 100 expressions,the accuracy is %d/100\n",count);
     fclose(input_file);
     return 0;
 }

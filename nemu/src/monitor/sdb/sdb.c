@@ -96,7 +96,7 @@ static int cmd_si(char *args){
 static int cmd_info(char *args){
     if(args ==NULL) printf("NO ARGS");
     else if (strcmp(args,"r")==0)  isa_reg_display();
-    else if(strcmp(args,"w")==0) sdb_watchpoint_display();
+    else if(strcmp(args,"w")==0) print_watchpoints();
     return 0;
 }
 	
@@ -116,7 +116,7 @@ static int cmd_d(char *args){
 }
 
 static int cmd_w(char* args){
-		create_watchpoint(args);
+		add_watchpoint(args);
 		return 0;
 }
 

@@ -12,8 +12,8 @@ typedef struct watchpoint {
     // TODO: Add more members if necessary
 
     bool used; // use / unuse
-    char expr[600];
-    int new_value;
+    char str[600];
+    //int new_value;
     int old_value;
 
 } WP;
@@ -25,10 +25,9 @@ static WP *free_ __attribute__((unused));
 void init_wp_pool();
 WP* new_wp();
 void free_wp(WP *wp);
-bool check_all();
-void delete_watchpoint(int no);
-void sdb_watchpoint_display();
-void create_watchpoint(char* args);
 int update_watchpoint();
+void print_watchpoints();
+void delete_watchpoint(int no);
+void add_watchpoint(char *str);
 
 #endif

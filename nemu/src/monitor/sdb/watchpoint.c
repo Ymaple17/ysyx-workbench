@@ -45,7 +45,7 @@ void init_wp_pool() {
 }
 
 /* TODO: Implement the functionality of watchpoint */
-WP* new_wp(){
+/*WP* new_wp(){
 	for(WP* p =free_;p->next!=NULL;p = p->next){
 		if(p->used ==false){
 			p->used=true;
@@ -74,47 +74,88 @@ void free_wp(WP *wp){
 			return;
 		}
 	}
-}
+}*/
 
-void delete_watchpoint(int no){
-    for(int i = 0 ; i < NR_WP ; i ++)
-        if(wp_pool[i].NO == no){
-            free_wp(&wp_pool[i]);
-            return ;
-        }
-}
-void create_watchpoint(char* args){
-    WP* p =  new_wp();
-    strcpy(p -> expr, args);
+
+void add_watchpoint(char *str) {
+    assert(free_ != NULL && "No free memory for new watchpoint");
+
     bool success = false;
-    int temp = expr(p -> expr,&success);
-   if(success) p -> old_value = temp;
-   else 
-    printf("Create watchpoint No.%d success.\n", (p -> NO));
+    int value = expr(str, &success);
+    if (!success) {
+        printf("Error: Invalid expression '%s'\n", str);
+        return;
+    }
+
+    WP *ptr = free_;
+    free_ = free_->next;
+
+    strncpy(ptr->str, str, 31);
+    ptr->str[31] = '\0';
+    ptr->old_value = value;
+
+    ptr->next = head;
+    head = ptr;
+
+    printf("Watchpoint %d: %s\n", ptr->NO, ptr->str);
 }
 
-void sdb_watchpoint_display(){
-    bool flag = true;
-    for(int i = 0 ; i < NR_WP ; i ++){
-        if(wp_pool[i].used){
-            printf("Watchpoint.No: %d, expr = \"%s\", old_value = %d, new_value = %d\n",
-                    wp_pool[i].NO, wp_pool[i].expr,wp_pool[i].old_value, wp_pool[i].new_value);
-                flag = false;
+void delete_watchpoint(int no) {
+    if (head == NULL) {
+        printf("Error: No watchpoints to delete.\n");
+        return;
+    }
+
+    if (head->NO == no) {
+        WP *tmp = head;
+        head = head->next;
+        tmp->next = free_;
+        free_ = tmp;
+        printf("Deleted watchpoint %d.\n", no);
+        return;
+    }
+
+    WP *ptr = head;
+    while (ptr->next) {
+        if (ptr->next->NO == no) {
+            WP *tmp = ptr->next;
+            ptr->next = tmp->next;
+            tmp->next = free_;
+            free_ = tmp;
+            printf("Deleted watchpoint %d.\n", no);
+            return;
         }
+        ptr = ptr->next;
     }
-    if(flag) printf("No watchpoint.");
+
+    printf("Error: Watchpoint %d not found.\n", no);
+}
+
+void print_watchpoints() {
+    if (head == NULL) {
+        printf("No watchpoints.\n");
+        return;
     }
+
+    printf("Num\t\tWhat\n");
+    WP *ptr = head;
+    while (ptr) {
+        printf("%d\t\t%s\n", ptr->NO, ptr->str);
+        ptr = ptr->next;
+    }
+}
+
     
 int update_watchpoint(){
 	int n_changed = 0;
 	WP *ptr =head;
 	while(ptr != NULL){
 		bool success = false;
-		word_t value = expr(ptr->expr,&success);
-		Assert(success, "wrong expression %s\n", ptr->expr);
+		word_t value = expr(ptr->str,&success);
+		Assert(success, "wrong expression %s\n", ptr->str);
 		if(value != ptr->old_value){
 			n_changed+=1;
-			printf("Watchpoint%d:%s\n",ptr->NO,ptr->expr);
+			printf("Watchpoint%d:%s\n",ptr->NO,ptr->str);
 			printf("Old value = 0x%08x(%d)\n", ptr->old_value, ptr->old_value);
 			printf("New value = 0x%08x(%d)\n", value, value);
 			ptr->old_value = value;

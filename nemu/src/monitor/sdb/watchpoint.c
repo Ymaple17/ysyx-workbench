@@ -38,6 +38,7 @@ void init_wp_pool() {
   for (i = 0; i < NR_WP; i ++) {
     wp_pool[i].NO = i;
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
+    wp_pool[i].count = 0;
   }
 
   head = NULL;
@@ -86,6 +87,7 @@ void free_wp(WP *wp){
 	{
 	    p -> next = p -> next -> next;
 	    p -> next -> flag = false; 
+	    p->count = 0;
 	    printf("free succes.\n");
 	    return ;
 	}

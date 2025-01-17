@@ -58,7 +58,7 @@ static struct rule {
 
 	{"!=", TK_NE},
 	{"&&", TK_AND},
-	{"\\$(\\$0|ra|sp|gp|tp|t[0-6]|s[0-9]|s10|s11|a[0-7])", TK_REG},
+	{"\\$(\\$0|ra|sp|gp|tp|pc|t[0-6]|s[0-9]|s10|s11|a[0-7])", TK_REG},
 };
 
 #define NR_REGEX ARRLEN(rules)
@@ -295,10 +295,10 @@ word_t eval_expr(int p, int q, bool *success) {
 
 
 word_t expr(char *e, bool *success) {
-  if(strcmp("$pc",e)==0) {
+  /*if(strcmp("$pc",e)==0) {
 	   	*success=true;
 	   	return cpu.pc;
-	}
+	}*/
   if (!make_token(e)) {
     *success = false;
     return 0;

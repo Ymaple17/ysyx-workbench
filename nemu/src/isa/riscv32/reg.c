@@ -32,7 +32,7 @@ void isa_reg_display() {
 }
 word_t isa_reg_str2val(const char *s, bool *success) {
 	int length=sizeof(regs) / sizeof((regs)[0]);
-	if(strcmp("$pc",s)==0) {
+	if(strstr(s,"$pc") != NULL) {
 	   *success=true;
 	   return cpu.pc;
 	}

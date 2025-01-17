@@ -295,7 +295,7 @@ word_t eval_expr(int p, int q, bool *success) {
 
 
 word_t expr(char *e, bool *success) {
-  if (strcmp(e, "$pc") == 0) {
+  if (strstr(e,"pc") != NULL) {
         *success = true;
          word_t hex_value;
         sscanf(e, "%*[^0-9xX]0x%x", &hex_value);

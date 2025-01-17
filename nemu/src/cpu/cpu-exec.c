@@ -42,24 +42,30 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
   if (g_print_step) { IFDEF(CONFIG_ITRACE, puts(_this->logbuf)); }
   IFDEF(CONFIG_DIFFTEST, difftest_step(_this->pc, dnpc));
 #ifdef CONFIG_WATCHPOINT
-     for(int i=0;i<NR_WP;i++){
-	if(wp_pool[i].used){
-		bool success = false;
-		int temp = expr(wp_pool[i].expr,&success);
-		if(success){
-			if(temp != wp_pool[i].old_value){
-				nemu_state.state = NEMU_STOP;
-				return ;
-			}
-		}
-		else{
-			printf("expr error.");
-			assert(0);
-		}
+     if(update_watchpoint()>0){
+		nemu_state.state = NEMU_STOP;
 	}
-}		
 #endif
 }
+
+/*int update_watchpoint(){
+	int n_changed = 0;
+	WP *ptr =head;
+	while(ptr != NULL){
+		bool success = false;
+		word_t value = expr(ptr->expr,&success);
+		Assert(success, "wrong expression %s\n", ptr->expr);
+		if(value != ptr->old_value){
+			n_changed+=1;
+			printf("Watchpoint%d:%s\n",ptr->NO,ptr->expr);
+			printf("Old value = 0x%08x(%d)\n", ptr->old_value, ptr->old_value);
+			printf("New value = 0x%08x(%d)\n", value, value);
+			ptr->old_value = value;
+		}
+		ptr = ptr->next;
+	}
+	return n_changed;
+}*/
 
 static void exec_once(Decode *s, vaddr_t pc) {
   s->pc = pc;

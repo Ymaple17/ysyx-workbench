@@ -104,3 +104,22 @@ void sdb_watchpoint_display(){
     }
     if(flag) printf("No watchpoint.");
     }
+    
+int update_watchpoint(){
+	int n_changed = 0;
+	WP *ptr =head;
+	while(ptr != NULL){
+		bool success = false;
+		word_t value = expr(ptr->expr,&success);
+		Assert(success, "wrong expression %s\n", ptr->expr);
+		if(value != ptr->old_value){
+			n_changed+=1;
+			printf("Watchpoint%d:%s\n",ptr->NO,ptr->expr);
+			printf("Old value = 0x%08x(%d)\n", ptr->old_value, ptr->old_value);
+			printf("New value = 0x%08x(%d)\n", value, value);
+			ptr->old_value = value;
+		}
+		ptr = ptr->next;
+	}
+	return n_changed;
+}

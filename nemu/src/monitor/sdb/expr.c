@@ -231,7 +231,7 @@ static int find_main_operator_index(int p, int q) {
 
 word_t vaddr_read(vaddr_t, int);
 
-word_t eval_expr(int p, int q, bool *success) {
+long long eval_expr(int p, int q, bool *success) {
 	if (p > q) {
 		*success = false;
 		return 0;
@@ -294,7 +294,7 @@ word_t eval_expr(int p, int q, bool *success) {
 }
 
 
-word_t expr(char *e, bool *success) {
+long long expr(char *e, bool *success) {
   /*if(strcmp("$pc",e)==0) {
 	   	*success=true;
 	   	return cpu.pc;

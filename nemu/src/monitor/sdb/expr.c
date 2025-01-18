@@ -162,19 +162,19 @@ static bool check_parentheses(int p, int q) {
 	if (tokens[p].type != '(' && tokens[q].type != ')') {
 		return false;
 	}
-	int n_left = 0;
+	int left = 0;
 	for (int i = p+1; i <= q-1; i++) {
 		if (tokens[i].type == '(') {
-			n_left++;
+			left++;
 		}
 		else if (tokens[i].type == ')') {
-			n_left--;
-			if (n_left < 0) {
+			left--;
+			if (left < 0) {
 				return false;
 			}
 		}
 	}
-	return n_left == 0;
+	return left == 0;
 }
 static int priority(int operator) {
 	switch (operator) {
@@ -199,15 +199,15 @@ static int priority(int operator) {
 static int find_main_operator_index(int p, int q) {
 	int main_operator_index = -1;
 	int main_operator = -1;
-	int n_left = 0;
+	int left = 0;
 	for (int i = p; i <= q; i++) {
 		int operator = tokens[i].type;
 		switch (operator) {
 			case '(': 
-				n_left++;
+				left++;
 				break;
 			case ')':
-				n_left--;
+				left--;
 				break;
 			case '+':
 			case '-':
@@ -218,7 +218,7 @@ static int find_main_operator_index(int p, int q) {
 			case TK_AND:
 			case TK_DEREF:
 			case TK_NEG:
-				if (n_left == 0 && (main_operator_index == -1 || priority(operator) <= priority(main_operator))) {
+				if (left == 0 && (main_operator_index == -1 || priority(operator) <= priority(main_operator))) {
 					main_operator_index = i;
 					main_operator = operator;
 				}

@@ -292,9 +292,6 @@ word_t eval_expr(int p, int q, bool *success) {
         	case TK_AND: result = value_left && value_right; break;
         	default: assert(0);
     }
-    if (result < 0) {
-        result = -result;
-    }
     return result;
 }
 

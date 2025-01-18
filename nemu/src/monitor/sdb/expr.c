@@ -24,7 +24,7 @@ enum {
   TK_NOTYPE = 256, TK_EQ,
 
   /* TODO: Add more token types */
-  TK_UINT,
+  	TK_UINT,
 	TK_HEX,
 
 	TK_NE,
@@ -135,8 +135,8 @@ static bool make_token(char *e) {
 			tokens[nr_token].type = rules[i].token_type;
 			int current_token = rules[i].token_type;
 			if (current_token  == '*' || current_token == '-') {
-			int tk = nr_token == 0 ? -1 : tokens[nr_token - 1].type;
-			if (nr_token == 0 || tk == '+' || tk == '-' || tk == '*' || tk == '/' || tk == '(' || tk == TK_EQ || tk == TK_NE || tk == TK_AND) {
+			int a = nr_token == 0 ? -1 : tokens[nr_token - 1].type;
+			if (nr_token == 0 || a == '+' || a == '-' || a == '*' || a == '/' || a == '(' || a == TK_EQ || a == TK_NE || a == TK_AND) {
 			tokens[nr_token].type = current_token == '*' ? TK_DEREF : TK_NEG;
 		}
 	}
@@ -158,7 +158,7 @@ static bool make_token(char *e) {
 }
 
 
-static bool is_paired(int p, int q) {
+static bool check_parentheses(int p, int q) {
 	if (tokens[p].type != '(' && tokens[q].type != ')') {
 		return false;
 	}
@@ -253,7 +253,7 @@ word_t eval_expr(int p, int q, bool *success) {
 				Assert(false, "error token type %d", tokens[p].type);
 		}
 	}
-	else if (is_paired(p, q)) {
+	else if (check_parentheses(p, q)) {
 		return eval_expr(p+1, q-1, success);
 	}
 	*success = true;
@@ -284,7 +284,8 @@ word_t eval_expr(int p, int q, bool *success) {
 	word_t result = 0;
     	switch (tokens[r].type) {
         	case '+': result = value_left + value_right; break;
-        	case '-': result = value_left - value_right; break;
+        	case '-': 
+        	result = value_left - value_right; break;
         	case '*': result = value_left * value_right; break;
         	case '/': result = value_left / value_right; break;
         	case TK_EQ: result = value_left == value_right; break;

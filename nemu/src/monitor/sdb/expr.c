@@ -281,21 +281,21 @@ word_t eval_expr(int p, int q, bool *success) {
 	if (*success == false) {
 		return 0;
 	}
-
-	switch (tokens[r].type) {
-		case '+': return value_left + value_right;
-		case '-':
-			word_t a = value_left - value_right;
-			if(a>2294967295) a =  4294967295-a;
-			return a;
-			//return value_left - value_right;
-		case '*': return value_left * value_right;
-		case '/': return value_left / value_right;
-		case TK_EQ: return value_left == value_right;
-		case TK_NE: return value_left != value_right;
-		case TK_AND: return value_left && value_right;
-		default: assert(0);
-	}
+	word_t result = 0;
+    	switch (tokens[r].type) {
+        	case '+': result = value_left + value_right; break;
+        	case '-': result = value_left - value_right; break;
+        	case '*': result = value_left * value_right; break;
+        	case '/': result = value_left / value_right; break;
+        	case TK_EQ: result = value_left == value_right; break;
+        	case TK_NE: result = value_left != value_right; break;
+        	case TK_AND: result = value_left && value_right; break;
+        	default: assert(0);
+    }
+    if (result < 0) {
+        result = -result;
+    }
+    return result;
 }
 
 

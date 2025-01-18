@@ -231,7 +231,7 @@ static int find_main_operator_index(int p, int q) {
 
 word_t vaddr_read(vaddr_t, int);
 
-word_t eval_expr(int p, int q, bool *success) {
+int eval_expr(int p, int q, bool *success) {
 	if (p > q) {
 		*success = false;
 		return 0;

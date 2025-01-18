@@ -231,7 +231,7 @@ static int find_main_operator_index(int p, int q) {
 
 word_t vaddr_read(vaddr_t, int);
 
-int eval_expr(int p, int q, bool *success) {
+word_t eval_expr(int p, int q, bool *success) {
 	if (p > q) {
 		*success = false;
 		return 0;
@@ -284,7 +284,11 @@ int eval_expr(int p, int q, bool *success) {
 
 	switch (tokens[r].type) {
 		case '+': return value_left + value_right;
-		case '-': return value_left - value_right;
+		case '-':
+			word_t a = value_left - value_right;
+			if(a>2294967295) a =  4294967295-a;
+			return a;
+			//return value_left - value_right;
 		case '*': return value_left * value_right;
 		case '/': return value_left / value_right;
 		case TK_EQ: return value_left == value_right;
@@ -306,5 +310,6 @@ word_t expr(char *e, bool *success) {
   }
 
   /* TODO: Insert codes to evaluate the expression. */
+  
   return eval_expr(0, nr_token-1, success);
 }

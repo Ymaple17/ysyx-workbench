@@ -231,7 +231,7 @@ static int find_main_operator_index(int p, int q) {
 
 word_t vaddr_read(vaddr_t, int);
 
-word_t eval_expr(int p, int q, bool *success) {
+word_t eval(int p, int q, bool *success) {
 	if (p > q) {
 		*success = false;
 		return 0;
@@ -254,7 +254,7 @@ word_t eval_expr(int p, int q, bool *success) {
 		}
 	}
 	else if (check_parentheses(p, q)) {
-		return eval_expr(p+1, q-1, success);
+		return eval(p+1, q-1, success);
 	}
 	*success = true;
 	int r = find_main_operator_index(p, q);
@@ -264,7 +264,7 @@ word_t eval_expr(int p, int q, bool *success) {
 		return 0;
 	}
 
-	word_t value_right = eval_expr(r+1, q, success);
+	word_t value_right = eval(r+1, q, success);
 	if (*success == false) {
 		return 0;
 	}
@@ -277,7 +277,7 @@ word_t eval_expr(int p, int q, bool *success) {
 		return -value_right;
 	}
 
-	word_t value_left = eval_expr(p, r-1, success);
+	word_t value_left = eval(p, r-1, success);
 	if (*success == false) {
 		return 0;
 	}
@@ -309,5 +309,5 @@ word_t expr(char *e, bool *success) {
 
   /* TODO: Insert codes to evaluate the expression. */
   
-  return eval_expr(0, nr_token-1, success);
+  return eval(0, nr_token-1, success);
 }

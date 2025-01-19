@@ -38,7 +38,6 @@ void init_wp_pool() {
   for (i = 0; i < NR_WP; i ++) {
     wp_pool[i].NO = i;
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
-    //wp_pool[i].count = 0;
   }
 
   head = NULL;
@@ -54,17 +53,6 @@ WP* new_wp(){
 	    if(head == NULL){    
 		head = p;
 	    }
-	    /*
-	    else{
-		WP* q = head;
-		while(q -> next -> flag == true)
-		{
-		    printf("1.\n");
-		    q = q -> next;
-		}
-		q -> next = p;
-	    }
-	    */
 	    return p;
 	}
     }
@@ -73,13 +61,10 @@ WP* new_wp(){
     return NULL;
 
 }
-
-
 void free_wp(WP *wp){
     if(head -> NO == wp -> NO){
     	head -> flag = false;
 	head = NULL;
-	//head -> count = false;
 	printf("Delete watchpoint  success.\n");
 	return ;
     }
@@ -88,12 +73,10 @@ void free_wp(WP *wp){
 	{
 	    p -> next = p -> next -> next;
 	    p -> next -> flag = false; 
-	    //p->count = false;
 	    printf("free succes.\n");
 	    return ;
 	}
     }
-
 }
 
 void sdb_watchpoint_display(){

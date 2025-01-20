@@ -126,7 +126,7 @@ static int cmd_test(char *args){
         else assert(0);
 
     }
-    printf("test 100 expressions,the accuracy is %d/100\n",count);
+    printf("test 100 expressions,the accuracy is %d/9886\n",count);
     fclose(input_file);
     return 0;
 }

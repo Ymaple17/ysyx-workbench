@@ -264,7 +264,7 @@ int eval(int p, int q, bool *success) {
 		return 0;
 	}
 
-	word_t value_right = eval(r+1, q, success);
+	int value_right = eval(r+1, q, success);
 	if (*success == false) {
 		return 0;
 	}
@@ -277,7 +277,7 @@ int eval(int p, int q, bool *success) {
 		return -value_right;
 	}
 
-	word_t value_left = eval(p, r-1, success);
+	int value_left = eval(p, r-1, success);
 	if (*success == false) {
 		return 0;
 	}

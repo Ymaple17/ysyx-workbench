@@ -95,7 +95,7 @@ static int cmd_si(char *args){
 
 static int cmd_test(char *args){
   int count = 0;
-  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input1", "r");
+  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input2", "r");
     if (input_file == NULL) {
         perror("Error open file\n");
         return 1;

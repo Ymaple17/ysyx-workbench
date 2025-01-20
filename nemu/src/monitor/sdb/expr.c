@@ -229,16 +229,16 @@ static int find_main_operator_index(int p, int q) {
 	return main_operator_index;
 }
 
-word_t vaddr_read(vaddr_t, int);
+int vaddr_read(vaddr_t, int);
 
-word_t eval(int p, int q, bool *success) {
+int eval(int p, int q, bool *success) {
 	if (p > q) {
 		*success = false;
 		return 0;
 	}
 	else if (p == q) {
 		*success = true;
-		word_t result = 0;
+		int result = 0;
 		switch (tokens[p].type) {
 			case TK_HEX:
 				sscanf(tokens[p].str, "%x", &result);
@@ -297,7 +297,7 @@ word_t eval(int p, int q, bool *success) {
 }
 
 
-word_t expr(char *e, bool *success) {
+int expr(char *e, bool *success) {
   /*if(strcmp("$pc",e)==0) {
 	   	*success=true;
 	   	return cpu.pc;

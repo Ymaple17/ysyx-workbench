@@ -101,7 +101,7 @@ static int cmd_test(char *args){
         return 1;
     }
     char record[1024];
-    unsigned real;
+    int real;
     char buf[1024];
     for (int i = 0; i < 100; i++) {
         if (fgets(record, sizeof(record), input_file) == NULL) {
@@ -121,7 +121,7 @@ static int cmd_test(char *args){
         }
         printf("Real Value: %u, Expression: %s\n", real, buf);
         bool flag = false;
-        unsigned res = expr(buf,&flag);
+        int res = expr(buf,&flag);
         if(res == real)  count++;
         else assert(0);
 

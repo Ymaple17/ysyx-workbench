@@ -103,7 +103,7 @@ static int cmd_test(char *args){
     char record[1024];
     int real;
     char buf[1024];
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 9886; i++) {
         if (fgets(record, sizeof(record), input_file) == NULL) {
             perror("Error read file\n");
             break;
@@ -126,7 +126,7 @@ static int cmd_test(char *args){
         else assert(0);
 
     }
-    printf("test 100 expressions,the accuracy is %d/9886\n",count);
+    printf("test 9886 expressions,the accuracy is %d/9886\n",count);
     fclose(input_file);
     return 0;
 }

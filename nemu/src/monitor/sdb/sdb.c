@@ -168,7 +168,6 @@ static int cmd_x(char *args){
     paddr_t addr=0;
     sscanf(n,"%d",&length);
     addr = expr(baseaddr, &success);
-    //sscanf(baseaddr,"%x",&addr);
     for(int i=0;i<length;i++){
       word_t value = paddr_read(addr, 4);
         printf("0x%08x: 0x%08x\n", addr, value);

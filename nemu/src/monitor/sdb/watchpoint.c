@@ -39,7 +39,7 @@ void init_wp_pool() {
     wp_pool[i].NO = i;
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
   }
-
+  wp_pool[NR_WP - 1].next = NULL;
   head = NULL;//无激活的观察点
   free_ = wp_pool;//所有观测点可用
 }

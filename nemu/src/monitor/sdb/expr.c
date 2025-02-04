@@ -257,32 +257,32 @@ int eval(int p, int q, bool *success) {
 		return eval(p+1, q-1, success);
 	}
 	*success = true;
-	int r = find_main_operator_index(p, q);
-	if (r < 0) {
+	int op = find_main_operator_index(p, q);
+	if (op < 0) {
 		printf("can't find main operator\n");
 		*success = false;
 		return 0;
 	}
 
-	int value_right = eval(r+1, q, success);
+	int value_right = eval(op+1, q, success);
 	if (*success == false) {
 		return 0;
 	}
 
-	if (tokens[r].type == TK_DEREF) {
+	if (tokens[op].type == TK_DEREF) {
 		return paddr_read(value_right, 4);
 	}
 
-	if (tokens[r].type == TK_NEG) {
+	if (tokens[op].type == TK_NEG) {
 		return -value_right;
 	}
 
-	int value_left = eval(p, r-1, success);
+	int value_left = eval(p, op-1, success);
 	if (*success == false) {
 		return 0;
 	}
 	word_t result = 0;
-    	switch (tokens[r].type) {
+    	switch (tokens[op].type) {
         	case '+': result = value_left + value_right; break;
         	case '-': 
         	result = value_left - value_right; break;

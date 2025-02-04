@@ -229,7 +229,7 @@ static int find_main_operator_index(int p, int q) {
 	return main_operator_index;
 }
 
-int vaddr_read(vaddr_t, int);
+int paddr_read(paddr_t, int);
 
 int eval(int p, int q, bool *success) {
 	if (p > q) {
@@ -270,7 +270,7 @@ int eval(int p, int q, bool *success) {
 	}
 
 	if (tokens[r].type == TK_DEREF) {
-		return vaddr_read(value_right, 4);
+		return paddr_read(value_right, 4);
 	}
 
 	if (tokens[r].type == TK_NEG) {

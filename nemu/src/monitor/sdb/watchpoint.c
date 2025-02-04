@@ -40,8 +40,8 @@ void init_wp_pool() {
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
   }
 
-  head = NULL;
-  free_ = wp_pool;
+  head = NULL;//无激活的观察点
+  free_ = wp_pool;//所有观测点可用
 }
 
 /* TODO: Implement the functionality of watchpoint */
@@ -49,7 +49,7 @@ WP* new_wp(){
     for(WP* p = free_ ; p -> next != NULL ; p = p -> next){
 //	printf("P address = %p\n",p);
 	if( p -> flag == false){
-	    p -> flag = true;
+	    p -> flag = true;//激活观察点
 	    if(head == NULL){    
 		head = p;
 	    }
@@ -62,7 +62,7 @@ WP* new_wp(){
 
 }
 void free_wp(WP *wp){
-    if(head -> NO == wp -> NO){
+    if(head -> NO == wp -> NO){//删除头部观察点
     	head -> flag = false;
 	head = NULL;
 	printf("Delete watchpoint  success.\n");
@@ -90,6 +90,7 @@ void sdb_watchpoint_display(){
     }
     if(flag) printf("No watchpoint now.\n");
 }
+
 void delete_watchpoint(int no){
     for(int i = 0 ; i < NR_WP ; i ++)
 	if(wp_pool[i].NO == no){
@@ -97,6 +98,7 @@ void delete_watchpoint(int no){
 	    return ;
 	}
 }
+
 void create_watchpoint(char* args){
     WP* p =  new_wp();
     strcpy(p -> expr, args);

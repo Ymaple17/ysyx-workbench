@@ -113,7 +113,7 @@ static int cmd_test(char *args){
             printf("Invalid record format\n");
             continue;
         }
-        real = atoi(token);
+        real = atoi(token);//转成整数
         strcpy(buf, "");
         while ((token = strtok(NULL, "\n")) != NULL) {
             strcat(buf, token);

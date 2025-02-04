@@ -30,7 +30,7 @@ uint32_t choose(uint32_t n) {
     return rand() % n;
 }
 
-bool is_previous_operator_division() {
+bool is_previous_operator_division() {//判断最后一个非空格是否为/
     int len = strlen(buf);
     if (len == 0) {
         return false;
@@ -55,8 +55,8 @@ static inline void gen_num() {
     count++;
 }
 static inline void gen(char str) {
-    uint32_t left = choose(4);
-    uint32_t right = choose(4); 
+    uint32_t left = choose(4);//生成左空格
+    uint32_t right = choose(4); //生成右空格
     char s[left + 1 + right + 1];
     uint32_t i;
     for (i = 0; i < left; i++) { s[i] = ' '; count++; }
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
         if (div_pos != NULL) {
             has_division_by_zero = true;
         }
-        if (has_division_by_zero) {
+        if (has_division_by_zero) {//如果有除0的算式，则重新生成
             i--; 
             continue;
         }
@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
         assert(fp != NULL);
         int result;
         int fsn = fscanf(fp, "%d", &result);
-        pclose(fp);
+        pclose(fp);//如果编译失败，则跳过该文件
         if (fsn == -1) {
             continue;
         }

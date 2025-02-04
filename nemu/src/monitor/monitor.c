@@ -17,12 +17,12 @@
 #include <memory/paddr.h>
 
 void init_rand();
-void init_log(const char *log_file);
+void init_log(const char *log_file);//日志文件
 void init_mem();
-void init_difftest(char *ref_so_file, long img_size, int port);
-void init_device();
-void init_sdb();
-void init_disasm();
+void init_difftest(char *ref_so_file, long img_size, int port);//差异测试环境
+void init_device();//虚拟设备
+void init_sdb();//调试器支持
+void init_disasm();//反汇编
 
 static void welcome() {
   Log("Trace: %s", MUXDEF(CONFIG_TRACE, ANSI_FMT("ON", ANSI_FG_GREEN), ANSI_FMT("OFF", ANSI_FG_RED)));
@@ -39,14 +39,14 @@ static void welcome() {
 #ifndef CONFIG_TARGET_AM
 #include <getopt.h>
 
-void sdb_set_batch_mode();
+void sdb_set_batch_mode();//批处理模式
 
 static char *log_file = NULL;
 static char *diff_so_file = NULL;
 static char *img_file = NULL;
 static int difftest_port = 1234;
 
-static long load_img() {
+static long load_img() {//加载镜像文件
   if (img_file == NULL) {
     Log("No image is given. Use the default build-in image.");
     return 4096; // built-in image size
@@ -68,7 +68,7 @@ static long load_img() {
   return size;
 }
 
-static int parse_args(int argc, char *argv[]) {
+static int parse_args(int argc, char *argv[]) {//解析命令行参数
   const struct option table[] = {
     {"batch"    , no_argument      , NULL, 'b'},
     {"log"      , required_argument, NULL, 'l'},
@@ -133,7 +133,7 @@ void init_monitor(int argc, char *argv[]) {
   /* Display welcome message. */
   welcome();
 }
-#else // CONFIG_TARGET_AM
+#else // CONFIG_TARGET_AM加载镜像文件到内存
 static long load_img() {
   extern char bin_start, bin_end;
   size_t size = &bin_end - &bin_start;
@@ -142,7 +142,7 @@ static long load_img() {
   return size;
 }
 
-void am_init_monitor() {
+void am_init_monitor() {//从内存中加载嵌入的镜像
   init_rand();
   init_mem();
   init_isa();

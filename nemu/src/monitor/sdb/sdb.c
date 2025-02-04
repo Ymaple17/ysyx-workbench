@@ -15,7 +15,7 @@
 
 #include <isa.h>
 #include <cpu/cpu.h>
-#include <memory/paddr.h>
+#include <memory/vaddr.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "sdb.h"
@@ -79,7 +79,7 @@ static int cmd_c(char *args) {
 
 
 static int cmd_q(char *args) {
-  //nemu_state.state = NEMU_QUIT;
+  nemu_state.state = NEMU_QUIT;
   return -1;
 }
 
@@ -165,11 +165,11 @@ static int cmd_x(char *args){
     char *n = strtok(args," ");
     char *baseaddr=strtok(NULL," ");
     int length=0;
-    paddr_t addr=0;
+    vaddr_t addr=0;
     sscanf(n,"%d",&length);
     addr = expr(baseaddr, &success);
     for(int i=0;i<length;i++){
-      word_t value = paddr_read(addr, 4);
+      word_t value = vaddr_read(addr, 4);
         printf("0x%08x: 0x%08x\n", addr, value);
         addr += 4;
     }

@@ -63,7 +63,7 @@ static struct rule {
 
 #define NR_REGEX ARRLEN(rules)
 
-static regex_t re[NR_REGEX] = {};
+static regex_t re[NR_REGEX] = {};//存储正则表达式
 
 /* Rules are used for many times.
  * Therefore we compile them only once before any usage.
@@ -73,8 +73,8 @@ void init_regex() {
   char error_msg[128];
   int ret;
 
-  for (i = 0; i < NR_REGEX; i ++) {
-    ret = regcomp(&re[i], rules[i].regex, REG_EXTENDED);
+ for (i = 0; i < NR_REGEX; i ++) {
+    ret = regcomp(&re[i], rules[i].regex, REG_EXTENDED);//rules[i].regex 是存储正则表达式模式的字符串数组
     if (ret != 0) {
       regerror(ret, &re[i], error_msg, 128);
       panic("regex compilation failed: %s\n%s", error_msg, rules[i].regex);
@@ -229,7 +229,7 @@ static int find_main_operator_index(int p, int q) {
 	return main_operator_index;
 }
 
-int vaddr_read(vaddr_t, int);
+int paddr_read(paddr_t, int);
 
 int eval(int p, int q, bool *success) {
 	if (p > q) {
@@ -270,7 +270,7 @@ int eval(int p, int q, bool *success) {
 	}
 
 	if (tokens[r].type == TK_DEREF) {
-		return vaddr_read(value_right, 4);
+		return paddr_read(value_right, 4);
 	}
 
 	if (tokens[r].type == TK_NEG) {

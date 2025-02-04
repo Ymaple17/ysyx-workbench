@@ -143,7 +143,7 @@ static int cmd_p(char *args) {
 	else{
 	    bool success = false;
 	    
-	    printf("exp_val = 0x%08x\n", expr(args, &success));//0x%08x
+	    printf("exp_val = %d\n", expr(args, &success));//0x%08x
 	}
 	return 0;
 }

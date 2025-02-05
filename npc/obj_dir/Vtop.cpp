@@ -8,13 +8,13 @@
 //============================================================
 // Constructors
 
-Vtop::Vtop(VerilatedContext* _vcontextp__, const char* _vcname__)
+Vtop::Vtop(VerilatedContext* _vcontextp__, const char* _vcname__)//初始化 Verilog 模块的 C++ 模型
     : VerilatedModel{*_vcontextp__}
-    , vlSymsp{new Vtop__Syms(contextp(), _vcname__, this)}
+    , vlSymsp{new Vtop__Syms(contextp(), _vcname__, this)}//vlSymsp：指向模块符号表的指针，包含模块的所有信号和子模块
     , a{vlSymsp->TOP.a}
     , b{vlSymsp->TOP.b}
     , f{vlSymsp->TOP.f}
-    , rootp{&(vlSymsp->TOP)}
+    , rootp{&(vlSymsp->TOP)}//rootp：指向模块的根节点
 {
     // Register model with the context
     contextp()->addModel(this);
@@ -28,7 +28,7 @@ Vtop::Vtop(const char* _vcname__)
 //============================================================
 // Destructor
 
-Vtop::~Vtop() {
+Vtop::~Vtop() {//释放模块符号表占用的内存
     delete vlSymsp;
 }
 
@@ -43,15 +43,15 @@ void Vtop___024root___eval_initial(Vtop___024root* vlSelf);
 void Vtop___024root___eval_settle(Vtop___024root* vlSelf);
 void Vtop___024root___eval(Vtop___024root* vlSelf);
 
-void Vtop::eval_step() {
-    VL_DEBUG_IF(VL_DBG_MSGF("+++++TOP Evaluate Vtop::eval_step\n"); );
+void Vtop::eval_step() {//执行仿真步骤
+    VL_DEBUG_IF(VL_DBG_MSGF("+++++TOP Evaluate Vtop::eval_step\n"); );//第一次运行
 #ifdef VL_DEBUG
     // Debug assertions
     Vtop___024root___eval_debug_assertions(&(vlSymsp->TOP));
 #endif  // VL_DEBUG
     vlSymsp->__Vm_activity = true;
     vlSymsp->__Vm_deleter.deleteAll();
-    if (VL_UNLIKELY(!vlSymsp->__Vm_didInit)) {
+    if (VL_UNLIKELY(!vlSymsp->__Vm_didInit)) {//第一次运行
         vlSymsp->__Vm_didInit = true;
         VL_DEBUG_IF(VL_DBG_MSGF("+ Initial\n"););
         Vtop___024root___eval_static(&(vlSymsp->TOP));
@@ -69,7 +69,7 @@ void Vtop::eval_step() {
 }
 
 //============================================================
-// Events and timing
+// Events and timing事件和时序
 bool Vtop::eventsPending() { return false; }
 
 uint64_t Vtop::nextTimeSlot() {
@@ -80,7 +80,7 @@ uint64_t Vtop::nextTimeSlot() {
 //============================================================
 // Utilities
 
-const char* Vtop::name() const {
+const char* Vtop::name() const {//返回模块的名称。
     return vlSymsp->name();
 }
 
@@ -94,7 +94,7 @@ VL_ATTR_COLD void Vtop::final() {
 }
 
 //============================================================
-// Implementations of abstract methods from VerilatedModel
+// Implementations of abstract methods from VerilatedModel配置波形跟踪
 
 const char* Vtop::hierName() const { return vlSymsp->name(); }
 const char* Vtop::modelName() const { return "Vtop"; }

@@ -95,7 +95,7 @@ static int cmd_si(char *args){
 
 static int cmd_test(char *args){
   int count = 0;
-  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input2", "r");
+  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input3", "r");
     if (input_file == NULL) {
         perror("Error open file\n");
         return 1;
@@ -126,7 +126,7 @@ static int cmd_test(char *args){
         else assert(0);
 
     }
-    printf("test 9886 expressions,the accuracy is %d/9886\n",count);
+    printf("test 496 expressions,the accuracy is %d/496\n",count);
     fclose(input_file);
     return 0;
 }

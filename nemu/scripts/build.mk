@@ -1,6 +1,6 @@
 .DEFAULT_GOAL = app
 
-# Add necessary options if the target is a shared library
+# Add necessary options if the target is a shared library共享库
 ifeq ($(SHARE),1)
 SO = -so
 CFLAGS  += -fPIC -fvisibility=hidden

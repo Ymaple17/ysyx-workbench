@@ -30,7 +30,7 @@ override ARGS += $(ARGS_DIFF)
 # Command to execute NEMU
 IMG ?=
 NEMU_EXEC := $(BINARY) $(ARGS) $(IMG)
-
+#执行环境设置
 run-env: $(BINARY) $(DIFF_REF_SO)
 
 run: run-env

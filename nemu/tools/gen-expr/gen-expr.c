@@ -13,99 +13,194 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
-#include <assert.h>
-#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <time.h>
-
-#define MAX_DEPTH 10
-#define SIZE_BUF  131072
+#include <assert.h>
+#include <string.h>
+#include <stdbool.h>
 
 // this should be enough
-static char buf[SIZE_BUF] = {0};
-static size_t len_buf = 0;
-static char code_buf[SIZE_BUF + 128] = {0}; // a little larger than `buf`
-static const char *const CODE_FORMAT = "#include <stdio.h>\n"
-                                       "int main(void) {\n"
-                                       "  unsigned result = %s;\n"
-                                       "  printf(\"%%u\", result);\n"
-                                       "  return 0;\n"
-                                       "}";
+static char buf[65536] = {};
+static int n=0;
+static char code_buf[65536 + 128] = {}; // a little larger than `buf`
+static char *code_format =
+"#include <stdio.h>\n"
+"int main() { "
+"  unsigned int result = (unsigned)%s; "
+"  printf(\"%%u\", result); "
+"  return 0; "
+"}";
 
-static int gen(char ch) {
-  if (len_buf + 1 >= sizeof(buf)) {
-    return 1;
-  }
-  buf[len_buf++] = ch;
-  return 0;
+static uint32_t choose(uint32_t i) {
+  uint32_t answer;
+  answer = (uint32_t) rand()%i;
+  return answer;
 }
 
-static int gen_num(void) {
-  const unsigned x = (unsigned)((double)UINT_MAX * ((double)rand() / (double)RAND_MAX));
-  const size_t len_str = (size_t)snprintf(NULL, 0, "%uu", x);
-  if (len_buf + len_str >= sizeof(buf)) {
-    return 1;
-  }
-  len_buf += sprintf(buf + len_buf, "%uu", x);
-  return 0;
-}
-
-static int gen_rand_op(void) {
-  switch (rand() % 4) {
-    case 0: return gen('+');
-    case 1: return gen('-');
-    case 2: return gen('*');
-    default: return gen('/');
+static void gen_num() {
+  char str[32] ;
+  uint32_t size = sprintf(str,"%u",rand()%256);
+  for(int i=0; i<size; i++) {
+    buf[n] = str[i];
+    n++;
   }
 }
 
-static int gen_rand_expr(void) {
-  // buf[len_buf] = '\0';
-  switch (rand() % 3) {
-    case 0: return gen_num();
-    case 1: return gen('(') || gen_rand_expr() || gen(')');
-    default: return gen_rand_expr() || gen_rand_op() || gen_rand_expr();
+static void gen(char str) {
+  buf[n] = str;
+  n++;
+}
+
+static void gen_rand_op() {
+  switch (choose(4)) {
+    case 0 : gen('+') ; break;
+    case 1 : gen('-') ; break;
+    case 2 : gen('*') ; break;
+    default: gen('/') ; break;
   }
 }
 
-int main(int argc, char *argv[]) {
-  srand(time(0));
-  size_t loop = 1;
-  if (argc > 1) {
-    sscanf(argv[1], "%zu", &loop);
+static void gen_rand_expr() {
+  if(n <=15) {
+    switch (choose(3)) {
+     case 0 : gen_num(); break;
+     case 1 : gen('(') ; gen_rand_expr(); gen(')'); break;
+     default: gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break;
+    }
   }
-  for (size_t i = 0; i < loop; i++) {
-    len_buf = 0;
-    gen_rand_expr();
-    buf[len_buf] = '\0';
+  else  gen_num();
+  buf[n] = '\0';
+}
 
-    snprintf(code_buf, sizeof(code_buf), CODE_FORMAT, buf);
+static bool check_parentheses(int p,int q){
+    int i;
+    int num = 0;
+    int pair = 0;
+    for(i=p;i<=q;i++) { 
+      if( buf[i] == '(')   
+        num++;
+      else if ( buf[i] == ')' ) {
+        num--;
+        if(num == 0)  pair++; 
+      }
+    }
+    if ( (buf[p] == '(') && (buf[q] == ')') && (pair == 1) ) {
+      return true; 
+    }
+    else 
+      return false;
+}
 
-    FILE *fp = fopen("/tmp/.code.c", "w");
-    assert(fp != NULL);
-    fputs(code_buf, fp);
-    fclose(fp);
+static uint32_t eval(int p, int q, bool *success ){
+    int op=0;
+    int nu=0;
+    int i,j;
+    int op1=0,op2=0;
+    int nonum=0;
 
-    int ret = system("gcc -Wall -Werror -std=c17 -O1 /tmp/.code.c -o /tmp/.expr");
-    if (ret != 0) {
-      i--;
-      fputs("W: Bad expression; retrying\n", stderr);
-      continue;
+    for(i=p;i<=q;i++) {
+      if ( (buf[i]=='(') || (buf[i]==')') ||
+          (buf[i]=='+') || (buf[i]=='-') || 
+          (buf[i]=='*') || (buf[i]=='/') )
+        nonum++;
     }
 
-    fp = popen("/tmp/.expr", "r");
-    assert(fp != NULL);
+    if(nonum == 0) {
+      char number[30] = {};
+      j = 0 ;
+      for(i = p; i <=q; i++) {
+        number[j] = buf[i];
+        j ++ ;
+      }
+      number[j] = '\0';
+      return (uint32_t)atoi(number);
+    }
+    else if (check_parentheses(p,q) == true) {
+      return eval(p+1, q-1,success);
+    }
+    else {
+      for(i=p; i<=q; i++){
+        if( buf[i]=='(') 
+          nu++;
+        else if ( buf[i] == ')' ) 
+          nu--;
+        else if ( nu == 0 ) {
+          if( (buf[i] == '+') || (buf[i] == '-') ) 
+            op1 = i;
+          else if ( (buf[i] == '*') || (buf[i] == '/') ) 
+            op2 = i;
+        }
+      }
+      op = (op1==0)? op2 : op1 ;
+      uint64_t val1 = eval(p ,op-1,success);
+      uint64_t val2 = eval(op+1, q,success);
+      uint64_t result;
+      switch (buf[op]) {
+        case '+': result =  val1 + val2; break;
+        case '-': if(val2 <= val1) {
+                    result = val1 - val2; break;
+                  }
+                  else { 
+                    *success = false;
+                    return 0;
+                  }
+        case '*': result =  val1 * val2; break;
+        case '/': if (val2 == 0) {
+                    *success = false;
+                    return 0;
+                  }
+                  else {
+                    result = val1 / val2;
+                    break;
+                  }
+        default : *success = false;
+                  return 0; break;
+      } 
+      if(result <= 0xffffffff && result >=0) { return (uint32_t)result; }
 
-    unsigned result;
-    ret = fscanf(fp, "%u", &result);
-    pclose(fp);
-
-    printf("%u %s\n", result, buf);
-  }
-  return 0;
+      else { *success = false; return 0; }
+    } 
 }
 
 
+int main(int argc, char *argv[]) {
+  int seed = time(0);
+  srand(seed);
+  int loop = 1;
+  if (argc > 1) {
+    sscanf(argv[1], "%d", &loop);
+  }
+  int i;
+  bool success=true;
+  for (i = 0; i < loop; i ++) {
+    gen_rand_expr();
+    eval(0,n-1,&success);
+    if(success == true) {
+  
+      sprintf(code_buf, code_format, buf);
+  
+      FILE *fp = fopen("/tmp/.code.c", "w");
+      assert(fp != NULL);
+      fputs(code_buf, fp);
+      fclose(fp);
+  
+      int ret = system("gcc /tmp/.code.c -o /tmp/.expr");
+      if (ret != 0) continue;
+  
+      fp = popen("/tmp/.expr", "r");
+      assert(fp != NULL);
+  
+      uint32_t result;
+      int x = fscanf(fp, "%u", &result);
+      if(x==EOF) continue;
+      pclose(fp);
+  
+      printf("%u %s\n", result, buf);
+    }
+    success = true;
+    n=0;
+  }
+  return 0;
+}

@@ -95,7 +95,7 @@ static int cmd_si(char *args){
 
 static int cmd_test(char *args){
   int count = 0;
-  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input3", "r");
+  FILE *input_file = fopen("/home/qiu/ysyx-workbench/nemu/tools/gen-expr/input4", "r");
     if (input_file == NULL) {
         perror("Error open file\n");
         return 1;
@@ -103,22 +103,22 @@ static int cmd_test(char *args){
     char record[1024];
     int real;
     char buf[1024];
-    for (int i = 0; i < 9886; i++) {
+    for (int i = 0; i < 9886; i++) { 
         if (fgets(record, sizeof(record), input_file) == NULL) {
             perror("Error read file\n");
             break;
-        }
+        } 
         char *token = strtok(record, " ");
         if (token == NULL) {
             printf("Invalid record format\n");
             continue;
-        }
+        } 
         real = atoi(token);//转成整数
         strcpy(buf, "");
         while ((token = strtok(NULL, "\n")) != NULL) {
             strcat(buf, token);
             strcat(buf, " ");
-        }
+        } 
         printf("Real Value: %u, Expression: %s\n", real, buf);
         bool flag = false;
         int res = expr(buf,&flag);
@@ -126,7 +126,7 @@ static int cmd_test(char *args){
         else assert(0);
 
     }
-    printf("test 496 expressions,the accuracy is %d/496\n",count);
+    printf("test 983 expressions,the accuracy is %d/983\n",count);
     fclose(input_file);
     return 0;
 }

@@ -90,7 +90,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 	return n_changed;
 }*/
 
-static void exec_once(Decode *s, vaddr_t pc) {
+static void exec_once(Decode *s, vaddr_t pc) {//执行指令
   s->pc = pc;
   s->snpc = pc;
   isa_exec_once(s);
@@ -115,7 +115,7 @@ static void exec_once(Decode *s, vaddr_t pc) {
   memset(p, ' ', space_len);
   p += space_len;
 
-  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);//反汇编函数
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst, ilen);
 #endif

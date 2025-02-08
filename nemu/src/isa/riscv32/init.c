@@ -36,8 +36,8 @@ static void restart() {
 
 void init_isa() {
   /* Load built-in image. */
-  memcpy(guest_to_host(RESET_VECTOR), img, sizeof(img));
+  memcpy(guest_to_host(RESET_VECTOR), img, sizeof(img));//将系统镜像（image）加载到 NEMU 物理内存
 
   /* Initialize this virtual computer system. */
-  restart();
+  restart();//初始化
 }

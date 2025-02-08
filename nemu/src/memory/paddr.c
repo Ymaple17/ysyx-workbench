@@ -18,21 +18,21 @@
 #include <device/mmio.h>
 #include <isa.h>
 
-#if   defined(CONFIG_PMEM_MALLOC)
-static uint8_t *pmem = NULL;
+#if   defined(CONFIG_PMEM_MALLOC)//启用则用动态数组分配内存，否则就用静态。
+static uint8_t *pmem = NULL;//pmem 是 NEMU 中模拟的物理内存区域
 #else // CONFIG_PMEM_GARRAY
 static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 #endif
 
-uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }
-paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
+uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }//将 客户程序中的物理地址 转换为 NEMU中的虚拟地址
+paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }//将 NEMU 进程的虚拟地址 映射回 客户程序的物理地址
 
-static word_t pmem_read(paddr_t addr, int len) {
-  word_t ret = host_read(guest_to_host(addr), len);
+static word_t pmem_read(paddr_t addr, int len) {//pmem_read()读取数据，先转化地址
+  word_t ret = host_read(guest_to_host(addr), len);//host_read() 负责执行内存读取
   return ret;
 }
 
-static void pmem_write(paddr_t addr, int len, word_t data) {
+static void pmem_write(paddr_t addr, int len, word_t data) {//pmem_write()写入数据
   host_write(guest_to_host(addr), len, data);
 }
 

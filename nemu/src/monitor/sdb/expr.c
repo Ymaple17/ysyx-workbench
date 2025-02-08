@@ -27,12 +27,12 @@ enum {
   	TK_UINT,
 	TK_HEX,
 
-	TK_NE,
+	TK_NE,//!=
 	TK_AND,
 
-	TK_REG,
-	TK_DEREF,
-	TK_NEG,
+	TK_REG,//寄存器
+	TK_DEREF,//解引用
+	TK_NEG,//负数
 };
 
 static struct rule {
@@ -74,7 +74,7 @@ void init_regex() {
   int ret;
 
  for (i = 0; i < NR_REGEX; i ++) {
-    ret = regcomp(&re[i], rules[i].regex, REG_EXTENDED);//rules[i].regex 是存储正则表达式模式的字符串数组
+    ret = regcomp(&re[i], rules[i].regex, REG_EXTENDED);//rules[i].regex 是存储正则表达式模式的字符串数组regcomp 是一个 POSIX 标准的正则表达式编译函数
     if (ret != 0) {
       regerror(ret, &re[i], error_msg, 128);
       panic("regex compilation failed: %s\n%s", error_msg, rules[i].regex);
@@ -100,7 +100,7 @@ static bool make_token(char *e) {
   while (e[position] != '\0') {
     /* Try all rules one by one. */
     for (i = 0; i < NR_REGEX; i ++) {
-      if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {
+      if (regexec(&re[i], e + position, 1, &pmatch, 0) == 0 && pmatch.rm_so == 0) {//regexec 是一个 POSIX 标准的正则表达式匹配函数
         char *substr_start = e + position;
         int substr_len = pmatch.rm_eo;
 
@@ -176,7 +176,7 @@ static bool check_parentheses(int p, int q) {
 	}
 	return left == 0;
 }
-static int priority(int operator) {
+static int priority(int operator) {//处理优先级
 	switch (operator) {
 		case TK_AND:
 			return 0;
@@ -196,7 +196,7 @@ static int priority(int operator) {
 			assert(0);
 	}
 }
-static int find_main_operator_index(int p, int q) {
+static int find_main_operator_index(int p, int q) {//找出主运算符
 	int main_operator_index = -1;
 	int main_operator = -1;
 	int left = 0;

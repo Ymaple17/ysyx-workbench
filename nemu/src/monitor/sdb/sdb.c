@@ -35,10 +35,10 @@ static char* rl_gets() {
     line_read = NULL;
   }
 
-  line_read = readline("(nemu) ");
+  line_read = readline("(nemu) ");//readline() 会返回输入文本的字符串
 
   if (line_read && *line_read) {
-    add_history(line_read);
+    add_history(line_read);//添加到历史命令中
   }
 
   return line_read;
@@ -182,7 +182,7 @@ static int cmd_help(char *args);
 static struct {
   const char *name;
   const char *description;
-  int (*handler) (char *);
+  int (*handler) (char *);//指向一个函数的指针，该函数会处理命令的执行。接受一个字符串,并返回一个整数
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
@@ -223,13 +223,13 @@ void sdb_set_batch_mode() {
   is_batch_mode = true;
 }
 
-void sdb_mainloop() {
+void sdb_mainloop() {//不是am环境下，再次对是否为批处理模式进行选择。
   if (is_batch_mode) {
     cmd_c(NULL);
     return;
   }
 
-  for (char *str; (str = rl_gets()) != NULL; ) {
+  for (char *str; (str = rl_gets()) != NULL; ) {//rl_gets() 读取用户输入的字符串
     char *str_end = str + strlen(str);
 
     /* extract the first token as the command */
@@ -244,15 +244,15 @@ void sdb_mainloop() {
       args = NULL;
     }
 
-#ifdef CONFIG_DEVICE
-    extern void sdl_clear_event_queue();
+#ifdef CONFIG_DEVICE//支持外设仿真
+    extern void sdl_clear_event_queue();//清空 SDL 事件队列
     sdl_clear_event_queue();
 #endif
 
     int i;
-    for (i = 0; i < NR_CMD; i ++) {
+    for (i = 0; i < NR_CMD; i ++) {//遍历 cmd_table，查找 cmd 是否匹配
       if (strcmp(cmd, cmd_table[i].name) == 0) {
-        if (cmd_table[i].handler(args) < 0) { return; }
+        if (cmd_table[i].handler(args) < 0) { return; }//运行q指令
         break;
       }
     }

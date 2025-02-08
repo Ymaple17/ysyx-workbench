@@ -17,10 +17,10 @@
 #define __MEMORY_PADDR_H__
 
 #include <common.h>
-
-#define PMEM_LEFT  ((paddr_t)CONFIG_MBASE)
-#define PMEM_RIGHT ((paddr_t)CONFIG_MBASE + CONFIG_MSIZE - 1)
-#define RESET_VECTOR (PMEM_LEFT + CONFIG_PC_RESET_OFFSET)
+//物理内存范围
+#define PMEM_LEFT  ((paddr_t)CONFIG_MBASE)//物理内存的起始地址（Memory Base）物理内存的大小（Memory Size）
+#define PMEM_RIGHT ((paddr_t)CONFIG_MBASE + CONFIG_MSIZE - 1)//PMEM_LEFT 和 PMEM_RIGHT 定义了 NEMU 物理内存的范围
+#define RESET_VECTOR (PMEM_LEFT + CONFIG_PC_RESET_OFFSET)//RESET_VECTOR 定义了 CPU 复位向量（Reset Vector）地址，表示 CPU 复位后应该跳转执行的地址
 
 /* convert the guest physical address in the guest program to host virtual address in NEMU */
 uint8_t* guest_to_host(paddr_t paddr);

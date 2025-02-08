@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
         assert(fp != NULL);
         fputs(code_buf, fp);
         fclose(fp);
-        int ret = system("gcc /tmp/.code.c -o /tmp/.expr");
+        int ret = system("gcc /tmp/.code.c -o -Werror -o /tmp/.expr");
         if (ret != 0) continue;
         fp = popen("/tmp/.expr", "r");
         assert(fp != NULL);

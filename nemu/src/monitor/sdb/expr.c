@@ -229,7 +229,7 @@ static int find_main_operator_index(int p, int q) {//找出主运算符
 	return main_operator_index;
 }
 
-int paddr_read(paddr_t, int);
+int vaddr_read(vaddr_t, int);
 
 int eval(int p, int q, bool *success) {
 	if (p > q) {
@@ -270,7 +270,7 @@ int eval(int p, int q, bool *success) {
 	}
 
 	if (tokens[op].type == TK_DEREF) {
-		return paddr_read(value_right, 4);
+		return vaddr_read(value_right, 4);
 	}
 
 	if (tokens[op].type == TK_NEG) {

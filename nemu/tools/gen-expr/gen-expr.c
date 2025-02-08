@@ -13,124 +13,99 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
+#include <assert.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
-#include <assert.h>
 #include <string.h>
-#include <stdbool.h>
-#include <ctype.h>
+#include <time.h>
 
+#define MAX_DEPTH 10
+#define SIZE_BUF  131072
 
-static char buf[65536];
-int count;
+// this should be enough
+static char buf[SIZE_BUF] = {0};
+static size_t len_buf = 0;
+static char code_buf[SIZE_BUF + 128] = {0}; // a little larger than `buf`
+static const char *const CODE_FORMAT = "#include <stdio.h>\n"
+                                       "int main(void) {\n"
+                                       "  unsigned result = %s;\n"
+                                       "  printf(\"%%u\", result);\n"
+                                       "  return 0;\n"
+                                       "}";
 
-uint32_t choose(uint32_t n) {
-    return rand() % n;
+static int gen(char ch) {
+  if (len_buf + 1 >= sizeof(buf)) {
+    return 1;
+  }
+  buf[len_buf++] = ch;
+  return 0;
 }
 
-bool is_previous_operator_division() {//判断最后一个非空格是否为/
-    int len = strlen(buf);
-    if (len == 0) {
-        return false;
-    }
-    for (int i = len - 1; i >= 0; i--) {
-        if (!isspace(buf[i])) {
-            return buf[i] == '/';
-        }
-    }
-    return false;
+static int gen_num(void) {
+  const unsigned x = (unsigned)((double)UINT_MAX * ((double)rand() / (double)RAND_MAX));
+  const size_t len_str = (size_t)snprintf(NULL, 0, "%uu", x);
+  if (len_buf + len_str >= sizeof(buf)) {
+    return 1;
+  }
+  len_buf += sprintf(buf + len_buf, "%uu", x);
+  return 0;
 }
 
-static inline void gen_num() {
-    char s[4];
-    uint32_t n;
-    bool is_division = is_previous_operator_division();
-    do {
-        n = choose(100);
-        sprintf(s, "%u", n);
-    } while (is_division && n == 0);
-    strcat(buf, s);
-    count++;
+static int gen_rand_op(void) {
+  switch (rand() % 4) {
+    case 0: return gen('+');
+    case 1: return gen('-');
+    case 2: return gen('*');
+    default: return gen('/');
+  }
 }
-static inline void gen(char str) {
-    uint32_t left = choose(4);//生成左空格
-    uint32_t right = choose(4); //生成右空格
-    char s[left + 1 + right + 1];
-    uint32_t i;
-    for (i = 0; i < left; i++) { s[i] = ' '; count++; }
-    s[i++] = str;
-    for (; i < left + 1 + right; i++) { s[i] = ' '; count++; }
-    s[left + 1 + right] = '\0';
-    strcat(buf, s);
+
+static int gen_rand_expr(void) {
+  // buf[len_buf] = '\0';
+  switch (rand() % 3) {
+    case 0: return gen_num();
+    case 1: return gen('(') || gen_rand_expr() || gen(')');
+    default: return gen_rand_expr() || gen_rand_op() || gen_rand_expr();
+  }
 }
-static inline void gen_rand_op() {
-    switch (choose(4)) {
-        case 0: gen('+'); break;
-        case 1: gen('-'); break;
-        case 2: gen('*'); break;
-        case 3: gen('/'); break;
-    }
-    count++;
-}
-static inline void gen_rand_expr() {
-    int a = choose(3);
-    if (count > 60) a = 0;
-    switch (a) {
-        case 0: gen_num(); break;
-        case 1: gen('('); gen_rand_expr(); gen(')'); break;
-        default: gen_rand_expr(); gen_rand_op(); gen_rand_expr(); break;
-    }
-}
-static char code_buf[65536];
-static char *code_format =
-    "#include <stdio.h>\n"
-    "int main() { "
-    "_Bool flag;"
-    "  unsigned result = %s; "
-    "  printf(\"%%u\", result); "
-    "  return 0; "
-    "}";
 
 int main(int argc, char *argv[]) {
-    int seed = time(0);
-    srand(seed);
-    int loop = 1;
-    if (argc > 1) {
-        sscanf(argv[1], "%d", &loop);
-    }
-    int i;
-    for (i = 0; i < loop; i++) {
-        count = 0;
-        memset(buf, '\0', sizeof(buf));
-        gen_rand_expr();
-        bool has_division_by_zero = false;
-        char *div_pos = strstr(buf, "/ 0");
-        if (div_pos != NULL) {
-            has_division_by_zero = true;
-        }
-        if (has_division_by_zero) {//如果有除0的算式，则重新生成
-            i--; 
-            continue;
-        }
-        sprintf(code_buf, code_format, buf);
+  srand(time(0));
+  size_t loop = 1;
+  if (argc > 1) {
+    sscanf(argv[1], "%zu", &loop);
+  }
+  for (size_t i = 0; i < loop; i++) {
+    len_buf = 0;
+    gen_rand_expr();
+    buf[len_buf] = '\0';
 
-        FILE *fp = fopen("/tmp/.code.c", "w");
-        assert(fp != NULL);
-        fputs(code_buf, fp);
-        fclose(fp);
-        int ret = system("gcc /tmp/.code.c -o -Werror -o /tmp/.expr");
-        if (ret != 0) continue;
-        fp = popen("/tmp/.expr", "r");
-        assert(fp != NULL);
-        int result;
-        int fsn = fscanf(fp, "%d", &result);
-        pclose(fp);//如果编译失败，则跳过该文件
-        if (fsn == -1) {
-            continue;
-        }
-        printf("%u\t %s\n", result, buf);
+    snprintf(code_buf, sizeof(code_buf), CODE_FORMAT, buf);
+
+    FILE *fp = fopen("/tmp/.code.c", "w");
+    assert(fp != NULL);
+    fputs(code_buf, fp);
+    fclose(fp);
+
+    int ret = system("gcc -Wall -Werror -std=c17 -O1 /tmp/.code.c -o /tmp/.expr");
+    if (ret != 0) {
+      i--;
+      fputs("W: Bad expression; retrying\n", stderr);
+      continue;
     }
-    return 0;
+
+    fp = popen("/tmp/.expr", "r");
+    assert(fp != NULL);
+
+    unsigned result;
+    ret = fscanf(fp, "%u", &result);
+    pclose(fp);
+
+    printf("%u %s\n", result, buf);
+  }
+  return 0;
 }
+
+

@@ -22,7 +22,7 @@ void init_mem();
 void init_difftest(char *ref_so_file, long img_size, int port);
 void init_device();
 void init_sdb();
-void init_disasm(const char *triple);
+void init_disasm();
 void parse_elf(const char **elf_files, int elf_file_count);
 
 static void welcome() {
@@ -137,12 +137,7 @@ void init_monitor(int argc, char *argv[]) {
   /* Initialize the simple debugger. */
   init_sdb();
 
-  IFDEF(CONFIG_ITRACE, init_disasm(
-    MUXDEF(CONFIG_ISA_x86,     "i686",
-    MUXDEF(CONFIG_ISA_mips32,  "mipsel",
-    MUXDEF(CONFIG_ISA_riscv32, "riscv32",
-    MUXDEF(CONFIG_ISA_riscv64, "riscv64", "bad")))) "-pc-linux-gnu"
-  ));
+  IFDEF(CONFIG_ITRACE, init_disasm());
 
   /* Display welcome message. */
   welcome();

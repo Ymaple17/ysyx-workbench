@@ -93,7 +93,7 @@ static int decode_exec(Decode *s) {
     trace_func_ret(s->pc);
   } else if (rd == 1) {
     trace_func_call(s->pc, s->dnpc, false);
-  } else if (rd == 0 && imm == 0) {
+  } else if (rd == 0) {
     trace_func_call(s->pc, s->dnpc,true);
   }
 });R(rd) = s -> pc + 4);

@@ -17,12 +17,12 @@
 #include <memory/paddr.h>
 
 void init_rand();
-void init_log(const char *log_file);//日志文件
+void init_log(const char *log_file);
 void init_mem();
-void init_difftest(char *ref_so_file, long img_size, int port);//差异测试环境
-void init_device();//虚拟设备
-void init_sdb();//调试器支持
-void init_disasm();//反汇编
+void init_difftest(char *ref_so_file, long img_size, int port);
+void init_device();
+void init_sdb();
+void init_disasm(const char *triple);
 void parse_elf(const char **elf_files, int elf_file_count);
 
 static void welcome() {
@@ -33,23 +33,23 @@ static void welcome() {
   Log("Build time: %s, %s", __TIME__, __DATE__);
   printf("Welcome to %s-NEMU!\n", ANSI_FMT(str(__GUEST_ISA__), ANSI_FG_YELLOW ANSI_BG_RED));
   printf("For help, type \"help\"\n");
-  Log("Exercise: Please remove me in the source code and compile NEMU again.");
+  //Log("Exercise: Please remove me in the source code and compile NEMU again.");
   //assert(0);
 }
 
 #ifndef CONFIG_TARGET_AM
 #include <getopt.h>
 
-void sdb_set_batch_mode();//批处理模式
+void sdb_set_batch_mode();
 
 static char *log_file = NULL;
 static char *diff_so_file = NULL;
-static char *img_file = NULL;
-static int difftest_port = 1234;
 static int elf_file_count = 0;
 static const char *elf_files[2];
+static char *img_file = NULL;
+static int difftest_port = 1234;
 
-static long load_img() {//加载镜像文件
+static long load_img() {
   if (img_file == NULL) {
     Log("No image is given. Use the default build-in image.");
     return 4096; // built-in image size
@@ -71,20 +71,20 @@ static long load_img() {//加载镜像文件
   return size;
 }
 
-static int parse_args(int argc, char *argv[]) {//解析命令行参数
+static int parse_args(int argc, char *argv[]) {
   const struct option table[] = {
-    {"batch"    , no_argument      , NULL, 'b'},//不需要额外参数
+    {"batch"    , no_argument      , NULL, 'b'},
     {"log"      , required_argument, NULL, 'l'},
+    {"elf"      , required_argument, NULL, 'e'},
     {"diff"     , required_argument, NULL, 'd'},
     {"port"     , required_argument, NULL, 'p'},
-    {"elf"      , required_argument, NULL, 'e'},
     {"help"     , no_argument      , NULL, 'h'},
     {0          , 0                , NULL,  0 },
   };
   int o;
-  while ( (o = getopt_long(argc, argv, "-bhl:d:p:", table, NULL)) != -1) {
+  while ( (o = getopt_long(argc, argv, "-bhl:d:p:e:", table, NULL)) != -1) {
     switch (o) {
-      case 'b': sdb_set_batch_mode(); break;//启动批处理模式batch
+      case 'b': sdb_set_batch_mode(); break;
       case 'p': sscanf(optarg, "%d", &difftest_port); break;
       case 'l': log_file = optarg; break;
       case 'd': diff_so_file = optarg; break;
@@ -94,9 +94,9 @@ static int parse_args(int argc, char *argv[]) {//解析命令行参数
         printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);
         printf("\t-b,--batch              run with batch mode\n");
         printf("\t-l,--log=FILE           output log to FILE\n");
+        printf("\t-e,--elf=FILE           output func-calls to \"FILE.log\" file using FILE\n");
         printf("\t-d,--diff=REF_SO        run DiffTest with reference REF_SO\n");
         printf("\t-p,--port=PORT          run DiffTest with port PORT\n");
-        printf("\t-e,--elf=FILE           output func-calls to \"FILE.log\" file using FILE\n");
         printf("\n");
         exit(0);
     }
@@ -116,8 +116,9 @@ void init_monitor(int argc, char *argv[]) {
   /* Open the log file. */
   init_log(log_file);
 
-   parse_elf(elf_files, elf_file_count);
-  
+  /* Initialize elf */
+  parse_elf(elf_files, elf_file_count);
+
   /* Initialize memory. */
   init_mem();
 
@@ -136,12 +137,17 @@ void init_monitor(int argc, char *argv[]) {
   /* Initialize the simple debugger. */
   init_sdb();
 
-  IFDEF(CONFIG_ITRACE, init_disasm());
+  IFDEF(CONFIG_ITRACE, init_disasm(
+    MUXDEF(CONFIG_ISA_x86,     "i686",
+    MUXDEF(CONFIG_ISA_mips32,  "mipsel",
+    MUXDEF(CONFIG_ISA_riscv32, "riscv32",
+    MUXDEF(CONFIG_ISA_riscv64, "riscv64", "bad")))) "-pc-linux-gnu"
+  ));
 
   /* Display welcome message. */
   welcome();
 }
-#else // CONFIG_TARGET_AM加载镜像文件到内存
+#else // CONFIG_TARGET_AM
 static long load_img() {
   extern char bin_start, bin_end;
   size_t size = &bin_end - &bin_start;
@@ -150,7 +156,7 @@ static long load_img() {
   return size;
 }
 
-void am_init_monitor() {//从内存中加载嵌入的镜像
+void am_init_monitor() {
   init_rand();
   init_mem();
   init_isa();
@@ -159,3 +165,4 @@ void am_init_monitor() {//从内存中加载嵌入的镜像
   welcome();
 }
 #endif
+

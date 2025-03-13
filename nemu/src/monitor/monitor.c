@@ -96,7 +96,7 @@ static int parse_args(int argc, char *argv[]) {//解析命令行参数
         printf("\t-l,--log=FILE           output log to FILE\n");
         printf("\t-d,--diff=REF_SO        run DiffTest with reference REF_SO\n");
         printf("\t-p,--port=PORT          run DiffTest with port PORT\n");
-        printf("\t--e,--elf=FILE           output func-calls to \"FILE.log\" file using FILE\n");
+        printf("\t-\t-e,--elf=FILE           output func-calls to \"FILE.log\" file using FILE\n");
         printf("\n");
         exit(0);
     }

@@ -24,6 +24,9 @@ static uint8_t *pmem = NULL;//pmem 是 NEMU 中模拟的物理内存区域
 static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
 #endif
 
+void trace_read(paddr_t addr, int len);
+void trace_write(paddr_t addr, int len, word_t data);
+
 uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }//将 客户程序中的物理地址 转换为 NEMU中的虚拟地址
 paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }//将 NEMU 进程的虚拟地址 映射回 客户程序的物理地址
 
@@ -51,6 +54,7 @@ void init_mem() {
 }
 
 word_t paddr_read(paddr_t addr, int len) {
+  IFDEF(CONFIG_MTRACE, trace_read(addr, len));
   if (likely(in_pmem(addr))) return pmem_read(addr, len);
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
   out_of_bound(addr);
@@ -58,6 +62,7 @@ word_t paddr_read(paddr_t addr, int len) {
 }
 
 void paddr_write(paddr_t addr, int len, word_t data) {
+  IFDEF(CONFIG_MTRACE, trace_write(addr, len,data));
   if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
   out_of_bound(addr);

@@ -40,4 +40,5 @@
 
 #define TODO() panic("please implement me")
 
+#define Statement(format, ...) puts("====== " format " ======", ## __VA_ARGS__)
 #endif

@@ -1,8 +1,6 @@
 #include <common.h>
-#include <memory/paddr.h>
 
-#define IRINGBUF_RANGE 5
-#define MAX_IRINGBUF 10
+#define MAX_IRINGBUF 16
 
 typedef struct {
   word_t pc;
@@ -11,37 +9,33 @@ typedef struct {
 
 ItraceNode iringbuf[MAX_IRINGBUF];
 int p_cur = 0;
-int p_error = 0;
-bool is_full = false;
+bool full = false;
 
-#if defined(CONFIG_ITRACE)
-
-void iringbuf_inst(word_t pc, uint32_t inst) {
+void itrace_inst(word_t pc, uint32_t inst) {
   iringbuf[p_cur].pc = pc;
   iringbuf[p_cur].inst = inst;
   p_cur = (p_cur + 1) % MAX_IRINGBUF;
-  is_full = is_full || p_cur == 0;
+  full = full || p_cur == 0;
 }
 
-void display_iringbuf() {
-  if (!is_full && !p_cur) return;
+void display_inst() {
+  if (!full && !p_cur) return;
 
-    int p_error = p_cur;
-    int i = is_full?p_cur:0;
+  int end = p_cur;
+  int i = full?p_cur:0;
 
-    void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-    char buf[128]; // 128 should be enough!
-    char *p;
-    do {
-      p = buf;
-      p += sprintf(buf, "%s" FMT_WORD ": %08x ", (i+1)%MAX_IRINGBUF==p_error?" --> ":"     ", iringbuf[i].pc, iringbuf[i].inst);
-      disassemble(p, buf+sizeof(buf)-p, iringbuf[i].pc, (uint8_t *)&iringbuf[i].inst, 4);
+  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+  char buf[128]; // 128 should be enough!
+  char *p;
+  Statement("Most recently executed instructions");
+  do {
+    p = buf;
+    p += sprintf(buf, "%s" FMT_WORD ": %08x ", (i+1)%MAX_IRINGBUF==end?" --> ":"     ", iringbuf[i].pc, iringbuf[i].inst);
+    disassemble(p, buf+sizeof(buf)-p, iringbuf[i].pc, (uint8_t *)&iringbuf[i].inst, 4);
 
-      if ((i+1)%MAX_IRINGBUF==p_error) printf(ANSI_FG_RED);
-      puts(buf);
-    } while ((i = (i+1)%MAX_IRINGBUF) != p_error);
-    puts(ANSI_NONE);
-
+    if ((i+1)%MAX_IRINGBUF==end) printf(ANSI_FG_RED);
+    puts(buf);
+  } while ((i = (i+1)%MAX_IRINGBUF) != end);
+  puts(ANSI_NONE);
 }
 
-#endif

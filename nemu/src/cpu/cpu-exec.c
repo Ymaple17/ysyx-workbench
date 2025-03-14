@@ -35,7 +35,7 @@ static bool g_print_step = false;
 
 void device_update();
 void display_inst();
-void display_iringbuf();
+
 
 static void trace_and_difftest(Decode *_this, vaddr_t dnpc) {
 #ifdef CONFIG_ITRACE_COND
@@ -120,8 +120,6 @@ static void exec_once(Decode *s, vaddr_t pc) {//执行指令
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);//反汇编函数
   disassemble(p, s->logbuf + sizeof(s->logbuf) - p,
       MUXDEF(CONFIG_ISA_x86, s->snpc, s->pc), (uint8_t *)&s->isa.inst, ilen);
-  void iringbuf_inst(word_t pc, uint32_t inst);
-  iringbuf_inst(s->pc, s->isa.inst);//itrace
 #endif
 }
 
@@ -146,6 +144,7 @@ static void statistic() {
 }
 
 void assert_fail_msg() {
+  display_inst();
   isa_reg_display();
   statistic();
 }
@@ -176,9 +175,6 @@ void cpu_exec(uint64_t n) {
            (nemu_state.halt_ret == 0 ? ANSI_FMT("HIT GOOD TRAP", ANSI_FG_GREEN) :
             ANSI_FMT("HIT BAD TRAP", ANSI_FG_RED))),
           nemu_state.halt_pc);
-          if (nemu_state.state == NEMU_ABORT || nemu_state.halt_ret != 0){
-            printf("show iringbuf:");
-            display_iringbuf(); }
       // fall through
     case NEMU_QUIT: statistic();
   }

@@ -13,11 +13,4 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
-#ifndef __SDB_H__
-#define __SDB_H__
-
-#include <common.h>
-
-int expr(char *e, bool *success);
-
-#endif
+// this is an empty file to avoid compile error

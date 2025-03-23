@@ -1,5 +1,5 @@
 /***************************************************************************************
-* Copyright (c) 2014-2024 Zihao Yu, Nanjing University
+* Copyright (c) 2014-2022 Zihao Yu, Nanjing University
 *
 * NEMU is licensed under Mulan PSL v2.
 * You can use this software according to the terms and conditions of the Mulan PSL v2.
@@ -13,115 +13,99 @@
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
 
-#include "sdb.h"
+#include <cpu/cpu.h>
+#include <common.h>
+
+word_t expr(char *e, bool *success);
+
 #define NR_WP 32
-#include "watchpoint.h"
-/*
+
 typedef struct watchpoint {
   int NO;
   struct watchpoint *next;
-  bool used;
-  char expr[105];
-  int new_value;
-  int old_value;
-  TODO: Add more members if necessary 
+
+  char expr[256];
+  word_t old;
 
 } WP;
 
-
 static WP wp_pool[NR_WP] = {};
 static WP *head = NULL, *free_ = NULL;
-*/
-WP* head = NULL;
-WP* free_ = NULL; 
-WP wp_pool[NR_WP] = {};
+
 void init_wp_pool() {
   int i;
   for (i = 0; i < NR_WP; i ++) {
     wp_pool[i].NO = i;
     wp_pool[i].next = (i == NR_WP - 1 ? NULL : &wp_pool[i + 1]);
   }
-  wp_pool[NR_WP - 1].next = NULL;
-  head = NULL;//无激活的观察点
-  free_ = wp_pool;//所有观测点可用
+
+  head = NULL;
+  free_ = wp_pool;
 }
 
-/* TODO: Implement the functionality of watchpoint */
-WP* new_wp(){
-    for(WP* p = free_ ; p -> next != NULL ; p = p -> next){
-//	printf("P address = %p\n",p);
-	if( p -> flag == false){
-	    p -> flag = true;//激活观察点
-	    if(head == NULL){    
-		head = p;
-	    }
-	    return p;
-	}
+static WP* new_wp() {
+  assert(free_);
+  WP* ret = free_;
+  free_ = free_->next;
+  ret->next = head;
+  head = ret;
+  return ret;
+}
+
+static void free_wp(WP *wp) {
+  WP* h = head;
+  if (h == wp) head = NULL;
+  else {
+    while (h && h->next != wp) h = h->next;
+    assert(h);
+    h->next = wp->next;
+  }
+  wp->next = free_;
+  free_ = wp;
+}
+
+void wp_watch(char *expr, word_t res) {
+  WP* wp = new_wp();
+  strcpy(wp->expr, expr);
+  wp->old = res;
+  printf("Watchpoint %d: %s\n", wp->NO, expr);
+}
+
+void wp_remove(int no) {
+  assert(no < NR_WP);
+  WP* wp = &wp_pool[no];
+  free_wp(wp);
+  printf("Delete watchpoint %d: %s\n", wp->NO, wp->expr);
+}
+
+void wp_iterate() {
+  WP* h = head;
+  if (!h) {
+    puts("No watchpoints.");
+    return;
+  }
+  printf("%-8s%-8s\n", "Num", "What");
+  while (h) {
+    printf("%-8d%-8s\n", h->NO, h->expr);
+    h = h->next;
+  }
+}
+
+int wp_difftest() {
+  WP* h = head;
+  int ret = 0;
+  while (h) {
+    bool _;
+    word_t new_val = expr(h->expr, &_);
+    if (h->old != new_val) {
+      printf("Watchpoint %d: %s\n"
+        "Old value = %llu\n"
+        "New value = %llu\n"
+        , h->NO, h->expr, h->old, new_val);
+      h->old = new_val;
+      ret++;
     }
-    printf("No unuse point.\n");
-    assert(0);
-    return NULL;
-
+    h = h->next;
+  }
+  return ret;
 }
-void free_wp(WP *wp){
-    if(head -> NO == wp -> NO){//删除头部观察点
-    	head -> flag = false;
-	head = NULL;
-	printf("Delete watchpoint  success.\n");
-	return ;
-    }
-    for(WP* p = head ; p -> next != NULL ; p = p -> next){
-	if(p -> next -> NO  == wp -> NO)
-	{
-	    p -> next = p -> next -> next;
-	    p -> next -> flag = false; 
-	    printf("free succes.\n");
-	    return ;
-	}
-    }
-}
-
-void sdb_watchpoint_display(){
-    bool flag = true;
-    for(int i = 0 ; i < NR_WP ; i ++){
-	if(wp_pool[i].flag){
-	    printf("Watchpoint.No: %d, expr = \"%s\", old_value = 0x%08x, new_value = 0x%08x\n", 
-		    wp_pool[i].NO, wp_pool[i].expr,wp_pool[i].old_value, wp_pool[i].new_value);
-		flag = false;
-	}
-    }
-    if(flag) printf("No watchpoint now.\n");
-}
-
-void delete_watchpoint(int no){
-    for(int i = 0 ; i < NR_WP ; i ++)
-	if(wp_pool[i].NO == no){
-	    free_wp(&wp_pool[i]);
-	    return ;
-	}
-}
-
-void create_watchpoint(char* args){
-    WP* p =  new_wp();
-    strcpy(p -> expr, args);
-    bool success = false;
-    int tmp = expr(p -> expr,&success);
-   if(success) p -> old_value = tmp;
-   else printf("error\n");
-    printf("Create watchpoint No.%d success.\n", p -> NO);
-}
-
-/*void set_breakpoint(vaddr_t addr) {
-    char expr_str[32];
-    snprintf(expr_str, sizeof(expr_str), "0x%08x", addr);
-    WP* p =  new_wp();
-    strcpy(p -> expr, expr_str);
-    bool success = false;
-    int tmp = expr(p -> expr,&success);
-    if(success) {
-    	p -> old_value = tmp;
-    	p -> count=true;
-    }
-    else printf("error\n");
-    printf("Create watchpoint No.%d success.\n", p -> NO);   
-}*/

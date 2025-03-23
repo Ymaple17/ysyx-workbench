@@ -6,7 +6,7 @@
 #include <mem/paddr.h>
 
 void init_sdb();
-void init_disasm();
+void init_disasm(const char *triple);
 void init_log(const char* log_file);
 void parse_elf_files(const char **elf_files, int elf_file_count);
 void init_difftest(char* ref_so_file, long img_size);
@@ -69,7 +69,7 @@ void init_monitor(int argc, char* argv[]) {
   init_sdb();
 
   // disasmble
-  init_disasm();
+  init_disasm("riscv64-pc-linux-gnu");
 
   // log
   init_log(log_file);
@@ -86,4 +86,3 @@ void init_monitor(int argc, char* argv[]) {
   // img elf
   parse_elf_files(elf_files, elf_file_count);
 }
-

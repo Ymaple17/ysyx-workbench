@@ -14,7 +14,6 @@ object playground extends ScalaModule with ScalafmtModule { m =>
     "-deprecation",
     "-feature",
     "-Xcheckinit",
-    // Enables autoclonetype2 in 3.4.x (on by default in 3.5)
     "-P:chiselplugin:useBundlePlugin"
   )
   override def ivyDeps = Agg(
@@ -24,7 +23,7 @@ object playground extends ScalaModule with ScalafmtModule { m =>
     ivy"edu.berkeley.cs:::chisel3-plugin:3.4.3",
     ivy"org.scalamacros:::paradise:2.1.1"
   )
-  object test extends Tests with Utest {
+  object test extends ScalaTests with TestModule.Utest {
     override def ivyDeps = m.ivyDeps() ++ Agg(
       ivy"com.lihaoyi::utest:0.7.10",
       ivy"edu.berkeley.cs::chiseltest:0.3.3",

@@ -30,3 +30,10 @@ object playground extends ScalaModule with ScalafmtModule { m =>
     )
   }
 }
+
+object Elaborate extends ScalaModule {
+  override def scalaVersion = "2.12.10"
+  override def scalacOptions = playground.scalacOptions
+  override def ivyDeps = playground.ivyDeps()
+  override def scalacPluginIvyDeps = playground.scalacPluginIvyDeps
+}

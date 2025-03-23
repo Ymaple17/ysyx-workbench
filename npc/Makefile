@@ -1,6 +1,6 @@
 BUILD_DIR = ./vsrc
 OBJ_DIR = ./obj_dir
-mill = ./mill/mill
+mill = ./mill
 TOPNAME = Main
 VSRCNAME = Main
 IMG = ""

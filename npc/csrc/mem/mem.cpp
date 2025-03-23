@@ -1,67 +1,56 @@
-#include <mem/mem.h>
-#include <mem/paddr.h>
+#include "npc.h"
 
-void mem_t::tick(mem_input_t in, char *name) {
-  bool ar_fire = !in.reset && in.ar_valid && ar_ready();
-  bool r_fire = !in.reset && in.r_ready && r_valid();
-  bool aw_fire = !in.reset && in.aw_valid && aw_ready();
-  bool w_fire = !in.reset && in.w_valid && w_ready();
-  bool b_fire = !in.reset && in.b_ready && b_valid();
+uint8_t pmem[CONFIG_MSIZE] = {0};
 
-  /* ------------------------ AR ------------------------ */
-  if (ar_fire) {
-    auto addr = in.ar_addr;
-    for (size_t i = 0; i <= in.ar_len; i++, addr += 8) {
-      // printf("%s read at " FMT_PADDR "\n", name, addr);
-      word_t data;
-      paddr_read(addr, &data);
-      // uint64_t data = paddr_read(addr, 8);
-      // if (addr >= 0x80008fe0 && addr < (0x80008fe0 + 8*4)) {
-      //   printf("%s read at " FMT_PADDR ", data = " FMT_WORD "\n", name, addr, data);
-      // }
-      rresp.push(rresp_t(data, i == in.ar_len));
-    }
-  }
+#ifdef CONFIG_MTRACE
+char mtrace_buf[16][100]={0};
+int mtrace_count=0;
+#endif
 
-  /* ------------------------- R ------------------------ */
-  if (r_fire) {
-    rresp.pop();
+#ifdef CONFIG_MTRACE
+void print_mtrace()
+{
+  puts("mtrace:");
+  for(int i=0;i<16;i++)
+  {
+    if(strlen(mtrace_buf[i])==0)
+      break;
+    if((i+1)%16==mtrace_count)
+      printf("-->");
+    else
+      printf("   ");
+    printf("%s\n",mtrace_buf[i]);
   }
+}
+#endif
 
-  /* ------------------------ WR ------------------------ */
-  if (aw_fire) {
-    // printf("%s aw_fire\n", name);
-    waddr = in.aw_addr;
-    wcount = in.aw_len + 1;
-    wsize = 1 << in.aw_size;
-    storing = true;
-  }
-  
-  /* ------------------------- W ------------------------ */
-  if (w_fire) {
-    // if (waddr >= 0x80008fe0 && waddr < (0x80008fe0 + 8*4)) {
-    //   printf("%s write at " FMT_PADDR ", data = " FMT_WORD ", strb = %x \n", name, waddr, in.w_data, in.w_strb);
-    // }
-    paddr_write(waddr, in.w_data, in.w_strb);
-    waddr += wsize;
-    wcount--;
-    if (wcount == 0) {
-      // printf("%s bresp = true\n", name);
-      bresp = true;
-      storing = false;
-      assert(in.w_last);
-    }
-  }
+uint8_t *guest_to_host(long long paddr) { return pmem + paddr - CONFIG_MBASE; }
+long long host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
 
-  /* ------------------------- B ------------------------ */
-  if (b_fire) {
-    // printf("%s bresp = false\n", name);
-    bresp = false;
-  }
+void pmem_read(long long Raddr, long long *Rdata)
+{
+  if (Raddr < CONFIG_MBASE || Raddr >= CONFIG_MSIZE + CONFIG_MBASE)
+    return;
+  (*Rdata) = *((long long *)guest_to_host(Raddr));
+  // printf("READ DATA %lx %lx\n", Raddr, Rdata);
+#ifdef CONFIG_MTRACE
+  sprintf(mtrace_buf[mtrace_count],"read:  addr:%016x content:%016lx",Raddr,(*Rdata));
+  mtrace_count=(mtrace_count+1)%16;
+#endif
+  return;
+}
 
-  if (in.reset) {
-    bresp = false;
-    storing = false;
-    while (!rresp.empty()) rresp.pop();
+void pmem_write(long long Waddr, long long Wdata, char Wmask)
+{
+  for (int i = 0; i < 7; i++)
+  {
+    uint8_t *Vaddr = guest_to_host(Waddr);
+    if ((Wmask >> i) & 1)
+      *((uint8_t *)(Vaddr + i)) = ((Wdata) >> (i * 8)) & (0xFF);
   }
+#ifdef CONFIG_MTRACE
+  sprintf(mtrace_buf[mtrace_count],"write: addr:%016x Wmask:%08d content:%016lx",Waddr,Wmask,Wdata);
+  mtrace_count=(mtrace_count+1)%16;
+#endif
+  return;
 }

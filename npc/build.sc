@@ -7,7 +7,7 @@ import mill.scalalib.TestModule.Utest
 import mill.bsp._
 
 object playground extends ScalaModule with ScalafmtModule { m =>
-  override def scalaVersion = "2.12.13"
+  override def scalaVersion = "2.12.10"
   override def scalacOptions = Seq(
     "-Xsource:2.11",
     "-language:reflectiveCalls",

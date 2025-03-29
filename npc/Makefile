@@ -37,8 +37,6 @@ build: $(BIN)
 
 run: build
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!
-	@echo
-	@echo "RUN"
 	$(BIN) $(IMG) $(ARGS)
 
 wave: sim

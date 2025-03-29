@@ -28,7 +28,7 @@ CFLAGS = -g  # 启用调试信息
 # Build target
 $(BIN): $(VSRCS) $(CSRCS) $(NPC_MAIN)
 	@mkdir -p $(BUILD_DIR)
-	verilator --build --exe -cc -O0 --x-assign unique --x-initial unique --noassert --timing --trace \
+	verilator --build --exe -cc -O3 --x-assign unique --x-initial unique --noassert --timing --trace \
 	-Wno-lint \
 	--top-module $(TOPNAME) --Mdir $(BUILD_DIR)/obj_dir -o $(BIN) \
 	-CFLAGS "$(CFLAGS) -I$(CSRCS_DIR)/include -I$(CSRCS_DIR)/include/mem -I$(CSRCS_DIR)/include/cpu -I$(CSRCS_DIR)/include/device -I$(CSRCS_DIR)/include/tracer -I$(CSRCS_DIR)/include/monitor -I$(CSRCS_DIR)/include/monitor/sdb -I/usr/include/capstone" \

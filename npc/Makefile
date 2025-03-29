@@ -13,9 +13,9 @@ NPC_MAIN = $(abspath ./npc-main.cpp)
 BIN = $(abspath $(BUILD_DIR)/$(TOPNAME))
 
 # Default image file and arguments
-IMG ?= $(abspath ./img.bin)
-ARGS ?= --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
 
+ARGS ?= --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
+IMG?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 # Define LDFLAGS for linking Capstone, SDL2, and readline
 LDFLAGS = -lcapstone -lSDL2 -lreadline
 
@@ -37,7 +37,7 @@ build: $(BIN)
 
 run: build
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!
-	$(OBJ_DIR)/Top $(IMAGE)
+	$(BIN) $(IMG) $(ARGS)
 
 wave: sim
 	gtkwave waveform.vcd

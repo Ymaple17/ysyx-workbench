@@ -36,4 +36,7 @@ image: image-dep
 run: insert-arg
 	$(MAKE) -C $(NPC_HOME) run IMAGE=$(IMAGE).bin
 
+gdb: insert-arg
+	$(MAKE) -C $(NPC_HOME) gdb IMAGE=$(IMAGE).bin
+
 .PHONY: insert-arg run

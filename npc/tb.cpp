@@ -6,7 +6,7 @@
 static VTop dut;
 VerilatedVcdC* vcd;
 
-static void single_cycle() {
+static void a_single_cycle() {
   static int sim_time = 0;
   dut.clock = 0; dut.eval(); vcd->dump(sim_time++);
   dut.clock = 1; dut.eval(); vcd->dump(sim_time++);
@@ -14,7 +14,7 @@ static void single_cycle() {
 
 static void reset(int n) {
   dut.reset = 1;
-  while (n -- > 0) single_cycle();
+  while (n -- > 0) a_single_cycle();
   dut.reset = 0;
 }
 
@@ -31,7 +31,7 @@ int main() {
   reset(10);
   
   for (int i = 0; i < 200; i++) {
-    single_cycle();
+    a_single_cycle();
   }
 
   finish();

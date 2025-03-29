@@ -13,14 +13,17 @@ NPC_MAIN = $(abspath ./npc-main.cpp)
 BIN = $(abspath $(BUILD_DIR)/$(TOPNAME))
 
 # Default image file and arguments
-
 ARGS ?= --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
-IMG?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
+IMG ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
+
 # Define LDFLAGS for linking Capstone, SDL2, and readline
 LDFLAGS = -lcapstone -lSDL2 -lreadline
 
+# Add debug flag to CFLAGS
+CFLAGS = -g  # 启用调试信息
+
 # Phony targets
-.PHONY: build sim wave clean run
+.PHONY: build sim wave clean run gdb
 
 # Build target
 $(BIN): $(VSRCS) $(CSRCS) $(NPC_MAIN)
@@ -28,7 +31,7 @@ $(BIN): $(VSRCS) $(CSRCS) $(NPC_MAIN)
 	verilator --build --exe -cc -O3 --x-assign unique --x-initial unique --noassert --timing --trace \
 	-Wno-lint \
 	--top-module $(TOPNAME) --Mdir $(BUILD_DIR)/obj_dir -o $(BIN) \
-	-CFLAGS "-I$(CSRCS_DIR)/include -I$(CSRCS_DIR)/include/mem -I$(CSRCS_DIR)/include/cpu -I$(CSRCS_DIR)/include/device -I$(CSRCS_DIR)/include/tracer -I$(CSRCS_DIR)/include/monitor -I$(CSRCS_DIR)/include/monitor/sdb -I/usr/include/capstone" \
+	-CFLAGS "$(CFLAGS) -I$(CSRCS_DIR)/include -I$(CSRCS_DIR)/include/mem -I$(CSRCS_DIR)/include/cpu -I$(CSRCS_DIR)/include/device -I$(CSRCS_DIR)/include/tracer -I$(CSRCS_DIR)/include/monitor -I$(CSRCS_DIR)/include/monitor/sdb -I/usr/include/capstone" \
 	-LDFLAGS "$(LDFLAGS)" \
 	$(VSRCS) $(CSRCS) $(NPC_MAIN)
 
@@ -44,6 +47,9 @@ wave: sim
 
 clean:
 	-rm -rf $(BUILD_DIR)
+
+gdb: build
+	gdb --args $(BIN) $(IMG) $(ARGS)
 
 # Include external Makefile (if needed)
 include ../Makefile

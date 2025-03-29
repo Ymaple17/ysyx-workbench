@@ -12,7 +12,11 @@
 *
 * See the Mulan PSL v2 for more details.
 ***************************************************************************************/
-#include <common.h>
+#ifndef __MEM_PADDR_H__
+#define __MEM_PADDR_H__
+
+#include <stdint.h>
+#include <common.h> // 假设 common.h 包含了 paddr_t 和 word_t 的定义
 
 // 物理内存范围
 #define PMEM_LEFT  ((paddr_t)CONFIG_MBASE) // 物理内存的起始地址（Memory Base）
@@ -28,3 +32,5 @@ word_t paddr_read(paddr_t addr, int len);
 void paddr_write(paddr_t addr, int len, word_t data);
 word_t paddr_read_c(paddr_t addr, int len);  // 确保有此声明
 void paddr_write_c(paddr_t addr, int len, word_t data);
+
+#endif // __MEM_PADDR_H__

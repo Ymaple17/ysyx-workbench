@@ -10,15 +10,15 @@
 #include <cpu/cpu.h>
 #include <module.h>
 #include <tracer/wave_tracer.h>
-#include "sim.h" 
+#include "sim.h"
 
 VerilatedContext* contextp = nullptr;
 VTop* top = nullptr;
 VerilatedVcdC* tfp = nullptr;
+
 void a_single_cycle() {
-    int sim_time = 0;
-    top->clock = 0; top->eval(); tfp->dump(sim_time++);
-    top->clock = 1; top->eval(); tfp->dump(sim_time++);
+    top->clock = 0; top->eval(); tfp->dump(contextp->time()); contextp->timeInc(1);
+    top->clock = 1; top->eval(); tfp->dump(contextp->time()); contextp->timeInc(1);
 }
 
 void init_monitor(int, char *[]);
@@ -71,9 +71,9 @@ void dpic_commit(unsigned int pc, unsigned int inst, unsigned int npc, char dmAc
 int main(int argc, char** argv) {
     init_monitor(argc, argv);
     init_verilator(argc, argv);
-    cpu_reset(10);
+    cpu_reset(10);  // 初始化硬件和 CPU 状态
+    npc_state.state = NPC_RUNNING;  // 确保初始状态正确
     sdb_mainloop();
-
     cleanup_verilator();
     return exit_code();
 }

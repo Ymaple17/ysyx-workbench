@@ -11,7 +11,7 @@ void init_disasm();
 void init_log(const char* log_file);
 void parse_elf_files(const char **elf_files, int elf_file_count);
 void init_difftest(char* ref_so_file, long img_size);
-void init_device();
+//void init_device();
 void sdb_set_batch_mode();
 
 static char* img_file;
@@ -104,7 +104,7 @@ void init_monitor(int argc, char* argv[]) {
   //IFDEF(CONFIG_DIFFTEST, init_difftest(diff_so_file, img_size));
 
   // device
-  init_device();
+  //init_device();
 
   // img elf
   parse_elf_files(elf_files, elf_file_count);

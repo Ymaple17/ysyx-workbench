@@ -16,7 +16,7 @@ extern void paddr_write_c(paddr_t addr, int len, word_t data);
 
 #define MAX_INST_TO_PRINT 10
 
-void device_update();
+//void device_update();
 int wp_difftest();
 
 CPU_state cpu;
@@ -73,7 +73,7 @@ extern "C" void dpic_commit(const svBitVecVal* pc, const svBitVecVal* inst, cons
 
     IFDEF(CONFIG_ITRACE, itracer.trace(pc_val, inst_val, g_print_step));
     IFDEF(CONFIG_WATCHPOINT, if (wp_difftest()) npc_state.state = NPC_STOP);
-    device_update();
+    //device_update();
     //IFDEF(CONFIG_DIFFTEST, difftest_step(pc_val));
 }
 

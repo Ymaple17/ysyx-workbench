@@ -37,7 +37,7 @@ build: $(BIN)
 
 run: build
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!
-	$(BIN) $(IMG) $(ARGS)
+	$(OBJ_DIR)/Top $(IMAGE)
 
 wave: sim
 	gtkwave waveform.vcd

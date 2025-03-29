@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cpu/cpu.h>
 #include <mem/paddr.h>
+#include <conf.h>
 
 void init_sdb();
 void init_disasm();

@@ -1,55 +1,51 @@
-BUILD_DIR = ./vsrc
-OBJ_DIR = ./obj_dir
-mill = ./mill
-TOPNAME = Main
-VSRCNAME = Main
-IMG = ""
-CSRCDIR = ./csrc
-VSRCDIR = ./vsrc
-CSRCDIRS = $(shell find $(CSRCDIR) -maxdepth 5 -type d)
-VSRCDIRS = $(shell find $(VSRCDIR) -maxdepth 5 -type d)
-CSRC = $(foreach dir, $(CSRCDIRS), $(wildcard $(dir)/*.cpp))
-VSRC = $(filter-out %/$(VSRCNAME).v, $(foreach dir, $(VSRCDIRS), $(wildcard $(dir)/*.v)))
+BUILD_DIR = ./build
 
-test:
-	$(mill) -i __.test
+export PATH := $(PATH):$(abspath ./utils)
 
-verilog:
-	$(call git_commit, "generate verilog")
-	mkdir -p $(BUILD_DIR)
-	$(mill) -i Elaborate.runMain Elaborate --target-dir $(BUILD_DIR)
+# File and directory definitions
+TOPNAME = Top
+VSRCS_DIR = $(abspath ./vsrc)
+CSRCS_DIR = $(abspath ./csrc)
+VSRCS = $(wildcard $(VSRCS_DIR)/*.v)  # All Verilog files in vsrc/
+# 递归包含 csrc/ 及其子目录下的所有 .c 和 .cpp 文件
+CSRCS = $(shell find $(CSRCS_DIR) -name "*.c" -o -name "*.cpp")
+NPC_MAIN = $(abspath ./npc-main.cpp)
+BIN = $(abspath $(BUILD_DIR)/$(TOPNAME))
 
-help:
-	$(mill)  -i __.test.runMain Elaborate --help
+# Default image file and arguments
+IMG ?= $(abspath ./img.bin)
+ARGS ?= --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
 
-compile: 
-	$(mill)  -i __.compile
+# Define LDFLAGS for linking Capstone, SDL2, and readline
+LDFLAGS = -lcapstone -lSDL2 -lreadline
 
-bsp:
-	$(mill)  -i mill.bsp.BSP/install
+# Phony targets
+.PHONY: build sim wave clean run
 
-reformat:
-	$(mill)  -i __.reformat
+# Build target
+$(BIN): $(VSRCS) $(CSRCS) $(NPC_MAIN)
+	@mkdir -p $(BUILD_DIR)
+	verilator --build --exe -cc -O3 --x-assign unique --x-initial unique --noassert --timing --trace \
+	-Wno-lint \
+	--top-module $(TOPNAME) --Mdir $(BUILD_DIR)/obj_dir -o $(BIN) \
+	-CFLAGS "-I$(CSRCS_DIR)/include -I$(CSRCS_DIR)/include/mem -I$(CSRCS_DIR)/include/cpu -I$(CSRCS_DIR)/include/device -I$(CSRCS_DIR)/include/tracer -I$(CSRCS_DIR)/include/monitor -I$(CSRCS_DIR)/include/monitor/sdb -I/usr/include/capstone" \
+	-LDFLAGS "$(LDFLAGS)" \
+	$(VSRCS) $(CSRCS) $(NPC_MAIN)
 
-checkformat:
-	$(mill)  -i __.checkFormat
+# Main targets
+build: $(BIN)
 
-clean_vsrc:
+run: build
+	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!
+	@echo
+	@echo "### RUN ###"
+	$(BIN) $(IMG) $(ARGS)
+
+wave: sim
+	gtkwave waveform.vcd
+
+clean:
 	-rm -rf $(BUILD_DIR)
 
-clean_obj:
-	-rm -rf $(OBJ_DIR)
-
-sim:
-	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
-	verilator --trace --cc --exe $(CSRC) ./vsrc/$(VSRCNAME).v -I $(VSRC) -CFLAGS -fpermissive  -CFLAGS -I -CFLAGS $$NPC_HOME/csrc/include -CFLAGS -I -CFLAGS /usr/lib/llvm-11/include -LDFLAGS $(shell llvm-config --libs) -LDFLAGS -ldl -Wno-fatal
-	make -j -C ./obj_dir/ -f V$(TOPNAME).mk V$(TOPNAME) 
-	./obj_dir/V$(TOPNAME)	$(IMG)
-	# gtkwave waveform.vcd
-
-run:
-	./obj_dir/V$(TOPNAME) $(IMG)
-
-.PHONY: test verilog help compile bsp reformat checkformat clean_vsrc clean_obj sim run
-
+# Include external Makefile (if needed)
 include ../Makefile

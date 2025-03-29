@@ -17,6 +17,13 @@ MAINARGS_MAX_LEN = 64
 MAINARGS_PLACEHOLDER = The insert-arg rule in Makefile will insert mainargs here.
 CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=\""$(MAINARGS_PLACEHOLDER)"\"
 
+# 为 riscv32e-npc 添加支持
+#ifeq ($(ARCH),riscv32e-npc)
+#  CC = riscv32-unknown-elf-gcc
+#  CFLAGS += -march=rv32e -mabi=ilp32e
+#  LDFLAGS += -T $(AM_HOME)/scripts/linker.ld
+#endif
+
 insert-arg: image
 	@python $(AM_HOME)/tools/insert-arg.py $(IMAGE).bin $(MAINARGS_MAX_LEN) "$(MAINARGS_PLACEHOLDER)" "$(mainargs)"
 
@@ -25,11 +32,7 @@ image: image-dep
 	@echo + OBJCOPY "->" $(IMAGE_REL).bin
 	@$(OBJCOPY) -S --set-section-flags .bss=alloc,contents -O binary $(IMAGE).elf $(IMAGE).bin
 
-run: image
-	$(MAKE) -C $(NPC_HOME) clean
+run: insert-arg
 	$(MAKE) -C $(NPC_HOME) run IMAGE=$(IMAGE).bin
-	
-gdb: insert-arg
-	$(MAKE) -C $(NPC_HOME) gdb IMG=$(IMAGE).bin ELF=$(IMAGE).elf
 
-.PHONY: insert-arg
+.PHONY: insert-arg run

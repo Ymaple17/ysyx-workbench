@@ -68,13 +68,13 @@ extern "C" void dpic_commit(const svBitVecVal* pc, const svBitVecVal* inst, cons
 
     if (device_access_st && dm_access) {
         device_access_st--;
-        //difftest_skip_ref();
+        difftest_skip_ref();
     }
 
     IFDEF(CONFIG_ITRACE, itracer.trace(pc_val, inst_val, g_print_step));
     IFDEF(CONFIG_WATCHPOINT, if (wp_difftest()) npc_state.state = NPC_STOP);
     device_update();
-    //IFDEF(CONFIG_DIFFTEST, difftest_step(pc_val));
+    IFDEF(CONFIG_DIFFTEST, difftest_step(pc_val));
 }
 
 extern "C" void paddr_read(const svBitVecVal* addr, svBitVecVal* data) {

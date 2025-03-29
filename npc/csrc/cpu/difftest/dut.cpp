@@ -34,37 +34,39 @@ void difftest_skip_ref() {
 }
 
 void init_difftest(char *ref_so_file, long img_size) {
-  assert(ref_so_file);
+    assert(ref_so_file);
+    printf("Loading ref_so_file: %s\n", ref_so_file);
 
-  void *handle;
-  handle = dlopen(ref_so_file, RTLD_LAZY);
-  assert(handle);
+    void *handle = dlopen(ref_so_file, RTLD_LAZY);
+    if (!handle) {
+        printf("dlopen failed: %s\n", dlerror());
+        assert(handle);
+    }
 
-  ref_difftest_memcpy = (memcpy_func_t)dlsym(handle, "difftest_memcpy");
-  assert(ref_difftest_memcpy);
+    ref_difftest_memcpy = (memcpy_func_t)dlsym(handle, "difftest_memcpy");
+    printf("ref_difftest_memcpy = %p\n", (void*)ref_difftest_memcpy);
+    assert(ref_difftest_memcpy);
 
-  ref_difftest_regcpy = (regcpy_func_t)dlsym(handle, "difftest_regcpy");
-  assert(ref_difftest_regcpy);
+    ref_difftest_regcpy = (regcpy_func_t)dlsym(handle, "difftest_regcpy");
+    printf("ref_difftest_regcpy = %p\n", (void*)ref_difftest_regcpy);
+    assert(ref_difftest_regcpy);
 
-  ref_difftest_exec = (exec_func_t)dlsym(handle, "difftest_exec");
-  assert(ref_difftest_exec);
+    ref_difftest_exec = (exec_func_t)dlsym(handle, "difftest_exec");
+    printf("ref_difftest_exec = %p\n", (void*)ref_difftest_exec);
+    assert(ref_difftest_exec);
 
-  ref_difftest_raise_intr =
-      (raise_intr_func_t)dlsym(handle, "difftest_raise_intr");
+    ref_difftest_raise_intr = (raise_intr_func_t)dlsym(handle, "difftest_raise_intr");
+    printf("ref_difftest_raise_intr = %p\n", (void*)ref_difftest_raise_intr);
 
-  init_func_t ref_difftest_init = (init_func_t)dlsym(handle, "difftest_init");
-  assert(ref_difftest_init);
+    init_func_t ref_difftest_init = (init_func_t)dlsym(handle, "difftest_init");
+    printf("ref_difftest_init = %p\n", (void*)ref_difftest_init);
+    assert(ref_difftest_init);
 
-  Log("Differential testing: %s", ANSI_FMT("ON", ANSI_FG_GREEN));
-  Log("The result of every instruction will be compared with %s. "
-      "This will help you a lot for debugging, but also significantly reduce "
-      "the performance. ",
-      ref_so_file);
+    Log("Differential testing: %s", ANSI_FMT("ON", ANSI_FG_GREEN));
+    Log("The result of every instruction will be compared with %s.", ref_so_file);
 
-  ref_difftest_init();
-  ref_difftest_memcpy(RESET_VECTOR, guest_to_host(RESET_VECTOR), img_size,
-                      DIFFTEST_TO_REF);
-  // ref_difftest_regcpy(&cpu_state, DIFFTEST_TO_REF);
+    ref_difftest_init();
+    ref_difftest_memcpy(RESET_VECTOR, guest_to_host(RESET_VECTOR), img_size, DIFFTEST_TO_REF);
 }
 
 #define CHECKDIFF(r1, r2, fmt, ...)                            \

@@ -100,7 +100,7 @@ void init_monitor(int argc, char* argv[]) {
   long img_size = load_img();
 
   // difftest
-  IFDEF(CONFIG_DIFFTEST, init_difftest(diff_so_file, img_size));
+  //IFDEF(CONFIG_DIFFTEST, init_difftest(diff_so_file, img_size));
 
   // device
   //init_device();

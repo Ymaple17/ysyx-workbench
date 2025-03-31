@@ -1,1 +1,0 @@
-CSRCS += $(abspath ./tb.cpp)

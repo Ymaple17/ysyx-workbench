@@ -1,55 +1,89 @@
-BUILD_DIR = ./build
+# 包含上层 Makefile（如果需要）
+include ../Makefile
 
-export PATH := $(PATH):$(abspath ./utils)
+# 基本工具和变量
+CC = gcc
+VERILATOR = verilator
+WORK_DIR = $(shell pwd)
+BUILD_DIR = $(WORK_DIR)/build
+OBJ_DIR = $(BUILD_DIR)/obj_dir
+TOPNAME = top
+BIN = $(BUILD_DIR)/$(TOPNAME)
 
-# File and directory definitions
-TOPNAME = Top
+# 源文件目录
 VSRCS_DIR = $(abspath ./vsrc)
 CSRCS_DIR = $(abspath ./csrc)
-VSRCS = $(wildcard $(VSRCS_DIR)/*.v)  # All Verilog files in vsrc/
-# 递归包含 csrc/ 及其子目录下的所有 .c 和 .cpp 文件
-CSRCS = $(shell find $(CSRCS_DIR) -name "*.c" -o -name "*.cpp")
-NPC_MAIN = $(abspath ./npc-main.cpp)
-BIN = $(abspath $(BUILD_DIR)/$(TOPNAME))
+TEST_DIR = $(abspath ./test)
 
-# Default image file and arguments
-ARGS ?= --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
-IMG ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
+# 查找源文件
+VSRCS = $(shell find $(VSRCS_DIR) -name "*.v" -or -name "*.sv")
+CSRCS = $(shell find $(CSRCS_DIR) -name "*.c" -or -name "*.cpp" -or -name "*.cc")
+TEST_CSRCS = $(shell find $(TEST_DIR) -name "*.cpp" -or -name "*.cc" -or -name "*.c" 2>/dev/null) # 防止 test 目录不存在
 
-# Define LDFLAGS for linking Capstone, SDL2, and readline
-LDFLAGS = -lcapstone -lSDL2 -lreadline
+# 默认镜像文件
+IMG ?=
 
-# Add debug flag to CFLAGS
-CFLAGS = -g  # 启用调试信息
+# 编译和链接选项
+INC_PATH = $(CSRCS_DIR)/include $(CSRCS_DIR)/src/isa/include
+INCLUDES = $(addprefix -I, $(INC_PATH))
+CFLAGS = -O2 -MMD -Wall -Og $(INCLUDES) -ggdb3 -g
+LDFLAGS = $(shell sdl2-config --libs) -lSDL2_image $(shell llvm-config --libs) -O2 -Og -ggdb3 -ldl -pie -lreadline
 
-# Phony targets
-.PHONY: build sim wave clean run gdb
+# Verilator 选项
+VERILATOR_FLAGS = -Wall --cc --trace -O3 --x-assign fast --x-initial fast --noassert -MMD --build \
+                  --top-module $(TOPNAME) \
+                  -CFLAGS "$(CFLAGS)" \
+                  -LDFLAGS "$(LDFLAGS)"
 
-# Build target
-$(BIN): $(VSRCS) $(CSRCS) $(NPC_MAIN)
-	@mkdir -p $(BUILD_DIR)
-	verilator --build --exe -cc -O3 --x-assign unique --x-initial unique --noassert --timing --trace \
-	-Wno-lint \
-	--top-module $(TOPNAME) --Mdir $(BUILD_DIR)/obj_dir -o $(BIN) \
-	-CFLAGS "$(CFLAGS) -I$(CSRCS_DIR)/include -I$(CSRCS_DIR)/include/mem -I$(CSRCS_DIR)/include/cpu -I$(CSRCS_DIR)/include/device -I$(CSRCS_DIR)/include/tracer -I$(CSRCS_DIR)/include/monitor -I$(CSRCS_DIR)/include/monitor/sdb -I/usr/include/capstone" \
-	-LDFLAGS "$(LDFLAGS)" \
-	$(VSRCS) $(CSRCS) $(NPC_MAIN)
+# 仿真参数
+override ARGS ?= --log=$(BUILD_DIR)/npc-log.txt
+override ARGS += --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
+NPC_FLAGS = $(ARGS) $(IMG)
 
-# Main targets
-build: $(BIN)
+# 确保构建目录存在
+$(shell mkdir -p $(BUILD_DIR))
 
-run: build
-	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!
-	$(BIN) $(IMG) $(ARGS)
+# 默认目标
+.PHONY: default all sim run wave clean test
+default: $(BIN)
 
+# 构建目标
+$(BIN): $(VSRCS) $(CSRCS)
+	@rm -rf $(OBJ_DIR)
+	@echo "Building $(BIN)"
+	@echo "Using source files: $(VSRCS) $(CSRCS)"
+	@echo "Include paths: $(INCLUDES)"
+	$(VERILATOR) $(VERILATOR_FLAGS) \
+		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN)) $^
+
+# 测试目标
+test: $(VSRCS) $(TEST_CSRCS)
+	@rm -rf $(OBJ_DIR)
+	@echo "Building test executable"
+	$(VERILATOR) $(VERILATOR_FLAGS) \
+		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN)) $^
+	./$(BIN)
+
+# 仿真目标
+sim: $(BIN)
+	@$^ $(NPC_FLAGS)
+
+run: sim
+
+# 波形查看
 wave: sim
-	gtkwave waveform.vcd
+	gtkwave dump.vcd
 
+# 调试目标
+gdb: $(BIN)
+	@gdb --args $(BIN) $(NPC_FLAGS)
+
+# 清理目标
 clean:
-	-rm -rf $(BUILD_DIR)
+	rm -rf $(BUILD_DIR) dump.vcd
 
-gdb: build
-	gdb --args $(BIN) $(IMG) $(ARGS)
+# 所有目标
+all: default
 
-# Include external Makefile (if needed)
-include ../Makefile
+# 默认 NEMU_HOME（如果未定义）
+NEMU_HOME ?= $(WORK_DIR)/../nemu

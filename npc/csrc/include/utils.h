@@ -1,18 +1,34 @@
-#pragma once
-#include "common.h"
+/***************************************************************************************
+* Copyright (c) 2014-2022 Zihao Yu, Nanjing University
+*
+* NEMU is licensed under Mulan PSL v2.
+* You can use this software according to the terms and conditions of the Mulan PSL v2.
+* You may obtain a copy of Mulan PSL v2 at:
+*          http://license.coscl.org.cn/MulanPSL2
+*
+* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+* EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+* MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+*
+* See the Mulan PSL v2 for more details.
+***************************************************************************************/
+
+#ifndef __UTILS_H__
+#define __UTILS_H__
+
+#include <common.h>
+
 // ----------- state -----------
 
-enum { NPC_RUNNING, NPC_ABORT, NPC_QUIT, NPC_END, NPC_STOP };
+enum { NPC_RUNNING, NPC_STOP, NPC_END, NPC_ABORT, NPC_QUIT };
 
 typedef struct {
   int state;
-  paddr_t halt_pc;
-  uint32_t halt_code;
+  vaddr_t halt_pc;
+  uint32_t halt_ret;
 } NPCState;
 
 extern NPCState npc_state;
-
-int exit_code();
 
 // ----------- timer -----------
 
@@ -33,22 +49,23 @@ uint64_t get_time();
 #define ANSI_BG_GREEN   "\33[1;42m"
 #define ANSI_BG_YELLOW  "\33[1;43m"
 #define ANSI_BG_BLUE    "\33[1;44m"
-#define ANSI_BG_MAGENTA "\33[1;45m"
+#define ANSI_BG_MAGENTA "\33[1;35m"
 #define ANSI_BG_CYAN    "\33[1;46m"
 #define ANSI_BG_WHITE   "\33[1;47m"
 #define ANSI_NONE       "\33[0m"
 
 #define ANSI_FMT(str, fmt) fmt str ANSI_NONE
 
-#define log_write(...) IFDEF(CONFIG_LOG, \
+#define log_write(...) IFDEF(CONFIG_TARGET_NATIVE_ELF, \
   do { \
     extern FILE* log_fp; \
-    fprintf(log_fp, __VA_ARGS__); \
-    fflush(log_fp); \
+    extern bool log_enable(); \
+    if (log_enable()) { \
+      fprintf(log_fp, __VA_ARGS__); \
+      fflush(log_fp); \
+    } \
   } while (0) \
 )
-
-#define ftrace_write log_write
 
 #define _Log(...) \
   do { \
@@ -56,3 +73,5 @@ uint64_t get_time();
     log_write(__VA_ARGS__); \
   } while (0)
 
+
+#endif

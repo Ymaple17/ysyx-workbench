@@ -35,7 +35,7 @@ VERILATOR_FLAGS = -Wall --cc --trace -O3 --x-assign fast --x-initial fast --noas
 
 # 仿真参数
 override ARGS ?= --log=$(BUILD_DIR)/npc-log.txt
-override ARGS += --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
+#override ARGS += --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
 NPC_FLAGS = $(ARGS) $(IMG)
 
 # 确保构建目录存在

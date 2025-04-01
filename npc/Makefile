@@ -1,6 +1,5 @@
 # 包含上层 Makefile（如果需要）
 include ../Makefile
-
 # 基本工具和变量
 CC = gcc
 VERILATOR = verilator
@@ -9,7 +8,6 @@ BUILD_DIR = $(WORK_DIR)/build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 TOPNAME = top
 BIN = $(BUILD_DIR)/$(TOPNAME)
-
 # 源文件目录
 VSRCS_DIR = $(abspath ./vsrc)
 CSRCS_DIR = $(abspath ./csrc)

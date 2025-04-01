@@ -9,13 +9,11 @@ static void (*cs_free_dl)(cs_insn *insn, size_t count);
 static csh handle;
 
 extern "C" void init_disasm() {
-    void *dl_handle = dlopen("/home/qiu/ysyx-workbench/npc/tools/capstone/repo/libcapstone.so.6", RTLD_LAZY);
+    void *dl_handle = dlopen("/home/qiu/ysyx-workbench/npc/tools/capstone/repo/libcapstone.so.5", RTLD_LAZY);
     if (!dl_handle) {
         fprintf(stderr, "Failed to open libcapstone.so.5: %s\n", dlerror());
         exit(1);
     }
-
-    // 使用 C++ 的 reinterpret_cast 安全转换
     auto cs_open_func = reinterpret_cast<cs_err (*)(cs_arch, cs_mode, csh*)>(dlsym(dl_handle, "cs_open"));
     if (!cs_open_func) {
         fprintf(stderr, "Failed to load cs_open: %s\n", dlerror());
@@ -33,8 +31,6 @@ extern "C" void init_disasm() {
         fprintf(stderr, "Failed to load cs_free: %s\n", dlerror());
         exit(1);
     }
-
-    // 硬编码 RISC-V 32 位配置
     cs_arch arch = CS_ARCH_RISCV;
     cs_mode mode = static_cast<cs_mode>(CS_MODE_RISCV32 | CS_MODE_RISCVC);
 
@@ -58,7 +54,6 @@ extern "C" void init_disasm() {
     }
 #endif
 }
-/*
 extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte) {
     cs_insn *insn;
     size_t count = cs_disasm_dl(handle, code, nbyte, pc, 0, &insn);
@@ -84,13 +79,4 @@ extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int
     }
 
     cs_free_dl(insn, count);
-}*/
-extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte) {
-    fprintf(stderr, "0x%08lx: ", pc);
-    for (int i = 0; i < nbyte; i++) {
-        fprintf(stderr, "%02x ", code[i]);
-    }
-    fprintf(stderr, "\n");
-
-    snprintf(str, size, "??"); // 临时占位
 }

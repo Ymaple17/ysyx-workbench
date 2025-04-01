@@ -18,7 +18,7 @@ TEST_DIR = $(abspath ./test)
 # 查找源文件
 VSRCS = $(shell find $(VSRCS_DIR) -name "*.v" -or -name "*.sv")
 CSRCS = $(shell find $(CSRCS_DIR) -name "*.c" -or -name "*.cpp" -or -name "*.cc")
-TEST_CSRCS = $(shell find $(TEST_DIR) -name "*.cpp" -or -name "*.cc" -or -name "*.c" 2>/dev/null) # 防止 test 目录不存在
+TEST_CSRCS = $(shell find $(TEST_DIR) -name "*.cpp" -or -name "*.cc" -or -name "*.c" 2>/dev/null)
 
 # 默认镜像文件
 IMG ?=

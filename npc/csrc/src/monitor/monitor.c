@@ -51,7 +51,7 @@ static long load_img(){
 
     fseek(fp, 0, SEEK_END);   //将fp指针指向文件末尾处
     long size = ftell(fp);    //获取文件大小
-    Log("The image is %sm size = %ld", img_file, size);
+    Log("The image is %s size = %ld", img_file, size);
     fseek(fp, 0, SEEK_SET); 
     int ret = fread(guest_to_host(RESET_VECTOR), size, 1, fp);
     assert(ret == 1);

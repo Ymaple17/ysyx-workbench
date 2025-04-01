@@ -35,7 +35,7 @@ static char* rl_gets() {
     line_read = NULL;
   }
 
-  line_read = readline("(nemu) ");//readline() 会返回输入文本的字符串
+  line_read = readline("(npc) ");//readline() 会返回输入文本的字符串
 
   if (line_read && *line_read) {
     add_history(line_read);//添加到历史命令中

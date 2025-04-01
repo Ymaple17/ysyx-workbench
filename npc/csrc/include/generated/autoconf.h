@@ -4,6 +4,7 @@
  * NEMU Configuration Menu
  *
  */
+
 #define CONFIG_AUDIO_CTL_MMIO 0xa0000200
 #define CONFIG_ENGINE "interpreter"
 #define CONFIG_VGA_SIZE_400x300 1

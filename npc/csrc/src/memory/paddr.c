@@ -17,7 +17,6 @@
 #include <memory/paddr.h>
 #include <device/mmio.h>
 #include <isa.h>
-
 #if   defined(CONFIG_PMEM_MALLOC)//启用则用动态数组分配内存，否则就用静态。
 static uint8_t *pmem = NULL;//pmem 是 NEMU 中模拟的物理内存区域
 #else // CONFIG_PMEM_GARRAY

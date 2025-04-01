@@ -1,4 +1,5 @@
 #include <isa.h>
+#include <cerrno>
 #include <memory/paddr.h>
 #include <getopt.h>
 #include <memory/paddr.h>
@@ -40,21 +41,51 @@ static char *img_file = NULL;
 static int difftest_port = 1234;
 static char *elf_file = NULL;
 
-static long load_img(){
-    if(img_file == NULL){
-        Log("No image file is given. Use the default build-in image.");
-        return 4096;  //buile-in image size
+static long load_img() {
+    if (img_file == NULL) {
+        Log("No image file is given. Use the default built-in image. Size: 4096 bytes.");
+        // 记录默认图像的加载地址
+        void *default_addr = guest_to_host(RESET_VECTOR);
+        Log("Default image loaded to address: %p", default_addr);
+        return 4096; // built-in image size
     }
 
-    FILE *fp = fopen(img_file, "rb");
-    Assert(fp, "Can not open '%s'", img_file);
+    Log("Attempting to load image file: %s", img_file);
 
-    fseek(fp, 0, SEEK_END);   //将fp指针指向文件末尾处
-    long size = ftell(fp);    //获取文件大小
-    Log("The image is %s size = %ld", img_file, size);
-    fseek(fp, 0, SEEK_SET); 
-    int ret = fread(guest_to_host(RESET_VECTOR), size, 1, fp);
-    assert(ret == 1);
+    FILE *fp = fopen(img_file, "rb");
+    if (fp == NULL) {
+        Log("Failed to open '%s'. Error: %s", img_file, strerror(errno));
+        Assert(0, "Cannot open image file");
+    }
+
+    fseek(fp, 0, SEEK_END);
+    long size = ftell(fp);
+    Log("Image file size: %ld bytes", size);
+
+    if (size <= 0) {
+        Log("Invalid image file size: %ld", size);
+        fclose(fp);
+        Assert(0, "Image file is empty or invalid");
+    }
+
+    fseek(fp, 0, SEEK_SET);
+
+    void *load_addr = guest_to_host(RESET_VECTOR);
+    Log("Loading image to address: %p (RESET_VECTOR: 0x%08x)", load_addr, RESET_VECTOR);
+
+    int ret = fread(load_addr, size, 1, fp);
+    if (ret != 1) {
+        Log("Failed to read image file. Bytes read: %ld, Expected: %ld", ret * size, size);
+        fclose(fp);
+        Assert(0, "Image file read error");
+    }
+
+    // 验证加载的内容
+    uint8_t *data = (uint8_t *)load_addr;
+    Log("First few bytes of loaded image:");
+    for (int i = 0; i < 16 && i < size; i++) {
+        Log("%02x ", data[i]);
+    }
 
     fclose(fp);
     return size;

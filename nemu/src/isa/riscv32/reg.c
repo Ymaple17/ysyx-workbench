@@ -21,26 +21,35 @@ const char *regs[] = {
   "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
   "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
   "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
-  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6","pc"
+  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
 };
 
 void isa_reg_display() {
-	int length=sizeof(regs)/sizeof(regs[0]);
-	for(int i=0;i<length-1;i++){
-	    printf("reg%s : 0x%08x\n",regs[i],cpu.gpr[i]);
-}
-	printf("pc: 0x%08x\n",cpu.pc);
+	printf("The 32 General-Purpose Register is:\n");
+	for(int i = 0;i < 32; i++){
+		printf(ANSI_FG_GREEN "%-3s: " ANSI_FG_BLUE FMT_WORD " " ANSI_NONE, regs[i], cpu.gpr[i]);
+		if(i%5 == 4)
+			printf("\n");
+		}
+		printf("\n");
+		printf("Program Counter:\n");
+		printf(ANSI_FG_RED "%-3s: " ANSI_FG_BLUE FMT_WORD ANSI_NONE"\n", "$pc", cpu.pc);
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
-    for(int i = 0 ; i <33 ; i ++){
-    	if(strcmp(regs[32],s)==0){
-    		return cpu.pc;
-    	}
-   	if(strcmp(regs[i], s) == 0){
-		return cpu.gpr[i];
-	}
+	char tmp[3] = {s[1], s[2]};
+  for (int i = 0; i < 32; i++) {
+    if(!strcmp(tmp, regs[i])) {
+      *success = true;
+      return cpu.gpr[i];
     }
-    success = false;
-    return 0;
+  }
+  if(!strcmp(tmp, "pc")) {
+    *success = true;
+    return cpu.pc;
+  }
+  Log("Register not found!");
+  *success = false;
+  return 0;
 }
+

@@ -62,7 +62,7 @@ void step_and_dump_wave(){
 
 extern "C" void init_module(){
     reset(10);
-    printf("Current pc = %x\n", top->pc);
+    printf("Current pc = 0x%08x\n", top->pc);
 }
 void sim_exit(){
 	step_and_dump_wave();

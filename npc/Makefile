@@ -84,4 +84,4 @@ clean:
 all: default
 
 # 默认 NEMU_HOME（如果未定义）
-NEMU_HOME ?= $(WORK_DIR)/../nemu
+NEMU_HOME ?= $(WORK_DIR)/../nemu修改我npc的makefile，为其加上路径

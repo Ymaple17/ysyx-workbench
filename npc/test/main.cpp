@@ -3,12 +3,12 @@
 #include<string.h>
 #include"verilated.h"
 #include"verilated_vcd_c.h"
-#include"Vysyx_23060278_top.h"
+#include"Vtop.h"
 
 VerilatedContext* contextp = NULL;
 VerilatedVcdC* tfp = NULL;
 
-static Vysyx_23060278_top* top;
+static Vtop* top;
 
 static const uint32_t img[] = {
     //0x00100073,
@@ -31,9 +31,9 @@ uint32_t pmem_read(uint32_t * memory,uint32_t vaddr){
     return memory[paddr/4];
 }
 
-/* extern "C" npc_trap(){ */
-/*     return  */
-/* } */
+ extern "C" void npc_trap(){ 
+    return;  
+} 
 
 void single_cycle(){
     top->clk = 0;top->eval();
@@ -49,7 +49,7 @@ static void reset(int n){
 void init_sim(){
 	contextp = new VerilatedContext;
 	tfp = new VerilatedVcdC;
-	top = new Vysyx_23060278_top;
+	top = new Vtop;
 	contextp->traceEverOn(true);
 	top->trace(tfp, 0);
 	tfp->open("dump.vcd");

@@ -126,7 +126,7 @@ static int cmd_test(char *args){
         else assert(0);
 
     }
-    printf("test 983 expressions,the accuracy is %d/983\n",count);
+    printf("pass:%d all:987\n",count);
     fclose(input_file);
     return 0;
 }
@@ -186,7 +186,7 @@ static struct {
 } cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
   { "c", "Continue the execution of the program", cmd_c },
-  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x},{"p","Expression Evaluation",cmd_p},{"d","delete watchpoint",cmd_d},{"w","create watchpoint",cmd_w},{"test","test input file",cmd_test}
+  { "q", "Exit NEMU", cmd_q },{"si"," Single-step Execution",cmd_si},{"info","Print Register Status",cmd_info},{"x"," Scan Memory",cmd_x},{"p","Expression Evaluation",cmd_p},{"d","delete watchpoint",cmd_d},{"w","create watchpoint",cmd_w},{"ext","test input file",cmd_test}
 
   /* TODO: Add more commands */
 

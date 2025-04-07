@@ -151,7 +151,6 @@ extern "C" void init_module() {
 extern "C" void npc_run_once(Decode *s) {
     // 在时钟低电平时获取指令
     top->inst = inst_fetch(&top->pc, 4);
-    
     // 执行一个完整时钟周期
     single_cycle();
     
@@ -160,8 +159,6 @@ extern "C" void npc_run_once(Decode *s) {
     s->dnpc = top->dnpc;
     s->pc   = top->pc;
     s->isa.inst.val = top->inst;
-    
-    // 指令跟踪
     trace_inst(top->pc, top->inst);
     
     // PC对齐检查

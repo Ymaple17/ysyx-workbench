@@ -1,5 +1,6 @@
 # 包含上层 Makefile（如果需要）
 include ../Makefile
+
 # 基本工具和变量
 CC = gcc
 VERILATOR = verilator
@@ -8,6 +9,7 @@ BUILD_DIR = $(WORK_DIR)/build
 OBJ_DIR = $(BUILD_DIR)/obj_dir
 TOPNAME = top
 BIN = $(BUILD_DIR)/$(TOPNAME)
+
 # 源文件目录
 VSRCS_DIR = $(abspath ./vsrc)
 CSRCS_DIR = $(abspath ./csrc)
@@ -24,22 +26,37 @@ IMG ?=
 # 编译和链接选项
 INC_PATH = $(CSRCS_DIR)/include $(CSRCS_DIR)/src/isa/include
 INCLUDES = $(addprefix -I, $(INC_PATH))
-CFLAGS = -O2 -MMD -Wall -Og $(INCLUDES) -ggdb3 -g
-LDFLAGS = $(shell sdl2-config --libs) -lSDL2_image $(shell llvm-config --libs) -O2 -Og -ggdb3 -ldl -pie -lreadline
+CFLAGS = -O2 -MMD -Wall -Og $(INCLUDES) -ggdb3 -g -I tools/capstone/repo/include
+LDFLAGS = $(shell sdl2-config --libs) -lSDL2_image $(shell llvm-config --libs) -lcapstone -O2 -Og -ggdb3 -ldl -pie -lreadline
 
 # Verilator 选项
 VERILATOR_FLAGS = -Wall --cc --trace -O3 --x-assign fast --x-initial fast --noassert -MMD --build \
-                  --top-module $(TOPNAME) \
+                  --top-module top \
                   -CFLAGS "$(CFLAGS)" \
-                  -LDFLAGS "$(LDFLAGS)"
+                  -LDFLAGS "$(LDFLAGS)" #\
+                  #--dpi-hdr-only
 
 # 仿真参数
 override ARGS ?= --log=$(BUILD_DIR)/npc-log.txt
-#override ARGS += --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
+override ARGS += --diff=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
 NPC_FLAGS = $(ARGS) $(IMG)
 
 # 确保构建目录存在
 $(shell mkdir -p $(BUILD_DIR))
+
+# 根据 CONFIG_ITRACE 和 CONFIG_IQUEUE 条件添加代码
+ifeq ($(CONFIG_ITRACE)$(CONFIG_IQUEUE),)
+    SRCS-BLACKLIST-y += csrc/utils/disasm.cc
+else
+    LIBCAPSTONE = tools/capstone/repo/libcapstone.so.5
+    CFLAGS += -I tools/capstone/repo/include
+    csrc/utils/disasm.cc: $(LIBCAPSTONE)
+    $(LIBCAPSTONE):
+        $(MAKE) -C tools/capstone
+endif
+
+# 从 CSRCS 中过滤掉黑名单中的源文件
+CSRCS := $(filter-out $(SRCS-BLACKLIST-y), $(CSRCS))
 
 # 默认目标
 .PHONY: default all sim run wave clean test
@@ -52,14 +69,14 @@ $(BIN): $(VSRCS) $(CSRCS)
 	@echo "Using source files: $(VSRCS) $(CSRCS)"
 	@echo "Include paths: $(INCLUDES)"
 	$(VERILATOR) $(VERILATOR_FLAGS) \
-		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN)) $^
+        --Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN)) $^
 
 # 测试目标
 test: $(VSRCS) $(TEST_CSRCS)
 	@rm -rf $(OBJ_DIR)
 	@echo "Building test executable"
 	$(VERILATOR) $(VERILATOR_FLAGS) \
-		--Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN)) $^
+        --Mdir $(OBJ_DIR) --exe -o $(abspath $(BIN)) $^
 	./$(BIN)
 
 # 仿真目标
@@ -84,4 +101,4 @@ clean:
 all: default
 
 # 默认 NEMU_HOME（如果未定义）
-NEMU_HOME ?= $(WORK_DIR)/../nemu修改我npc的makefile，为其加上路径
+NEMU_HOME ?= $(WORK_DIR)/../nemu

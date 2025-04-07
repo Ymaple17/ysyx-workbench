@@ -1,7 +1,5 @@
 #include <isa.h>
 #include "local-include/reg.h"
-
-
 #include "verilated.h"
 #include "verilated_dpi.h"
 

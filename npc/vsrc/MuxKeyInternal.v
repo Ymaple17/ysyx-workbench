@@ -1,3 +1,4 @@
+/* verilator lint_off MULTITOP */
 module MuxKeyInternal #(NR_KEY = 2, KEY_LEN = 1, DATA_LEN = 1, HAS_DEFAULT = 0) (
   output reg [DATA_LEN-1:0] out,
   input [KEY_LEN-1:0] key,
@@ -33,4 +34,4 @@ module MuxKeyInternal #(NR_KEY = 2, KEY_LEN = 1, DATA_LEN = 1, HAS_DEFAULT = 0) 
     else out = (hit ? lut_out : default_out);
   end
 endmodule
-
+/* verilator lint_on MULTITOP */

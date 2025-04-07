@@ -7,48 +7,48 @@
 #include <errno.h>
 
 #define MAX_SIZE 16    // 环形缓冲区最大空间
-
+#define MAX_IRINGBUF 16
 extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-
 // 指令缓冲区结构
 typedef struct {
     word_t pc;      // 程序计数器
     uint32_t inst;  // 指令
 } Instbuf;
-
 int func_num = 0;           // 符号表中函数数量
-Instbuf iringbuf[MAX_SIZE]; // 环形缓冲区
+Instbuf iringbuf[MAX_IRINGBUF]; // 环形缓冲区
 int cur_inst = 0;           // 当前指令位置
 bool full = false;          // 缓冲区是否满
 
 // 跟踪指令
 extern "C" void trace_inst(word_t pc, uint32_t inst) {
-    iringbuf[cur_inst].pc = pc;
-    iringbuf[cur_inst].inst = inst;
-    cur_inst = (cur_inst + 1) % MAX_SIZE;    // 更新缓冲区位置
-    full = full || cur_inst == 0;            // 检查是否满
+  iringbuf[cur_inst].pc = pc;
+  iringbuf[cur_inst].inst = inst;
+  cur_inst = (cur_inst + 1) % MAX_IRINGBUF;
+  full = full || cur_inst == 0;
 }
 
 // 显示最近执行的指令
 void display_inst() {
-    if (!full && !cur_inst) return;          // 缓冲区为空，直接返回
+  if (!full && !cur_inst) return;
 
-    int end = cur_inst;                      // 结束位置
-    int i = full ? cur_inst : 0;             // 开始位置
+  int end = cur_inst;
+  int i = full?cur_inst:0;
 
-    char buf[256];                           // 增大缓冲区大小以防溢出
-    char *p;
+  void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
+  char buf[128]; // 128 should be enough!
+  char *p;
+  //Statement("Most recently executed instructions");
+  //printf("[DEBUG] inst raw = 0x%08x at pc = 0x%08x\n", iringbuf[i].inst, iringbuf[i].pc);
+  do {
+    p = buf;
+    p += sprintf(buf, "%s" FMT_WORD ": %08x ", (i+1)%MAX_IRINGBUF==end?" --> ":"     ", iringbuf[i].pc, iringbuf[i].inst);
+    //printf("[disassemble] call with inst = 0x%08x at pc = 0x%08x\n", iringbuf[i].inst, iringbuf[i].pc);
+    disassemble(p, buf+sizeof(buf)-p, iringbuf[i].pc, (uint8_t *)&iringbuf[i].inst, 4);
 
-    do {
-        p = buf;
-        p += sprintf(buf, "%s" FMT_WORD ": %08x ", (i + 1) % MAX_SIZE == end ? " --> " : "     ", iringbuf[i].pc, iringbuf[i].inst);
-        disassemble(p, buf + sizeof(buf) - p, iringbuf[i].pc, (uint8_t *)&iringbuf[i].inst, 4);
-
-        if ((i + 1) % MAX_SIZE == end) printf(ANSI_FG_RED);    // 高亮当前指令
-        puts(buf);
-        i = (i + 1) % MAX_SIZE;
-    } while (i != end);
-    puts(ANSI_NONE);    // 恢复默认颜色
+    if ((i+1)%MAX_IRINGBUF==end) printf(ANSI_FG_RED);
+    puts(buf);
+  } while ((i = (i+1)%MAX_IRINGBUF) != end);
+  puts(ANSI_NONE);
 }
 
 // 显示内存读操作

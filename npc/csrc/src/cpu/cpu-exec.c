@@ -33,7 +33,7 @@ static void trace_and_difftest(Decode *_this, vaddr_t dnpc){
 static void exec_once(Decode *s, vaddr_t pc){
     s->pc = pc;
     s->snpc = pc;
-    npc_run_once(s);   //对顶层模块赋值
+    npc_run_once(s);
     cpu.pc = s->dnpc;
 #ifdef CONFIG_ITRACE
     char *p = s->logbuf;
@@ -50,7 +50,6 @@ static void exec_once(Decode *s, vaddr_t pc){
     space_len = space_len * 3 + 1;
     memset(p, ' ', space_len);
     p += space_len;
-
     disassemble(p, s->logbuf + sizeof(s->logbuf) - p, s->pc, (uint8_t *)&s->isa.inst.val, ilen);
 
 #endif 
@@ -77,7 +76,8 @@ static void statistic(){
 
 
 void assert_fail_msg(){
-    IFDEF(CONFIG_IRINGBUF, display_inst()); //IRINGBUF
+    //IFDEF(CONFIG_IRINGBUF, display_inst()); //IRINGBUF
+    display_inst();
     isa_reg_display();
     statistic();
 }

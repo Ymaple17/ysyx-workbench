@@ -20,12 +20,16 @@
 
 //extern CPU_state cpu;
 
-__EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction) {
-  if(direction == DIFFTEST_TO_REF){
-    memcpy(guest_to_host(addr),buf,n);
-  }
-  else assert(0);
+__EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction) 
+{
+    if(direction == DIFFTEST_TO_REF){
+        memcpy(guest_to_host(addr), buf, n);
+    }
+    else{
+  assert(0);
+    }
 }
+
 
 __EXPORT void difftest_regcpy(CPU_state *dut, bool direction) {
     // CPU_state *diff_ref = (CPU_state *)dut;

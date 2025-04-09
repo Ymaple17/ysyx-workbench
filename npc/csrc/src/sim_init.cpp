@@ -84,8 +84,9 @@ void single_cycle() {
 
 static void reset(int n) {
     printf("Resetting for %d cycles...\n", n);
-    top->rst = 1;
-    
+    // 假设复位信号低电平有效，修改为 top->rst = 0;
+    top->rst = 1; 
+
     for (int i = 0; i < n; i++) {
         top->clk = !top->clk;
         top->eval();
@@ -93,7 +94,8 @@ static void reset(int n) {
         IFDEF(CONFIG_WAVE, step_and_dump_wave());
     }
     
-    top->rst = 0;
+    // 释放复位信号，修改为 top->rst = 1;
+    top->rst = 0; 
     printf("Reset complete.\n");
 }
 
@@ -112,6 +114,8 @@ void init_sim() {
     
     // 初始化时钟
     top->clk = 0;
+    // 初始化复位信号，假设低电平有效
+    top->rst = 0; 
     cycle_count = 0;
     
     printf("Simulation initialized.\n");
@@ -165,4 +169,4 @@ extern "C" void npc_run_once(Decode *s) {
     if (top->pc % 4 != 0) {
         printf("Warning: Unaligned PC detected: 0x%08x\n", top->pc);
     }
-}
+}    

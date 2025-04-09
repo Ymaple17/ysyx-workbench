@@ -26,6 +26,7 @@ LDFLAGS  += -O2 -Og -ggdb3 -ldl -pie -lreadline
 -include $(NPC_HOME)/include/config/auto.conf.cmd
 include $(NPC_HOME)/scripts/config.mk
 include $(NPC_HOME)/scripts/build.mk
+include $(NPC_HOME)/csrc/src/utils/filelist.mk
 # Include all filelist.mk to merge file lists
 FILELIST_MK = $(shell find ./csrc -name "filelist.mk")
 include $(FILELIST_MK)

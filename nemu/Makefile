@@ -1,18 +1,3 @@
-#***************************************************************************************
-# Copyright (c) 2014-2024 Zihao Yu, Nanjing University
-#
-# NEMU is licensed under Mulan PSL v2.
-# You can use this software according to the terms and conditions of the Mulan PSL v2.
-# You may obtain a copy of Mulan PSL v2 at:
-#          http://license.coscl.org.cn/MulanPSL2
-#
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
-# EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
-# MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
-#
-# See the Mulan PSL v2 for more details.
-#**************************************************************************************/
-
 # Sanity check环境检查
 ifeq ($(wildcard $(NEMU_HOME)/src/nemu-main.c),)
   $(error NEMU_HOME=$(NEMU_HOME) is not a NEMU repo)
@@ -34,10 +19,13 @@ NAME    = $(GUEST_ISA)-nemu-$(ENGINE)
 FILELIST_MK = $(shell find -L ./src -name "filelist.mk")
 include $(FILELIST_MK)
 
+# 强制包含disasm.c
+FORCE_SRCS-y += $(NEMU_HOME)/src/utils/disasm.c
+
 # Filter out directories and files in blacklist to obtain the final set of source files过滤黑名单文件
 DIRS-BLACKLIST-y += $(DIRS-BLACKLIST)
 SRCS-BLACKLIST-y += $(SRCS-BLACKLIST) $(shell find -L $(DIRS-BLACKLIST-y) -name "*.c")
-SRCS-y += $(shell find -L $(DIRS-y) -name "*.c")
+SRCS-y += $(shell find -L $(DIRS-y) -name "*.c") $(FORCE_SRCS-y)
 SRCS = $(filter-out $(SRCS-BLACKLIST-y),$(SRCS-y))
 
 # Extract compiler and options from menuconfig提取编译器和选项

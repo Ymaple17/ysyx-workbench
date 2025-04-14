@@ -1,16 +1,27 @@
+/***************************************************************************************
+* Copyright (c) 2014-2024 Zihao Yu, Nanjing University
+*
+* NEMU is licensed under Mulan PSL v2.
+* You can use this software according to the terms and conditions of the Mulan PSL v2.
+* You may obtain a copy of Mulan PSL v2 at:
+*          http://license.coscl.org.cn/MulanPSL2
+*
+* THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+* EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+* MERCHANTABILITY OR FIT FOR A PARTICULAR PURPOSE.
+*
+* See the Mulan PSL v2 for more details.
+***************************************************************************************/
 #include "local-include/reg.h"
 #include <cpu/cpu.h>
 #include <cpu/ifetch.h>
 #include <cpu/decode.h>
-
 #define R(i) gpr(i)
 #define Mr vaddr_read
 #define Mw vaddr_write
 void trace_func_call(paddr_t pc, paddr_t target, bool is_tail);
 void trace_func_ret(paddr_t pc);
 void itrace_inst(word_t pc, uint32_t inst);
-void display_call_func(word_t pc, word_t func_addr);
-void display_ret_func(word_t pc);
 enum {
   TYPE_I, TYPE_U, TYPE_S,
   TYPE_N, TYPE_J, TYPE_R, TYPE_B,// none
@@ -76,7 +87,7 @@ static int decode_exec(Decode *s) {
 																																IFDEF(CONFIG_FTRACE, if(rd == 1)
 																																												trace_func_call(s->pc, s->dnpc, false);
 																																												));
-	INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, s->dnpc = (src1 + imm) & ~(word_t)1; R(rd) = s->pc + 4;IFDEF(CONFIG_ITRACE, {
+	INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, s->dnpc = (src1 + imm) & ~(word_t)1; R(rd) = s->pc + 4;IFDEF(CONFIG_FTRACE, {
   if (s->isa.inst == 0x00008067) {
     trace_func_ret(s->pc); // ret -> jalr x0, 0(x1)
   } else if (rd == 1) {
@@ -109,7 +120,6 @@ static int decode_exec(Decode *s) {
 	INSTPAT("??????? ????? ????? 101 ????? 11000 11", bge    , B, if((sword_t)src1 >= (sword_t)src2)	s->dnpc = s->pc + imm);
 	INSTPAT("??????? ????? ????? 100 ????? 11000 11", blt    , B, if((sword_t)src1 < (sword_t)src2) 	s->dnpc = s->pc + imm);
 	INSTPAT("??????? ????? ????? 110 ????? 11000 11", bltu   , B, if(src1 < src2)		s->dnpc = s->pc + imm);
-
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0
   INSTPAT("??????? ????? ????? ??? ????? ????? ??", inv    , N, INV(s->pc));
   INSTPAT_END();

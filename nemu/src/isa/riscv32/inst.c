@@ -6,6 +6,8 @@
 #define R(i) gpr(i)
 #define Mr vaddr_read
 #define Mw vaddr_write
+void trace_func_call(paddr_t pc, paddr_t target, bool is_tail);
+void trace_func_ret(paddr_t pc);
 void itrace_inst(word_t pc, uint32_t inst);
 void display_call_func(word_t pc, word_t func_addr);
 void display_ret_func(word_t pc);
@@ -72,14 +74,18 @@ static int decode_exec(Decode *s) {
 	INSTPAT("010000? ????? ????? 101 ????? 00100 11", srai   , I, R(rd) = (sword_t)src1 >> BITS(imm, 4, 0));
 	INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal    , J, R(rd) = s->pc + 4;s->dnpc = s->pc;s->dnpc += imm;
 																																IFDEF(CONFIG_FTRACE, if(rd == 1)
-																																												display_call_func(s -> pc, s -> dnpc);
+																																												trace_func_call(s->pc, s->dnpc, false);
 																																												));
-	INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, s->dnpc = (src1 + imm) & ~(word_t)1; R(rd) = s->pc + 4;
-																																IFDEF(CONFIG_FTRACE, if(rd == 1)
-																																												display_call_func(s -> pc, s -> dnpc);
-																																										 else if(rd == 0 && src1 == R(1))
-																																												display_ret_func(s -> pc);
-																																												));
+	INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, s->dnpc = (src1 + imm) & ~(word_t)1; R(rd) = s->pc + 4;IFDEF(CONFIG_ITRACE, {
+  if (s->isa.inst == 0x00008067) {
+    trace_func_ret(s->pc); // ret -> jalr x0, 0(x1)
+  } else if (rd == 1) {
+    trace_func_call(s->pc, s->dnpc, false);
+  } else if (rd == 0 && imm == 0) {
+    trace_func_call(s->pc, s->dnpc, true);
+  }
+}););
+
 	INSTPAT("0000000 ????? ????? 000 ????? 01100 11", add    , R, R(rd) = src1 + src2);
 	INSTPAT("0100000 ????? ????? 000 ????? 01100 11", sub    , R, R(rd) = src1 - src2);
 	INSTPAT("0000001 ????? ????? 000 ????? 01100 11", mul    , R, R(rd) = src1 * src2);

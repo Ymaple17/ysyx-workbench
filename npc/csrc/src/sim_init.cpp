@@ -79,22 +79,18 @@ void single_cycle() {
     // 更新周期计数器和波形
     cycle_count++;
     contextp->timeInc(1);
-    IFDEF(CONFIG_WAVE, step_and_dump_wave());
+    step_and_dump_wave();
 }
 
 static void reset(int n) {
     printf("Resetting for %d cycles...\n", n);
-    // 假设复位信号低电平有效，修改为 top->rst = 0;
     top->rst = 1; 
-
     for (int i = 0; i < n; i++) {
         top->clk = !top->clk;
         top->eval();
         contextp->timeInc(1);
-        IFDEF(CONFIG_WAVE, step_and_dump_wave());
+        step_and_dump_wave();
     }
-    
-    // 释放复位信号，修改为 top->rst = 1;
     top->rst = 0; 
     printf("Reset complete.\n");
 }

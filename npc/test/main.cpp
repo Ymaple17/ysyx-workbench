@@ -36,8 +36,8 @@ uint32_t pmem_read(uint32_t * memory,uint32_t vaddr){
 } 
 
 void single_cycle(){
-    top->clk = 0;top->eval();
     top->clk = 1;top->eval();
+    top->clk = 0;top->eval();
 }
 
 static void reset(int n){

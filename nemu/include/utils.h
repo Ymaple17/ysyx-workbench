@@ -69,6 +69,7 @@ uint64_t get_time();
 
 #define ftrace_write log_write
 #define mtrace_write log_write
+#define dtrace_write log_write
 
 #define _Log(...) \
   do { \

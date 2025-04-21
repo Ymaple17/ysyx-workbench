@@ -38,8 +38,8 @@ CSRCS += $(shell find $(abspath ./csrc) -name "*.c" -o -name "*.cpp" -o -name "*
 VSRCS = $(shell find $(abspath ./vsrc) -name "*.v" -o -name "*.sv")
 
 # 确保包含必要的源文件
-CSRCS += $(wildcard $(NPC_HOME)/csrc/src/device/io/mmio.c)
-CSRCS += $(wildcard $(NPC_HOME)/csrc/src/monitor/sdb/sdl_utils.c)  # 假设SDL实现在这里
+#CSRCS += $(wildcard $(NPC_HOME)/csrc/src/device/io/mmio.c)
+#CSRCS += $(wildcard $(NPC_HOME)/csrc/src/monitor/sdb/sdl_utils.c)  # 假设SDL实现在这里
 
 # Verilator配置
 VERILATOR = verilator

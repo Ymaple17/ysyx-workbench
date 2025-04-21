@@ -145,7 +145,7 @@ extern "C" void trace_inst(word_t pc, uint32_t inst);
 
 extern "C" void init_module() {
     reset(10);
-    printf("Initial PC = 0x%08x\n", top->pc);
+    printf("Initial PC = 0x%08x\n", top->tmp_pc);
 }
 
 extern "C" void npc_run_once(Decode *s) {

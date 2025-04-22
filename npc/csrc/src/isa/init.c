@@ -10,13 +10,13 @@ static const uint32_t img [] = {
   // 0x00c000ef,
   // 0x00c12083,	//lw
   // 0x00053513,	//seqzq
-  0x800002b7,  // lui t0,0x80000
+  ////0x800002b7,  // lui t0,0x80000
   // 0x00050463,  //beq
-  0x0002a023,  // sw  zero,0(t0)
-  0x0002a503,  // lw  a0,0(t0)
+  ////0x0002a023,  // sw  zero,0(t0)
+  ////0x0002a503,  // lw  a0,0(t0)
   // 0x01851513,  //slli a0,a0,0x18
   /* 0x41855513,  //srai a0,a0,0x18 */
-  0x00100073,  // ebreak (used as nemu_trap)
+  ////0x00100073,  // ebreak (used as nemu_trap)
 };
 
 static void restart(){

@@ -10,7 +10,7 @@ void init_difftest(char *ref_so_file, long img_size, int port);
 void init_device();
 void init_sdb();
 void parse_elf(const char *elf_file);
-extern "C" void init_disasm();
+void init_disasm();
 void init_sim();
 extern "C" void test();
 extern "C" void init_module();
@@ -129,7 +129,8 @@ void init_monitor(int argc, char *argv[]) {
   /* Initialize the simple debugger. */
   init_sdb();
 
-  IFDEF(CONFIG_ITRACE, extern "C" void init_disasm());
+  IFDEF(CONFIG_ITRACE,init_disasm());
+
   /* Display welcome message. */
   welcome();
 }

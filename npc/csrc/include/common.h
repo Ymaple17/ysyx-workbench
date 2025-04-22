@@ -22,7 +22,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include <generated/autoconf.h>
+#include </home/qiu/ysyx-workbench/npc/include/generated/autoconf.h>
 #include <macro.h>
 
 

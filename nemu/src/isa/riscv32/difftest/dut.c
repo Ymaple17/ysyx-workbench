@@ -37,10 +37,12 @@ bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
   return true;
 }*/
 
+extern const char *regs[];
+
 bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
   if(cpu.pc != ref_r -> pc)
   {
-    printf("PC = 0x%x, Difftest failed at PC, Difftest get 0x%x, NEMU get 0x%x\n", cpu.pc, ref_r -> pc, cpu.pc);
+    printf("[difftest]PC = 0x%x, Difftest failed at PC, Difftest=0x%x, NEMU=0x%x\n", cpu.pc, ref_r -> pc, cpu.pc);
     return false;
   }
 
@@ -48,7 +50,7 @@ bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
   {
     if(cpu.gpr[integer_register_index] != ref_r -> gpr[integer_register_index])
     {
-      printf("PC = 0x%x, Difftest Reg Compare failed at GPR[%d], Difftest Get 0x%x, NEMU Get 0x%x\n", cpu.pc, integer_register_index, ref_r -> gpr[integer_register_index], cpu.gpr[integer_register_index]);
+      printf("[difftest]PC = 0x%x, Difftest Reg Compare failed at %-3s, Difftest=0x%x, NEMU=0x%x\n", cpu.pc, regs[integer_register_index], ref_r -> gpr[integer_register_index], cpu.gpr[integer_register_index]);
       return false;
     }
 }

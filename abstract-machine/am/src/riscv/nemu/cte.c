@@ -18,7 +18,7 @@ Context* __am_irq_handle(Context *c) {
   return c;
 }
 
-extern void __am_asm_trap(void);
+extern void __am_asm_trap(void);//中断异常入口
 
 bool cte_init(Context*(*handler)(Event, Context*)) {
   // initialize exception entry

@@ -99,8 +99,4 @@ finish:
 #define INSTPAT_START(name) { const void * __instpat_end = &&concat(__instpat_end_, name);
 #define INSTPAT_END(name)   concat(__instpat_end_, name): ; }
 
-#define ECALL(dnpc) {bool success; dnpc = isa_raise_intr(isa_reg_str2val("a7",&success),s->pc);}
-
-
-
 #endif

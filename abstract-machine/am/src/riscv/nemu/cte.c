@@ -8,13 +8,19 @@ Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     Event ev = {0};
     switch (c->mcause) {
-      case 3: ev.event = EVENT_SYSCALL; break;
-      case 11: ev.event = EVENT_YIELD; break;
+      case 11: 
+        if (c->gpr[17] == -1)  // check a7 value
+          ev.event = EVENT_YIELD;
+        else 
+          ev.event = EVENT_SYSCALL;
+        c->mepc += 4;
+        break;
       default: ev.event = EVENT_ERROR; break;
     }
     c = user_handler(ev, c);
     assert(c != NULL);
   }
+
   return c;
 }
 

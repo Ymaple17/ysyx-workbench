@@ -57,6 +57,22 @@ bool isa_difftest_checkregs(CPU_state *ref_r, vaddr_t pc) {
 
   // M-State CSR checkings
   //printf("PC = 0x%lx, Difftest success\n", cpu.pc);
+  if (ref_r->csrs.mstatus != cpu.csrs.mstatus) {
+        printf("mstatus is different! ref: 0x%08x, current: 0x%08x\n", ref_r->csrs.mstatus, cpu.csrs.mstatus);
+        return false;
+    }
+    if (ref_r->csrs.mcause != cpu.csrs.mcause) {
+        printf("mcause is different! ref: 0x%08x, current: 0x%08x\n", ref_r->csrs.mcause, cpu.csrs.mcause);
+        return false;
+    }
+    if (ref_r->csrs.mepc != cpu.csrs.mepc) {
+        printf("mepc is different! ref: 0x%08x, current: 0x%08x\n", ref_r->csrs.mepc, cpu.csrs.mepc);
+        return false;
+    }
+    if (ref_r->csrs.mtvec != cpu.csrs.mtvec) {
+        printf("mtvec is different! ref: 0x%08x, current: 0x%08x\n", ref_r->csrs.mtvec, cpu.csrs.mtvec);
+        return false;
+    }
   return true;
 }
 

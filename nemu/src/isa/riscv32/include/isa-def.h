@@ -19,10 +19,10 @@
 #include <common.h>
 
 typedef struct{
-  word_t mepc;
+  word_t mcause;
+  vaddr_t mepc;
   word_t mstatus;
   word_t mtvec;
-  word_t mcause;
 } riscv32_CSRS;
 
 typedef struct {

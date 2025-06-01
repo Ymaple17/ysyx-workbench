@@ -7,22 +7,29 @@ static Context* (*user_handler)(Event, Context*) = NULL;
 Context* __am_irq_handle(Context *c) {
   if (user_handler) {
     Event ev = {0};
-    switch (c->mcause) {
-      case 11: 
-        if (c->gpr[17] == -1)  // check a7 value
-          ev.event = EVENT_YIELD;
-        else 
-          ev.event = EVENT_SYSCALL;
-        c->mepc += 4;
-        break;
-      default: ev.event = EVENT_ERROR; break;
+    if (c->GPR1 == -1) {
+      ev.event = EVENT_YIELD;
+    } else if (c->GPR1 >= 0 && c->GPR1 <= 19) {
+      ev.event = EVENT_SYSCALL;
+    } else {
+      ev.event = EVENT_ERROR;
     }
+
     c = user_handler(ev, c);
+
+    switch (ev.event) {
+      case EVENT_PAGEFAULT:
+      case EVENT_ERROR:
+        break;
+      default: c->mepc += 4;
+    }
+
     assert(c != NULL);
   }
 
   return c;
 }
+
 
 extern void __am_asm_trap(void);//中断异常入口
 

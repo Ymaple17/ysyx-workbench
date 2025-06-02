@@ -18,7 +18,7 @@
 #include <cpu/decode.h>
 #define R(i) gpr(i)
 #define CSR(i) *csr_reg(i)
-#define ECALL(dnpc) { bool success; dnpc = (isa_raise_intr(isa_reg_str2val("a7", &success), s->pc)); }
+#define ECALL(dnpc) { bool success; dnpc = (isa_raise_intr(isa_reg_str2val("$a7", &success), s->pc)); }
 #define Mr vaddr_read
 #define Mw vaddr_write
 void trace_func_call(paddr_t pc, paddr_t target, bool is_tail);

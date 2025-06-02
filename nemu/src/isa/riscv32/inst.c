@@ -30,14 +30,14 @@ enum {
 };
 
 static vaddr_t *csr_reg(word_t imm) {
-  switch (imm) {
-    case 0x300 :  return &(cpu.csrs.mstatus);
-    case 0x305 :  return &(cpu.csrs.mtvec);
-    case 0x341 :  return &(cpu.csrs.mepc);
-    case 0x342 :  return &(cpu.csrs.mcause);
-    default : Log("csrs error");
+  switch (imm)
+  {
+  case 0x341: return &(cpu.csrs.mepc);
+  case 0x342: return &(cpu.csrs.mcause);
+  case 0x300: return &(cpu.csrs.mstatus);
+  case 0x305: return &(cpu.csrs.mtvec);
+  default: panic("Unknown csr");
   }
-  return NULL;
 }
 
 #define src1R() do { *src1 = R(rs1); } while (0)

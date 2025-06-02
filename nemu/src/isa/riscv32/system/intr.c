@@ -18,13 +18,10 @@
 word_t isa_raise_intr(word_t NO, vaddr_t epc) {
   cpu.csrs.mcause = NO;
   cpu.csrs.mepc = epc;
-  //cpu.csrs.mstatus = (cpu.csrs.mstatus & ~(1 << 7)) | ((cpu.csrs.mstatus & (1 << 3)) << 4); // MIE -> MPIE
-  //cpu.csrs.mstatus &= ~(1 << 3); // 0 -> MIE
-  //cpu.csrs.mstatus &= ~((1 << 11) + (1 << 12)); // 00 -> MPP
-  //cpu.csrs.mstatus |= cpu.mode << 11; // mode -> MPP
-  //cpu.mode = 0x03;
+
   return cpu.csrs.mtvec;
 }
+
 
 word_t isa_query_intr() {
   return INTR_EMPTY;

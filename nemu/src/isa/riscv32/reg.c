@@ -18,36 +18,36 @@
 #include <cpu/cpu.h>
 
 const char *regs[] = {
-  "$0", "ra", "sp", "gp", "tp", "t0", "t1", "t2",
-  "s0", "s1", "a0", "a1", "a2", "a3", "a4", "a5",
-  "a6", "a7", "s2", "s3", "s4", "s5", "s6", "s7",
-  "s8", "s9", "s10", "s11", "t3", "t4", "t5", "t6",
+  "$0", "$ra", "$sp", "$gp", "$tp", "$t0", "$t1", "$t2",
+  "$s0", "$s1", "$a0", "$a1", "$a2", "$a3", "$a4", "$a5",
+  "$a6", "$a7", "$s2", "$s3", "$s4", "$s5", "$s6", "$s7",
+  "$s8", "$s9", "$s10", "$s11", "$t3", "$t4", "$t5", "$t6",
 };
 
 void isa_reg_display() {
-	printf("The 32 General-Purpose Register is:\n");
-	for(int i = 0;i < 32; i++){
-		printf(ANSI_FG_GREEN "%-3s: " ANSI_FG_BLUE FMT_WORD " " ANSI_NONE, regs[i], cpu.gpr[i]);
-		if(i%5 == 4)
-			printf("\n");
-		}
-		printf("\n");
-		printf("Program Counter:\n");
-		printf(ANSI_FG_RED "%-3s: " ANSI_FG_BLUE FMT_WORD ANSI_NONE"\n", "$pc", cpu.pc);
+  printf("The 32 General-Purpose Register is:\n");
+  for(int i = 0; i < 32; i++){
+    printf(ANSI_FG_GREEN "%-4s: " ANSI_FG_BLUE FMT_WORD " " ANSI_NONE, regs[i], cpu.gpr[i]);
+    if(i%5 == 4)
+      printf("\n");
+  }
+  printf("\n");
+  printf("Program Counter:\n");
+  printf(ANSI_FG_RED "%-4s: " ANSI_FG_BLUE FMT_WORD ANSI_NONE"\n", "$pc", cpu.pc);
 }
 
 word_t isa_reg_str2val(const char *s, bool *success) {
-	char tmp[3] = {s[1], s[2]};
   for (int i = 0; i < 32; i++) {
-    if(!strcmp(tmp, regs[i])) {
+    if (strcmp(s, regs[i]) == 0) {
       *success = true;
       return cpu.gpr[i];
     }
   }
-  if(!strcmp(tmp, "pc")) {
+  if (strcmp(s, "$pc") == 0) {
     *success = true;
     return cpu.pc;
   }
+  
   Log("Register not found!");
   *success = false;
   return 0;

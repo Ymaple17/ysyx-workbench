@@ -207,6 +207,7 @@ module top(
 
     always @(posedge clk) begin
       npc_pmem_read(mem_addr, rdata, mem_ren);
+	  
       npc_pmem_write(mem_addr, store_data, {4'b0,store_len}, mem_wen);
     end
 

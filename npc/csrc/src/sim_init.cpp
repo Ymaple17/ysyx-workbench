@@ -9,6 +9,11 @@
 #include "verilated_vcd_c.h"
 #include "Vtop.h"
 
+#define CLOCK_ADDRESS 0xa0000048 
+#define UART_BASE_ADDR 0xa00003F8  
+#define CLOCK_ADDR_LEN 8  
+#define UART_ADDR_LEN  8  
+
 // 全局变量
 VerilatedContext* contextp = NULL;
 VerilatedVcdC* tfp = NULL;
@@ -22,22 +27,43 @@ void step_and_dump_wave();
 
 /******************** 内存访问接口 ********************/
 extern "C" void npc_pmem_read(int raddr, int *rdata, char ren) {
+    *rdata = 0;  // 默认返回0
+    
+    // 读使能控制（原核心逻辑）
     if (!ren) {
-        *rdata = 0;
         return;
     }
     
-    // 静默处理复位时的0地址访问
+    // 地址对齐（参考pmem_read逻辑）
+    raddr = raddr & ~0x3u;  // 清除低两位，确保按4字节对齐
+    
+    // 静默处理复位时的0地址访问（原核心逻辑）
     if (raddr == 0x00000000) {
-        *rdata = 0;
         return;
     }
     
+    // 时钟地址处理（整合pmem_read逻辑）
+    if (raddr >= CLOCK_ADDRESS && raddr < CLOCK_ADDRESS + CLOCK_ADDR_LEN) {
+        uint64_t us = get_time();
+        if (raddr == CLOCK_ADDRESS) {
+            *rdata = (uint32_t)(us & 0xFFFFFFFF);  // 低32位
+            return;
+        } else if (raddr == CLOCK_ADDRESS + 4) {
+            *rdata = (uint32_t)((us >> 32) & 0xFFFFFFFF);  // 高32位
+            return;
+        }
+    }
+    
+    // 串口地址处理（整合pmem_read逻辑）
+    if (raddr >= UART_BASE_ADDR && raddr < UART_BASE_ADDR + UART_ADDR_LEN) {
+        return;  // 串口地址保持返回0（*rdata已初始化为0）
+    }
+    
+    // PMEM范围检查（原核心逻辑）
     if (raddr >= PMEM_LEFT && raddr <= PMEM_RIGHT) {
         *rdata = paddr_read(raddr, 4);
     } else {
-        *rdata = 0;
-        // 只输出非复位期的非法访问警告
+        // 非复位期的非法访问警告（原核心逻辑）
         if (cycle_count > 10) {
             printf("Warning: Invalid read at address 0x%08x\n", raddr);
         }
@@ -45,16 +71,27 @@ extern "C" void npc_pmem_read(int raddr, int *rdata, char ren) {
 }
 
 extern "C" void npc_pmem_write(int waddr, int wdata, char len, char wen) {
-    if (!wen) return;
-    
-    // 特殊处理复位时的0地址写入
+    if (!wen) return;  // 写使能控制（原核心逻辑）
+
+    // 地址对齐（参考pmem_write逻辑）
+    waddr = waddr & ~0x3u;  // 清除低两位，确保按4字节对齐
+
+    // 串口地址处理（整合pmem_write逻辑）
+    if (waddr >= UART_BASE_ADDR && waddr < UART_BASE_ADDR + UART_ADDR_LEN) {
+        putchar(static_cast<char>(wdata & 0xFF));  // 输出串口数据（低8位）
+        return;
+    }
+
+    // 特殊处理复位时的0地址写入（原核心逻辑）
     if (waddr == 0x00000000) {
         return;
     }
-    
+
+    // PMEM范围检查（原核心逻辑）
     if (waddr >= PMEM_LEFT && waddr <= PMEM_RIGHT) {
-        paddr_write((paddr_t)waddr, len, wdata);
+        paddr_write((paddr_t)waddr, len, wdata);  // 调用原写入函数
     } else {
+        // 非法地址警告（原核心逻辑）
         printf("Warning: Invalid write at address 0x%08x\n", waddr);
     }
 }

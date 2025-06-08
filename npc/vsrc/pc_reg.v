@@ -13,9 +13,9 @@ module pc_reg(
 		output reg [31:0]pc
 );
 
-  wire [31:0]br_pc = pc + imm;
+  wire [31:0] br_pc = (pc + imm) & ~3;
 	wire [31:0]jal_pc = result;
-	wire [31:0]jalr_pc = result & {{31{1'b1}}, 1'b0};//跳转地址最低位清零
+	wire [31:0] jalr_pc = result & ~3;
 
 	wire snpc_en = (!jal_en) & (!jalr_en) &(!brpc_en);	
 

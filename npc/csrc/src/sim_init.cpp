@@ -37,11 +37,6 @@ extern "C" void npc_pmem_read(int raddr, int *rdata, char ren) {
     // 地址对齐（参考pmem_read逻辑）
     raddr = raddr & ~0x3u;  // 清除低两位，确保按4字节对齐
     
-    // 静默处理复位时的0地址访问（原核心逻辑）
-    if (raddr == 0x00000000) {
-        return;
-    }
-    
     // 时钟地址处理（整合pmem_read逻辑）
     if (raddr >= CLOCK_ADDRESS && raddr < CLOCK_ADDRESS + CLOCK_ADDR_LEN) {
         uint64_t us = get_time();
@@ -79,11 +74,6 @@ extern "C" void npc_pmem_write(int waddr, int wdata, char len, char wen) {
     // 串口地址处理（整合pmem_write逻辑）
     if (waddr >= UART_BASE_ADDR && waddr < UART_BASE_ADDR + UART_ADDR_LEN) {
         putchar(static_cast<char>(wdata & 0xFF));  // 输出串口数据（低8位）
-        return;
-    }
-
-    // 特殊处理复位时的0地址写入（原核心逻辑）
-    if (waddr == 0x00000000) {
         return;
     }
 

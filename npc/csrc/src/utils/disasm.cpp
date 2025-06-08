@@ -45,40 +45,12 @@ void init_disasm() {
 }
 
 extern "C" void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte) {
-    printf("Disassembling: pc=0x%lx, nbyte=%d, code[0]=0x%02x\n", pc, nbyte, code[0]);
-    cs_insn *insn;
-    size_t count = cs_disasm_dl(handle, code, nbyte, pc, 0, &insn);
-    if (count != 1) {
-        fprintf(stderr, "Disassembly failed at pc=0x%lx, count=%zu\n", pc, count);
-        snprintf(str, size, "??");
-        if (count > 0) cs_free_dl(insn, count);
-        return;
-    }
-
-    // 检查 RV32E 寄存器范围（0-15）
-    uint32_t inst = *(uint32_t*)code;
-    uint32_t rd = (inst >> 7) & 0x1f;    // 目标寄存器
-    uint32_t rs1 = (inst >> 15) & 0x1f;  // 源寄存器 1
-    if (rd > 15 || rs1 > 15) {
-        fprintf(stderr, "Invalid RV32E register at pc=0x%lx: rd=%u, rs1=%u\n", pc, rd, rs1);
-        snprintf(str, size, "??");
-        cs_free_dl(insn, count);
-        return;
-    }
-
-    int ret = snprintf(str, size, "%s", insn->mnemonic);
-    if (ret < 0 || ret >= size) {
-        snprintf(str, size, "??");
-        cs_free_dl(insn, count);
-        return;
-    }
-
-    if (insn->op_str[0] != '\0') {
-        int remaining = size - ret;
-        if (remaining > 1) {
-            snprintf(str + ret, remaining, "\t%s", insn->op_str);
-        }
-    }
-
-    cs_free_dl(insn, count);
+	cs_insn *insn;
+	size_t count = cs_disasm_dl(handle, code, nbyte, pc, 0, &insn);
+  assert(count == 1);
+  int ret = snprintf(str, size, "%s", insn->mnemonic);
+  if (insn->op_str[0] != '\0') {
+    snprintf(str + ret, size - ret, "\t%s", insn->op_str);
+  }
+  cs_free_dl(insn, count);
 }

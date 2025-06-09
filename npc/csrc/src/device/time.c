@@ -14,38 +14,22 @@
 ***************************************************************************************/
 
 #include <common.h>
+#include <device/map.h>
 #include <device/alarm.h>
-#include <sys/time.h>
-#include <signal.h>
 
-#define MAX_HANDLER 8
+#define RTC_ADDR 0xa0000048
+static uint32_t *rtc_port_base = NULL;
 
-static alarm_handler_t handler[MAX_HANDLER] = {};
-static int idx = 0;
-
-void add_alarm_handle(alarm_handler_t h) {
-  assert(idx < MAX_HANDLER);
-  handler[idx ++] = h;
-}
-
-static void alarm_sig_handler(int signum) {
-  int i;
-  for (i = 0; i < idx; i ++) {
-    handler[i]();
+static void rtc_io_handler(uint32_t offset, int len, bool is_write) {
+  assert(offset == 0 || offset == 4);
+  if (!is_write && offset == 4) {
+    uint64_t us = get_time();
+    rtc_port_base[0] = (uint32_t)us;
+    rtc_port_base[1] = us >> 32;
   }
 }
 
-void init_alarm() {
-  struct sigaction s;
-  memset(&s, 0, sizeof(s));
-  s.sa_handler = alarm_sig_handler;
-  int ret = sigaction(SIGVTALRM, &s, NULL);
-  Assert(ret == 0, "Can not set signal handler");
-
-  struct itimerval it = {};
-  it.it_value.tv_sec = 0;
-  it.it_value.tv_usec = 1000000 / TIMER_HZ;
-  it.it_interval = it.it_value;
-  ret = setitimer(ITIMER_VIRTUAL, &it, NULL);
-  Assert(ret == 0, "Can not set timer");
+void init_timer() {
+  rtc_port_base = (uint32_t *)new_space(8);
+  add_mmio_map("rtc", RTC_ADDR, rtc_port_base, 8, rtc_io_handler);
 }

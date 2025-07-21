@@ -1,226 +1,176 @@
+`include "defs.vh"
 module top(
-	input clk,
-	input rst,
-	input [31:0]inst,
-  //input pc_wen,
-	output [31:0]dnpc,
-	output [31:0]snpc,
-  output reg [31:0]tmp_pc,
-	output reg [31:0]pc
+    input wire clk,
+    input wire rst,
+    output [`DATA_WIDTH-1:0] imem_pc
 );
+    import "DPI-C" function int pmem_read(input int raddr);
+    import "DPI-C" function void pmem_write(input int waddr, input int wdata, input byte wmask);
 
+    assign imem_pc = imem_addr;
 
-	wire [31:0]imm;
-	wire [6:0]opcode;
-  wire [6:0]func7;
-  wire [2:0]func3;
-	wire [4:0]rs1;
-	wire [4:0]rs2;
-	wire [4:0]rd;
+    // Internal signals
+    wire [`DATA_WIDTH-1:0] pc;
+    wire [31:0] inst;
+    wire [`DATA_WIDTH-1:0] reg_write_data;
+    wire [4:0] alu_op;
+    wire [1:0] op1_sel;
+    wire [1:0] op2_sel;
+    wire [2:0] pc_sel;
+    wire rf_we;
+    wire mem_en;
+    wire mem_wen;
+    wire [1:0] wb_sel;
+    wire [`DATA_WIDTH-1:0] Op1;
+    wire [`DATA_WIDTH-1:0] Op2;
+    wire [`DATA_WIDTH-1:0] pc_plus4;
+    wire [`DATA_WIDTH-1:0] jump_reg_target;
+    wire [`DATA_WIDTH-1:0] br_target;
+    wire [`DATA_WIDTH-1:0] jmp_target;
+    wire br_eq;
+    wire br_lt;
+    wire br_ltu;
+    wire [2:0] ctl_mem_access;
+    wire [`REG_ADDR_WIDTH-1:0] rs1_addr;
+    wire [`REG_ADDR_WIDTH-1:0] rs2_addr;
+    wire [`REG_ADDR_WIDTH-1:0] waddr;
+    wire [`DATA_WIDTH-1:0] rdata1;
+    wire [`DATA_WIDTH-1:0] rdata2;
 
-	wire [31:0]rd_data1;
-	wire [31:0]rd_data2;
-	wire [31:0]alu_data1;
-  wire [31:0]alu_data2;
-
-	wire [31:0]result;	//add result
-	
-
-
-  wire brpc_en; //分支pc使能信号
-
-  wire w_pc;
-	wire w_alu;
-  wire w_load;
-
-
-	pc_reg pc_reg1(
-		.clk(clk),
-		.rst(rst),
-		.jal_en(jal_en),
-		.jalr_en(jalr_en),
-    .brpc_en(brpc_en),
-    .imm(imm),
-		.result(result),
-    .pc_wen(1'b1),
-		.dnpc(dnpc),
-		.snpc(snpc),
-    .tmp_pc(tmp_pc),
-		.pc(pc)
-	);
-
-	decoder decoder(
-		.inst(inst),
-		.opcode(opcode),
-    .func7(func7),
-    .func3(func3),
-    .rs1(rs1),
-		.rs2(rs2),
-		.rd(rd),
-		.imm(imm)
-	);
-
-	regfile regfile1(
-		.clk(clk),
-		.rst(rst),
-		.w_en(regwrite),
-		.rs1(rs1),
-		.rs2(rs2),
-		.rd(rd),
-		.w_pc(w_pc),
-		.w_alu(w_alu),
-    		.w_load(w_load),
-    		.load_data(load_data),
-		.alu_result(result),
-		.pc_result(snpc),
-		.rd_data1(rd_data1),
-		.rd_data2(rd_data2)
-	);
-
-	wire pc_sel;
-  	wire imm_sel;
-	wire regwrite;
-
-	wire jal_en;
-	wire jalr_en;
-  	wire br_en;   //分支指令使能信号
-  	wire lgc_en;
-  	wire md_en;
-  	wire ebreak;
-
-  	wire [3:0]lgc_op; //加、减、逻辑运算和移位运算
-  	wire [2:0]md_op;  //乘、除和取余运算
-  	wire [2:0]br_op;  //分支跳转
-  	wire lb;
-  	wire lh;
-  	wire lw;
-  	wire lbu;
-  	wire lhu;
-  	wire sb;
-  	wire sh;
-  	wire sw;
-  	wire mem_wen;
-  	wire mem_ren;
-	idu idu1(
-		.idu_opcode(opcode),
-    		.idu_func7(func7),
-    		.idu_func3(func3),
-    		.idu_rs2(rs2),
-		.pc_sel(pc_sel),
-    		.imm_sel(imm_sel),
-		.regwrite(regwrite),
-		.jal_en(jal_en),
-		.jalr_en(jalr_en),
-    .ebreak(ebreak),
-    .lgc_op(lgc_op),
-    .md_op(md_op),
-    .br_op(br_op),
-    .lgc_en(lgc_en),
-    .md_en(md_en),
-    .br_en(br_en),
-
-    .lb(lb),
-    .lh(lh),
-    .lw(lw),
-    //.ld(ld),
-    .lbu(lbu),
-    .lhu(lhu),
-    //.lwu(lwu),
-    .sb(sb),
-    .sh(sh),
-    .sw(sw),
-    //.sd(sd),
-    .mem_wen(mem_wen),
-    .mem_ren(mem_ren),
-    .w_pc(w_pc),
-    .w_alu(w_alu),
-    .w_load(w_load)
-	);
-
-  wire [31:0]rdata;
-  wire [3:0]store_len;
-  wire [31:0]load_data;
-  wire [31:0]store_data;
-  wire [31:0]mem_addr;
-  mem mem1(
-    .lb(lb),
-    .lh(lh),
-    .lw(lw),
-    //.ld(ld),
-    .lbu(lbu),
-    .lhu(lhu),
-    //.lwu(lwu),
-    
-    .sb(sb),
-    .sh(sh),
-    .sw(sw),
-    //.sd(sd),
-    
-    .addr(result),
-    .wdata(rd_data2),
-    .rdata(rdata),
-
-    .store_len(store_len),
-    .load_data(load_data),
-    .store_data(store_data),
-
-    .mem_addr(mem_addr)
-  );
-
-	mux2_1 alu_data1_mux(
-		.a(rd_data1),
-		.b(pc),
-		.sel(pc_sel),
-		.opdata(alu_data1)
-	);
-
-  mux2_1 alu_data2_mux(
-    .a(rd_data2),
-    .b(imm),
-    .sel(imm_sel),
-    .opdata(alu_data2)
-  );
-	alu alu1(
-		.opdata1(alu_data1),
-		.opdata2(alu_data2),
-    		.lgc_en(lgc_en),
-    		.md_en(md_en),
-    		.br_en(br_en),
-    		.lgc_op(lgc_op),
-    		.md_op(md_op),
-    		.br_op(br_op),
-    		.brpc_en(brpc_en),
-		.result(result)
-		);
-
-    import "DPI-C" function void npc_pmem_read(
-      input int raddr,
-      output int rdata,
-      input bit ren
-    );
-    import "DPI-C" function void npc_pmem_write(
-      input int waddr,
-      input int wdata,
-      input byte len,
-      input bit wen
-    );
-
-    always @(posedge clk) begin
-      npc_pmem_read(mem_addr, rdata, mem_ren);
-	  
-      npc_pmem_write(mem_addr, store_data, {4'b0,store_len}, mem_wen);
-    end
-
-    import "DPI-C" function void npc_trap();
+    // Instruction Memory interface
+    wire [31:0] imem_addr;
+    reg [`DATA_WIDTH-1:0] imem_rdata;
     always @(*) begin
-      if(ebreak)  begin
-        //$display("ebreak");
-        npc_trap();
-      end
+        imem_rdata = pmem_read(imem_addr);
     end
+    
+    // Data Memory interface
+    reg [`DATA_WIDTH-1:0] dmem_rdata_raw;
+    wire [`DATA_WIDTH-1:0] dmem_rdata;
+    wire [`DATA_WIDTH-1:0] dmem_addr;
+    wire [`DATA_WIDTH-1:0] dmem_wdata;
+    wire [`DATA_WIDTH-1:0] dmem_wdata_raw;
+    wire [7:0] wmask;
+    assign dmem_wdata_raw = rdata2;
+
+    always @(*) begin
+        if (mem_en) begin 
+            dmem_rdata_raw = pmem_read(dmem_addr);
+            if (mem_wen) begin 
+                pmem_write(dmem_addr, dmem_wdata, wmask);
+            end
+        end else begin
+            dmem_rdata_raw = 0;
+        end
+    end
+
+    alignment_network alignment_network (
+        .data_in(dmem_rdata_raw),
+        .control(ctl_mem_access),
+        .dmem_addr(dmem_addr),
+        .data_out(dmem_rdata)
+    );
+
+    wmask_gen wmask_gen (
+        .control(ctl_mem_access),
+        .dmem_addr(dmem_addr),
+        .wmask(wmask),
+        .dmem_wdata_raw(dmem_wdata_raw),
+        .dmem_wdata(dmem_wdata)
+    );
+
+    // Handle ebreak signal
+    wire is_ebreak;
+    import "DPI-C" function void sim_exit(input int ret);
+    always @(*) begin
+        if (is_ebreak) begin
+           $display("EBREAK: Simulation exiting...");
+           sim_exit(0);
+        end
+    end
+
+    // Register File
+    RegisterFile #(
+        .ADDR_WIDTH(`REG_ADDR_WIDTH),
+        .DATA_WIDTH(`DATA_WIDTH)
+    ) u_RegisterFile (
+        .clk(clk),
+        .wdata(reg_write_data),
+        .waddr(waddr),
+        .wen(rf_we),
+        .raddr1(rs1_addr),
+        .raddr2(rs2_addr),
+        .rdata1(rdata1),
+        .rdata2(rdata2)
+    );
+        
+    // Fetch instruction
+    IFU ifu (
+        .clk(clk),
+        .rst(rst),
+        .pc_sel(pc_sel),
+        .jump_reg_target(jump_reg_target),
+        .br_target(br_target),
+        .jmp_target(jmp_target),
+        .pc_wen(1'b1),
+        .pc_o(pc),
+        .inst_o(inst),
+        .inst_i(imem_rdata),
+        .pc_plus4_o(pc_plus4)
+    );
+    assign imem_addr = pc;
+
+    // Instantiate IDU
+    IDU idu (
+        .inst_i(inst),
+        .Op1(Op1),
+        .Op2(Op2),
+        .Op1Sel(op1_sel),
+        .Op2Sel(op2_sel),
+        .rs1_data_i(rdata1),
+        .rs2_data_i(rdata2),
+        .rd_addr_o(waddr),
+        .rs1_addr(rs1_addr),
+        .rs2_addr(rs2_addr),
+        .pc_i(pc),
+        .jump_reg_target_o(jump_reg_target),
+        .br_target_o(br_target),
+        .jmp_target_o(jmp_target),
+        .br_eq(br_eq),
+        .br_lt(br_lt),
+        .br_ltu(br_ltu)
+    );
+
+    // Instantiate Control Logic
+    ControlLogic control (
+        .inst(inst),
+        .br_eq(br_eq),
+        .br_lt(br_lt),
+        .br_ltu(br_ltu),
+        .alu_op(alu_op),
+        .op1_sel(op1_sel),
+        .op2_sel(op2_sel),
+        .pc_sel(pc_sel),
+        .rf_we(rf_we),
+        .mem_en(mem_en),
+        .mem_wen(mem_wen),
+        .wb_sel(wb_sel),
+        .is_ebreak(is_ebreak),
+        .ctl_mem_access(ctl_mem_access)
+    );
+
+    // Instantiate EXU
+    EXU exu (
+        .clk(clk),
+        .rst(rst),
+        .Op1(Op1),
+        .Op2(Op2),
+        .alu_op(alu_op),
+        .wb_sel(wb_sel),
+        .pc_plus4(pc_plus4),
+        .dmem_rdata(dmem_rdata),
+        .dmem_addr(dmem_addr),
+        .reg_write_data(reg_write_data)
+    );
+
 endmodule
-
-
-
-
-	

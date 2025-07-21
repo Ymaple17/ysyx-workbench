@@ -36,6 +36,8 @@ uint64_t get_time();
 
 // ----------- log -----------
 
+
+
 #define ANSI_FG_BLACK   "\33[1;30m"
 #define ANSI_FG_RED     "\33[1;31m"
 #define ANSI_FG_GREEN   "\33[1;32m"

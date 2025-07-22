@@ -11,6 +11,7 @@ module top(
 
     // Internal signals
     wire [`DATA_WIDTH-1:0] pc;
+    wire [`DATA_WIDTH-1:0] pc_current;
     wire [31:0] inst;
     wire [`DATA_WIDTH-1:0] reg_write_data;
     wire [4:0] alu_op;
@@ -120,6 +121,7 @@ module top(
         .jmp_target(jmp_target),
         .pc_wen(1'b1),
         .pc_o(pc),
+        .pc_current_o(pc_current),
         .inst_o(inst),
         .inst_i(imem_rdata),
         .pc_plus4_o(pc_plus4)
@@ -138,7 +140,7 @@ module top(
         .rd_addr_o(waddr),
         .rs1_addr(rs1_addr),
         .rs2_addr(rs2_addr),
-        .pc_i(pc),
+        .pc_i(pc_current),
         .jump_reg_target_o(jump_reg_target),
         .br_target_o(br_target),
         .jmp_target_o(jmp_target),

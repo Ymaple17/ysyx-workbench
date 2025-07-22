@@ -2,8 +2,8 @@
 # Automatically generated file; DO NOT EDIT.
 # NPC Configuration
 #
+# CONFIG_DEFAULT_BATCH_MODE is not set
 # CONFIG_DIFFTEST is not set
-CONFIG_WAVEFORM=y
-CONFIG_WAVEFORM_FILE="debug_wave.vcd"
+# CONFIG_WAVEFORM is not set
 # CONFIG_CONFIG_TRACE is not set
 # CONFIG_CONFIG_DEVICE is not set

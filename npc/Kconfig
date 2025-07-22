@@ -1,5 +1,13 @@
 mainmenu "NPC Configuration"
 
+config DEFAULT_BATCH_MODE
+    bool "Default to batch mode (run)"
+    default n
+    help
+      If enabled, NPC will run in batch mode (continuous execution) by default when no mode is specified.
+      If disabled, default mode is interactive step mode.
+      The command line argument (run/step) can still override this default.
+
 # 差分测试配置
 config DIFFTEST
     bool "open difftest"

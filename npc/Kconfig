@@ -10,18 +10,18 @@ config DEFAULT_BATCH_MODE
 
 # 差分测试配置
 config DIFFTEST
-    bool "open difftest"
+    bool "Enable difftest"
     default n
 
 if DIFFTEST
 
 config DIFFTEST_PATH
-    string "diff test path"
-    default "/root/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so"
+    string "Diff test library path"
+    default "/home/qiu/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so"
     depends on DIFFTEST
 
 config ENABLE_MEMORY_CHECK
-    bool "open memory check"
+    bool "Enable memory comparison in difftest"
     default y
     depends on DIFFTEST
 
@@ -29,45 +29,62 @@ endif # DIFFTEST
 
 # 波形跟踪配置
 config WAVEFORM
-    bool "open waveform"
+    bool "Enable waveform recording"
     default n
 
 if WAVEFORM
 
 config WAVEFORM_FILE
-    string "waveform file path"
+    string "Waveform output file path"
     default "debug_wave.vcd"
     depends on WAVEFORM
 
 endif # WAVEFORM
 
 # 指令跟踪配置
-config CONFIG_TRACE
-    bool "open instruction trace"
+config ITRACE
+    bool "Enable instruction tracing"
     default n
+    help
+      Enable real-time tracing of executed instructions. When enabled, each instruction's 
+      program counter (PC) and instruction value will be recorded via itrace_inst() function.
+      This is helpful for instruction flow analysis and debugging, but may slightly reduce
+      simulation performance.
+
+if ITRACE
+
+config ITRACE_DETAIL
+    bool "Enable detailed instruction tracing"
+    default n
+    help
+      Include additional details in instruction trace output, such as register changes
+      and operand values. Only effective when instruction tracing is enabled.
+
+endif # ITRACE
 
 # 设备支持配置
 config CONFIG_DEVICE
-    tristate "open device support"
+    tristate "Enable device support"
     default y
 
 if CONFIG_DEVICE
 
 config UART_ENABLE
-    bool "open UART"
+    bool "Enable UART device"
     default y
     depends on CONFIG_DEVICE
 
 config TIMER_ENABLE
-    bool "open TIMER_ENABLE"
+    bool "Enable timer device"
     default y
     depends on CONFIG_DEVICE
 
 config MMIO_DEBUG
-    bool "open MMIO debug "
+    bool "Enable MMIO operation debugging"
     default n
+    help
+      Print detailed logs for memory-mapped I/O operations, including address, value and access type.
+      Useful for debugging device interactions.
     depends on CONFIG_DEVICE
 
 endif # CONFIG_DEVICE
-
-# 确保文件末尾有空行

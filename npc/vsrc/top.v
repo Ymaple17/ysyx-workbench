@@ -4,8 +4,8 @@ module top(
     input wire rst,
     output [`DATA_WIDTH-1:0] imem_pc
 );
-    import "DPI-C" function int pmem_read(input int raddr);
-    import "DPI-C" function void pmem_write(input int waddr, input int wdata, input byte wmask);
+    import "DPI-C" context function int pmem_read(input int raddr);
+    import "DPI-C" context function void pmem_write(input int waddr, input int wdata, input byte wmask);
 
     assign imem_pc = imem_addr;
 
@@ -44,6 +44,12 @@ module top(
         imem_rdata = pmem_read(imem_addr);
     end
     
+    export "DPI-C" function get_current_inst;
+
+    function bit [31:0] get_current_inst();
+        return inst;
+    endfunction
+
     // Data Memory interface
     reg [`DATA_WIDTH-1:0] dmem_rdata_raw;
     wire [`DATA_WIDTH-1:0] dmem_rdata;
@@ -81,7 +87,7 @@ module top(
 
     // Handle ebreak signal
     wire is_ebreak;
-    import "DPI-C" function void sim_exit(input int ret);
+    import "DPI-C" context function void sim_exit(input int ret);
     always @(*) begin
         if (is_ebreak) begin
            $display("EBREAK: Simulation exiting...");

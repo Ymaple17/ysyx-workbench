@@ -20,13 +20,12 @@ NPCFLAGS  += --diff=$(NPC_HOME)/build/riscv32-nemu-interpreter-so
 # NPCFLAGS += -b  # 批处理模式
 
 MAINARGS_MAX_LEN = 64
-MAINARGS_PLACEHOLDER = "The insert-arg rule in Makefile will insert mainargs here."
-CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=\"$(MAINARGS_PLACEHOLDER)\"
+MAINARGS_PLACEHOLDER = The insert-arg rule in Makefile will insert mainargs here.
+CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=\""$(MAINARGS_PLACEHOLDER)"\"
 
 .PHONY: image insert-arg run gdb
 
 insert-arg: image
-	@echo "===== Debug: mainargs value in Makefile is: '$(mainargs)' ====="
 	@python $(AM_HOME)/tools/insert-arg.py $(IMAGE).bin $(MAINARGS_MAX_LEN) "$(MAINARGS_PLACEHOLDER)" "$(mainargs)"
 
 image: image-dep

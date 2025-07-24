@@ -3,9 +3,7 @@
 # NPC Configuration
 #
 # CONFIG_DEFAULT_BATCH_MODE is not set
-CONFIG_DIFFTEST=y
-CONFIG_DIFFTEST_PATH="/home/qiu/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so"
-CONFIG_ENABLE_MEMORY_CHECK=y
+# CONFIG_DIFFTEST is not set
 # CONFIG_WAVEFORM is not set
 CONFIG_ITRACE=y
 CONFIG_ITRACE_DETAIL=y

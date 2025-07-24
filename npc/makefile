@@ -1,9 +1,14 @@
 VERILATOR = verilator
 TOP_MODULE = top
 CSRC = $(shell find csrc -name "*.cpp") $(shell find csrc -name "*.cc")
-VSRC = $(shell find vsrc -name "*.v" -o -name "*.sv")
+
+VSRC_RISCV32E = $(shell find riscv32e_vsrc -name "*.v" -o -name "*.sv")
+VSRC_MINIRISCV = $(shell find miniriscv_vsrc -name "*.v" -o -name "*.sv")
+
+VSRC = $(VSRC_RISCV32E)
+
 C_INCLUDE_DIRS = -Icsrc -I$(NPC_HOME)/csrc/include -I$(NPC_HOME)/include
-V_INCLUDE_DIRS = -Ivsrc -Ivsrc/include
+V_INCLUDE_DIRS = -Iriscv32e_vsrc -Iriscv32e_vsrc/include -Iminiriscv_vsrc -Iminiriscv_vsrc/include
 INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
 OBJ_DIR = obj_dir
 EXEC = $(OBJ_DIR)/V$(TOP_MODULE)
@@ -59,16 +64,16 @@ else
 $(info [INFO] CONFIG_ITRACE is disabled)
 endif
 
-# 确保构建目录存在
+
 $(shell mkdir -p $(BUILD_DIR) $(OBJ_DIR))
 
-# 主目标：编译Verilator仿真器
+
 all: $(EXEC)
 	$(info [SUCCESS] Build completed: $(EXEC))
 
-# Verilator编译规则
+
 $(EXEC): $(VSRC) $(CSRC)
-	$(info [BUILD] Compiling Verilator simulation...)
+	$(info [BUILD] Compiling Verilator simulation with $(VSRC))
 	$(VERILATOR) --cc $(VSRC) --exe $(CSRC) \
 		$(INCLUDE_DIRS) \
 		--build -j $(shell nproc) --top-module $(TOP_MODULE) \
@@ -77,20 +82,24 @@ $(EXEC): $(VSRC) $(CSRC)
 		-CFLAGS "$(CFLAGS)" \
 		--LDFLAGS "-lreadline"
 
-# 运行仿真
+
 sim: $(EXEC) $(PROGRAM)
 	$(info [RUN] Starting simulation: $(PROGRAM) in $(RUN_MODE) mode)
 	$(EXEC) $(PROGRAM) $(RUN_MODE) $(ARGS)
 
-# 批处理模式运行
 run:
 	$(MAKE) sim RUN_MODE=run
 
-# 交互模式运行
+minirun:
+	$(MAKE) sim RUN_MODE=run VSRC=$(VSRC_MINIRISCV)
+
 step:
 	$(MAKE) sim RUN_MODE=step
 
-# 生成空的目标程序（默认）
+ministep:
+	$(MAKE) sim RUN_MODE=step VSRC=$(VSRC_MINIRISCV)
+
+
 $(PROGRAM):
 	@mkdir -p $(@D)
 	@if [ ! -f "$@" ]; then \
@@ -98,7 +107,7 @@ $(PROGRAM):
 		$(info [INFO] Created empty program: $@); \
 	fi
 
-# 清理编译产物（不清理capstone）
+
 clean:
 	$(info [CLEAN] Removing build artifacts...)
 	rm -rf $(OBJ_DIR) $(BUILD_DIR)
@@ -107,7 +116,7 @@ ifdef CONFIG_WAVEFORM
 endif
 	$(info [CLEAN] Done)
 
-# 包含menuconfig配置
+
 include $(NPC_HOME)/scripts/config.mk
 
-.PHONY: all sim run step clean
+.PHONY: all sim run minirun step ministep clean

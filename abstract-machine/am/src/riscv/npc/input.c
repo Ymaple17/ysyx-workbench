@@ -1,6 +1,7 @@
 #include <am.h>
 
 void __am_input_keybrd(AM_INPUT_KEYBRD_T *kbd) {
-  kbd->keydown = 0;
-  kbd->keycode = AM_KEY_NONE;
+  uint32_t kbd_value = inl(KBD_ADDR);
+  kbd->keydown = (kbd_value & KEYDOWN_MASK) ? true : false;
+  kbd->keycode = kbd_value & ~KEYDOWN_MASK;
 }

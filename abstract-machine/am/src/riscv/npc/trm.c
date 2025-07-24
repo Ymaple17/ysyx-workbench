@@ -1,6 +1,5 @@
 #include <am.h>
 #include <klib-macros.h>
-#include <string.h>
 
 # define npc_trap(code) asm volatile("mv a0, %0; ebreak" : :"r"(code))
 
@@ -12,7 +11,7 @@ extern char _pmem_start;
 #define PMEM_END  ((uintptr_t)&_pmem_start + PMEM_SIZE)
 
 Area heap = RANGE(&_heap_start, PMEM_END);
-static char mainargs[MAINARGS_MAX_LEN] = MAINARGS_PLACEHOLDER; // defined in CFLAGS
+static const char mainargs[MAINARGS_MAX_LEN] = TOSTRING(MAINARGS_PLACEHOLDER); // defined in CFLAGS
 
 void putch(char ch) {
 }
@@ -23,10 +22,6 @@ void halt(int code) {
 }
 
 void _trm_init() {
-  const char *actual_args = mainargs;
-  if (strcmp(mainargs, MAINARGS_PLACEHOLDER) == 0) {
-      actual_args = "";
-  }
-  int ret = main(actual_args);
+  int ret = main(mainargs);
   halt(ret);
 }

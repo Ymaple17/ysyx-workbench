@@ -26,6 +26,7 @@ CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=\"$(MAIN
 .PHONY: image insert-arg run gdb
 
 insert-arg: image
+	@echo "===== Debug: mainargs value in Makefile is: '$(mainargs)' ====="
 	@python $(AM_HOME)/tools/insert-arg.py $(IMAGE).bin $(MAINARGS_MAX_LEN) "$(MAINARGS_PLACEHOLDER)" "$(mainargs)"
 
 image: image-dep

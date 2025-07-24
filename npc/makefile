@@ -1,14 +1,27 @@
 VERILATOR = verilator
 TOP_MODULE = top
-CSRC = $(shell find csrc -name "*.cpp") $(shell find csrc -name "*.cc")
+
+# 明确指定所有C++源文件，包括device文件夹
+CSRC = $(shell find csrc -name "*.cpp") \
+       $(shell find csrc -name "*.c") \
+       $(shell find csrc/device -name "*.cpp") \
+       $(shell find csrc/device -name "*.c")
 
 VSRC_RISCV32E = $(shell find riscv32e_vsrc -name "*.v" -o -name "*.sv")
 VSRC_MINIRISCV = $(shell find miniriscv_vsrc -name "*.v" -o -name "*.sv")
 
 VSRC = $(VSRC_RISCV32E)
 
-C_INCLUDE_DIRS = -Icsrc -I$(NPC_HOME)/csrc/include -I$(NPC_HOME)/include
-V_INCLUDE_DIRS = -Iriscv32e_vsrc -Iriscv32e_vsrc/include -Iminiriscv_vsrc -Iminiriscv_vsrc/include
+C_INCLUDE_DIRS = -Icsrc \
+                 -Icsrc/device \
+                 -I$(NPC_HOME)/csrc/include \
+                 -I$(NPC_HOME)/include
+
+V_INCLUDE_DIRS = -Iriscv32e_vsrc \
+                 -Iriscv32e_vsrc/include \
+                 -Iminiriscv_vsrc \
+                 -Iminiriscv_vsrc/include
+
 INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
 OBJ_DIR = obj_dir
 EXEC = $(OBJ_DIR)/V$(TOP_MODULE)
@@ -38,7 +51,6 @@ else
 $(info [INFO] CONFIG_WAVEFORM is disabled)
 endif
 
-# 差分测试宏定义
 ifdef CONFIG_DIFFTEST
 CFLAGS += -DDIFFTEST
 ifdef CONFIG_ENABLE_MEMORY_CHECK
@@ -64,14 +76,12 @@ else
 $(info [INFO] CONFIG_ITRACE is disabled)
 endif
 
-
 $(shell mkdir -p $(BUILD_DIR) $(OBJ_DIR))
-
 
 all: $(EXEC)
 	$(info [SUCCESS] Build completed: $(EXEC))
 
-
+# 编译目标，添加依赖跟踪
 $(EXEC): $(VSRC) $(CSRC)
 	$(info [BUILD] Compiling Verilator simulation with $(VSRC))
 	$(VERILATOR) --cc $(VSRC) --exe $(CSRC) \
@@ -80,8 +90,7 @@ $(EXEC): $(VSRC) $(CSRC)
 		$(VERILATOR_FLAGS) \
 		--Mdir $(OBJ_DIR) \
 		-CFLAGS "$(CFLAGS)" \
-		--LDFLAGS "-lreadline"
-
+		--LDFLAGS "-lreadline -lSDL2"
 
 sim: $(EXEC) $(PROGRAM)
 	$(info [RUN] Starting simulation: $(PROGRAM) in $(RUN_MODE) mode)
@@ -99,14 +108,12 @@ step:
 ministep:
 	$(MAKE) sim RUN_MODE=step VSRC=$(VSRC_MINIRISCV)
 
-
 $(PROGRAM):
 	@mkdir -p $(@D)
 	@if [ ! -f "$@" ]; then \
 		touch "$@"; \
 		$(info [INFO] Created empty program: $@); \
 	fi
-
 
 clean:
 	$(info [CLEAN] Removing build artifacts...)
@@ -115,7 +122,6 @@ ifdef CONFIG_WAVEFORM
 	rm -f $(CONFIG_WAVEFORM_FILE)
 endif
 	$(info [CLEAN] Done)
-
 
 include $(NPC_HOME)/scripts/config.mk
 

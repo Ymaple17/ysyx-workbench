@@ -1,5 +1,5 @@
 #include <am.h>
-
+#include "../riscv.h"
 void __am_timer_init() {
 }
 
@@ -9,9 +9,9 @@ void __am_timer_uptime(AM_TIMER_UPTIME_T *uptime) {
   // uptime->us = (uint64_t)low + (((uint64_t)high) << 32);
   uint32_t high, low,high2;
   do {
-    high = inl(RTC_ADDR+4);
-    low = inl(RTC_ADDR);
-    high2 = inl(RTC_ADDR+4);
+    high = inl(0xa0000048+4);
+    low = inl(0xa0000048);
+    high2 = inl(0xa0000048+4);
   } while (high!= high2);
   uptime->us = (uint64_t)low + (((uint64_t)high) << 32);
 }

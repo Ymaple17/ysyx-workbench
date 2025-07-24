@@ -1,4 +1,4 @@
- #ifndef __AMDEV_H__
+#ifndef __AMDEV_H__
 #define __AMDEV_H__
 
 // **MAY SUBJECT TO CHANGE IN THE FUTURE**

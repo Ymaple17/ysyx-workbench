@@ -4,8 +4,6 @@ TOP_MODULE = top
 # 明确指定所有C++源文件，包括device文件夹
 CSRC = $(shell find csrc -name "*.cpp") \
        $(shell find csrc -name "*.c") \
-       $(shell find csrc/device -name "*.cpp") \
-       $(shell find csrc/device -name "*.c")
 
 VSRC_RISCV32E = $(shell find riscv32e_vsrc -name "*.v" -o -name "*.sv")
 VSRC_MINIRISCV = $(shell find miniriscv_vsrc -name "*.v" -o -name "*.sv")

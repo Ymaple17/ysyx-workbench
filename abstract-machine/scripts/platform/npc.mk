@@ -42,4 +42,16 @@ step: insert-arg
 		RUN_MODE=step \
 		ARGS="$(NPCFLAGS)"
 
+# minirun: insert-arg
+# 	$(MAKE) -C $(NPC_HOME) minirun \
+# 		ARGS="$(NPCFLAGS)" \
+# 		PROGRAM="$(abspath $(IMAGE).bin)" \
+		
+
+# ministep: insert-arg
+# 	$(MAKE) -C $(NPC_HOME) ministep \
+# 		PROGRAM="$(abspath $(IMAGE).bin)" \
+# 		RUN_MODE=step \
+# 		ARGS="$(NPCFLAGS)"
+
 .PHONY: image insert-arg run gdb

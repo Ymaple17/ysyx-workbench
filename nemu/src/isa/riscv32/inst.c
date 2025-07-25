@@ -40,12 +40,12 @@ static vaddr_t *csr_reg(word_t imm) {
   }
 }
 
-static inline void do_mret() {
-  // 从 mepc 恢复 PC
-  cpu.pc = CSR(0x341);
-  uint32_t mstatus = CSR(0x300);
-  mstatus |= (1 << 3);
-  CSR(0x300) = mstatus;
+#define MRET() { \
+  s->dnpc = CSR(0x341); \
+  cpu.csrs.mstatus &= ~(1<<3); \
+  cpu.csrs.mstatus |= ((cpu.csrs.mstatus&(1<<7))>>4); \
+  cpu.csrs.mstatus |= (1<<7); \
+  cpu.csrs.mstatus &= ~((1<<11)+(1<<12)); \
 }
 
 #define src1R() do { *src1 = R(rs1); } while (0)
@@ -145,6 +145,7 @@ static int decode_exec(Decode *s) {
   INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I, R(rd) = CSR(imm);CSR(imm) = src1);
   INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, R(rd) = CSR(imm);CSR(imm) |= src1);
   INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , N, ECALL(s->dnpc));
+  INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , R, MRET());
   
   
   INSTPAT("0000000 00001 00000 000 00000 11100 11", ebreak , N, NEMUTRAP(s->pc, R(10))); // R(10) is $a0

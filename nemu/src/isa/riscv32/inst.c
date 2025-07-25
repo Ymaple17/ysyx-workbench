@@ -21,6 +21,7 @@
 #define ECALL(dnpc) { bool success; dnpc = (isa_raise_intr(isa_reg_str2val("$a7", &success), s->pc)); }
 #define Mr vaddr_read
 #define Mw vaddr_write
+void etrace();
 void trace_func_call(paddr_t pc, paddr_t target, bool is_tail);
 void trace_func_ret(paddr_t pc);
 void itrace_inst(word_t pc, uint32_t inst);
@@ -144,7 +145,7 @@ static int decode_exec(Decode *s) {
   
   INSTPAT("??????? ????? ????? 001 ????? 11100 11", csrrw  , I, R(rd) = CSR(imm);CSR(imm) = src1);
   INSTPAT("??????? ????? ????? 010 ????? 11100 11", csrrs  , I, R(rd) = CSR(imm);CSR(imm) |= src1);
-  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , N, ECALL(s->dnpc));
+  INSTPAT("0000000 00000 00000 000 00000 11100 11", ecall  , N, ECALL(s->dnpc);IFDEF(CONFIG_ERTACE,etrace()));
   INSTPAT("0011000 00010 00000 000 00000 11100 11", mret   , R, MRET());
   
   

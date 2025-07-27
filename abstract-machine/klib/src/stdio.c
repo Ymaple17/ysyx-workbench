@@ -7,7 +7,7 @@
 
 int sprintf_number(char *out, int num, int base) {
   const char digits[] = "0123456789abcdef";
-  char buf[32];
+  char buf[255];
   int i = 0;
   
   if (num == 0) {
@@ -36,7 +36,7 @@ int sprintf_string(char *out, const char *str) {
 int printf(const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  char buf[1024];
+  char buf[255];
   int len = vsprintf(buf, fmt, ap);
   va_end(ap);
   for (int i = 0; i < len; i++) {

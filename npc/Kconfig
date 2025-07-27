@@ -1,12 +1,8 @@
 mainmenu "NPC Configuration"
 
-config DEFAULT_BATCH_MODE
-    bool "Default to batch mode (run)"
-    default n
-    help
-      If enabled, NPC will run in batch mode (continuous execution) by default when no mode is specified.
-      If disabled, default mode is interactive step mode.
-      The command line argument (run/step) can still override this default.
+config BATCH_MODE
+        bool "Enable Batch Execution (Disable Stepping)"
+        default n
 
 # 差分测试配置
 config DIFFTEST
@@ -61,6 +57,10 @@ config ITRACE_DETAIL
       and operand values. Only effective when instruction tracing is enabled.
 
 endif # ITRACE
+
+config MTRACE
+    bool "Enable memory tracing"
+    default n
 
 # 设备支持配置
 config CONFIG_DEVICE

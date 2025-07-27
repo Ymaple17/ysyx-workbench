@@ -1,9 +1,7 @@
 VERILATOR = verilator
 TOP_MODULE = top
 
-# 明确指定所有C++源文件，包括device文件夹
-CSRC = $(shell find csrc -name "*.cpp") \
-       $(shell find csrc -name "*.c") \
+CSRC = $(shell find csrc -name "*.cpp" -o -name "*.c")
 
 VSRC_RISCV32E = $(shell find riscv32e_vsrc -name "*.v" -o -name "*.sv")
 VSRC_MINIRISCV = $(shell find miniriscv_vsrc -name "*.v" -o -name "*.sv")
@@ -11,7 +9,6 @@ VSRC_MINIRISCV = $(shell find miniriscv_vsrc -name "*.v" -o -name "*.sv")
 VSRC = $(VSRC_RISCV32E)
 
 C_INCLUDE_DIRS = -Icsrc \
-                 -Icsrc/device \
                  -I$(NPC_HOME)/csrc/include \
                  -I$(NPC_HOME)/include
 
@@ -24,27 +21,22 @@ INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
 OBJ_DIR = obj_dir
 EXEC = $(OBJ_DIR)/V$(TOP_MODULE)
 BUILD_DIR ?= build
-RUN_MODE ?= run
 PROGRAM ?= $(BUILD_DIR)/dummy.bin
 
-# 检查 .config 文件是否存在
 ifeq (,$(wildcard .config))
 $(error .config file not found, please run 'make menuconfig' first)
 endif
 
-# 包含 Kconfig 生成的配置文件
 include .config
 
-# 编译标志基础配置
-CFLAGS = -Wall -std=c++11 -g #-O2
+CFLAGS = -Wall -std=c++11 -g
+CXXFLAGS = $(CFLAGS)
 VERILATOR_FLAGS =
 
-# 波形功能宏定义
+
+
 ifdef CONFIG_WAVEFORM
 CFLAGS += -DENABLE_WAVEFORM
-CFLAGS += -DWAVEFORM_FILE=\\\"$(CONFIG_WAVEFORM_FILE)\\\"
-VERILATOR_FLAGS += --trace
-$(info [INFO] Waveform recording enabled: $(CONFIG_WAVEFORM_FILE))
 else
 $(info [INFO] CONFIG_WAVEFORM is disabled)
 endif
@@ -79,32 +71,30 @@ $(shell mkdir -p $(BUILD_DIR) $(OBJ_DIR))
 all: $(EXEC)
 	$(info [SUCCESS] Build completed: $(EXEC))
 
-# 编译目标，添加依赖跟踪
 $(EXEC): $(VSRC) $(CSRC)
 	$(info [BUILD] Compiling Verilator simulation with $(VSRC))
 	$(VERILATOR) --cc $(VSRC) --exe $(CSRC) \
 		$(INCLUDE_DIRS) \
 		--build -j $(shell nproc) --top-module $(TOP_MODULE) \
-		$(VERILATOR_FLAGS) \
 		--Mdir $(OBJ_DIR) \
 		-CFLAGS "$(CFLAGS)" \
 		--LDFLAGS "-lreadline -lSDL2"
 
 sim: $(EXEC) $(PROGRAM)
-	$(info [RUN] Starting simulation: $(PROGRAM) in $(RUN_MODE) mode)
-	$(EXEC) $(PROGRAM) $(RUN_MODE) $(ARGS)
+	$(info [RUN] Starting simulation: $(PROGRAM))
+	$(EXEC) $(PROGRAM) $(ARGS)
 
 run:
-	$(MAKE) sim RUN_MODE=run
+	$(MAKE) sim 
 
 minirun:
-	$(MAKE) sim RUN_MODE=run VSRC=$(VSRC_MINIRISCV)
+	$(MAKE) sim  VSRC=$(VSRC_MINIRISCV)
 
 step:
-	$(MAKE) sim RUN_MODE=step
+	$(MAKE) sim 
 
 ministep:
-	$(MAKE) sim RUN_MODE=step VSRC=$(VSRC_MINIRISCV)
+	$(MAKE) sim VSRC=$(VSRC_MINIRISCV)
 
 $(PROGRAM):
 	@mkdir -p $(@D)

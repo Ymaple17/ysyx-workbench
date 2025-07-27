@@ -34,6 +34,7 @@ Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   
   Context *re = (Context *)(kstack.end - sizeof(Context));
   re->mepc = (uintptr_t)entry;
+  re->mstatus = 0x1800;
   re->gpr[10] = (uintptr_t)arg;
   //printf("entry = 0x%08x, mepc = 0x%08x\n", entry, re->mepc);
   return re; 

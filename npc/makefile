@@ -33,6 +33,7 @@ CFLAGS = -Wall -std=c++11 -g
 CXXFLAGS = $(CFLAGS)
 VERILATOR_FLAGS =
 
+LDFLAGS_BASE = -lreadline -lSDL2 -ldl
 
 
 ifdef CONFIG_WAVEFORM
@@ -42,20 +43,23 @@ $(info [INFO] CONFIG_WAVEFORM is disabled)
 endif
 
 ifdef CONFIG_DIFFTEST
-CFLAGS += -DDIFFTEST
+CFLAGS += -DDIFFTEST \
+          -DDIFFTEST_LIB=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
 ifdef CONFIG_ENABLE_MEMORY_CHECK
 CFLAGS += -DENABLE_MEMORY_CHECK
 $(info [INFO] Memory check in difftest enabled)
 endif
+# 添加NEMU共享库路径到链接选项
+LDFLAGS_DIFFTEST = -L$(NEMU_HOME)/build -lriscv32-nemu-interpreter-so
 $(info [INFO] DiffTest enabled)
 else
+LDFLAGS_DIFFTEST =
 $(info [INFO] CONFIG_DIFFTEST is disabled)
 endif
 
 ifdef CONFIG_ITRACE
 LIBCAPSTONE = tools/capstone/libcapstone.so.6
 CFLAGS += -DCONFIG_ITRACE -Itools/capstone/include
-VERILATOR_FLAGS += -LDFLAGS "-ldl"
 $(info [INFO] Instruction tracing enabled)
 
 $(OBJ_DIR)/csrc/disasm.o: $(LIBCAPSTONE)
@@ -78,7 +82,7 @@ $(EXEC): $(VSRC) $(CSRC)
 		--build -j $(shell nproc) --top-module $(TOP_MODULE) \
 		--Mdir $(OBJ_DIR) \
 		-CFLAGS "$(CFLAGS)" \
-		--LDFLAGS "-lreadline -lSDL2"
+		--LDFLAGS "$(LDFLAGS_BASE) $(LDFLAGS_DIFFTEST)"  # 合并链接选项
 
 sim: $(EXEC) $(PROGRAM)
 	$(info [RUN] Starting simulation: $(PROGRAM))
@@ -109,7 +113,6 @@ clean:
 ifdef CONFIG_WAVEFORM
 	rm -f $(CONFIG_WAVEFORM_FILE)
 endif
-	$(info [CLEAN] Done)
 
 include $(NPC_HOME)/scripts/config.mk
 

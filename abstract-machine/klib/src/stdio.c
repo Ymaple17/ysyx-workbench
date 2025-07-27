@@ -5,165 +5,187 @@
 
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
-int sprintf_number(char *out, int num, int base) {
-  const char digits[] = "0123456789abcdef";
-  char buf[255];
-  int i = 0;
-  
-  if (num == 0) {
-    buf[i++] = '0';
-  } else {
-    while (num != 0) {
-      buf[i++] = digits[num % base];
-      num /= base;
-    }
-  }
-  int len = 0;
-  while (--i >= 0) {
-    out[len++] = buf[i];
-  }
-  return len;
-}
-
-int sprintf_string(char *out, const char *str) {
-  int len = 0;
-  while (*str) {
-    out[len++] = *str++;
-  }
-  return len;
-}
-
-int printf(const char *fmt, ...) {
+int printf(const char *fmt, ...){
   va_list ap;
   va_start(ap, fmt);
-  char buf[255];
-  int len = vsprintf(buf, fmt, ap);
-  va_end(ap);
-  for (int i = 0; i < len; i++) {
-    putch(buf[i]);
-  }
-  return len;
-}
-
-int vsprintf(char *out, const char *fmt, va_list ap) {
-  int len = 0;
-  const char *ptr = fmt;
-  while (*ptr) {
-     if (*ptr == '%' && *(ptr + 1) != '\0') {
-      ptr++;
-      switch (*ptr) {
-        case 'd': {
-          int value = va_arg(ap, int);
-          len += sprintf_number(out + len, value, 10);
+  int i = 0;
+  while(*fmt != '\0'){
+    if(*fmt == '%'){
+      fmt++;
+      switch(*fmt){
+        case 's': {
+          char *string = va_arg(ap, char *);
+          while(*string != '\0'){
+            putch(*string);
+            i++;
+            string++;
+          }
           break;
         }
-        case 's': {
-          char *str = va_arg(ap, char*);
-          len += sprintf_string(out + len, str);
+        case 'd': {
+          uint64_t d = va_arg(ap, uint64_t);
+          int j = 0;
+          char dd[30];
+          while(d / 10){
+            dd[j] = (char)(d % 10 + '0');
+            j++;
+            d = d / 10;
+          }
+          dd[j] = d + '0';
+          for(; j >= 0; j--){
+            putch(dd[j]);
+            i++;
+          }
           break;
         }
         case 'x': {
-          int value = va_arg(ap, int);
-          len += sprintf_number(out + len, value, 16);
+          uint64_t d = va_arg(ap, uint64_t);
+          int j = 0;
+          char dd[30];
+          while(d / 16){
+            if(d % 16 < 10){
+              dd[j] = (char)(d % 16 + '0');
+            }
+            else{
+              dd[j] = (char)(d % 16 - 10 + 'a');
+            }
+            j++;
+            d = d / 16;
+          }
+          if(d < 10){
+            dd[j] = (char)(d % 16 + '0');
+          }
+          else{
+            dd[j] = (char)(d % 16 - 10 + 'a');
+          }
+          for(; j >= 0; j--){
+            putch(dd[j]);
+            i++;
+          }
           break;
         }
-        case '%': {
-          out[len++] = '%';
-          break;
-        }
-        default: {
-          out[len++] = '%';
-          out[len++] = *ptr;
-          break;
-        }
+        default: va_end(ap); return -1;
       }
-    } else {
-      out[len++] = *ptr;
     }
-    ptr++;
+    else{
+      putch(*fmt);
+      i++;
+    }
+    fmt++;
   }
-  out[len] = '\0';
-  return len;
+  va_end(ap);
+  return i;
 }
 
 int sprintf(char *out, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  int result = vsprintf(out, fmt, ap);
+  int i = 0;
+  while(*fmt != '\0'){
+    if(*fmt == '%'){
+      fmt++;
+      switch(*fmt){
+        case 's': {
+          char *string = va_arg(ap, char *);
+          while(*string != '\0'){
+            out[i] = *string;
+            i++;
+            string++;
+          }
+          break;
+        }
+        case 'd': {
+          int d = va_arg(ap, int);
+          int j = 0;
+          char dd[30];
+          while(d / 10){
+            dd[j] = (char)(d % 10 + '0');
+            j++;
+            d = d / 10;
+          }
+          dd[j] = d + '0';
+          for(; j >= 0; j--){
+            out[i] = dd[j];
+            i++;
+          }
+          break;
+        }
+        default: va_end(ap); return -1;
+      }
+    }
+    else{
+      out[i] = *fmt;
+      i++;
+    }
+    fmt++;
+  }
   va_end(ap);
-  return result;
+  out[i] = '\0';
+  return i;
 }
 
-// 实现 snprintf 函数
 int snprintf(char *out, size_t n, const char *fmt, ...) {
   va_list ap;
   va_start(ap, fmt);
-  int result = vsnprintf(out, n, fmt, ap);
+  int i = 0;
+  while(*fmt != '\0'){
+    if(i == n - 1){
+      break;
+    }
+    if(*fmt == '%'){
+      fmt++;
+      switch(*fmt){
+        case 's': {
+          char *string = va_arg(ap, char *);
+          while(*string != '\0'){
+            out[i] = *string;
+            i++;
+            string++;
+          }
+          break;
+        }
+        case 'd': {
+          int d = va_arg(ap, int);
+          int j = 0;
+          char dd[30];
+          while(d / 10){
+            dd[j] = (char)(d % 10 + '0');
+            j++;
+            d = d / 10;
+          }
+          dd[j] = d + '0';
+          for(; j >= 0; j--){
+            out[i] = dd[j];
+            i++;
+          }
+          break;
+        }
+        default: va_end(ap); return -1;
+      }
+    }
+    else{
+      out[i] = *fmt;
+      i++;
+    }
+    fmt++;
+  }
   va_end(ap);
-  return result;
+  out[i] = '\0';
+  if(i == n - 1){
+    return n;
+  }
+  else{
+    return i;
+  }
 }
 
-// 实现 vsnprintf 函数
-int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
-  int len = 0;
-  const char *ptr = fmt;
-  while (*ptr && len < n - 1) {
-     if (*ptr == '%' && *(ptr + 1) != '\0') {
-      ptr++;
-      switch (*ptr) {
-        case 'd': {
-          int value = va_arg(ap, int);
-          int num_len = sprintf_number(out + len, value, 10);
-          if (len + num_len < n - 1) {
-            len += num_len;
-          } else {
-            len = n - 1;
-          }
-          break;
-        }
-        case 's': {
-          char *str = va_arg(ap, char*);
-          int str_len = 0;
-          while (str[str_len] && len + str_len < n - 1) {
-            out[len + str_len] = str[str_len];
-            str_len++;
-          }
-          len += str_len;
-          break;
-        }
-        case 'x': {
-          int value = va_arg(ap, int);
-          int num_len = sprintf_number(out + len, value, 16);
-          if (len + num_len < n - 1) {
-            len += num_len;
-          } else {
-            len = n - 1;
-          }
-          break;
-        }
-        case '%': {
-          out[len++] = '%';
-          break;
-        }
-        default: {
-          if (len < n - 2) {
-            out[len++] = '%';
-            out[len++] = *ptr;
-          } else {
-            len = n - 1;
-          }
-          break;
-        }
-      }
-    } else {
-      out[len++] = *ptr;
-    }
-    ptr++;
-  }
-  if (n > 0) {
-    out[len] = '\0';
-  }
-  return len;
+int vsprintf(char *out, const char *fmt, va_list ap) {
+  panic("Not implemented");
 }
+
+int vsnprintf(char *out, size_t n, const char *fmt, va_list ap) {
+  panic("Not implemented");
+}
+
 
 #endif    

@@ -32,26 +32,33 @@ include .config
 CFLAGS = -Wall -std=c++11 -g
 CXXFLAGS = $(CFLAGS)
 VERILATOR_FLAGS =
-
 LDFLAGS_BASE = -lreadline -lSDL2 -ldl
 
 
 ifdef CONFIG_WAVEFORM
 CFLAGS += -DENABLE_WAVEFORM
+VERILATOR_FLAGS += --trace
 else
 $(info [INFO] CONFIG_WAVEFORM is disabled)
 endif
 
 ifdef CONFIG_DIFFTEST
+NEMU_LIB_ABS_PATH = $(NEMU_HOME)/build/riscv32-nemu-interpreter-so
+
+ifeq (,$(wildcard $(NEMU_LIB_ABS_PATH)))
+$(error NEMU共享库不存在: $(NEMU_LIB_ABS_PATH)，请先编译NEMU)
+endif
+
 CFLAGS += -DDIFFTEST \
-          -DDIFFTEST_LIB=$(NEMU_HOME)/build/riscv32-nemu-interpreter-so
+          -DDIFFTEST_LIB=\"$(NEMU_LIB_ABS_PATH)\"
+
 ifdef CONFIG_ENABLE_MEMORY_CHECK
 CFLAGS += -DENABLE_MEMORY_CHECK
 $(info [INFO] Memory check in difftest enabled)
 endif
-# 添加NEMU共享库路径到链接选项
-LDFLAGS_DIFFTEST = -L$(NEMU_HOME)/build -lriscv32-nemu-interpreter-so
-$(info [INFO] DiffTest enabled)
+
+LDFLAGS_DIFFTEST = $(NEMU_LIB_ABS_PATH)
+$(info [INFO] DiffTest enabled，使用绝对路径链接: $(NEMU_LIB_ABS_PATH))
 else
 LDFLAGS_DIFFTEST =
 $(info [INFO] CONFIG_DIFFTEST is disabled)
@@ -79,10 +86,11 @@ $(EXEC): $(VSRC) $(CSRC)
 	$(info [BUILD] Compiling Verilator simulation with $(VSRC))
 	$(VERILATOR) --cc $(VSRC) --exe $(CSRC) \
 		$(INCLUDE_DIRS) \
+		$(VERILATOR_FLAGS) \
 		--build -j $(shell nproc) --top-module $(TOP_MODULE) \
 		--Mdir $(OBJ_DIR) \
 		-CFLAGS "$(CFLAGS)" \
-		--LDFLAGS "$(LDFLAGS_BASE) $(LDFLAGS_DIFFTEST)"  # 合并链接选项
+		--LDFLAGS "$(LDFLAGS_BASE) $(LDFLAGS_DIFFTEST)"
 
 sim: $(EXEC) $(PROGRAM)
 	$(info [RUN] Starting simulation: $(PROGRAM))

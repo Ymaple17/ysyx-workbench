@@ -18,7 +18,15 @@
 #include <cpu/decode.h>
 #define R(i) gpr(i)
 #define CSR(i) *csr_reg(i)
-#define ECALL(dnpc) {  dnpc = (isa_raise_intr(11, s->pc)); }
+//#define ECALL(dnpc) {  dnpc = (isa_raise_intr(11, s->pc)); }
+#define ECALL(dnpc) do { \
+  uint32_t mpie = (cpu.csrs.mstatus >> 3) & 1; \
+  cpu.csrs.mstatus = (cpu.csrs.mstatus & ~(1 << 7)) | (mpie << 7); \
+  cpu.csrs.mstatus &= ~(1 << 3); \
+  cpu.csrs.mstatus &= ~(3 << 11); \
+  cpu.csrs.mstatus |= (1 << 11); \
+  dnpc = isa_raise_intr(11, s->pc); \
+} while(0)
 #define Mr vaddr_read
 #define Mw vaddr_write
 void etrace();

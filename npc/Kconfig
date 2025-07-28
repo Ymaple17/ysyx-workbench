@@ -37,28 +37,6 @@ config MTRACE
     default n
 
 # 设备支持配置
-config CONFIG_DEVICE
+config DEVICE
     tristate "Enable device support"
     default y
-
-if CONFIG_DEVICE
-
-config UART_ENABLE
-    bool "Enable UART device"
-    default y
-    depends on CONFIG_DEVICE
-
-config TIMER_ENABLE
-    bool "Enable timer device"
-    default y
-    depends on CONFIG_DEVICE
-
-config MMIO_DEBUG
-    bool "Enable MMIO operation debugging"
-    default n
-    help
-      Print detailed logs for memory-mapped I/O operations, including address, value and access type.
-      Useful for debugging device interactions.
-    depends on CONFIG_DEVICE
-
-endif # CONFIG_DEVICE

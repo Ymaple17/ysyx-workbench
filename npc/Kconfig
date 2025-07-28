@@ -9,43 +9,17 @@ config DIFFTEST
     bool "Enable difftest"
     default n
 
-if DIFFTEST
-
-config DIFFTEST_PATH
-    string "Diff test library path"
-    default "/home/qiu/ysyx-workbench/nemu/build/riscv32-nemu-interpreter-so"
-    depends on DIFFTEST
-
-config ENABLE_MEMORY_CHECK
-    bool "Enable memory comparison in difftest"
-    default y
-    depends on DIFFTEST
-
-endif # DIFFTEST
-
 # 波形跟踪配置
 config WAVEFORM
     bool "Enable waveform recording"
     default n
-
-if WAVEFORM
-
-config WAVEFORM_FILE
-    string "Waveform output file path"
-    default "debug_wave.vcd"
-    depends on WAVEFORM
-
-endif # WAVEFORM
 
 # 指令跟踪配置
 config ITRACE
     bool "Enable instruction tracing"
     default n
     help
-      Enable real-time tracing of executed instructions. When enabled, each instruction's 
-      program counter (PC) and instruction value will be recorded via itrace_inst() function.
-      This is helpful for instruction flow analysis and debugging, but may slightly reduce
-      simulation performance.
+      Enable real-time tracing of executed instructions.
 
 if ITRACE
 

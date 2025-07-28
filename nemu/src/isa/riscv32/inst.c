@@ -24,7 +24,8 @@
   cpu.csrs.mstatus = (cpu.csrs.mstatus & ~(1 << 7)) | (mpie << 7); \
   cpu.csrs.mstatus &= ~(1 << 3); \
   cpu.csrs.mstatus &= ~(3 << 11); \
-  cpu.csrs.mstatus |= (1 << 11); \
+  cpu.csrs.mstatus |= (1 << 11);\
+  cpu.csrs.mstatus &= ~(1 << 12); \
   dnpc = isa_raise_intr(11, s->pc); \
 } while(0)
 #define Mr vaddr_read

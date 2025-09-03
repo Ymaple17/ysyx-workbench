@@ -67,9 +67,9 @@ AS        = $(CROSS_COMPILE)gcc
 CC        = $(CROSS_COMPILE)gcc
 CXX       = $(CROSS_COMPILE)g++
 LD        = $(CROSS_COMPILE)ld
-AR        = $(CROSS_COMPILE)ar
-OBJDUMP   = $(CROSS_COMPILE)objdump
-OBJCOPY   = $(CROSS_COMPILE)objcopy
+AR        = $(CROSS_COMPILE)ar#静态库打包工具
+OBJDUMP   = $(CROSS_COMPILE)objdump#反汇编工具
+OBJCOPY   = $(CROSS_COMPILE)objcopy#目标文件转换工具
 READELF   = $(CROSS_COMPILE)readelf
 
 ### Compilation flags
@@ -95,10 +95,10 @@ LDFLAGS  += -z noexecstack $(addprefix -T, $(LDSCRIPTS))
 
 ## 5. Compilation Rules
 
-### Rule (compile): a single `.c` -> `.o` (gcc)
+### Rule (compile): a single `.c` -> `.o` (gcc)语法错误gcc return 1  
 $(DST_DIR)/%.o: %.c
 	@mkdir -p $(dir $@) && echo + CC $<
-	@$(CC) -std=gnu11 $(CFLAGS) -c -o $@ $(realpath $<)
+	@$(CC) -std=gnu11 $(CFLAGS) -c -o $@ $(realpath $<) 
 
 ### Rule (compile): a single `.cc` -> `.o` (g++)
 $(DST_DIR)/%.o: %.cc
@@ -115,7 +115,7 @@ $(DST_DIR)/%.o: %.S
 	@mkdir -p $(dir $@) && echo + AS $<
 	@$(AS) $(ASFLAGS) -c -o $@ $(realpath $<)
 
-ifeq ($(MAKECMDGOALS),archive)
+ifeq ($(MAKECMDGOALS),archive)#打包成静态库
 ### Rule (archive): objects (`*.o`) -> `ARCHIVE.a` (ar)
 $(ARCHIVE): $(OBJS)
 	@echo + AR "->" $(shell realpath $@ --relative-to .)
@@ -132,7 +132,7 @@ endef
 $(foreach lib, $(LIBS), $(eval $(call LIB_TEMPLATE,$(lib))))
 endif
 
-### Rule (link): objects (`*.o`) and libraries (`*.a`) -> `IMAGE.elf`, the final ELF binary to be packed into image (ld)
+### Rule (link): objects (`*.o`) and libraries (`*.a`) -> `IMAGE.elf`, the final ELF binary to be packed into image (ld)链接生成elf文件,ld fail return 1
 $(IMAGE).elf: $(LINKAGE) $(LDSCRIPTS)
 	@echo \# Creating image [$(ARCH)]
 	@echo + LD "->" $(IMAGE_REL).elf
@@ -147,7 +147,7 @@ endif
 
 ## 6. Miscellaneous
 
-### Build order control
+### Build order control image->archive->image-dep
 image: image-dep
 archive: $(ARCHIVE)
 image-dep: $(IMAGE).elf

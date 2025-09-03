@@ -1,13 +1,13 @@
 VERILATOR = verilator
 TOP_MODULE = top
 
-# CSRC = $(shell find csrc -name "*.cpp" -o -name "*.c")#rv32e
-CSRC = $(shell find chisel_csrc -name "*.cpp" -o -name "*.c")#chisel
+CSRC = $(shell find csrc -name "*.cpp" -o -name "*.c")#rv32e
+#CSRC = $(shell find chisel_csrc -name "*.cpp" -o -name "*.c")#chisel
 
 
-# VSRC_RISCV32E = $(shell find riscv32e_vsrc -name "*.v" -o -name "*.sv")#rv32e
+VSRC_RISCV32E = $(shell find riscv32e_vsrc -name "*.v" -o -name "*.sv")#rv32e
 #VSRC_RISCV32E = $(shell find single_vsrc -name "*.v" -o -name "*.sv")
-VSRC_RISCV32E = $(shell find chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#chisel
+#VSRC_RISCV32E = $(shell find chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#chisel
 VSRC_MULVSRC = $(shell find mul_vsrc -name "*.v" -o -name "*.sv")
 VSRC_MINIRISCV = $(shell find miniriscv_vsrc -name "*.v" -o -name "*.sv")
 

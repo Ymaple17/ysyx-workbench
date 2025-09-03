@@ -1,0 +1,39 @@
+mainmenu "NPC Configuration"
+
+config MUL
+    bool "Enable mul_vsrc implementation"
+    default n
+
+config MINIRV
+    bool "Enable Mini-RV32I"
+    default n
+
+config BATCH_MODE
+    bool "Enable Batch Execution (Disable Stepping)"
+    default n
+
+config DIFFTEST
+    bool "Enable difftest"
+    default n
+
+config WAVEFORM
+    bool "Enable waveform recording"
+    default n
+
+config ITRACE
+    bool "Enable instruction tracing"
+    default n
+    help
+      Enable real-time tracing of executed instructions.
+
+
+
+config MTRACE
+    bool "Enable memory tracing"
+    default n
+
+# 设备支持配置
+config DEVICE
+    tristate "Enable device support"
+    default y
+    

@@ -22,7 +22,7 @@ static IOMap maps[NR_MAP] = {};
 static int nr_map = 0;
 
 /* device interface */
-void add_pio_map(const char *name, ioaddr_t addr, void *space, uint32_t len, io_callback_t callback) {
+void add_pio_map(const char *name, ioaddr_t addr, void *space, uint32_t len, io_callback_t callback) {//space 内存映射地址
   assert(nr_map < NR_MAP);
   assert(addr + len <= PORT_IO_SPACE_MAX);
   maps[nr_map] = (IOMap){ .name = name, .low = addr, .high = addr + len - 1,
@@ -36,7 +36,7 @@ void add_pio_map(const char *name, ioaddr_t addr, void *space, uint32_t len, io_
 /* CPU interface */
 uint32_t pio_read(ioaddr_t addr, int len) {
   assert(addr + len - 1 < PORT_IO_SPACE_MAX);
-  int mapid = find_mapid_by_addr(maps, nr_map, addr);
+  int mapid = find_mapid_by_addr(maps, nr_map, addr);//find map id
   assert(mapid != -1);
   return map_read(addr, len, &maps[mapid]);
 }

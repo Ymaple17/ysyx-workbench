@@ -5,7 +5,10 @@
 !/nexus-am/*
 !/nanos-lite/*
 !/navy-apps/*
-!/npc/*
+!/npc/**/*
+!abstract-machine/
+!abstract-machine_mini/
+npc/obj_dir
 !Makefile
 !README.md
 !.gitignore

@@ -18,21 +18,13 @@
 #include <cpu/decode.h>
 #define R(i) gpr(i)
 #define CSR(i) *csr_reg(i)
-//#define ECALL(dnpc) {  dnpc = (isa_raise_intr(11, s->pc)); }
-#define ECALL(dnpc) do { \
-  uint32_t mpie = (cpu.csrs.mstatus >> 3) & 1; \
-  cpu.csrs.mstatus = (cpu.csrs.mstatus & ~(1 << 7)) | (mpie << 7); \
-  cpu.csrs.mstatus &= ~(1 << 3); \
-  cpu.csrs.mstatus &= ~(3 << 11); \
-  cpu.csrs.mstatus |= (1 << 11);\
-  cpu.csrs.mstatus &= ~(1 << 12); \
-  dnpc = isa_raise_intr(11, s->pc); \
-} while(0)
+
+#define ECALL(dnpc) {  dnpc = (isa_raise_intr(11, s->pc)); }
 #define Mr vaddr_read
 #define Mw vaddr_write
 void etrace();
-void trace_func_call(paddr_t pc, paddr_t target, bool is_tail);
-void trace_func_ret(paddr_t pc);
+void ftrace_call(uint32_t call_site, uint32_t target);
+void ftrace_ret(uint32_t ret_site);
 void itrace_inst(word_t pc, uint32_t inst);
 enum {
   TYPE_I, TYPE_U, TYPE_S,
@@ -50,13 +42,8 @@ static vaddr_t *csr_reg(word_t imm) {
   }
 }
 
-#define MRET() { \
-  s->dnpc = CSR(0x341); \
-  cpu.csrs.mstatus &= ~(1<<3); \
-  cpu.csrs.mstatus |= ((cpu.csrs.mstatus&(1<<7))>>4); \
-  cpu.csrs.mstatus |= (1<<7); \
-  cpu.csrs.mstatus &= ~((1<<11)+(1<<12)); \
-}
+#define MRET() {s->dnpc = CSR(0x341);}
+
 
 #define src1R() do { *src1 = R(rs1); } while (0)
 #define src2R() do { *src2 = R(rs2); } while (0)
@@ -70,6 +57,7 @@ static void decode_operand(Decode *s, int *rd, word_t *src1, word_t *src2, word_
   int rs1 = BITS(i, 19, 15);
   int rs2 = BITS(i, 24, 20);
   *rd     = BITS(i, 11, 7);
+  s->rs1  = rs1;
   switch (type) {
     case TYPE_I: src1R();          immI(); break;
     case TYPE_U:                   immU(); break;
@@ -105,7 +93,7 @@ static int decode_exec(Decode *s) {
   INSTPAT("??????? ????? ????? 000 ????? 00000 11", lb     , I, R(rd) = SEXT(Mr(src1 + imm, 1),  8));
   INSTPAT("??????? ????? ????? 001 ????? 00000 11", lh     , I, R(rd) = SEXT(Mr(src1 + imm, 2), 16));
   INSTPAT("??????? ????? ????? 010 ????? 00000 11", lw     , I, R(rd) = SEXT(Mr(src1 + imm, 4), 32));
-  INSTPAT("??????? ????? ????? 000 ????? 00100 11", addi   , I, R(rd) = src1+imm);
+  INSTPAT("??????? ????? ????? 000 ????? 00100 11", ad di   , I, R(rd) = src1+imm);
   INSTPAT("??????? ????? ????? 111 ????? 00100 11", andi   , I, R(rd) = src1 & imm);
   INSTPAT("??????? ????? ????? 110 ????? 00100 11", ori    , I, R(rd) = src1 | imm);
   INSTPAT("??????? ????? ????? 100 ????? 00100 11", xori   , I, R(rd) = src1 ^ imm);
@@ -114,19 +102,17 @@ static int decode_exec(Decode *s) {
   INSTPAT("000000? ????? ????? 001 ????? 00100 11", slli   , I, R(rd) = src1 << BITS(imm, 4, 0));
 	INSTPAT("0000000 ????? ????? 101 ????? 00100 11", srli   , I, R(rd) = src1 >> BITS(imm, 4, 0));
 	INSTPAT("010000? ????? ????? 101 ????? 00100 11", srai   , I, R(rd) = (sword_t)src1 >> BITS(imm, 4, 0));
-	INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal    , J, R(rd) = s->pc + 4;s->dnpc = s->pc;s->dnpc += imm;
-																																IFDEF(CONFIG_FTRACE, if(rd == 1)
-																																												trace_func_call(s->pc, s->dnpc, false);
-																																												));
-	INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, s->dnpc = (src1 + imm) & ~(word_t)1; R(rd) = s->pc + 4;IFDEF(CONFIG_FTRACE, {
-  if (s->isa.inst == 0x00008067) {
-    trace_func_ret(s->pc); // ret -> jalr x0, 0(x1)
-  } else if (rd == 1) {
-    trace_func_call(s->pc, s->dnpc, false);
-  } else if (rd == 0 && imm == 0) {
-    trace_func_call(s->pc, s->dnpc, true);
+	INSTPAT("??????? ????? ????? ??? ????? 11011 11", jal    , J, s->dnpc = s->pc;s->dnpc += imm;//symtab
+																																IFDEF(CONFIG_FTRACE, if(rd == 1)//x1 return address
+																																												ftrace_call(s->pc, s->dnpc);
+																																												)R(rd) = s->pc + 4;);
+	INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, s->dnpc = (src1 + imm) & ~(word_t)1; IFDEF(CONFIG_FTRACE, {
+  if (rd == 0 && imm == 0&&s->rs1==1) {
+    ftrace_ret(s->pc); // ret -> jalr x0, 0(x1)  dynsym
+  } else if (rd == 1) {//call
+    ftrace_call(s->pc,s->dnpc);
   }
-}););
+});R(rd) = s->pc + 4;);
 
 	INSTPAT("0000000 ????? ????? 000 ????? 01100 11", add    , R, R(rd) = src1 + src2);
 	INSTPAT("0100000 ????? ????? 000 ????? 01100 11", sub    , R, R(rd) = src1 - src2);

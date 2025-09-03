@@ -1,0 +1,14 @@
+{
+    "files.watcherExclude": {
+        "**/target": true
+    },
+    "files.associations": {
+        "*.inc": "cpp",
+        "type_traits": "cpp",
+        "fstream": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "cassert": "cpp"
+    }
+}

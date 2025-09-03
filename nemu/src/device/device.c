@@ -45,9 +45,10 @@ void device_update() {
 
 #ifndef CONFIG_TARGET_AM
   SDL_Event event;
+  // 循环处理所有待处理的SDL事件
   while (SDL_PollEvent(&event)) {
     switch (event.type) {
-      case SDL_QUIT:
+      case SDL_QUIT://windown close
         nemu_state.state = NEMU_QUIT;
         break;
 #ifdef CONFIG_HAS_KEYBOARD
@@ -66,6 +67,7 @@ void device_update() {
 #endif
 }
 
+//清空 SDL 事件队列
 void sdl_clear_event_queue() {
 #ifndef CONFIG_TARGET_AM
   SDL_Event event;
@@ -74,8 +76,8 @@ void sdl_clear_event_queue() {
 }
 
 void init_device() {
-  IFDEF(CONFIG_TARGET_AM, ioe_init());
-  init_map();
+  IFDEF(CONFIG_TARGET_AM, ioe_init());//device
+  init_map();//mem
 
   IFDEF(CONFIG_HAS_SERIAL, init_serial());
   IFDEF(CONFIG_HAS_TIMER, init_timer());

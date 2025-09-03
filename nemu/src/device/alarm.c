@@ -26,22 +26,21 @@ static int idx = 0;
 void add_alarm_handle(alarm_handler_t h) {
   assert(idx < MAX_HANDLER);
   handler[idx ++] = h;
-}
+}//get timer func
 
 static void alarm_sig_handler(int signum) {
   int i;
   for (i = 0; i < idx; i ++) {
     handler[i]();
   }
-}
+}//回调
 
 void init_alarm() {
   struct sigaction s;
   memset(&s, 0, sizeof(s));
-  s.sa_handler = alarm_sig_handler;
-  int ret = sigaction(SIGVTALRM, &s, NULL);
+  s.sa_handler = alarm_sig_handler;//set 
+  int ret = sigaction(SIGVTALRM, &s, NULL);//注册singal
   Assert(ret == 0, "Can not set signal handler");
-
   struct itimerval it = {};
   it.it_value.tv_sec = 0;
   it.it_value.tv_usec = 1000000 / TIMER_HZ;

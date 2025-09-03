@@ -23,7 +23,7 @@ void init_difftest(char *ref_so_file, long img_size, int port);
 void init_device();
 void init_sdb();
 void init_disasm();
-void parse_elf(const char **elf_files, int elf_file_count);
+static char *elf_file = NULL;
 
 static void welcome() {
   Log("Trace: %s", MUXDEF(CONFIG_TRACE, ANSI_FMT("ON", ANSI_FG_GREEN), ANSI_FMT("OFF", ANSI_FG_RED)));
@@ -44,11 +44,36 @@ void sdb_set_batch_mode();
 
 static char *log_file = NULL;
 static char *diff_so_file = NULL;
-static int elf_file_count = 0;
-static const char *elf_files[2];
 static char *img_file = NULL;
 static int difftest_port = 1234;
-
+#ifdef CONFIG_FTRACE
+void parse_elf(const char *elf_file);
+static void set_elf_file() {
+  if (img_file == NULL) {
+    printf("Error: img_file is NULL.\n");
+    return;
+  }
+  size_t len = strlen(img_file);
+  if (len < 5 || strcmp(img_file + len - 4, ".bin") != 0) {
+    printf("Error: img_file does not have '.bin' extension: %s\n", img_file);
+    return;
+  }
+  
+  // 分配足够内存
+  elf_file = (char *)malloc(len + 1);
+  if (elf_file == NULL) {
+    printf("Error: malloc failed for elf_file.\n");
+    return;
+  }
+  
+  // 完整复制路径
+  strcpy(elf_file, img_file);
+  
+  // 替换
+  char *ext_pos = elf_file + len - 4;
+  strcpy(ext_pos, ".elf");
+}
+#endif
 static long load_img() {
   if (img_file == NULL) {
     Log("No image is given. Use the default build-in image.");
@@ -88,7 +113,7 @@ static int parse_args(int argc, char *argv[]) {
       case 'p': sscanf(optarg, "%d", &difftest_port); break;
       case 'l': log_file = optarg; break;
       case 'd': diff_so_file = optarg; break;
-      case 'e': elf_files[elf_file_count++] = optarg; break;
+      case 'e': elf_file = optarg;; break;
       case 1: img_file = optarg; return 0;
       default:
         printf("Usage: %s [OPTION...] IMAGE [args]\n\n", argv[0]);
@@ -116,8 +141,7 @@ void init_monitor(int argc, char *argv[]) {
   /* Open the log file. */
   init_log(log_file);
 
-  /* Initialize elf */
-  parse_elf(elf_files, elf_file_count);
+  
 
   /* Initialize memory. */
   init_mem();
@@ -130,6 +154,18 @@ void init_monitor(int argc, char *argv[]) {
 
   /* Load the image to memory. This will overwrite the built-in image. */
   long img_size = load_img();
+
+  /* Parse the ELF file. */
+  #ifdef CONFIG_FTRACE
+    if (elf_file == NULL) {
+      set_elf_file();
+  }
+  if (elf_file != NULL) {
+      parse_elf(elf_file);
+  } else {
+      printf("Warning: No ELF file provided. Function names in ftrace will not be resolved.\n");
+  }
+  #endif
 
   /* Initialize differential testing. */
   init_difftest(diff_so_file, img_size, difftest_port);

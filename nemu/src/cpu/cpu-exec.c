@@ -20,12 +20,6 @@
 #include "isa.h"
 #include "/home/qiu/ysyx-workbench/nemu/src/monitor/sdb/watchpoint.h"
 
-
-/* The assembly code of instructions executed is only output to the screen
- * when the number of instructions executed is less than this value.
- * This is useful when you use the `si' command.
- * You can modify this value as you want.
- */
 #define MAX_INST_TO_PRINT 10
 
 CPU_state cpu = {};

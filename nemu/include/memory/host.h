@@ -17,7 +17,7 @@
 #define __MEMORY_HOST_H__
 
 #include <common.h>
-
+//host_mem <-> data(len)
 static inline word_t host_read(void *addr, int len) {
   switch (len) {
     case 1: return *(uint8_t  *)addr;

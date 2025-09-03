@@ -51,16 +51,16 @@ static void init_screen() {
       SCREEN_H * (MUXDEF(CONFIG_VGA_SIZE_400x300, 2, 1)),
       0, &window, &renderer);
   SDL_SetWindowTitle(window, title);
-  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,
+  texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888,//创建纹理
       SDL_TEXTUREACCESS_STATIC, SCREEN_W, SCREEN_H);
-  SDL_RenderPresent(renderer);
+  SDL_RenderPresent(renderer);//初始渲染
 }
 
 static inline void update_screen() {
-  SDL_UpdateTexture(texture, NULL, vmem, SCREEN_W * sizeof(uint32_t));
-  SDL_RenderClear(renderer);
-  SDL_RenderCopy(renderer, texture, NULL, NULL);
-  SDL_RenderPresent(renderer);
+  SDL_UpdateTexture(texture, NULL, vmem, SCREEN_W * sizeof(uint32_t));//更新纹理
+  SDL_RenderClear(renderer);//清空渲染器
+  SDL_RenderCopy(renderer, texture, NULL, NULL);//渲染纹理
+  SDL_RenderPresent(renderer);//提交结果
 }
 #else
 static void init_screen() {}
@@ -74,7 +74,7 @@ static inline void update_screen() {
 void vga_update_screen() {
   // TODO: call `update_screen()` when the sync register is non-zero,
   // then zero out the sync register
-  uint32_t sync = vgactl_port_base[1];
+  uint32_t sync = vgactl_port_base[1];//0 分辨率 1 同步 是否需要进行刷新
   if (sync) {
     update_screen();
     vgactl_port_base[1] = 0;
@@ -83,13 +83,13 @@ void vga_update_screen() {
 
 void init_vga() {
   vgactl_port_base = (uint32_t *)new_space(8);
-  vgactl_port_base[0] = (screen_width() << 16) | screen_height();
+  vgactl_port_base[0] = (screen_width() << 16) | screen_height();//分辨率
 #ifdef CONFIG_HAS_PORT_IO
   add_pio_map ("vgactl", CONFIG_VGA_CTL_PORT, vgactl_port_base, 8, NULL);
 #else
   add_mmio_map("vgactl", CONFIG_VGA_CTL_MMIO, vgactl_port_base, 8, NULL);
 #endif
-
+  //分配显存空间
   vmem = new_space(screen_size());
   add_mmio_map("vmem", CONFIG_FB_ADDR, vmem, screen_size(), NULL);
   IFDEF(CONFIG_VGA_SHOW_SCREEN, init_screen());

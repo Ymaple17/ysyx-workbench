@@ -24,10 +24,9 @@ void display_inst() {
 
   int end = p_cur;
   int i = full?p_cur:0;
-  char buf[128]; // 128 should be enough!
+  char buf[128];
   char *p;
   void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-  //Statement("Most recently executed instructions");
   do {
     p = buf;
     p += sprintf(buf, "%s" FMT_WORD ": %08x ", (i+1)%MAX_IRINGBUF==end?" --> ":"     ", iringbuf[i].pc, iringbuf[i].inst);

@@ -1,79 +1,189 @@
-// Include definitions
 `include "include/defs.vh"
 
-module IDU (
-    // the instruction to be decoded
-    input      [31:0]                                inst_i,
-    // register file access
-    input      [`DATA_WIDTH-1:0]       rs1_data_i,
-    input      [`DATA_WIDTH-1:0]       rs2_data_i,
-    output     wire [`REG_ADDR_WIDTH-1:0]   rs1_addr,
-    output     wire [`REG_ADDR_WIDTH-1:0]   rs2_addr,
-    output     [`REG_ADDR_WIDTH-1:0]   rd_addr_o,
-    // Operands output
-    output     [`DATA_WIDTH-1:0]    Op1,
-    output     [`DATA_WIDTH-1:0]    Op2,
-    input      [1:0]                                 Op1Sel,
-    input      [1:0]                                 Op2Sel,  
-    input wire is_ebreak,  
-    // Jump target addresses
-    input  [`DATA_WIDTH-1:0] pc_i,
-    output [`DATA_WIDTH-1:0] jump_reg_target_o,
-    output [`DATA_WIDTH-1:0] jmp_target_o
-    // Branch conditions
+module ysyx_25020039_IDU (
+    input             clk,
+    input             reset,
+    input      [31:0] instr,
+
+    input             ex_ready,//来自EX就绪
+    input             if_valid,//IF有效
+    output reg        id_ready,//ID就绪
+    output reg        id_valid,//ID输出是否有效
+
+    output reg [6:0]  opcode,
+    output reg [4:0]  rs1,
+    output reg [4:0]  rs2,
+    output reg [4:0]  rd,
+    output reg [31:0] imm,
+    output reg [2:0]  func3,
+    output reg [6:0]  func7,
+    output reg        RegWrite,
+    output reg        MemWrite,
+    output reg        MemRead,
+    output reg [3:0]  alu_op,
+    output reg [2:0]  MemLen
+    // input      [31:0] branch_total,
+    // input      [31:0] branch_correct
 );
+    import "DPI-C" function void sim_exit();
 
-    // -----------------------------
-    // -----------------------------
-    wire [`REG_ADDR_WIDTH-1:0]  wb_addr   = inst_i[11:7];
-    assign  rs1_addr  = inst_i[19:15];
-    assign  rs2_addr  = inst_i[24:20];
+    // 状态机定义
+    typedef enum {
+        IDLE, //空闲等待指令
+        STALL //等待下游握手
+    } state_t;
+    state_t state, next_state;
+    // reg [1:0] delay;
+    // parameter DELAY_CYCLES = 1;
 
-    wire [11:0] imm_i = inst_i[31:20];
-    wire [11:0] imm_s = {inst_i[31:25], inst_i[11:7]};
-    wire [11:0] imm_b = {inst_i[31], inst_i[7], inst_i[30:25], inst_i[11:8]};
-    wire [19:0] imm_u = inst_i[31:12];
-    wire [19:0] imm_j = {inst_i[31], inst_i[19:12], inst_i[20], inst_i[30:21]};
-    wire [4:0]  imm_z = inst_i[19:15];
-
-    wire [`DATA_WIDTH-1:0] imm_i_sext;
-    wire [`DATA_WIDTH-1:0] imm_s_sext;
-    wire [`DATA_WIDTH-1:0] imm_b_sext;
-    wire [`DATA_WIDTH-1:0] imm_u_sext;
-    wire [`DATA_WIDTH-1:0] imm_j_sext;
-
-    // sign extend bits should be consistent with macro DATA_WIDTH
-    assign imm_i_sext = {{20{imm_i[11]}}, imm_i}; 
-    assign imm_s_sext = {{20{imm_s[11]}}, imm_s}; 
-    assign imm_b_sext = {{19{imm_b[11]}}, imm_b, 1'b0}; 
-    assign imm_u_sext = {imm_u, 12'b0}; 
-    assign imm_j_sext = {{11{imm_j[19]}}, imm_j, 1'b0}; 
-
-
-    assign jump_reg_target_o = rs1_data_i + imm_i_sext;
-    assign jmp_target_o      = pc_i + imm_j_sext;
-
-    assign rd_addr_o       = wb_addr;
-    MuxKey #(2, 2, `DATA_WIDTH) op1_sel_mux (
-        .out(Op1),
-        .key(Op1Sel),
-        .lut({
-            2'b00, rs1_data_i,
-            2'b01, imm_u_sext
-        })
-    );
-
-    MuxKey #(4, 2, `DATA_WIDTH) op2_sel_mux (
-        .out(Op2),
-        .key(Op2Sel),
-        .lut({
-            2'b00, pc_i,
-            2'b01, imm_i_sext,
-            2'b10, imm_s_sext,
-            2'b11, rs2_data_i
-        })
-    );
+    reg [31:0] immI;
+    reg [31:0] immU;
+    reg [31:0] immS;
+    reg [31:0] immB;
+    reg [31:0] immJ;
+    reg [31:0] immR;
+    reg [4:0] get_opcode;
     
- 
+    assign immI = {{20{instr[31]}}, instr[31:20]};
+    assign immU = {instr[31:12], 12'b0};
+    assign immS = {{20{instr[31]}}, instr[31:25], instr[11:7]};
+    assign immB = {{20{instr[31]}}, instr[7], instr[30:25], instr[11:8], 1'b0};
+    assign immJ = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
+    assign immR = 32'b0;
 
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            opcode    = 7'b0;
+            rs1       = 5'b0;
+            rs2       = 5'b0;
+            rd        = 5'b0;
+            imm       = 32'b0;
+            func3     = 3'b0;
+            func7     = 7'b0;
+            RegWrite  = 1'b0;
+            MemWrite  = 1'b0;
+            MemRead   = 1'b0;
+            alu_op    = `ALU_ADD;
+            MemLen    = `Mem_Word;
+        end
+        else begin
+            state = next_state;
+            case (state)
+                IDLE: begin
+                    id_ready = 1'b1;  //空闲时准备接收指令
+                    id_valid = 1'b0;
+                    // delay = DELAY_CYCLES;
+                    if(if_valid) begin
+                        // instr = instr; 
+                        id_ready = 1'b0;    //译码时不接收新指令
+                        id_valid = 1'b0;    //译码期间不驱动输出
+
+                        opcode = instr[6:0];
+                        rs1    = instr[19:15];
+                        rs2    = instr[24:20];
+                        rd     = instr[11:7];
+                        func3  = instr[14:12];
+                        func7  = instr[31:25];
+
+                        imm      = 32'b0;
+                        RegWrite = 1'b0;
+                        MemWrite = 1'b0;
+                        MemRead  = 1'b0;
+                        alu_op   = `ALU_ADD;
+                        MemLen   = `Mem_Word;
+                
+                        assign get_opcode = opcode[6:2];
+
+                        case(get_opcode)
+                            // LUI
+                            `INST_TYPE_LUI: begin
+                                imm = immU;
+                                RegWrite = 1'b1;
+                            end
+                            // AUIPC
+                            `INST_TYPE_AUIPC: begin
+                                imm = immU;
+                                RegWrite = 1'b1;
+                                alu_op=`ALU_ADD;//PC+imm
+                            end
+                            // JALR
+                            `INST_TYPE_JALR: begin
+                                if (func3 == 3'b000) begin
+                                    imm = immI;
+                                    RegWrite = 1'b1;
+                                end
+                            end
+                            `INST_TYPE_S: begin
+                                imm=immS;
+                                MemWrite=1'b1;
+                                alu_op=`ALU_ADD;
+                                case(func3)
+                                    `F3_SW: MemLen=`Mem_Word;
+                                    `F3_SB: MemLen=`Mem_Bit;
+                                    default:;
+                                endcase
+                            end
+
+                            `INST_TYPE_L: begin
+                                if(func3 == `F3_LW) begin
+                                    imm=immI;
+                                    RegWrite=1'b1;
+                                    MemRead=1'b1;
+                                    alu_op = `ALU_ADD;
+                                    MemLen = `Mem_Word;
+                                end
+                                else if(func3 == `F3_LBU) begin
+                                    imm=immI;
+                                    RegWrite=1'b1;
+                                    MemRead=1'b1;
+                                    alu_op = `ALU_ADD;
+                                    MemLen = `Mem_UBit;
+                                end
+                            end
+
+                            `INST_TYPE_R: begin
+                                RegWrite = 1'b1;
+                                imm = immR;
+                                case (func3)
+                                    3'b000:   alu_op = (func7[5]) ? `ALU_SUB : `ALU_ADD; // add, sub
+                                    default:;
+                                endcase
+                            end
+
+                            `INST_TYPE_I: begin
+                                imm=immI;
+                                RegWrite=1'b1;
+                                case(func3)
+                                    `F3_ADDI: alu_op = `ALU_ADD;
+                                    default:;
+                                endcase
+                            end
+
+                            `INST_TYPE_E: begin
+                                if (instr == `INST_EBREAK) begin
+                                    sim_exit();
+                                    $display("EBREAK: Simulation exiting...");
+                                end
+                            end
+                            default:;
+                        endcase
+                        next_state = ex_ready ? STALL : IDLE;
+                    end
+                    else begin
+                        next_state = IDLE;
+                    end
+                end
+                STALL: begin
+                    id_ready = 1'b0;
+                    id_valid = 1'b1;
+                    next_state = ex_ready ? IDLE : STALL;
+                end
+                default: begin
+                    id_valid = 1'b0;
+                    id_ready = 1'b0;
+                    next_state = IDLE;
+                end
+            endcase
+        end
+    end
 endmodule

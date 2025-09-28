@@ -1,118 +1,134 @@
-`include "include/defs.vh"
+`include "/home/qiu/ysyx-workbench/npc/mul_vsrc/include/defs.vh"
 
 module IFU (
-  // Clock and reset signals
-  input                                clk,
-  input                                rst,
-  // Program counter (PC) control signals
-  input      [2:0]                     pc_sel,   
-  input      [`DATA_WIDTH-1:0]         jump_reg_target,
-  input      [`DATA_WIDTH-1:0]         br_target,
-  input      [`DATA_WIDTH-1:0]         jmp_target,
-  input                                pc_wen,
-  // IFU output
-  output     [`DATA_WIDTH-1:0]         pc_o,
-  output reg [31:0]                    inst_o,
-  output     [`DATA_WIDTH-1:0]         pc_plus4_o,
-  output reg                           inst_valid,  // 添加指令有效信号
-  input wire                           is_ecall,
-  input wire                           is_mret,
-  input wire [`DATA_WIDTH-1:0]         mtvec_val,
-  input wire [`DATA_WIDTH-1:0]         mepc_val
+    input         clk,
+    input         reset,
+    input  [31:0] branch_target,
+    input         pc_src,
+    input         id_ready,
+    input         wb_valid,
+    output reg    if_ready,
+    output reg    if_valid,
+    output reg [31:0] pc,
+    output reg [31:0] instr,
+    output reg        if_access_fault,
+    output reg [31:0] if_fault_addr,
+
+    output reg [31:0] sram_araddr,
+    output reg        sram_arvalid,
+    input wire        sram_arready,
+    input wire [31:0] sram_rdata,
+    input wire        sram_rvalid,
+    output reg        sram_rready,
+    input wire [1:0]  sram_rresp,
+    output reg [31:0] sram_awaddr,
+    output reg        sram_awvalid,
+    input wire        sram_awready,
+    output reg [31:0] sram_wdata,
+    output reg [3:0]  sram_wstrb,
+    output reg        sram_wvalid,
+    input wire        sram_wready,
+    input wire [1:0]  sram_bresp,
+    input wire        sram_bvalid,
+    output reg        sram_bready
 );
+    typedef enum {IDLE, READ_ADDR, READ_DATA, STALL} state_t;
+    state_t state;
 
-  wire [`DATA_WIDTH-1:0] pc_next;
-  wire [`DATA_WIDTH-1:0] pc_plus4;
-  reg                    rst_done; 
-
-  reg                    sram_valid;
-  wire                   sram_ready;
-  wire                   sram_data_valid;
-  wire [31:0]           sram_data;
-  reg                    fetching;
-
-  always @(posedge clk) begin
-    if (rst) begin
-      rst_done <= 1'b0; 
-    end else begin
-      rst_done <= 1'b1;  
+    always @(posedge clk) begin
+        sram_awaddr <= 0;
+        sram_awvalid <= 0;
+        sram_wdata <= 0;
+        sram_wstrb <= 0;
+        sram_wvalid <= 0;
+        sram_bready <= 0;
     end
-  end
 
-  // 只在有效指令且PC写使能时更新PC
-  wire pc_update_en = pc_wen & inst_valid;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            pc <= 32'h8000_0000;
+            sram_araddr <= 32'h8000_0000;
 
-  Reg #(
-    .WIDTH(`DATA_WIDTH),
-    .RESET_VAL(32'h80000000)
-  ) pc_reg (
-    .clk (clk),
-    .rst (rst),
-    .din (pc_next),
-    .dout(pc_o),
-    .wen (pc_update_en)
-  );
-
-  SRAM imem_sram (
-    .clk     (clk),
-    .rst     (rst),
-    .valid_i (sram_valid),
-    .ready_o (sram_ready),
-    .addr_i  (pc_o),
-    .valid_o (sram_data_valid),
-    .data_o  (sram_data)
-  );
-
-  // Fetch control state machine
-  always @(posedge clk) begin
-    if(rst) begin
-      fetching <= 1'b0;
-      sram_valid <= 1'b0;
-      inst_valid <= 1'b0;
-    end else begin
-      // Start fetch if not currently fetching
-      if (!fetching && rst_done && !inst_valid) begin
-        sram_valid <= 1'b1;
-        if (sram_valid && sram_ready) begin
-          fetching <= 1'b1;
-          sram_valid <= 1'b0;
+            if_valid <= 1'b0;
+            if_ready <= 1'b1;
+            state <= READ_ADDR;
+            // delay_counter <= 2'b00;
+            sram_arvalid <= 1'b1;
+            sram_rready <= 1'b1;
+            if_access_fault <= 1'b0;
+            if_fault_addr <= 32'h0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    if_ready <= 1'b1;
+                    if_valid <= 1'b0;
+                    sram_arvalid <= 1'b0;
+                    sram_rready <= 1'b0;
+                    if (wb_valid) begin
+                        pc <= pc_src ? branch_target : pc + 4;
+                        sram_araddr <= pc_src ? branch_target : pc + 4;
+                        sram_arvalid <= 1'b1;
+                        state <= READ_ADDR;
+                    end
+                    else begin
+                        state <= IDLE;
+                    end
+                end
+                READ_ADDR: begin
+                    if_ready <= 1'b0;
+                    if_valid <= 1'b0;
+                    if(sram_arready && sram_arvalid) begin
+                        sram_rready <= 1'b1;
+                        state <= READ_DATA;
+                    end 
+                    else begin
+                        state <= READ_ADDR;
+                    end
+                end
+                READ_DATA: begin
+                    if_valid <= 1'b0;
+                    if_ready <= 1'b0;
+                    if(sram_rvalid && sram_rready) begin
+                        sram_arvalid <= 1'b0;
+                        instr <= sram_rdata;
+                        if(sram_rresp != `OKAY) begin
+                            if_access_fault <= 1'b1;
+                            if_fault_addr <= sram_araddr;
+                        end 
+                        else begin
+                            if_access_fault <= 1'b0;
+                            if_fault_addr <= 32'h0;
+                        end
+                        state <= STALL;
+                    end 
+                    else begin
+                        state <= READ_DATA;
+                    end
+                end
+                STALL: begin
+                    if_ready <= 1'b0;
+                    if_valid <= 1'b1;
+                    sram_arvalid <= 1'b0;
+                    if(id_ready) begin
+                        state <= IDLE;
+                    end 
+                    else begin
+                        state <= STALL;
+                    end
+                end
+                default: begin
+                    if_ready <= 1'b0;
+                    if_valid <= 1'b0;
+                    sram_arvalid <= 1'b0;
+                    sram_rready <= 1'b0;
+                    state <= IDLE;
+                end
+            endcase
         end
-      end
-      // When data arrives
-      else if (fetching && sram_data_valid) begin
-        fetching <= 1'b0;
-        inst_valid <= 1'b1;  // Mark instruction as valid
-      end
-      // Clear valid after PC update
-      else if (inst_valid && pc_update_en) begin
-        inst_valid <= 1'b0;
-        // Start next fetch immediately for sequential instructions
-        if (pc_sel == 3'b000) begin
-          sram_valid <= 1'b1;
-        end
-      end
     end
-  end
 
-  // Instruction output register
-  always @(posedge clk) begin
-    if (rst) begin
-      inst_o <= 32'h00000000;
-    end else if (sram_data_valid && fetching) begin
-      inst_o <= sram_data;
+    always @(posedge clk) begin
+        assert(!(sram_arvalid && sram_arready && state != READ_ADDR)) else $error("[IFU] AR channel handshake in wrong state");
+        assert(!(sram_rvalid && sram_rready && state != READ_DATA)) else $error("[IFU] R channel handshake in wrong state");
     end
-  end
-
-  assign pc_plus4 = pc_o + `PC_STEP;
-  assign pc_plus4_o = pc_plus4;
-
-  assign pc_next = rst ? 32'h80000000 :
-                   is_ecall ? mtvec_val :
-                   is_mret  ? mepc_val :
-                   (pc_sel == 3'b000) ? pc_plus4 :
-                   (pc_sel == 3'b001) ? jump_reg_target :
-                   (pc_sel == 3'b010) ? br_target :
-                   (pc_sel == 3'b011) ? jmp_target : 
-                   32'h80000000;
-
 endmodule

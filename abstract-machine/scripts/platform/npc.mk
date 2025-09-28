@@ -9,15 +9,10 @@ AM_SRCS := riscv/npc/start.S \
            platform/dummy/mpe.c
 
 CFLAGS    += -fdata-sections -ffunction-sections
-CFLAGS    += -I$(AM_HOME)/am/src/riscv/npc/include
-LDFLAGS   += -T $(AM_HOME)/scripts/linker.ld \
-             --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0 \
-             --gc-sections -e _start
+LDSCRIPTS += $(AM_HOME)/scripts/linker.ld
+LDFLAGS   += --defsym=_pmem_start=0x80000000 --defsym=_entry_offset=0x0
+LDFLAGS   += --gc-sections -e _start
 
-NPCFLAGS  := -l $(shell dirname $(IMAGE).elf)/npc-log.txt
-NPCFLAGS  += -e $(IMAGE).elf
-NPCFLAGS  += --diff=$(NPC_HOME)/build/riscv32-nemu-interpreter-so
-# NPCFLAGS += -b  # 批处理模式
 MAINARGS_MAX_LEN = 64
 MAINARGS_PLACEHOLDER = the_insert-arg_rule_in_Makefile_will_insert_mainargs_here
 CFLAGS += -DMAINARGS_MAX_LEN=$(MAINARGS_MAX_LEN) -DMAINARGS_PLACEHOLDER=$(MAINARGS_PLACEHOLDER)
@@ -31,27 +26,6 @@ image: image-dep
 	@$(OBJCOPY) -S --set-section-flags .bss=alloc,contents -O binary $(IMAGE).elf $(IMAGE).bin
 
 run: insert-arg
-	$(MAKE) -C $(NPC_HOME) run \
-		ARGS="$(NPCFLAGS)" \
-		PROGRAM="$(abspath $(IMAGE).bin)" \
-		
+	echo "TODO: add command here to run simulation"
 
-step: insert-arg
-	$(MAKE) -C $(NPC_HOME) step \
-		PROGRAM="$(abspath $(IMAGE).bin)" \
-		RUN_MODE=step \
-		ARGS="$(NPCFLAGS)"
-
-# minirun: insert-arg
-# 	$(MAKE) -C $(NPC_HOME) minirun \
-# 		ARGS="$(NPCFLAGS)" \
-# 		PROGRAM="$(abspath $(IMAGE).bin)" \
-		
-
-# ministep: insert-arg
-# 	$(MAKE) -C $(NPC_HOME) ministep \
-# 		PROGRAM="$(abspath $(IMAGE).bin)" \
-# 		RUN_MODE=step \
-# 		ARGS="$(NPCFLAGS)"
-
-.PHONY: image insert-arg run gdb
+.PHONY: insert-arg

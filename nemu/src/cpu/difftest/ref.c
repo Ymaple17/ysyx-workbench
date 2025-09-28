@@ -20,7 +20,7 @@
 
 //extern CPU_state cpu;
 
-__EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction) 
+__EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction) //同步内存
 {
     if(direction == DIFFTEST_TO_REF){
         memcpy(guest_to_host(addr), buf, n);
@@ -31,7 +31,7 @@ __EXPORT void difftest_memcpy(paddr_t addr, void *buf, size_t n, bool direction)
 }
 
 
-__EXPORT void difftest_regcpy(CPU_state *dut, bool direction) {
+__EXPORT void difftest_regcpy(CPU_state *dut, bool direction) {//同步寄存器
     // CPU_state *diff_ref = (CPU_state *)dut;
     int i;
     for(i = 0; i < 32; i++){

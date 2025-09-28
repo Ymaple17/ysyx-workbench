@@ -1,51 +1,72 @@
 VERILATOR = verilator
 TOP_MODULE = top
 
-CSRC = $(shell find csrc -name "*.cpp" -o -name "*.c")#rv32e
-#CSRC = $(shell find chisel_csrc -name "*.cpp" -o -name "*.c")#chisel
+# CSRC = $(shell find chisel_csrc -name "*.cpp" -o -name "*.c")#chisel
+# CSRC = $(shell find mul_chisel_csrc -name "*.cpp" -o -name "*.c")#mul_chisel
 
 
 VSRC_RISCV32E = $(shell find riscv32e_vsrc -name "*.v" -o -name "*.sv")#rv32e
-#VSRC_RISCV32E = $(shell find single_vsrc -name "*.v" -o -name "*.sv")
-#VSRC_RISCV32E = $(shell find chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#chisel
+# VSRC_RISCV32E = $(shell find mul_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
+# VSRC_RISCV32E = $(shell find chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#chisel
 VSRC_MULVSRC = $(shell find mul_vsrc -name "*.v" -o -name "*.sv")
 VSRC_MINIRISCV = $(shell find miniriscv_vsrc -name "*.v" -o -name "*.sv")
 
 CONFIG_MINIRV_VAL := $(shell grep CONFIG_MINIRV .config | cut -d'=' -f2)
-CONFIG_MUL_VAL := $(shell grep CONFIG_MUL .config | cut -d'=' -f2)
+CONFIG_SINGLE_VAL := $(shell grep CONFIG_SINGLE .config | cut -d'=' -f2)
 
-ifeq ($(CONFIG_MUL_VAL),y)
-VSRC = $(VSRC_MULVSRC)
-$(info [INFO] Using mul_vsrc implementation)
+VSRC_MINIRV_PERIP = $(shell find ../ysyxSoC/perip -name "*.v" -o -name "*.sv")
+VSRC_MINIRV_TOP = ../ysyxSoC/ready-to-run/D-stage/ysyxSoCFull.v
+
+VERILATOR_FLAGS =
+
+ifeq ($(CONFIG_SINGLE_VAL),y)
+VSRC = $(VSRC_RISCV32E)
+CSRC = $(shell find riscv32e_csrc -name "*.cpp" -o -name "*.c")#rv32e
+$(info [INFO] Using single_vsrc implementation)
 else ifeq ($(CONFIG_MINIRV_VAL),y)
-VSRC = $(VSRC_MINIRISCV)
+VSRC = $(VSRC_MINIRISCV) $(VSRC_MINIRV_PERIP) $(VSRC_MINIRV_TOP)
+CSRC = $(shell find minirv_csrc -name "*.cpp" -o -name "*.c")#minirv
+
+TOP_MODULE = ysyxSoCFull
+VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
+
 $(info [INFO] Using MiniRISCV implementation)
 else
-VSRC = $(VSRC_RISCV32E)
-$(info [INFO] Using RISC-V32E implementation)
+VSRC = $(VSRC_MULVSRC)
+CSRC = $(shell find mul_csrc -name "*.cpp" -o -name "*.c")#mul
+$(info [INFO] Using mul implementation)
 endif
 
 C_INCLUDE_DIRS = -Icsrc \
                  -I$(NPC_HOME)/csrc/include \
                  -I$(NPC_HOME)/include \
                  -Ichisel_csrc \
-                 -I$(NPC_HOME)/chisel_csrc/include
+                 -I$(NPC_HOME)/chisel_csrc/include \
+                 -Imul_csrc \
+                 -I$(NPC_HOME)/mul_csrc/include
 
-V_INCLUDE_DIRS = -Iriscv32e_vsrc \
-                 -Iriscv32e_vsrc/include \
-                 -Iminiriscv_vsrc \
-                 -Iminiriscv_vsrc/include\
-                 -Imul_vsrc \
-                 -Imul_vsrc/include\
-                 -Isingle_npc \
-				 -Isingle_vsrc/include
+V_INCLUDE_DIRS =
+ifeq ($(CONFIG_SINGLE_VAL),y)
+  V_INCLUDE_DIRS += -Iriscv32e_vsrc \
+                    -Iriscv32e_vsrc/include
+else ifeq ($(CONFIG_MINIRV_VAL),y)
+  V_INCLUDE_DIRS += -Iminiriscv_vsrc \
+                    -Iminiriscv_vsrc/include \
+                    -I../ysyxSoC/perip/uart16550/rtl \
+                    -I../ysyxSoC/perip/spi/rtl
+else
+  V_INCLUDE_DIRS += -Imul_vsrc \
+                    -Imul_vsrc/include
+endif
 
 
 INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
 OBJ_DIR = obj_dir
 EXEC = $(OBJ_DIR)/V$(TOP_MODULE)
 BUILD_DIR ?= build
-PROGRAM ?= $(BUILD_DIR)/dummy.bin
+# PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/hello-minirv-ysyxsoc.bin
+#  PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/dummy.bin
+PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/hello.bin
 
 ifeq (,$(wildcard .config))
 $(error .config file not found, please run 'make menuconfig' first)
@@ -55,7 +76,6 @@ include .config
 
 CFLAGS = -Wall -std=c++11 -g
 CXXFLAGS = $(CFLAGS)
-VERILATOR_FLAGS =
 LDFLAGS_BASE = -lreadline -lSDL2 -ldl
 
 

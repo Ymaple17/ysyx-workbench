@@ -59,7 +59,7 @@ word_t map_read(paddr_t addr, int len, IOMap *map) {
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);
   paddr_t offset = addr - map->low;
-  invoke_callback(map->callback, offset, len, false); // prepare data to read
+  invoke_callback(map->callback, offset, len, false); // prepare data to read  is_write = false 
   word_t ret = host_read(map->space + offset, len);
   IFDEF(CONFIG_DTRACE,trace_dread(addr,len,map));
   return ret;
@@ -69,7 +69,7 @@ void map_write(paddr_t addr, int len, word_t data, IOMap *map) {
   assert(len >= 1 && len <= 8);
   check_bound(map, addr);
   paddr_t offset = addr - map->low;
-  host_write(map->space + offset, len, data);
+  host_write(map->space + offset, len, data);//实际地址
   invoke_callback(map->callback, offset, len, true);
   IFDEF(CONFIG_DTRACE,trace_dwrite(addr,len,data,map));
 }

@@ -1,125 +1,224 @@
-`include "include/defs.vh"
+`include "/home/qiu/ysyx-workbench/npc/mul_vsrc/include/defs.vh"
 
-module LSU (
-  input                        clk,            // 时钟信号
-  input                        rst,            // 复位信号
-  input      [`DATA_WIDTH-1:0] dmem_addr,      // 内存地址
-  input      [`DATA_WIDTH-1:0] dmem_wdata_raw, // 原始写数据（rs2）
-  input      [2:0]             ctl_mem_access, // 内存访问控制（操作类型）
-  input                        mem_en,         // 内存访问使能
-  input                        mem_wen,        // 内存写使能
-  output     [`DATA_WIDTH-1:0] dmem_rdata,     // 对齐后读数据（输出到WBU）
-  output reg [`DATA_WIDTH-1:0] mem_addr,       
-  output reg                   wen             
+module MEM (
+    input             clk,
+    input             reset,
+    input             ex_valid,//上游ex输出是否有效
+    output reg        mem_ready,//mem就绪状态
+    input             wb_ready,//下游wb写回是否就绪
+    output reg        mem_valid,//mem模块输出是否有效
+    input             MemRead,
+    input             MemWrite,
+    input      [31:0] addr,
+    input      [31:0] data_in,
+    input      [2:0]  MemLen,
+    output reg [31:0] data_out,
+    output reg        load_access_fault,//异常访问
+    output reg        store_access_fault,//异常写入
+    output reg [31:0] mem_fault_addr,//异常地址
+
+    output reg [31:0] sram_araddr,
+    output reg        sram_arvalid,
+    input wire        sram_arready,
+    input wire [31:0] sram_rdata,
+    input wire        sram_rvalid,
+    output reg        sram_rready,
+    input wire [1:0]  sram_rresp,
+    output reg [31:0] sram_awaddr,
+    output reg        sram_awvalid,
+    input wire        sram_awready,
+    output reg [31:0] sram_wdata,
+    output reg [3:0]  sram_wstrb,
+    output reg        sram_wvalid,
+    input wire        sram_wready,
+    input wire [1:0]  sram_bresp,
+    input wire        sram_bvalid,
+    output reg        sram_bready
 );
+    //====状态机定义====//  
+    typedef enum {IDLE, READ_ADDR, READ_DATA, 
+    WRITE_ADDR, WRITE_DATA, WRITE_RESP, STALL} state_t;
+    state_t state;
+    
+    reg [1:0] delay;
+    parameter DELAY_CYCLES = 3;
 
-  import "DPI-C" context function int paddr_read(input int raddr);
-  import "DPI-C" context function void paddr_write(input int waddr, input int wdata, input byte wmask);
+    always @(posedge clk or posedge reset) begin
+        if(reset) begin
+            state <= IDLE;
+            delay <= DELAY_CYCLES;
+            mem_ready <= 1'b1;
+            mem_valid <= 1'b0;
+            data_out <= 32'h0;
 
-  reg  [`DATA_WIDTH-1:0] dmem_rdata_raw; 
-  wire [`DATA_WIDTH-1:0] dmem_wdata;     
-  wire [7:0]             wmask;         
+            sram_arvalid <= 1'b0;
+            sram_rready <= 1'b0;
+            sram_wvalid <= 1'b0;
+            sram_araddr <= 32'h0;
+            sram_awaddr <= 32'h0;
+            sram_awvalid <= 1'b0;
+            sram_wdata <= 32'h0;
+            sram_wstrb <= 4'b1111;
+            sram_bready <= 1'b0;
+            load_access_fault <= 1'b0;
+            store_access_fault <= 1'b0;
+            mem_fault_addr <= 32'h0;
+        end
+        else begin
+            case(state)
+                IDLE: begin
+                    mem_ready <= 1'b1;
+                    mem_valid <= 1'b0;
+                    sram_arvalid <= 1'b0;
+                    sram_rready <= 1'b0;
+                    sram_awvalid <= 1'b0;
+                    sram_bready <= 1'b0;
+                    load_access_fault <= 1'b0;
+                    store_access_fault <= 1'b0;
+                    if(ex_valid && mem_ready) begin//mem和上游ex握手
+                        if(MemRead) begin
+                            sram_araddr <= addr;
+                            sram_arvalid <= 1'b1;//发送sram读请求
+                            state <= READ_ADDR;
+                        end
+                        else if(MemWrite) begin
+                            sram_awaddr <= addr;
+                            sram_awvalid <= 1'b1;//发送sram写地址请求
+                            sram_wdata <= data_in;
+                            case(MemLen)
+                                `Mem_Bit:  sram_wstrb <= 4'b0001;//sb
+                                `Mem_Half: sram_wstrb <= 4'b0011;//sh
+                                `Mem_Word: sram_wstrb <= 4'b1111;//sw
+                                default:   sram_wstrb <= 4'b1111;
+                            endcase
+                            state <= WRITE_ADDR;
+                        end
+                        else begin
+                            state <= STALL;
+                        end
+                    end
+                    else begin
+                        state <= IDLE;
+                    end
+                end
 
-  // 1. 读操作：组合逻辑（可保留，读操作多次执行通常无副作用）
-  always @(*) begin
-    if (rst || !mem_en) begin
-      dmem_rdata_raw = 32'b0;
-    end else begin
-      dmem_rdata_raw = paddr_read(dmem_addr);
+                READ_ADDR: begin
+                    mem_ready <= 1'b0;
+                    mem_valid <= 1'b0;
+                    // sram_arvalid <= 1'b1;
+                    if(sram_arready && sram_arvalid) begin
+
+                        state <= READ_DATA;
+                    end
+                    else begin
+                        state <= READ_ADDR;
+                    end
+                end
+
+                READ_DATA: begin
+                    mem_ready <= 1'b0;
+                    mem_valid <= 1'b0;
+                    sram_rready <= 1'b1;
+                    if(sram_rvalid && sram_rready) begin
+                        sram_arvalid <= 1'b0;
+                        case(MemLen)
+                            `Mem_Bit:   data_out <= {{24{sram_rdata[7]}},sram_rdata[7:0]}; 
+                            `Mem_UBit:  data_out <= {24'b0,sram_rdata[7:0]};
+                            `Mem_UHalf: data_out <= {16'b0,sram_rdata[15:0]};
+                            `Mem_Half:  data_out <= {{16{sram_rdata[15]}},sram_rdata[15:0]};
+                            `Mem_Word:  data_out <= sram_rdata;
+                            default:    data_out <= 32'h0;
+                        endcase
+                        if(sram_rresp != `OKAY) begin
+                            load_access_fault <= 1'b1;
+                            mem_fault_addr <= sram_araddr;
+                        end
+                        else begin
+                            load_access_fault <= 1'b0;
+                            mem_fault_addr <= 32'h0;
+                        end
+                        state <= STALL;
+                    end
+                    else begin
+                        state <= READ_DATA;
+                    end
+                end
+
+                WRITE_ADDR: begin
+                    mem_ready <= 1'b0;
+                    mem_valid <= 1'b0;
+                    if(sram_awready && sram_awvalid) begin
+                        sram_wvalid <= 1'b1;//发送写请求
+                        state <= WRITE_DATA;
+                    end
+                    else begin
+                        state <= WRITE_ADDR;
+                    end
+                end
+
+                WRITE_DATA: begin
+                    mem_ready <= 1'b0;
+                    mem_valid <= 1'b0;
+                    // sram_wvalid <= 1'b1;//发送写请求
+                    if(sram_wready && sram_wvalid) begin
+                        sram_awvalid <= 1'b0;
+                        sram_bready <= 1'b1;//准备接受写响应
+                        
+                        state <= WRITE_RESP;
+                    end
+                    else begin
+                        state <= WRITE_DATA;
+                    end
+                end
+                
+                WRITE_RESP: begin
+                    mem_ready <= 1'b0;
+                    mem_valid <= 1'b0;
+                    if(sram_bvalid && sram_bready) begin
+                        if(sram_bresp != `OKAY) begin
+                            store_access_fault <= 1'b1;
+                            mem_fault_addr <= sram_awaddr;
+                        end
+                        else begin
+                            store_access_fault <= 1'b0;
+                            mem_fault_addr <= 32'h0;
+                        end
+                        state <= STALL;
+                    end
+                    else begin
+                        state <= WRITE_RESP;
+                    end
+                end
+                STALL: begin
+                    mem_ready <= 1'b0;
+                    mem_valid <= 1'b1;
+                    sram_wvalid <= 1'b0;
+                    sram_rready <= 1'b0;
+                    sram_arvalid <= 1'b0;
+                    sram_bready <= 1'b0;
+                    sram_awvalid <= 1'b0;
+                    if(wb_ready) begin
+                        state <= IDLE;
+                    end
+                    else begin
+                        state <= STALL;
+                    end
+                end
+
+                default: begin
+                    mem_ready <= 1'b0;
+                    mem_valid <= 1'b0;
+                    state <= IDLE;
+                end
+            endcase
+        end
     end
-  end
-
-  // 2. 写操作：时序逻辑（仅在时钟边沿执行一次）
-  always @(posedge clk) begin
-    if (!rst && mem_en && mem_wen) begin  // 仅在时钟边沿且条件满足时执行
-      paddr_write(dmem_addr, dmem_wdata, wmask);
+    // 协议断言
+    always @(posedge clk) begin
+        assert(!(sram_arvalid && sram_arready && state != READ_ADDR)) else $error("[MEM] AR channel handshake in wrong state");
+        assert(!(sram_rvalid && sram_rready && state != READ_DATA)) else $error("[MEM] R channel handshake in wrong state");
+        assert(!(sram_awvalid && sram_awready && state != WRITE_ADDR)) else $error("[MEM] AW channel handshake in wrong state");
+        assert(!(sram_wvalid && sram_wready && state != WRITE_DATA)) else $error("[MEM] W channel handshake in wrong state");
+        assert(!(sram_bvalid && sram_bready && state != WRITE_RESP)) else $error("[MEM] B channel handshake in wrong state");
     end
-  end
-
-  // 3. 数据对齐和写掩码生成（保持不变）
-  alignment_network align_unit (
-    .data_in(dmem_rdata_raw),
-    .dmem_addr(dmem_addr),
-    .control(ctl_mem_access),
-    .data_out(dmem_rdata)
-  );
-
-  wmask_gen wmask_unit (
-    .control(ctl_mem_access),
-    .dmem_addr(dmem_addr),
-    .dmem_wdata_raw(dmem_wdata_raw),
-    .dmem_wdata(dmem_wdata),
-    .wmask(wmask)
-  );
-
-  // 调试信号（时序输出，避免毛刺）
-  always @(posedge clk) begin
-    mem_addr <= dmem_addr;
-    wen <= mem_en | mem_wen;
-  end
-
 endmodule
-module alignment_network (
-  input  [`DATA_WIDTH-1:0] data_in,  
-  input  [`DATA_WIDTH-1:0] dmem_addr,     
-  input  [2:0]  control,       
-  output [`DATA_WIDTH-1:0] data_out       
-);
-
-  wire [1:0] shift_amount = dmem_addr[1:0];
-  wire [`DATA_WIDTH-1:0] shifted_data = data_in >> (shift_amount * 8);
-
-  wire [`DATA_WIDTH-1:0] zero_ext_byte;   
-  wire [`DATA_WIDTH-1:0] zero_ext_half;
-  wire [`DATA_WIDTH-1:0] sign_ext_byte;
-  wire [`DATA_WIDTH-1:0] sign_ext_half;
-
-  assign zero_ext_byte = {24'b0, shifted_data[7:0]};
-  assign zero_ext_half = {16'b0, shifted_data[15:0]};
-  assign sign_ext_byte = {{24{shifted_data[7]}}, shifted_data[7:0]};
-  assign sign_ext_half = {{16{shifted_data[15]}}, shifted_data[15:0]};
-
-  MuxKey #(
-    .NR_KEY(5),         
-    .KEY_LEN(3),        
-    .DATA_LEN(`DATA_WIDTH)       
-  ) mem_mux (
-    .out(data_out),
-    .key(control), 
-    .lut({              
-      3'b100, zero_ext_byte,    // LBU                       
-      3'b101, zero_ext_half,    // LHU
-      3'b010, data_in,          // LW
-      3'b000, sign_ext_byte,    // LB
-      3'b001, sign_ext_half     // LH                   
-    })
-  );
-
-endmodule
-
-module wmask_gen (
-  input  [2:0]  control,   
-  input  [`DATA_WIDTH-1:0] dmem_addr,     
-  input  [`DATA_WIDTH-1:0] dmem_wdata_raw,  
-  output [`DATA_WIDTH-1:0] dmem_wdata,   
-  output [7:0] wmask       
-);
-
-  wire [1:0] shift_amount = dmem_addr[1:0];
-  wire [7:0] base_mask;
-
-  MuxKey #(3, 3, 8) mask_mux (
-    .out(base_mask),
-    .key(control), 
-    .lut({              
-      3'b010, 8'b00001111,    // SW                      
-      3'b001, 8'b00000011,    // SH
-      3'b000, 8'b00000001     // SB
-    })
-  );
-
-  assign wmask = base_mask << (shift_amount * 1);
-  assign dmem_wdata = dmem_wdata_raw << (shift_amount * 8);
-
-endmodule
-

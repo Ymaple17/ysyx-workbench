@@ -1,63 +1,113 @@
 `include "include/defs.vh"
 
 module IFU (
-    input                    clk,
-    input                    rst,
-    input  [2:0]             pc_sel,
-    input  [`DATA_WIDTH-1:0] jump_reg_target,
-    input  [`DATA_WIDTH-1:0] br_target,
-    input  [`DATA_WIDTH-1:0] jmp_target,
-    input                    pc_wen,
-    input                    is_ecall,
-    input                    is_mret,
-    input  [`DATA_WIDTH-1:0] mtvec_val,
-    input  [`DATA_WIDTH-1:0] mepc_val,
-    output [`DATA_WIDTH-1:0] pc_o,
-    output [`DATA_WIDTH-1:0] inst_o,
-    output [`DATA_WIDTH-1:0] pc_plus4_o
+    input         clk,
+    input         reset,
+    input  [31:0] branch_target,
+    input         pc_src,
+    input         id_ready,
+    input         wb_valid,
+    output reg    if_ready,
+    output reg    if_valid,
+    output reg [31:0] pc,
+    output reg [31:0] instr,
+
+    // SimpleBus interface to SRAM
+    output reg        ifu_reqValid,
+    // input wire        ifu_reqReady,
+    output reg [31:0] ifu_addr,
+    input wire        ifu_respValid,
+    // output reg        ifu_respReady,
+    input wire [31:0] ifu_rdata
 );
+    typedef enum {IDLE, REQ_WAIT, RESP_WAIT, STALL} state_t;
+    state_t state, next_state;
 
-    wire [`DATA_WIDTH-1:0] pc_next;
-    wire [`DATA_WIDTH-1:0] pc_plus4;
-    reg [`DATA_WIDTH-1:0] inst;
-    reg rst_done;
-
-    import "DPI-C" context function int paddr_read(input int raddr);
-
-    always @(*) begin
-        inst = paddr_read(pc_o);
-    end
-
-    always @(posedge clk) begin
-        if (rst) begin
-            rst_done <= 1'b0;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            pc <= 32'h8000_0000;
+            ifu_addr <= 32'h8000_0000;
+            ifu_reqValid <= 1'b0;
+            // ifu_respReady <= 1'b1;
+            if_valid <= 1'b0;
+            if_ready <= 1'b1;
+            state <= REQ_WAIT;      // Start with first instruction fetch
+            instr <= 32'h0000_0000;
         end else begin
-            rst_done <= 1'b1;
+            case (state)
+                IDLE: begin
+                    if_ready <= 1'b1;
+                    if_valid <= 1'b0;
+                    ifu_reqValid <= 1'b0;
+                    // ifu_respReady <= 1'b1;
+                    if (wb_valid) begin
+                        // Update PC for next instruction
+                        pc <= pc_src ? branch_target : pc + 4;
+                        ifu_addr <= pc_src ? branch_target : pc + 4;
+                        if_ready <= 1'b0;
+                        state <= REQ_WAIT;
+                    end
+                    else begin
+                        state <= IDLE;
+                    end
+                end
+                
+                REQ_WAIT: begin
+                    if_ready <= 1'b0;
+                    if_valid <= 1'b0;
+                    // ifu_respReady <= 1'b1;
+                    
+                    // Send request and wait for SRAM to be ready
+                    ifu_reqValid <= 1'b1;
+                    //$display("[IFU] In RESP_WAIT state: ifu_respValid=%b, ifu_respReady=%b, ifu_rdata=0x%08x", ifu_respValid, ifu_respReady, ifu_rdata);
+                    // Request handshake: reqValid && reqReady
+                    if (ifu_reqValid /*&& ifu_reqReady*/) begin
+                        ifu_reqValid <= 1'b0;  // Request accepted, clear valid
+                        state <= RESP_WAIT;
+                    end
+                    else begin
+                        state <= REQ_WAIT; // Keep waiting for SRAM ready
+                    end
+                end
+                
+                RESP_WAIT: begin
+                    if_ready <= 1'b0;
+                    if_valid <= 1'b0;
+                    ifu_reqValid <= 1'b0;
+                    // ifu_respReady <= 1'b1;
+                    
+                    // Response handshake: respValid && respReady
+                    if (ifu_respValid /*&& ifu_respReady*/) begin
+                        instr <= ifu_rdata;
+                        state <= STALL;
+                    end 
+                    else begin
+                        state <= RESP_WAIT; // Keep waiting for response
+                    end
+                end
+                
+                STALL: begin
+                    if_ready <= 1'b0;
+                    if_valid <= 1'b1;
+                    ifu_reqValid <= 1'b0;
+                    // ifu_respReady <= 1'b0; // Not ready for new response
+                    if (id_ready) begin
+                        state <= IDLE;
+                    end 
+                    else begin
+                        state <= STALL;
+                    end
+                end
+                
+                default: begin
+                    if_ready <= 1'b0;
+                    if_valid <= 1'b0;
+                    ifu_reqValid <= 1'b0;
+                    // ifu_respReady <= 1'b0;
+                    state <= IDLE;
+                end
+            endcase
         end
     end
-
-    Reg #(
-        .WIDTH(`DATA_WIDTH),
-        .RESET_VAL(32'h80000000)
-    ) pc_reg (
-        .clk(clk),
-        .rst(rst),
-        .din(pc_next),
-        .dout(pc_o),
-        .wen(pc_wen&&rst_done)
-    );
-
-    assign pc_plus4 = pc_o + 4;
-    assign pc_plus4_o = pc_plus4;
-
-    assign inst_o = rst_done? inst : 32'h0;
-    assign pc_next = rst ? 32'h80000000 :
-                    is_ecall? mtvec_val :
-                    is_mret ? mepc_val :
-                    (pc_sel == 3'b000) ? pc_plus4 :
-                    (pc_sel == 3'b001) ? jump_reg_target :
-                    (pc_sel == 3'b010) ? br_target :
-                    (pc_sel == 3'b011) ? jmp_target :
-                    32'h80000000;
 
 endmodule

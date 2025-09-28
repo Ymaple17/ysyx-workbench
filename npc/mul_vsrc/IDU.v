@@ -1,280 +1,262 @@
-`include "include/defs.vh"
+`include "/home/qiu/ysyx-workbench/npc/mul_vsrc/include/defs.vh"
 
 module IDU (
-    // 输入信号
-    input  [31:0]                inst_i,         // 待解码指令
-    input  [`DATA_WIDTH-1:0]     rs1_data_i,     // 寄存器rs1数据
-    input  [`DATA_WIDTH-1:0]     rs2_data_i,     // 寄存器rs2数据
-    input  [`DATA_WIDTH-1:0]     pc_i,           // 当前PC值
+    input             clk,
+    input             reset,
+    input      [31:0] instr,
 
-    // 寄存器文件访问输出
-    output [`REG_ADDR_WIDTH-1:0] rs1_addr_o,     // rs1地址
-    output [`REG_ADDR_WIDTH-1:0] rs2_addr_o,     // rs2地址
-    output [`REG_ADDR_WIDTH-1:0] rd_addr_o,      // 目的寄存器地址
+    input             ex_ready,//来自EX就绪
+    input             if_valid,//IF有效
+    output reg        id_ready,//ID就绪
+    output reg        id_valid,//ID输出是否有效
 
-    // 运算数输出
-    output [`DATA_WIDTH-1:0]     Op1_o,          // 运算数1
-    output [`DATA_WIDTH-1:0]     Op2_o,          // 运算数2
-
-    // 跳转目标地址输出
-    output [`DATA_WIDTH-1:0]     jump_reg_target_o, // 寄存器跳转目标
-    output [`DATA_WIDTH-1:0]     br_target_o,    // 分支目标地址
-    output [`DATA_WIDTH-1:0]     jmp_target_o,   // 跳转目标地址
-
-    // 控制信号输出
-    output [4:0]                 alu_op_o,       // ALU操作码
-    output [2:0]                 pc_sel_o,       // PC选择信号
-    output                       rf_we_o,        // 寄存器堆写使能
-    output                       mem_en_o,       // 存储器使能
-    output                       mem_wen_o,      // 存储器写使能
-    output [1:0]                 wb_sel_o,       // 写回源选择
-    output                       is_ebreak_o,    // ebreak指令标志
-    output [2:0]                 ctl_mem_access_o, // 存储器访问控制
-    output                       is_csr_instr_o, // CSR指令标志
-    output [2:0]                 csr_op_o,       // CSR操作码
-    output [11:0]                csr_addr_o,     // CSR寄存器地址
-    output                       is_ecall_o,     // 系统调用标志
-    output                       is_mret_o       // 从机器模式返回标志
+    output reg [6:0]  opcode,
+    output reg [4:0]  rs1,
+    output reg [4:0]  rs2,
+    output reg [4:0]  rd,
+    output reg [31:0] imm,
+    output reg [2:0]  func3,
+    output reg [6:0]  func7,
+    output reg        RegWrite,
+    output reg        MemWrite,
+    output reg        MemRead,
+    output reg [3:0]  alu_op,
+    output reg [2:0]  MemLen
+    // input      [31:0] branch_total,
+    // input      [31:0] branch_correct
 );
+    import "DPI-C" function void sim_exit();
 
-    // -----------------------------
-    // 原IDU模块的内部信号和逻辑
-    // -----------------------------
-    wire [`REG_ADDR_WIDTH-1:0]  wb_addr   = inst_i[11:7];
-    assign  rs1_addr_o  = inst_i[19:15];
-    assign  rs2_addr_o  = inst_i[24:20];
+    // 状态机定义
+    typedef enum {
+        IDLE, //空闲等待指令
+        STALL //等待下游握手
+    } state_t;
+    state_t state;
+    // reg [1:0] delay;
+    // parameter DELAY_CYCLES = 1;
 
-    wire [11:0] imm_i = inst_i[31:20];
-    wire [11:0] imm_s = {inst_i[31:25], inst_i[11:7]};
-    wire [11:0] imm_b = {inst_i[31], inst_i[7], inst_i[30:25], inst_i[11:8]};
-    wire [19:0] imm_u = inst_i[31:12];
-    wire [19:0] imm_j = {inst_i[31], inst_i[19:12], inst_i[20], inst_i[30:21]};
-
-    assign is_ecall_o = (inst_i == 32'h0000_0073);
-    assign is_mret_o = (inst_i[31:25] == 7'b0011000) && 
-                       (inst_i[24:20] == 5'b00010) &&    
-                       (inst_i[14:12] == 3'b000) &&       
-                       (inst_i[6:0] == 7'b1110011); 
-
-    wire [`DATA_WIDTH-1:0] imm_i_sext;
-    wire [`DATA_WIDTH-1:0] imm_s_sext;
-    wire [`DATA_WIDTH-1:0] imm_b_sext;
-    wire [`DATA_WIDTH-1:0] imm_u_sext;
-    wire [`DATA_WIDTH-1:0] imm_j_sext;
-
-    assign imm_i_sext = {{20{imm_i[11]}}, imm_i}; 
-    assign imm_s_sext = {{20{imm_s[11]}}, imm_s}; 
-    assign imm_b_sext = {{19{imm_b[11]}}, imm_b, 1'b0}; 
-    assign imm_u_sext = {imm_u, 12'b0}; 
-    assign imm_j_sext = {{11{imm_j[19]}}, imm_j, 1'b0}; 
-
-    assign jump_reg_target_o = rs1_data_i + imm_i_sext;
-    assign br_target_o       = pc_i + imm_b_sext;
-    assign jmp_target_o      = pc_i + imm_j_sext;
-
-    wire br_eq, br_lt, br_ltu;
-    assign br_eq  = (rs1_data_i == rs2_data_i);
-    assign br_lt  = ($signed(rs1_data_i) < $signed(rs2_data_i));
-    assign br_ltu = (rs1_data_i < rs2_data_i);
-
-    assign rd_addr_o = wb_addr;
-    assign csr_addr_o = inst_i[31:20];
-
-    // 操作数选择信号（来自控制逻辑）
-    reg [1:0] op1_sel;
-    reg [1:0] op2_sel;
-    reg is_ebreak;
-
-    // 操作数选择多路器
-    MuxKey #(2, 2, `DATA_WIDTH) op1_sel_mux (
-        .out(Op1_o),
-        .key(op1_sel),
-        .lut({
-            2'b00, rs1_data_i,
-            2'b01, imm_u_sext
-        })
-    );
-
-    MuxKey #(4, 2, `DATA_WIDTH) op2_sel_mux (
-        .out(Op2_o),
-        .key(op2_sel),
-        .lut({
-            2'b00, pc_i,
-            2'b01, imm_i_sext,
-            2'b10, imm_s_sext,
-            2'b11, rs2_data_i
-        })
-    );
-
-    localparam DATA_LEN  = 17;
-    localparam KEY_LEN   = 17;
-    localparam NR_KEY    = 49;
-
-    wire [6:0] opcode = inst_i[6:0];
-    wire [2:0] funct3 = inst_i[14:12];
-    wire [6:0] funct7 = inst_i[31:25];
-
-    reg [KEY_LEN-1:0] inst_key;
+    reg [31:0] immI;
+    reg [31:0] immU;
+    reg [31:0] immS;
+    reg [31:0] immB;
+    reg [31:0] immJ;
+    reg [31:0] immR;
+    reg [4:0] get_opcode;
     
-    always @(*) begin
-        case (opcode)
-            7'b1110011: begin
-                inst_key = {opcode, funct3, funct7};
-            end  
-            7'b1100111: begin
-                case (funct3)
-                    3'b000: inst_key = {opcode, funct3, 7'b0};
-                    default: inst_key = {opcode, funct3, 7'b1101111};
-                endcase
-            end
-            7'b0010011: begin
-                case (funct3)
-                    3'b101: inst_key = {opcode, funct3, funct7};
-                    default: inst_key = {opcode, funct3, 7'b0000000};
-                endcase
-            end
-            7'b0010111, 7'b1101111, 7'b0110111: begin
-                inst_key = {opcode, 3'b0, 7'b0};  
-            end
-            7'b0100011, 7'b0000011, 7'b1100011: begin
-                inst_key = {opcode, funct3, 7'b0}; 
-            end
-            default: begin
-                inst_key = {opcode, funct3, funct7};
-            end
-        endcase
-    end
+    assign immI = {{20{instr[31]}}, instr[31:20]};
+    assign immU = {instr[31:12], 12'b0};
+    assign immS = {{20{instr[31]}}, instr[31:25], instr[11:7]};
+    assign immB = {{20{instr[31]}}, instr[7], instr[30:25], instr[11:8], 1'b0};
+    assign immJ = {{12{instr[31]}}, instr[19:12], instr[20], instr[30:21], 1'b0};
+    assign immR = 32'b0;
 
-    wire [DATA_LEN-1:0] ctl_signals;
-    MuxKey #(NR_KEY, KEY_LEN, DATA_LEN) funct_mux (
-        .out(ctl_signals),
-        .key(inst_key),
-        .lut({
-        // R-type instructions
-        17'b0110011_000_0000000, 17'b00000_00_11_000_1_0_0_10, // ADD
-        17'b0110011_000_0100000, 17'b00001_00_11_000_1_0_0_10, // SUB
-        17'b0110011_001_0000000, 17'b00111_00_11_000_1_0_0_10, // SLL
-        17'b0110011_010_0000000, 17'b00010_00_11_000_1_0_0_10, // SLT
-        17'b0110011_011_0000000, 17'b00011_00_11_000_1_0_0_10, // SLTU
-        17'b0110011_100_0000000, 17'b00100_00_11_000_1_0_0_10, // XOR
-        17'b0110011_101_0000000, 17'b01000_00_11_000_1_0_0_10, // SRL
-        17'b0110011_101_0100000, 17'b01001_00_11_000_1_0_0_10, // SRA
-        17'b0110011_110_0000000, 17'b00101_00_11_000_1_0_0_10, // OR
-        17'b0110011_111_0000000, 17'b00110_00_11_000_1_0_0_10, // AND
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            opcode    = 7'b0;
+            rs1       = 5'b0;
+            rs2       = 5'b0;
+            rd        = 5'b0;
+            imm       = 32'b0;
+            func3     = 3'b0;
+            func7     = 7'b0;
+            RegWrite  = 1'b0;
+            MemWrite  = 1'b0;
+            MemRead   = 1'b0;
+            alu_op    = `ALU_ADD;
+            MemLen    = `Mem_Word;
+        end
+        else begin
+            case (state)
+                IDLE: begin
+                    id_ready = 1'b1;  //空闲时准备接收指令
+                    id_valid = 1'b0;
+                    // delay = DELAY_CYCLES;
+                    if(if_valid) begin
+                        // instr = instr; 
+                        id_ready = 1'b0;    //译码时不接收新指令
+                        id_valid = 1'b0;    //译码期间不驱动输出
 
-        // 乘法指令
-        17'b0110011_000_0000001, 17'b01011_00_11_000_1_0_0_10, // mul
-        17'b0110011_001_0000001, 17'b01100_00_11_000_1_0_0_10, // mulh
-        17'b0110011_011_0000001, 17'b01101_00_11_000_1_0_0_10, // mulhu
-        17'b0110011_100_0000001, 17'b01111_00_11_000_1_0_0_10, // div
-        17'b0110011_101_0000001, 17'b10000_00_11_000_1_0_0_10, // divu
-        17'b0110011_110_0000001, 17'b10001_00_11_000_1_0_0_10, // rem
-        17'b0110011_111_0000001, 17'b10010_00_11_000_1_0_0_10, // remu
+                        opcode = instr[6:0];
+                        rs1    = instr[19:15];
+                        rs2    = instr[24:20];
+                        rd     = instr[11:7];
+                        func3  = instr[14:12];
+                        func7  = instr[31:25];
 
-        // I-type instructions
-        17'b0010011_000_0000000, 17'b00000_00_01_000_1_0_0_10, // ADDI
-        17'b0010011_010_0000000, 17'b00010_00_01_000_1_0_0_10, // SLTI
-        17'b0010011_011_0000000, 17'b00011_00_01_000_1_0_0_10, // SLTIU
-        17'b0010011_100_0000000, 17'b00100_00_01_000_1_0_0_10, // XORI
-        17'b0010011_110_0000000, 17'b00101_00_01_000_1_0_0_10, // ORI
-        17'b0010011_111_0000000, 17'b00110_00_01_000_1_0_0_10, // ANDI
-        17'b0010011_001_0000000, 17'b00111_00_01_000_1_0_0_10, // SLLI
-        17'b0010011_101_0000000, 17'b01000_00_01_000_1_0_0_10, // SRLI
-        17'b0010011_101_0100000, 17'b01001_00_01_000_1_0_0_10, // SRAI
-        17'b0000011_010_0000000, 17'b00000_00_01_000_1_1_0_11, // LW
-        17'b0000011_000_0000000, 17'b00000_00_01_000_1_1_0_11, // LB
-        17'b0000011_100_0000000, 17'b00000_00_01_000_1_1_0_11, // LBU
-        17'b0000011_001_0000000, 17'b00000_00_01_000_1_1_0_11, // LH
-        17'b0000011_101_0000000, 17'b00000_00_01_000_1_1_0_11, // LHU
+                        imm      = 32'b0;
+                        RegWrite = 1'b0;
+                        MemWrite = 1'b0;
+                        MemRead  = 1'b0;
+                        alu_op   = `ALU_ADD;
+                        MemLen   = `Mem_Word;
+                
+                        assign get_opcode = opcode[6:2];
 
-        // B-type instructions
-        17'b1100011_000_0000000, 17'b00000_00_00_000_0_0_0_10, // BEQ
-        17'b1100011_001_0000000, 17'b00000_00_00_000_0_0_0_10, // BNE
-        17'b1100011_100_0000000, 17'b00000_00_00_000_0_0_0_10, // BLT
-        17'b1100011_101_0000000, 17'b00000_00_00_000_0_0_0_10, // BGE
-        17'b1100011_110_0000000, 17'b00000_00_00_000_0_0_0_10, // BLTU
-        17'b1100011_111_0000000, 17'b00000_00_00_000_0_0_0_10, // BGEU
+                        case(get_opcode)
+                            // LUI
+                            `INST_TYPE_LUI: begin
+                                imm = immU;
+                                RegWrite = 1'b1;
+                            end
+                            // AUIPC
+                            `INST_TYPE_AUIPC: begin
+                                imm = immU;
+                                RegWrite = 1'b1;
+                                alu_op=`ALU_ADD;//PC+imm
+                            end
+                            // JAL
+                            `INST_TYPE_JAL: begin
+                                imm = immJ;
+                                RegWrite = 1'b1;
+                            end
+                            // JALR
+                            `INST_TYPE_JALR: begin
+                                if (func3 == 3'b000) begin
+                                    imm = immI;
+                                    RegWrite = 1'b1;
+                                end
+                            end
+                    
+                            `INST_TYPE_S: begin
+                                imm=immS;
+                                MemWrite=1'b1;
+                                alu_op=`ALU_ADD;
+                                case(func3)
+                                    `F3_SW: MemLen=`Mem_Word;
+                                    `F3_SH: MemLen=`Mem_Half;
+                                    `F3_SB: MemLen=`Mem_Bit;
+                                    default:;
+                                endcase
+                            end
 
-        // J-type instructions
-        17'b1101111_000_0000000, 17'b00000_00_00_011_1_0_0_01, // JAL
+                            `INST_TYPE_L: begin
+                                if(func3 == `F3_LW) begin
+                                    imm=immI;
+                                    RegWrite=1'b1;
+                                    MemRead=1'b1;
+                                    alu_op = `ALU_ADD;
 
-        // U-type instructions
-        17'b0010111_000_0000000, 17'b00000_01_00_000_1_0_0_10, // AUIPC
-        17'b0110111_000_0000000, 17'b01010_01_00_000_1_0_0_10, // LUI
+                                    MemLen = `Mem_Word;
+                                end
+                                else if(func3 == `F3_LBU) begin
+                                    imm=immI;
+                                    RegWrite=1'b1;
+                                    MemRead=1'b1;
+                                    alu_op = `ALU_ADD;
+                                    MemLen = `Mem_UBit;
+                                end
+                                else if(func3 == `F3_LH) begin
+                                    imm=immI;
+                                    RegWrite=1'b1;
+                                    MemRead=1'b1;
+                                    alu_op = `ALU_ADD;
 
-        // S-type instructions
-        17'b0100011_010_0000000, 17'b00000_00_10_000_0_1_1_00, // SW
-        17'b0100011_000_0000000, 17'b00000_00_10_000_0_1_1_00, // SB
-        17'b0100011_001_0000000, 17'b00000_00_10_000_0_1_1_00, // SH
+                                    MemLen = `Mem_Half;
+                                end
+                                else if(func3 == `F3_LHU) begin
+                                    imm=immI;
+                                    RegWrite=1'b1;
+                                    MemRead=1'b1;
+                                    alu_op = `ALU_ADD;
 
-        // JALR instruction
-        17'b1100111_000_0000000, 17'b00000_00_01_001_1_0_0_01, // JALR
+                                    MemLen = `Mem_UHalf;
+                                end
+                                else if(func3 == `F3_LB && opcode == 7'b00000_11) begin
+                                    imm=immI;
+                                    RegWrite=1'b1;
+                                    MemRead=1'b1;
+                                    alu_op = `ALU_ADD;
 
-        // ebreak instruction
-        17'b1110011_000_0000000, 17'b00000_00_00_000_0_0_0_00,  // EBREAK
+                                    MemLen = `Mem_Bit;
+                                end
+                            end
 
-        // CSR指令
-        17'b1110011_001_0000000, 17'b00000_00_11_000_1_0_0_10, // CSRRW
-        17'b1110011_010_0000000, 17'b00000_00_11_000_1_0_0_10, // CSRRS
-        17'b1110011_011_0000000, 17'b00000_00_11_000_1_0_0_10, // CSRRC
-        17'b1110011_000_0011000, 17'b00000_00_00_000_0_0_0_00
-        })
-    );
+                            `INST_TYPE_R: begin
+                                RegWrite = 1'b1;
+                                imm = immR;
+                                case (func3)
+                                    3'b000:   alu_op = (func7[5]) ? `ALU_SUB : `ALU_ADD; // add, sub
+                                    `F3_ANDI: alu_op = `ALU_AND; // and
+                                    `F3_ORI:  alu_op = `ALU_OR; // or
+                                    `F3_XORI:   alu_op = `ALU_XOR;// xor
+                                    `F3_SLTU: begin
+                                        if(func7==7'b0000000) alu_op=`ALU_SLTU;
+                                        else if(func7==7'b0000000) alu_op=`ALU_SRL;
+                                    end
+                                    `F3_RSH: begin
+                                        if(func7 == 7'b0100000) alu_op=`ALU_SRA;
+                                        else if(func7 == 7'b0000000) alu_op=`ALU_SRL;
+                                    end
+                                    `F3_LSH: begin
+                                        if(func7==7'b0000000) alu_op=`ALU_SLL;
+                                    end
+                                    `F3_SLT: begin
+                                        if(func7==7'b0000000) alu_op=`ALU_SLT;//slt
+                                    end
+                                    default:;
+                                endcase
+                            end
 
-    // 解码控制信号
-    assign alu_op_o   = ctl_signals[16:12];
-    always @(*) begin
-        op1_sel  = ctl_signals[11:10];
-        op2_sel  = ctl_signals[9:8];
-    end
-    assign rf_we_o    = ctl_signals[4];
-    assign mem_en_o   = ctl_signals[3];
-    assign mem_wen_o  = ctl_signals[2];
-    assign wb_sel_o   = ctl_signals[1:0];
+                            `INST_TYPE_I: begin
+                                imm=immI;
+                                RegWrite=1'b1;
+                                case(func3)
+                                    `F3_ADDI: alu_op = `ALU_ADD;
+                                    `F3_ANDI: alu_op = `ALU_AND;
+                                    `F3_ORI:  alu_op = `ALU_OR;
+                                    `F3_SLTU: alu_op = `ALU_SLTU;//sltiu(支持seqz)
+                                    `F3_SLTI: alu_op = `ALU_SLT;
+                                    `F3_XORI: alu_op = `ALU_XOR;
+                                    `F3_RSH: begin
+                                        if(func7==7'b0100000) alu_op=`ALU_SRA;
+                                        else if(func7==7'b0000000) alu_op=`ALU_SRL;
+                                    end
+                                    `F3_LSH: begin
+                                        if(func7==7'b0000000) alu_op=`ALU_SLL;
+                                    end
+                                    default:;
+                                endcase
+                            end
 
-    // ebreak信号
-    assign is_ebreak = (inst_i == 32'h00100073);
-    assign is_ebreak_o = is_ebreak;
+                            `INST_TYPE_B: begin
+                                imm=immB;
+                                case(func3)
+                                    `F3_BEQ:  alu_op = `ALU_SUB;
+                                    `F3_BNE:  alu_op = `ALU_SUB;
+                                    `F3_BLT:  alu_op = `ALU_SLT;//blt,bltz
+                                    `F3_BGE:  alu_op = `ALU_SLT;//bge,blez
+                                    `F3_BLTU: alu_op = `ALU_SLTU;
+                                    `F3_BGEU: alu_op = `ALU_SLTU;
+                                    default:;
+                                endcase
+                            end
 
-    // CSR相关信号
-    assign is_csr_instr_o = (opcode == 7'b1110011) && !is_ebreak && !is_mret_o;
-    assign csr_op_o = inst_i[14:12];
-
-    // PC选择逻辑
-    reg [2:0] pc_sel;
-    always @(*) begin
-        if (opcode == 7'b1100011) begin
-            // 分支指令处理
-            case (funct3)
-                3'b000: pc_sel = br_eq ? 3'b010 : 3'b000;            // BEQ
-                3'b001: pc_sel = ~br_eq ? 3'b010 : 3'b000;           // BNE
-                3'b100: pc_sel = br_lt ? 3'b010 : 3'b000;            // BLT
-                3'b101: pc_sel = ~br_lt ? 3'b010 : 3'b000;           // BGE
-                3'b110: pc_sel = br_ltu ? 3'b010 : 3'b000;           // BLTU
-                3'b111: pc_sel = ~br_ltu ? 3'b010 : 3'b000;          // BGEU
-                default: pc_sel = 3'b000;
+                            `INST_TYPE_E: begin
+                                if (instr == `INST_EBREAK) begin
+                                    sim_exit();
+                                    $display("EBREAK: Simulation exiting...");
+                                end
+                            end
+                            default:;
+                        endcase
+                        state <= ex_ready ? STALL : IDLE;
+                    end
+                    else begin
+                        state <= IDLE;
+                    end
+                end
+                STALL: begin
+                    id_ready = 1'b0;
+                    id_valid = 1'b1;
+                    state <= ex_ready ? IDLE : STALL;
+                end
+                default: begin
+                    id_valid = 1'b0;
+                    id_ready = 1'b0;
+                    state <= IDLE;
+                end
             endcase
-        end else begin
-            // 非分支指令
-            pc_sel = ctl_signals[7:5];
         end
     end
-    assign pc_sel_o = pc_sel;
-
-    // 存储器访问控制
-    MuxKey #(8, 10, 3) mem_acces_ctl_mux (
-        .out(ctl_mem_access_o),
-        .key({opcode, funct3}),
-        .lut({
-            10'b0000011_010, 3'b010, // LW
-            10'b0000011_000, 3'b000, // LB
-            10'b0000011_100, 3'b100, // LBU
-            10'b0000011_001, 3'b001, // LH
-            10'b0000011_101, 3'b101, // LHU
-            10'b0100011_010, 3'b010, // SW
-            10'b0100011_000, 3'b000, // SB
-            10'b0100011_001, 3'b001  // SH
-        })
-    );
-
 endmodule

@@ -13,7 +13,7 @@ AM_SRCS := native/trm.c \
            native/ioe/disk.c \
 
 CFLAGS  += -fpie $(shell sdl2-config --cflags)
-ASFLAGS += -fpie -pie #com和ld时生成位置无关可执行文件
+ASFLAGS += -fpie -pie
 comma = ,
 LDFLAGS_CXX = $(addprefix -Wl$(comma), $(LDFLAGS)) -pie -ldl $(shell sdl2-config --libs)
 

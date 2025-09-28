@@ -46,20 +46,20 @@ const char* find_func(uint32_t addr) {
 void parse_elf(const char *elf_file) {
   FILE *fp = fopen(elf_file, "rb");
   if (!fp) {
-    fprintf(stderr, "ftrace: failed to open ELF file: %s (check path)\n", elf_file);
+    fprintf(stderr, "[ftrace]: failed to open ELF file: %s (check path)\n", elf_file);
     return;
   }
 
   // 读取ELF头部
   Elf32_Ehdr ehdr;
   if (fread(&ehdr, sizeof(Elf32_Ehdr), 1, fp) != 1) {
-    fprintf(stderr, "ftrace: read ELF header failed\n");
+    fprintf(stderr, "[ftrace]: read ELF header failed\n");
     fclose(fp);
     return;
   }
 // 检查ELF文件类型
   if (memcmp(ehdr.e_ident, ELFMAG, SELFMAG) != 0) {//e_ident魔数
-    fprintf(stderr, "ftrace: %s is not a valid ELF file\n", elf_file);
+    fprintf(stderr, "[ftrace]: %s is not a valid ELF file\n", elf_file);
     fclose(fp);
     return;
   }
@@ -68,7 +68,7 @@ void parse_elf(const char *elf_file) {
   Elf32_Shdr *sh_table = (Elf32_Shdr *)malloc(ehdr.e_shnum * sizeof(Elf32_Shdr));//e_shnum总数量
   fseek(fp, ehdr.e_shoff, SEEK_SET);//定位
   if (fread(sh_table, sizeof(Elf32_Shdr), ehdr.e_shnum, fp) != ehdr.e_shnum) {
-    fprintf(stderr, "ftrace: read section header failed\n");
+    fprintf(stderr, "[ftrace]: read section header failed\n");
     free(sh_table);
     fclose(fp);
     return;

@@ -1,4 +1,4 @@
-#define concat_temp(x, y) x ## y 
+#define concat_temp(x, y) x ## y
 #define concat(x, y) concat_temp(x, y)
 #define MAP(c, f) c(f)
 
@@ -40,29 +40,27 @@ f(30) f(31)
 .align 3
 .globl __am_asm_trap
 __am_asm_trap:
-  addi sp, sp, -CONTEXT_SIZE //down sp to reserve context space 
+  addi sp, sp, -CONTEXT_SIZE
 
-  MAP(REGS, PUSH) //save all reg
+  MAP(REGS, PUSH)
 
   csrr t0, mcause
   csrr t1, mstatus
   csrr t2, mepc
 
-  STORE t0, OFFSET_CAUSE(sp) //save reg
+  STORE t0, OFFSET_CAUSE(sp)
   STORE t1, OFFSET_STATUS(sp)
   STORE t2, OFFSET_EPC(sp)
 
-  mv a0, sp  //args->sp
-  jal __am_irq_handle//call irq_handle
+  mv a0, sp
+  call __am_irq_handle
 
-  mv sp, a0 //move stack 
-  LOAD t1, OFFSET_STATUS(sp) //restore reg
+  LOAD t1, OFFSET_STATUS(sp)
   LOAD t2, OFFSET_EPC(sp)
   csrw mstatus, t1
   csrw mepc, t2
 
-  MAP(REGS, POP) //restore all reg
+  MAP(REGS, POP)
 
-  
-  addi sp, sp, CONTEXT_SIZE //up sp free context space
+  addi sp, sp, CONTEXT_SIZE
   mret

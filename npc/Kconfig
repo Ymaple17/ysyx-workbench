@@ -1,7 +1,7 @@
 mainmenu "NPC Configuration"
 
-config MUL
-    bool "Enable mul_vsrc implementation"
+config SINGLE
+    bool "Enable single_vsrc implementation"
     default n
 
 config MINIRV

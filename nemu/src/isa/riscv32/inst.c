@@ -107,9 +107,9 @@ static int decode_exec(Decode *s) {
 																																												ftrace_call(s->pc, s->dnpc);
 																																												)R(rd) = s->pc + 4;);
 	INSTPAT("??????? ????? ????? 000 ????? 11001 11", jalr   , I, s->dnpc = (src1 + imm) & ~(word_t)1; IFDEF(CONFIG_FTRACE, {
-  if (rd == 0 && imm == 0&&s->rs1==1) {
+  if (rd == 0 && imm == 0&&s->rs1==1) {//return 
     ftrace_ret(s->pc); // ret -> jalr x0, 0(x1)  dynsym
-  } else if (rd == 1) {//call
+  } else if (rd == 1) {//call x1
     ftrace_call(s->pc,s->dnpc);
   }
 });R(rd) = s->pc + 4;);

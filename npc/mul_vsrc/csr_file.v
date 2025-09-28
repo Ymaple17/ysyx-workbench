@@ -1,50 +1,75 @@
-`include "defs.vh"
-module csr_file(
-    input clk,
-    input rst,
-    input wire [11:0] csr_addr,
-    input wire [`DATA_WIDTH-1:0] pc_current,
-    input wire [`DATA_WIDTH-1:0] csr_wdata,
-    input wire csr_we,
-    input wire is_ecall,
-    input wire is_mret,
-    output reg [`DATA_WIDTH-1:0] mtvec_val,
-    output reg [`DATA_WIDTH-1:0] mepc_val,
-    output reg [`DATA_WIDTH-1:0] csr_rdata,
-    output reg [`DATA_WIDTH-1:0] mstatus,
-    output reg [`DATA_WIDTH-1:0] mcause
+`include "/home/qiu/ysyx-workbench/npc/mul_vsrc/include/defs.vh"
+
+module CSR_FILE(
+    input             clk,
+    input             rst,
+    input             csrWrite,
+    input      [11:0] addr,
+    input      [31:0] wdata,
+    input      [1:0]  op,
+    output reg [31:0] rdata,
+    input             ecall,
+    input             mret,
+    input      [31:0] pc,
+    output     [31:0] mret_pc,
+    output reg [31:0] ecall_pc
 );
+    reg [31:0] mstatus;  
+    reg [31:0] mtvec;    
+    reg [31:0] mepc;     
+    reg [31:0] mcause;   
 
-    always @(posedge clk) begin
-        if (rst) begin
-            mstatus <= 32'h1800;
-            mtvec_val <= 32'h00000000;
-            mepc_val <= 32'h00000000;
-            mcause <= 32'h00000000;
-        end else if (is_ecall) begin
-            mepc_val <= pc_current;
-            mcause <= 32'h0000000b;
-        end else if (csr_we) begin
-            case (csr_addr)
-                12'h300: mstatus <= csr_wdata;
-                12'h305: mtvec_val <= {csr_wdata[31:2], 2'b00};
-                12'h341: mepc_val <= csr_wdata;
-                12'h342: mcause <= csr_wdata;
-                default:;
-            endcase
-        end
-    end
+    localparam MSTATUS = 12'h300;
+    localparam MTVEC   = 12'h305;
+    localparam MEPC    = 12'h341;
+    localparam MCAUSE  = 12'h342;
 
-    always @* begin
-        case (csr_addr)
-            12'h300: csr_rdata = mstatus;
-            12'h305: csr_rdata = mtvec_val;
-            12'h341: csr_rdata = mepc_val;
-            12'h342: csr_rdata = mcause;
-            default: csr_rdata = 32'h00000000;
+    always @(*) begin
+        case(addr)
+            MSTATUS: rdata = mstatus;
+            MTVEC:   rdata = mtvec;
+            MEPC:    rdata = mepc;
+            MCAUSE:  rdata = mcause;
+            default: rdata = 32'h0;
         endcase
     end
 
+    always @(posedge clk or posedge rst) begin
+        if(rst) begin
+            mstatus = 32'h1800;
+            mtvec   = 32'h0;
+            mepc    = 32'h0;
+            mcause  = 32'h0;
 
+            ecall_pc = 32'h0;
+            mret_pc = 32'h0;
+        end
+        else if(ecall) begin
+            mepc = pc;
+            mcause = 32'h0b;
+            ecall_pc = mtvec;
+        end
+        else if(mret) begin
+            mret_pc = mepc;
+        end
+        else begin
+            if(csrWrite) begin
+                case(addr)
+                    MSTATUS: if(op != `CSR_NONE) mstatus = (op == `CSR_CSRRW) ? wdata :
+                                                (op == `CSR_CSRRS) ? (mstatus | wdata) :
+                                                (mstatus & ~wdata);
+                    MTVEC:  if(op != `CSR_NONE) mtvec = (op == `CSR_CSRRW) ? wdata :
+                                                (op == `CSR_CSRRS) ? (mtvec | wdata) :
+                                                (mtvec & ~wdata);
+                    MEPC:   if(op != `CSR_NONE) mepc = (op == `CSR_CSRRW) ? wdata :
+                                                (op == `CSR_CSRRS) ? (mepc | wdata) :
+                                                (mepc & ~wdata);
+                    MCAUSE: if(op != `CSR_NONE) mcause = (op == `CSR_CSRRW) ? wdata :
+                                                (op == `CSR_CSRRS) ? (mcause | wdata) :
+                                                (mcause & ~wdata);
+                    default: ;
+                endcase
+            end
+        end
+    end
 endmodule
-    

@@ -4,6 +4,5 @@
  * NPC Configuration
  *
  */
-#define CONFIG_DEVICE 1
 #define CONFIG_BATCH_MODE 1
-#define CONFIG_DIFFTEST 1
+#define CONFIG_MINIRV 1

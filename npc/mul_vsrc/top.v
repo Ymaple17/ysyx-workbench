@@ -1,194 +1,495 @@
-`include "include/defs.vh"
+`include "/home/qiu/ysyx-workbench/npc/mul_vsrc/include/defs.vh"
 
 module top (
-  input wire clk,
-  input wire rst,
-  output [`DATA_WIDTH-1:0] instr,       // 当前指令（调试用）
-  output [`DATA_WIDTH-1:0] imem_pc,     // 指令内存地址（调试用）
-  output wire wen,                      // 内存使能（调试用）
-  output [`DATA_WIDTH-1:0] mem_addr     // 数据内存地址（调试用）
+    input         clk,
+    input         rst,
+    input         io_interrupt,
+    output [31:0] instr,       // 指令
+    output [31:0] imem_pc,     // 指令内存地址
+    output wire wen,                      // 内存使能
+    output [31:0] mem_addr     // 数据内存地址
 );
+    //===== IFU =====//
+    wire [31:0]  pc;
+    wire [31:0]  inst;
+    wire         if_ready;
+    wire         wb_valid;
+    wire         if_valid;
+    wire         id_ready;
+    wire         if_access_fault;
+    wire [31:0]  if_fault_addr;
+    wire [31:0]  trap_pc;
+    wire [31:0] ifu_sram_araddr;
+    wire        ifu_sram_arvalid;
+    wire        ifu_sram_arready;
+    wire [31:0] ifu_sram_rdata;
+    wire        ifu_sram_rvalid;
+    wire        ifu_sram_rready;
+    wire [1:0]  ifu_sram_rresp;
+    wire [31:0] ifu_sram_awaddr;
+    wire        ifu_sram_awvalid;
+    wire        ifu_sram_awready;
+    wire [31:0] ifu_sram_wdata;
+    wire [3:0]  ifu_sram_wstrb;
+    wire        ifu_sram_wvalid;
+    wire        ifu_sram_wready;
+    wire [1:0]  ifu_sram_bresp;
+    wire        ifu_sram_bvalid;
+    wire        ifu_sram_bready;
+    //===== ID =====//
+    wire [6:0]   opcode;
+    wire [4:0]   rs1, rs2, rd;
+    wire [31:0]  imm;
+    wire [2:0]   func3;
+    wire [6:0]   func7;
+    wire         RegWrite;
+    wire         MemWrite;
+    wire         MemRead;
+    wire [3:0]   alu_op;
+    wire [2:0]   MemLen;
+    wire         id_valid;
+    wire         ex_ready;
 
-  // 内部信号
-  // IFU相关
-  wire [`DATA_WIDTH-1:0] pc;
-  wire [31:0] inst;
-  wire [`DATA_WIDTH-1:0] pc_plus4;
-  wire [2:0] pc_sel;
-  wire [`DATA_WIDTH-1:0] jump_reg_target, br_target, jmp_target;
+    //===== RegFile =====//
+    wire         reg_valid;
+    wire         reg_ready;
 
-  // IDU相关
-  wire [`REG_ADDR_WIDTH-1:0] rs1_addr, rs2_addr;
-  wire [`DATA_WIDTH-1:0] rdata1;
-  wire [`DATA_WIDTH-1:0] rdata2;
-  wire [`REG_ADDR_WIDTH-1:0] waddr;
-  wire [4:0] alu_op;
-  wire rf_we, mem_en, mem_wen;
-  wire [1:0] wb_sel;
-  wire [2:0] ctl_mem_access;
-  wire br_eq, br_lt, br_ltu;
-  wire is_csr_instr, is_ecall, is_ebreak, is_mret;
-  wire [2:0] csr_op;
-  wire [11:0] csr_addr;
+    //===== EXU =====//
+    wire [31:0]  rs1_val, rs2_val;
+    wire [31:0]  alu_result;
+    wire         alu_zero;
+    wire         alu_less;
+    wire         ex_valid;
+    wire         mem_ready;
 
-  // EXU相关
-  wire [`DATA_WIDTH-1:0] Op1, Op2;
-  wire [`DATA_WIDTH-1:0] alu_result, dmem_addr;
-  wire csr_we;
-  wire [`DATA_WIDTH-1:0] csr_wdata, csr_rdata;
-  // LSU相关
-  wire [`DATA_WIDTH-1:0] dmem_rdata;
+    //===== MEM =====//
+    wire [31:0]  data_out;
+    wire         mem_valid;
+    wire         wb_ready;
+    wire         load_access_fault;
+    wire         store_access_fault;
+    wire [31:0]  mem_fault_addr;
 
-  // WBU相关
-  wire [`DATA_WIDTH-1:0] reg_write_data;
-  wire reg_we;
+    wire [31:0] mem_sram_araddr;
+    wire        mem_sram_arvalid;
+    wire        mem_sram_arready;
+    wire [31:0] mem_sram_rdata;
+    wire        mem_sram_rvalid;
+    wire        mem_sram_rready;
+    wire [1:0]  mem_sram_rresp;
+    wire [31:0] mem_sram_awaddr;
+    wire        mem_sram_awvalid;
+    wire        mem_sram_awready;
+    wire [31:0] mem_sram_wdata;
+    wire [3:0]  mem_sram_wstrb;
+    wire        mem_sram_wvalid;
+    wire        mem_sram_wready;
+    wire [1:0]  mem_sram_bresp;
+    wire        mem_sram_bvalid;
+    wire        mem_sram_bready;
+    //===== WB =====//
+    wire [31:0]  wb_data;
+    wire [31:0]  jal_target;
+    wire [31:0]  jalr_target;
+    wire         is_jal, is_jalr;
+    wire         take_branch;
+    wire [31:0]  branch_target;  
+    wire [4:0]   rd_wb;
+    wire         RegWrite_wb;
+    wire         wb_MemRead, wb_MemWrite;
+    wire [2:0]   wb_MemLen;
+    wire [31:0]  wb_addr, wb_data_in;
 
-  //csr
-  wire [`DATA_WIDTH-1:0] mtvec_val, mepc_val, mcause_val, mstatus_val;
+    //====SRAM读写接口====//
+    //AR channel
+    wire [31:0] sram_araddr;//读地址
+    wire        sram_arvalid;//读地址有效
+    wire        sram_arready;//sram读地址准备好
+    //R channel
+    wire [1:0]  sram_rresp;//读响应信号
+    wire [31:0] sram_rdata;//读数据
+    wire        sram_rvalid;//读数据有效
+    wire        sram_rready;//CPU读数据准备好
+    //AW channel
+    wire [31:0] sram_awaddr;//写地址
+    wire        sram_awready;//sram写地址准备好
+    wire        sram_awvalid;//写地址有效
+    //W channel
+    wire [31:0] sram_wdata;//写数据
+    wire [3:0]  sram_wstrb;//写掩码
+    wire        sram_wvalid;//写请求有效
+    wire        sram_wready;//sram写请求准备好
+    //B channel
+    wire [1:0]  sram_bresp;//写响应信号
+    wire        sram_bvalid;//写响应有效
+    wire        sram_bready;//写响应准备好
 
-  wire inst_valid;
+    //====== UART =======//
+    //AR channel
+    wire [31:0] uart_araddr;//读地址
+    wire        uart_arvalid;//读地址有效
+    wire        uart_arready;//uart读地址准备好
+    //R channel
+    wire [1:0]  uart_rresp;//读响应信号
+    wire [31:0] uart_rdata;//读数据
+    wire        uart_rvalid;//读数据有效
+    wire        uart_rready;//CPU读数据准备好
+    //AW channel
+    wire [31:0] uart_awaddr;//写地址
+    wire        uart_awready;//uart写地址准备好
+    wire        uart_awvalid;//写地址有效
+    //W channel
+    wire [31:0] uart_wdata;//写数据
+    wire [3:0]  uart_wstrb;//写掩码
+    wire        uart_wvalid;//写请求有效
+    wire        uart_wready;//uart写请求准备好
+    //B channel
+    wire [1:0]  uart_bresp;//写响应信号
+    wire        uart_bvalid;//写响应有效
+    wire        uart_bready;//写响应准备好
 
-  wire rf_we_valid = rf_we & inst_valid;  // 只在指令有效时写寄存器
-  wire mem_en_valid = mem_en & inst_valid;  // 只在指令有效时访问内存
-  wire mem_wen_valid = mem_wen & inst_valid;  // 只在指令有效时写内存
-  wire csr_we_valid = csr_we & inst_valid;  // 只在指令有效时写CSR
+    //====== CLINT =======//
+    //AR channel
+    wire [31:0] clint_araddr;//读地址
+    wire        clint_arvalid;//读地址有效
+    wire        clint_arready;//clint读地址准备好
+    //R channel
+    wire [1:0]  clint_rresp;//读响应信号
+    wire [31:0] clint_rdata;//读数据
+    wire        clint_rvalid;//读数据有效
+    wire        clint_rready;//CPU读数据准备好
+    //AW channel
+    wire [31:0] clint_awaddr;//写地址
+    wire        clint_awready;//clint写地址准备好
+    wire        clint_awvalid;//写地址有效
+    //W channel
+    wire [31:0] clint_wdata;//写数据
+    wire [3:0]  clint_wstrb;//写掩码
+    wire        clint_wvalid;//写请求有效
+    wire        clint_wready;//clint写请求准备好
+    //B channel
+    wire [1:0]  clint_bresp;//写响应信号
+    wire        clint_bvalid;//写响应有效
+    wire        clint_bready;//写响应准备好
 
-  // 寄存器文件
-  RegisterFile #(
-    .ADDR_WIDTH(`REG_ADDR_WIDTH),
-    .DATA_WIDTH(`DATA_WIDTH)
-  ) u_RegisterFile (
-    .clk(clk),
-    .waddr(waddr),
-    .wdata(reg_write_data),
-    .wen(reg_we),
-    .raddr1(rs1_addr),
-    .raddr2(rs2_addr),
-    .rdata1(rdata1),
-    .rdata2(rdata2),
-    .pc(pc),
-    .is_csr_instr(is_csr_instr)
-  );
 
-  // CSR文件
-  csr_file csr (
-    .clk(clk),
-    .rst(rst),
-    .csr_addr(csr_addr),
-    .csr_wdata(csr_wdata),
-    .csr_we(csr_we_valid),
-    .csr_rdata(csr_rdata),
-    .is_ecall(is_ecall & inst_valid),
-    .pc_current(pc),
-    .mtvec_val(mtvec_val),
-    .mepc_val(mepc_val),
-    .mcause(mcause_val),
-    .mstatus(mstatus_val),
-    .is_mret(is_mret&& inst_valid)
-  );
-  
+    Arbiter arbiter (
+        .clk(clk),
+        .reset(rst),
 
-  // 1. 取指单元（包含指令读取）
-  IFU ifu (
-    .clk(clk),
-    .rst(rst),
-    .pc_sel(pc_sel),
-    .jump_reg_target(jump_reg_target),
-    .br_target(br_target),
-    .jmp_target(jmp_target),
-    .mtvec_val(mtvec_val),
-    .mepc_val(mepc_val),
-    .is_ecall(is_ecall),
-    .is_mret(is_mret),
-    .pc_o(pc),
-    .inst_o(inst),
-    .pc_plus4_o(pc_plus4),
-    .pc_wen(1'b1),
-    .inst_valid(inst_valid)
-  );
+        // IFU master
+        .ifu_araddr(ifu_sram_araddr),
+        .ifu_arvalid(ifu_sram_arvalid),
+        .ifu_arready(ifu_sram_arready),
+        .ifu_rdata(ifu_sram_rdata),
+        .ifu_rresp(ifu_sram_rresp),
+        .ifu_rvalid(ifu_sram_rvalid),
+        .ifu_rready(ifu_sram_rready),
 
-  // 2. 解码单元
-  IDU idu (
-    .inst_i(inst),
-    .rs1_data_i(rdata1),
-    .rs2_data_i(rdata2),
-    .pc_i(pc),
-    .rs1_addr_o(rs1_addr),
-    .rs2_addr_o(rs2_addr),
-    .rd_addr_o(waddr),
-    .alu_op_o(alu_op),
-    .Op1_o(Op1),
-    .Op2_o(Op2),
-    .pc_sel_o(pc_sel),
-    .rf_we_o(rf_we),
-    .mem_en_o(mem_en),
-    .mem_wen_o(mem_wen),
-    .wb_sel_o(wb_sel),
-    .ctl_mem_access_o(ctl_mem_access),
-    .jump_reg_target_o(jump_reg_target),
-    .br_target_o(br_target),
-    .jmp_target_o(jmp_target),
-    .is_csr_instr_o(is_csr_instr),
-    .csr_op_o(csr_op),
-    .csr_addr_o(csr_addr),
-    .is_ecall_o(is_ecall),
-    .is_ebreak_o(is_ebreak),
-    .is_mret_o(is_mret)
-  );
+        // MEM master
+        .mem_araddr(mem_sram_araddr),
+        .mem_arvalid(mem_sram_arvalid),
+        .mem_arready(mem_sram_arready),
+        .mem_rdata(mem_sram_rdata),
+        .mem_rresp(mem_sram_rresp),
+        .mem_rvalid(mem_sram_rvalid),
+        .mem_rready(mem_sram_rready),
+        .mem_awaddr(mem_sram_awaddr),
+        .mem_awvalid(mem_sram_awvalid),
+        .mem_awready(mem_sram_awready),
+        .mem_wdata(mem_sram_wdata),
+        .mem_wstrb(mem_sram_wstrb),
+        .mem_wvalid(mem_sram_wvalid),
+        .mem_wready(mem_sram_wready),
+        .mem_bresp(mem_sram_bresp),
+        .mem_bvalid(mem_sram_bvalid),
+        .mem_bready(mem_sram_bready),
 
-  // 3. 执行单元
-  EXU exu (
-    .clk(clk),
-    .rst(rst),
-    .Op1(Op1),
-    .Op2(Op2),
-    .alu_op(alu_op),
-    .is_csr_instr(is_csr_instr),
-    .csr_op(csr_op),
-    .csr_rdata(csr_rdata),
-    .alu_result(alu_result),
-    .csr_we(csr_we),
-    .csr_wdata(csr_wdata)
-  );
+        // UART从设备
+        .uart_araddr(uart_araddr),
+        .uart_arvalid(uart_arvalid),
+        .uart_arready(uart_arready),
+        .uart_rdata(uart_rdata),
+        .uart_rresp(uart_rresp),
+        .uart_rvalid(uart_rvalid),
+        .uart_rready(uart_rready),
+        .uart_awaddr(uart_awaddr),
+        .uart_awvalid(uart_awvalid),
+        .uart_awready(uart_awready),
+        .uart_wdata(uart_wdata),
+        .uart_wstrb(uart_wstrb),
+        .uart_wvalid(uart_wvalid),
+        .uart_wready(uart_wready),
+        .uart_bresp(uart_bresp),
+        .uart_bvalid(uart_bvalid),
+        .uart_bready(uart_bready),
 
-  // 4. 加载存储单元（包含数据内存访问）
-  LSU lsu (
-    .clk(clk),
-    .rst(rst),
-    .dmem_addr(alu_result),
-    .dmem_wdata_raw(rdata2),
-    .ctl_mem_access(ctl_mem_access),
-    .mem_en(mem_en_valid),
-    .mem_wen(mem_wen_valid),
-    .dmem_rdata(dmem_rdata),
-    .mem_addr(mem_addr),
-    .wen(wen)
-  );
+        // CLINT从设备
+        .clint_araddr(clint_araddr),
+        .clint_arvalid(clint_arvalid),
+        .clint_arready(clint_arready),
+        .clint_rdata(clint_rdata),
+        .clint_rresp(clint_rresp),
+        .clint_rvalid(clint_rvalid),
+        .clint_rready(clint_rready),
+        .clint_awaddr(clint_awaddr),
+        .clint_awvalid(clint_awvalid),
+        .clint_awready(clint_awready),
+        .clint_wdata(clint_wdata),
+        .clint_wstrb(clint_wstrb),
+        .clint_wvalid(clint_wvalid),
+        .clint_wready(clint_wready),
+        .clint_bresp(clint_bresp),
+        .clint_bvalid(clint_bvalid),
+        .clint_bready(clint_bready),
 
-  // 5. 写回单元
-  WBU wbu (
-    .alu_result(alu_result),
-    .dmem_rdata(dmem_rdata),
-    .pc_plus4(pc_plus4),
-    .csr_rdata(csr_rdata),
-    .wb_sel(wb_sel),
-    .rf_we(rf_we_valid),
-    .is_csr_instr(is_csr_instr),
-    .reg_write_data(reg_write_data),
-    .reg_we(reg_we)
-  );
+        // SRAM 从设备
+        .sram_araddr(sram_araddr),
+        .sram_arvalid(sram_arvalid),
+        .sram_arready(sram_arready),
+        .sram_rdata(sram_rdata),
+        .sram_rresp(sram_rresp),
+        .sram_rvalid(sram_rvalid),
+        .sram_rready(sram_rready),
+        .sram_awaddr(sram_awaddr),
+        .sram_awvalid(sram_awvalid),
+        .sram_awready(sram_awready),
+        .sram_wdata(sram_wdata),
+        .sram_wstrb(sram_wstrb),
+        .sram_wvalid(sram_wvalid),
+        .sram_wready(sram_wready),
+        .sram_bresp(sram_bresp),
+        .sram_bvalid(sram_bvalid),
+        .sram_bready(sram_bready)
+    );
 
-  // 调试信号
+    // CLINT
+    CLINT clint (
+        .clk(clk),
+        .reset(rst),
+        .awvalid(clint_awvalid),
+        .awready(clint_awready),
+        .awaddr(clint_awaddr),
+        .wdata(clint_wdata),
+        .wstrb(clint_wstrb),
+        .wvalid(clint_wvalid),
+        .wready(clint_wready),
+        .bresp(clint_bresp),
+        .bvalid(clint_bvalid),
+        .bready(clint_bready),
+        .arvalid(clint_arvalid),
+        .araddr(clint_araddr),
+        .arready(clint_arready),
+        .rready(clint_rready),
+        .rvalid(clint_rvalid),
+        .rresp(clint_rresp),
+        .rdata(clint_rdata)
+    );
+
+    // UART
+    UART uart (
+        .clk(clk),
+        .reset(rst),
+        .awvalid(uart_awvalid),
+        .awready(uart_awready),
+        .awaddr(uart_awaddr),
+        .wdata(uart_wdata),
+        .wstrb(uart_wstrb),
+        .wvalid(uart_wvalid),
+        .wready(uart_wready),
+        .bresp(uart_bresp),
+        .bvalid(uart_bvalid),
+        .bready(uart_bready),
+        .arvalid(uart_arvalid),
+        .araddr(uart_araddr),
+        .arready(uart_arready),
+        .rready(uart_rready),
+        .rvalid(uart_rvalid),
+        .rresp(uart_rresp),
+        .rdata(uart_rdata)
+    );
+
+    SRAM sram(
+        .clk(clk),
+        .reset(rst),
+        //AR channel
+        .araddr(sram_araddr),
+        .arvalid(sram_arvalid),
+        .arready(sram_arready),
+        //R channel
+        .rdata(sram_rdata),
+        .rvalid(sram_rvalid),
+        .rready(sram_rready),
+        .rresp(sram_rresp),
+        //AW channel
+        .awaddr(sram_awaddr),
+        .awvalid(sram_awvalid),
+        .awready(sram_awready),
+        //W channel
+        .wdata(sram_wdata),
+        .wstrb(sram_wstrb),
+        .wvalid(sram_wvalid),
+        .wready(sram_wready),
+        //B channel
+        .bresp(sram_bresp),
+        .bvalid(sram_bvalid),
+        .bready(sram_bready)
+    );
+
+
+    // 取指模块
+    IFU ifu (
+        .clk(clk),
+        .reset(rst),
+        .branch_target(branch_target),
+        .pc_src(is_jal | is_jalr | take_branch),
+        .pc(pc),
+        .instr(inst),
+        .if_ready(if_ready),
+        .wb_valid(wb_valid),
+        .if_valid(if_valid),
+        .id_ready(id_ready),
+        .if_access_fault(if_access_fault),
+        .if_fault_addr(if_fault_addr),
+        .sram_araddr(ifu_sram_araddr),
+        .sram_arvalid(ifu_sram_arvalid),
+        .sram_arready(ifu_sram_arready),
+        .sram_rdata(ifu_sram_rdata),
+        .sram_rvalid(ifu_sram_rvalid),
+        .sram_rready(ifu_sram_rready),
+        .sram_rresp(ifu_sram_rresp),
+        .sram_awaddr(ifu_sram_awaddr),
+        .sram_awvalid(ifu_sram_awvalid),
+        .sram_awready(ifu_sram_awready),
+        .sram_wdata(ifu_sram_wdata),
+        .sram_wstrb(ifu_sram_wstrb),
+        .sram_wvalid(ifu_sram_wvalid),
+        .sram_wready(ifu_sram_wready),
+        .sram_bresp(ifu_sram_bresp),
+        .sram_bvalid(ifu_sram_bvalid),
+        .sram_bready(ifu_sram_bready)
+    );
+
+    // 译码模块
+    IDU idu (
+        .clk(clk),
+        .reset(rst),
+        .instr(inst),
+        .if_valid(if_valid),
+        .id_ready(id_ready),
+        .id_valid(id_valid),
+        .ex_ready(ex_ready),
+        .opcode(opcode),
+        .rs1(rs1),
+        .rs2(rs2),
+        .rd(rd),
+        .imm(imm),
+        .func3(func3),
+        .func7(func7),
+        .RegWrite(RegWrite),
+        .MemWrite(MemWrite),
+        .MemRead(MemRead),
+        .alu_op(alu_op),
+        .MemLen(MemLen)
+    );
+    
+    EXU exu(
+        .clk(clk), 
+        .reset(rst),
+        .id_valid(id_valid),
+        .ex_ready(ex_ready),
+        .opcode(opcode), 
+        .rs1_val(rs1_val),
+        .rs2_val(rs2_val),
+        .imm(imm),
+        .alu_op(alu_op),
+        .mem_ready(mem_ready),
+        .ex_valid(ex_valid),
+        .alu_result(alu_result),
+        .alu_zero(alu_zero),   
+        .alu_less(alu_less)
+    );
+    // 内存模块
+    MEM mem(
+        .clk(clk),
+        .reset(rst),
+        .ex_valid(ex_valid),
+        .mem_ready(mem_ready),
+        .wb_ready(wb_ready),
+        .mem_valid(mem_valid),
+        .MemRead(MemRead),
+        .MemWrite(MemWrite),
+        .MemLen(MemLen),
+        .addr(rs1_val + imm),
+        .data_in(rs2_val),
+        .data_out(data_out),
+        .load_access_fault(load_access_fault),
+        .store_access_fault(store_access_fault),
+        .mem_fault_addr(mem_fault_addr),
+        .sram_araddr(mem_sram_araddr),
+        .sram_arvalid(mem_sram_arvalid),
+        .sram_arready(mem_sram_arready),
+        .sram_rdata(mem_sram_rdata),
+        .sram_rvalid(mem_sram_rvalid),
+        .sram_rready(mem_sram_rready),
+        .sram_rresp(mem_sram_rresp),
+        .sram_awaddr(mem_sram_awaddr),
+        .sram_awvalid(mem_sram_awvalid),
+        .sram_awready(mem_sram_awready),
+        .sram_wdata(mem_sram_wdata),
+        .sram_wstrb(mem_sram_wstrb),
+        .sram_wvalid(mem_sram_wvalid),
+        .sram_wready(mem_sram_wready),
+        .sram_bresp(mem_sram_bresp),
+        .sram_bvalid(mem_sram_bvalid),
+        .sram_bready(mem_sram_bready)
+    );
+
+    // 写回模块
+    WBU wbu (
+        .clk(clk), 
+        .reset(rst),
+        .mem_valid(mem_valid),
+        .wb_ready(wb_ready),
+        .if_ready(if_ready),
+        .wb_valid(wb_valid),
+        .opcode(opcode),
+        .func3(func3),
+        .id_rd(rd),
+        .id_RegWrite(RegWrite),
+        .rs1(rs1),
+        .rs2(rs2),
+        .rs1_val(rs1_val),
+        .rs2_val(rs2_val),
+        .pc(pc),
+        .imm(imm),
+        .alu_less(alu_less),
+        .alu_zero(alu_zero),
+        .alu_result(alu_result),
+        .data_out(data_out),
+        .is_jal(is_jal),
+        .is_jalr(is_jalr),
+        .take_branch(take_branch),
+        .jal_target(jal_target),
+        .jalr_target(jalr_target),
+        .wb_data(wb_data)
+    );
+    assign branch_target = is_jalr ? jalr_target : jal_target;
+
     assign instr = inst;
     assign imem_pc = pc;
+    assign wen = MemRead | MemWrite;
+    assign mem_addr = mem_sram_araddr;
 
-    import "DPI-C" context function void sim_exit();
     always @(*) begin
-        if (is_ebreak&&inst_valid) begin
-           $display("EBREAK: Simulation exiting...");
-           sim_exit(); // 通知仿真环境结束
+        if(if_access_fault) begin
+            $display("\033[31m[IFU]:IF access fault at address: %h\033[0m", if_fault_addr);
         end
-    end
-
-
+        if(load_access_fault) begin
+            $display("\033[31m[MEM]:Load access fault at address: %h\033[0m", mem_fault_addr);
+        end
+        if(store_access_fault) begin
+            $display("\033[31m[MEM]:Store access fault at address: %h\033[0m", mem_fault_addr);
+        end
+    end 
 endmodule

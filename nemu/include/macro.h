@@ -93,7 +93,7 @@
 #define PG_ALIGN __attribute((aligned(4096)))
 
 #if !defined(likely)
-#define likely(cond)   __builtin_expect(cond, 1)
+#define likely(cond)   __builtin_expect(cond, 1)//分支预测优化
 #define unlikely(cond) __builtin_expect(cond, 0)
 #endif
 

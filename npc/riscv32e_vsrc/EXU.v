@@ -1,55 +1,69 @@
 `include "include/defs.vh"
 
 module EXU (
-    input clk,
-    input rst,
-    input [`DATA_WIDTH-1:0] Op1,
-    input [`DATA_WIDTH-1:0] Op2,
-    input [3:0]             alu_op,
-    input                   is_csr_instr,
-    input [2:0]                  csr_op,
-    input [`DATA_WIDTH-1:0] csr_rdata,
-    output reg csr_we,
-    output reg [`DATA_WIDTH-1:0] csr_wdata,
-    output [`DATA_WIDTH-1:0] alu_result
+    input             clk,
+    input             reset,
+    input             id_valid,//reg模块的输出是否有效
+    output reg        ex_ready,//ex就绪状态
+    input      [6:0]  opcode,
+    input      [31:0] rs1_val,
+    input      [31:0] rs2_val,
+    input      [31:0] imm,
+    input      [3:0]  alu_op,
+    input             mem_ready,//下游mem是否就绪
+    output reg        ex_valid,//ex输出是否有效
+    output reg [31:0] alu_result
 );
+    typedef enum { IDLE, STALL } state_t;
+    state_t state, next_state;
 
-    assign alu_result = result;
-    wire [`DATA_WIDTH-1:0] result;
-    
-    ALU alu (
-        .A(Op1),
-        .B(Op2),
-        .op(alu_op),
-        .Result(result)
-    );
-
-    always @(*) begin
-        csr_we = 0;
-        csr_wdata = 0;
-        if(is_csr_instr) begin
-            case(csr_op)
-                3'b001: begin// CSRRW
-                    csr_we = 1;
-                    csr_wdata = Op1;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            state = IDLE;
+            ex_ready = 1'b1;
+            ex_valid = 1'b0;
+            alu_result = 32'b0;
+        end else begin
+            state = next_state;
+            case (state)
+                IDLE: begin
+                    ex_ready = 1'b1;
+                    ex_valid = 1'b0;
+                    if(id_valid) begin
+                        ex_ready = 1'b0;
+                        ex_valid = 1'b0;
+                        case (alu_op)
+                             `ALU_ADD:  alu_result = rs1_val + ((opcode[6:2] == `INST_TYPE_R || opcode[6:2] == `INST_TYPE_B) ? rs2_val : imm);
+                             `ALU_SUB:  alu_result = rs1_val - ((opcode[6:2] == `INST_TYPE_R || opcode[6:2] == `INST_TYPE_B) ? rs2_val : imm);
+                            default:   alu_result = 32'b0;
+                        endcase
+                        next_state = mem_ready ? STALL : IDLE;
+                    end
+                    else begin
+                        next_state = IDLE;
+                    end
                 end
-                3'b010: begin// CSRRS
-                    csr_we = (Op1 != 32'b0);
-                    csr_wdata = Op1 | csr_rdata;
-                end
-                3'b011: begin// CSRRC
-                    csr_we = (Op1 != 32'b0);
-                    csr_wdata = (~Op1) & csr_rdata;
+                STALL: begin
+                    ex_ready = 1'b0;
+                    ex_valid = 1'b1;
+                    next_state = mem_ready ? IDLE : STALL;
                 end
                 default: begin
-                    csr_we = 0;
-                    csr_wdata = 0;
+                    ex_ready = 1'b0;
+                    ex_valid = 1'b0;
+                    next_state = IDLE;
                 end
             endcase
         end
     end
-
+    
 endmodule
+
+
+
+
+    
+
 
 
 

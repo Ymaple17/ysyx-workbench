@@ -36,17 +36,17 @@ static void report_mmio_overlap(const char *name1, paddr_t l1, paddr_t r1,
 void add_mmio_map(const char *name, paddr_t addr, void *space, uint32_t len, io_callback_t callback) {
   assert(nr_map < NR_MAP);
   paddr_t left = addr, right = addr + len - 1;
-  if (in_pmem(left) || in_pmem(right)) {
+  if (in_pmem(left) || in_pmem(right)) {//不与物理内存重叠
     report_mmio_overlap(name, left, right, "pmem", PMEM_LEFT, PMEM_RIGHT);
   }
-  for (int i = 0; i < nr_map; i++) {
+  for (int i = 0; i < nr_map; i++) {//不与其他设备重叠
     if (left <= maps[i].high && right >= maps[i].low) {
       report_mmio_overlap(name, left, right, maps[i].name, maps[i].low, maps[i].high);
     }
   }
 
   maps[nr_map] = (IOMap){ .name = name, .low = addr, .high = addr + len - 1,
-    .space = space, .callback = callback };
+    .space = space, .callback = callback };//注册
   Log("Add mmio map '%s' at [" FMT_PADDR ", " FMT_PADDR "]",
       maps[nr_map].name, maps[nr_map].low, maps[nr_map].high);
 

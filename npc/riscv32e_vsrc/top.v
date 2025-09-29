@@ -37,6 +37,7 @@ module top (
     wire [2:0]   MemLen;
     wire         id_valid;
     wire         ex_ready;
+    wire [11:0]  csr_addr;
 
     //===== EXU =====//
     wire [31:0]  rs1_val, rs2_val;
@@ -129,7 +130,8 @@ module top (
         .MemWrite(MemWrite),
         .MemRead(MemRead),
         .alu_op(alu_op),
-        .MemLen(MemLen)
+        .MemLen(MemLen),
+        .csr_addr(csr_addr)
     );
     
     EXU exu(
@@ -194,7 +196,8 @@ module top (
         .data_out(data_out),
         .is_jalr(is_jalr),
         .jalr_target(jalr_target),
-        .wb_data(wb_data)
+        .wb_data(wb_data),
+        .csr_addr(csr_addr)
     );
 
     assign instr = inst;

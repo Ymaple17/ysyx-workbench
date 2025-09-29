@@ -2,8 +2,8 @@
 # Automatically generated file; DO NOT EDIT.
 # NPC Configuration
 #
-# CONFIG_SINGLE is not set
-CONFIG_MINIRV=y
+CONFIG_SINGLE=y
+# CONFIG_MINIRV is not set
 CONFIG_BATCH_MODE=y
 # CONFIG_DIFFTEST is not set
 # CONFIG_WAVEFORM is not set

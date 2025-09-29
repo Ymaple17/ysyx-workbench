@@ -90,4 +90,13 @@
 `define CSR_CSRRC 2'b11
 `define CSR_NONE  2'b00
 
+`define INST_TYPE_CSR   5'b11100
+
+`define F3_CSRRS 3'b010
+
+`define CSR_MCYCLE    12'hB00
+`define CSR_MCYCLEH   12'hB80
+`define CSR_MVENDORID 12'hF11
+`define CSR_MARCHID   12'hF12
+
 `endif // DEFS_VH

@@ -21,9 +21,8 @@ module IDU (
     output reg        MemWrite,
     output reg        MemRead,
     output reg [3:0]  alu_op,
-    output reg [2:0]  MemLen
-    // input      [31:0] branch_total,
-    // input      [31:0] branch_correct
+    output reg [2:0]  MemLen,
+    output reg [11:0] csr_addr
 );
     import "DPI-C" function void sim_exit();
 
@@ -160,7 +159,11 @@ module IDU (
                             end
 
                             `INST_TYPE_E: begin
-                                if (instr == `INST_EBREAK) begin
+                                if(func3 == `F3_CSRRS) begin
+                                    RegWrite = 1'b1;
+                                    csr_addr = instr[31:20];
+                                    imm = 32'b0;
+                                end else if (instr == `INST_EBREAK) begin
                                     sim_exit();
                                     $display("EBREAK: Simulation exiting...");
                                 end

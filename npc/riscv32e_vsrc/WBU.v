@@ -21,17 +21,25 @@ module WBU (
     output reg         wb_valid,
     output reg [31:0]  jalr_target,
     output reg         is_jalr,
-    output reg [31:0]  wb_data
+    output reg [31:0]  wb_data,
+    input       [11:0] csr_addr
 );
     typedef enum {IDLE, STALL} state_t;
     state_t state, next_state;
 
     reg        RegWrite_wb;
     reg [4:0]  rd_wb;
-    reg [4:0]  rd_wb_pre;
     reg [31:0] regs [0:31];
     assign rs1_val = (rs1 != 0) ? regs[rs1] : 0;
     assign rs2_val = (rs2 != 0) ? regs[rs2] : 0;
+
+    wire [31:0] csr_rdata;
+    CSR csr(
+        .clk(clk),
+        .rst(reset),
+        .csr_addr(csr_addr),
+        .csr_rdata(csr_rdata)
+    );
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -56,16 +64,20 @@ module WBU (
                         jalr_target = (rs1_val + imm) & ~32'h1;
                         is_jalr = (opcode == `INST_JALR) & (func3 == 3'b000);
                         // 写回数据选择
-                        wb_data = (opcode == `INST_LUI) ? imm :// LUI
-                                        (opcode == `INST_AUIPC) ? (pc + imm) :// AUIPC
-                                        (opcode == `INST_JALR) ? (pc + 4) : // JAL, JALR
-                                        (opcode == `INST_LW) ? data_out :// LW
-                                        (opcode == `INST_R || opcode == `INST_I) ? alu_result : 32'b0;
+                        case(opcode[6:2])
+                            `INST_TYPE_LUI:   wb_data = imm;
+                            `INST_TYPE_AUIPC: wb_data = pc + imm;
+                            `INST_TYPE_JALR:  wb_data = pc + 4;//jalr
+                            `INST_TYPE_L:     wb_data = data_out;//lw
+                            `INST_TYPE_E:   wb_data = csr_rdata;//csrrw
+                            `INST_TYPE_R,
+                            `INST_TYPE_I:     wb_data = alu_result;
+                            default:          wb_data = 32'b0;
+                        endcase
                         //=====写回数据=====
                         rd_wb = id_rd;
                         RegWrite_wb = id_RegWrite;
                         if(RegWrite_wb && rd_wb != 0) begin
-                            //$display("[WBU] Write regs[%0d] = 0x%08x", rd_wb_pre, wb_data);
                             regs[rd_wb] <= wb_data;
                         end
                         next_state = if_ready ? STALL : IDLE;

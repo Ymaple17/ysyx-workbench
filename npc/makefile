@@ -66,6 +66,7 @@ EXEC = $(OBJ_DIR)/V$(TOP_MODULE)
 BUILD_DIR ?= build
 # PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/hello-minirv-ysyxsoc.bin
 #  PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/dummy.bin
+# PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/timer.bin
 PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/new.bin
 
 ifeq (,$(wildcard .config))

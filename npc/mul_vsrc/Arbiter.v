@@ -114,7 +114,7 @@ module Arbiter (
         else if (addr >= 32'ha000_03f8 && addr <= 32'ha000_03ff) begin
             decode_address = UART;
         end 
-        else if (addr >= 32'ha000_2000 && addr <= 32'ha000_2007) begin
+        else if (addr >= 32'ha000_0048 && addr <= 32'ha000_004c) begin
             decode_address = CLINT;
         end
         else begin

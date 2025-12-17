@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include "verilated_fst_c.h"
-#include "Vtop.h"
+#include "VysyxSoCFull.h"
 #include "svdpi.h"
 #include "include/common.h"
 #include "include/init.h"
@@ -17,7 +17,8 @@
 void difftest_init(const char* ref_so_file, word_t img_size);
 const char* img_path = NULL;
 void init_disasm();
-Vtop *top = new Vtop("top");
+void init_rgs_array();
+VysyxSoCFull *top = new VysyxSoCFull("top");
 #ifdef ENABLE_WAVEFORM
 VerilatedFstC* tfp = new VerilatedFstC;
 #else
@@ -30,13 +31,14 @@ int main(int argc, char **argv){
   }
   img_path = argv[1];
   Verilated::commandArgs(argc, argv); 
+  init_rgs_array();
   #ifdef ENABLE_WAVEFORM
     Verilated::traceEverOn(true);
     top->trace(tfp, 0);
     tfp->open("wave.fst");
   #endif
 
-  set_npc_state(NPC_STOP, 0x80000000, 0);
+  set_npc_state(NPC_STOP, 0x30000000, 0);
   init_mem();
   init_npc_cpu();
   init_sdb();

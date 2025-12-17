@@ -3,7 +3,7 @@
 
 extern char _heap_start;
 int main(const char *args);
-
+# define mininpc_trap(code) asm volatile("mv a0, %0; ebreak" : :"r"(code))
 Area heap = RANGE(&_heap_start, PMEM_END);
 
 void putch(char ch) {
@@ -12,8 +12,7 @@ void putch(char ch) {
 
 __attribute__((noinline))
 void halt(int code) {
-  register long a0 asm("a0") = code;
-  asm volatile("ebreak" : : "r"(a0));
+  mininpc_trap(code);
   while (1);
 }
 

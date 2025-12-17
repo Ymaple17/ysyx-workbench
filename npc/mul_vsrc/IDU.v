@@ -21,7 +21,14 @@ module IDU (
     output reg        MemWrite,
     output reg        MemRead,
     output reg [3:0]  alu_op,
-    output reg [2:0]  MemLen
+    output reg [2:0]  MemLen,
+    output reg        csr_en,
+    output reg [11:0] csr_addr,
+    output reg [1:0]  csr_op,
+    output reg        csr_imm,
+    output reg [4:0]  csr_zimm,
+    output reg        csr_ecall,
+    output reg        csr_mret
     // input      [31:0] branch_total,
     // input      [31:0] branch_correct
 );
@@ -65,6 +72,13 @@ module IDU (
             MemRead   = 1'b0;
             alu_op    = `ALU_ADD;
             MemLen    = `Mem_Word;
+            csr_en    = 1'b0;
+            csr_addr  = 12'h0;
+            csr_op    = `CSR_NONE;
+            csr_imm   = 1'b0;
+            csr_zimm  = 5'b0;
+            csr_ecall = 1'b0;
+            csr_mret  = 1'b0;
         end
         else begin
             case (state)
@@ -90,8 +104,15 @@ module IDU (
                         MemRead  = 1'b0;
                         alu_op   = `ALU_ADD;
                         MemLen   = `Mem_Word;
+                        csr_en    = 1'b0;
+                        csr_addr  = instr[31:20];
+                        csr_op    = `CSR_NONE;
+                        csr_imm   = 1'b0;
+                        csr_zimm  = instr[19:15];
+                        csr_ecall = 1'b0;
+                        csr_mret  = 1'b0;
                 
-                        assign get_opcode = opcode[6:2];
+                        get_opcode = opcode[6:2];
 
                         case(get_opcode)
                             // LUI
@@ -233,10 +254,52 @@ module IDU (
                             end
 
                             `INST_TYPE_E: begin
-                                if (instr == `INST_EBREAK) begin
-                                    sim_exit();
-                                    $display("EBREAK: Simulation exiting...");
-                                end
+                                case(func3)
+                                    3'b000: begin
+                                        if (instr == `INST_EBREAK) begin
+                                            sim_exit();
+                                            $display("EBREAK: Simulation exiting...");
+                                        end else if (instr == 32'h0000_0073) begin
+                                            csr_ecall = 1'b1;
+                                        end else if (instr == 32'h3020_0073) begin
+                                            csr_mret = 1'b1;
+                                        end
+                                    end
+                                    3'b001: begin
+                                        csr_en   = 1'b1;
+                                        csr_op   = `CSR_CSRRW;
+                                        RegWrite = (rd != 5'd0);
+                                    end
+                                    3'b010: begin
+                                        csr_en   = 1'b1;
+                                        csr_op   = `CSR_CSRRS;
+                                        RegWrite = (rd != 5'd0);
+                                    end
+                                    3'b011: begin
+                                        csr_en   = 1'b1;
+                                        csr_op   = `CSR_CSRRC;
+                                        RegWrite = (rd != 5'd0);
+                                    end
+                                    3'b101: begin
+                                        csr_en   = 1'b1;
+                                        csr_op   = `CSR_CSRRW;
+                                        csr_imm  = 1'b1;
+                                        RegWrite = (rd != 5'd0);
+                                    end
+                                    3'b110: begin
+                                        csr_en   = 1'b1;
+                                        csr_op   = `CSR_CSRRS;
+                                        csr_imm  = 1'b1;
+                                        RegWrite = (rd != 5'd0);
+                                    end
+                                    3'b111: begin
+                                        csr_en   = 1'b1;
+                                        csr_op   = `CSR_CSRRC;
+                                        csr_imm  = 1'b1;
+                                        RegWrite = (rd != 5'd0);
+                                    end
+                                    default:;
+                                endcase
                             end
                             default:;
                         endcase

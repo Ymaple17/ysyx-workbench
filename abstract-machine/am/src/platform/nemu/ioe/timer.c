@@ -1,26 +1,17 @@
 #include <am.h>
 #include <nemu.h>
 
-static uint64_t base_time = 0;
-
-static uint64_t am_get_time() {
-   inl(RTC_ADDR + 4); // clear pending interrupts
-  uint32_t hi, lo;
-  lo = inl(RTC_ADDR);
-  hi = inl(RTC_ADDR + 4);
-  return ((uint64_t)hi << 32) | lo;
-}
-
-
 void __am_timer_init() {
-  base_time = am_get_time();
 }
 
 void __am_timer_uptime(AM_TIMER_UPTIME_T *uptime) {
-
-  uint64_t now = am_get_time();
-  uptime->us = now - base_time;// (μs)
-  
+  uint32_t high, low,high2;
+  do {
+    high = inl(RTC_ADDR+4);
+    low = inl(RTC_ADDR);
+    high2 = inl(RTC_ADDR+4);
+  } while (high!= high2);
+  uptime->us = (uint64_t)low + (((uint64_t)high) << 32);
 }
 
 void __am_timer_rtc(AM_TIMER_RTC_T *rtc) {

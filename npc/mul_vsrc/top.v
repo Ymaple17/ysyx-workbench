@@ -50,10 +50,6 @@ module top (
     wire         id_valid;
     wire         ex_ready;
 
-    //===== RegFile =====//
-    wire         reg_valid;
-    wire         reg_ready;
-
     //===== EXU =====//
     wire [31:0]  rs1_val, rs2_val;
     wire [31:0]  alu_result;
@@ -99,6 +95,24 @@ module top (
     wire         wb_MemRead, wb_MemWrite;
     wire [2:0]   wb_MemLen;
     wire [31:0]  wb_addr, wb_data_in;
+    wire         csr_en;
+    wire [11:0]  csr_addr;
+    wire [1:0]   csr_op;
+    wire         csr_imm;
+    wire [4:0]   csr_zimm;
+    wire         csr_ecall;
+    wire         csr_mret;
+    wire         csr_write;
+    wire [31:0]  csr_wdata;
+    wire [1:0]   csr_op_exec;
+    wire         csr_ecall_req;
+    wire         csr_mret_req;
+    wire         csr_trap;
+    wire [31:0]  csr_target_pc;
+    wire [31:0]  csr_rdata;
+    wire [31:0]  csr_mret_pc;
+    wire [31:0]  csr_ecall_pc;
+    wire         pc_src_sel;
 
     //====SRAM读写接口====//
     //AR channel
@@ -342,7 +356,7 @@ module top (
         .clk(clk),
         .reset(rst),
         .branch_target(branch_target),
-        .pc_src(is_jal | is_jalr | take_branch),
+        .pc_src(pc_src_sel),
         .pc(pc),
         .instr(inst),
         .if_ready(if_ready),
@@ -390,7 +404,14 @@ module top (
         .MemWrite(MemWrite),
         .MemRead(MemRead),
         .alu_op(alu_op),
-        .MemLen(MemLen)
+        .MemLen(MemLen),
+        .csr_en(csr_en),
+        .csr_addr(csr_addr),
+        .csr_op(csr_op),
+        .csr_imm(csr_imm),
+        .csr_zimm(csr_zimm),
+        .csr_ecall(csr_ecall),
+        .csr_mret(csr_mret)
     );
     
     EXU exu(
@@ -467,14 +488,46 @@ module top (
         .alu_zero(alu_zero),
         .alu_result(alu_result),
         .data_out(data_out),
+        .csr_en(csr_en),
+        .csr_op(csr_op),
+        .csr_imm(csr_imm),
+        .csr_zimm(csr_zimm),
+        .csr_ecall(csr_ecall),
+        .csr_mret(csr_mret),
+        .csr_rdata(csr_rdata),
+        .csr_mret_pc(csr_mret_pc),
+        .csr_ecall_pc(csr_ecall_pc),
         .is_jal(is_jal),
         .is_jalr(is_jalr),
         .take_branch(take_branch),
         .jal_target(jal_target),
         .jalr_target(jalr_target),
-        .wb_data(wb_data)
+        .wb_data(wb_data),
+        .csr_write(csr_write),
+        .csr_wdata(csr_wdata),
+        .csr_op_exec(csr_op_exec),
+        .csr_ecall_req(csr_ecall_req),
+        .csr_mret_req(csr_mret_req),
+        .csr_trap(csr_trap),
+        .csr_target_pc(csr_target_pc)
     );
-    assign branch_target = is_jalr ? jalr_target : jal_target;
+
+    CSR_FILE csr_file (
+        .clk(clk),
+        .rst(rst),
+        .csrWrite(csr_write),
+        .addr(csr_addr),
+        .wdata(csr_wdata),
+        .op(csr_op_exec),
+        .rdata(csr_rdata),
+        .ecall(csr_ecall_req),
+        .mret(csr_mret_req),
+        .pc(pc),
+        .mret_pc(csr_mret_pc),
+        .ecall_pc(csr_ecall_pc)
+    );
+    assign branch_target = csr_trap ? csr_target_pc : (is_jalr ? jalr_target : jal_target);
+    assign pc_src_sel = csr_trap | is_jal | is_jalr | take_branch;
 
     assign instr = inst;
     assign imem_pc = pc;

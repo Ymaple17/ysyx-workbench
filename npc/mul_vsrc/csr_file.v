@@ -12,7 +12,7 @@ module CSR_FILE(
     input             mret,
     input      [31:0] pc,
     output     [31:0] mret_pc,
-    output reg [31:0] ecall_pc
+    output     [31:0] ecall_pc
 );
     reg [31:0] mstatus;  
     reg [31:0] mtvec;    
@@ -34,42 +34,36 @@ module CSR_FILE(
         endcase
     end
 
-    always @(posedge clk or posedge rst) begin
-        if(rst) begin
-            mstatus = 32'h1800;
-            mtvec   = 32'h0;
-            mepc    = 32'h0;
-            mcause  = 32'h0;
+    assign mret_pc  = mepc;
+    assign ecall_pc = mtvec;
 
-            ecall_pc = 32'h0;
-            mret_pc = 32'h0;
-        end
-        else if(ecall) begin
-            mepc = pc;
-            mcause = 32'h0b;
-            ecall_pc = mtvec;
-        end
-        else if(mret) begin
-            mret_pc = mepc;
-        end
-        else begin
-            if(csrWrite) begin
-                case(addr)
-                    MSTATUS: if(op != `CSR_NONE) mstatus = (op == `CSR_CSRRW) ? wdata :
-                                                (op == `CSR_CSRRS) ? (mstatus | wdata) :
-                                                (mstatus & ~wdata);
-                    MTVEC:  if(op != `CSR_NONE) mtvec = (op == `CSR_CSRRW) ? wdata :
-                                                (op == `CSR_CSRRS) ? (mtvec | wdata) :
-                                                (mtvec & ~wdata);
-                    MEPC:   if(op != `CSR_NONE) mepc = (op == `CSR_CSRRW) ? wdata :
-                                                (op == `CSR_CSRRS) ? (mepc | wdata) :
-                                                (mepc & ~wdata);
-                    MCAUSE: if(op != `CSR_NONE) mcause = (op == `CSR_CSRRW) ? wdata :
-                                                (op == `CSR_CSRRS) ? (mcause | wdata) :
-                                                (mcause & ~wdata);
-                    default: ;
-                endcase
-            end
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            mstatus <= 32'h1800;
+            mtvec   <= 32'h0;
+            mepc    <= 32'h0;
+            mcause  <= 32'h0;
+        end else if (ecall) begin
+            mepc   <= pc;
+            mcause <= 32'h0000_000b;
+        end else if (mret) begin
+            // mret does not modify CSRs directly here; target PC is exposed via mret_pc
+        end else if (csrWrite) begin
+            case (addr)
+                MSTATUS: if (op != `CSR_NONE) mstatus <= (op == `CSR_CSRRW) ? wdata :
+                                                       (op == `CSR_CSRRS) ? (mstatus | wdata) :
+                                                                            (mstatus & ~wdata);
+                MTVEC:   if (op != `CSR_NONE) mtvec   <= (op == `CSR_CSRRW) ? wdata :
+                                                       (op == `CSR_CSRRS) ? (mtvec | wdata) :
+                                                                            (mtvec & ~wdata);
+                MEPC:    if (op != `CSR_NONE) mepc    <= (op == `CSR_CSRRW) ? wdata :
+                                                       (op == `CSR_CSRRS) ? (mepc | wdata) :
+                                                                            (mepc & ~wdata);
+                MCAUSE:  if (op != `CSR_NONE) mcause  <= (op == `CSR_CSRRW) ? wdata :
+                                                       (op == `CSR_CSRRS) ? (mcause | wdata) :
+                                                                            (mcause & ~wdata);
+                default: ;
+            endcase
         end
     end
 endmodule

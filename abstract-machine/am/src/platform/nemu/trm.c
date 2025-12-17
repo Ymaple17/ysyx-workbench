@@ -9,7 +9,7 @@ static const char mainargs[MAINARGS_MAX_LEN] = TOSTRING(MAINARGS_PLACEHOLDER); /
 
 void putch(char ch) {
   outb(SERIAL_PORT, ch);
-}
+}//输出一个字符
 
 void halt(int code) {
   nemu_trap(code);

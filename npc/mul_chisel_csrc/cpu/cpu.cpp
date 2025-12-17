@@ -1,9 +1,9 @@
 #include <stdint.h>
-#include "Vtop.h"
+#include "VysyxSoCFull.h"
 #include "verilated_dpi.h"
 #include "verilated_fst_c.h"
 #include "svdpi.h"
-#include "../../obj_dir/Vtop___024root.h"
+#include "../../obj_dir/VysyxSoCFull___024root.h"
 #include "../include/state.h"
 #include "../include/difftest.h"
 #include "../include/common.h"
@@ -14,7 +14,7 @@
 
 #define MAX_INST_TO_PRINT 10
 CPU_State cpu;
-extern Vtop* top;
+extern VysyxSoCFull* top;
 bool rst_done = false;
 #define WAVE_time 0
 
@@ -28,7 +28,7 @@ static vluint64_t main_time = 0;
 static bool g_print_step = false;
  
 extern "C" void sim_exit(){
-  set_npc_state(NPC_END, top->imem_pc, cpu_gpr[10]);
+  set_npc_state(NPC_END, top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__npc__DOT__ifu__DOT__pc_reg, *rgs[10]);
 }
 
 static inline bool in_pmem(uint32_t addr) {
@@ -40,8 +40,8 @@ double sc_time_stamp(){
 }
 
 void init_npc_cpu(){
-  top->clk = 0;
-  top->rst = 1;
+  top->clock = 0;
+  top->reset = 1;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -50,7 +50,7 @@ void init_npc_cpu(){
   #endif
   main_time++;
 
-  top->clk = 1;
+  top->clock = 1;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -58,7 +58,7 @@ void init_npc_cpu(){
     }
   #endif
   main_time++;
-  top->clk = 0;
+  top->clock = 0;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -67,7 +67,7 @@ void init_npc_cpu(){
   #endif
   main_time++;
   
-  top->rst = 0;
+  top->reset = 0;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -76,7 +76,7 @@ void init_npc_cpu(){
   #endif
   main_time++;
 
-  top->clk = 1;
+  top->clock = 1;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -89,7 +89,7 @@ void init_npc_cpu(){
 
 void exec_once(){
   //negedge
-  top->clk = 0;
+  top->clock = 0;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if(tfp != nullptr && main_time > WAVE_time){
@@ -100,17 +100,16 @@ void exec_once(){
 
   //posedge
   
-  top->clk = 1;
+  top->clock = 1;
   top->eval(); 
-  cpu.pc = top->imem_pc;//rv32e
+  cpu.pc = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__npc__DOT__ifu__DOT__pc_reg;//rv32e
   #ifdef CONFIG_ITRACE 
     uint32_t current_inst = top->instr;
-    itrace_inst(top->imem_pc, current_inst);
+    itrace_inst(top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__npc__DOT__ifu__DOT__pc_reg, current_inst);
     display_inst();
   #endif
   for(int i = 0; i < 32; i++){
-    //cpu.gpr[i] = top->rootp->top__DOT__u_RegisterFile__DOT__rg[i];//rv32e
-    cpu.gpr[i] = top->rootp->top__DOT__npc__DOT__regfile_ext__DOT__Memory[i];//chisel
+    cpu.gpr[i] = *rgs[i];//chisel
   }
   #ifdef ENABLE_WAVEFORM
     if(tfp != nullptr && main_time > WAVE_time){
@@ -183,7 +182,7 @@ void cpu_exec(uint64_t n){
           difftest_one_exec();
         #endif
         printf("npc: " ANSI_FG_GREEN "%s" ANSI_RESET " at pc = 0x%08x\n", 
-               out, top->imem_pc); 
+               out, top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__npc__DOT__ifu__DOT__pc_reg); 
       }
       else{
         out = (char *)"ABORT";
@@ -191,18 +190,18 @@ void cpu_exec(uint64_t n){
           difftest_one_exec(); 
         #endif
         printf("npc: " ANSI_FG_RED "%s" ANSI_RESET " at pc = 0x%08x\n", 
-               out, top->imem_pc); 
+               out, top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__npc__DOT__ifu__DOT__pc_reg); 
       }
       break;
     case NPC_ABORT: 
       out = (char *)"ABORT"; 
       printf("npc: " ANSI_FG_RED "%s" ANSI_RESET " at pc = 0x%08x\n", 
-             out, top->imem_pc); 
+             out, top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__npc__DOT__ifu__DOT__pc_reg); 
       break;
     default: 
       out = (char *)"HIT BAD TRAP"; 
       printf("npc: " ANSI_FG_RED "%s" ANSI_RESET " at pc = 0x%08x\n", 
-             out, top->imem_pc); 
+             out, top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__npc__DOT__ifu__DOT__pc_reg); 
       break;
   }
 }

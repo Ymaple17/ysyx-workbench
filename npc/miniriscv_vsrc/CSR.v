@@ -10,7 +10,7 @@ module CSR(
     reg [63:0] mcycle_reg;
 
     wire [31:0] mvendorid = 32'h79737978;  // "ysyx"
-    wire [31:0] marchid   = 32'h0017DC687; //25020039
+    wire [31:0] marchid   = 32'h017DC687; //25020039
 
     always @(posedge clk) begin
         if (rst) begin

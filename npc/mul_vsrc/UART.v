@@ -49,9 +49,13 @@ module UART #(
     reg addr_valid;
 
     // 检查地址是否有效
+    // always @(*) begin
+    //     addr_valid = (araddr >= 32'ha000_0000 && araddr <= 32'ha000_0007) ||
+    //                  (awaddr >= 32'ha000_0000 && awaddr <= 32'ha000_0007);
+    // end
     always @(*) begin
-        addr_valid = (araddr >= 32'ha000_0000 && araddr <= 32'ha000_0007) ||
-                     (awaddr >= 32'ha000_0000 && awaddr <= 32'ha000_0007);
+        addr_valid = (araddr >= 32'ha000_03f8 && araddr <= 32'ha000_03ff) ||
+                    (awaddr >= 32'ha000_03f8 && awaddr <= 32'ha000_03ff);
     end
 
     // 状态机：状态转换和信号处理

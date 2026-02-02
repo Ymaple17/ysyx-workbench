@@ -1,0 +1,74 @@
+package build_
+import _root_.{build_ => $file}
+import build_.{package_ => build}
+import _root_.mill.runner.MillBuildRootModule
+@_root_.scala.annotation.nowarn
+object MillMiscInfo extends mill.main.RootModule.Info(
+  Vector("/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/out/mill-launcher/0.12.5.jar"),
+  "/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc",
+  "/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/out",
+  "/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc"
+)
+import MillMiscInfo._
+
+object package_ extends package_{
+  
+  override lazy val millDiscover: _root_.mill.define.Discover = _root_.mill.define.Discover[this.type]
+
+}
+abstract class package_ extends _root_.mill.main.RootModule()  {
+//MILL_ORIGINAL_FILE_PATH=/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/build.mill
+//MILL_USER_CODE_START_MARKER
+import coursier.MavenRepository
+import mill._
+import mill.api.PathRef
+import mill.scalalib._
+import mill.scalalib.TestModule.ScalaTest
+
+// Note: This project requires .mill-jvm-opts file containing:
+//   -Dchisel.project.root=${PWD}
+// This is needed because Chisel needs to know the project root directory
+// to properly generate and handle test directories and output files.
+// See: https://github.com/com-lihaoyi/mill/issues/3840
+
+object mychisel extends ScalaModule { m =>
+  override def millSourcePath = super.millSourcePath / os.up
+
+  override def scalaVersion = "2.13.15"
+
+  override def repositoriesTask = T.task {
+    super.repositoriesTask() ++ Seq(
+      MavenRepository("https://jitpack.io")
+    )
+  }
+
+  // Limit compilation to local src/main/scala plus the external rvdecoderdb checkout under $HOME.
+  override def sources = T.sources {
+    Seq(
+      PathRef(millSourcePath / "src" / "main" / "scala"),
+    )
+  }
+
+  override def resources = T.sources {
+    millSourcePath / "src" / "main" / "resources"
+  }
+
+  override def scalacOptions = Seq(
+    "-language:reflectiveCalls",
+    "-deprecation",
+    "-feature",
+    "-Xcheckinit",
+    "-Ymacro-annotations",
+  )
+
+  override def ivyDeps = Agg(
+    ivy"org.chipsalliance::chisel:7.0.0-RC1",
+    ivy"com.lihaoyi::os-lib:0.9.1",
+  )
+
+  override def scalacPluginIvyDeps = Agg(
+    ivy"org.chipsalliance:::chisel-plugin:7.0.0-RC1",
+  )
+}
+
+}

@@ -1,0 +1,28 @@
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:11:12: object chipsalliance is not a member of package org[0m
+[0m[[0m[31merror[0m] [0m[0mimport org.chipsalliance.rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0m           ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:13:27: not found: value rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0mcase class Insn(val inst: rvdecoderdb.Instruction) extends DecodePattern {[0m
+[0m[[0m[31merror[0m] [0m[0m                          ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:58:20: not found: value rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0m  val instTable  = rvdecoderdb.fromFile.instructions(os.pwd / "riscv-opcodes")[0m
+[0m[[0m[31merror[0m] [0m[0m                   ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:309:9: not found: value rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0m    if (rvdecoderdb.Utils.isJ(inst.inst) || rvdecoderdb.Utils.isB(inst.inst) || inst.inst.name.matches("auipc")) //auipc[0m
+[0m[[0m[31merror[0m] [0m[0m        ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:309:45: not found: value rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0m    if (rvdecoderdb.Utils.isJ(inst.inst) || rvdecoderdb.Utils.isB(inst.inst) || inst.inst.name.matches("auipc")) //auipc[0m
+[0m[[0m[31merror[0m] [0m[0m                                            ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:320:9: not found: value rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0m    if (rvdecoderdb.Utils.isJ(inst.inst) || inst.opcode.rawString.matches("1100111"))[0m
+[0m[[0m[31merror[0m] [0m[0m        ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:333:9: not found: value rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0m    if (rvdecoderdb.Utils.isS(inst.inst) || rvdecoderdb.Utils.isB(inst.inst)) //！！注意这里是if() n else y!!!!!!!![0m
+[0m[[0m[31merror[0m] [0m[0m        ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:333:45: not found: value rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0m    if (rvdecoderdb.Utils.isS(inst.inst) || rvdecoderdb.Utils.isB(inst.inst)) //！！注意这里是if() n else y!!!!!!!![0m
+[0m[[0m[31merror[0m] [0m[0m                                            ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/decoder.scala:386:9: not found: value rvdecoderdb[0m
+[0m[[0m[31merror[0m] [0m[0m    if (rvdecoderdb.Utils.isB(inst.inst))[0m
+[0m[[0m[31merror[0m] [0m[0m        ^[0m
+[0m[[0m[31merror[0m] [0m[0m9 errors found[0m

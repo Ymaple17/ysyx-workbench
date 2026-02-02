@@ -1,0 +1,21 @@
+{
+    "value": [
+        "qref:v1:6236f12e:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.11.1/mill-moduledefs_2.13-0.11.1.jar",
+        "qref:v1:f3eb0863:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15.jar",
+        "ref:v0:c984eca8:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/mill-build/compile-resources",
+        "qref:v0:e305a7a5:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/out/mill-launcher/0.12.5.jar",
+        "qref:v1:544ccb70:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-runner-linenumbers_2.13/0.12.5/mill-runner-linenumbers_2.13-0.12.5.jar",
+        "qref:v1:eefc1afb:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-compiler/2.13.15/scala-compiler-2.13.15.jar",
+        "qref:v1:f3eb0863:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-library/2.13.15/scala-library-2.13.15.jar",
+        "qref:v1:6236f12e:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-moduledefs_2.13/0.11.1/mill-moduledefs_2.13-0.11.1.jar",
+        "qref:v1:837537bc:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/mill-main-client/0.12.5/mill-main-client-0.12.5.jar",
+        "qref:v1:35c5b358:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.15/scala-reflect-2.13.15.jar",
+        "qref:v1:ab5fb80f:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/io/github/java-diff-utils/java-diff-utils/4.12/java-diff-utils-4.12.jar",
+        "qref:v1:7da12ee0:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/org/jline/jline/3.26.3/jline-3.26.3.jar",
+        "qref:v1:c4e78447:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/net/java/dev/jna/jna/5.14.0/jna-5.14.0.jar",
+        "qref:v1:5dd43eff:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/sourcecode_2.13/0.3.0/sourcecode_2.13-0.3.0.jar",
+        "ref:v0:9b9b7cd2:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/out/mill-build/compile.dest/classes"
+    ],
+    "valueHash": 1336032491,
+    "inputsHash": -2009815537
+}

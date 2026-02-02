@@ -54,6 +54,7 @@ _do_bl_ss:
   addi t0, t0, 4
   j 0b
 1:
+  fence.i
 
   mv a0, zero
   mv a1, zero

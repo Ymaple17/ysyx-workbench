@@ -1,0 +1,15 @@
+{
+    "files.associations": {
+        "initializer_list": "c",
+        "utility": "c",
+        "xutility": "c",
+        "stdint.h": "c",
+        "stdbool.h": "c",
+        "compare": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "xmemory": "c",
+        "xtr1common": "c",
+        "memory.h": "c"
+    }
+}

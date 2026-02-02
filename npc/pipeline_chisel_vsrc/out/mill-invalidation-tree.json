@@ -1,0 +1,91 @@
+{
+  "mychisel.runIvyDeps": {},
+  "mychisel.zincIncrementalCompilation": {},
+  "mychisel.zincReportCachedProblems": {},
+  "mychisel.generatedSources": {
+    "mychisel.allSources": {
+      "mychisel.allSourceFiles": {}
+    }
+  },
+  "mychisel.mandatoryJavacOptions": {},
+  "mychisel.resources": {
+    "mychisel.localRunClasspath": {
+      "mychisel.localClasspath": {}
+    }
+  },
+  "mychisel.ivyDeps": {
+    "mychisel.allIvyDeps": {}
+  },
+  "mychisel.mandatoryScalacOptions": {},
+  "mychisel.javacOptions": {},
+  "mill.scalalib.ZincWorkerModule.jvmId": {},
+  "mychisel.forkArgs.super.RunModule": {
+    "mychisel.forkArgs": {}
+  },
+  "mill.scalalib.ZincWorkerModule.jvmIndexVersion": {
+    "mill.scalalib.ZincWorkerModule.javaHome": {}
+  },
+  "mychisel.sources": {},
+  "mychisel.forkEnv.super.RunModule": {
+    "mychisel.forkEnv": {}
+  },
+  "mychisel.transitiveLocalClasspath": {},
+  "mychisel.compileResources": {},
+  "mychisel.localRunClasspath.super.RunModule": {},
+  "mill.scalalib.ZincWorkerModule.zincLogDebug": {
+    "mill.scalalib.ZincWorkerModule.worker": {}
+  },
+  "mychisel.transitiveCompileClasspath": {
+    "mychisel.compileClasspath": {}
+  },
+  "mychisel.mandatoryIvyDeps.super.JavaModule": {
+    "mychisel.mandatoryIvyDeps": {}
+  },
+  "mychisel.runClasspath.super.RunModule": {
+    "mychisel.runClasspath": {}
+  },
+  "mill.scalalib.ZincWorkerModule.classpath": {
+    "mychisel.allLocalMainClasses": {}
+  },
+  "mychisel.runUseArgsFile.super.RunModule": {
+    "mychisel.runUseArgsFile": {}
+  },
+  "mychisel.depManagement": {},
+  "mychisel.scalaVersion": {
+    "mychisel.transitiveCompileIvyDeps": {},
+    "mychisel.resolvedIvyDeps": {},
+    "mychisel.scalaCompilerClasspath": {},
+    "mychisel.zincAuxiliaryClassFileExtensions": {},
+    "mychisel.scalaLibraryIvyDeps": {},
+    "mychisel.transitiveRunIvyDeps": {},
+    "mychisel.compile": {},
+    "mychisel.resolvedRunIvyDeps": {},
+    "mychisel.transitiveIvyDeps": {},
+    "mychisel.scalaOrganization": {}
+  },
+  "mychisel.scalacPluginIvyDeps": {
+    "mychisel.enablePluginScalacOptions.super.ScalaModule": {},
+    "mychisel.scalacPluginClasspath": {}
+  },
+  "mychisel.artifactTypes": {},
+  "mychisel.upstreamCompileOutput": {},
+  "mychisel.platformSuffix": {},
+  "mychisel.compileIvyDeps": {},
+  "mychisel.scalacOptions": {
+    "mychisel.allScalacOptions": {}
+  },
+  "mychisel.mainClass": {
+    "mychisel.finalMainClassOpt.super.RunModule": {},
+    "mychisel.finalMainClassOpt": {
+      "mychisel.runMain": {}
+    }
+  },
+  "mychisel.zincAuxiliaryClassFileExtensions.super.JavaModule": {},
+  "mychisel.forkWorkingDir.super.RunModule": {
+    "mychisel.forkWorkingDir": {}
+  },
+  "mychisel.unmanagedClasspath": {
+    "mychisel.localCompileClasspath": {}
+  },
+  "mychisel.bomIvyDeps": {}
+}

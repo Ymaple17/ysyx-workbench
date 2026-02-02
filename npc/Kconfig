@@ -10,8 +10,14 @@ config MUL_SOC
 config CHISEL_MUL
     bool "Enable Chisel riscv32_mul implementation"
 
+config PIPELINE_CHISEL
+    bool "Enable Pipeline Chisel implementation"
+
 config CHISEL_RISCV32E
     bool "Enable Chisel riscv32e implementation"
+
+config PIPELINE_SOC
+    bool "Enable pipeline_soc implementation"
 
 config MUL
     bool "Enable riscv32_mul implementation"
@@ -23,6 +29,21 @@ config MINIRV
     bool "Enable Mini-RV32I"
 
 endchoice
+
+
+if PIPELINE_CHISEL
+    choice
+        prompt "Pipeline Chisel Run Mode"
+        default PIPELINE_CHISEL_SOC
+
+        config PIPELINE_CHISEL_SOC
+            bool "SOC Mode"
+
+        config PIPELINE_CHISEL_NPC
+            bool "NPC Mode"
+    endchoice
+endif
+
 
 config BATCH_MODE
     bool "Enable Batch Execution (Disable Stepping)"

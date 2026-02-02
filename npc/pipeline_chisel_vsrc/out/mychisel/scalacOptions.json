@@ -1,0 +1,11 @@
+{
+    "value": [
+        "-language:reflectiveCalls",
+        "-deprecation",
+        "-feature",
+        "-Xcheckinit",
+        "-Ymacro-annotations"
+    ],
+    "valueHash": -799101527,
+    "inputsHash": 1139652247
+}

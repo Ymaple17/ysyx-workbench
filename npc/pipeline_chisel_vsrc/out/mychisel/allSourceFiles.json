@@ -1,0 +1,28 @@
+{
+    "value": [
+        "ref:v0:aa96b952:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/npc.scala",
+        "ref:v0:615b59ba:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/top.scala",
+        "ref:v0:7f330879:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/ifu.scala",
+        "ref:v0:73240560:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/control.scala",
+        "ref:v0:0c4d0d42:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/core.scala",
+        "ref:v0:e77d47cc:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/icache.scala",
+        "ref:v0:8a09ecca:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/lsu.scala",
+        "ref:v0:4983b6de:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/ebreak.scala",
+        "ref:v0:d2f5183a:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/wbu.scala",
+        "ref:v0:091ddaa9:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/imm.scala",
+        "ref:v0:385a8ab2:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/alu.scala",
+        "ref:v0:e9a29980:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/simple_icache.scala",
+        "ref:v0:771be871:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/idu.scala",
+        "ref:v0:b33f7277:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/refile.scala",
+        "ref:v0:2807dbee:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/exu.scala",
+        "ref:v0:a91779a6:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/pc.scala",
+        "ref:v0:17e04ab6:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/csr.scala",
+        "ref:v0:f00d296c:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/xbar.scala",
+        "ref:v0:87d423e1:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/clint.scala",
+        "ref:v0:16b6be56:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/axi.scala",
+        "ref:v0:01fdecf8:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/sram.scala",
+        "ref:v0:10a2b9e2:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/config.scala"
+    ],
+    "valueHash": 1471339613,
+    "inputsHash": 774915129
+}

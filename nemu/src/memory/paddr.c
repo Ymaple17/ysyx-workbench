@@ -21,14 +21,40 @@
 #if   defined(CONFIG_PMEM_MALLOC)
 static uint8_t *pmem = NULL;
 #else // CONFIG_PMEM_GARRAY
-static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
+// static uint8_t pmem[CONFIG_MSIZE] PG_ALIGN = {};
+static uint8_t mrom[0x1000] PG_ALIGN = {};
+static uint8_t sram[0x2000] PG_ALIGN = {};
+static uint8_t flash[16 * 1024 * 1024] PG_ALIGN = {};
+static uint8_t psram[ 4*1024*1024] PG_ALIGN = {};
+static uint8_t sdram[64 * 1024 * 1024] PG_ALIGN = {};
 #endif
 
 void trace_read(paddr_t addr, int len);
 void trace_write(paddr_t addr, int len, word_t data);
 
-uint8_t* guest_to_host(paddr_t paddr) { return pmem + paddr - CONFIG_MBASE; }//offest
-paddr_t host_to_guest(uint8_t *haddr) { return haddr - pmem + CONFIG_MBASE; }
+bool in_mrom(paddr_t addr) { return addr >= 0x20000000 && addr < 0x20000000 + 0x1000; }
+bool in_flash(paddr_t addr) { return addr >= 0x30000000 && addr < 0x30000000 + 16 * 1024 * 1024; }
+bool in_sram(paddr_t addr) { return addr >= 0x0f000000 && addr < 0x0f000000 + 0x2000; }
+bool in_psram(paddr_t addr) { return addr >= 0x80000000 && addr < 0x80000000 + 4 * 1024 * 1024; }
+bool in_sdram(paddr_t addr) { return addr >= 0xa0000000 && addr < 0xa0000000 + 64 * 1024 * 1024; }
+
+uint8_t* guest_to_host(paddr_t paddr) { 
+  if (in_psram(paddr)) return psram + (paddr - 0x80000000);
+  if (in_mrom(paddr)) return mrom + (paddr - 0x20000000);
+  if (in_flash(paddr)) return flash + (paddr - 0x30000000);
+  if (in_sram(paddr)) return sram + (paddr - 0x0f000000);
+  if (in_sdram(paddr)) return sdram + (paddr - 0xa0000000);
+  return NULL;
+}
+
+paddr_t host_to_guest(uint8_t *haddr) { 
+  if (haddr >= psram && haddr < psram + 4*1024*1024) return 0x80000000 + (haddr - psram);
+  if (haddr >= mrom && haddr < mrom + 0x1000) return 0x20000000 + (haddr - mrom);
+  if (haddr >= flash && haddr < flash + 16*1024*1024) return 0x30000000 + (haddr - flash);
+  if (haddr >= sram && haddr < sram + 0x2000) return 0x0f000000 + (haddr - sram);
+  if (haddr >= sdram && haddr < sdram + 64*1024*1024) return 0xa0000000 + (haddr - sdram);
+  return 0; // Should not happen usually
+}
 
 static word_t pmem_read(paddr_t addr, int len) {
   word_t ret = host_read(guest_to_host(addr), len);
@@ -40,8 +66,8 @@ static void pmem_write(paddr_t addr, int len, word_t data) {
 }
 
 static void out_of_bound(paddr_t addr) {
-  panic("address = " FMT_PADDR " is out of bound of pmem [" FMT_PADDR ", " FMT_PADDR "] at pc = " FMT_WORD,
-      addr, PMEM_LEFT, PMEM_RIGHT, cpu.pc);
+  panic("address = " FMT_PADDR " is out of bound of pmem at pc = " FMT_WORD,
+      addr, cpu.pc);
 }
 
 void init_mem() {
@@ -49,13 +75,20 @@ void init_mem() {
   pmem = malloc(CONFIG_MSIZE);
   assert(pmem);
 #endif
-  IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
-  Log("physical memory area [" FMT_PADDR ", " FMT_PADDR "]", PMEM_LEFT, PMEM_RIGHT);
+  // IFDEF(CONFIG_MEM_RANDOM, memset(pmem, rand(), CONFIG_MSIZE));
+  IFDEF(CONFIG_MEM_RANDOM, memset(psram, rand(), 4*1024*1024));
+  IFDEF(CONFIG_MEM_RANDOM, memset(sdram, rand(), 64*1024*1024));
+  IFDEF(CONFIG_MEM_RANDOM, memset(sram, rand(), 0x2000));
+  
+  Log("physical memory area initialized for SoC map");
 }
 
 word_t paddr_read(paddr_t addr, int len) {
   IFDEF(CONFIG_MTRACE, trace_read(addr, len));
-  if (likely(in_pmem(addr))) return pmem_read(addr, len);
+  // if (in_pmem(addr)) return pmem_read(addr, len); // Removed legacy check
+  if (in_psram(addr) || in_mrom(addr) || in_flash(addr) || in_sram(addr) || in_sdram(addr))
+     return pmem_read(addr, len);
+  
   IFDEF(CONFIG_DEVICE, return mmio_read(addr, len));
   out_of_bound(addr);
   return 0;
@@ -63,7 +96,12 @@ word_t paddr_read(paddr_t addr, int len) {
 
 void paddr_write(paddr_t addr, int len, word_t data) {
   IFDEF(CONFIG_MTRACE, trace_write(addr, len,data));
-  if (likely(in_pmem(addr))) { pmem_write(addr, len, data); return; }
+  // if (in_pmem(addr)) { pmem_write(addr, len, data); return; } // Removed legacy check
+  
+  if (in_psram(addr) || in_mrom(addr) || in_flash(addr) || in_sram(addr) || in_sdram(addr)) {
+     pmem_write(addr, len, data); return;
+  }
+
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
   out_of_bound(addr);
 }

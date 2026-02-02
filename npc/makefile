@@ -1,8 +1,18 @@
 VERILATOR = verilator
 TOP_MODULE = top
 
+ifeq (,$(wildcard .config))
+$(error .config file not found, please run 'make menuconfig' first)
+endif
+
+include .config
+
 VSRC_CHISEL_MUL = $(shell find mul_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
 CSRC_CHISEL_MUL = $(shell find mul_chisel_csrc -name "*.cpp" -o -name "*.c")#mul_chisel
+
+VSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
+CSRC_PIPELINE_CHISEL_SOC = $(shell find pipeline_chisel_soc_csrc -name "*.cpp" -o -name "*.c")#pipeline_chisel
+CSRC_PIPELINE_CHISEL_NPC = $(shell find pipeline_chisel_npc_csrc -name "*.cpp" -o -name "*.c")#pipeline_chisel
 
 VSRC_CHISEL_RISCV32E = $(shell find chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#chisel
 CSRC_CHISEL_RISCV32E = $(shell find chisel_csrc -name "*.cpp" -o -name "*.c")#chisel
@@ -12,13 +22,19 @@ VSRC_MULVSRC = $(shell find mul_vsrc -name "*.v" -o -name "*.sv")
 #VSRC_MINIRISCV = $(shell find miniriscv_vsrc -name "*.v" -o -name "*.sv")
 VSRC_MINIRISCV = /home/qiu/ysyx-workbench/npc/ysyx_25020039.v
 VSRC_MUL_SOC = $(shell find mul_soc_vsrc -name "*.v" -o -name "*.sv")
+VSRC_PIPELINE_SOC = $(shell find pipeline_soc_vsrc -name "*.v" -o -name "*.sv")
 
 CONFIG_MINIRV_VAL := $(shell grep CONFIG_MINIRV .config | cut -d'=' -f2)
 CONFIG_SINGLE_VAL := $(shell grep CONFIG_SINGLE .config | cut -d'=' -f2)
 CONFIG_MUL_VAL := $(shell grep CONFIG_MUL .config | cut -d'=' -f2)
 CONFIG_CHISEL_MUL_VAL := $(shell grep CONFIG_CHISEL_MUL .config | cut -d'=' -f2)
+CONFIG_PIPELINE_CHISEL_VAL := $(shell grep -w CONFIG_PIPELINE_CHISEL .config | cut -d'=' -f2)
 CONFIG_CHISEL_RISCV32E_VAL := $(shell grep CONFIG_CHISEL_RISCV32E .config | cut -d'=' -f2)
 CONFIG_NVBOARD_VAL := $(shell grep CONFIG_NVBOARD .config | cut -d'=' -f2)
+CONFIG_PIPELINE_SOC_VAL := $(shell grep CONFIG_PIPELINE_SOC .config | cut -d'=' -f2)
+
+CONFIG_PIPELINE_CHISEL_SOC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_SOC .config | cut -d'=' -f2)
+CONFIG_PIPELINE_CHISEL_NPC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_NPC .config | cut -d'=' -f2)
 
 VSRC_MINIRV_PERIP = $(shell find ../ysyxSoC/perip -name "*.v" -o -name "*.sv")
 VSRC_MINIRV_TOP = ../ysyxSoC/ready-to-run/D-stage/ysyxSoCFull.v
@@ -30,15 +46,36 @@ ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
   VSRC = $(VSRC_CHISEL_MUL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
   CSRC = $(CSRC_CHISEL_MUL)
   CHISEL_WORK_DIR := mul_chisel_vsrc
+  CHISEL_BUILD_TOOL := sbt
   TOP_MODULE = ysyxSoCFull
   VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
   CFLAGS += -std=c++17
-  $(info [INFO] Using chisel_mul implementation)
+  $(info [INFO] Using chisel_mul implementation, build with sbt)
+else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
+  ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
+    VSRC = $(VSRC_PIPELINE_CHISEL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
+    CSRC = $(CSRC_PIPELINE_CHISEL_SOC)
+    CHISEL_WORK_DIR := pipeline_chisel_vsrc
+    CHISEL_BUILD_TOOL := mill
+#     CHISEL_BUILD_TOOL := none
+    TOP_MODULE = ysyxSoCFull
+    VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
+    CFLAGS += -std=c++17
+    $(info [INFO] Using pipeline_chisel SOC Mode)
+  else ifeq ($(CONFIG_PIPELINE_CHISEL_NPC_VAL),y)
+    VSRC = $(VSRC_PIPELINE_CHISEL)
+    CSRC = $(CSRC_PIPELINE_CHISEL_NPC)
+    CHISEL_WORK_DIR := pipeline_chisel_vsrc
+    CHISEL_BUILD_TOOL := mill
+    TOP_MODULE = ysyx_25020039
+    $(info [INFO] Using pipeline_chisel NPC Mode)
+  endif
 else ifeq ($(CONFIG_CHISEL_RISCV32E_VAL),y)
   VSRC = $(VSRC_CHISEL_RISCV32E)
   CSRC = $(CSRC_CHISEL_RISCV32E)
   CHISEL_WORK_DIR := chisel_vsrc
-  $(info [INFO] Using chisel_riscv32e implementation)
+  CHISEL_BUILD_TOOL := sbt
+  $(info [INFO] Using chisel_riscv32e implementation, build with sbt)
 else ifeq ($(CONFIG_MINIRV_VAL),y)
   VSRC = $(VSRC_MINIRISCV) $(VSRC_MINIRV_PERIP) $(VSRC_MINIRV_TOP)
   CSRC = $(shell find minirv_csrc -name "*.cpp" -o -name "*.c")#minirv
@@ -49,6 +86,12 @@ else ifeq ($(CONFIG_MUL_VAL),y)
   VSRC = $(VSRC_MULVSRC)
   CSRC = $(shell find mul_csrc -name "*.cpp" -o -name "*.c")#mul
   $(info [INFO] Using mul implementation)
+else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
+  VSRC = $(VSRC_PIPELINE_SOC) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
+  CSRC = $(shell find pipeline_soc_csrc -name "*.cpp" -o -name "*.c")#pipeline_soc
+  TOP_MODULE = ysyxSoCFull
+  VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
+  $(info [INFO] Using pipeline_soc implementation)
 else ifeq ($(CONFIG_SINGLE_VAL),y)
   VSRC = $(VSRC_RISCV32E) 
   CSRC = $(shell find single_csrc -name "*.cpp" -o -name "*.c")#rv32e
@@ -83,6 +126,21 @@ else ifeq ($(CONFIG_MUL_VAL),y)
     -Imul_csrc \
     -I$(NPC_HOME)/mul_csrc/include \
     -I$(NPC_HOME)/include
+else ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
+  C_INCLUDE_DIRS += \
+    -Ipipeline_chisel_soc_csrc \
+    -I$(NPC_HOME)/pipeline_chisel_soc_csrc/include \
+    -I$(NPC_HOME)/include
+else ifeq ($(CONFIG_PIPELINE_CHISEL_NPC_VAL),y)
+  C_INCLUDE_DIRS += \
+    -Ipipeline_chisel_npc_csrc \
+    -I$(NPC_HOME)/pipeline_chisel_npc_csrc/include \
+    -I$(NPC_HOME)/include
+else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
+  C_INCLUDE_DIRS += \
+    -Ipipeline_soc_csrc \
+    -I$(NPC_HOME)/pipeline_soc_csrc/include \
+    -I$(NPC_HOME)/include
 else ifeq ($(CONFIG_CHISEL_RISCV32E_VAL),y)
   C_INCLUDE_DIRS += \
     -Iriscv32e_csrc \
@@ -103,6 +161,7 @@ ifeq ($(CONFIG_SINGLE_VAL),y)
 else ifeq ($(CONFIG_MINIRV_VAL),y)
   V_INCLUDE_DIRS += -Iminiriscv_vsrc \
                     -Iminiriscv_vsrc/include \
+                    -I../ortl \
                     -I../ysyxSoC/perip/uart16550/rtl \
                     -I../ysyxSoC/perip/spi/rtl
 else ifeq ($(CONFIG_MUL_VAL),y)
@@ -110,11 +169,24 @@ else ifeq ($(CONFIG_MUL_VAL),y)
                     -Imul_vsrc/include
 else ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
   V_INCLUDE_DIRS += -Imul_chisel_vsrc \
+                    -I../ortl \
+                    -I../ysyxSoC/perip/uart16550/rtl \
+                    -I../ysyxSoC/perip/spi/rtl
+else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
+  V_INCLUDE_DIRS += -Ipipeline_chisel_vsrc \
+                    -I../ortl \
+                    -I../ysyxSoC/perip/uart16550/rtl \
+                    -I../ysyxSoC/perip/spi/rtl
+else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
+  V_INCLUDE_DIRS += -Ipipeline_soc_vsrc \
+                    -Ipipeline_soc_vsrc/include \
+                    -I../ortl \
                     -I../ysyxSoC/perip/uart16550/rtl \
                     -I../ysyxSoC/perip/spi/rtl
 else 
   V_INCLUDE_DIRS += -Imul_soc_vsrc \
                     -Imul_soc_vsrc/include \
+                    -I../ortl \
                     -I../ysyxSoC/perip/uart16550/rtl \
                     -I../ysyxSoC/perip/spi/rtl
 endif
@@ -126,15 +198,10 @@ BUILD_DIR ?= build
 PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/dummy.bin
 # PROGRAM ?= ../am-kernels/kernels/char-test/char-test.bin
 
-ifeq (,$(wildcard .config))
-$(error .config file not found, please run 'make menuconfig' first)
-endif
-
-include .config
-
 CFLAGS = -Wall -std=c++11 -g
 CXXFLAGS = $(CFLAGS)
 LDFLAGS_BASE = -lreadline -lSDL2 -ldl
+VERILATOR_FLAGS += -Wno-WIDTHEXPAND
 
 ifeq ($(CONFIG_NVBOARD_VAL),y)
   ifndef NVBOARD_HOME
@@ -193,19 +260,32 @@ endif
 
 chisel-gen:
 ifdef CHISEL_WORK_DIR
-	$(info [CHISEL] Generating SV files in $(CHISEL_WORK_DIR)...)
-	# 进入 Chisel 工作目录执行 sbt run（生成 SV）
-	cd $(CHISEL_WORK_DIR) && sbt run
-	$(info [CHISEL] SV files generated successfully)
+	$(info [CHISEL] Check build tool: $(CHISEL_BUILD_TOOL))
+	cd $(CHISEL_WORK_DIR) && \
+	if [ "$(CHISEL_BUILD_TOOL)" = "mill" ]; then \
+	    ./mill -i mychisel.runMain TopMain; \
+	elif [ "$(CHISEL_BUILD_TOOL)" = "sbt" ]; then \
+	    sbt run; \
+	else \
+	    $(info [CHISEL]  pipeline_chisel: skip all build commands, SV/Verilog files are ready!) \
+	    true; \
+	fi
 else
 	$(info [CHISEL] Not a Chisel configuration, skip SV generation)
 endif
 
 chisel-clean:
 ifdef CHISEL_WORK_DIR
-	$(info [CHISEL] Cleaning Chisel artifacts in $(CHISEL_WORK_DIR)...)
-	cd $(CHISEL_WORK_DIR) && sbt clean
-	$(info [CHISEL] Chisel artifacts cleaned successfully)
+	$(info [CHISEL] Check build tool: $(CHISEL_BUILD_TOOL))
+	cd $(CHISEL_WORK_DIR) && \
+	if [ "$(CHISEL_BUILD_TOOL)" = "mill" ]; then \
+	    mill -i clean; \
+	elif [ "$(CHISEL_BUILD_TOOL)" = "sbt" ]; then \
+	    sbt clean; \
+	else \
+	    $(info [CHISEL]  pipeline_chisel: skip clean commands, no build artifacts to clean!) \
+	    true; \
+	fi
 else
 	$(info [CHISEL] Not a Chisel configuration, skip Chisel clean)
 endif
@@ -246,7 +326,6 @@ ifdef CONFIG_WAVEFORM
 	rm -f $(CONFIG_WAVEFORM_FILE)
 endif
 
-
 include $(NPC_HOME)/scripts/config.mk
 
-.PHONY: all sim run chisel-gen chisel-clean  clean
+.PHONY: all sim run chisel-gen chisel-clean clean

@@ -2,31 +2,10 @@ mainmenu "NPC Configuration"
 
 choice
     prompt "Architecture Selection"
-    default MUL_SOC
-
-config MUL_SOC
-    bool "Enable mul_soc implementation (Default)"
-
-config CHISEL_MUL
-    bool "Enable Chisel riscv32_mul implementation"
+    default PIPELINE_CHISEL
 
 config PIPELINE_CHISEL
     bool "Enable Pipeline Chisel implementation"
-
-config CHISEL_RISCV32E
-    bool "Enable Chisel riscv32e implementation"
-
-config PIPELINE_SOC
-    bool "Enable pipeline_soc implementation"
-
-config MUL
-    bool "Enable riscv32_mul implementation"
-
-config SINGLE
-    bool "Enable riscv32e_vsrc implementation"
-
-config MINIRV
-    bool "Enable Mini-RV32I"
 
 endchoice
 
@@ -72,7 +51,6 @@ config TRACE_DIFF
     default n
     help
       Enable trace difference comparison for debugging.
-
 
 
 

@@ -43,155 +43,44 @@ VSRC_SOC_TOP = ../ysyxSoC/build/ysyxSoCFull.v
 
 VERILATOR_FLAGS =
 
-ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
-  VSRC = $(VSRC_CHISEL_MUL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
-  CSRC = $(CSRC_CHISEL_MUL)
-  CHISEL_WORK_DIR := mul_chisel_vsrc
-  CHISEL_BUILD_TOOL := sbt
+ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
+  VSRC = $(VSRC_PIPELINE_CHISEL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
+  CSRC = $(CSRC_PIPELINE_CHISEL_SOC)
+  CHISEL_WORK_DIR := pipeline_chisel_vsrc
+  CHISEL_BUILD_TOOL := mill
   TOP_MODULE = ysyxSoCFull
   VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
   CFLAGS += -std=c++17
-  $(info [INFO] Using chisel_mul implementation, build with sbt)
-else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
-  ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
-    VSRC = $(VSRC_PIPELINE_CHISEL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
-    CSRC = $(CSRC_PIPELINE_CHISEL_SOC)
-    CHISEL_WORK_DIR := pipeline_chisel_vsrc
-    CHISEL_BUILD_TOOL := mill
-#     CHISEL_BUILD_TOOL := none
-    TOP_MODULE = ysyxSoCFull
-    VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
-    CFLAGS += -std=c++17
-    $(info [INFO] Using pipeline_chisel SOC Mode)
-  else ifeq ($(CONFIG_PIPELINE_CHISEL_NPC_VAL),y)
-    VSRC = $(VSRC_PIPELINE_CHISEL)
-    CSRC = $(CSRC_PIPELINE_CHISEL_NPC)
-    CHISEL_WORK_DIR := pipeline_chisel_vsrc
-    CHISEL_BUILD_TOOL := mill
-#     CHISEL_BUILD_TOOL := none
-    TOP_MODULE = ysyx_25020039
-    $(info [INFO] Using pipeline_chisel NPC Mode)
-  endif
-else ifeq ($(CONFIG_CHISEL_RISCV32E_VAL),y)
-  VSRC = $(VSRC_CHISEL_RISCV32E)
-  CSRC = $(CSRC_CHISEL_RISCV32E)
-  CHISEL_WORK_DIR := chisel_vsrc
-  CHISEL_BUILD_TOOL := sbt
-  $(info [INFO] Using chisel_riscv32e implementation, build with sbt)
-else ifeq ($(CONFIG_MINIRV_VAL),y)
-  VSRC = $(VSRC_MINIRISCV) $(VSRC_MINIRV_PERIP) $(VSRC_MINIRV_TOP)
-  CSRC = $(shell find minirv_csrc -name "*.cpp" -o -name "*.c")#minirv
-  TOP_MODULE = ysyxSoCFull
-  VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
-  $(info [INFO] Using MiniRISCV implementation)
-else ifeq ($(CONFIG_MUL_VAL),y)
-  VSRC = $(VSRC_MULVSRC)
-  CSRC = $(shell find mul_csrc -name "*.cpp" -o -name "*.c")#mul
-  $(info [INFO] Using mul implementation)
-else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
-  VSRC = $(VSRC_PIPELINE_SOC) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
-  CSRC = $(shell find pipeline_soc_csrc -name "*.cpp" -o -name "*.c")#pipeline_soc
-  TOP_MODULE = ysyxSoCFull
-  VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
-  $(info [INFO] Using pipeline_soc implementation)
-else ifeq ($(CONFIG_SINGLE_VAL),y)
-  VSRC = $(VSRC_RISCV32E) 
-  CSRC = $(shell find single_csrc -name "*.cpp" -o -name "*.c")#rv32e
-  $(info [INFO] Using single_vsrc implementation)
-else 
-  VSRC = $(VSRC_MUL_SOC) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
-  CSRC = $(shell find mul_soc_csrc -name "*.cpp" -o -name "*.c")#mul_soc
-  TOP_MODULE = ysyxSoCFull
-  VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
-  #VERILATOR_FLAGS += --autoflush
-  $(info [INFO] Using mul_soc implementation)
+  $(info [INFO] Using pipeline_chisel SOC Mode)
+else
+  VSRC = $(VSRC_PIPELINE_CHISEL)
+  CSRC = $(CSRC_PIPELINE_CHISEL_NPC)
+  CHISEL_WORK_DIR := pipeline_chisel_vsrc
+  CHISEL_BUILD_TOOL := mill
+  TOP_MODULE = ysyx_25020039
+  $(info [INFO] Using pipeline_chisel NPC Mode)
 endif
 
 C_INCLUDE_DIRS =
 
-ifeq ($(CONFIG_SINGLE_VAL),y)
-  C_INCLUDE_DIRS += \
-    -Isingle_csrc \
-    -I$(NPC_HOME)/single_csrc/include \
-    -I$(NPC_HOME)/include \
-    -Ichisel_csrc \
-    -I$(NPC_HOME)/chisel_csrc/include
-else ifeq ($(CONFIG_MINIRV_VAL),y)
-  C_INCLUDE_DIRS += \
-    -Iminirv_csrc \
-    -I$(NPC_HOME)/minirv_csrc/include \
-    -I$(NPC_HOME)/include
-else ifeq ($(CONFIG_MUL_VAL),y)
-  C_INCLUDE_DIRS += \
-    -Imul_chisel_csrc \
-    -I$(NPC_HOME)/mul_chisel_csrc/include \
-    -Imul_csrc \
-    -I$(NPC_HOME)/mul_csrc/include \
-    -I$(NPC_HOME)/include
-else ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
+ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
   C_INCLUDE_DIRS += \
     -Ipipeline_chisel_soc_csrc \
     -I$(NPC_HOME)/pipeline_chisel_soc_csrc/include \
     -I$(NPC_HOME)/include
-else ifeq ($(CONFIG_PIPELINE_CHISEL_NPC_VAL),y)
+else
   C_INCLUDE_DIRS += \
     -Ipipeline_chisel_npc_csrc \
     -I$(NPC_HOME)/pipeline_chisel_npc_csrc/include \
-    -I$(NPC_HOME)/include
-else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
-  C_INCLUDE_DIRS += \
-    -Ipipeline_soc_csrc \
-    -I$(NPC_HOME)/pipeline_soc_csrc/include \
-    -I$(NPC_HOME)/include
-else ifeq ($(CONFIG_CHISEL_RISCV32E_VAL),y)
-  C_INCLUDE_DIRS += \
-    -Iriscv32e_csrc \
-    -I$(NPC_HOME)/riscv32e_csrc/include \
-    -I$(NPC_HOME)/include
-else
-  C_INCLUDE_DIRS += \
-    -Imul_soc_csrc \
-    -I$(NPC_HOME)/mul_soc_csrc/include \
     -I$(NPC_HOME)/include
 endif
 
 V_INCLUDE_DIRS =
 
-ifeq ($(CONFIG_SINGLE_VAL),y)
-  V_INCLUDE_DIRS += -Iriscv32e_vsrc \
-                    -Iriscv32e_vsrc/include
-else ifeq ($(CONFIG_MINIRV_VAL),y)
-  V_INCLUDE_DIRS += -Iminiriscv_vsrc \
-                    -Iminiriscv_vsrc/include \
-                    -I../ortl \
-                    -I../ysyxSoC/perip/uart16550/rtl \
-                    -I../ysyxSoC/perip/spi/rtl
-else ifeq ($(CONFIG_MUL_VAL),y)
-  V_INCLUDE_DIRS += -Imul_vsrc \
-                    -Imul_vsrc/include
-else ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
-  V_INCLUDE_DIRS += -Imul_chisel_vsrc \
-                    -I../ortl \
-                    -I../ysyxSoC/perip/uart16550/rtl \
-                    -I../ysyxSoC/perip/spi/rtl
-else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
-  V_INCLUDE_DIRS += -Ipipeline_chisel_vsrc \
-                    -I../ortl \
-                    -I../ysyxSoC/perip/uart16550/rtl \
-                    -I../ysyxSoC/perip/spi/rtl
-else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
-  V_INCLUDE_DIRS += -Ipipeline_soc_vsrc \
-                    -Ipipeline_soc_vsrc/include \
-                    -I../ortl \
-                    -I../ysyxSoC/perip/uart16550/rtl \
-                    -I../ysyxSoC/perip/spi/rtl
-else 
-  V_INCLUDE_DIRS += -Imul_soc_vsrc \
-                    -Imul_soc_vsrc/include \
-                    -I../ortl \
-                    -I../ysyxSoC/perip/uart16550/rtl \
-                    -I../ysyxSoC/perip/spi/rtl
-endif
+V_INCLUDE_DIRS += -Ipipeline_chisel_vsrc \
+                  -I../ortl \
+                  -I../ysyxSoC/perip/uart16550/rtl \
+                  -I../ysyxSoC/perip/spi/rtl
 
 INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
 OBJ_DIR = obj_dir

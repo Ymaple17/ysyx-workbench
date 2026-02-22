@@ -67,21 +67,16 @@ int main(int argc, char **argv){
             diff_so_file = argv[i] + 7;
         }
     }
-    
-    // Default to diff_so usually provided by make run (NEMU), if we want fallback
-    // But strictly speaking, trace_diff against NEMU might not be what we want if registers differ.
-    // For now, let's allow it as fallback but prioritize local.
     trace_so_file = diff_so_file;
 
     #ifdef CONFIG_TRACE_DIFF
-        // Check for local reference SO and prioritize it
-        FILE *f = fopen("build/npc-ref.so", "r");
+        FILE *f = fopen("tools/npc-ref.so", "r");
         if (f) {
             fclose(f);
-            trace_so_file = (char*)"build/npc-ref.so"; // Override for trace_diff only
-            printf(ANSI_GREEN "[trace_diff] Target Reference: build/npc-ref.so\n" ANSI_RESET);
+            trace_so_file = (char*)"tools/npc-ref.so";
+            printf(ANSI_GREEN "[trace_diff] Target Reference: tools/npc-ref.so\n" ANSI_RESET);
         } else {
-             printf(ANSI_YELLOW "[trace_diff] build/npc-ref.so not found. Falling back to: %s\n" ANSI_RESET, trace_so_file ? trace_so_file : "None");
+             printf(ANSI_YELLOW "[trace_diff] tools/npc-ref.so not found. Falling back to: %s\n" ANSI_RESET, trace_so_file ? trace_so_file : "None");
         }
     #endif
     
@@ -128,7 +123,6 @@ int main(int argc, char **argv){
         assert(fp);
         long long size = getFileSize(fp);
         fclose(fp);
-        // void trace_diff_init(const char *ref_so_file, long long img_size); // REMOVED
         trace_diff_load(trace_so_file, size);
     }
     #endif

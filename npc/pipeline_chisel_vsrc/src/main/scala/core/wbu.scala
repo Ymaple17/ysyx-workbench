@@ -6,23 +6,28 @@ import INST_Control._
 import REG_WRITE_SEL._
 import CSR_SEL._
 
-class WBU_IO(xlen: Int) extends Bundle{
+class WBU_IO(conf: CoreConfig) extends Bundle{
   val in = Flipped(Decoupled(new LSU_WBU_IO))
-  val refile = Flipped(new Refile_WRITE_IO(xlen))
-  val csr = Flipped(new CSR_WRITE_IO(xlen))
+  val refile = Flipped(new Refile_WRITE_IO(conf.xlen))
+  val csr = Flipped(new CSR_WRITE_IO(conf.xlen))
   
   val state_read = Input(new State)
   val state_write = Output(new State)
   val state_write_en = Output(Bool())
 
   val is_flush = Input(Bool())
+  val ebreak = if(!conf.useDPIC) Some(Output(Bool())) else None
 }
 
 class WBU(val conf: CoreConfig) extends Module{
-  val io = IO(new WBU_IO(conf.xlen))
+    override def desiredName = "ysyx_25020039_WBU"
+
+    val io = IO(new WBU_IO(conf))
 
     val ebreak = if(conf.useDPIC) Some(Module(new Ebreak)) else None
     if(conf.useDPIC) ebreak.get.io.is_ebreak := io.in.bits.is_ebreak
+    
+    if(!conf.useDPIC) io.ebreak.get := io.in.bits.is_ebreak && io.in.valid && !io.is_flush
 
     io.refile.wdata := MuxLookup(io.in.bits.signals.wbu.reg_write_sel, io.in.bits.alu_result)(Seq(
       ALU_SEL -> io.in.bits.alu_result,

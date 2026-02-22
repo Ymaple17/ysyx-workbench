@@ -22,9 +22,10 @@ import PC_SEL._
 import IRQ_CTRL._
 import FENCEI_CTRL._
 
-class Core_IO(xlen : Int) extends Bundle{
+class Core_IO(val conf :CoreConfig) extends Bundle{
   val imem = new AXI4Master
   val dmem = new AXI4Master
+  val ebreak = if(!conf.useDPIC) Some(Output(Bool())) else None
 }
 
 class State extends Bundle{
@@ -33,12 +34,18 @@ class State extends Bundle{
 }
 
 class Core(val conf :CoreConfig) extends Module{
-    val io = IO(new Core_IO(conf.xlen))
+    override def desiredName = "ysyx_25020039_Core"
+
+    val io = IO(new Core_IO(conf))
     val ifu = Module(new IFU(conf))
     val idu = Module(new IDU(conf))
     val exu = Module(new EXU(conf))
     val lsu = Module(new LSU(conf))
     val wbu = Module(new WBU(conf))
+
+    if (!conf.useDPIC) {
+      io.ebreak.get := wbu.io.ebreak.get
+    }
 
     val icache = Module(new ICache(4,1,8,conf))
     // val icache = Module(new Simple_ICache(conf))
@@ -52,15 +59,15 @@ class Core(val conf :CoreConfig) extends Module{
     lsu.io.state := state
     wbu.io.state_read := state
 
-    val is_irq = RegNext(wbu.io.state_write_en && (wbu.io.state_write.state))
+    val is_irq = RegNext(wbu.io.state_write_en && (wbu.io.state_write.state), false.B)
     csr.io.irq := is_irq
-    csr.io.irq_no := RegNext(wbu.io.state_write.state_num)
-    csr.io.irq_pc := RegNext(wbu.io.in.bits.pc)
+    csr.io.irq_no := RegNext(wbu.io.state_write.state_num, 0.U)
+    csr.io.irq_pc := RegNext(wbu.io.in.bits.pc, 0.U)
 
     //pipeline connect
     def PipelineConnect[T <: Data, T2 <: Data](prevOut: DecoupledIO[T], thisIn: DecoupledIO[T], is_flush: Bool) = {
     prevOut.ready := thisIn.ready
-    thisIn.bits := RegEnable(prevOut.bits, prevOut.valid && thisIn.ready)
+        thisIn.bits := RegEnable(prevOut.bits, 0.U.asTypeOf(prevOut.bits), prevOut.valid && thisIn.ready)
     thisIn.valid := RegEnable(prevOut.valid,false.B, thisIn.ready) && !is_flush
   }
 
@@ -138,8 +145,8 @@ class Core(val conf :CoreConfig) extends Module{
     val rd2_forward_en = Wire(Bool())
     val rd1_forward_data = Wire(UInt(32.W))
     val rd2_forward_data = Wire(UInt(32.W))
-    val rd1_forward_data_read = RegEnable(rd1_forward_data, rd1_forward_en)
-    val rd2_forward_data_read = RegEnable(rd2_forward_data, rd2_forward_en)
+    val rd1_forward_data_read = RegEnable(rd1_forward_data, 0.U(32.W), rd1_forward_en)
+    val rd2_forward_data_read = RegEnable(rd2_forward_data, 0.U(32.W), rd2_forward_en)
     val forward_count1 = RegInit(0.U(1.W))
     val forward_count2 = RegInit(0.U(1.W))
     val forward_count1_write = Wire(UInt(1.W))
@@ -147,7 +154,7 @@ class Core(val conf :CoreConfig) extends Module{
     forward_count1_write := forward_count1
     forward_count2_write := forward_count2
 
-    when(RegNext(idu.io.in.ready) && idu.io.in.valid){
+    when(RegNext(idu.io.in.ready, false.B) && idu.io.in.valid){
         forward_count1_write := (idu.io.rs1_ren & is_raw_rs1).asUInt - rd1_forward_en.asUInt
         forward_count2_write := (idu.io.rs2_ren & is_raw_rs2).asUInt - rd2_forward_en.asUInt
         forward_count1 := forward_count1_write
@@ -210,8 +217,8 @@ class Core(val conf :CoreConfig) extends Module{
         wbu_forward_rd2 -> wbu_forward_data
     )), idu.io.out.bits.rd2)
 
-    exu.io.in.bits.rd1 := RegEnable(Mux(rd1_forward_en || ~is_raw_rs1, rd1_forward_data, rd1_forward_data_read), idu.io.out.valid && exu.io.in.ready)
-    exu.io.in.bits.rd2 := RegEnable(Mux(rd2_forward_en || ~is_raw_rs2, rd2_forward_data, rd2_forward_data_read), idu.io.out.valid && exu.io.in.ready)
+    exu.io.in.bits.rd1 := RegEnable(Mux(rd1_forward_en || ~is_raw_rs1, rd1_forward_data, rd1_forward_data_read), 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
+    exu.io.in.bits.rd2 := RegEnable(Mux(rd2_forward_en || ~is_raw_rs2, rd2_forward_data, rd2_forward_data_read), 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
     idu.io.is_stall := ~(~is_raw || (((forward_count1_write === 0.U) || (forward_count1 === 1.U && rd1_forward_en)) && ((forward_count2_write === 0.U) || (forward_count2 === 1.U && rd2_forward_en))))
 
     //hazard
@@ -228,11 +235,11 @@ class Core(val conf :CoreConfig) extends Module{
     val is_jump = exu.io.in.bits.signals.exu.jump =/= JUMP_NONE & exu.io.pc.valid
     exu.io.pc.ready := true.B
     val is_ch = Wire(Bool())
-    val is_ch_r = RegNext(is_ch)
+    val is_ch_r = RegNext(is_ch, false.B)
     is_ch := is_jump & pc_src =/= PC_PLUS4
     
-    val is_fencei = RegNext(icache.io.fencei.valid & icache.io.fencei.ready)
-    ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(is_ch_r, RegNext(correct_pc), Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
+    val is_fencei = RegNext(icache.io.fencei.valid & icache.io.fencei.ready, false.B)
+    ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(is_ch_r, RegNext(correct_pc, 0.U), Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
 
     ifu.io.is_flush := is_ch_r || is_irq || is_fencei
     idu.io.is_flush := is_ch_r || is_irq

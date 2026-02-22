@@ -117,6 +117,7 @@ bool difftest_check_reg(){
             printf("[difftest] PC = 0x%08x\n", cpu.pc);
             printf("[difftest] %-4s: REF = 0x%08x, DUT = 0x%08x\n", 
                    regs[i], ref.gpr[i], cpu.gpr[i]);
+            printf("[difftest] $a0 (x10) = 0x%08x\n", cpu.gpr[10]);
             printf("[difftest] =========================================\n\n");
             return false;
         }

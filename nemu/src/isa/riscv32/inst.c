@@ -32,13 +32,18 @@ enum {
 };
 
 static vaddr_t *csr_reg(word_t imm) {
+  imm &= 0xfff;
   switch (imm)
   {
   case 0x341: return &(cpu.csrs.mepc);
   case 0x342: return &(cpu.csrs.mcause);
   case 0x300: return &(cpu.csrs.mstatus);
   case 0x305: return &(cpu.csrs.mtvec);
-  default: panic("Unknown csr");
+  case 0xf11: return &(cpu.csrs.mvendorid);
+  case 0xf12: return &(cpu.csrs.marchid);
+  default: 
+    printf("Unknown CSR: 0x%x\n", imm);
+    panic("Unknown csr");
   }
 }
 

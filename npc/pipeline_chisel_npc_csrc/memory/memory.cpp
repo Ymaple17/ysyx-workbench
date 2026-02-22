@@ -22,6 +22,8 @@
 #define CONFIG_SOC__PSRAM_SIZE 0x00400000
 #define CONFIG_FLASH_BASE 0x30000000
 #define flash_size 0x01000000
+#define CONFIG_SRAM_BASE 0x0f000000
+#define CONFIG_SRAM_SIZE 8192
 #define PMEM_LEFT  ((paddr_t)CONFIG_MBASE)//物理内存的起始地址（Memory Base）物理内存的大小（Memory Size）
 #define PMEM_RIGHT ((paddr_t)CONFIG_MBASE + CONFIG_MSIZE - 1)//PMEM_LEFT 和 PMEM_RIGHT 定义了 NPC 物理内存的范围
 #define MROM_LEFT  ((paddr_t)CONFIG_SOC_MROM_BASE)
@@ -34,9 +36,10 @@
 extern Vysyx_25020039* top;
 
 uint8_t pmem[memory_size] = {};
-uint8_t mrom[mrom_size] = {};
-uint8_t flash[flash_size] = {};
-uint8_t psram[CONFIG_SOC__PSRAM_SIZE] = {};
+// uint8_t mrom[mrom_size] = {};
+// uint8_t flash[flash_size] = {};
+// uint8_t psram[CONFIG_SOC__PSRAM_SIZE] = {};
+// uint8_t sram[CONFIG_SRAM_SIZE] = {};
 
 void print_register_values();
 extern int skip;
@@ -44,7 +47,7 @@ extern int skip;
 uint8_t *guest_to_host(uint64_t paddr){ 
   return pmem + paddr - CONFIG_MBASE; 
 }
-
+/*
 uint8_t *soc_mrom_guest_to_host(uint64_t paddr){
   return mrom + paddr - CONFIG_SOC_MROM_BASE;
 }
@@ -57,6 +60,10 @@ uint8_t *psram_guest_to_host(uint64_t paddr){
   return psram + paddr - CONFIG_SOC__PSRAM_BASE;
 }
 
+uint8_t *sram_guest_to_host(uint64_t paddr){
+  return sram + paddr - CONFIG_SRAM_BASE;
+}
+*/
 extern "C" inline uint64_t host_read(void *addr, int len) {
   switch (len) {
     case 1: return *(uint8_t  *)addr;
@@ -81,6 +88,7 @@ static inline bool in_pmem(paddr_t addr) {
   return (addr - CONFIG_MBASE < CONFIG_MSIZE);
 }
 
+/*
 static inline bool in_mrom(paddr_t addr) {
   return (addr - CONFIG_SOC_MROM_BASE < mrom_size);
 }
@@ -93,6 +101,10 @@ static inline bool in_psram(paddr_t addr) {
   return (addr - CONFIG_SOC__PSRAM_BASE < CONFIG_SOC__PSRAM_SIZE);
 }
 
+static inline bool in_sram(paddr_t addr) {
+  return (addr - CONFIG_SRAM_BASE < CONFIG_SRAM_SIZE);
+}
+*/
 static inline void out_of_bound(paddr_t addr) {
   print_register_values();
   printf("[npc]address = 0x%08x is out of bound of pmem [0x%08x, 0x%08x] at pc = 0x%08x", addr, PMEM_LEFT, PMEM_RIGHT, read_pc_from_top());
@@ -135,11 +147,12 @@ extern "C" void pmem_write(paddr_t addr,word_t data,int len)
   {
     host_write(guest_to_host(addr), len, data);
     return;
-  }  
+  }
   IFDEF(CONFIG_DEVICE, mmio_write(addr, len, data); return);
   out_of_bound(addr);
 }
 
+/*
 extern "C" void flash_read(int32_t addr, int32_t *data) {
   paddr_t flash_addr = (paddr_t)((addr+CONFIG_FLASH_BASE) & ~0x3u);
   if(likely(in_flash(flash_addr))) {
@@ -181,3 +194,4 @@ extern "C" void psram_write(int32_t addr, int32_t data, int32_t wcount) {
     }
   }
 }
+*/

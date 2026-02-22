@@ -2,6 +2,8 @@ package core
 
 import chisel3._
 import chisel3.util._
+import core.PM
+import core.PerfEvents._
 import INST_Control._
 import ALU_SRCA._
 import ALU_SRCB._
@@ -47,6 +49,8 @@ class JUMP_PC_IO extends Bundle{
 }
 
 class EXU(val conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_EXU"
+
     val io = IO(new EXU_IO)
 
     val alu = Module(new ALU(conf.xlen))
@@ -105,6 +109,10 @@ class EXU(val conf: CoreConfig) extends Module{
     io.in.ready := !io.in.valid || io.out.ready
     io.out.valid := io.in.valid
     io.pc.valid := io.out.valid && io.in.ready
+
+    if(conf.statistics){
+      PM(conf, clock, EVENT_EXU_COMP, 1.U, io.out.valid && io.out.ready)
+    }
 }
 
 

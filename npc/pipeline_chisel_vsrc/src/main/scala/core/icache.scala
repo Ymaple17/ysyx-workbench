@@ -4,6 +4,8 @@ import chisel3._
 import chisel3.util._
 import scala.math._
 import bus._
+import core.PM
+import core.PerfEvents._
 
 class ICache_IO extends Bundle{
     val in = Flipped(new IFU_ICACHE_IO)
@@ -22,6 +24,8 @@ class ICache_Set(val tag_size : Int, val block_size : Int, val way : Int) extend
 }
 
 class ICache(val set : Int, val way : Int, val block_size : Int, val conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_ICache"
+
     val io = IO(new ICache_IO)
 
     val bus_width = 4
@@ -32,13 +36,13 @@ class ICache(val set : Int, val way : Int, val block_size : Int, val conf: CoreC
     val count = RegInit(c.U(4.W))
     val tag_size = 32 - m - n
 
-    val icache = Mem(set, new ICache_Set(tag_size, block_size, way))
+    val icache = RegInit(0.U.asTypeOf(Vec(set, new ICache_Set(tag_size, block_size, way))))
     val base_addr = Wire(UInt(32.W))
     val tagA = Wire(UInt(tag_size.W))
     val index = Wire(UInt(n.W))
     val offset = Wire(UInt(m.W))
 
-    val rdata = RegEnable(io.in.rdata, io.in.rvalid)
+    val rdata = RegEnable(io.in.rdata, 0.U(32.W), io.in.rvalid)
 
     val Cache_Set = Wire(new ICache_Set(tag_size, block_size, way))
     val Cache_Data = Wire(new ICache_Block(tag_size, block_size))
@@ -53,7 +57,7 @@ class ICache(val set : Int, val way : Int, val block_size : Int, val conf: CoreC
     val fence_cnt = RegInit(0.U(n.W))
     val fifo_ptr = RegInit(0.U(w.W))
     
-    val in_addr = RegEnable(io.in.araddr, io.in.arvalid && io.in.arready)
+    val in_addr = RegEnable(io.in.araddr, 0.U(32.W), io.in.arvalid && io.in.arready)
     
     val is_sdram = RegEnable(io.in.araddr >= "ha000_0000".U(32.W) && io.in.araddr <= "hbfff_ffff".U(32.W), false.B, io.in.arready & io.in.arvalid)
 
@@ -88,7 +92,7 @@ class ICache(val set : Int, val way : Int, val block_size : Int, val conf: CoreC
     }
     io.fencei.ready := fence_cnt === (set-1).U
     when(io.fencei.valid & io.fencei.bits.is_fencei){
-        icache.write(fence_cnt, 0.U.asTypeOf(new ICache_Set(tag_size, block_size, way)))
+        icache(fence_cnt) := 0.U.asTypeOf(new ICache_Set(tag_size, block_size, way))
     }
 
     // decode
@@ -198,7 +202,7 @@ class ICache(val set : Int, val way : Int, val block_size : Int, val conf: CoreC
         new_block.valid := true.B
         new_block.tag := tagA
         new_block.data := Cache_Set.set(miss_way).data
-        new_block.data((c.U - (count + 1.U))) := io.out.rdata    
+        new_block.data((c.U - (count + 1.U))(log2Ceil(c).max(1) - 1, 0)) := io.out.rdata    
         miss_data := new_block.data(offset >> 2).asUInt
 
         val new_Cache_Set = Wire(Cache_Set.set.cloneType)
@@ -213,5 +217,9 @@ class ICache(val set : Int, val way : Int, val block_size : Int, val conf: CoreC
         count := (c-1).U
     }.elsewhen(count =/= 0.U && io.out.rvalid){
         count := count - 1.U
+    }
+
+    if(conf.statistics){
+      PM(conf, clock, EVENT_ICACHE_MISS, 1.U, state === s_IFU_ADDRESS && io.in.arvalid && io.in.arready && !hit)
     }
 }

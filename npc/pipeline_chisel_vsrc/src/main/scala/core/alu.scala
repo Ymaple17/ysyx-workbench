@@ -29,6 +29,8 @@ class ALU_IO(width: Int) extends Bundle {
 }
 
 class ALU(val width: Int) extends Module {
+  override def desiredName = "ysyx_25020039_ALU"
+
   val io = IO(new ALU_IO(width))
 
   val alu_add = io.A + io.B
@@ -37,6 +39,7 @@ class ALU(val width: Int) extends Module {
   import ALU_OP._
 
   io.result := MuxLookup(io.alu_control, 0.U)(Seq(
+    // ALU_ADD  -> (alu_add + 1.U),
     ALU_ADD  -> alu_add,
     ALU_SUB  -> alu_sub,
     ALU_SLL  -> (io.A << io.B(4, 0)),

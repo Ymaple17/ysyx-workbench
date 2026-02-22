@@ -2,6 +2,8 @@ package core
 
 import chisel3._
 import chisel3.util._
+import core.PM
+import core.PerfEvents._
 import INST_Control._
 import MEM_READ._
 import MEM_WMASK._
@@ -34,6 +36,8 @@ class LSU_IO (xlen: Int) extends Bundle{
 }
 
 class LSU(val conf: CoreConfig) extends Module{
+  override def desiredName = "ysyx_25020039_LSU"
+
   val io = IO(new LSU_IO(conf.xlen))
 
   io.dmem.arid := 0.U
@@ -73,48 +77,52 @@ class LSU(val conf: CoreConfig) extends Module{
   val state = RegInit(s_idle)
   val next_state = WireDefault(state)
 
-  val req_addr_sent = RegInit(false.B)
-  val req_data_sent = RegInit(false.B)
+  val ar_handshake_done = RegInit(false.B)
+  val aw_handshake_done = RegInit(false.B)
+  val w_handshake_done = RegInit(false.B)
 
-  // Reset handshake flags
   when(state =/= s_idle || io.is_flush) {
-    req_addr_sent := false.B
-    req_data_sent := false.B
+    ar_handshake_done := false.B
+    aw_handshake_done := false.B
+    w_handshake_done := false.B
   }
 
-  // Handshake logic
-  val load_handshake = is_load && (io.dmem.arready || req_addr_sent)
-  val aw_handshake = is_store && (io.dmem.awready || req_addr_sent)
-  val w_handshake  = is_store && (io.dmem.wready  || req_data_sent)
-  val store_handshake = aw_handshake && w_handshake
+  val load_handshake = is_load && (ar_handshake_done || (io.dmem.arvalid && io.dmem.arready))
+  val aw_complete = is_store && (aw_handshake_done || (io.dmem.awvalid && io.dmem.awready))
+  val w_complete  = is_store && (w_handshake_done || (io.dmem.wvalid && io.dmem.wready))
+  val store_handshake = aw_complete && w_complete
 
   next_state := MuxLookup(state, s_idle)(Seq(
       s_idle   -> Mux(idle && (load_handshake || store_handshake), Mux(work, s_idle, s_work), s_idle),
-      s_work     -> Mux(work, s_idle, Mux(io.is_flush, s_flush, s_work)),
-      s_flush   ->  Mux(io.dmem.rvalid || io.dmem.bvalid, s_idle, s_flush)
+      s_work   -> Mux(work, s_idle, Mux(io.is_flush, s_flush, s_work)),
+      s_flush  -> Mux(io.dmem.rvalid || io.dmem.bvalid, s_idle, s_flush)
   ))
   state := next_state
 
-  // Maintain handshake state
   when(state === s_idle && idle) {
-      when(is_load && io.dmem.arready) { req_addr_sent := true.B }
+      when(is_load && io.dmem.arvalid && io.dmem.arready) { 
+        ar_handshake_done := true.B 
+      }
       when(is_store) {
-          when(io.dmem.awready) { req_addr_sent := true.B }
-          when(io.dmem.wready)  { req_data_sent := true.B }
+          when(io.dmem.awvalid && io.dmem.awready) { 
+            aw_handshake_done := true.B 
+          }
+          when(io.dmem.wvalid && io.dmem.wready) { 
+            w_handshake_done := true.B 
+          }
       }
   }
   
-  // Reset handshake flags
   when(io.is_flush || (state === s_work && (io.dmem.rvalid || io.dmem.bvalid))) {
-    req_addr_sent := false.B
-    req_data_sent := false.B
+    ar_handshake_done := false.B
+    aw_handshake_done := false.B
+    w_handshake_done := false.B
   }
 
-  io.dmem.arvalid := is_load && (state === s_idle) && idle && !req_addr_sent
-  io.dmem.awvalid := is_store && (state === s_idle) && idle && !req_addr_sent
-  io.dmem.wvalid := is_store && (state === s_idle) && idle && !req_data_sent
+  io.dmem.arvalid := is_load && (state === s_idle) && idle && !ar_handshake_done
+  io.dmem.awvalid := is_store && (state === s_idle) && idle && !aw_handshake_done
+  io.dmem.wvalid := is_store && (state === s_idle) && idle && !w_handshake_done
   
-  // AXI Ready signals should not depend on Valid signals to avoid deadlock
   io.dmem.rready := (is_load && (state === s_work)) || state === s_flush
   io.dmem.bready := (is_store && (state === s_work)) || state === s_flush
   io.dmem.arsize := arsize
@@ -174,4 +182,10 @@ class LSU(val conf: CoreConfig) extends Module{
   work := ready && io.out.ready
   io.in.ready := !io.in.valid || (ready && io.out.ready)
   io.out.valid := io.in.valid && ready
+
+  if(conf.statistics){
+    PM(conf, clock, EVENT_LSU_READ, 1.U, io.dmem.arvalid && io.dmem.arready)
+    PM(conf, clock, EVENT_LSU_WRITE, 1.U, io.dmem.awvalid && io.dmem.awready)
+    PM(conf, clock, EVENT_LSU_LATENCY, 1.U, state === s_work && (!ready || io.out.ready))
+  }
 }

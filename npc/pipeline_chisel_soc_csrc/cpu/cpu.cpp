@@ -3,13 +3,14 @@
 #include "verilated_dpi.h"
 #include "verilated_fst_c.h"
 #include "svdpi.h"
-#include "../../obj_dir/VysyxSoCFull___024root.h"
+#include "VysyxSoCFull___024root.h"
 #include "../include/state.h"
 #include "../include/difftest.h"
 #include "../include/common.h"
 #include "../include/trace.h"
 #include "../include/regs.h"
 #include "../include/perf.h"
+#include "../include/trace_diff.h"
 #include "../../include/generated/autoconf.h"
 
 #ifdef CONFIG_NVBOARD
@@ -113,9 +114,21 @@ void reset() {
 
 void init_npc_cpu(){
     reset();
+
+
+    #ifdef CONFIG_TRACE_DIFF
+    trace_diff_init();
+    if(top && top->rootp){
+        trace_diff_register("PC_WB", (uint32_t*)&top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_bits_r_pc);
+        trace_diff_register("PC_IF", (uint32_t*)&top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT___ifu_io_out_bits_pc);
+        trace_diff_register("alu_result", (uint32_t*)&top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_bits_r_alu_result);
+    }
+    #endif
     
     update_cpu_state();
 }
+
+extern "C" word_t pmem_read(uint32_t addr, int len);
 
 void exec_once(){
     if (!rst_done) {
@@ -124,9 +137,13 @@ void exec_once(){
     }
     
     #ifdef CONFIG_ITRACE 
-        uint32_t current_inst = top->instr;
-        itrace_inst(top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT___ifu_io_out_bits_pc, current_inst);
-        display_inst();
+        if (top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_valid) {
+            uint32_t pc = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_bits_r_pc;
+            uint32_t inst_from_mem = 0;
+            inst_from_mem = pmem_read(pc, 4);
+            itrace_inst(pc, inst_from_mem);
+            display_inst();
+        }
     #endif
 
     #ifdef CONFIG_NVBOARD
@@ -160,7 +177,7 @@ struct DiffTestState {
     bool check_pending;
     bool is_mmio;
 } dt_state = {false, false};
-
+static word_t last_wbu_pc = 0;
 #endif
 
 static void execute(uint64_t n) {
@@ -176,43 +193,57 @@ static void execute(uint64_t n) {
         if (Verilated::gotFinish()) {
             break;
         }
+        #ifdef CONFIG_TRACE_DIFF
+        bool wb_valid = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_valid;
+        if (wb_valid && !top->reset) {
+            // Execute Reference Model until it commits 1 instruction, then compare
+            trace_diff_check_inst(1);
+            if (npc_state.state == NPC_ABORT) break;
+        }
+        #endif
 
         #ifdef CONFIG_DIFFTEST
         bool reset = top->reset;
         
-        // 1. Deferred Check (Verify result of previous instruction)
-        if (!reset && dt_state.check_pending) {
-            if (dt_state.is_mmio) {
-                difftest_skip_ref();
-                difftest_one_exec();
-            }
-
-            // Sync DUT PC to Ref PC to prevent mismatches caused by pipeline bubbles
-            CPU_State ref_state;
-            ref_difftest_regcpy(&ref_state, DIFFTEST_TO_DUT);
-            cpu.pc = ref_state.pc;
-            cpu_pc = ref_state.pc;
-
-            if (!difftest_check_reg()) {
-                npc_state.state = NPC_ABORT;
-                break;
-            }
-            dt_state.check_pending = false;
-        }
-
         // 2. Current Commit (Capture instruction)
         bool wb_valid = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_valid;
         if (wb_valid && !reset) {
+            // 1. Deferred Check (Verify result of previous instruction)
+            if (dt_state.check_pending) {
+                if (dt_state.is_mmio) {
+                    difftest_skip_ref();
+                    cpu.pc = last_wbu_pc + 4;
+                    cpu_pc = cpu.pc;
+                    difftest_one_exec();
+                }
+
+                // Sync DUT PC to Ref PC to prevent mismatches caused by pipeline bubbles
+                CPU_State ref_state;
+                ref_difftest_regcpy(&ref_state, DIFFTEST_TO_DUT);
+                cpu.pc = ref_state.pc;
+
+                if (!difftest_check_reg()) {
+                    npc_state.state = NPC_ABORT;
+                    break;
+                }
+                dt_state.check_pending = false;
+            }
+
             word_t wbu_pc = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_bits_r_pc;
             word_t wbu_alu = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_bits_r_alu_result;
-            bool lsu_mem_write = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__lsu_io_in_bits_r_signals_lsu_mem_write;
+            // bool lsu_mem_write = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__lsu_io_in_bits_r_signals_lsu_mem_write;
+            uint32_t inst = 0;
+            ref_difftest_memcpy(wbu_pc, &inst, 4, DIFFTEST_TO_DUT);
+            bool is_store = ((inst & 0x7f) == 0x23);
+
             uint8_t wbu_reg_write_sel = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__wbu_io_in_bits_r_signals_wbu_reg_write_sel;
             bool is_load_wb = (wbu_reg_write_sel == 4);
 
             check_pc_and_sync(wbu_pc);
             if (npc_state.state == NPC_ABORT) break;
 
-            dt_state.is_mmio = (lsu_mem_write || is_load_wb) && is_mmio_addr(wbu_alu);
+            dt_state.is_mmio = (is_store || is_load_wb) && is_mmio_addr(wbu_alu);
+            last_wbu_pc = wbu_pc;
             
             if (!dt_state.is_mmio) {
                 difftest_one_exec();
@@ -248,12 +279,6 @@ void cpu_exec(uint64_t n){
         case NPC_END: 
             if(npc_state.halt_ret == 0){
                 out = (char *)"HIT GOOD TRAP"; 
-                #ifdef CONFIG_DIFFTEST
-                    difftest_one_exec();
-                    if (!difftest_check_reg()) {
-                        printf("Warning: Final difftest check failed\n");
-                    }
-                #endif
                 printf("npc: " ANSI_FG_GREEN "%s" ANSI_RESET " at pc = 0x%08x\n", 
                        out, read_pc_from_top());
             }

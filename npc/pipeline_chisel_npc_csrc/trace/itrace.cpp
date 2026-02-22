@@ -25,34 +25,19 @@ void itrace_inst(uint32_t pc, uint32_t inst) {
 }
 
 void display_inst() {
-    if (!full && p_cur == 0) {
-        return;
-    }
-    int latest_idx = (p_cur - 1 + MAX_IRINGBUF) % MAX_IRINGBUF;
-    if (latest_idx < 0 || latest_idx >= MAX_IRINGBUF) {
-        fprintf(stderr, "[ERROR] display_inst: invalid latest index %d\n", latest_idx);
-        return;
-    }
+    if (!full && p_cur == 0) return;
 
-    static char buf[1024];
-    char *p = buf;
+    int latest_idx = (p_cur - 1 + MAX_IRINGBUF) % MAX_IRINGBUF;
+
     void disassemble(char *str, int size, uint64_t pc, uint8_t *code, int nbyte);
-    int sprintf_ret = sprintf(buf, " --> 0x%08x: %08x ", 
-                             iringbuf[latest_idx].pc, 
-                             iringbuf[latest_idx].inst);
-    if (sprintf_ret < 0) {
-        fprintf(stderr, "[ERROR] sprintf failed in display_inst\n");
-        return;
-    }
-    p += sprintf_ret;
+    char buf[128];
+    char *p = buf;
+    
+    // Print just the latest instruction
+    p += sprintf(buf, "0x%08x: %08x ", iringbuf[latest_idx].pc, iringbuf[latest_idx].inst);
+        
     uint8_t *code = (uint8_t*)&iringbuf[latest_idx].inst;
-    if (code == NULL) {
-        fprintf(stderr, "[ERROR] invalid inst pointer\n");
-        return;
-    }
-    int nbyte = 4;
-    disassemble(p, buf + sizeof(buf) - p, iringbuf[latest_idx].pc, code, nbyte);
-    printf(ANSI_FG_GREEN);
+    disassemble(p, buf + sizeof(buf) - p, iringbuf[latest_idx].pc, code, 4);
+
     puts(buf);
-    printf(ANSI_NONE);
 }

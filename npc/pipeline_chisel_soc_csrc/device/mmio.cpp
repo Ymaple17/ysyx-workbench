@@ -2,6 +2,7 @@
 #include <inttypes.h>
 #include "../include/common.h"
 #include "../include/map.h"
+#include "../include/difftest.h"
 #include "../../include/generated/autoconf.h"
 
 #define NR_MAP 16
@@ -27,9 +28,15 @@ void add_mmio_map(const char *name, uint32_t addr, void *space, uint32_t len, io
 
 /* bus interface */
 uint64_t mmio_read(uint32_t addr, int len) {
+#ifdef CONFIG_DIFFTEST
+  difftest_skip_ref();
+#endif
   return map_read(addr, len, fetch_mmio_map(addr));
 }
 
 void mmio_write(uint32_t addr, int len, uint64_t data) {
+#ifdef CONFIG_DIFFTEST
+  difftest_skip_ref();
+#endif
   map_write(addr, len, data, fetch_mmio_map(addr));
 }

@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "verilated_dpi.h"
-#include "../../obj_dir/VysyxSoCFull___024root.h"
+#include "VysyxSoCFull___024root.h"
 #include "../include/common.h"
 #include "VysyxSoCFull.h"
 #include "../../include/generated/autoconf.h"

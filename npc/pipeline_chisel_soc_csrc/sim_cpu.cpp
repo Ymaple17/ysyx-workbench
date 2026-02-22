@@ -13,6 +13,7 @@
 #include "include/state.h"
 #include "include/cpu.h"
 #include "include/difftest.h"
+#include "include/trace_diff.h"
 #include "../include/generated/autoconf.h"
 
 #ifdef CONFIG_NVBOARD
@@ -52,11 +53,37 @@ void cleanup() {
 
 int main(int argc, char **argv){
     if (argc < 2) {
-        fprintf(stderr, "Usage: %s <program_file>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <program_file> [--diff=ref_so_path]\n", argv[0]);
         return 1;
     }
     
     img_path = argv[1];
+    
+    char *diff_so_file = NULL;
+    char *trace_so_file = NULL;
+
+    for (int i = 2; i < argc; i++) {
+        if (strncmp(argv[i], "--diff=", 7) == 0) {
+            diff_so_file = argv[i] + 7;
+        }
+    }
+    
+    // Default to diff_so usually provided by make run (NEMU), if we want fallback
+    // But strictly speaking, trace_diff against NEMU might not be what we want if registers differ.
+    // For now, let's allow it as fallback but prioritize local.
+    trace_so_file = diff_so_file;
+
+    #ifdef CONFIG_TRACE_DIFF
+        // Check for local reference SO and prioritize it
+        FILE *f = fopen("build/npc-ref.so", "r");
+        if (f) {
+            fclose(f);
+            trace_so_file = (char*)"build/npc-ref.so"; // Override for trace_diff only
+            printf(ANSI_GREEN "[trace_diff] Target Reference: build/npc-ref.so\n" ANSI_RESET);
+        } else {
+             printf(ANSI_YELLOW "[trace_diff] build/npc-ref.so not found. Falling back to: %s\n" ANSI_RESET, trace_so_file ? trace_so_file : "None");
+        }
+    #endif
     
     // Initialize Verilator
     Verilated::commandArgs(argc, argv);
@@ -90,12 +117,22 @@ int main(int argc, char **argv){
             init_device();
         #endif
         
-        // Initialize and reset CPU
         init_npc_cpu();
         
-        // Initialize SDB (Simple Debugger)
         init_sdb();
-        
+    
+    #ifdef CONFIG_TRACE_DIFF
+    if (trace_so_file) {
+        extern long long getFileSize(FILE *fp);
+        FILE *fp = fopen(img_path, "rb");
+        assert(fp);
+        long long size = getFileSize(fp);
+        fclose(fp);
+        // void trace_diff_init(const char *ref_so_file, long long img_size); // REMOVED
+        trace_diff_load(trace_so_file, size);
+    }
+    #endif
+
         // Set initial state
         npc_state.state = NPC_RUNNING;
         
@@ -108,6 +145,12 @@ int main(int argc, char **argv){
         
         // Enter main simulation loop
         sdb_mainloop();
+
+        #ifdef CONFIG_TRACE_DIFF
+        if (npc_state.state == NPC_END && npc_state.halt_ret == 0) {
+            printf(ANSI_GREEN "[trace_diff] PASSED: DUT matches Reference Model execution.\n" ANSI_RESET);
+        }
+        #endif
         
     } catch (const std::exception& e) {
         fprintf(stderr, "Exception during simulation: %s\n", e.what());

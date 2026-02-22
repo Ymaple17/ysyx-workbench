@@ -5,11 +5,13 @@ import chisel3.util._
 import _root_.core._
 
 class Clint(coreConfig: CoreConfig) extends Module{
+  override def desiredName = "ysyx_25020039_Clint"
+
   val io = IO(new AXI4Slave)
   io.setDefaults()
   val rdata = RegInit(0.U(32.W))
   io.rdata := rdata
-  val ADDR = "h02000000".U
+  val ADDR = if(coreConfig.npc) "ha0000048".U else "h02000000".U
   
   val mtime = RegInit(0.U(64.W))
   mtime := mtime + 1.U

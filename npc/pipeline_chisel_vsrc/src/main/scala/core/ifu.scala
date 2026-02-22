@@ -5,6 +5,8 @@ import chisel3.util._
 import bus._
 import core._
 import IRQ_CTRL._
+import core.PM
+import core.PerfEvents._
 
 class IFUPC_IO extends Bundle{
   val next_pc = Output(UInt(32.W))
@@ -40,6 +42,8 @@ class IFU_IO(xlen: Int) extends Bundle{
 }
 
 class IFU(val conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_IFU"
+
     val io = IO(new IFU_IO(conf.xlen))
 
     val pc_init = if(conf.ysyxsoc){ "h3000_0000".U(32.W) }else if(conf.npc){ "h8000_0000".U(32.W)} else { "h0000_0000".U(32.W) }
@@ -90,4 +94,10 @@ class IFU(val conf: CoreConfig) extends Module{
 
     io.in.ready := (!io.in.valid || (ready && io.out.ready) || io.is_flush)
     io.out.valid := ready && io.in.valid
+
+    if(conf.statistics){
+      PM(conf, clock, EVENT_IFU_FETCH, 1.U, io.imem.arvalid && io.imem.arready)
+      PM(conf, clock, EVENT_IFU_STALL_ICACHE, 1.U, state === s_work && !io.imem.rvalid) 
+      PM(conf, clock, EVENT_IFU_STALL_IDU, 1.U, state === s_work && io.imem.rvalid && !io.out.ready)
+    }
 } 

@@ -52,7 +52,7 @@ static inline bool in_sram(uint32_t addr) {
 }
 
 static inline bool in_sdram(uint32_t addr) {
-    return addr - 0xa0000000 < 0x04000000;
+    return false;
 }
 
 static inline bool in_psram(uint32_t addr) {
@@ -117,6 +117,8 @@ void init_npc_cpu(){
     update_cpu_state();
 }
 
+extern "C" word_t pmem_read(uint32_t addr, int len);
+
 void exec_once(){
     if (!rst_done) {
         printf("Warning: exec_once called before reset completion\n");
@@ -124,9 +126,12 @@ void exec_once(){
     }
     
     #ifdef CONFIG_ITRACE 
-        uint32_t current_inst = top->instr;
-        itrace_inst(top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT___ifu_io_out_bits_pc, current_inst);
-        display_inst();
+        if (top->rootp->ysyx_25020039__DOT__core__DOT__wbu_io_in_valid) {
+             uint32_t pc = top->rootp->ysyx_25020039__DOT__core__DOT__wbu_io_in_bits_r_pc;
+             uint32_t inst_from_mem = pmem_read(pc, 4);
+             itrace_inst(pc, inst_from_mem);
+             display_inst();
+        }
     #endif
 
     #ifdef CONFIG_NVBOARD
@@ -143,69 +148,85 @@ void exec_once(){
 void device_update();
 
 #ifdef CONFIG_DIFFTEST
-static bool difftest_step(bool wb_valid, bool lsu_mem_write, word_t mem_addr) {
-    if (!wb_valid) {
-        return true;
-    }
-    
-    bool is_mmio_write = false;
-    if (lsu_mem_write) {
-        if (is_mmio_addr(mem_addr)) {
-            is_mmio_write = true;
-        }
-    }
-    
-    if (is_mmio_write) {
-        difftest_skip_ref();
-        return true;
-    } else {
-        difftest_one_exec();
-        
-        if (!difftest_check_reg()) {
-            printf("\n");
-            printf("[difftest]========================================\n");
-            printf("[difftest]  DIFFTEST FAILED\n");
-            printf("[difftest]========================================\n");
-            printf("[difftest] Instruction committed at PC = 0x%08x\n", cpu.pc);
-            printf("[difftest]========================================\n");
-            printf("\n");
-            return false;
-        }
-        return true;
+extern void (*ref_difftest_regcpy)(void *dut, bool direction);
+
+static void check_pc_and_sync(word_t wbu_pc) {
+    CPU_State ref_state;
+    ref_difftest_regcpy(&ref_state, DIFFTEST_TO_DUT);
+    if (wbu_pc != ref_state.pc) {
+        printf("\n[difftest] ========== PC MISMATCH (Fetch/Commit) ==========\n");
+        printf("[difftest] PC: REF = 0x%08x, DUT = 0x%08x\n", ref_state.pc, wbu_pc);
+        printf("[difftest] ================================================\n");
+        npc_state.state = NPC_ABORT;
     }
 }
+
+struct DiffTestState {
+    bool check_pending;
+    bool is_mmio;
+} dt_state = {false, false};
+static word_t last_wbu_pc = 0;
 #endif
 
 static void execute(uint64_t n) {
     for (; n > 0; n--) {
-        if (!Verilated::gotFinish()) {
-            #ifdef CONFIG_DIFFTEST
-            bool reset = top->reset;
-            #endif
+        if (npc_state.state != NPC_RUNNING) break;
 
-            exec_once();
-            
-            #ifdef CONFIG_DEVICE
-                device_update();
-            #endif
+        exec_once();
 
-            #ifdef CONFIG_DIFFTEST
-            bool wb_valid = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__lsu_wb_valid;
-            bool lsu_mem_write = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__exu_lsu_MemWrite;
-            word_t mem_addr = top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__exu_lsu_process_result;    
-            if (!reset && !difftest_step(wb_valid, lsu_mem_write, mem_addr)) {
-                panic("[difftest] Register mismatch detected at PC = 0x%08x", cpu.pc);
-            }
-            #endif
-        }
-        
-        // if (g_print_step) {
-        //     printf("execute at pc = 0x%08x\n", top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT___ifu_io_out_bits_pc);
-        // }
-        
-        if (npc_state.state != NPC_RUNNING) {
+        #ifdef CONFIG_DEVICE
+        device_update();
+        #endif
+
+        if (Verilated::gotFinish()) {
             break;
         }
+
+        #ifdef CONFIG_DIFFTEST
+        bool reset = top->reset;
+
+        bool wb_valid = top->rootp->ysyx_25020039__DOT__core__DOT__wbu_io_in_valid;
+        if (wb_valid && !reset) {
+            if (dt_state.check_pending) {
+                if (dt_state.is_mmio) {
+                    difftest_skip_ref();
+                    cpu.pc = last_wbu_pc + 4;
+                    cpu_pc = cpu.pc;
+                    difftest_one_exec();
+                }
+
+                CPU_State ref_state;
+                ref_difftest_regcpy(&ref_state, DIFFTEST_TO_DUT);
+                cpu.pc = ref_state.pc;
+
+                if (!difftest_check_reg()) {
+                    npc_state.state = NPC_ABORT;
+                    break;
+                }
+                dt_state.check_pending = false;
+            }
+
+            word_t wbu_pc = top->rootp->ysyx_25020039__DOT__core__DOT__wbu_io_in_bits_r_pc;
+            word_t wbu_alu = top->rootp->ysyx_25020039__DOT__core__DOT__wbu_io_in_bits_r_alu_result;
+            uint32_t inst = 0;
+            ref_difftest_memcpy(wbu_pc, &inst, 4, DIFFTEST_TO_DUT);
+            bool is_store = ((inst & 0x7f) == 0x23);
+
+            uint8_t wbu_reg_write_sel = top->rootp->ysyx_25020039__DOT__core__DOT__wbu_io_in_bits_r_signals_wbu_reg_write_sel;
+            bool is_load_wb = (wbu_reg_write_sel == 4);
+
+            check_pc_and_sync(wbu_pc);
+            if (npc_state.state == NPC_ABORT) break;
+
+            dt_state.is_mmio = (is_store || is_load_wb) && is_mmio_addr(wbu_alu);
+            last_wbu_pc = wbu_pc;
+
+            if (!dt_state.is_mmio) {
+                difftest_one_exec();
+            }
+            dt_state.check_pending = true;
+        }
+        #endif
     }
 }
 
@@ -234,12 +255,6 @@ void cpu_exec(uint64_t n){
         case NPC_END: 
             if(npc_state.halt_ret == 0){
                 out = (char *)"HIT GOOD TRAP"; 
-                #ifdef CONFIG_DIFFTEST
-                    difftest_one_exec();
-                    if (!difftest_check_reg()) {
-                        printf("Warning: Final difftest check failed\n");
-                    }
-                #endif
                 printf("npc: " ANSI_FG_GREEN "%s" ANSI_RESET " at pc = 0x%08x\n", 
                        out, read_pc_from_top());
             }

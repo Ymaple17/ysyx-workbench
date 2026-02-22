@@ -6,12 +6,13 @@ $(error .config file not found, please run 'make menuconfig' first)
 endif
 
 include .config
+include Makefile.diff
 
 VSRC_CHISEL_MUL = $(shell find mul_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
 CSRC_CHISEL_MUL = $(shell find mul_chisel_csrc -name "*.cpp" -o -name "*.c")#mul_chisel
 
 VSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
-CSRC_PIPELINE_CHISEL_SOC = $(shell find pipeline_chisel_soc_csrc -name "*.cpp" -o -name "*.c")#pipeline_chisel
+CSRC_PIPELINE_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find pipeline_chisel_soc_csrc -name "*.cpp" -o -name "*.c"))#pipeline_chisel
 CSRC_PIPELINE_CHISEL_NPC = $(shell find pipeline_chisel_npc_csrc -name "*.cpp" -o -name "*.c")#pipeline_chisel
 
 VSRC_CHISEL_RISCV32E = $(shell find chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#chisel
@@ -67,6 +68,7 @@ else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
     CSRC = $(CSRC_PIPELINE_CHISEL_NPC)
     CHISEL_WORK_DIR := pipeline_chisel_vsrc
     CHISEL_BUILD_TOOL := mill
+#     CHISEL_BUILD_TOOL := none
     TOP_MODULE = ysyx_25020039
     $(info [INFO] Using pipeline_chisel NPC Mode)
   endif
@@ -195,14 +197,13 @@ INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
 OBJ_DIR = obj_dir
 EXEC = $(OBJ_DIR)/V$(TOP_MODULE)
 BUILD_DIR ?= build
-PROGRAM ?= ../ysyxSoC/ready-to-run/D-stage/dummy.bin
+PROGRAM ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 # PROGRAM ?= ../am-kernels/kernels/char-test/char-test.bin
 
 CFLAGS = -Wall -std=c++11 -g
 CXXFLAGS = $(CFLAGS)
 LDFLAGS_BASE = -lreadline -lSDL2 -ldl
 VERILATOR_FLAGS += -Wno-WIDTHEXPAND
-
 ifeq ($(CONFIG_NVBOARD_VAL),y)
   ifndef NVBOARD_HOME
     $(error NVBOARD_HOME is not set)
@@ -316,16 +317,73 @@ $(PROGRAM):
 	@mkdir -p $(@D)
 	@if [ ! -f "$@" ]; then \
 		touch "$@"; \
-		$(info [INFO] Created empty program: $@); \
+		echo "[INFO] Created empty program: $@"; \
 	fi
 
 clean: chisel-clean
 	$(info [CLEAN] Removing build artifacts...)
-	rm -rf $(OBJ_DIR) $(BUILD_DIR)
+	rm -rf $(OBJ_DIR)
 ifdef CONFIG_WAVEFORM
 	rm -f $(CONFIG_WAVEFORM_FILE)
 endif
 
+sta:
+	$(MAKE) chisel-gen
+	rm -rf ../yosys-sta/result/ysyx_25020039-500MHz
+	$(MAKE) -C ../yosys-sta sta DESIGN=ysyx_25020039 RTL_FILES="$(abspath $(filter-out %/SRAM.sv %/DPI_Mem.v, $(VSRC_PIPELINE_CHISEL)))"
+	cat ../yosys-sta/result/ysyx_25020039-500MHz/synth_stat.txt
+
+#IMG ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.elf
+# IMG ?= ../rt-thread-am/bsp/abstract-machine/build/rtthread-riscv32e-npc.elf
+IMG_ELF ?= ../am-kernels/benchmarks/microbench/build/microbench-riscv32e-npc.elf
+IMG_BIN ?= ../am-kernels/benchmarks/microbench/build/microbench-riscv32e-npc.bin
+
+
+mainargs ?= test
+MICROBENCH_DIR = ../am-kernels/benchmarks/microbench
+
+.PHONY: build-microbench
+
+build-microbench:
+	@echo "[BUILD] Building microbench with ARCH=riscv32e-npc mainargs=$(mainargs)..."
+	@$(MAKE) -C $(MICROBENCH_DIR) ARCH=riscv32e-npc mainargs=$(mainargs) insert-arg
+
+iverilog: chisel-gen build-microbench
+	@echo "[BUILD] Compiling with Icarus Verilog..."
+	@mkdir -p $(OBJ_DIR)
+	@echo "[INFO] Converting $(IMG_BIN) to mem.hex (byte-wise)..."
+	@hexdump -v -e '1/1 "%02x\n"' $(IMG_BIN) > mem.hex
+	iverilog -g2012 -D__ICARUS__ -D MAINARGS=\"$(mainargs)\" -o $(OBJ_DIR)/sim.vvp tb_top.sv $(VSRC_PIPELINE_CHISEL)
+	@echo "[RUN] Running simulation with mainargs=$(mainargs)..."
+	vvp $(OBJ_DIR)/sim.vvp $(mainargs)
+
+NETLIST_FILE = ../yosys-sta/result/ysyx_25020039-500MHz/ysyx_25020039.netlist.syn.v
+CELLS_FILE = ../yosys-sta/nangate45/sim/cells.v
+IVERILOG_BIN_NETLIST = $(OBJ_DIR)/sim_netlist.vvp
+
+$(NETLIST_FILE): chisel-gen
+	@echo "[SYNTH] Generating Netlist..."
+	@mkdir -p $(OBJ_DIR)
+	@python3 scripts/filter_sram.py $(CHISEL_WORK_DIR)/ysyx_25020039.sv $(OBJ_DIR)/ysyx_25020039_no_sram.sv $(OBJ_DIR)/SRAM.sv
+	@rm -rf ../yosys-sta/result/ysyx_25020039-500MHz
+	$(MAKE) -C ../yosys-sta syn DESIGN=ysyx_25020039 PDK=nangate45 RTL_FILES="$(abspath $(filter-out %/SRAM.sv %/DPI_Mem.v %/SimUART.v %/ysyx_25020039.sv, $(VSRC_PIPELINE_CHISEL))) $(abspath $(OBJ_DIR)/ysyx_25020039_no_sram.sv) $(abspath scripts/blackbox_sim.v)"
+
+$(IVERILOG_BIN_NETLIST): $(NETLIST_FILE) tb_top.sv
+	@echo "[BUILD] Compiling netlist with Icarus Verilog..."
+	@iverilog -g2012 -D__ICARUS__ -o $@ \
+		tb_top.sv \
+		$(NETLIST_FILE) \
+		$(CELLS_FILE) \
+		$(OBJ_DIR)/SRAM.sv \
+		$(CHISEL_WORK_DIR)/DPI_Mem.v \
+		$(filter-out %/ysyx_25020039.sv %/SRAM.sv %/DPI_Mem.v, $(VSRC_PIPELINE_CHISEL))
+
+sim-netlist: $(IVERILOG_BIN_NETLIST)
+	@echo "[RUN] Running netlist simulation..."
+	@riscv64-linux-gnu-objcopy -O verilog --adjust-vma=-0x80000000 $(IMG) mem.hex
+	@vvp -n $<
+
+include Makefile.lib
 include $(NPC_HOME)/scripts/config.mk
 
-.PHONY: all sim run chisel-gen chisel-clean clean
+.PHONY: all sim run chisel-gen chisel-clean clean stainclude Makefile.lib

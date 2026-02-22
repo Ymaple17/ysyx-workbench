@@ -67,6 +67,13 @@ config ITRACE
     help
       Enable real-time tracing of executed instructions.
 
+config TRACE_DIFF
+    bool "Enable Trace Diff"
+    default n
+    help
+      Enable trace difference comparison for debugging.
+
+
 
 
 config MTRACE

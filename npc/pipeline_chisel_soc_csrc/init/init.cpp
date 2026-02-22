@@ -10,6 +10,7 @@
 #include "../include/state.h"
 #include "../include/difftest.h"
 #include "../include/init.h"
+#include "../include/trace.h"
 #include "../../include/generated/autoconf.h"
 
 

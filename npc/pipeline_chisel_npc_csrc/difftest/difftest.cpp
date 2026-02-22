@@ -23,7 +23,10 @@ uint8_t *flash_guest_to_host(uint64_t paddr);
 
 word_t mem_img_size = -1;
 
+#define CONFIG_MBASE 0x80000000
 #define CONFIG_FLASH_BASE 0x30000000
+
+extern uint8_t* flash_guest_to_host(paddr_t paddr);
 
 void panic(const char* fmt, ...) {
   va_list args;
@@ -63,12 +66,12 @@ void difftest_init(const char* ref_so_file, word_t img_size){
     void (*ref_difftest_init)(int) = (void (*)(int)) dlsym(handle, "difftest_init");
     assert(ref_difftest_init);
 
-    cpu.pc = 0x30000000;
+    cpu.pc = CONFIG_MBASE;
     printf("[difftest] initialized PC = 0x%x\n", cpu.pc);
 
     ref_difftest_init(1234);
     //ref_difftest_memcpy(MEM_START, guest_to_host(MEM_START), img_size, DIFFTEST_TO_REF);
-    ref_difftest_memcpy(CONFIG_FLASH_BASE, flash_guest_to_host(CONFIG_FLASH_BASE), img_size, DIFFTEST_TO_REF);
+    ref_difftest_memcpy(CONFIG_MBASE, guest_to_host(CONFIG_MBASE), img_size, DIFFTEST_TO_REF);
     ref_difftest_regcpy(&cpu, DIFFTEST_TO_REF);
 
     #else

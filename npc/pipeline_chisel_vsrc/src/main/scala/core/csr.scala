@@ -42,8 +42,10 @@ class CSR_IO(xlen: Int) extends Bundle{
 }
 
 class CSR(conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_CSR"
+
     val io = IO(new CSR_IO(conf.xlen))
-    val rf = Reg(Vec(6, UInt(conf.xlen.W)))
+    val rf = RegInit(VecInit(Seq.fill(6)(0.U(conf.xlen.W))))
     
     import CSR_REG._
     val in_waddr = Wire(UInt(3.W))

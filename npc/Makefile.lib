@@ -1,0 +1,35 @@
+
+# -----------------------------------------------------------------------
+# Library Generation (Compiling NPC as a .so for difftest)
+# -----------------------------------------------------------------------
+
+# Sources for the shared object: Exclude DUT-specific files
+CSRC_LIB = $(filter-out %/sim_cpu.cpp %/sim_main.cpp %/trace_diff.cpp %/difftest.cpp %/ref.cpp, $(CSRC)) 
+# Add the reference wrapper
+CSRC_LIB += $(CHISEL_WORK_DIR)/../pipeline_chisel_soc_csrc/difftest/ref_so.cpp
+
+NPC_SO = $(BUILD_DIR)/npc-ref.so
+
+# Ensure the library is built with PIC (Position Independent Code)
+# Note: Verilator needs to be told to produce PIC for the model too.
+# We append -CFLAGS "-fPIC" to Verilator. 
+# Also we need to ensure we don't link existing .o files that weren't built with PIC.
+# So we force a rebuild in a separate object directory or clean ? 
+# Actually, standard way is to rely on separate compile commands.
+# Here we invoke verilator to build and link everything into a .so.
+
+$(NPC_SO): $(VSRC) $(CSRC_LIB)
+	@echo "Building NPC Shared Object: $@"
+	mkdir -p $(dir $@)
+	$(VERILATOR) $(VERILATOR_FLAGS) +define+NO_UART_PRINT \
+		--top-module $(TOP_MODULE) \
+		--Mdir $(OBJ_DIR)/so_build \
+		--cc --exe --build \
+		$(abspath $(CSRC_LIB)) $(VSRC) \
+		-CFLAGS "-fPIC -shared -D_NPC_SO_BUILD" \
+		-LDFLAGS "-shared" \
+		-I$(NPC_HOME)/../ysyxSoC/perip/uart16550/rtl \
+		-I$(NPC_HOME)/../ysyxSoC/perip/spi/rtl \
+		-o $(abspath $@)
+
+lib: $(NPC_SO)

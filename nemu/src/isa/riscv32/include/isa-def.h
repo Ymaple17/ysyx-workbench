@@ -23,6 +23,8 @@ typedef struct{
   vaddr_t mepc;
   word_t mstatus;
   word_t mtvec;
+  word_t mvendorid;
+  word_t marchid;
 } riscv32_CSRS;
 
 typedef struct {

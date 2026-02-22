@@ -8,4 +8,7 @@
 void itrace_inst(uint32_t pc, uint32_t inst);
 void display_inst();
 
+void init_mtrace();
+void mtrace(char type, uint32_t addr, int len, uint32_t data);
+
 #endif  // TRACE_H

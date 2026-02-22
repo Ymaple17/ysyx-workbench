@@ -17,7 +17,7 @@ uint32_t read_gpr_from_top(int idx) {
 }
 
 uint32_t read_pc_from_top() {
-  return top->rootp->ysyx_25020039__DOT__core__DOT___ifu_io_out_bits_pc;
+  return top->rootp->ysyx_25020039__DOT__core__DOT__ifu__DOT__pc_reg;
 }
 
 static inline void refresh_cpu_regs() {

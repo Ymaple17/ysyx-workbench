@@ -8,7 +8,7 @@
     "evalWatched": [
         "ref:v0:c984eca8:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/compile-resources",
         "ref:v0:b2b6e08e:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/resources",
-        "ref:v0:8d0f009a:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala"
+        "ref:v0:9e004de9:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala"
     ],
     "moduleWatched": [],
     "classLoaderIdentity": [],

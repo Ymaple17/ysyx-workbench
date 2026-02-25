@@ -47,8 +47,7 @@ class Core(val conf :CoreConfig) extends Module{
       io.ebreak.get := wbu.io.ebreak.get
     }
 
-    val icache = Module(new ICache(4,1,8,conf))
-    // val icache = Module(new Simple_ICache(conf))
+    val icache = Module(new ICache(2,1,8,conf))
     val refile = Module(new Refile(conf))
     val csr = Module(new CSR(conf))
 
@@ -66,17 +65,17 @@ class Core(val conf :CoreConfig) extends Module{
 
     //pipeline connect
     def PipelineConnect[T <: Data, T2 <: Data](prevOut: DecoupledIO[T], thisIn: DecoupledIO[T], is_flush: Bool) = {
-    prevOut.ready := thisIn.ready
-        thisIn.bits := RegEnable(prevOut.bits, 0.U.asTypeOf(prevOut.bits), prevOut.valid && thisIn.ready)
-    thisIn.valid := RegEnable(prevOut.valid,false.B, thisIn.ready) && !is_flush
-  }
+      prevOut.ready := thisIn.ready
+      thisIn.bits := RegEnable(prevOut.bits, 0.U.asTypeOf(prevOut.bits), prevOut.valid && thisIn.ready)
+      thisIn.valid := RegEnable(prevOut.valid,false.B, thisIn.ready) && !is_flush
+    }
 
     def IFU_Connect[T <: Data, T2 <: Data](prevOut: DecoupledIO[T], thisIn: DecoupledIO[T]) = {
-    prevOut.ready := thisIn.ready
-    val resetPC = if(conf.ysyxsoc){ "h3000_0000".U(32.W) }else if(conf.npc){ "h8000_0000".U(32.W)} else { "h0000_0000".U(32.W) }
-    thisIn.bits := RegEnable(prevOut.bits, resetPC.asTypeOf(new IFUPC_IO), prevOut.valid && thisIn.ready)
-    thisIn.valid := RegEnable(prevOut.valid, false.B, thisIn.ready);
-  }
+      prevOut.ready := thisIn.ready
+      val resetPC = if(conf.ysyxsoc){ "h3000_0000".U(32.W) }else if(conf.npc){ "h8000_0000".U(32.W)} else { "h0000_0000".U(32.W) }
+      thisIn.bits := RegEnable(prevOut.bits, resetPC.asTypeOf(new IFUPC_IO), prevOut.valid && thisIn.ready)
+      thisIn.valid := RegEnable(prevOut.valid, false.B, thisIn.ready)
+    }
 
     IFU_Connect(ifu.io.pc ,ifu.io.in)
     PipelineConnect(ifu.io.out, idu.io.in, idu.io.is_flush)
@@ -88,13 +87,14 @@ class Core(val conf :CoreConfig) extends Module{
     def dataConflict(rs: UInt, rd: UInt) = (rs === rd)
   
     def dataConflictWithStage(stage: IDU_IO, rd: UInt, is_write: Bool, stage_work: Bool) = {
-        val rs1 = stage.refile.raddr1
-        val rs2 = stage.refile.raddr2
-        val stage_working = (stage.in.valid) & stage_work
-        val rs1_ren = stage.rs1_ren
-        val rs2_ren = stage.rs2_ren
-        ((rs1_ren & (rs1 =/= 0.U) & dataConflict(rs1, rd)) || (rs2_ren & (rs2 =/= 0.U) & dataConflict(rs2, rd))) && is_write && stage_working
-  }
+      val rs1 = stage.refile.raddr1
+      val rs2 = stage.refile.raddr2
+      val stage_working = (stage.in.valid) & stage_work
+      val rs1_ren = stage.rs1_ren
+      val rs2_ren = stage.rs2_ren
+      ((rs1_ren & (rs1 =/= 0.U) & dataConflict(rs1, rd)) || (rs2_ren & (rs2 =/= 0.U) & dataConflict(rs2, rd))) && is_write && stage_working
+    }
+
     //exu raw
     val exu_raw = Wire(Bool())
     val exu_raw_rs1 = Wire(Bool())
@@ -120,23 +120,12 @@ class Core(val conf :CoreConfig) extends Module{
     val is_raw_rs1 = exu_raw_rs1 || lsu_raw_rs1 || wbu_raw_rs1
     val is_raw_rs2 = exu_raw_rs2 || lsu_raw_rs2 || wbu_raw_rs2
 
-    //exu forward
-    val exu_forward = Wire(Bool())
     val exu_forward_rd1 = Wire(Bool())
     val exu_forward_rd2 = Wire(Bool())
-    exu_forward := exu_forward_rd1 || exu_forward_rd2
-
-    //lsu forward
-    val lsu_forward = Wire(Bool())
     val lsu_forward_rd1 = Wire(Bool())
     val lsu_forward_rd2 = Wire(Bool())
-    lsu_forward := lsu_forward_rd1 || lsu_forward_rd2
-    
-    //wbu forward
-    val wbu_forward = Wire(Bool())
     val wbu_forward_rd1 = Wire(Bool())
     val wbu_forward_rd2 = Wire(Bool())
-    wbu_forward := wbu_forward_rd1 || wbu_forward_rd2
 
     val exu_forward_data = Wire(UInt(32.W))
     val lsu_forward_data = Wire(UInt(32.W))
@@ -155,66 +144,66 @@ class Core(val conf :CoreConfig) extends Module{
     forward_count2_write := forward_count2
 
     when(RegNext(idu.io.in.ready, false.B) && idu.io.in.valid){
-        forward_count1_write := (idu.io.rs1_ren & is_raw_rs1).asUInt - rd1_forward_en.asUInt
-        forward_count2_write := (idu.io.rs2_ren & is_raw_rs2).asUInt - rd2_forward_en.asUInt
-        forward_count1 := forward_count1_write
-        forward_count2 := forward_count2_write
+      forward_count1_write := (idu.io.rs1_ren & is_raw_rs1).asUInt - rd1_forward_en.asUInt
+      forward_count2_write := (idu.io.rs2_ren & is_raw_rs2).asUInt - rd2_forward_en.asUInt
+      forward_count1 := forward_count1_write
+      forward_count2 := forward_count2_write
     }.elsewhen(idu.io.in.valid){
-        when(rd1_forward_en && forward_count1 =/= 0.U){forward_count1 := forward_count1 - 1.U}
-        when(rd2_forward_en && forward_count2 =/= 0.U){forward_count2 := forward_count2 - 1.U}
+      when(rd1_forward_en && forward_count1 =/= 0.U){forward_count1 := forward_count1 - 1.U}
+      when(rd2_forward_en && forward_count2 =/= 0.U){forward_count2 := forward_count2 - 1.U}
     }
 
     exu_raw := dataConflictWithStage(idu.io, exu.io.in.bits.waddr, exu.io.in.bits.signals.wbu.reg_write, exu.io.in.valid)
     exu_forward_rd1 := exu_raw_rs1 && (exu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL)
     exu_forward_rd2 := exu_raw_rs2 && (exu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL)
-    
+
     lsu_raw := dataConflictWithStage(idu.io, lsu.io.in.bits.waddr, lsu.io.in.bits.signals.wbu.reg_write, lsu.io.in.valid)
-    lsu_forward_rd1 := lsu_raw_rs1 && (lsu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL) || lsu.io.dmem.rvalid
-    lsu_forward_rd2 := lsu_raw_rs2 && (lsu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL) || lsu.io.dmem.rvalid
+    lsu_forward_rd1 := lsu_raw_rs1 && (lsu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL || lsu.io.dmem.rvalid)
+    lsu_forward_rd2 := lsu_raw_rs2 && (lsu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL || lsu.io.dmem.rvalid)
 
     wbu_raw := dataConflictWithStage(idu.io, wbu.io.in.bits.waddr, wbu.io.in.bits.signals.wbu.reg_write, wbu.io.in.valid)
     wbu_forward_rd1 := wbu_raw_rs1
     wbu_forward_rd2 := wbu_raw_rs2
 
     exu_forward_data := MuxLookup(exu.io.in.bits.signals.wbu.reg_write_sel, 0.U)(Seq(
-        ALU_SEL -> exu.io.out.bits.alu_result,
-        IMM_SEL -> exu.io.out.bits.imm_ext,
-        PC4_SEL -> (exu.io.out.bits.pc + 4.U),
-        CSR_DATA -> exu.io.out.bits.csr_rd1
+      ALU_SEL  -> exu.io.out.bits.alu_result,
+      IMM_SEL  -> exu.io.out.bits.imm_ext,
+      PC4_SEL  -> (exu.io.out.bits.pc + 4.U),
+      CSR_DATA -> exu.io.out.bits.csr_rd1
     ))
 
     lsu_forward_data := MuxLookup(lsu.io.in.bits.signals.wbu.reg_write_sel, 0.U)(Seq(
-        ALU_SEL -> lsu.io.out.bits.alu_result,
-        IMM_SEL -> lsu.io.out.bits.imm_ext,
-        PC4_SEL -> (lsu.io.out.bits.pc + 4.U),
-        CSR_DATA -> lsu.io.out.bits.csr_rd1,
-        MEM_SEL -> lsu.io.out.bits.mem_read
+      ALU_SEL  -> lsu.io.out.bits.alu_result,
+      IMM_SEL  -> lsu.io.out.bits.imm_ext,
+      PC4_SEL  -> (lsu.io.out.bits.pc + 4.U),
+      CSR_DATA -> lsu.io.out.bits.csr_rd1,
+      MEM_SEL  -> lsu.io.out.bits.mem_read
     ))
 
     wbu_forward_data := wbu.io.refile.wdata
 
     rd1_forward_en := MuxCase(false.B, Seq(
-        exu_raw_rs1 -> exu_forward_rd1,
-        lsu_raw_rs1 -> lsu_forward_rd1,
-        wbu_raw_rs1 -> wbu_forward_rd1
+      exu_raw_rs1 -> exu_forward_rd1,
+      lsu_raw_rs1 -> lsu_forward_rd1,
+      wbu_raw_rs1 -> wbu_forward_rd1
     ))
 
     rd2_forward_en := MuxCase(false.B, Seq(
-        exu_raw_rs2 -> exu_forward_rd2,
-        lsu_raw_rs2 -> lsu_forward_rd2,
-        wbu_raw_rs2 -> wbu_forward_rd2
+      exu_raw_rs2 -> exu_forward_rd2,
+      lsu_raw_rs2 -> lsu_forward_rd2,
+      wbu_raw_rs2 -> wbu_forward_rd2
     ))
 
     rd1_forward_data := Mux(rd1_forward_en, MuxCase(0.U, Seq(
-        exu_forward_rd1 -> exu_forward_data,
-        lsu_forward_rd1 -> lsu_forward_data,
-        wbu_forward_rd1 -> wbu_forward_data
+      exu_forward_rd1 -> exu_forward_data,
+      lsu_forward_rd1 -> lsu_forward_data,
+      wbu_forward_rd1 -> wbu_forward_data
     )), idu.io.out.bits.rd1)
 
     rd2_forward_data := Mux(rd2_forward_en, MuxCase(0.U, Seq(
-        exu_forward_rd2 -> exu_forward_data,
-        lsu_forward_rd2 -> lsu_forward_data,
-        wbu_forward_rd2 -> wbu_forward_data
+      exu_forward_rd2 -> exu_forward_data,
+      lsu_forward_rd2 -> lsu_forward_data,
+      wbu_forward_rd2 -> wbu_forward_data
     )), idu.io.out.bits.rd2)
 
     exu.io.in.bits.rd1 := RegEnable(Mux(rd1_forward_en || ~is_raw_rs1, rd1_forward_data, rd1_forward_data_read), 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
@@ -225,19 +214,18 @@ class Core(val conf :CoreConfig) extends Module{
     val correct_pc = Wire(UInt(32.W))
     val pc_src = exu.io.pc.bits.pc_src
     correct_pc := MuxLookup(pc_src, exu.io.pc.bits.pc4)(Seq(
-        PC_PLUS4 -> exu.io.pc.bits.pc4,
-        PC_IMM  -> exu.io.pc.bits.pc4_imm,
-        PC_RS2  -> exu.io.pc.bits.pc4_rs2,
-        MEPC -> csr.io.read.mepc
+      PC_PLUS4 -> exu.io.pc.bits.pc4,
+      PC_IMM   -> exu.io.pc.bits.pc4_imm,
+      PC_RS2   -> exu.io.pc.bits.pc4_rs2,
+      MEPC     -> csr.io.read.mepc
     ))
 
-    val idu_working = idu.io.in.valid
     val is_jump = exu.io.in.bits.signals.exu.jump =/= JUMP_NONE & exu.io.pc.valid
     exu.io.pc.ready := true.B
     val is_ch = Wire(Bool())
     val is_ch_r = RegNext(is_ch, false.B)
     is_ch := is_jump & pc_src =/= PC_PLUS4
-    
+
     val is_fencei = RegNext(icache.io.fencei.valid & icache.io.fencei.ready, false.B)
     ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(is_ch_r, RegNext(correct_pc, 0.U), Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
 
@@ -247,13 +235,13 @@ class Core(val conf :CoreConfig) extends Module{
     lsu.io.is_flush := is_irq
     wbu.io.is_flush := is_irq
 
-    ifu.io.imem <> icache.io.in
-    icache.io.out <> io.imem
+    ifu.io.imem      <> icache.io.in
+    icache.io.out    <> io.imem
     icache.io.fencei <> idu.io.ifu_signals
-    idu.io.refile :<>= refile.io.read
-    idu.io.csr :<>= csr.io.read
+    idu.io.refile    :<>= refile.io.read
+    idu.io.csr       :<>= csr.io.read
 
-    lsu.io.dmem <> io.dmem
+    lsu.io.dmem   <> io.dmem
     wbu.io.refile :<>= refile.io.write
-    wbu.io.csr :<>= csr.io.write
+    wbu.io.csr    :<>= csr.io.write
 }

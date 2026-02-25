@@ -21,14 +21,16 @@ class Refile_IO(xlen: Int) extends Bundle{
   val write = new Refile_WRITE_IO(xlen)
 }
 
-class Refile(conf: CoreConfig) extends Module{
+class Refile(conf: CoreConfig) extends Module {
   override def desiredName = "ysyx_25020039_Refile"
-
   val io = IO(new Refile_IO(conf.xlen))
-  val rf = Mem(32, UInt(conf.xlen.W))
-  io.read.rdata1 := Mux(io.read.raddr1=/=0.U, rf(io.read.raddr1), 0.U)
-  io.read.rdata2 := Mux(io.read.raddr2=/=0.U, rf(io.read.raddr2), 0.U)
-  when(io.write.wen & io.write.waddr=/=0.U){
+  val rf = Mem(16, UInt(conf.xlen.W))
+  val rdata1_raw = rf(io.read.raddr1)
+  val rdata2_raw = rf(io.read.raddr2)
+  
+  io.read.rdata1 := Mux(io.read.raddr1 === 0.U, 0.U, rdata1_raw)
+  io.read.rdata2 := Mux(io.read.raddr2 === 0.U, 0.U, rdata2_raw)
+  when(io.write.wen) {
     rf(io.write.waddr) := io.write.wdata
   }
 }

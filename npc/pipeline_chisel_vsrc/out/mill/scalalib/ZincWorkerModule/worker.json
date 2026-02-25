@@ -1,7 +1,7 @@
 {
     "value": {
         "worker": "mill.scalalib.ZincWorkerModule.worker",
-        "toString": "mill.scalalib.worker.ZincWorkerImpl@3828d728",
+        "toString": "mill.scalalib.worker.ZincWorkerImpl@71e4cbe7",
         "inputsHash": -181851863
     },
     "valueHash": -181851863,

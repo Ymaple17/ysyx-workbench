@@ -1,7 +1,7 @@
-From 0b494e859bcc7167e0c2dd05051b4e6aa5c79d49 Mon Sep 17 00:00:00 2001
+From a5b8d95b02edb09dd5350c11f8fe3df2ce0c1c3e Mon Sep 17 00:00:00 2001
 From: ysyx-100012487 <15323232995@163.com>
-Date: Thu, 26 Feb 2026 16:16:50 +0800
-Subject: [PATCH] ysyxsoc
+Date: Thu, 26 Feb 2026 17:46:18 +0800
+Subject: [PATCH] soc
 
 ---
  perip/amba/apb_delayer.v                     |  94 ++++++-
@@ -14,13 +14,13 @@ Subject: [PATCH] ysyxsoc
  perip/sdram/core_sdram_axi4/sdram_axi_core.v |  94 ++++---
  perip/sdram/core_sdram_axi4/sdram_axi_pmem.v |   2 +-
  perip/sdram/sdram.v                          |  54 +++-
- perip/sdram/sdram_16.v                       | 187 ++++++++++++
+ perip/sdram/sdram_16.v                       | 187 +++++++++++++
  perip/sdram/sdram_32.v                       |  40 +++
  perip/sdram/sdram_top_apb.v                  |  17 +-
  perip/sdram/sdram_top_axi.v                  |  18 +-
- perip/spi/rtl/spi_top_apb.v                  | 282 +++++++++++++++++--
+ perip/spi/rtl/spi_top_apb.v                  | 273 +++++++++++++++++--
  perip/uart16550/rtl/uart_tfifo.v             |   4 +
- perip/vga/vga_top_apb.v                      | 140 ++++++++-
+ perip/vga/vga_top_apb.v                      | 140 +++++++++-
  ready-to-run/D-stage/dummy.bin               | Bin 0 -> 375712 bytes
  ready-to-run/D-stage/hello.bin               | Bin 0 -> 674292 bytes
  ready-to-run/D-stage/timer.bin               | Bin 0 -> 853720 bytes
@@ -29,7 +29,7 @@ Subject: [PATCH] ysyxsoc
  src/Top.scala                                |   2 +-
  src/amba/AXI4Delayer.scala                   | 121 +++++++-
  src/device/SDRAM.scala                       |   6 +-
- 25 files changed, 1505 insertions(+), 110 deletions(-)
+ 25 files changed, 1496 insertions(+), 110 deletions(-)
  create mode 100644 perip/sdram/sdram_16.v
  create mode 100644 perip/sdram/sdram_32.v
  create mode 100755 ready-to-run/D-stage/dummy.bin
@@ -1451,7 +1451,7 @@ index f0fd6fdb..723cc89d 100644
 +endmodule
 \ No newline at end of file
 diff --git a/perip/spi/rtl/spi_top_apb.v b/perip/spi/rtl/spi_top_apb.v
-index 92d37516..e20f798b 100644
+index 92d37516..ff2a9e8a 100644
 --- a/perip/spi/rtl/spi_top_apb.v
 +++ b/perip/spi/rtl/spi_top_apb.v
 @@ -1,6 +1,6 @@
@@ -1462,7 +1462,7 @@ index 92d37516..e20f798b 100644
  
  module spi_top_apb #(
    parameter flash_addr_start = 32'h30000000,
-@@ -48,25 +48,267 @@ assign in_prdata  = data[31:0];
+@@ -48,25 +48,258 @@ assign in_prdata  = data[31:0];
  
  `else
  
@@ -1490,16 +1490,7 @@ index 92d37516..e20f798b 100644
 +
 +  localparam [3:0] XIP_IDLE = 4'd0,XIP_SETUP_DIV = 4'd1,XIP_SETUP_SS = 4'd2,XIP_SETUP_CMD = 4'd3,XIP_SETUP_DUMMY = 4'd4,XIP_CONF_CTRL = 4'd5,XIP_START = 4'd6,XIP_WAIT = 4'd7,XIP_READ_DATA = 4'd8,XIP_RETURN = 4'd9;
 +
-+  reg [31:0] ctrl_config;
-+  always @(*) begin
-+        ctrl_config = 32'h0;
-+        ctrl_config[13] = 1'b1;            // ASS = 1 (Auto slave select)
-+        ctrl_config[12] = 1'b0;            // IE = 0 (no interrupt)
-+        ctrl_config[11] = 1'b0;            // LSB = 0 (MSB first)
-+        ctrl_config[10] = 1'b1;            // Tx_NEG = 1 (output on falling edge)
-+        ctrl_config[9] = 1'b0;             // Rx_NEG = 0 (sample on rising edge)
-+        ctrl_config[6:0] = 7'd64;          // CHAR_LEN = 64 bits
-+    end
++  assign ctrl_config = 32'h0 | (1'b1 << 13) | (1'b1 << 10) | 7'd64;
 +
 +  reg [31:0] xip_flash_addr;
 +  always @(posedge clock or posedge reset) begin

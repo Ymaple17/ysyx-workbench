@@ -1,459 +1,472 @@
 [
   {
-    "label": "mychisel.localRunClasspath.super.RunModule",
-    "millis": 5,
-    "cached": false,
+    "label": "mychisel.mainClass",
+    "millis": 6,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 1182368135,
-    "previousInputsHash": 449552511
-  },
-  {
-    "label": "mychisel.scalaVersion",
-    "millis": 4,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": -462886412,
-    "previousInputsHash": -1195702036
+    "inputsHash": -1302759336
   },
   {
     "label": "mychisel.upstreamCompileOutput",
-    "millis": 12,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": -668139279,
-    "previousInputsHash": -1400954903
-  },
-  {
-    "label": "mychisel.resources",
-    "millis": 16,
-    "valueHashChanged": true,
-    "inputsHash": 556928808,
-    "previousInputsHash": 547503941
-  },
-  {
-    "label": "mychisel.mainClass",
-    "millis": 10,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": -1302759336,
-    "previousInputsHash": -2035574960
-  },
-  {
-    "label": "mychisel.generatedSources",
-    "millis": 4,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": 294767798,
-    "previousInputsHash": -438047826
+    "inputsHash": -668139279
   },
   {
     "label": "mill.scalalib.ZincWorkerModule.zincLogDebug",
-    "millis": 8,
+    "millis": 2,
     "valueHashChanged": false,
-    "inputsHash": -62215823,
-    "previousInputsHash": -1625631990
+    "inputsHash": 169579112,
+    "previousInputsHash": -62215823
+  },
+  {
+    "label": "mychisel.scalaVersion",
+    "millis": 3,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": -462886412
+  },
+  {
+    "label": "mychisel.generatedSources",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": 294767798
   },
   {
     "label": "mychisel.platformSuffix",
-    "millis": 3,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 978149426,
-    "previousInputsHash": 245333802
-  },
-  {
-    "label": "mill.scalalib.ZincWorkerModule.jvmIndexVersion",
-    "millis": 9,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": 1401435059,
-    "previousInputsHash": 668619435
-  },
-  {
-    "label": "mill.scalalib.ZincWorkerModule.jvmId",
-    "millis": 6,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": 1401435059,
-    "previousInputsHash": 668619435
-  },
-  {
-    "label": "mychisel.bomIvyDeps",
-    "millis": 4,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": 625885139,
-    "previousInputsHash": -106930485
+    "inputsHash": 978149426
   },
   {
     "label": "mychisel.compileIvyDeps",
-    "millis": 3,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 1337119132,
-    "previousInputsHash": 604303508
+    "inputsHash": 1337119132
   },
   {
-    "label": "mychisel.transitiveCompileClasspath",
-    "millis": 2,
-    "cached": false,
+    "label": "mychisel.resources",
+    "millis": 13,
     "valueHashChanged": false,
-    "inputsHash": 612630956,
-    "previousInputsHash": -120184668
-  },
-  {
-    "label": "mychisel.mandatoryIvyDeps.super.JavaModule",
-    "millis": 4,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": -652757598,
-    "previousInputsHash": -1385573222
+    "inputsHash": -842151971,
+    "previousInputsHash": 556928808
   },
   {
     "label": "mychisel.depManagement",
-    "millis": 7,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 1089789156,
-    "previousInputsHash": 356973532
+    "inputsHash": 1089789156
   },
   {
-    "label": "mychisel.ivyDeps",
-    "millis": 8,
-    "cached": false,
+    "label": "mill.scalalib.ZincWorkerModule.jvmId",
+    "millis": 17,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 388643338,
-    "previousInputsHash": -344172286
+    "inputsHash": 1401435059
   },
   {
-    "label": "mychisel.artifactTypes",
-    "millis": 7,
-    "cached": false,
+    "label": "mychisel.bomIvyDeps",
+    "millis": 1,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 1837340707,
-    "previousInputsHash": 1104525083
+    "inputsHash": 625885139
   },
   {
-    "label": "mychisel.javacOptions",
-    "millis": 5,
-    "cached": false,
+    "label": "mychisel.localRunClasspath.super.RunModule",
+    "millis": 18,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": -1368842012,
-    "previousInputsHash": -2101657636
+    "inputsHash": 1182368135
   },
   {
-    "label": "mychisel.mandatoryJavacOptions",
-    "millis": 3,
-    "cached": false,
+    "label": "mychisel.transitiveCompileClasspath",
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 801573963,
-    "previousInputsHash": 68758339
-  },
-  {
-    "label": "mychisel.mandatoryScalacOptions",
-    "millis": 5,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": 40097685,
-    "previousInputsHash": -692717939
+    "inputsHash": 612630956
   },
   {
     "label": "mychisel.unmanagedClasspath",
-    "millis": 3,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 275294852,
-    "previousInputsHash": -457520772
+    "inputsHash": 275294852
   },
   {
     "label": "mychisel.compileResources",
-    "millis": 6,
+    "millis": 1,
     "valueHashChanged": false,
-    "inputsHash": -49197343,
-    "previousInputsHash": 1715179543
+    "inputsHash": -1708208461,
+    "previousInputsHash": -49197343
+  },
+  {
+    "label": "mychisel.javacOptions",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": -1368842012
+  },
+  {
+    "label": "mychisel.mandatoryScalacOptions",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": 40097685
+  },
+  {
+    "label": "mychisel.ivyDeps",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": 388643338
+  },
+  {
+    "label": "mychisel.mandatoryIvyDeps.super.JavaModule",
+    "millis": 1,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": -652757598
   },
   {
     "label": "mychisel.scalacOptions",
-    "millis": 3,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 1872467871,
-    "previousInputsHash": 1139652247
-  },
-  {
-    "label": "mychisel.zincAuxiliaryClassFileExtensions.super.JavaModule",
-    "millis": 2,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": -264046897,
-    "previousInputsHash": -996862521
+    "inputsHash": 1872467871
   },
   {
     "label": "mychisel.zincIncrementalCompilation",
-    "millis": 3,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": -1602261347,
-    "previousInputsHash": 1959890325
+    "inputsHash": -1602261347
   },
   {
     "label": "mychisel.zincReportCachedProblems",
-    "millis": 5,
+    "millis": 1,
     "valueHashChanged": false,
-    "inputsHash": 540253540,
-    "previousInputsHash": -296383974
+    "inputsHash": -1588623217,
+    "previousInputsHash": 540253540
+  },
+  {
+    "label": "mychisel.zincAuxiliaryClassFileExtensions.super.JavaModule",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": -264046897
+  },
+  {
+    "label": "mychisel.sources",
+    "millis": 13,
+    "valueHashChanged": false,
+    "inputsHash": 87405580,
+    "previousInputsHash": -290602064
+  },
+  {
+    "label": "mychisel.artifactTypes",
+    "millis": 1,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": 1837340707
+  },
+  {
+    "label": "mill.scalalib.ZincWorkerModule.jvmIndexVersion",
+    "millis": 17,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": 1401435059
   },
   {
     "label": "mychisel.scalacPluginIvyDeps",
-    "millis": 5,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 2146907916,
-    "previousInputsHash": 1414092292
+    "inputsHash": 2146907916
   },
   {
-    "label": "mychisel.transitiveLocalClasspath",
-    "millis": 2,
-    "cached": false,
+    "label": "mill.scalalib.ZincWorkerModule.classpath",
+    "millis": 23,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 117005210,
-    "previousInputsHash": -615810414
+    "inputsHash": 1401435059
   },
   {
-    "label": "mychisel.runClasspath.super.RunModule",
-    "millis": 5,
-    "cached": false,
+    "label": "mychisel.mandatoryJavacOptions",
+    "millis": 6,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": -1745082055,
-    "previousInputsHash": 1817069617
-  },
-  {
-    "label": "mychisel.runIvyDeps",
-    "millis": 4,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": 1419537395,
-    "previousInputsHash": 686721771
-  },
-  {
-    "label": "mychisel.forkWorkingDir.super.RunModule",
-    "millis": 3,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": -227805616,
-    "previousInputsHash": -960621240
-  },
-  {
-    "label": "mychisel.runUseArgsFile.super.RunModule",
-    "millis": 4,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": -1930538635,
-    "previousInputsHash": 1631613037
+    "inputsHash": 801573963
   },
   {
     "label": "mychisel.forkArgs.super.RunModule",
-    "millis": 85,
-    "cached": false,
+    "millis": 2,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": 757931798,
-    "previousInputsHash": 25116174
+    "inputsHash": 757931798
   },
   {
     "label": "mychisel.forkEnv.super.RunModule",
-    "millis": 84,
-    "cached": false,
+    "millis": 3,
+    "cached": true,
     "valueHashChanged": false,
-    "inputsHash": -941227523,
-    "previousInputsHash": -1674043147
+    "inputsHash": -941227523
+  },
+  {
+    "label": "mychisel.forkWorkingDir.super.RunModule",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": -227805616
+  },
+  {
+    "label": "mychisel.transitiveLocalClasspath",
+    "millis": 3,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": 117005210
+  },
+  {
+    "label": "mychisel.scalaOrganization",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mychisel.scalaVersion"
+    ],
+    "inputsHash": -358459044
+  },
+  {
+    "label": "mychisel.forkArgs",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mychisel.forkArgs.super.RunModule"
+    ],
+    "inputsHash": -1592899402
   },
   {
     "label": "mychisel.zincAuxiliaryClassFileExtensions",
-    "millis": 2,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.zincAuxiliaryClassFileExtensions.super.JavaModule",
       "mychisel.scalaVersion"
     ],
-    "inputsHash": 707158271,
-    "previousInputsHash": -25657353
-  },
-  {
-    "label": "mychisel.sources",
-    "millis": 116,
-    "valueHashChanged": true,
-    "inputsHash": -290602064,
-    "previousInputsHash": -76793835
-  },
-  {
-    "label": "mychisel.scalaOrganization",
-    "millis": 3,
-    "cached": false,
-    "valueHashChanged": false,
-    "dependencies": [
-      "mychisel.scalaVersion"
-    ],
-    "inputsHash": -358459044,
-    "previousInputsHash": -1091274668
-  },
-  {
-    "label": "mychisel.runUseArgsFile",
-    "millis": 12,
-    "cached": false,
-    "valueHashChanged": false,
-    "dependencies": [
-      "mychisel.runUseArgsFile.super.RunModule"
-    ],
-    "inputsHash": -888204266,
-    "previousInputsHash": -1621019890
-  },
-  {
-    "label": "mychisel.transitiveRunIvyDeps",
-    "millis": 3,
-    "cached": false,
-    "valueHashChanged": false,
-    "dependencies": [
-      "mychisel.scalaVersion",
-      "mychisel.platformSuffix",
-      "mychisel.runIvyDeps"
-    ],
-    "inputsHash": 1716205448,
-    "previousInputsHash": 983389824
+    "inputsHash": 707158271
   },
   {
     "label": "mychisel.localCompileClasspath",
-    "millis": 17,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.compileResources",
       "mychisel.unmanagedClasspath"
     ],
-    "inputsHash": -1894326408,
-    "previousInputsHash": 1667825264
+    "inputsHash": -1894326408
   },
   {
-    "label": "mill.scalalib.ZincWorkerModule.javaHome",
-    "millis": 16,
-    "cached": false,
+    "label": "mychisel.forkEnv",
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
-      "mill.scalalib.ZincWorkerModule.jvmId",
-      "mill.scalalib.ZincWorkerModule.jvmIndexVersion"
+      "mychisel.forkEnv.super.RunModule"
     ],
-    "inputsHash": -1611875991,
-    "previousInputsHash": 1950275681
+    "inputsHash": -1803314584
   },
   {
     "label": "mychisel.transitiveCompileIvyDeps",
-    "millis": 7,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.scalaVersion",
       "mychisel.platformSuffix",
       "mychisel.compileIvyDeps"
     ],
-    "inputsHash": -783589206,
-    "previousInputsHash": -1516404830
+    "inputsHash": -783589206
   },
   {
-    "label": "mychisel.forkArgs",
-    "millis": 6,
-    "cached": false,
+    "label": "mychisel.forkWorkingDir",
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
-      "mychisel.forkArgs.super.RunModule"
+      "mychisel.forkWorkingDir.super.RunModule"
     ],
-    "inputsHash": -1592899402,
-    "previousInputsHash": 1969252270
+    "inputsHash": 1610284355
+  },
+  {
+    "label": "mychisel.enablePluginScalacOptions.super.ScalaModule",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mychisel.scalaVersion",
+      "mychisel.platformSuffix",
+      "mychisel.scalaOrganization",
+      "mychisel.scalacPluginIvyDeps"
+    ],
+    "inputsHash": -341871317
+  },
+  {
+    "label": "mychisel.runIvyDeps",
+    "millis": 3,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": 1419537395
   },
   {
     "label": "mychisel.scalaLibraryIvyDeps",
     "millis": 1,
-    "cached": false,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.scalaOrganization",
       "mychisel.scalaVersion"
     ],
-    "inputsHash": -313251884,
-    "previousInputsHash": -1046067508
+    "inputsHash": -313251884
   },
   {
-    "label": "mychisel.forkEnv",
-    "millis": 3,
-    "cached": false,
+    "label": "mychisel.transitiveRunIvyDeps",
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
-      "mychisel.forkEnv.super.RunModule"
+      "mychisel.scalaVersion",
+      "mychisel.platformSuffix",
+      "mychisel.runIvyDeps"
     ],
-    "inputsHash": -1803314584,
-    "previousInputsHash": 1758837088
+    "inputsHash": 1716205448
   },
   {
-    "label": "mychisel.allSources",
-    "millis": 3,
-    "cached": false,
-    "valueHashChanged": true,
-    "dependencies": [
-      "mychisel.sources",
-      "mychisel.generatedSources"
-    ],
-    "inputsHash": -2034753778,
-    "previousInputsHash": 1436030092
-  },
-  {
-    "label": "mychisel.forkWorkingDir",
-    "millis": 22,
-    "cached": false,
+    "label": "mychisel.allScalacOptions",
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
-      "mychisel.forkWorkingDir.super.RunModule"
+      "mychisel.mandatoryScalacOptions",
+      "mychisel.enablePluginScalacOptions.super.ScalaModule",
+      "mychisel.scalacOptions"
     ],
-    "inputsHash": 1610284355,
-    "previousInputsHash": 877468731
+    "inputsHash": -144407321
   },
   {
     "label": "mychisel.mandatoryIvyDeps",
-    "millis": 6,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.mandatoryIvyDeps.super.JavaModule",
       "mychisel.scalaLibraryIvyDeps"
     ],
-    "inputsHash": -1197760134,
-    "previousInputsHash": -1930575758
+    "inputsHash": -1197760134
+  },
+  {
+    "label": "mychisel.allSources",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mychisel.sources",
+      "mychisel.generatedSources"
+    ],
+    "inputsHash": -2034753778
+  },
+  {
+    "label": "mychisel.scalaCompilerClasspath",
+    "millis": 1,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mychisel.scalaVersion",
+      "mychisel.platformSuffix",
+      "mychisel.scalaOrganization",
+      "mychisel.scalaLibraryIvyDeps"
+    ],
+    "inputsHash": -540581793
+  },
+  {
+    "label": "mychisel.allSourceFiles",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mychisel.allSources"
+    ],
+    "inputsHash": -2132848582
+  },
+  {
+    "label": "mill.scalalib.ZincWorkerModule.javaHome",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mill.scalalib.ZincWorkerModule.jvmId",
+      "mill.scalalib.ZincWorkerModule.jvmIndexVersion"
+    ],
+    "inputsHash": -1611875991
+  },
+  {
+    "label": "mychisel.runClasspath.super.RunModule",
+    "millis": 4,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": -1745082055
+  },
+  {
+    "label": "mychisel.scalacPluginClasspath",
+    "millis": 4,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mychisel.scalaVersion",
+      "mychisel.platformSuffix",
+      "mychisel.scalaOrganization",
+      "mychisel.scalacPluginIvyDeps"
+    ],
+    "inputsHash": 1626784093
+  },
+  {
+    "label": "mychisel.runUseArgsFile.super.RunModule",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
+    "inputsHash": -1930538635
   },
   {
     "label": "mychisel.allIvyDeps",
-    "millis": 4,
-    "cached": false,
+    "millis": 2,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.ivyDeps",
       "mychisel.mandatoryIvyDeps"
     ],
-    "inputsHash": -1825809913,
-    "previousInputsHash": 1736341759
+    "inputsHash": -1825809913
   },
   {
-    "label": "mychisel.allSourceFiles",
-    "millis": 11,
-    "cached": false,
-    "valueHashChanged": true,
+    "label": "mychisel.runUseArgsFile",
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
     "dependencies": [
-      "mychisel.allSources"
+      "mychisel.runUseArgsFile.super.RunModule"
     ],
-    "inputsHash": -2132848582,
-    "previousInputsHash": -1771614683
+    "inputsHash": -888204266
   },
   {
     "label": "mychisel.transitiveIvyDeps",
-    "millis": 3,
-    "cached": false,
+    "millis": 1,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.scalaVersion",
@@ -462,68 +475,12 @@
       "mychisel.depManagement",
       "mychisel.allIvyDeps"
     ],
-    "inputsHash": -1596627681,
-    "previousInputsHash": 1965523991
-  },
-  {
-    "label": "mychisel.enablePluginScalacOptions.super.ScalaModule",
-    "millis": 33,
-    "cached": false,
-    "valueHashChanged": false,
-    "dependencies": [
-      "mychisel.scalaVersion",
-      "mychisel.platformSuffix",
-      "mychisel.scalaOrganization",
-      "mychisel.scalacPluginIvyDeps"
-    ],
-    "inputsHash": -341871317,
-    "previousInputsHash": -1074686941
-  },
-  {
-    "label": "mychisel.allScalacOptions",
-    "millis": 1,
-    "cached": false,
-    "valueHashChanged": false,
-    "dependencies": [
-      "mychisel.mandatoryScalacOptions",
-      "mychisel.enablePluginScalacOptions.super.ScalaModule",
-      "mychisel.scalacOptions"
-    ],
-    "inputsHash": -144407321,
-    "previousInputsHash": -877222945
-  },
-  {
-    "label": "mychisel.scalaCompilerClasspath",
-    "millis": 50,
-    "cached": false,
-    "valueHashChanged": false,
-    "dependencies": [
-      "mychisel.scalaVersion",
-      "mychisel.platformSuffix",
-      "mychisel.scalaOrganization",
-      "mychisel.scalaLibraryIvyDeps"
-    ],
-    "inputsHash": -540581793,
-    "previousInputsHash": -1273397417
-  },
-  {
-    "label": "mychisel.scalacPluginClasspath",
-    "millis": 61,
-    "cached": false,
-    "valueHashChanged": false,
-    "dependencies": [
-      "mychisel.scalaVersion",
-      "mychisel.platformSuffix",
-      "mychisel.scalaOrganization",
-      "mychisel.scalacPluginIvyDeps"
-    ],
-    "inputsHash": 1626784093,
-    "previousInputsHash": 893968469
+    "inputsHash": -1596627681
   },
   {
     "label": "mychisel.resolvedRunIvyDeps",
-    "millis": 127,
-    "cached": false,
+    "millis": 7,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.scalaVersion",
@@ -533,13 +490,12 @@
       "mychisel.transitiveIvyDeps",
       "mychisel.artifactTypes"
     ],
-    "inputsHash": -1731465464,
-    "previousInputsHash": 1830686208
+    "inputsHash": -1731465464
   },
   {
     "label": "mychisel.resolvedIvyDeps",
-    "millis": 126,
-    "cached": false,
+    "millis": 8,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.scalaVersion",
@@ -549,48 +505,38 @@
       "mychisel.transitiveIvyDeps",
       "mychisel.artifactTypes"
     ],
-    "inputsHash": 1483535863,
-    "previousInputsHash": 750720239
+    "inputsHash": 1483535863
   },
   {
     "label": "mychisel.compileClasspath",
-    "millis": 2,
-    "cached": false,
+    "millis": 3,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.resolvedIvyDeps",
       "mychisel.transitiveCompileClasspath",
       "mychisel.localCompileClasspath"
     ],
-    "inputsHash": -2068780987,
-    "previousInputsHash": 1493370685
-  },
-  {
-    "label": "mill.scalalib.ZincWorkerModule.classpath",
-    "millis": 311,
-    "cached": false,
-    "valueHashChanged": false,
-    "inputsHash": 1401435059,
-    "previousInputsHash": 668619435
+    "inputsHash": -2068780987
   },
   {
     "label": "mill.scalalib.ZincWorkerModule.worker",
-    "millis": 22,
+    "millis": 19,
     "cached": false,
-    "valueHashChanged": true,
+    "valueHashChanged": false,
     "dependencies": [
       "mill.scalalib.ZincWorkerModule.classpath",
       "mill.scalalib.ZincWorkerModule.zincLogDebug",
       "mill.scalalib.ZincWorkerModule.javaHome"
     ],
     "inputsHash": 550963761,
-    "previousInputsHash": -181851863
+    "previousInputsHash": 550963761
   },
   {
     "label": "mychisel.compile",
-    "millis": 5024,
-    "cached": false,
-    "valueHashChanged": true,
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
     "dependencies": [
       "mychisel.scalaVersion",
       "mill.scalalib.ZincWorkerModule.worker",
@@ -607,52 +553,35 @@
       "mychisel.zincIncrementalCompilation",
       "mychisel.zincAuxiliaryClassFileExtensions"
     ],
-    "inputsHash": -1640901831,
-    "previousInputsHash": -1272466566
+    "inputsHash": -1640901831
   },
   {
     "label": "mychisel.localRunClasspath",
-    "millis": 2,
-    "cached": false,
-    "valueHashChanged": true,
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
     "dependencies": [
       "mychisel.localRunClasspath.super.RunModule",
       "mychisel.resources",
       "mychisel.compile"
     ],
-    "inputsHash": -1539980882,
-    "previousInputsHash": -1350324812
+    "inputsHash": -1539980882
   },
   {
     "label": "mychisel.localClasspath",
-    "millis": 1,
-    "cached": false,
-    "valueHashChanged": true,
+    "millis": 0,
+    "cached": true,
+    "valueHashChanged": false,
     "dependencies": [
       "mychisel.localCompileClasspath",
       "mychisel.localRunClasspath"
     ],
-    "inputsHash": 1493264043,
-    "previousInputsHash": 1647925868
-  },
-  {
-    "label": "mychisel.runClasspath",
-    "millis": 2,
-    "cached": false,
-    "valueHashChanged": true,
-    "dependencies": [
-      "mychisel.runClasspath.super.RunModule",
-      "mychisel.resolvedRunIvyDeps",
-      "mychisel.transitiveLocalClasspath",
-      "mychisel.localClasspath"
-    ],
-    "inputsHash": -450402231,
-    "previousInputsHash": 1817994830
+    "inputsHash": 1493264043
   },
   {
     "label": "mychisel.allLocalMainClasses",
-    "millis": 254,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.localRunClasspath",
@@ -660,25 +589,23 @@
       "mill.scalalib.ZincWorkerModule.classpath",
       "mill.scalalib.ZincWorkerModule.worker"
     ],
-    "inputsHash": -1249569029,
-    "previousInputsHash": -82211235
+    "inputsHash": -1249569029
   },
   {
     "label": "mychisel.finalMainClassOpt.super.RunModule",
-    "millis": 2,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.mainClass",
       "mychisel.allLocalMainClasses"
     ],
-    "inputsHash": -209133059,
-    "previousInputsHash": -941948683
+    "inputsHash": -209133059
   },
   {
     "label": "mychisel.finalMainClassOpt",
-    "millis": 16,
-    "cached": false,
+    "millis": 0,
+    "cached": true,
     "valueHashChanged": false,
     "dependencies": [
       "mychisel.mainClass",
@@ -687,12 +614,24 @@
       "mill.scalalib.ZincWorkerModule.worker",
       "mychisel.compile"
     ],
-    "inputsHash": -2095652708,
-    "previousInputsHash": -895689096
+    "inputsHash": -2095652708
+  },
+  {
+    "label": "mychisel.runClasspath",
+    "millis": 5,
+    "cached": true,
+    "valueHashChanged": false,
+    "dependencies": [
+      "mychisel.runClasspath.super.RunModule",
+      "mychisel.resolvedRunIvyDeps",
+      "mychisel.transitiveLocalClasspath",
+      "mychisel.localClasspath"
+    ],
+    "inputsHash": -450402231
   },
   {
     "label": "mychisel.runMain",
-    "millis": 2280,
+    "millis": 1490,
     "cached": false,
     "valueHashChanged": false,
     "dependencies": [
@@ -705,6 +644,6 @@
       "mychisel.forkWorkingDir"
     ],
     "inputsHash": 1069744233,
-    "previousInputsHash": 1664574859
+    "previousInputsHash": 1069744233
   }
 ]

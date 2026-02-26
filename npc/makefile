@@ -27,6 +27,11 @@ CONFIG_NVBOARD_VAL             := $(shell grep CONFIG_NVBOARD .config | cut -d'=
 
 VERILATOR_FLAGS =
 
+ifndef CONFIG_ITRACE
+CSRC_PIPELINE_CHISEL_SOC := $(filter-out %/disasm.cpp %/itrace.cpp, $(CSRC_PIPELINE_CHISEL_SOC))
+CSRC_PIPELINE_CHISEL_NPC := $(filter-out %/disasm.cpp %/itrace.cpp, $(CSRC_PIPELINE_CHISEL_NPC))
+endif
+
 ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
 VSRC = $(shell find $(VSRC_CACHE_SOC_DIR) -name "*.v" -o -name "*.sv" 2>/dev/null) \
        $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)

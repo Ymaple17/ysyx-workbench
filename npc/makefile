@@ -197,6 +197,7 @@ $(EXEC): $(VSRC) $(CSRC) $(NVBOARD_ARCHIVE)
 
 sim: all $(PROGRAM)
 	$(EXEC) $(PROGRAM) $(ARGS)
+	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
 
 run:
 	$(MAKE) sim

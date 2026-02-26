@@ -294,7 +294,7 @@ sta:
 		$(abspath $(VSRC_CACHE_NPC))"
 	cat ../yosys-sta/result/ysyx_25020039-500MHz/synth_stat.txt
 
-clean: chisel-clean
+clean: 
 	rm -rf $(OBJ_DIR) $(BUILD_DIR)
 ifdef CONFIG_WAVEFORM
 	rm -f $(CONFIG_WAVEFORM_FILE)

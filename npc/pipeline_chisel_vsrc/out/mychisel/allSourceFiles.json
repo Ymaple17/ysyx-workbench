@@ -21,9 +21,9 @@
         "ref:v0:a3e812a3:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/uart.scala",
         "ref:v0:7ddbe0c4:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/clint.scala",
         "ref:v0:0b26d86b:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/axi.scala",
-        "ref:v0:b1d8b0ce:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/sram.scala",
+        "ref:v0:ca69b52b:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/sram.scala",
         "ref:v0:3c431473:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/config.scala"
     ],
-    "valueHash": 281846727,
-    "inputsHash": 642572786
+    "valueHash": -1211245681,
+    "inputsHash": 1373944108
 }

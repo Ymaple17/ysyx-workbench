@@ -312,6 +312,7 @@ class Control_IO extends Bundle{
 }
 
 class Control(val conf: CoreConfig) extends Module{
+      override def desiredName = "ysyx_25020039_Control"
     val io = IO(new Control_IO)
     val default = INST_Control.default
     val map = INST_Control.map

@@ -72,7 +72,7 @@ EXEC      = $(OBJ_DIR)/V$(TOP_MODULE)
 BUILD_DIR ?= build
 PROGRAM  ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 
-CFLAGS       = -Wall -std=c++11 -g
+CFLAGS       = -Wall -std=c++17 -g
 CXXFLAGS     = $(CFLAGS)
 LDFLAGS_BASE = -lreadline -lSDL2 -ldl
 
@@ -238,7 +238,7 @@ verilog:
 		echo "[ERROR] $(VSRC_CACHE_SOC_DIR)/ysyx_25020039.sv 不存在，请先运行 make soc"; \
 		exit 1; \
 	fi
-	@cat $(CHISEL_WORK_DIR)/Ebreak.v $(VSRC_CACHE_SOC_DIR)/ysyx_25020039.sv > $(VERILOG_OUT)
+	@cat $(CHISEL_WORK_DIR)/ysyx_25020039_Ebreak.v $(VSRC_CACHE_SOC_DIR)/ysyx_25020039.sv > $(VERILOG_OUT)
 	@echo "[INFO] Generated verilog: $(VERILOG_OUT)"
 
 $(MEM_HEX): $(IMG)

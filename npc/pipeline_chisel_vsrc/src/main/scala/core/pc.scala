@@ -14,6 +14,7 @@ class PC_IO extends Bundle{
 }
 
 class PC(val conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_PC"
     val io = IO(new PC_IO)
     io.pc_src := MuxCase(PC_NONE, Seq(
         (io.jump === JUMP_BEQ) -> Mux(io.zero_flag.asBool, PC_IMM, PC_PLUS4),

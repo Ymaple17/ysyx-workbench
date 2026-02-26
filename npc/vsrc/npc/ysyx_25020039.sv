@@ -68,7 +68,7 @@ module ysyx_25020039_IFU(
   assign io_imem_rready = work | _io_imem_rready_T;
 endmodule
 
-module Control(
+module ysyx_25020039_Control(
   output        io_signals_ifu_bits_is_fencei,
   output [2:0]  io_signals_idu_imm_type,
   output        io_signals_idu_rs1_ren,
@@ -369,7 +369,7 @@ module Control(
   assign io_irq = ~_GEN_17 & _control_signals_T_637;
 endmodule
 
-module IMM(
+module ysyx_25020039_IMM(
   input  [31:0] io_inst,
   input  [2:0]  io_imm_type,
   output [31:0] io_imm_ext
@@ -431,7 +431,7 @@ module ysyx_25020039_IDU(
   wire       _controller_io_signals_ifu_bits_is_fencei;
   wire [2:0] _controller_io_signals_idu_imm_type;
   wire       io_is_fencei = _controller_io_signals_ifu_bits_is_fencei & io_in_valid;
-  Control controller (
+  ysyx_25020039_Control controller (
     .io_signals_ifu_bits_is_fencei (_controller_io_signals_ifu_bits_is_fencei),
     .io_signals_idu_imm_type       (_controller_io_signals_idu_imm_type),
     .io_signals_idu_rs1_ren        (io_rs1_ren),
@@ -451,7 +451,7 @@ module ysyx_25020039_IDU(
     .io_irq                        (io_out_bits_state_state),
     .io_inst                       (io_in_bits_inst)
   );
-  IMM imm (
+  ysyx_25020039_IMM imm (
     .io_inst     (io_in_bits_inst),
     .io_imm_type (_controller_io_signals_idu_imm_type),
     .io_imm_ext  (io_out_bits_imm_ext)
@@ -525,7 +525,7 @@ module ysyx_25020039_ALU(
   assign io_zero_flag = casez_tmp == 32'h0;
 endmodule
 
-module PC(
+module ysyx_25020039_PC(
   input  [3:0] io_jump,
   input        io_zero_flag,
                io_cmp_flag,
@@ -613,7 +613,7 @@ module ysyx_25020039_EXU(
     .io_result      (_alu_io_result),
     .io_zero_flag   (_alu_io_zero_flag)
   );
-  PC exu_pc (
+  ysyx_25020039_PC exu_pc (
     .io_jump      (io_in_bits_signals_exu_jump),
     .io_zero_flag (_alu_io_zero_flag),
     .io_cmp_flag  (_alu_io_result[0]),

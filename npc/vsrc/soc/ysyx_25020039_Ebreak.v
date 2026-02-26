@@ -1,6 +1,6 @@
 
 
-module Ebreak(
+module ysyx_25020039_Ebreak(
   input is_ebreak
 );
 

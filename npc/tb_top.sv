@@ -24,6 +24,7 @@ module tb_top;
   );
 
   initial begin
+    // Simulation control
     $display("[SIM] Simulation started. Waiting for ebreak...");
     
     wait(ebreak == 1);

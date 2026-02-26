@@ -284,14 +284,14 @@ sim-iverilog-netlist: $(MEM_HEX) $(IVERILOG_BIN_NETLIST_IV)
 	$(VVP) -n $(IVERILOG_BIN_NETLIST_IV)
 
 sta:
-	@if [ ! -f "$(VSRC_CACHE_NPC)" ]; then \
-		echo "[ERROR] $(VSRC_CACHE_NPC) 不存在，请先运行 make npc"; \
+	@if [ -z "$(wildcard $(VSRC_CACHE_SOC_DIR)/*.sv $(VSRC_CACHE_SOC_DIR)/*.v)" ]; then \
+		echo "[ERROR] $(VSRC_CACHE_SOC_DIR)/ 为空，请先运行 make soc"; \
 		exit 1; \
 	fi
 	rm -rf ../yosys-sta/result/ysyx_25020039-500MHz
 	$(MAKE) -C ../yosys-sta sta DESIGN=ysyx_25020039 \
-		RTL_FILES="$(abspath $(filter-out %/SRAM.sv %/DPI_Mem.v %/ysyx_25020039.sv, $(VSRC_PIPELINE_CHISEL))) \
-		$(abspath $(VSRC_CACHE_NPC))"
+		RTL_FILES="$(abspath $(filter-out %/SRAM.sv %/DPI_Mem.v %/SimUART.v, \
+		$(shell find $(VSRC_CACHE_SOC_DIR) -name "*.v" -o -name "*.sv")))"
 	cat ../yosys-sta/result/ysyx_25020039-500MHz/synth_stat.txt
 
 clean: 

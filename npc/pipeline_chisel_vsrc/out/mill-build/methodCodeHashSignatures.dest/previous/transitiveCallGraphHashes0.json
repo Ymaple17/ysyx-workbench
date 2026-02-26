@@ -2888,12 +2888,8 @@
     -300655753
   ],
   [
-    "call os.package$#home()os.Path",
-    883360179
-  ],
-  [
     "def build_.package_$mychisel$.$anonfun$sources$3(build_.package_$mychisel$)scala.collection.immutable.Seq",
-    -855102088
+    459103860
   ],
   [
     "call mill.scalalib.ScalaModule.manifest$(mill.scalalib.ScalaModule)mill.define.Target",
@@ -3073,19 +3069,19 @@
   ],
   [
     "call build_.package_$mychisel$.$anonfun$sources$3(build_.package_$mychisel$)scala.collection.immutable.Seq",
-    -855102088
+    459103860
   ],
   [
     "def build_.package_$mychisel$.$anonfun$sources$2(build_.package_$mychisel$,scala.collection.immutable.Seq,mill.api.Ctx)mill.api.Result",
-    641866702
+    1956072650
   ],
   [
     "call build_.package_$mychisel$.$anonfun$sources$2(build_.package_$mychisel$,scala.collection.immutable.Seq,mill.api.Ctx)mill.api.Result",
-    641866702
+    1956072650
   ],
   [
     "def build_.package_$mychisel$.$anonfun$sources$1(build_.package_$mychisel$)mill.define.SourcesImpl",
-    1998973034
+    -981788314
   ],
   [
     "call mill.scalalib.ScalaModule.zincAuxiliaryClassFileExtensions$(mill.scalalib.ScalaModule)mill.define.Target",
@@ -3105,11 +3101,11 @@
   ],
   [
     "call build_.package_$mychisel$.$anonfun$sources$1(build_.package_$mychisel$)mill.define.SourcesImpl",
-    1998973034
+    -981788314
   ],
   [
     "def build_.package_$mychisel$#sources()mill.define.Target",
-    -912441192
+    401764756
   ],
   [
     "call mill.scalalib.SemanticDbJavaModule.semanticDbVersion$(mill.scalalib.SemanticDbJavaModule)mill.define.Target",
@@ -3397,7 +3393,7 @@
   ],
   [
     "def build_.package_$mychisel$.$deserializeLambda$(java.lang.invoke.SerializedLambda)java.lang.Object",
-    -219968095
+    -572317547
   ],
   [
     "call mill.scalalib.ScalaModule.semanticDbScalaVersion$(mill.scalalib.ScalaModule)mill.define.Target",

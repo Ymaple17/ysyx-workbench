@@ -1,8 +1,13 @@
 VERILATOR = verilator
 TOP_MODULE = top
 
+CONFIG_PIPELINE_CHISEL_SOC_VAL ?= y
+CONFIG_PIPELINE_CHISEL_NPC_VAL ?= n
+CONFIG_NVBOARD_VAL ?= n
+
 ifeq (,$(wildcard .config))
-$(error .config file not found, please run 'make menuconfig' first)
+$(warning .config file not found, using default SOC mode)
+#$(error .config file not found, please run 'make menuconfig' first)
 endif
 
 include .config
@@ -196,9 +201,10 @@ $(EXEC): $(VSRC) $(CSRC) $(NVBOARD_ARCHIVE)
 		--LDFLAGS "$(LDFLAGS_BASE) $(LDFLAGS_DIFFTEST)"
 
 sim: all $(PROGRAM)
-	$(EXEC) $(PROGRAM) $(ARGS)
 	$(call git_commit, "sim RTL") # DO NOT REMOVE THIS LINE!!!
-
+	$(EXEC) $(PROGRAM) $(ARGS)
+	$(info [INFO] Simulation completed successfully)
+	
 run:
 	$(MAKE) sim
 

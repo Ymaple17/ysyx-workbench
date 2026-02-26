@@ -820,8 +820,7 @@ module ysyx_25020039_WBU(
   output        io_csr_wen,
                 io_state_write_state,
                 io_state_write_en,
-  input         io_is_flush,
-  output        io_ebreak
+  input         io_is_flush
 );
 
   reg [31:0] casez_tmp;
@@ -837,6 +836,9 @@ module ysyx_25020039_WBU(
         casez_tmp = io_in_bits_pc;
     endcase
   end // always_comb
+  Ebreak ebreak (
+    .is_ebreak (io_in_bits_is_ebreak)
+  );
   assign io_refile_wdata =
     io_in_bits_signals_wbu_reg_write_sel == 3'h5
       ? io_in_bits_csr_rd1
@@ -854,7 +856,6 @@ module ysyx_25020039_WBU(
   assign io_csr_wen = io_in_bits_signals_wbu_csr_write & io_in_valid & ~io_is_flush;
   assign io_state_write_state = io_in_bits_state_state;
   assign io_state_write_en = io_in_valid & ~io_is_flush;
-  assign io_ebreak = io_in_bits_is_ebreak & io_in_valid & ~io_is_flush;
 endmodule
 
 // VCS coverage exclude_file
@@ -1186,8 +1187,7 @@ module ysyx_25020039_Core(
   input         io_dmem_wready,
   input  [1:0]  io_dmem_bresp,
   input         io_dmem_bvalid,
-  output        io_dmem_bready,
-                io_ebreak
+  output        io_dmem_bready
 );
 
   wire        exu_io_is_flush;
@@ -1839,8 +1839,7 @@ module ysyx_25020039_Core(
     .io_csr_wen                           (_wbu_io_csr_wen),
     .io_state_write_state                 (_wbu_io_state_write_state),
     .io_state_write_en                    (_wbu_io_state_write_en),
-    .io_is_flush                          (is_irq),
-    .io_ebreak                            (io_ebreak)
+    .io_is_flush                          (is_irq)
   );
   ysyx_25020039_ICache icache (
     .clock                    (clock),
@@ -2460,10 +2459,9 @@ module ysyx_25020039_SRAM(
 endmodule
 
 module ysyx_25020039(
-  input  clock,
-         reset,
-         io_interrupt,
-  output io_ebreak
+  input clock,
+        reset,
+        io_interrupt
 );
 
   wire        _sram_io_axi_arready;
@@ -2553,8 +2551,7 @@ module ysyx_25020039(
     .io_dmem_wready  (_xbar_io_dmem_wready),
     .io_dmem_bresp   (_xbar_io_dmem_bresp),
     .io_dmem_bvalid  (_xbar_io_dmem_bvalid),
-    .io_dmem_bready  (_core_io_dmem_bready),
-    .io_ebreak       (io_ebreak)
+    .io_dmem_bready  (_core_io_dmem_bready)
   );
   ysyx_25020039_Xbar xbar (
     .clock            (clock),

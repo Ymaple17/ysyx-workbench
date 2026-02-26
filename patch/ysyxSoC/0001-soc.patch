@@ -1,7 +1,7 @@
 From a5b8d95b02edb09dd5350c11f8fe3df2ce0c1c3e Mon Sep 17 00:00:00 2001
 From: ysyx-100012487 <15323232995@163.com>
 Date: Thu, 26 Feb 2026 17:46:18 +0800
-Subject: [PATCH] soc
+Subject: [PATCH 1/2] soc
 
 ---
  perip/amba/apb_delayer.v                     |  94 ++++++-

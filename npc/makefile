@@ -234,11 +234,11 @@ VERILOG_OUT = $(BUILD_DIR)/ysyx_25020039.sv
 
 verilog:
 	@mkdir -p $(BUILD_DIR)
-	@if [ ! -f "$(VSRC_CACHE_NPC)" ]; then \
-		echo "[ERROR] $(VSRC_CACHE_NPC) 不存在，请先运行 make npc"; \
+	@if [ ! -f "$(VSRC_CACHE_SOC_DIR)/ysyx_25020039.sv" ]; then \
+		echo "[ERROR] $(VSRC_CACHE_SOC_DIR)/ysyx_25020039.sv 不存在，请先运行 make soc"; \
 		exit 1; \
 	fi
-	@cat $(CHISEL_WORK_DIR)/Ebreak.v $(VSRC_CACHE_NPC) > $(VERILOG_OUT)
+	@cat $(CHISEL_WORK_DIR)/Ebreak.v $(VSRC_CACHE_SOC_DIR)/ysyx_25020039.sv > $(VERILOG_OUT)
 	@echo "[INFO] Generated verilog: $(VERILOG_OUT)"
 
 $(MEM_HEX): $(IMG)

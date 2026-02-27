@@ -286,7 +286,7 @@ $(IVERILOG_BIN_NETLIST_IV): $(VSRC_CACHE_NETLIST) $(CELLS) $(MEM_HEX)
 		$(IVERILOG_NETLIST_VSRC) \
 		tb_top.sv
 
-sim-iverilog-netlist: $(MEM_HEX) $(IVERILOG_BIN_NETLIST_IV)
+sim-iverilog-netlist: syn-npc $(MEM_HEX) $(IVERILOG_BIN_NETLIST_IV)
 	$(VVP) -n $(IVERILOG_BIN_NETLIST_IV)
 
 sta:

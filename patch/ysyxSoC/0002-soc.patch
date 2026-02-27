@@ -1,7 +1,7 @@
 From 3f177a5b16b1a1f3241da7d7d8714845984ac798 Mon Sep 17 00:00:00 2001
 From: ysyx-100012487 <15323232995@163.com>
 Date: Thu, 26 Feb 2026 18:11:16 +0800
-Subject: [PATCH 2/2]  soc
+Subject: [PATCH 2/3]  soc
 
 ---
  perip/spi/rtl/spi_top_apb.v | 5 +++--

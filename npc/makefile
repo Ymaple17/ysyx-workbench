@@ -7,9 +7,6 @@ endif
 
 include .config
 include Makefile.diff
-ifndef CONFIG_NVBOARD
-CONFIG_NVBOARD = y
-endif
 
 VSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
 CSRC_PIPELINE_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find pipeline_chisel_soc_csrc -name "*.cpp" -o -name "*.c"))
@@ -26,7 +23,8 @@ VSRC_CACHE_NETLIST = $(VSRC_CACHE_NPC_DIR)/ysyx_25020039.netlist.syn.v
 
 CONFIG_PIPELINE_CHISEL_SOC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_SOC .config | cut -d'=' -f2)
 CONFIG_PIPELINE_CHISEL_NPC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_NPC .config | cut -d'=' -f2)
-CONFIG_NVBOARD_VAL             := $(shell grep CONFIG_NVBOARD .config | cut -d'=' -f2)
+#CONFIG_NVBOARD_VAL             := $(shell grep CONFIG_NVBOARD .config | cut -d'=' -f2)
+CONFIG_NVBOARD_VAL             := y
 
 VERILATOR_FLAGS =
 

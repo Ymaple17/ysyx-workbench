@@ -858,7 +858,7 @@ module ysyx_25020039_WBU(
 endmodule
 
 // VCS coverage exclude_file
-module tag_array_0_2x28(
+module ysyx_25020039_tag_array_0_2x28(
   input         R0_addr,
                 R0_en,
                 R0_clk,
@@ -878,7 +878,7 @@ module tag_array_0_2x28(
 endmodule
 
 // VCS coverage exclude_file
-module data_array_0_4x32(
+module ysyx_25020039_data_array_0_4x32(
   input  [1:0]  R0_addr,
   input         R0_en,
                 R0_clk,
@@ -920,8 +920,8 @@ module ysyx_25020039_ICache(
   wire [31:0] miss_data;
   wire        io_in_arready_0;
   wire        hit;
-  wire [31:0] _data_array_0_ext_R0_data;
-  wire [27:0] _tag_array_0_ext_R0_data;
+  wire [31:0] _ysyx_25020039_data_array_0_ext_R0_data;
+  wire [27:0] _ysyx_25020039_tag_array_0_ext_R0_data;
   reg  [1:0]  count;
   reg         valid_array_0_0;
   reg         valid_array_1_0;
@@ -969,11 +969,12 @@ module ysyx_25020039_ICache(
   wire [31:0] _base_addr_T_1 = (io_in_arvalid ? io_in_araddr : in_addr) - {29'h0, offset};
   wire [1:0]  _GEN = {index, 1'h0};
   wire        _GEN_0 =
-    (index ? valid_array_1_0 : valid_array_0_0) & _tag_array_0_ext_R0_data == tagA;
+    (index ? valid_array_1_0 : valid_array_0_0)
+    & _ysyx_25020039_tag_array_0_ext_R0_data == tagA;
   assign hit = _GEN_0 & io_in_arvalid;
   wire [31:0] _io_in_rdata_T_4 =
     hit & state != 3'h2
-      ? (_GEN_0 ? _data_array_0_ext_R0_data : 32'h0)
+      ? (_GEN_0 ? _ysyx_25020039_data_array_0_ext_R0_data : 32'h0)
       : (|count) ? 32'h0 : miss_data;
   assign io_in_arready_0 = _next_state_T_13 & ~_io_in_arready_T;
   wire        io_in_rvalid_0 =
@@ -1022,21 +1023,21 @@ module ysyx_25020039_ICache(
         requested_miss_data <= io_out_rdata;
     end
   end // always @(posedge)
-  tag_array_0_2x28 tag_array_0_ext (
+  ysyx_25020039_tag_array_0_2x28 ysyx_25020039_tag_array_0_ext (
     .R0_addr (index),
     .R0_en   (1'h1),
     .R0_clk  (clock),
-    .R0_data (_tag_array_0_ext_R0_data),
+    .R0_data (_ysyx_25020039_tag_array_0_ext_R0_data),
     .W0_addr (index),
     .W0_en   (io_out_rvalid),
     .W0_clk  (clock),
     .W0_data (tagA)
   );
-  data_array_0_4x32 data_array_0_ext (
+  ysyx_25020039_data_array_0_4x32 ysyx_25020039_data_array_0_ext (
     .R0_addr (_GEN + {1'h0, offset[2]}),
     .R0_en   (_GEN_0),
     .R0_clk  (clock),
-    .R0_data (_data_array_0_ext_R0_data),
+    .R0_data (_ysyx_25020039_data_array_0_ext_R0_data),
     .W0_addr (_GEN + {1'h0, _current_word_idx_T_2}),
     .W0_en   (io_out_rvalid),
     .W0_clk  (clock),
@@ -1055,7 +1056,7 @@ module ysyx_25020039_ICache(
 endmodule
 
 // VCS coverage exclude_file
-module rf_16x32(
+module ysyx_25020039_rf_16x32(
   input  [3:0]  R0_addr,
   input         R0_en,
                 R0_clk,
@@ -1090,24 +1091,24 @@ module ysyx_25020039_Refile(
   input         io_write_wen
 );
 
-  wire [31:0] _rf_ext_R0_data;
-  wire [31:0] _rf_ext_R1_data;
-  rf_16x32 rf_ext (
+  wire [31:0] _ysyx_25020039_rf_ext_R0_data;
+  wire [31:0] _ysyx_25020039_rf_ext_R1_data;
+  ysyx_25020039_rf_16x32 ysyx_25020039_rf_ext (
     .R0_addr (io_read_raddr2[3:0]),
     .R0_en   (1'h1),
     .R0_clk  (clock),
-    .R0_data (_rf_ext_R0_data),
+    .R0_data (_ysyx_25020039_rf_ext_R0_data),
     .R1_addr (io_read_raddr1[3:0]),
     .R1_en   (1'h1),
     .R1_clk  (clock),
-    .R1_data (_rf_ext_R1_data),
+    .R1_data (_ysyx_25020039_rf_ext_R1_data),
     .W0_addr (io_write_waddr[3:0]),
     .W0_en   (io_write_wen),
     .W0_clk  (clock),
     .W0_data (io_write_wdata)
   );
-  assign io_read_rdata1 = io_read_raddr1 == 5'h0 ? 32'h0 : _rf_ext_R1_data;
-  assign io_read_rdata2 = io_read_raddr2 == 5'h0 ? 32'h0 : _rf_ext_R0_data;
+  assign io_read_rdata1 = io_read_raddr1 == 5'h0 ? 32'h0 : _ysyx_25020039_rf_ext_R1_data;
+  assign io_read_rdata2 = io_read_raddr2 == 5'h0 ? 32'h0 : _ysyx_25020039_rf_ext_R0_data;
 endmodule
 
 module ysyx_25020039_CSR(

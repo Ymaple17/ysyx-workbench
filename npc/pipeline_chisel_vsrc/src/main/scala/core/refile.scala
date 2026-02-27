@@ -24,7 +24,8 @@ class Refile_IO(xlen: Int) extends Bundle{
 class Refile(conf: CoreConfig) extends Module {
   override def desiredName = "ysyx_25020039_Refile"
   val io = IO(new Refile_IO(conf.xlen))
-  val rf = Mem(16, UInt(conf.xlen.W))
+  // val rf = Mem(16, UInt(conf.xlen.W))
+  val rf = Mem(16, UInt(conf.xlen.W)).suggestName("ysyx_25020039_rf")
   val rdata1_raw = rf(io.read.raddr1)
   val rdata2_raw = rf(io.read.raddr2)
   

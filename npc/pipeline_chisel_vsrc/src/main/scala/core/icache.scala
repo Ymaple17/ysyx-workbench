@@ -27,8 +27,15 @@ class ICache(val set : Int, val way : Int, val block_size : Int, val conf: CoreC
     val tag_size = 32 - m - n
 
     val valid_array = RegInit(VecInit(Seq.fill(set)(VecInit(Seq.fill(way)(false.B)))))
-    val tag_array = Seq.fill(way)(Mem(set, UInt(tag_size.W)))
-    val data_array = Seq.fill(way)(Mem(set * c, UInt(32.W))) 
+    // val tag_array = Seq.fill(way)(Mem(set, UInt(tag_size.W)))
+    // val data_array = Seq.fill(way)(Mem(set * c, UInt(32.W)))
+    val tag_array = (0 until way).map { i =>
+    Mem(set, UInt(tag_size.W)).suggestName(s"ysyx_25020039_tag_array_$i")
+    }.toSeq
+
+    val data_array = (0 until way).map { i =>
+    Mem(set * c, UInt(32.W)).suggestName(s"ysyx_25020039_data_array_$i")
+    }.toSeq
 
     val base_addr = Wire(UInt(32.W))
     val tagA = Wire(UInt(tag_size.W))

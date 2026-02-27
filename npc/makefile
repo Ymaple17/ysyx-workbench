@@ -272,7 +272,7 @@ syn-npc:
 	$(MAKE) -C ../yosys-sta syn DESIGN=ysyx_25020039 \
 		RTL_FILES="$(abspath $(filter-out %/ysyx_25020039.sv, $(VSRC_PIPELINE_CHISEL))) \
 		$(abspath $(VSRC_CACHE_NPC))"
-	@cp ../yosys-sta/result/ysyx_25020039-npc-500MHz/ysyx_25020039.netlist.syn.v \
+	@cp ../yosys-sta/ysyx_25020039-npc-500MHz/ysyx_25020039.netlist.syn.v \
 		$(VSRC_CACHE_NETLIST)
 
 $(IVERILOG_BIN_NETLIST_IV): $(VSRC_CACHE_NETLIST) $(CELLS) $(MEM_HEX)
@@ -286,7 +286,7 @@ $(IVERILOG_BIN_NETLIST_IV): $(VSRC_CACHE_NETLIST) $(CELLS) $(MEM_HEX)
 		$(IVERILOG_NETLIST_VSRC) \
 		tb_top.sv
 
-sim-iverilog-netlist: syn-npc $(MEM_HEX) $(IVERILOG_BIN_NETLIST_IV)
+sim-iverilog-netlist: $(MEM_HEX) $(IVERILOG_BIN_NETLIST_IV)
 	$(VVP) -n $(IVERILOG_BIN_NETLIST_IV)
 
 sta:

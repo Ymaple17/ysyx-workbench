@@ -5,6 +5,7 @@
 static Context* (*user_handler)(Event, Context*) = NULL;
 
 Context* __am_irq_handle(Context *c) {//instr
+  putch('!');
   if (user_handler) {
     Event ev = {0};
     switch (c->mcause) {
@@ -23,21 +24,38 @@ extern void __am_asm_trap(void);
 bool cte_init(Context*(*handler)(Event, Context*)) {
   // initialize exception entry
   asm volatile("csrw mtvec, %0" : : "r"(__am_asm_trap));//mtvec(_am_asm_trap)->_am_irq_handler
-
   // register event handler
   user_handler = handler;
 
   return true;
 }
-
-Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
+/*
+bool cte_init(Context*(*handler)(Event, Context*)) {
+  putch('C');
+  asm volatile("csrw mtvec, %0" : : "r"(__am_asm_trap));
   
-  Context *re = (Context *)kstack.end - 1;
-  re->mepc = (uintptr_t)entry;//entry function
-  re->mstatus = 0x1800;
-  re->gpr[10] = (uintptr_t)arg;//a0->arg
-  //printf("entry = 0x%08x, mepc = 0x%08x\n", entry, re->mepc);
-  return re; 
+  uintptr_t mtvec_val;
+  asm volatile("csrr %0, mtvec" : "=r"(mtvec_val));
+  
+  uintptr_t trap_addr = (uintptr_t)__am_asm_trap;
+  
+  // 打印两个地址
+  for(int i = 7; i >= 0; i--) { int d=(mtvec_val>>(i*4))&0xF; putch(d<10?d+'0':d-10+'A'); }
+  putch(' ');
+  for(int i = 7; i >= 0; i--) { int d=(trap_addr>>(i*4))&0xF; putch(d<10?d+'0':d-10+'A'); }
+  putch('\n');
+  
+  user_handler = handler;
+  putch('c');
+  return true;
+}
+*/
+Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
+  Context *cp = (Context *)(kstack.end - sizeof(Context));
+  cp->mstatus = 0x1800;
+  cp->mepc = (uintptr_t)entry;
+  cp->gpr[10] = (uintptr_t)(arg);
+  return cp;
 }
 
 void yield() {

@@ -67,7 +67,7 @@ SECTIONS {
   .data : ALIGN(4) {
     _data_start = .;
     *(.data*)
-    *(.data.extra*)  /* 包含 .data.extra */
+    *(.data.extra*)
     *(.sdata*)
 
     /* section information for initial. */

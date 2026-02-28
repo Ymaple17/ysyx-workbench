@@ -36,7 +36,7 @@ module ysyx_25020039_IFU(
   wire        io_in_ready_0 = ~io_in_valid | work | io_is_flush;
   always @(posedge clock) begin
     if (reset) begin
-      pc_reg <= 32'h80000000;
+      pc_reg <= 32'h30000000;
       first_cycle <= 1'h1;
       state <= 2'h0;
     end
@@ -61,7 +61,7 @@ module ysyx_25020039_IFU(
     io_is_flush
       ? io_correct_pc
       : first_cycle
-          ? 32'h80000000
+          ? 32'h30000000
           : io_in_valid ? io_in_bits_next_pc + 32'h4 : pc_reg + 32'h4;
   assign io_imem_araddr = io_imem_araddr_0;
   assign io_imem_arvalid = idle & _io_imem_arvalid_T;
@@ -86,6 +86,7 @@ module ysyx_25020039_Control(
   output        io_signals_wbu_csr_write,
   output [1:0]  io_signals_wbu_csr_sel,
   output        io_irq,
+  output [7:0]  io_irq_num,
   input  [31:0] io_inst
 );
 
@@ -367,6 +368,7 @@ module ysyx_25020039_Control(
           ? 2'h3
           : _GEN_6 ? 2'h0 : _control_signals_T_81 ? 2'h1 : {_control_signals_T_759, 1'h0};
   assign io_irq = ~_GEN_17 & _control_signals_T_637;
+  assign io_irq_num = _GEN_17 | ~_control_signals_T_637 ? 8'h0 : 8'hB;
 endmodule
 
 module ysyx_25020039_IMM(
@@ -414,6 +416,7 @@ module ysyx_25020039_IDU(
   output [11:0] io_out_bits_csr_waddr,
   output        io_out_bits_is_ebreak,
                 io_out_bits_state_state,
+  output [7:0]  io_out_bits_state_state_num,
   input         io_ifu_signals_ready,
   output        io_ifu_signals_valid,
                 io_ifu_signals_bits_is_fencei,
@@ -449,6 +452,7 @@ module ysyx_25020039_IDU(
     .io_signals_wbu_csr_write      (io_out_bits_signals_wbu_csr_write),
     .io_signals_wbu_csr_sel        (io_out_bits_signals_wbu_csr_sel),
     .io_irq                        (io_out_bits_state_state),
+    .io_irq_num                    (io_out_bits_state_state_num),
     .io_inst                       (io_in_bits_inst)
   );
   ysyx_25020039_IMM imm (
@@ -574,7 +578,8 @@ module ysyx_25020039_EXU(
   input  [11:0] io_in_bits_csr_waddr,
   input         io_in_bits_is_ebreak,
                 io_in_bits_state_state,
-                io_out_ready,
+  input  [7:0]  io_in_bits_state_state_num,
+  input         io_out_ready,
   output        io_out_valid,
   output [7:0]  io_out_bits_signals_lsu_mem_wmask,
   output [2:0]  io_out_bits_signals_lsu_mem_rd,
@@ -594,7 +599,8 @@ module ysyx_25020039_EXU(
   output [11:0] io_out_bits_csr_waddr,
   output        io_out_bits_is_ebreak,
                 io_out_bits_state_state,
-                io_pc_valid,
+  output [7:0]  io_out_bits_state_state_num,
+  output        io_pc_valid,
   output [31:0] io_pc_bits_pc4_imm,
                 io_pc_bits_pc4_rs2,
                 io_pc_bits_pc4,
@@ -639,6 +645,7 @@ module ysyx_25020039_EXU(
   assign io_out_bits_csr_waddr = io_in_bits_csr_waddr;
   assign io_out_bits_is_ebreak = io_in_bits_is_ebreak;
   assign io_out_bits_state_state = io_in_bits_state_state;
+  assign io_out_bits_state_state_num = io_in_bits_state_state_num;
   assign io_pc_valid = io_in_valid & io_in_ready_0;
   assign io_pc_bits_pc4_imm = io_in_bits_pc + io_in_bits_imm_ext & 32'hFFFFFFFE;
   assign io_pc_bits_pc4_rs2 = _alu_io_result & 32'hFFFFFFFE;
@@ -668,6 +675,7 @@ module ysyx_25020039_LSU(
   input  [11:0] io_in_bits_csr_waddr,
   input         io_in_bits_is_ebreak,
                 io_in_bits_state_state,
+  input  [7:0]  io_in_bits_state_state_num,
   output        io_out_valid,
                 io_out_bits_signals_wbu_reg_write,
   output [2:0]  io_out_bits_signals_wbu_reg_write_sel,
@@ -683,9 +691,11 @@ module ysyx_25020039_LSU(
   output [11:0] io_out_bits_csr_waddr,
   output        io_out_bits_is_ebreak,
                 io_out_bits_state_state,
+  output [7:0]  io_out_bits_state_state_num,
   input         io_is_flush,
   output [31:0] io_dmem_araddr,
   output        io_dmem_arvalid,
+  output [2:0]  io_dmem_arsize,
   input         io_dmem_arready,
   input  [31:0] io_dmem_rdata,
   input  [1:0]  io_dmem_rresp,
@@ -693,6 +703,7 @@ module ysyx_25020039_LSU(
   output        io_dmem_rready,
   output [31:0] io_dmem_awaddr,
   output        io_dmem_awvalid,
+  output [2:0]  io_dmem_awsize,
   input         io_dmem_awready,
   output [31:0] io_dmem_wdata,
   output [3:0]  io_dmem_wstrb,
@@ -708,6 +719,10 @@ module ysyx_25020039_LSU(
     ~io_in_bits_signals_lsu_mem_write & io_in_bits_signals_lsu_mem_valid;
   wire        is_store =
     io_in_bits_signals_lsu_mem_write & io_in_bits_signals_lsu_mem_valid;
+  wire        _io_out_bits_mem_read_T_2 = io_in_bits_signals_lsu_mem_rd == 3'h2;
+  wire        _io_out_bits_mem_read_T_4 = io_in_bits_signals_lsu_mem_rd == 3'h3;
+  wire        _io_out_bits_mem_read_T_6 = io_in_bits_signals_lsu_mem_rd == 3'h4;
+  wire        _io_out_bits_mem_read_T_8 = io_in_bits_signals_lsu_mem_rd == 3'h5;
   reg  [1:0]  state;
   reg         ar_handshake_done;
   reg         aw_handshake_done;
@@ -724,6 +739,8 @@ module ysyx_25020039_LSU(
   wire [31:0] rword = io_dmem_rdata >> {26'h0, _data_offset_T, 3'h0};
   wire [94:0] _io_dmem_wdata_T_2 =
     {63'h0, io_in_bits_rd2} << {89'h0, _data_offset_T, 3'h0};
+  wire        has_laf = io_dmem_rvalid & (|io_dmem_rresp);
+  wire        has_saf = io_dmem_bvalid & (|io_dmem_bresp);
   assign idle = io_in_valid & ~io_is_flush;
   wire        ready = _ready_T | ~is_load & ~is_store;
   wire        _GEN = (|state) | io_is_flush;
@@ -770,26 +787,44 @@ module ysyx_25020039_LSU(
   assign io_out_bits_pc = io_in_bits_pc;
   assign io_out_bits_imm_ext = io_in_bits_imm_ext;
   assign io_out_bits_mem_read =
-    io_in_bits_signals_lsu_mem_rd == 3'h5
+    _io_out_bits_mem_read_T_8
       ? {16'h0, rword[15:0]}
-      : io_in_bits_signals_lsu_mem_rd == 3'h4
+      : _io_out_bits_mem_read_T_6
           ? {24'h0, rword[7:0]}
-          : io_in_bits_signals_lsu_mem_rd == 3'h3
+          : _io_out_bits_mem_read_T_4
               ? rword
-              : io_in_bits_signals_lsu_mem_rd == 3'h2
+              : _io_out_bits_mem_read_T_2
                   ? {{16{rword[15]}}, rword[15:0]}
                   : {{24{rword[7]}}, rword[7:0]};
   assign io_out_bits_waddr = io_in_bits_waddr;
   assign io_out_bits_csr_waddr = io_in_bits_csr_waddr;
   assign io_out_bits_is_ebreak = io_in_bits_is_ebreak;
-  assign io_out_bits_state_state =
-    io_dmem_rvalid & (|io_dmem_rresp) | io_dmem_bvalid & (|io_dmem_bresp)
-    | io_in_bits_state_state;
+  assign io_out_bits_state_state = has_laf | has_saf | io_in_bits_state_state;
+  assign io_out_bits_state_state_num =
+    has_saf ? 8'h7 : has_laf ? 8'h5 : io_in_bits_state_state_num;
   assign io_dmem_araddr = io_in_bits_alu_result;
   assign io_dmem_arvalid = io_dmem_arvalid_0;
+  assign io_dmem_arsize =
+    {1'h0,
+     _io_out_bits_mem_read_T_8
+       ? 2'h1
+       : _io_out_bits_mem_read_T_6
+           ? 2'h0
+           : _io_out_bits_mem_read_T_4
+               ? 2'h2
+               : _io_out_bits_mem_read_T_2
+                   ? 2'h1
+                   : {io_in_bits_signals_lsu_mem_rd != 3'h1, 1'h0}};
   assign io_dmem_rready = is_load & _io_dmem_bready_T | _io_dmem_bready_T_2;
   assign io_dmem_awaddr = io_in_bits_alu_result;
   assign io_dmem_awvalid = io_dmem_awvalid_0;
+  assign io_dmem_awsize =
+    {1'h0,
+     io_in_bits_signals_lsu_mem_wmask == 8'hF
+       ? 2'h2
+       : io_in_bits_signals_lsu_mem_wmask == 8'h3
+           ? 2'h1
+           : {io_in_bits_signals_lsu_mem_wmask != 8'h1, 1'h0}};
   assign io_dmem_wdata = _io_dmem_wdata_T_2[31:0];
   assign io_dmem_wstrb = _mem_wmask_T_1[3:0];
   assign io_dmem_wvalid = io_dmem_wvalid_0;
@@ -812,6 +847,7 @@ module ysyx_25020039_WBU(
   input  [11:0] io_in_bits_csr_waddr,
   input         io_in_bits_is_ebreak,
                 io_in_bits_state_state,
+  input  [7:0]  io_in_bits_state_state_num,
   output [31:0] io_refile_wdata,
   output [4:0]  io_refile_waddr,
   output        io_refile_wen,
@@ -819,9 +855,9 @@ module ysyx_25020039_WBU(
   output [11:0] io_csr_waddr,
   output        io_csr_wen,
                 io_state_write_state,
-                io_state_write_en,
-  input         io_is_flush,
-  output        io_ebreak
+  output [7:0]  io_state_write_state_num,
+  output        io_state_write_en,
+  input         io_is_flush
 );
 
   reg [31:0] casez_tmp;
@@ -837,6 +873,9 @@ module ysyx_25020039_WBU(
         casez_tmp = io_in_bits_pc;
     endcase
   end // always_comb
+  ysyx_25020039_Ebreak ebreak (
+    .is_ebreak (io_in_bits_is_ebreak)
+  );
   assign io_refile_wdata =
     io_in_bits_signals_wbu_reg_write_sel == 3'h5
       ? io_in_bits_csr_rd1
@@ -853,8 +892,8 @@ module ysyx_25020039_WBU(
   assign io_csr_waddr = io_in_bits_csr_waddr;
   assign io_csr_wen = io_in_bits_signals_wbu_csr_write & io_in_valid & ~io_is_flush;
   assign io_state_write_state = io_in_bits_state_state;
+  assign io_state_write_state_num = io_in_bits_state_state_num;
   assign io_state_write_en = io_in_valid & ~io_is_flush;
-  assign io_ebreak = io_in_bits_is_ebreak & io_in_valid & ~io_is_flush;
 endmodule
 
 // VCS coverage exclude_file
@@ -908,6 +947,9 @@ module ysyx_25020039_ICache(
   output [31:0] io_in_rdata,
                 io_out_araddr,
   output        io_out_arvalid,
+  output [7:0]  io_out_arlen,
+  output [2:0]  io_out_arsize,
+  output [1:0]  io_out_arburst,
   input         io_out_arready,
   input  [31:0] io_out_rdata,
   input         io_out_rvalid,
@@ -976,13 +1018,14 @@ module ysyx_25020039_ICache(
     hit & state != 3'h2
       ? (_GEN_0 ? _ysyx_25020039_data_array_0_ext_R0_data : 32'h0)
       : (|count) ? 32'h0 : miss_data;
+  wire        _GEN_1 = _next_state_T_13 | ~_next_state_T_15;
   assign io_in_arready_0 = _next_state_T_13 & ~_io_in_arready_T;
   wire        io_in_rvalid_0 =
     _next_state_T_13
       ? hit
       : ~_next_state_T_15
         & (_next_state_T_17 ? ~(|count) & io_out_rvalid : _next_state_T_19);
-  wire        _GEN_1 =
+  wire        _GEN_2 =
     _next_state_T_13 | _next_state_T_15 | _next_state_T_17 | ~_next_state_T_19;
   reg  [31:0] requested_miss_data;
   wire        _current_word_idx_T_2 = 1'h0 - (count[0] - 1'h1);
@@ -1011,7 +1054,7 @@ module ysyx_25020039_ICache(
         io_out_rvalid & ~index | ~(_io_in_arready_T & ~fence_cnt) & valid_array_0_0;
       valid_array_1_0 <=
         io_out_rvalid & index | ~(_io_in_arready_T & fence_cnt) & valid_array_1_0;
-      if (io_in_rvalid_0 & _GEN_1)
+      if (io_in_rvalid_0 & _GEN_2)
         rdata <= _io_in_rdata_T_4;
       fence_cnt <= state == 3'h4 & ~fence_cnt & fence_cnt - 1'h1;
       if (_next_state_T) begin
@@ -1045,12 +1088,15 @@ module ysyx_25020039_ICache(
   );
   assign io_in_arready = io_in_arready_0;
   assign io_in_rvalid = io_in_rvalid_0;
-  assign io_in_rdata = _GEN_1 ? _io_in_rdata_T_4 : rdata;
+  assign io_in_rdata = _GEN_2 ? _io_in_rdata_T_4 : rdata;
   assign io_out_araddr =
-    _next_state_T_13 | ~_next_state_T_15
+    _GEN_1
       ? 32'h0
       : is_sdram ? _base_addr_T_1 : {28'h0, 2'h1 - count, 2'h0} + _base_addr_T_1;
   assign io_out_arvalid = ~_next_state_T_13 & _next_state_T_15;
+  assign io_out_arlen = _GEN_1 ? 8'h0 : {7'h0, is_sdram};
+  assign io_out_arsize = _next_state_T_13 ? 3'h0 : {1'h0, _next_state_T_15, 1'h0};
+  assign io_out_arburst = _next_state_T_13 ? 2'h0 : {1'h0, _next_state_T_15};
   assign io_out_rready = ~(_next_state_T_13 | _next_state_T_15) & _next_state_T_17;
   assign io_fencei_ready = fence_cnt;
 endmodule
@@ -1115,6 +1161,7 @@ module ysyx_25020039_CSR(
   input         clock,
                 reset,
                 io_irq,
+  input  [7:0]  io_irq_no,
   input  [31:0] io_irq_pc,
   input  [11:0] io_read_raddr,
   output [31:0] io_read_rdata,
@@ -1125,41 +1172,78 @@ module ysyx_25020039_CSR(
   input         io_write_wen
 );
 
-  reg  [31:0] rf_mtvec;
-  reg  [31:0] rf_mepc;
-  wire        _GEN = io_write_waddr == 12'h305;
+  reg  [31:0] rf_0;
+  reg  [31:0] rf_1;
+  reg  [31:0] rf_2;
+  reg  [31:0] rf_3;
+  reg  [31:0] rf_4;
+  reg  [31:0] rf_5;
+  reg  [31:0] casez_tmp;
+  always_comb begin
+    casez (io_read_raddr == 12'hF12
+             ? 3'h5
+             : io_read_raddr == 12'hF11
+                 ? 3'h4
+                 : io_read_raddr == 12'h342
+                     ? 3'h3
+                     : io_read_raddr == 12'h341 ? 3'h2 : {2'h0, io_read_raddr == 12'h305})
+      3'b000:
+        casez_tmp = rf_0;
+      3'b001:
+        casez_tmp = rf_1;
+      3'b010:
+        casez_tmp = rf_2;
+      3'b011:
+        casez_tmp = rf_3;
+      3'b100:
+        casez_tmp = rf_4;
+      3'b101:
+        casez_tmp = rf_5;
+      3'b110:
+        casez_tmp = rf_0;
+      default:
+        casez_tmp = rf_0;
+    endcase
+  end // always_comb
+  wire [2:0]  in_waddr =
+    io_write_waddr == 12'hF12
+      ? 3'h5
+      : io_write_waddr == 12'hF11
+          ? 3'h4
+          : io_write_waddr == 12'h342
+              ? 3'h3
+              : io_write_waddr == 12'h341 ? 3'h2 : {2'h0, io_write_waddr == 12'h305};
+  wire        _GEN = io_write_wen & ~io_irq;
   always @(posedge clock) begin
     if (reset) begin
-      rf_mtvec <= 32'h0;
-      rf_mepc <= 32'h0;
+      rf_0 <= 32'h0;
+      rf_1 <= 32'h0;
+      rf_2 <= 32'h0;
+      rf_3 <= 32'h0;
+      rf_4 <= 32'h0;
+      rf_5 <= 32'h0;
     end
     else begin
-      if (io_irq | ~(io_write_wen & _GEN)) begin
+      rf_0 <= _GEN & in_waddr == 3'h0 ? io_write_wdata : 32'h1800;
+      if (_GEN & in_waddr == 3'h1)
+        rf_1 <= io_write_wdata;
+      if (io_irq) begin
+        rf_2 <= io_irq_pc;
+        rf_3 <= {24'h0, io_irq_no};
       end
-      else
-        rf_mtvec <= io_write_wdata;
-      if (io_irq)
-        rf_mepc <= io_irq_pc;
-      else if (~io_write_wen | _GEN | io_write_waddr != 12'h341) begin
+      else begin
+        if (_GEN & in_waddr == 3'h2)
+          rf_2 <= io_write_wdata;
+        if (_GEN & in_waddr == 3'h3)
+          rf_3 <= io_write_wdata;
       end
-      else
-        rf_mepc <= io_write_wdata;
+      rf_4 <= _GEN & in_waddr == 3'h4 ? io_write_wdata : 32'h79737978;
+      rf_5 <= _GEN & in_waddr == 3'h5 ? io_write_wdata : 32'h25020039;
     end
   end // always @(posedge)
-  assign io_read_rdata =
-    io_read_raddr == 12'hF12
-      ? 32'h25020039
-      : io_read_raddr == 12'hF11
-          ? 32'h79737978
-          : io_read_raddr == 12'h342
-              ? 32'hB
-              : io_read_raddr == 12'h341
-                  ? rf_mepc
-                  : io_read_raddr == 12'h305
-                      ? rf_mtvec
-                      : io_read_raddr == 12'h300 ? 32'h1800 : 32'h0;
-  assign io_read_mtvec = rf_mtvec;
-  assign io_read_mepc = rf_mepc;
+  assign io_read_rdata = casez_tmp;
+  assign io_read_mtvec = rf_1;
+  assign io_read_mepc = rf_2;
 endmodule
 
 module ysyx_25020039_Core(
@@ -1167,12 +1251,16 @@ module ysyx_25020039_Core(
                 reset,
   output [31:0] io_imem_araddr,
   output        io_imem_arvalid,
+  output [7:0]  io_imem_arlen,
+  output [2:0]  io_imem_arsize,
+  output [1:0]  io_imem_arburst,
   input         io_imem_arready,
   input  [31:0] io_imem_rdata,
   input         io_imem_rvalid,
   output        io_imem_rready,
   output [31:0] io_dmem_araddr,
   output        io_dmem_arvalid,
+  output [2:0]  io_dmem_arsize,
   input         io_dmem_arready,
   input  [31:0] io_dmem_rdata,
   input  [1:0]  io_dmem_rresp,
@@ -1180,6 +1268,7 @@ module ysyx_25020039_Core(
   output        io_dmem_rready,
   output [31:0] io_dmem_awaddr,
   output        io_dmem_awvalid,
+  output [2:0]  io_dmem_awsize,
   input         io_dmem_awready,
   output [31:0] io_dmem_wdata,
   output [3:0]  io_dmem_wstrb,
@@ -1187,8 +1276,7 @@ module ysyx_25020039_Core(
   input         io_dmem_wready,
   input  [1:0]  io_dmem_bresp,
   input         io_dmem_bvalid,
-  output        io_dmem_bready,
-                io_ebreak
+  output        io_dmem_bready
 );
 
   wire        exu_io_is_flush;
@@ -1213,6 +1301,7 @@ module ysyx_25020039_Core(
   wire [11:0] _wbu_io_csr_waddr;
   wire        _wbu_io_csr_wen;
   wire        _wbu_io_state_write_state;
+  wire [7:0]  _wbu_io_state_write_state_num;
   wire        _wbu_io_state_write_en;
   wire        _lsu_io_in_ready;
   wire        _lsu_io_out_valid;
@@ -1230,6 +1319,7 @@ module ysyx_25020039_Core(
   wire [11:0] _lsu_io_out_bits_csr_waddr;
   wire        _lsu_io_out_bits_is_ebreak;
   wire        _lsu_io_out_bits_state_state;
+  wire [7:0]  _lsu_io_out_bits_state_state_num;
   wire        _exu_io_in_ready;
   wire        _exu_io_out_valid;
   wire [7:0]  _exu_io_out_bits_signals_lsu_mem_wmask;
@@ -1250,6 +1340,7 @@ module ysyx_25020039_Core(
   wire [11:0] _exu_io_out_bits_csr_waddr;
   wire        _exu_io_out_bits_is_ebreak;
   wire        _exu_io_out_bits_state_state;
+  wire [7:0]  _exu_io_out_bits_state_state_num;
   wire        _exu_io_pc_valid;
   wire [31:0] _exu_io_pc_bits_pc4_imm;
   wire [31:0] _exu_io_pc_bits_pc4_rs2;
@@ -1278,6 +1369,7 @@ module ysyx_25020039_Core(
   wire [11:0] _idu_io_out_bits_csr_waddr;
   wire        _idu_io_out_bits_is_ebreak;
   wire        _idu_io_out_bits_state_state;
+  wire [7:0]  _idu_io_out_bits_state_state_num;
   wire        _idu_io_ifu_signals_valid;
   wire        _idu_io_ifu_signals_bits_is_fencei;
   wire [4:0]  _idu_io_refile_raddr1;
@@ -1295,6 +1387,7 @@ module ysyx_25020039_Core(
   wire        _ifu_io_imem_arvalid;
   wire        _ifu_io_imem_rready;
   reg         is_irq;
+  reg  [7:0]  csr_io_irq_no_REG;
   reg  [31:0] csr_io_irq_pc_REG;
   reg  [31:0] ifu_io_in_bits_r_next_pc;
   reg         ifu_io_in_valid_r;
@@ -1321,6 +1414,7 @@ module ysyx_25020039_Core(
   reg  [11:0] exu_io_in_bits_r_csr_waddr;
   reg         exu_io_in_bits_r_is_ebreak;
   reg         exu_io_in_bits_r_state_state;
+  reg  [7:0]  exu_io_in_bits_r_state_state_num;
   reg         exu_io_in_valid_r;
   wire        exu_io_in_valid = exu_io_in_valid_r & ~exu_io_is_flush;
   reg  [7:0]  lsu_io_in_bits_r_signals_lsu_mem_wmask;
@@ -1341,6 +1435,7 @@ module ysyx_25020039_Core(
   reg  [11:0] lsu_io_in_bits_r_csr_waddr;
   reg         lsu_io_in_bits_r_is_ebreak;
   reg         lsu_io_in_bits_r_state_state;
+  reg  [7:0]  lsu_io_in_bits_r_state_state_num;
   reg         lsu_io_in_valid_r;
   wire        lsu_io_in_valid = lsu_io_in_valid_r & ~is_irq;
   reg         wbu_io_in_bits_r_signals_wbu_reg_write;
@@ -1357,6 +1452,7 @@ module ysyx_25020039_Core(
   reg  [11:0] wbu_io_in_bits_r_csr_waddr;
   reg         wbu_io_in_bits_r_is_ebreak;
   reg         wbu_io_in_bits_r_state_state;
+  reg  [7:0]  wbu_io_in_bits_r_state_state_num;
   reg         wbu_io_in_valid_r;
   wire        wbu_io_in_valid = wbu_io_in_valid_r & ~is_irq;
   wire        _exu_raw_T_2 = exu_io_in_bits_r_waddr == _idu_io_refile_raddr1;
@@ -1451,8 +1547,9 @@ module ysyx_25020039_Core(
   always @(posedge clock) begin
     if (reset) begin
       is_irq <= 1'h0;
+      csr_io_irq_no_REG <= 8'h0;
       csr_io_irq_pc_REG <= 32'h0;
-      ifu_io_in_bits_r_next_pc <= 32'h80000000;
+      ifu_io_in_bits_r_next_pc <= 32'h30000000;
       ifu_io_in_valid_r <= 1'h0;
       idu_io_in_bits_r_inst <= 32'h0;
       idu_io_in_bits_r_pc <= 32'h0;
@@ -1476,6 +1573,7 @@ module ysyx_25020039_Core(
       exu_io_in_bits_r_csr_waddr <= 12'h0;
       exu_io_in_bits_r_is_ebreak <= 1'h0;
       exu_io_in_bits_r_state_state <= 1'h0;
+      exu_io_in_bits_r_state_state_num <= 8'h0;
       exu_io_in_valid_r <= 1'h0;
       lsu_io_in_bits_r_signals_lsu_mem_wmask <= 8'h0;
       lsu_io_in_bits_r_signals_lsu_mem_rd <= 3'h0;
@@ -1495,6 +1593,7 @@ module ysyx_25020039_Core(
       lsu_io_in_bits_r_csr_waddr <= 12'h0;
       lsu_io_in_bits_r_is_ebreak <= 1'h0;
       lsu_io_in_bits_r_state_state <= 1'h0;
+      lsu_io_in_bits_r_state_state_num <= 8'h0;
       lsu_io_in_valid_r <= 1'h0;
       wbu_io_in_bits_r_signals_wbu_reg_write <= 1'h0;
       wbu_io_in_bits_r_signals_wbu_reg_write_sel <= 3'h0;
@@ -1510,6 +1609,7 @@ module ysyx_25020039_Core(
       wbu_io_in_bits_r_csr_waddr <= 12'h0;
       wbu_io_in_bits_r_is_ebreak <= 1'h0;
       wbu_io_in_bits_r_state_state <= 1'h0;
+      wbu_io_in_bits_r_state_state_num <= 8'h0;
       wbu_io_in_valid_r <= 1'h0;
       rd1_forward_data_read <= 32'h0;
       rd2_forward_data_read <= 32'h0;
@@ -1524,6 +1624,7 @@ module ysyx_25020039_Core(
     end
     else begin
       is_irq <= _wbu_io_state_write_en & _wbu_io_state_write_state;
+      csr_io_irq_no_REG <= _wbu_io_state_write_state_num;
       csr_io_irq_pc_REG <= wbu_io_in_bits_r_pc;
       if (_ifu_io_pc_valid & _ifu_io_in_ready)
         ifu_io_in_bits_r_next_pc <= _ifu_io_pc_bits_next_pc;
@@ -1557,6 +1658,7 @@ module ysyx_25020039_Core(
         exu_io_in_bits_r_csr_waddr <= _idu_io_out_bits_csr_waddr;
         exu_io_in_bits_r_is_ebreak <= _idu_io_out_bits_is_ebreak;
         exu_io_in_bits_r_state_state <= _idu_io_out_bits_state_state;
+        exu_io_in_bits_r_state_state_num <= _idu_io_out_bits_state_state_num;
         exu_io_in_bits_rd1_r <=
           rd1_forward_en | ~is_raw_rs1
             ? (rd1_forward_en ? _rd1_forward_data_T_2 : _idu_io_out_bits_rd1)
@@ -1588,6 +1690,7 @@ module ysyx_25020039_Core(
         lsu_io_in_bits_r_csr_waddr <= _exu_io_out_bits_csr_waddr;
         lsu_io_in_bits_r_is_ebreak <= _exu_io_out_bits_is_ebreak;
         lsu_io_in_bits_r_state_state <= _exu_io_out_bits_state_state;
+        lsu_io_in_bits_r_state_state_num <= _exu_io_out_bits_state_state_num;
       end
       if (_lsu_io_in_ready)
         lsu_io_in_valid_r <= _exu_io_out_valid;
@@ -1607,6 +1710,7 @@ module ysyx_25020039_Core(
         wbu_io_in_bits_r_csr_waddr <= _lsu_io_out_bits_csr_waddr;
         wbu_io_in_bits_r_is_ebreak <= _lsu_io_out_bits_is_ebreak;
         wbu_io_in_bits_r_state_state <= _lsu_io_out_bits_state_state;
+        wbu_io_in_bits_r_state_state_num <= _lsu_io_out_bits_state_state_num;
       end
       wbu_io_in_valid_r <= _lsu_io_out_valid;
       if (rd1_forward_en)
@@ -1691,6 +1795,7 @@ module ysyx_25020039_Core(
     .io_out_bits_csr_waddr                 (_idu_io_out_bits_csr_waddr),
     .io_out_bits_is_ebreak                 (_idu_io_out_bits_is_ebreak),
     .io_out_bits_state_state               (_idu_io_out_bits_state_state),
+    .io_out_bits_state_state_num           (_idu_io_out_bits_state_state_num),
     .io_ifu_signals_ready                  (_icache_io_fencei_ready),
     .io_ifu_signals_valid                  (_idu_io_ifu_signals_valid),
     .io_ifu_signals_bits_is_fencei         (_idu_io_ifu_signals_bits_is_fencei),
@@ -1733,6 +1838,7 @@ module ysyx_25020039_Core(
     .io_in_bits_csr_waddr                  (exu_io_in_bits_r_csr_waddr),
     .io_in_bits_is_ebreak                  (exu_io_in_bits_r_is_ebreak),
     .io_in_bits_state_state                (exu_io_in_bits_r_state_state),
+    .io_in_bits_state_state_num            (exu_io_in_bits_r_state_state_num),
     .io_out_ready                          (_lsu_io_in_ready),
     .io_out_valid                          (_exu_io_out_valid),
     .io_out_bits_signals_lsu_mem_wmask     (_exu_io_out_bits_signals_lsu_mem_wmask),
@@ -1753,6 +1859,7 @@ module ysyx_25020039_Core(
     .io_out_bits_csr_waddr                 (_exu_io_out_bits_csr_waddr),
     .io_out_bits_is_ebreak                 (_exu_io_out_bits_is_ebreak),
     .io_out_bits_state_state               (_exu_io_out_bits_state_state),
+    .io_out_bits_state_state_num           (_exu_io_out_bits_state_state_num),
     .io_pc_valid                           (_exu_io_pc_valid),
     .io_pc_bits_pc4_imm                    (_exu_io_pc_bits_pc4_imm),
     .io_pc_bits_pc4_rs2                    (_exu_io_pc_bits_pc4_rs2),
@@ -1782,6 +1889,7 @@ module ysyx_25020039_Core(
     .io_in_bits_csr_waddr                  (lsu_io_in_bits_r_csr_waddr),
     .io_in_bits_is_ebreak                  (lsu_io_in_bits_r_is_ebreak),
     .io_in_bits_state_state                (lsu_io_in_bits_r_state_state),
+    .io_in_bits_state_state_num            (lsu_io_in_bits_r_state_state_num),
     .io_out_valid                          (_lsu_io_out_valid),
     .io_out_bits_signals_wbu_reg_write     (_lsu_io_out_bits_signals_wbu_reg_write),
     .io_out_bits_signals_wbu_reg_write_sel (_lsu_io_out_bits_signals_wbu_reg_write_sel),
@@ -1797,9 +1905,11 @@ module ysyx_25020039_Core(
     .io_out_bits_csr_waddr                 (_lsu_io_out_bits_csr_waddr),
     .io_out_bits_is_ebreak                 (_lsu_io_out_bits_is_ebreak),
     .io_out_bits_state_state               (_lsu_io_out_bits_state_state),
+    .io_out_bits_state_state_num           (_lsu_io_out_bits_state_state_num),
     .io_is_flush                           (is_irq),
     .io_dmem_araddr                        (io_dmem_araddr),
     .io_dmem_arvalid                       (io_dmem_arvalid),
+    .io_dmem_arsize                        (io_dmem_arsize),
     .io_dmem_arready                       (io_dmem_arready),
     .io_dmem_rdata                         (io_dmem_rdata),
     .io_dmem_rresp                         (io_dmem_rresp),
@@ -1807,6 +1917,7 @@ module ysyx_25020039_Core(
     .io_dmem_rready                        (io_dmem_rready),
     .io_dmem_awaddr                        (io_dmem_awaddr),
     .io_dmem_awvalid                       (io_dmem_awvalid),
+    .io_dmem_awsize                        (io_dmem_awsize),
     .io_dmem_awready                       (io_dmem_awready),
     .io_dmem_wdata                         (io_dmem_wdata),
     .io_dmem_wstrb                         (io_dmem_wstrb),
@@ -1832,6 +1943,7 @@ module ysyx_25020039_Core(
     .io_in_bits_csr_waddr                 (wbu_io_in_bits_r_csr_waddr),
     .io_in_bits_is_ebreak                 (wbu_io_in_bits_r_is_ebreak),
     .io_in_bits_state_state               (wbu_io_in_bits_r_state_state),
+    .io_in_bits_state_state_num           (wbu_io_in_bits_r_state_state_num),
     .io_refile_wdata                      (_wbu_io_refile_wdata),
     .io_refile_waddr                      (_wbu_io_refile_waddr),
     .io_refile_wen                        (_wbu_io_refile_wen),
@@ -1839,9 +1951,9 @@ module ysyx_25020039_Core(
     .io_csr_waddr                         (_wbu_io_csr_waddr),
     .io_csr_wen                           (_wbu_io_csr_wen),
     .io_state_write_state                 (_wbu_io_state_write_state),
+    .io_state_write_state_num             (_wbu_io_state_write_state_num),
     .io_state_write_en                    (_wbu_io_state_write_en),
-    .io_is_flush                          (is_irq),
-    .io_ebreak                            (io_ebreak)
+    .io_is_flush                          (is_irq)
   );
   ysyx_25020039_ICache icache (
     .clock                    (clock),
@@ -1854,6 +1966,9 @@ module ysyx_25020039_Core(
     .io_in_rdata              (_icache_io_in_rdata),
     .io_out_araddr            (io_imem_araddr),
     .io_out_arvalid           (io_imem_arvalid),
+    .io_out_arlen             (io_imem_arlen),
+    .io_out_arsize            (io_imem_arsize),
+    .io_out_arburst           (io_imem_arburst),
     .io_out_arready           (io_imem_arready),
     .io_out_rdata             (io_imem_rdata),
     .io_out_rvalid            (io_imem_rvalid),
@@ -1876,6 +1991,7 @@ module ysyx_25020039_Core(
     .clock          (clock),
     .reset          (reset),
     .io_irq         (is_irq),
+    .io_irq_no      (csr_io_irq_no_REG),
     .io_irq_pc      (csr_io_irq_pc_REG),
     .io_read_raddr  (_idu_io_csr_raddr),
     .io_read_rdata  (_csr_io_read_rdata),
@@ -1892,12 +2008,16 @@ module ysyx_25020039_Xbar(
                 reset,
   input  [31:0] io_imem_araddr,
   input         io_imem_arvalid,
+  input  [7:0]  io_imem_arlen,
+  input  [2:0]  io_imem_arsize,
+  input  [1:0]  io_imem_arburst,
   output        io_imem_arready,
   output [31:0] io_imem_rdata,
   output        io_imem_rvalid,
   input         io_imem_rready,
   input  [31:0] io_dmem_araddr,
   input         io_dmem_arvalid,
+  input  [2:0]  io_dmem_arsize,
   output        io_dmem_arready,
   output [31:0] io_dmem_rdata,
   output [1:0]  io_dmem_rresp,
@@ -1905,6 +2025,7 @@ module ysyx_25020039_Xbar(
   input         io_dmem_rready,
   input  [31:0] io_dmem_awaddr,
   input         io_dmem_awvalid,
+  input  [2:0]  io_dmem_awsize,
   output        io_dmem_awready,
   input  [31:0] io_dmem_wdata,
   input  [3:0]  io_dmem_wstrb,
@@ -1915,17 +2036,24 @@ module ysyx_25020039_Xbar(
   input         io_dmem_bready,
   output [31:0] io_soc_araddr,
   output        io_soc_arvalid,
+  output [7:0]  io_soc_arlen,
+  output [2:0]  io_soc_arsize,
+  output [1:0]  io_soc_arburst,
   input         io_soc_arready,
   input  [31:0] io_soc_rdata,
   input  [1:0]  io_soc_rresp,
   input         io_soc_rvalid,
+                io_soc_rlast,
   output        io_soc_rready,
   output [31:0] io_soc_awaddr,
   output        io_soc_awvalid,
+  output [2:0]  io_soc_awsize,
+  output [1:0]  io_soc_awburst,
   input         io_soc_awready,
   output [31:0] io_soc_wdata,
   output [3:0]  io_soc_wstrb,
   output        io_soc_wvalid,
+                io_soc_wlast,
   input         io_soc_wready,
   input  [1:0]  io_soc_bresp,
   input         io_soc_bvalid,
@@ -1935,57 +2063,33 @@ module ysyx_25020039_Xbar(
   input         io_clint_arready,
   input  [31:0] io_clint_rdata,
   input         io_clint_rvalid,
-  output        io_clint_rready,
-  output [31:0] io_uart_araddr,
-  output        io_uart_arvalid,
-  input         io_uart_arready,
-  input  [31:0] io_uart_rdata,
-  input  [1:0]  io_uart_rresp,
-  input         io_uart_rvalid,
-  output        io_uart_rready,
-  output [31:0] io_uart_awaddr,
-  output        io_uart_awvalid,
-  input         io_uart_awready,
-  output [31:0] io_uart_wdata,
-  output        io_uart_wvalid,
-  input         io_uart_wready,
-  input  [1:0]  io_uart_bresp,
-  input         io_uart_bvalid,
-  output        io_uart_bready
+  output        io_clint_rready
 );
 
-  reg  [2:0]  state;
-  wire        is_dmem = io_dmem_arvalid | io_dmem_awvalid;
-  wire        is_imem = io_imem_arvalid & {is_dmem, state} == 4'h0;
-  wire        _next_state_T =
-    io_dmem_arvalid & io_dmem_araddr > 32'hA00003F7 & io_dmem_araddr < 32'hA0000400
-    | io_dmem_awvalid & io_dmem_awaddr > 32'hA00003F7 & io_dmem_awaddr < 32'hA0000400;
-  wire        _next_state_T_2 =
-    io_dmem_arvalid & io_dmem_araddr > 32'hA0000047 & io_dmem_araddr < 32'hA0000050
-    | io_dmem_awvalid & io_dmem_awaddr > 32'hA0000047 & io_dmem_awaddr < 32'hA0000050;
-  wire        _next_state_T_17 = state == 3'h0;
-  wire        _next_state_T_19 = state == 3'h1;
-  wire        _next_state_T_21 = state == 3'h2;
-  wire        _next_state_T_23 = state == 3'h3;
-  wire        _next_state_T_25 = state == 3'h4;
-  reg  [2:0]  casez_tmp;
+  reg  [2:0] state;
+  wire       is_dmem = io_dmem_arvalid | io_dmem_awvalid;
+  wire       is_imem = io_imem_arvalid & {is_dmem, state} == 4'h0;
+  wire       _next_state_T_2 =
+    (|(io_dmem_araddr[31:25])) & io_dmem_araddr < 32'h2010000 | (|(io_dmem_awaddr[31:25]))
+    & io_dmem_awaddr < 32'h2010000;
+  wire       _next_state_T_15 = state == 3'h0;
+  wire       _next_state_T_17 = state == 3'h1;
+  wire       _next_state_T_19 = state == 3'h2;
+  wire       _next_state_T_21 = state == 3'h3;
+  reg  [2:0] casez_tmp;
   always_comb begin
     casez (state)
       3'b000:
         casez_tmp =
-          is_imem
-            ? 3'h1
-            : is_dmem & _next_state_T
-                ? 3'h4
-                : is_dmem & _next_state_T_2 ? 3'h3 : {1'h0, is_dmem, 1'h0};
+          is_imem ? 3'h1 : is_dmem & _next_state_T_2 ? 3'h3 : {1'h0, is_dmem, 1'h0};
       3'b001:
-        casez_tmp = io_soc_rvalid ? {2'h0, io_imem_arvalid} : 3'h1;
+        casez_tmp = io_soc_rvalid & io_soc_rlast ? {2'h0, io_imem_arvalid} : 3'h1;
       3'b010:
         casez_tmp = {1'h0, ~(io_soc_rvalid | io_soc_bvalid), 1'h0};
       3'b011:
         casez_tmp = io_clint_rvalid ? 3'h0 : 3'h3;
       3'b100:
-        casez_tmp = {~(io_uart_rvalid | io_uart_bvalid), 2'h0};
+        casez_tmp = 3'h0;
       3'b101:
         casez_tmp = 3'h0;
       3'b110:
@@ -1994,44 +2098,15 @@ module ysyx_25020039_Xbar(
         casez_tmp = 3'h0;
     endcase
   end // always_comb
-  wire        _GEN = is_dmem & _next_state_T;
-  wire        _GEN_0 = is_dmem & _next_state_T_2;
-  wire        _GEN_1 = is_imem | _GEN;
-  wire        _GEN_2 = _GEN | _GEN_0;
-  wire        _GEN_3 = _GEN_0 | ~is_dmem;
-  wire        _GEN_4 = is_imem | _GEN_2;
-  wire        _GEN_5 =
-    _next_state_T_17 ? _GEN_4 | ~is_dmem : _next_state_T_19 | ~_next_state_T_21;
-  wire        _GEN_6 = _next_state_T_19 | _next_state_T_21;
-  wire        _GEN_7 = _next_state_T_19 | _next_state_T_21 | _next_state_T_23;
-  wire        _GEN_8 = _next_state_T_17 ? is_imem | ~_GEN : _GEN_7 | ~_next_state_T_25;
-  reg  [31:0] casez_tmp_0;
-  always_comb begin
-    casez (state)
-      3'b000:
-        casez_tmp_0 =
-          is_imem
-            ? 32'h0
-            : _GEN
-                ? io_uart_rdata
-                : _GEN_0 ? io_clint_rdata : is_dmem ? io_soc_rdata : 32'h0;
-      3'b001:
-        casez_tmp_0 = 32'h0;
-      3'b010:
-        casez_tmp_0 = io_soc_rdata;
-      3'b011:
-        casez_tmp_0 = io_clint_rdata;
-      3'b100:
-        casez_tmp_0 = io_uart_rdata;
-      3'b101:
-        casez_tmp_0 = 32'h0;
-      3'b110:
-        casez_tmp_0 = 32'h0;
-      default:
-        casez_tmp_0 = 32'h0;
-    endcase
-  end // always_comb
-  wire        _GEN_9 = _next_state_T_23 | ~_next_state_T_25;
+  wire       _GEN = is_dmem & _next_state_T_2;
+  wire       _GEN_0 = _GEN | ~is_dmem;
+  wire [1:0] _GEN_1 = {1'h0, is_dmem};
+  wire       _GEN_2 = is_imem | _GEN;
+  wire       _GEN_3 = _next_state_T_15 ? is_imem : _next_state_T_17;
+  wire [1:0] _GEN_4 = {1'h0, _next_state_T_19};
+  wire       _GEN_5 =
+    _next_state_T_15 ? _GEN_2 | ~is_dmem : _next_state_T_17 | ~_next_state_T_19;
+  wire       _GEN_6 = _next_state_T_17 | _next_state_T_19;
   always @(posedge clock) begin
     if (reset)
       state <= 3'h0;
@@ -2039,123 +2114,93 @@ module ysyx_25020039_Xbar(
       state <= casez_tmp;
   end // always @(posedge)
   assign io_imem_arready =
-    _next_state_T_17 ? is_imem & io_soc_arready : _next_state_T_19 & io_soc_arready;
-  assign io_imem_rdata =
-    (_next_state_T_17 ? is_imem : _next_state_T_19) ? io_soc_rdata : 32'h0;
+    _next_state_T_15 ? is_imem & io_soc_arready : _next_state_T_17 & io_soc_arready;
+  assign io_imem_rdata = _GEN_3 ? io_soc_rdata : 32'h0;
   assign io_imem_rvalid =
-    _next_state_T_17 ? is_imem & io_soc_rvalid : _next_state_T_19 & io_soc_rvalid;
+    _next_state_T_15 ? is_imem & io_soc_rvalid : _next_state_T_17 & io_soc_rvalid;
   assign io_dmem_arready =
-    _next_state_T_17
-      ? ~is_imem
-        & (_GEN ? io_uart_arready : _GEN_0 ? io_clint_arready : is_dmem & io_soc_arready)
-      : ~_next_state_T_19
-        & (_next_state_T_21
-             ? io_soc_arready
-             : _next_state_T_23 ? io_clint_arready : _next_state_T_25 & io_uart_arready);
-  assign io_dmem_rdata = casez_tmp_0;
-  assign io_dmem_rresp =
-    _next_state_T_17
-      ? (is_imem ? 2'h0 : _GEN ? io_uart_rresp : _GEN_3 ? 2'h0 : io_soc_rresp)
-      : _next_state_T_19
-          ? 2'h0
-          : _next_state_T_21 ? io_soc_rresp : _GEN_9 ? 2'h0 : io_uart_rresp;
+    _next_state_T_15
+      ? ~is_imem & (_GEN ? io_clint_arready : is_dmem & io_soc_arready)
+      : ~_next_state_T_17
+        & (_next_state_T_19 ? io_soc_arready : _next_state_T_21 & io_clint_arready);
+  assign io_dmem_rdata =
+    _next_state_T_15
+      ? (is_imem ? 32'h0 : _GEN ? io_clint_rdata : is_dmem ? io_soc_rdata : 32'h0)
+      : _next_state_T_17
+          ? 32'h0
+          : _next_state_T_19 ? io_soc_rdata : _next_state_T_21 ? io_clint_rdata : 32'h0;
+  assign io_dmem_rresp = _GEN_5 ? 2'h0 : io_soc_rresp;
   assign io_dmem_rvalid =
-    _next_state_T_17
-      ? ~is_imem
-        & (_GEN ? io_uart_rvalid : _GEN_0 ? io_clint_rvalid : is_dmem & io_soc_rvalid)
-      : ~_next_state_T_19
-        & (_next_state_T_21
-             ? io_soc_rvalid
-             : _next_state_T_23 ? io_clint_rvalid : _next_state_T_25 & io_uart_rvalid);
+    _next_state_T_15
+      ? ~is_imem & (_GEN ? io_clint_rvalid : is_dmem & io_soc_rvalid)
+      : ~_next_state_T_17
+        & (_next_state_T_19 ? io_soc_rvalid : _next_state_T_21 & io_clint_rvalid);
   assign io_dmem_awready =
-    _next_state_T_17
-      ? ~is_imem & (_GEN ? io_uart_awready : ~_GEN_0 & is_dmem & io_soc_awready)
-      : ~_next_state_T_19
-        & (_next_state_T_21
-             ? io_soc_awready
-             : ~_next_state_T_23 & _next_state_T_25 & io_uart_awready);
+    _next_state_T_15
+      ? ~_GEN_2 & is_dmem & io_soc_awready
+      : ~_next_state_T_17 & _next_state_T_19 & io_soc_awready;
   assign io_dmem_wready =
-    _next_state_T_17
-      ? ~is_imem & (_GEN ? io_uart_wready : ~_GEN_0 & is_dmem & io_soc_wready)
-      : ~_next_state_T_19
-        & (_next_state_T_21
-             ? io_soc_wready
-             : ~_next_state_T_23 & _next_state_T_25 & io_uart_wready);
-  assign io_dmem_bresp =
-    _next_state_T_17
-      ? (is_imem ? 2'h0 : _GEN ? io_uart_bresp : _GEN_3 ? 2'h0 : io_soc_bresp)
-      : _next_state_T_19
-          ? 2'h0
-          : _next_state_T_21 ? io_soc_bresp : _GEN_9 ? 2'h0 : io_uart_bresp;
+    _next_state_T_15
+      ? ~_GEN_2 & is_dmem & io_soc_wready
+      : ~_next_state_T_17 & _next_state_T_19 & io_soc_wready;
+  assign io_dmem_bresp = _GEN_5 ? 2'h0 : io_soc_bresp;
   assign io_dmem_bvalid =
-    _next_state_T_17
-      ? ~is_imem & (_GEN ? io_uart_bvalid : ~_GEN_0 & is_dmem & io_soc_bvalid)
-      : ~_next_state_T_19
-        & (_next_state_T_21
-             ? io_soc_bvalid
-             : ~_next_state_T_23 & _next_state_T_25 & io_uart_bvalid);
+    _next_state_T_15
+      ? ~_GEN_2 & is_dmem & io_soc_bvalid
+      : ~_next_state_T_17 & _next_state_T_19 & io_soc_bvalid;
   assign io_soc_araddr =
-    _next_state_T_17
-      ? (is_imem ? io_imem_araddr : _GEN_2 | ~is_dmem ? 32'h0 : io_dmem_araddr)
-      : _next_state_T_19 ? io_imem_araddr : _next_state_T_21 ? io_dmem_araddr : 32'h0;
+    _next_state_T_15
+      ? (is_imem ? io_imem_araddr : _GEN_0 ? 32'h0 : io_dmem_araddr)
+      : _next_state_T_17 ? io_imem_araddr : _next_state_T_19 ? io_dmem_araddr : 32'h0;
   assign io_soc_arvalid =
-    _next_state_T_17
-      ? (is_imem ? io_imem_arvalid : ~_GEN_2 & is_dmem & io_dmem_arvalid)
-      : _next_state_T_19 ? io_imem_arvalid : _next_state_T_21 & io_dmem_arvalid;
+    _next_state_T_15
+      ? (is_imem ? io_imem_arvalid : ~_GEN & is_dmem & io_dmem_arvalid)
+      : _next_state_T_17 ? io_imem_arvalid : _next_state_T_19 & io_dmem_arvalid;
+  assign io_soc_arlen = _GEN_3 ? io_imem_arlen : 8'h0;
+  assign io_soc_arsize =
+    _next_state_T_15
+      ? (is_imem ? io_imem_arsize : _GEN_0 ? 3'h0 : io_dmem_arsize)
+      : _next_state_T_17 ? io_imem_arsize : _next_state_T_19 ? io_dmem_arsize : 3'h0;
+  assign io_soc_arburst =
+    _next_state_T_15
+      ? (is_imem ? io_imem_arburst : _GEN ? 2'h0 : _GEN_1)
+      : _next_state_T_17 ? io_imem_arburst : _GEN_4;
   assign io_soc_rready =
-    _next_state_T_17
-      ? (is_imem ? io_imem_rready : ~_GEN_2 & is_dmem & io_dmem_rready)
-      : _next_state_T_19 ? io_imem_rready : _next_state_T_21 & io_dmem_rready;
+    _next_state_T_15
+      ? (is_imem ? io_imem_rready : ~_GEN & is_dmem & io_dmem_rready)
+      : _next_state_T_17 ? io_imem_rready : _next_state_T_19 & io_dmem_rready;
   assign io_soc_awaddr = _GEN_5 ? 32'h0 : io_dmem_awaddr;
   assign io_soc_awvalid =
-    _next_state_T_17
-      ? ~_GEN_4 & is_dmem & io_dmem_awvalid
-      : ~_next_state_T_19 & _next_state_T_21 & io_dmem_awvalid;
+    _next_state_T_15
+      ? ~_GEN_2 & is_dmem & io_dmem_awvalid
+      : ~_next_state_T_17 & _next_state_T_19 & io_dmem_awvalid;
+  assign io_soc_awsize = _GEN_5 ? 3'h0 : io_dmem_awsize;
+  assign io_soc_awburst =
+    _next_state_T_15 ? (_GEN_2 ? 2'h0 : _GEN_1) : _next_state_T_17 ? 2'h0 : _GEN_4;
   assign io_soc_wdata = _GEN_5 ? 32'h0 : io_dmem_wdata;
   assign io_soc_wstrb = _GEN_5 ? 4'h0 : io_dmem_wstrb;
   assign io_soc_wvalid =
-    _next_state_T_17
-      ? ~_GEN_4 & is_dmem & io_dmem_wvalid
-      : ~_next_state_T_19 & _next_state_T_21 & io_dmem_wvalid;
+    _next_state_T_15
+      ? ~_GEN_2 & is_dmem & io_dmem_wvalid
+      : ~_next_state_T_17 & _next_state_T_19 & io_dmem_wvalid;
+  assign io_soc_wlast =
+    _next_state_T_15 ? ~_GEN_2 & is_dmem : ~_next_state_T_17 & _next_state_T_19;
   assign io_soc_bready =
-    _next_state_T_17
-      ? ~_GEN_4 & is_dmem & io_dmem_bready
-      : ~_next_state_T_19 & _next_state_T_21 & io_dmem_bready;
+    _next_state_T_15
+      ? ~_GEN_2 & is_dmem & io_dmem_bready
+      : ~_next_state_T_17 & _next_state_T_19 & io_dmem_bready;
   assign io_clint_araddr =
-    (_next_state_T_17 ? _GEN_1 | ~_GEN_0 : _GEN_6 | ~_next_state_T_23)
+    (_next_state_T_15 ? is_imem | ~_GEN : _GEN_6 | ~_next_state_T_21)
       ? 32'h0
       : io_dmem_araddr;
   assign io_clint_arvalid =
-    _next_state_T_17
-      ? ~_GEN_1 & _GEN_0 & io_dmem_arvalid
-      : ~_GEN_6 & _next_state_T_23 & io_dmem_arvalid;
-  assign io_clint_rready =
-    _next_state_T_17
-      ? ~_GEN_1 & _GEN_0 & io_dmem_rready
-      : ~_GEN_6 & _next_state_T_23 & io_dmem_rready;
-  assign io_uart_araddr = _GEN_8 ? 32'h0 : io_dmem_araddr;
-  assign io_uart_arvalid =
-    _next_state_T_17
+    _next_state_T_15
       ? ~is_imem & _GEN & io_dmem_arvalid
-      : ~_GEN_7 & _next_state_T_25 & io_dmem_arvalid;
-  assign io_uart_rready =
-    _next_state_T_17
+      : ~_GEN_6 & _next_state_T_21 & io_dmem_arvalid;
+  assign io_clint_rready =
+    _next_state_T_15
       ? ~is_imem & _GEN & io_dmem_rready
-      : ~_GEN_7 & _next_state_T_25 & io_dmem_rready;
-  assign io_uart_awaddr = _GEN_8 ? 32'h0 : io_dmem_awaddr;
-  assign io_uart_awvalid =
-    _next_state_T_17
-      ? ~is_imem & _GEN & io_dmem_awvalid
-      : ~_GEN_7 & _next_state_T_25 & io_dmem_awvalid;
-  assign io_uart_wdata = _GEN_8 ? 32'h0 : io_dmem_wdata;
-  assign io_uart_wvalid =
-    _next_state_T_17
-      ? ~is_imem & _GEN & io_dmem_wvalid
-      : ~_GEN_7 & _next_state_T_25 & io_dmem_wvalid;
-  assign io_uart_bready =
-    _next_state_T_17
-      ? ~is_imem & _GEN & io_dmem_bready
-      : ~_GEN_7 & _next_state_T_25 & io_dmem_bready;
+      : ~_GEN_6 & _next_state_T_21 & io_dmem_rready;
 endmodule
 
 module ysyx_25020039_Clint(
@@ -2179,7 +2224,7 @@ module ysyx_25020039_Clint(
       state <= 1'h0;
     end
     else begin
-      rdata <= io_araddr == 32'hA0000048 ? mtime[31:0] : mtime[63:32];
+      rdata <= io_araddr == 32'h2000000 ? mtime[31:0] : mtime[63:32];
       mtime <= mtime + 64'h1;
       if (state)
         state <= ~io_rready;
@@ -2192,297 +2237,70 @@ module ysyx_25020039_Clint(
   assign io_rvalid = state;
 endmodule
 
-module ysyx_25020039_UartWrapper(
-  input         clock,
-                reset,
-  input  [31:0] io_araddr,
-  input         io_arvalid,
-  output        io_arready,
-  output [31:0] io_rdata,
-  output [1:0]  io_rresp,
-  output        io_rvalid,
-  input         io_rready,
-  input  [31:0] io_awaddr,
-  input         io_awvalid,
-  output        io_awready,
-  input  [31:0] io_wdata,
-  input         io_wvalid,
-  output        io_wready,
-  output [1:0]  io_bresp,
-  output        io_bvalid,
-  input         io_bready
-);
-
-  reg  [2:0]  state;
-  reg  [31:0] LFSR_DELAY;
-  reg  [31:0] araddr_reg;
-  reg  [31:0] awaddr_reg;
-  reg  [31:0] rdata_reg;
-  reg  [1:0]  bresp_reg;
-  reg  [1:0]  rresp_reg;
-  wire        io_awready_0 = state == 3'h0;
-  wire        _GEN = state == 3'h1;
-  wire        _GEN_0 = state == 3'h2;
-  wire        _GEN_1 = io_awready_0 | _GEN;
-  wire        _GEN_2 = _GEN_1 | ~_GEN_0;
-  wire        _GEN_3 = state == 3'h3;
-  wire        _GEN_4 = state == 3'h4;
-  wire        _GEN_5 = io_awready_0 | _GEN | _GEN_0 | _GEN_3;
-  wire        _GEN_6 = _GEN_5 | ~(_GEN_4 & io_wvalid);
-  wire        _GEN_7 = state == 3'h5;
-  wire        _GEN_8 = io_awready_0 | _GEN | _GEN_0 | _GEN_3 | _GEN_4;
-  reg  [2:0]  casez_tmp;
-  wire [2:0]  _GEN_9 = _GEN_7 & io_bready ? 3'h0 : state;
-  always_comb begin
-    casez (state)
-      3'b000:
-        casez_tmp = io_arvalid ? 3'h1 : io_awvalid ? 3'h3 : state;
-      3'b001:
-        casez_tmp = (|LFSR_DELAY) ? state : 3'h2;
-      3'b010:
-        casez_tmp = io_rready ? 3'h0 : state;
-      3'b011:
-        casez_tmp = (|LFSR_DELAY) ? state : 3'h4;
-      3'b100:
-        casez_tmp = io_wvalid ? 3'h5 : state;
-      3'b101:
-        casez_tmp = _GEN_9;
-      3'b110:
-        casez_tmp = _GEN_9;
-      default:
-        casez_tmp = _GEN_9;
-    endcase
-  end // always_comb
-  wire        _GEN_10 = io_awready_0 | ~_GEN | (|LFSR_DELAY);
-  always @(posedge clock) begin
-    if (reset) begin
-      state <= 3'h0;
-      araddr_reg <= 32'h0;
-      awaddr_reg <= 32'h0;
-      rdata_reg <= 32'h0;
-      bresp_reg <= 2'h0;
-      rresp_reg <= 2'h0;
-    end
-    else begin
-      state <= casez_tmp;
-      if (io_awready_0) begin
-        if (io_arvalid)
-          araddr_reg <= io_araddr;
-      end
-      else if (_GEN | ~(_GEN_0 & io_rready)) begin
-      end
-      else
-        araddr_reg <= 32'h0;
-      if (~io_awready_0 | io_arvalid | ~io_awvalid) begin
-      end
-      else
-        awaddr_reg <= io_awaddr;
-      if (_GEN_10) begin
-      end
-      else
-        rdata_reg <= 32'h0;
-      if (_GEN_6) begin
-      end
-      else
-        bresp_reg <= {~(awaddr_reg > 32'hA00003F7 & awaddr_reg < 32'hA0000400), 1'h0};
-      if (_GEN_10) begin
-      end
-      else
-        rresp_reg <= {~(araddr_reg > 32'hA00003F7 & araddr_reg < 32'hA0000400), 1'h0};
-    end
-    if (io_awready_0) begin
-      if (io_arvalid | io_awvalid)
-        LFSR_DELAY <= 32'h0;
-    end
-    else if (_GEN) begin
-      if (|LFSR_DELAY)
-        LFSR_DELAY <= LFSR_DELAY - 32'h1;
-    end
-    else if (_GEN_0 | ~(_GEN_3 & (|LFSR_DELAY))) begin
-    end
-    else
-      LFSR_DELAY <= LFSR_DELAY - 32'h1;
-  end // always @(posedge)
-  SimUART sim (
-    .clk   (clock),
-    .wen   (~_GEN_5 & _GEN_4 & io_wvalid),
-    .waddr (_GEN_6 ? 32'h0 : awaddr_reg),
-    .wdata (_GEN_6 ? 8'h0 : io_wdata[7:0])
-  );
-  assign io_arready = io_awready_0;
-  assign io_rdata = _GEN_2 ? 32'h0 : rdata_reg;
-  assign io_rresp = _GEN_2 ? 2'h0 : rresp_reg;
-  assign io_rvalid = ~_GEN_1 & _GEN_0;
-  assign io_awready = io_awready_0;
-  assign io_wready = ~_GEN_5 & _GEN_4;
-  assign io_bresp = _GEN_8 | ~_GEN_7 ? 2'h0 : bresp_reg;
-  assign io_bvalid = ~_GEN_8 & _GEN_7;
-endmodule
-
-module ysyx_25020039_SRAM(
-  input         clock,
-                reset,
-  input  [31:0] io_axi_araddr,
-  input         io_axi_arvalid,
-  output        io_axi_arready,
-  output [31:0] io_axi_rdata,
-  output [1:0]  io_axi_rresp,
-  output        io_axi_rvalid,
-  input         io_axi_rready,
-  input  [31:0] io_axi_awaddr,
-  input         io_axi_awvalid,
-  output        io_axi_awready,
-  input  [31:0] io_axi_wdata,
-  input  [3:0]  io_axi_wstrb,
-  input         io_axi_wvalid,
-  output        io_axi_wready,
-  output [1:0]  io_axi_bresp,
-  output        io_axi_bvalid,
-  input         io_axi_bready
-);
-
-  wire [31:0] _mem_rdata;
-  reg  [2:0]  state;
-  reg  [31:0] LFSR_DELAY;
-  reg  [31:0] araddr_reg;
-  reg  [31:0] awaddr_reg;
-  reg  [31:0] rdata_reg;
-  reg  [1:0]  rresp_reg;
-  reg  [1:0]  bresp_reg;
-  wire        io_axi_awready_0 = state == 3'h0;
-  wire        _GEN = state == 3'h1;
-  wire        _GEN_0 =
-    araddr_reg[31] & araddr_reg < 32'h90000000 | araddr_reg > 32'h9FFFFFFF
-    & araddr_reg < 32'hA0000008;
-  wire        _GEN_1 = state == 3'h2;
-  wire        _GEN_2 = io_axi_awready_0 | _GEN;
-  wire        _GEN_3 = _GEN_2 | ~_GEN_1;
-  wire        _GEN_4 = state == 3'h3;
-  wire        _GEN_5 = state == 3'h4;
-  wire        _GEN_6 = io_axi_awready_0 | _GEN | _GEN_1 | _GEN_4;
-  wire        _GEN_7 =
-    awaddr_reg[31] & awaddr_reg < 32'h90000000 | awaddr_reg > 32'h9FFFFFFF
-    & awaddr_reg < 32'hA0000008;
-  wire        _GEN_8 = _GEN_5 & io_axi_wvalid;
-  wire        _GEN_9 = _GEN_6 | ~(_GEN_5 & io_axi_wvalid & _GEN_7);
-  wire        _GEN_10 = state == 3'h5;
-  wire        _GEN_11 = io_axi_awready_0 | _GEN | _GEN_1 | _GEN_4 | _GEN_5;
-  reg  [2:0]  casez_tmp;
-  wire [2:0]  _GEN_12 = _GEN_10 & io_axi_bready ? 3'h0 : state;
-  always_comb begin
-    casez (state)
-      3'b000:
-        casez_tmp = io_axi_arvalid ? 3'h1 : io_axi_awvalid ? 3'h3 : state;
-      3'b001:
-        casez_tmp = (|LFSR_DELAY) ? state : 3'h2;
-      3'b010:
-        casez_tmp = io_axi_rready ? 3'h0 : state;
-      3'b011:
-        casez_tmp = (|LFSR_DELAY) ? state : 3'h4;
-      3'b100:
-        casez_tmp = io_axi_wvalid ? 3'h5 : state;
-      3'b101:
-        casez_tmp = _GEN_12;
-      3'b110:
-        casez_tmp = _GEN_12;
-      default:
-        casez_tmp = _GEN_12;
-    endcase
-  end // always_comb
-  always @(posedge clock) begin
-    if (reset) begin
-      state <= 3'h0;
-      araddr_reg <= 32'h0;
-      awaddr_reg <= 32'h0;
-      rdata_reg <= 32'h0;
-      rresp_reg <= 2'h0;
-      bresp_reg <= 2'h0;
-    end
-    else begin
-      state <= casez_tmp;
-      if (io_axi_awready_0) begin
-        if (io_axi_arvalid)
-          araddr_reg <= io_axi_araddr;
-      end
-      else if (_GEN | ~(_GEN_1 & io_axi_rready)) begin
-      end
-      else
-        araddr_reg <= 32'h0;
-      if (~io_axi_awready_0 | io_axi_arvalid | ~io_axi_awvalid) begin
-      end
-      else
-        awaddr_reg <= io_axi_awaddr;
-      if (io_axi_awready_0 | ~_GEN | (|LFSR_DELAY)) begin
-      end
-      else begin
-        rdata_reg <= _GEN_0 ? _mem_rdata : 32'h0;
-        rresp_reg <= {~_GEN_0, 1'h0};
-      end
-      if (_GEN_6 | ~_GEN_8) begin
-      end
-      else
-        bresp_reg <= {~_GEN_7, 1'h0};
-    end
-    if (io_axi_awready_0) begin
-      if (io_axi_arvalid | io_axi_awvalid)
-        LFSR_DELAY <= 32'h0;
-    end
-    else if (_GEN) begin
-      if (|LFSR_DELAY)
-        LFSR_DELAY <= LFSR_DELAY - 32'h1;
-    end
-    else if (_GEN_1 | ~(_GEN_4 & (|LFSR_DELAY))) begin
-    end
-    else
-      LFSR_DELAY <= LFSR_DELAY - 32'h1;
-  end // always @(posedge)
-  DPI_Mem mem (
-    .clk   (clock),
-    .rst   (reset),
-    .ren   (~io_axi_awready_0 & _GEN & ~(|LFSR_DELAY) & _GEN_0),
-    .wen   (~_GEN_6 & _GEN_8 & _GEN_7),
-    .raddr
-      (io_axi_awready_0 | ~_GEN | (|LFSR_DELAY) | ~_GEN_0
-         ? 32'h0
-         : araddr_reg & 32'hFFFFFFFC),
-    .waddr (_GEN_9 ? 32'h0 : awaddr_reg & 32'hFFFFFFFC),
-    .wdata (_GEN_9 ? 32'h0 : io_axi_wdata),
-    .wmask (_GEN_9 ? 4'h0 : io_axi_wstrb),
-    .rdata (_mem_rdata)
-  );
-  assign io_axi_arready = io_axi_awready_0;
-  assign io_axi_rdata = _GEN_3 ? 32'h0 : rdata_reg;
-  assign io_axi_rresp = _GEN_3 ? 2'h0 : rresp_reg;
-  assign io_axi_rvalid = ~_GEN_2 & _GEN_1;
-  assign io_axi_awready = io_axi_awready_0;
-  assign io_axi_wready = ~_GEN_6 & _GEN_5;
-  assign io_axi_bresp = _GEN_11 | ~_GEN_10 ? 2'h0 : bresp_reg;
-  assign io_axi_bvalid = ~_GEN_11 & _GEN_10;
-endmodule
-
 module ysyx_25020039(
-  input  clock,
-         reset,
-         io_interrupt,
-  output io_ebreak
+  input         clock,
+                reset,
+                io_interrupt,
+  output [31:0] io_master_araddr,
+  output        io_master_arvalid,
+  output [3:0]  io_master_arid,
+  output [7:0]  io_master_arlen,
+  output [2:0]  io_master_arsize,
+  output [1:0]  io_master_arburst,
+  input         io_master_arready,
+  input  [31:0] io_master_rdata,
+  input  [1:0]  io_master_rresp,
+  input         io_master_rvalid,
+                io_master_rlast,
+  input  [3:0]  io_master_rid,
+  output        io_master_rready,
+  output [31:0] io_master_awaddr,
+  output        io_master_awvalid,
+  output [3:0]  io_master_awid,
+  output [7:0]  io_master_awlen,
+  output [2:0]  io_master_awsize,
+  output [1:0]  io_master_awburst,
+  input         io_master_awready,
+  output [31:0] io_master_wdata,
+  output [3:0]  io_master_wstrb,
+  output        io_master_wvalid,
+                io_master_wlast,
+  input         io_master_wready,
+  input  [1:0]  io_master_bresp,
+  input         io_master_bvalid,
+  input  [3:0]  io_master_bid,
+  output        io_master_bready,
+  input  [31:0] io_slave_araddr,
+  input         io_slave_arvalid,
+  input  [3:0]  io_slave_arid,
+  input  [7:0]  io_slave_arlen,
+  input  [2:0]  io_slave_arsize,
+  input  [1:0]  io_slave_arburst,
+  output        io_slave_arready,
+  output [31:0] io_slave_rdata,
+  output [1:0]  io_slave_rresp,
+  output        io_slave_rvalid,
+                io_slave_rlast,
+  output [3:0]  io_slave_rid,
+  input         io_slave_rready,
+  input  [31:0] io_slave_awaddr,
+  input         io_slave_awvalid,
+  input  [3:0]  io_slave_awid,
+  input  [7:0]  io_slave_awlen,
+  input  [2:0]  io_slave_awsize,
+  input  [1:0]  io_slave_awburst,
+  output        io_slave_awready,
+  input  [31:0] io_slave_wdata,
+  input  [3:0]  io_slave_wstrb,
+  input         io_slave_wvalid,
+                io_slave_wlast,
+  output        io_slave_wready,
+  output [1:0]  io_slave_bresp,
+  output        io_slave_bvalid,
+  output [3:0]  io_slave_bid,
+  input         io_slave_bready
 );
 
-  wire        _sram_io_axi_arready;
-  wire [31:0] _sram_io_axi_rdata;
-  wire [1:0]  _sram_io_axi_rresp;
-  wire        _sram_io_axi_rvalid;
-  wire        _sram_io_axi_awready;
-  wire        _sram_io_axi_wready;
-  wire [1:0]  _sram_io_axi_bresp;
-  wire        _sram_io_axi_bvalid;
-  wire        _uart_io_arready;
-  wire [31:0] _uart_io_rdata;
-  wire [1:0]  _uart_io_rresp;
-  wire        _uart_io_rvalid;
-  wire        _uart_io_awready;
-  wire        _uart_io_wready;
-  wire [1:0]  _uart_io_bresp;
-  wire        _uart_io_bvalid;
   wire        _clint_io_arready;
   wire [31:0] _clint_io_rdata;
   wire        _clint_io_rvalid;
@@ -2497,34 +2315,22 @@ module ysyx_25020039(
   wire        _xbar_io_dmem_wready;
   wire [1:0]  _xbar_io_dmem_bresp;
   wire        _xbar_io_dmem_bvalid;
-  wire [31:0] _xbar_io_soc_araddr;
-  wire        _xbar_io_soc_arvalid;
-  wire        _xbar_io_soc_rready;
-  wire [31:0] _xbar_io_soc_awaddr;
-  wire        _xbar_io_soc_awvalid;
-  wire [31:0] _xbar_io_soc_wdata;
-  wire [3:0]  _xbar_io_soc_wstrb;
-  wire        _xbar_io_soc_wvalid;
-  wire        _xbar_io_soc_bready;
   wire [31:0] _xbar_io_clint_araddr;
   wire        _xbar_io_clint_arvalid;
   wire        _xbar_io_clint_rready;
-  wire [31:0] _xbar_io_uart_araddr;
-  wire        _xbar_io_uart_arvalid;
-  wire        _xbar_io_uart_rready;
-  wire [31:0] _xbar_io_uart_awaddr;
-  wire        _xbar_io_uart_awvalid;
-  wire [31:0] _xbar_io_uart_wdata;
-  wire        _xbar_io_uart_wvalid;
-  wire        _xbar_io_uart_bready;
   wire [31:0] _core_io_imem_araddr;
   wire        _core_io_imem_arvalid;
+  wire [7:0]  _core_io_imem_arlen;
+  wire [2:0]  _core_io_imem_arsize;
+  wire [1:0]  _core_io_imem_arburst;
   wire        _core_io_imem_rready;
   wire [31:0] _core_io_dmem_araddr;
   wire        _core_io_dmem_arvalid;
+  wire [2:0]  _core_io_dmem_arsize;
   wire        _core_io_dmem_rready;
   wire [31:0] _core_io_dmem_awaddr;
   wire        _core_io_dmem_awvalid;
+  wire [2:0]  _core_io_dmem_awsize;
   wire [31:0] _core_io_dmem_wdata;
   wire [3:0]  _core_io_dmem_wstrb;
   wire        _core_io_dmem_wvalid;
@@ -2534,12 +2340,16 @@ module ysyx_25020039(
     .reset           (reset),
     .io_imem_araddr  (_core_io_imem_araddr),
     .io_imem_arvalid (_core_io_imem_arvalid),
+    .io_imem_arlen   (_core_io_imem_arlen),
+    .io_imem_arsize  (_core_io_imem_arsize),
+    .io_imem_arburst (_core_io_imem_arburst),
     .io_imem_arready (_xbar_io_imem_arready),
     .io_imem_rdata   (_xbar_io_imem_rdata),
     .io_imem_rvalid  (_xbar_io_imem_rvalid),
     .io_imem_rready  (_core_io_imem_rready),
     .io_dmem_araddr  (_core_io_dmem_araddr),
     .io_dmem_arvalid (_core_io_dmem_arvalid),
+    .io_dmem_arsize  (_core_io_dmem_arsize),
     .io_dmem_arready (_xbar_io_dmem_arready),
     .io_dmem_rdata   (_xbar_io_dmem_rdata),
     .io_dmem_rresp   (_xbar_io_dmem_rresp),
@@ -2547,6 +2357,7 @@ module ysyx_25020039(
     .io_dmem_rready  (_core_io_dmem_rready),
     .io_dmem_awaddr  (_core_io_dmem_awaddr),
     .io_dmem_awvalid (_core_io_dmem_awvalid),
+    .io_dmem_awsize  (_core_io_dmem_awsize),
     .io_dmem_awready (_xbar_io_dmem_awready),
     .io_dmem_wdata   (_core_io_dmem_wdata),
     .io_dmem_wstrb   (_core_io_dmem_wstrb),
@@ -2554,20 +2365,23 @@ module ysyx_25020039(
     .io_dmem_wready  (_xbar_io_dmem_wready),
     .io_dmem_bresp   (_xbar_io_dmem_bresp),
     .io_dmem_bvalid  (_xbar_io_dmem_bvalid),
-    .io_dmem_bready  (_core_io_dmem_bready),
-    .io_ebreak       (io_ebreak)
+    .io_dmem_bready  (_core_io_dmem_bready)
   );
   ysyx_25020039_Xbar xbar (
     .clock            (clock),
     .reset            (reset),
     .io_imem_araddr   (_core_io_imem_araddr),
     .io_imem_arvalid  (_core_io_imem_arvalid),
+    .io_imem_arlen    (_core_io_imem_arlen),
+    .io_imem_arsize   (_core_io_imem_arsize),
+    .io_imem_arburst  (_core_io_imem_arburst),
     .io_imem_arready  (_xbar_io_imem_arready),
     .io_imem_rdata    (_xbar_io_imem_rdata),
     .io_imem_rvalid   (_xbar_io_imem_rvalid),
     .io_imem_rready   (_core_io_imem_rready),
     .io_dmem_araddr   (_core_io_dmem_araddr),
     .io_dmem_arvalid  (_core_io_dmem_arvalid),
+    .io_dmem_arsize   (_core_io_dmem_arsize),
     .io_dmem_arready  (_xbar_io_dmem_arready),
     .io_dmem_rdata    (_xbar_io_dmem_rdata),
     .io_dmem_rresp    (_xbar_io_dmem_rresp),
@@ -2575,6 +2389,7 @@ module ysyx_25020039(
     .io_dmem_rready   (_core_io_dmem_rready),
     .io_dmem_awaddr   (_core_io_dmem_awaddr),
     .io_dmem_awvalid  (_core_io_dmem_awvalid),
+    .io_dmem_awsize   (_core_io_dmem_awsize),
     .io_dmem_awready  (_xbar_io_dmem_awready),
     .io_dmem_wdata    (_core_io_dmem_wdata),
     .io_dmem_wstrb    (_core_io_dmem_wstrb),
@@ -2583,45 +2398,36 @@ module ysyx_25020039(
     .io_dmem_bresp    (_xbar_io_dmem_bresp),
     .io_dmem_bvalid   (_xbar_io_dmem_bvalid),
     .io_dmem_bready   (_core_io_dmem_bready),
-    .io_soc_araddr    (_xbar_io_soc_araddr),
-    .io_soc_arvalid   (_xbar_io_soc_arvalid),
-    .io_soc_arready   (_sram_io_axi_arready),
-    .io_soc_rdata     (_sram_io_axi_rdata),
-    .io_soc_rresp     (_sram_io_axi_rresp),
-    .io_soc_rvalid    (_sram_io_axi_rvalid),
-    .io_soc_rready    (_xbar_io_soc_rready),
-    .io_soc_awaddr    (_xbar_io_soc_awaddr),
-    .io_soc_awvalid   (_xbar_io_soc_awvalid),
-    .io_soc_awready   (_sram_io_axi_awready),
-    .io_soc_wdata     (_xbar_io_soc_wdata),
-    .io_soc_wstrb     (_xbar_io_soc_wstrb),
-    .io_soc_wvalid    (_xbar_io_soc_wvalid),
-    .io_soc_wready    (_sram_io_axi_wready),
-    .io_soc_bresp     (_sram_io_axi_bresp),
-    .io_soc_bvalid    (_sram_io_axi_bvalid),
-    .io_soc_bready    (_xbar_io_soc_bready),
+    .io_soc_araddr    (io_master_araddr),
+    .io_soc_arvalid   (io_master_arvalid),
+    .io_soc_arlen     (io_master_arlen),
+    .io_soc_arsize    (io_master_arsize),
+    .io_soc_arburst   (io_master_arburst),
+    .io_soc_arready   (io_master_arready),
+    .io_soc_rdata     (io_master_rdata),
+    .io_soc_rresp     (io_master_rresp),
+    .io_soc_rvalid    (io_master_rvalid),
+    .io_soc_rlast     (io_master_rlast),
+    .io_soc_rready    (io_master_rready),
+    .io_soc_awaddr    (io_master_awaddr),
+    .io_soc_awvalid   (io_master_awvalid),
+    .io_soc_awsize    (io_master_awsize),
+    .io_soc_awburst   (io_master_awburst),
+    .io_soc_awready   (io_master_awready),
+    .io_soc_wdata     (io_master_wdata),
+    .io_soc_wstrb     (io_master_wstrb),
+    .io_soc_wvalid    (io_master_wvalid),
+    .io_soc_wlast     (io_master_wlast),
+    .io_soc_wready    (io_master_wready),
+    .io_soc_bresp     (io_master_bresp),
+    .io_soc_bvalid    (io_master_bvalid),
+    .io_soc_bready    (io_master_bready),
     .io_clint_araddr  (_xbar_io_clint_araddr),
     .io_clint_arvalid (_xbar_io_clint_arvalid),
     .io_clint_arready (_clint_io_arready),
     .io_clint_rdata   (_clint_io_rdata),
     .io_clint_rvalid  (_clint_io_rvalid),
-    .io_clint_rready  (_xbar_io_clint_rready),
-    .io_uart_araddr   (_xbar_io_uart_araddr),
-    .io_uart_arvalid  (_xbar_io_uart_arvalid),
-    .io_uart_arready  (_uart_io_arready),
-    .io_uart_rdata    (_uart_io_rdata),
-    .io_uart_rresp    (_uart_io_rresp),
-    .io_uart_rvalid   (_uart_io_rvalid),
-    .io_uart_rready   (_xbar_io_uart_rready),
-    .io_uart_awaddr   (_xbar_io_uart_awaddr),
-    .io_uart_awvalid  (_xbar_io_uart_awvalid),
-    .io_uart_awready  (_uart_io_awready),
-    .io_uart_wdata    (_xbar_io_uart_wdata),
-    .io_uart_wvalid   (_xbar_io_uart_wvalid),
-    .io_uart_wready   (_uart_io_wready),
-    .io_uart_bresp    (_uart_io_bresp),
-    .io_uart_bvalid   (_uart_io_bvalid),
-    .io_uart_bready   (_xbar_io_uart_bready)
+    .io_clint_rready  (_xbar_io_clint_rready)
   );
   ysyx_25020039_Clint clint (
     .clock      (clock),
@@ -2633,47 +2439,20 @@ module ysyx_25020039(
     .io_rvalid  (_clint_io_rvalid),
     .io_rready  (_xbar_io_clint_rready)
   );
-  ysyx_25020039_UartWrapper uart (
-    .clock      (clock),
-    .reset      (reset),
-    .io_araddr  (_xbar_io_uart_araddr),
-    .io_arvalid (_xbar_io_uart_arvalid),
-    .io_arready (_uart_io_arready),
-    .io_rdata   (_uart_io_rdata),
-    .io_rresp   (_uart_io_rresp),
-    .io_rvalid  (_uart_io_rvalid),
-    .io_rready  (_xbar_io_uart_rready),
-    .io_awaddr  (_xbar_io_uart_awaddr),
-    .io_awvalid (_xbar_io_uart_awvalid),
-    .io_awready (_uart_io_awready),
-    .io_wdata   (_xbar_io_uart_wdata),
-    .io_wvalid  (_xbar_io_uart_wvalid),
-    .io_wready  (_uart_io_wready),
-    .io_bresp   (_uart_io_bresp),
-    .io_bvalid  (_uart_io_bvalid),
-    .io_bready  (_xbar_io_uart_bready)
-  );
-  ysyx_25020039_SRAM sram (
-    .clock          (clock),
-    .reset          (reset),
-    .io_axi_araddr  (_xbar_io_soc_araddr),
-    .io_axi_arvalid (_xbar_io_soc_arvalid),
-    .io_axi_arready (_sram_io_axi_arready),
-    .io_axi_rdata   (_sram_io_axi_rdata),
-    .io_axi_rresp   (_sram_io_axi_rresp),
-    .io_axi_rvalid  (_sram_io_axi_rvalid),
-    .io_axi_rready  (_xbar_io_soc_rready),
-    .io_axi_awaddr  (_xbar_io_soc_awaddr),
-    .io_axi_awvalid (_xbar_io_soc_awvalid),
-    .io_axi_awready (_sram_io_axi_awready),
-    .io_axi_wdata   (_xbar_io_soc_wdata),
-    .io_axi_wstrb   (_xbar_io_soc_wstrb),
-    .io_axi_wvalid  (_xbar_io_soc_wvalid),
-    .io_axi_wready  (_sram_io_axi_wready),
-    .io_axi_bresp   (_sram_io_axi_bresp),
-    .io_axi_bvalid  (_sram_io_axi_bvalid),
-    .io_axi_bready  (_xbar_io_soc_bready)
-  );
+  assign io_master_arid = 4'h0;
+  assign io_master_awid = 4'h0;
+  assign io_master_awlen = 8'h0;
+  assign io_slave_arready = 1'h0;
+  assign io_slave_rdata = 32'h0;
+  assign io_slave_rresp = 2'h0;
+  assign io_slave_rvalid = 1'h0;
+  assign io_slave_rlast = 1'h0;
+  assign io_slave_rid = 4'h0;
+  assign io_slave_awready = 1'h0;
+  assign io_slave_wready = 1'h0;
+  assign io_slave_bresp = 2'h0;
+  assign io_slave_bvalid = 1'h0;
+  assign io_slave_bid = 4'h0;
 endmodule
 
 

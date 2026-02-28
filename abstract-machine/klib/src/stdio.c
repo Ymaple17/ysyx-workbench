@@ -112,6 +112,13 @@ int vsprintf(char *out, const char *fmt, va_list ap) {
           out[len++] = '%';
           break;
         }
+        case 'p': {
+	  unsigned int value = va_arg(ap, unsigned int);
+	  out[len++] = '0';
+	  out[len++] = 'x';
+	  len += sprintf_number(out + len, value, 16, width, fill);
+	  break;
+	}
         default: {
           out[len++] = '%';
           out[len++] = *ptr;

@@ -56,8 +56,8 @@ class DPI_Mem extends BlackBox with HasBlackBoxInline {
       |
       |  always @(posedge clk) begin
       |     if (wen) begin
-      |        if (waddr == 32'ha00003f8) begin
-      |            $write("%c", wdata[7:0]);
+      |        if (waddr >= 32'ha00003f8 && waddr <= 32'ha00003ff) begin
+      |             $write("%c", wdata[7:0]);
       |        end
       |
       |        else if (waddr >= 32'h80000000 && waddr < 32'h80000000 + 128*1024) begin
@@ -164,9 +164,9 @@ class SRAM extends Module {
   val bresp_reg  = RegInit(OKAY)
   
   def isValidAddr(addr: UInt): Bool = {
-     (addr >= "h80000000".U && addr <= "h8fffffff".U) || 
-     (addr >= "ha0000000".U && addr <= "ha0000007".U)
-  }
+   (addr >= "h80000000".U && addr <= "h8fffffff".U) || 
+   (addr >= "ha0000000".U && addr <= "ha0000fff".U)
+}
 
   // Generate random delay
   // val lfsr_val = LFSR(16)

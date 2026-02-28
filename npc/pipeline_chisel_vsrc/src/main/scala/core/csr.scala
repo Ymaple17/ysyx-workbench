@@ -45,34 +45,42 @@ class CSR(conf: CoreConfig) extends Module{
     override def desiredName = "ysyx_25020039_CSR"
 
     val io = IO(new CSR_IO(conf.xlen))
-
+    val rf = RegInit(VecInit(Seq.fill(6)(0.U(conf.xlen.W))))
+    
     import CSR_REG._
+    val in_waddr = Wire(UInt(3.W))
+    val in_raddr = Wire(UInt(3.W))
 
-    val rf_mtvec = RegInit(0.U(conf.xlen.W))
-    val rf_mepc  = RegInit(0.U(conf.xlen.W))
-
-    val w_mstatus   = 0x1800.U(conf.xlen.W)
-    val w_mcause    = 0xb.U(conf.xlen.W)
-    val w_mvendorid = "h79737978".U(conf.xlen.W)
-    val w_marchid   = 0x25020039.U(conf.xlen.W)
-
-    when(io.irq) {
-        rf_mepc := io.irq_pc
-    }.elsewhen(io.write.wen) {
-        switch(io.write.waddr) {
-            is(MTVEC) { rf_mtvec := io.write.wdata }
-            is(MEPC)  { rf_mepc  := io.write.wdata }
-        }
-    }
-    io.read.rdata := MuxLookup(io.read.raddr, 0.U)(Seq(
-        MSTATUS   -> w_mstatus,
-        MTVEC     -> rf_mtvec,
-        MEPC      -> rf_mepc,
-        MCAUSE    -> w_mcause,
-        MVENDORID -> w_mvendorid,
-        MARCHID   -> w_marchid,
+    in_waddr := MuxLookup(io.write.waddr, csr_none)(Seq(
+        MSTATUS -> csr_mstatus,
+        MTVEC -> csr_mtvec,
+        MEPC -> csr_mepc,
+        MCAUSE -> csr_mcause,
+        MVENDORID -> csr_mvendorid,
+        MARCHID -> csr_marchid
     ))
 
-    io.read.mtvec := rf_mtvec
-    io.read.mepc  := rf_mepc
+    in_raddr := MuxLookup(io.read.raddr, csr_none)(Seq(
+        MSTATUS -> csr_mstatus,
+        MTVEC -> csr_mtvec,
+        MEPC -> csr_mepc,
+        MCAUSE -> csr_mcause,
+        MVENDORID -> csr_mvendorid,
+        MARCHID -> csr_marchid
+    ))
+
+    io.read.rdata := rf(in_raddr)
+    io.read.mtvec := rf(csr_mtvec)
+    io.read.mepc := rf(csr_mepc)
+    rf(csr_mstatus) := 0x1800.U
+    rf(csr_mvendorid) := "h79737978".U
+    rf(csr_marchid) := 0x25020039.U
+
+    when(io.write.wen & ~(io.irq)){
+        rf(in_waddr) := io.write.wdata
+    }
+    when(io.irq){
+        rf(csr_mcause) := io.irq_no.asUInt
+        rf(csr_mepc) := io.irq_pc
+    }
 }

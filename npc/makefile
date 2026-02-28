@@ -23,7 +23,7 @@ VSRC_CACHE_NETLIST = $(VSRC_CACHE_NPC_DIR)/ysyx_25020039.netlist.syn.v
 
 CONFIG_PIPELINE_CHISEL_SOC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_SOC .config | cut -d'=' -f2)
 CONFIG_PIPELINE_CHISEL_NPC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_NPC .config | cut -d'=' -f2)
-#CONFIG_NVBOARD_VAL             := $(shell grep CONFIG_NVBOARD .config | cut -d'=' -f2)
+# CONFIG_NVBOARD_VAL             := $(shell grep CONFIG_NVBOARD .config | cut -d'=' -f2)
 CONFIG_NVBOARD_VAL             := y
 
 VERILATOR_FLAGS =
@@ -44,7 +44,7 @@ VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1
 CFLAGS += -std=c++17
 $(info [INFO] Using pipeline_chisel SOC Mode)
 else
-VSRC = $(shell find $(VSRC_CACHE_NPC_DIR) -name "*.v" -o -name "*.sv" 2>/dev/null)
+VSRC = $(shell find $(VSRC_CACHE_NPC_DIR) -name "*.sv" 2>/dev/null)
 CSRC = $(CSRC_PIPELINE_CHISEL_NPC)
 CHISEL_WORK_DIR   := pipeline_chisel_vsrc
 CHISEL_BUILD_TOOL := mill
@@ -152,7 +152,7 @@ IMG   ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 IVERILOG_VSRC = $(filter-out %/ysyx_25020039.sv, $(VSRC_PIPELINE_CHISEL)) \
                 $(VSRC_CACHE_NPC)
 
-IVERILOG_NETLIST_VSRC = $(filter-out %/ysyx_25020039.sv %/SimUART.v, $(VSRC_PIPELINE_CHISEL))
+IVERILOG_NETLIST_VSRC = $(filter-out %/ysyx_25020039.sv, $(VSRC_PIPELINE_CHISEL))
 
 IVERILOG_FLAGS_IV = -g2012 -D__ICARUS__ \
                     -Ipipeline_chisel_vsrc \
@@ -268,11 +268,11 @@ syn-npc:
 		echo "[ERROR] $(VSRC_CACHE_NPC) 不存在，请先运行 make npc"; \
 		exit 1; \
 	fi
-	rm -rf ../yosys-sta/result/ysyx_25020039-npc-500MHz
-	$(MAKE) -C ../yosys-sta syn DESIGN=ysyx_25020039 \
+	rm -rf ../yosys-sta/result/ysyx_25020039-500MHz
+	$(MAKE) -C ../yosys-sta syn DESIGN=ysyx_25020039 -B \
 		RTL_FILES="$(abspath $(filter-out %/ysyx_25020039.sv, $(VSRC_PIPELINE_CHISEL))) \
 		$(abspath $(VSRC_CACHE_NPC))"
-	@cp ../yosys-sta/ysyx_25020039-npc-500MHz/ysyx_25020039.netlist.syn.v \
+	@cp ../yosys-sta/result/ysyx_25020039-500MHz/ysyx_25020039.netlist.syn.v \
 		$(VSRC_CACHE_NETLIST)
 
 $(IVERILOG_BIN_NETLIST_IV): $(VSRC_CACHE_NETLIST) $(CELLS) $(MEM_HEX)
@@ -287,7 +287,7 @@ $(IVERILOG_BIN_NETLIST_IV): $(VSRC_CACHE_NETLIST) $(CELLS) $(MEM_HEX)
 		tb_top.sv
 
 sim-iverilog-netlist: $(MEM_HEX) $(IVERILOG_BIN_NETLIST_IV)
-	$(VVP) -n $(IVERILOG_BIN_NETLIST_IV)
+	cd $(IVERILOG_DIR) && $(VVP) -n $(abspath $(IVERILOG_BIN_NETLIST_IV))
 
 sta:
 	@if [ -z "$(wildcard $(VSRC_CACHE_SOC_DIR)/*.sv $(VSRC_CACHE_SOC_DIR)/*.v)" ]; then \
@@ -299,6 +299,25 @@ sta:
 		RTL_FILES="$(abspath $(filter-out %/SRAM.sv %/DPI_Mem.v %/SimUART.v, \
 		$(shell find $(VSRC_CACHE_SOC_DIR) -name "*.v" -o -name "*.sv")))"
 	cat ../yosys-sta/result/ysyx_25020039-500MHz/synth_stat.txt
+
+IVERILOG_BIN_NETLIST = obj_dir/sim_netlist.vvp
+
+$(IVERILOG_BIN_NETLIST): vsrc/npc/ysyx_25020039.netlist.syn.v tb_top.sv
+	@echo "[BUILD] Compiling NPC netlist with Icarus Verilog..."
+	@mkdir -p obj_dir
+	@iverilog -g2012 -D__ICARUS__ -o $@ \
+		-I./pipeline_chisel_vsrc \
+		-I./obj_dir \
+		tb_top.sv \
+		vsrc/npc/ysyx_25020039.netlist.syn.v \
+		../yosys-sta/nangate45/sim/cells.v \
+		./pipeline_chisel_vsrc/DPI_Mem.v \
+		$(filter-out %/ysyx_25020039.sv %/DPI_Mem.v, $(wildcard ./pipeline_chisel_vsrc/*.sv))
+
+sim-netlist: $(IVERILOG_BIN_NETLIST)
+	@echo "[RUN] Running NPC netlist simulation..."
+	@riscv64-linux-gnu-objcopy -I binary -O verilog $(IMG) mem.hex
+	@vvp -n $<
 
 clean: 
 	rm -rf $(OBJ_DIR) $(BUILD_DIR)

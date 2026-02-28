@@ -37,8 +37,8 @@ module DPI_Mem(
 
   always @(posedge clk) begin
      if (wen) begin
-        if (waddr == 32'ha00003f8) begin
-            $write("%c", wdata[7:0]);
+        if (waddr >= 32'ha00003f8 && waddr <= 32'ha00003ff) begin
+             $write("%c", wdata[7:0]);
         end
 
         else if (waddr >= 32'h80000000 && waddr < 32'h80000000 + 128*1024) begin

@@ -2353,7 +2353,7 @@ module ysyx_25020039_SRAM(
   wire        _GEN = state == 3'h1;
   wire        _GEN_0 =
     araddr_reg[31] & araddr_reg < 32'h90000000 | araddr_reg > 32'h9FFFFFFF
-    & araddr_reg < 32'hA0000008;
+    & araddr_reg < 32'hA0001000;
   wire        _GEN_1 = state == 3'h2;
   wire        _GEN_2 = io_axi_awready_0 | _GEN;
   wire        _GEN_3 = _GEN_2 | ~_GEN_1;
@@ -2362,7 +2362,7 @@ module ysyx_25020039_SRAM(
   wire        _GEN_6 = io_axi_awready_0 | _GEN | _GEN_1 | _GEN_4;
   wire        _GEN_7 =
     awaddr_reg[31] & awaddr_reg < 32'h90000000 | awaddr_reg > 32'h9FFFFFFF
-    & awaddr_reg < 32'hA0000008;
+    & awaddr_reg < 32'hA0001000;
   wire        _GEN_8 = _GEN_5 & io_axi_wvalid;
   wire        _GEN_9 = _GEN_6 | ~(_GEN_5 & io_axi_wvalid & _GEN_7);
   wire        _GEN_10 = state == 3'h5;

@@ -4,6 +4,6 @@
  * NPC Configuration
  *
  */
-#define CONFIG_PIPELINE_CHISEL 1
 #define CONFIG_BATCH_MODE 1
-#define CONFIG_PIPELINE_CHISEL_NPC 1
+#define CONFIG_NVBOARD 1
+#define CONFIG_PIPELINE_SOC 1

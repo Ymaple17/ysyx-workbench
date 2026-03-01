@@ -1,0 +1,7 @@
+[INFO] Using pipeline_chisel SOC Mode
+[INFO] CONFIG_WAVEFORM is disabled
+[INFO] CONFIG_DIFFTEST is disabled
+[INFO] CONFIG_ITRACE is disabled
+[RUN] Running NPC netlist simulation...
+[SIM] Simulation started. Waiting for ebreak...
+[SIM] Ebreak ! Simulation completed successfully.

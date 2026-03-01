@@ -86,6 +86,7 @@ module ysyx_25020039_Control(
   output        io_signals_wbu_csr_write,
   output [1:0]  io_signals_wbu_csr_sel,
   output        io_irq,
+  output [7:0]  io_irq_num,
   input  [31:0] io_inst
 );
 
@@ -367,6 +368,7 @@ module ysyx_25020039_Control(
           ? 2'h3
           : _GEN_6 ? 2'h0 : _control_signals_T_81 ? 2'h1 : {_control_signals_T_759, 1'h0};
   assign io_irq = ~_GEN_17 & _control_signals_T_637;
+  assign io_irq_num = _GEN_17 | ~_control_signals_T_637 ? 8'h0 : 8'hB;
 endmodule
 
 module ysyx_25020039_IMM(
@@ -414,6 +416,7 @@ module ysyx_25020039_IDU(
   output [11:0] io_out_bits_csr_waddr,
   output        io_out_bits_is_ebreak,
                 io_out_bits_state_state,
+  output [7:0]  io_out_bits_state_state_num,
   input         io_ifu_signals_ready,
   output        io_ifu_signals_valid,
                 io_ifu_signals_bits_is_fencei,
@@ -449,6 +452,7 @@ module ysyx_25020039_IDU(
     .io_signals_wbu_csr_write      (io_out_bits_signals_wbu_csr_write),
     .io_signals_wbu_csr_sel        (io_out_bits_signals_wbu_csr_sel),
     .io_irq                        (io_out_bits_state_state),
+    .io_irq_num                    (io_out_bits_state_state_num),
     .io_inst                       (io_in_bits_inst)
   );
   ysyx_25020039_IMM imm (
@@ -574,7 +578,8 @@ module ysyx_25020039_EXU(
   input  [11:0] io_in_bits_csr_waddr,
   input         io_in_bits_is_ebreak,
                 io_in_bits_state_state,
-                io_out_ready,
+  input  [7:0]  io_in_bits_state_state_num,
+  input         io_out_ready,
   output        io_out_valid,
   output [7:0]  io_out_bits_signals_lsu_mem_wmask,
   output [2:0]  io_out_bits_signals_lsu_mem_rd,
@@ -594,7 +599,8 @@ module ysyx_25020039_EXU(
   output [11:0] io_out_bits_csr_waddr,
   output        io_out_bits_is_ebreak,
                 io_out_bits_state_state,
-                io_pc_valid,
+  output [7:0]  io_out_bits_state_state_num,
+  output        io_pc_valid,
   output [31:0] io_pc_bits_pc4_imm,
                 io_pc_bits_pc4_rs2,
                 io_pc_bits_pc4,
@@ -639,6 +645,7 @@ module ysyx_25020039_EXU(
   assign io_out_bits_csr_waddr = io_in_bits_csr_waddr;
   assign io_out_bits_is_ebreak = io_in_bits_is_ebreak;
   assign io_out_bits_state_state = io_in_bits_state_state;
+  assign io_out_bits_state_state_num = io_in_bits_state_state_num;
   assign io_pc_valid = io_in_valid & io_in_ready_0;
   assign io_pc_bits_pc4_imm = io_in_bits_pc + io_in_bits_imm_ext & 32'hFFFFFFFE;
   assign io_pc_bits_pc4_rs2 = _alu_io_result & 32'hFFFFFFFE;
@@ -668,6 +675,7 @@ module ysyx_25020039_LSU(
   input  [11:0] io_in_bits_csr_waddr,
   input         io_in_bits_is_ebreak,
                 io_in_bits_state_state,
+  input  [7:0]  io_in_bits_state_state_num,
   output        io_out_valid,
                 io_out_bits_signals_wbu_reg_write,
   output [2:0]  io_out_bits_signals_wbu_reg_write_sel,
@@ -683,6 +691,7 @@ module ysyx_25020039_LSU(
   output [11:0] io_out_bits_csr_waddr,
   output        io_out_bits_is_ebreak,
                 io_out_bits_state_state,
+  output [7:0]  io_out_bits_state_state_num,
   input         io_is_flush,
   output [31:0] io_dmem_araddr,
   output        io_dmem_arvalid,
@@ -724,6 +733,8 @@ module ysyx_25020039_LSU(
   wire [31:0] rword = io_dmem_rdata >> {26'h0, _data_offset_T, 3'h0};
   wire [94:0] _io_dmem_wdata_T_2 =
     {63'h0, io_in_bits_rd2} << {89'h0, _data_offset_T, 3'h0};
+  wire        has_laf = io_dmem_rvalid & (|io_dmem_rresp);
+  wire        has_saf = io_dmem_bvalid & (|io_dmem_bresp);
   assign idle = io_in_valid & ~io_is_flush;
   wire        ready = _ready_T | ~is_load & ~is_store;
   wire        _GEN = (|state) | io_is_flush;
@@ -782,9 +793,9 @@ module ysyx_25020039_LSU(
   assign io_out_bits_waddr = io_in_bits_waddr;
   assign io_out_bits_csr_waddr = io_in_bits_csr_waddr;
   assign io_out_bits_is_ebreak = io_in_bits_is_ebreak;
-  assign io_out_bits_state_state =
-    io_dmem_rvalid & (|io_dmem_rresp) | io_dmem_bvalid & (|io_dmem_bresp)
-    | io_in_bits_state_state;
+  assign io_out_bits_state_state = has_laf | has_saf | io_in_bits_state_state;
+  assign io_out_bits_state_state_num =
+    has_saf ? 8'h7 : has_laf ? 8'h5 : io_in_bits_state_state_num;
   assign io_dmem_araddr = io_in_bits_alu_result;
   assign io_dmem_arvalid = io_dmem_arvalid_0;
   assign io_dmem_rready = is_load & _io_dmem_bready_T | _io_dmem_bready_T_2;
@@ -812,6 +823,7 @@ module ysyx_25020039_WBU(
   input  [11:0] io_in_bits_csr_waddr,
   input         io_in_bits_is_ebreak,
                 io_in_bits_state_state,
+  input  [7:0]  io_in_bits_state_state_num,
   output [31:0] io_refile_wdata,
   output [4:0]  io_refile_waddr,
   output        io_refile_wen,
@@ -819,7 +831,8 @@ module ysyx_25020039_WBU(
   output [11:0] io_csr_waddr,
   output        io_csr_wen,
                 io_state_write_state,
-                io_state_write_en,
+  output [7:0]  io_state_write_state_num,
+  output        io_state_write_en,
   input         io_is_flush,
   output        io_ebreak
 );
@@ -853,6 +866,7 @@ module ysyx_25020039_WBU(
   assign io_csr_waddr = io_in_bits_csr_waddr;
   assign io_csr_wen = io_in_bits_signals_wbu_csr_write & io_in_valid & ~io_is_flush;
   assign io_state_write_state = io_in_bits_state_state;
+  assign io_state_write_state_num = io_in_bits_state_state_num;
   assign io_state_write_en = io_in_valid & ~io_is_flush;
   assign io_ebreak = io_in_bits_is_ebreak & io_in_valid & ~io_is_flush;
 endmodule
@@ -1115,6 +1129,7 @@ module ysyx_25020039_CSR(
   input         clock,
                 reset,
                 io_irq,
+  input  [7:0]  io_irq_no,
   input  [31:0] io_irq_pc,
   input  [11:0] io_read_raddr,
   output [31:0] io_read_rdata,
@@ -1125,41 +1140,78 @@ module ysyx_25020039_CSR(
   input         io_write_wen
 );
 
-  reg  [31:0] rf_mtvec;
-  reg  [31:0] rf_mepc;
-  wire        _GEN = io_write_waddr == 12'h305;
+  reg  [31:0] rf_0;
+  reg  [31:0] rf_1;
+  reg  [31:0] rf_2;
+  reg  [31:0] rf_3;
+  reg  [31:0] rf_4;
+  reg  [31:0] rf_5;
+  reg  [31:0] casez_tmp;
+  always_comb begin
+    casez (io_read_raddr == 12'hF12
+             ? 3'h5
+             : io_read_raddr == 12'hF11
+                 ? 3'h4
+                 : io_read_raddr == 12'h342
+                     ? 3'h3
+                     : io_read_raddr == 12'h341 ? 3'h2 : {2'h0, io_read_raddr == 12'h305})
+      3'b000:
+        casez_tmp = rf_0;
+      3'b001:
+        casez_tmp = rf_1;
+      3'b010:
+        casez_tmp = rf_2;
+      3'b011:
+        casez_tmp = rf_3;
+      3'b100:
+        casez_tmp = rf_4;
+      3'b101:
+        casez_tmp = rf_5;
+      3'b110:
+        casez_tmp = rf_0;
+      default:
+        casez_tmp = rf_0;
+    endcase
+  end // always_comb
+  wire [2:0]  in_waddr =
+    io_write_waddr == 12'hF12
+      ? 3'h5
+      : io_write_waddr == 12'hF11
+          ? 3'h4
+          : io_write_waddr == 12'h342
+              ? 3'h3
+              : io_write_waddr == 12'h341 ? 3'h2 : {2'h0, io_write_waddr == 12'h305};
+  wire        _GEN = io_write_wen & ~io_irq;
   always @(posedge clock) begin
     if (reset) begin
-      rf_mtvec <= 32'h0;
-      rf_mepc <= 32'h0;
+      rf_0 <= 32'h0;
+      rf_1 <= 32'h0;
+      rf_2 <= 32'h0;
+      rf_3 <= 32'h0;
+      rf_4 <= 32'h0;
+      rf_5 <= 32'h0;
     end
     else begin
-      if (io_irq | ~(io_write_wen & _GEN)) begin
+      rf_0 <= _GEN & in_waddr == 3'h0 ? io_write_wdata : 32'h1800;
+      if (_GEN & in_waddr == 3'h1)
+        rf_1 <= io_write_wdata;
+      if (io_irq) begin
+        rf_2 <= io_irq_pc;
+        rf_3 <= {24'h0, io_irq_no};
       end
-      else
-        rf_mtvec <= io_write_wdata;
-      if (io_irq)
-        rf_mepc <= io_irq_pc;
-      else if (~io_write_wen | _GEN | io_write_waddr != 12'h341) begin
+      else begin
+        if (_GEN & in_waddr == 3'h2)
+          rf_2 <= io_write_wdata;
+        if (_GEN & in_waddr == 3'h3)
+          rf_3 <= io_write_wdata;
       end
-      else
-        rf_mepc <= io_write_wdata;
+      rf_4 <= _GEN & in_waddr == 3'h4 ? io_write_wdata : 32'h79737978;
+      rf_5 <= _GEN & in_waddr == 3'h5 ? io_write_wdata : 32'h25020039;
     end
   end // always @(posedge)
-  assign io_read_rdata =
-    io_read_raddr == 12'hF12
-      ? 32'h25020039
-      : io_read_raddr == 12'hF11
-          ? 32'h79737978
-          : io_read_raddr == 12'h342
-              ? 32'hB
-              : io_read_raddr == 12'h341
-                  ? rf_mepc
-                  : io_read_raddr == 12'h305
-                      ? rf_mtvec
-                      : io_read_raddr == 12'h300 ? 32'h1800 : 32'h0;
-  assign io_read_mtvec = rf_mtvec;
-  assign io_read_mepc = rf_mepc;
+  assign io_read_rdata = casez_tmp;
+  assign io_read_mtvec = rf_1;
+  assign io_read_mepc = rf_2;
 endmodule
 
 module ysyx_25020039_Core(
@@ -1213,6 +1265,7 @@ module ysyx_25020039_Core(
   wire [11:0] _wbu_io_csr_waddr;
   wire        _wbu_io_csr_wen;
   wire        _wbu_io_state_write_state;
+  wire [7:0]  _wbu_io_state_write_state_num;
   wire        _wbu_io_state_write_en;
   wire        _lsu_io_in_ready;
   wire        _lsu_io_out_valid;
@@ -1230,6 +1283,7 @@ module ysyx_25020039_Core(
   wire [11:0] _lsu_io_out_bits_csr_waddr;
   wire        _lsu_io_out_bits_is_ebreak;
   wire        _lsu_io_out_bits_state_state;
+  wire [7:0]  _lsu_io_out_bits_state_state_num;
   wire        _exu_io_in_ready;
   wire        _exu_io_out_valid;
   wire [7:0]  _exu_io_out_bits_signals_lsu_mem_wmask;
@@ -1250,6 +1304,7 @@ module ysyx_25020039_Core(
   wire [11:0] _exu_io_out_bits_csr_waddr;
   wire        _exu_io_out_bits_is_ebreak;
   wire        _exu_io_out_bits_state_state;
+  wire [7:0]  _exu_io_out_bits_state_state_num;
   wire        _exu_io_pc_valid;
   wire [31:0] _exu_io_pc_bits_pc4_imm;
   wire [31:0] _exu_io_pc_bits_pc4_rs2;
@@ -1278,6 +1333,7 @@ module ysyx_25020039_Core(
   wire [11:0] _idu_io_out_bits_csr_waddr;
   wire        _idu_io_out_bits_is_ebreak;
   wire        _idu_io_out_bits_state_state;
+  wire [7:0]  _idu_io_out_bits_state_state_num;
   wire        _idu_io_ifu_signals_valid;
   wire        _idu_io_ifu_signals_bits_is_fencei;
   wire [4:0]  _idu_io_refile_raddr1;
@@ -1295,6 +1351,7 @@ module ysyx_25020039_Core(
   wire        _ifu_io_imem_arvalid;
   wire        _ifu_io_imem_rready;
   reg         is_irq;
+  reg  [7:0]  csr_io_irq_no_REG;
   reg  [31:0] csr_io_irq_pc_REG;
   reg  [31:0] ifu_io_in_bits_r_next_pc;
   reg         ifu_io_in_valid_r;
@@ -1321,6 +1378,7 @@ module ysyx_25020039_Core(
   reg  [11:0] exu_io_in_bits_r_csr_waddr;
   reg         exu_io_in_bits_r_is_ebreak;
   reg         exu_io_in_bits_r_state_state;
+  reg  [7:0]  exu_io_in_bits_r_state_state_num;
   reg         exu_io_in_valid_r;
   wire        exu_io_in_valid = exu_io_in_valid_r & ~exu_io_is_flush;
   reg  [7:0]  lsu_io_in_bits_r_signals_lsu_mem_wmask;
@@ -1341,6 +1399,7 @@ module ysyx_25020039_Core(
   reg  [11:0] lsu_io_in_bits_r_csr_waddr;
   reg         lsu_io_in_bits_r_is_ebreak;
   reg         lsu_io_in_bits_r_state_state;
+  reg  [7:0]  lsu_io_in_bits_r_state_state_num;
   reg         lsu_io_in_valid_r;
   wire        lsu_io_in_valid = lsu_io_in_valid_r & ~is_irq;
   reg         wbu_io_in_bits_r_signals_wbu_reg_write;
@@ -1357,6 +1416,7 @@ module ysyx_25020039_Core(
   reg  [11:0] wbu_io_in_bits_r_csr_waddr;
   reg         wbu_io_in_bits_r_is_ebreak;
   reg         wbu_io_in_bits_r_state_state;
+  reg  [7:0]  wbu_io_in_bits_r_state_state_num;
   reg         wbu_io_in_valid_r;
   wire        wbu_io_in_valid = wbu_io_in_valid_r & ~is_irq;
   wire        _exu_raw_T_2 = exu_io_in_bits_r_waddr == _idu_io_refile_raddr1;
@@ -1451,6 +1511,7 @@ module ysyx_25020039_Core(
   always @(posedge clock) begin
     if (reset) begin
       is_irq <= 1'h0;
+      csr_io_irq_no_REG <= 8'h0;
       csr_io_irq_pc_REG <= 32'h0;
       ifu_io_in_bits_r_next_pc <= 32'h80000000;
       ifu_io_in_valid_r <= 1'h0;
@@ -1476,6 +1537,7 @@ module ysyx_25020039_Core(
       exu_io_in_bits_r_csr_waddr <= 12'h0;
       exu_io_in_bits_r_is_ebreak <= 1'h0;
       exu_io_in_bits_r_state_state <= 1'h0;
+      exu_io_in_bits_r_state_state_num <= 8'h0;
       exu_io_in_valid_r <= 1'h0;
       lsu_io_in_bits_r_signals_lsu_mem_wmask <= 8'h0;
       lsu_io_in_bits_r_signals_lsu_mem_rd <= 3'h0;
@@ -1495,6 +1557,7 @@ module ysyx_25020039_Core(
       lsu_io_in_bits_r_csr_waddr <= 12'h0;
       lsu_io_in_bits_r_is_ebreak <= 1'h0;
       lsu_io_in_bits_r_state_state <= 1'h0;
+      lsu_io_in_bits_r_state_state_num <= 8'h0;
       lsu_io_in_valid_r <= 1'h0;
       wbu_io_in_bits_r_signals_wbu_reg_write <= 1'h0;
       wbu_io_in_bits_r_signals_wbu_reg_write_sel <= 3'h0;
@@ -1510,6 +1573,7 @@ module ysyx_25020039_Core(
       wbu_io_in_bits_r_csr_waddr <= 12'h0;
       wbu_io_in_bits_r_is_ebreak <= 1'h0;
       wbu_io_in_bits_r_state_state <= 1'h0;
+      wbu_io_in_bits_r_state_state_num <= 8'h0;
       wbu_io_in_valid_r <= 1'h0;
       rd1_forward_data_read <= 32'h0;
       rd2_forward_data_read <= 32'h0;
@@ -1524,6 +1588,7 @@ module ysyx_25020039_Core(
     end
     else begin
       is_irq <= _wbu_io_state_write_en & _wbu_io_state_write_state;
+      csr_io_irq_no_REG <= _wbu_io_state_write_state_num;
       csr_io_irq_pc_REG <= wbu_io_in_bits_r_pc;
       if (_ifu_io_pc_valid & _ifu_io_in_ready)
         ifu_io_in_bits_r_next_pc <= _ifu_io_pc_bits_next_pc;
@@ -1557,6 +1622,7 @@ module ysyx_25020039_Core(
         exu_io_in_bits_r_csr_waddr <= _idu_io_out_bits_csr_waddr;
         exu_io_in_bits_r_is_ebreak <= _idu_io_out_bits_is_ebreak;
         exu_io_in_bits_r_state_state <= _idu_io_out_bits_state_state;
+        exu_io_in_bits_r_state_state_num <= _idu_io_out_bits_state_state_num;
         exu_io_in_bits_rd1_r <=
           rd1_forward_en | ~is_raw_rs1
             ? (rd1_forward_en ? _rd1_forward_data_T_2 : _idu_io_out_bits_rd1)
@@ -1588,6 +1654,7 @@ module ysyx_25020039_Core(
         lsu_io_in_bits_r_csr_waddr <= _exu_io_out_bits_csr_waddr;
         lsu_io_in_bits_r_is_ebreak <= _exu_io_out_bits_is_ebreak;
         lsu_io_in_bits_r_state_state <= _exu_io_out_bits_state_state;
+        lsu_io_in_bits_r_state_state_num <= _exu_io_out_bits_state_state_num;
       end
       if (_lsu_io_in_ready)
         lsu_io_in_valid_r <= _exu_io_out_valid;
@@ -1607,6 +1674,7 @@ module ysyx_25020039_Core(
         wbu_io_in_bits_r_csr_waddr <= _lsu_io_out_bits_csr_waddr;
         wbu_io_in_bits_r_is_ebreak <= _lsu_io_out_bits_is_ebreak;
         wbu_io_in_bits_r_state_state <= _lsu_io_out_bits_state_state;
+        wbu_io_in_bits_r_state_state_num <= _lsu_io_out_bits_state_state_num;
       end
       wbu_io_in_valid_r <= _lsu_io_out_valid;
       if (rd1_forward_en)
@@ -1691,6 +1759,7 @@ module ysyx_25020039_Core(
     .io_out_bits_csr_waddr                 (_idu_io_out_bits_csr_waddr),
     .io_out_bits_is_ebreak                 (_idu_io_out_bits_is_ebreak),
     .io_out_bits_state_state               (_idu_io_out_bits_state_state),
+    .io_out_bits_state_state_num           (_idu_io_out_bits_state_state_num),
     .io_ifu_signals_ready                  (_icache_io_fencei_ready),
     .io_ifu_signals_valid                  (_idu_io_ifu_signals_valid),
     .io_ifu_signals_bits_is_fencei         (_idu_io_ifu_signals_bits_is_fencei),
@@ -1733,6 +1802,7 @@ module ysyx_25020039_Core(
     .io_in_bits_csr_waddr                  (exu_io_in_bits_r_csr_waddr),
     .io_in_bits_is_ebreak                  (exu_io_in_bits_r_is_ebreak),
     .io_in_bits_state_state                (exu_io_in_bits_r_state_state),
+    .io_in_bits_state_state_num            (exu_io_in_bits_r_state_state_num),
     .io_out_ready                          (_lsu_io_in_ready),
     .io_out_valid                          (_exu_io_out_valid),
     .io_out_bits_signals_lsu_mem_wmask     (_exu_io_out_bits_signals_lsu_mem_wmask),
@@ -1753,6 +1823,7 @@ module ysyx_25020039_Core(
     .io_out_bits_csr_waddr                 (_exu_io_out_bits_csr_waddr),
     .io_out_bits_is_ebreak                 (_exu_io_out_bits_is_ebreak),
     .io_out_bits_state_state               (_exu_io_out_bits_state_state),
+    .io_out_bits_state_state_num           (_exu_io_out_bits_state_state_num),
     .io_pc_valid                           (_exu_io_pc_valid),
     .io_pc_bits_pc4_imm                    (_exu_io_pc_bits_pc4_imm),
     .io_pc_bits_pc4_rs2                    (_exu_io_pc_bits_pc4_rs2),
@@ -1782,6 +1853,7 @@ module ysyx_25020039_Core(
     .io_in_bits_csr_waddr                  (lsu_io_in_bits_r_csr_waddr),
     .io_in_bits_is_ebreak                  (lsu_io_in_bits_r_is_ebreak),
     .io_in_bits_state_state                (lsu_io_in_bits_r_state_state),
+    .io_in_bits_state_state_num            (lsu_io_in_bits_r_state_state_num),
     .io_out_valid                          (_lsu_io_out_valid),
     .io_out_bits_signals_wbu_reg_write     (_lsu_io_out_bits_signals_wbu_reg_write),
     .io_out_bits_signals_wbu_reg_write_sel (_lsu_io_out_bits_signals_wbu_reg_write_sel),
@@ -1797,6 +1869,7 @@ module ysyx_25020039_Core(
     .io_out_bits_csr_waddr                 (_lsu_io_out_bits_csr_waddr),
     .io_out_bits_is_ebreak                 (_lsu_io_out_bits_is_ebreak),
     .io_out_bits_state_state               (_lsu_io_out_bits_state_state),
+    .io_out_bits_state_state_num           (_lsu_io_out_bits_state_state_num),
     .io_is_flush                           (is_irq),
     .io_dmem_araddr                        (io_dmem_araddr),
     .io_dmem_arvalid                       (io_dmem_arvalid),
@@ -1832,6 +1905,7 @@ module ysyx_25020039_Core(
     .io_in_bits_csr_waddr                 (wbu_io_in_bits_r_csr_waddr),
     .io_in_bits_is_ebreak                 (wbu_io_in_bits_r_is_ebreak),
     .io_in_bits_state_state               (wbu_io_in_bits_r_state_state),
+    .io_in_bits_state_state_num           (wbu_io_in_bits_r_state_state_num),
     .io_refile_wdata                      (_wbu_io_refile_wdata),
     .io_refile_waddr                      (_wbu_io_refile_waddr),
     .io_refile_wen                        (_wbu_io_refile_wen),
@@ -1839,6 +1913,7 @@ module ysyx_25020039_Core(
     .io_csr_waddr                         (_wbu_io_csr_waddr),
     .io_csr_wen                           (_wbu_io_csr_wen),
     .io_state_write_state                 (_wbu_io_state_write_state),
+    .io_state_write_state_num             (_wbu_io_state_write_state_num),
     .io_state_write_en                    (_wbu_io_state_write_en),
     .io_is_flush                          (is_irq),
     .io_ebreak                            (io_ebreak)
@@ -1876,6 +1951,7 @@ module ysyx_25020039_Core(
     .clock          (clock),
     .reset          (reset),
     .io_irq         (is_irq),
+    .io_irq_no      (csr_io_irq_no_REG),
     .io_irq_pc      (csr_io_irq_pc_REG),
     .io_read_raddr  (_idu_io_csr_raddr),
     .io_read_rdata  (_csr_io_read_rdata),

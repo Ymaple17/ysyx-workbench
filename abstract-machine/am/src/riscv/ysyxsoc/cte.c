@@ -5,7 +5,6 @@
 static Context* (*user_handler)(Event, Context*) = NULL;
 
 Context* __am_irq_handle(Context *c) {//instr
-  putch('!');
   if (user_handler) {
     Event ev = {0};
     switch (c->mcause) {
@@ -29,27 +28,7 @@ bool cte_init(Context*(*handler)(Event, Context*)) {
 
   return true;
 }
-/*
-bool cte_init(Context*(*handler)(Event, Context*)) {
-  putch('C');
-  asm volatile("csrw mtvec, %0" : : "r"(__am_asm_trap));
-  
-  uintptr_t mtvec_val;
-  asm volatile("csrr %0, mtvec" : "=r"(mtvec_val));
-  
-  uintptr_t trap_addr = (uintptr_t)__am_asm_trap;
-  
-  // 打印两个地址
-  for(int i = 7; i >= 0; i--) { int d=(mtvec_val>>(i*4))&0xF; putch(d<10?d+'0':d-10+'A'); }
-  putch(' ');
-  for(int i = 7; i >= 0; i--) { int d=(trap_addr>>(i*4))&0xF; putch(d<10?d+'0':d-10+'A'); }
-  putch('\n');
-  
-  user_handler = handler;
-  putch('c');
-  return true;
-}
-*/
+
 Context *kcontext(Area kstack, void (*entry)(void *), void *arg) {
   Context *cp = (Context *)(kstack.end - sizeof(Context));
   cp->mstatus = 0x1800;

@@ -1,14 +1,12 @@
 {
-  "call os.package$#home()os.Path": {
-    "def build_.package_$mychisel$.$anonfun$sources$3(build_.package_$mychisel$)scala.collection.immutable.Seq": {
-      "call build_.package_$mychisel$.$anonfun$sources$3(build_.package_$mychisel$)scala.collection.immutable.Seq": {
-        "def build_.package_$mychisel$.$deserializeLambda$(java.lang.invoke.SerializedLambda)java.lang.Object": {},
-        "def build_.package_$mychisel$.$anonfun$sources$2(build_.package_$mychisel$,scala.collection.immutable.Seq,mill.api.Ctx)mill.api.Result": {
-          "call build_.package_$mychisel$.$anonfun$sources$2(build_.package_$mychisel$,scala.collection.immutable.Seq,mill.api.Ctx)mill.api.Result": {
-            "def build_.package_$mychisel$.$anonfun$sources$1(build_.package_$mychisel$)mill.define.SourcesImpl": {
-              "call build_.package_$mychisel$.$anonfun$sources$1(build_.package_$mychisel$)mill.define.SourcesImpl": {
-                "def build_.package_$mychisel$#sources()mill.define.Target": {}
-              }
+  "def build_.package_$mychisel$.$anonfun$sources$3(build_.package_$mychisel$)scala.collection.immutable.Seq": {
+    "call build_.package_$mychisel$.$anonfun$sources$3(build_.package_$mychisel$)scala.collection.immutable.Seq": {
+      "def build_.package_$mychisel$.$deserializeLambda$(java.lang.invoke.SerializedLambda)java.lang.Object": {},
+      "def build_.package_$mychisel$.$anonfun$sources$2(build_.package_$mychisel$,scala.collection.immutable.Seq,mill.api.Ctx)mill.api.Result": {
+        "call build_.package_$mychisel$.$anonfun$sources$2(build_.package_$mychisel$,scala.collection.immutable.Seq,mill.api.Ctx)mill.api.Result": {
+          "def build_.package_$mychisel$.$anonfun$sources$1(build_.package_$mychisel$)mill.define.SourcesImpl": {
+            "call build_.package_$mychisel$.$anonfun$sources$1(build_.package_$mychisel$)mill.define.SourcesImpl": {
+              "def build_.package_$mychisel$#sources()mill.define.Target": {}
             }
           }
         }

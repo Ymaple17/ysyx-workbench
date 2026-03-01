@@ -312,6 +312,7 @@ $(IVERILOG_BIN_NETLIST): vsrc/npc/ysyx_25020039.netlist.syn.v tb_top.sv
 		vsrc/npc/ysyx_25020039.netlist.syn.v \
 		../yosys-sta/nangate45/sim/cells.v \
 		./pipeline_chisel_vsrc/DPI_Mem.v \
+		./pipeline_chisel_vsrc/SimUART.v \
 		$(filter-out %/ysyx_25020039.sv %/DPI_Mem.v, $(wildcard ./pipeline_chisel_vsrc/*.sv))
 
 sim-netlist: $(IVERILOG_BIN_NETLIST)

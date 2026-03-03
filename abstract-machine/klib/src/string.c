@@ -5,111 +5,122 @@
 #if !defined(__ISA_NATIVE__) || defined(__NATIVE_USE_KLIB__)
 
 size_t strlen(const char *s) {
+  //panic("Not implemented");
   size_t len = 0;
-  while (s[len]) {
+  while(*s) {
     len++;
+    s++;
   }
   return len;
 }
 
 char *strcpy(char *dst, const char *src) {
-  size_t i = 0;
-  while (src[i]) {
-    dst[i] = src[i];
-    i++;
+  //panic("Not implemented");
+  char *temp = dst;
+  while (*src) {
+    *temp = *src;
+    temp++;
+    src++;
   }
-  dst[i] = '\0';
+  *temp = '\0';
   return dst;
 }
 
 char *strncpy(char *dst, const char *src, size_t n) {
-  size_t i = 0;
-  while (i < n && src[i]) {
-    dst[i] = src[i];
-    i++;
-  }
-  while (i < n) {
-    dst[i] = '\0';
-    i++;
-  }
-  return dst;
+  panic("Not implemented");
 }
 
 char *strcat(char *dst, const char *src) {
-  size_t i = 0;
-  while (dst[i]) {
-    i++;
+  //panic("Not implemented");
+  char *temp = dst;
+  while (*temp) {
+    temp++;
   }
-  size_t j = 0;
-  while (src[j]) {
-    dst[i + j] = src[j];
-    j++;
+  while (*src) {
+    *temp = *src;
+    temp++;
+    src++;
   }
-  dst[i + j] = '\0';
+  *temp = '\0';
   return dst;
 }
 
 int strcmp(const char *s1, const char *s2) {
-  while (*s1 && *s1 == *s2) {
-    s1++;
-    s2++;
-  }
-  return *(const unsigned char *)s1 - *(const unsigned char *)s2;
+  //panic("Not implemented");
+  while (*s1 && *s2 && (*s1 == *s2)) {
+      s1++;
+      s2++;
+    }
+  if(*s1 < *s2)
+    return -1;
+  else if (*s1 > *s2)
+    return 1;
+  else 
+    return 0;
 }
 
 int strncmp(const char *s1, const char *s2, size_t n) {
-  size_t i=0;
-  while (i < n && s1[i] && *s1 == *s2) {
-    i++;
-}
-  if(i==n) return 0;
-  return (unsigned char)s1[i] - (unsigned char)s2[i];
+  while (n > 0) {
+    if (*s1 != *s2) return (unsigned char)*s1 - (unsigned char)*s2;
+    else if (*s1 == '\0') return 0;
+    s1++;
+    s2++;
+    n--;
+  }
+  return 0;
 }
 
 void *memset(void *s, int c, size_t n) {
-  unsigned char *ptr = s;
+  //panic("Not implemented");
+  unsigned char *temp = (unsigned char *)s;
   for (size_t i = 0; i < n; i++) {
-    ptr[i] = (unsigned char)c;
+    *temp = c;
+    temp ++;
   }
   return s;
 }
 
 void *memmove(void *dst, const void *src, size_t n) {
-  unsigned char *d = dst;
-  const unsigned char *s=src;
-  if (s < d && d < s + n) {
-    s += n;
-    d += n;
-    while (n--) {
-      *(--d) = *(--s);
+  char *destination = (char *)dst;
+  const char *source = (const char *)src;
+
+  if (source < destination && destination < source + n) {
+    for (size_t i = n; i > 0; --i) {
+      destination[i - 1] = source[i - 1];
     }
   } else {
-    while (n--) {
-      *d++ = *s++;
+    for (size_t i = 0; i < n; ++i) {
+      destination[i] = source[i];
     }
   }
+
   return dst;
 }
 
 void *memcpy(void *out, const void *in, size_t n) {
-  unsigned char *d = out;
-  const unsigned char *s = in;
-  while (n--) {
-    *d++ = *s++;
+  //panic("Not implemented");
+  void *original_out = out;
+  char *dest = (char *)out;
+  const char *src = (const char *)in;
+
+  for (size_t i = 0; i < n; i++) {
+    dest[i] = src[i];
   }
-  return out;
+  return original_out;
 }
 
 int memcmp(const void *s1, const void *s2, size_t n) {
-  const unsigned char *p1 = s1;
-  const unsigned char *p2 = s2;
-  
-  while (n--) {
-    if (*p1 != *p2) {
-      return *p1 - *p2;
-    }
-    p1++;
-    p2++;
+  //panic("Not implemented");
+    const unsigned char *temp1 = (const unsigned char *)s1;
+    const unsigned char *temp2 = (const unsigned char *)s2;
+  while (n) {
+    if(*temp1 < *temp2)
+      return -1;
+    else if (*temp1 > *temp2)
+      return 1;
+    temp1++;
+    temp2++;
+    n--;
   }
   return 0;
 }

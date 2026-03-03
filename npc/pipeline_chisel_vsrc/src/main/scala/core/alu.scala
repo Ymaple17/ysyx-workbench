@@ -33,33 +33,37 @@ class ALU(val width: Int) extends Module {
 
   val io = IO(new ALU_IO(width))
 
-  val alu_add = io.A + io.B
-  val alu_sub = io.A - io.B
-
   import ALU_OP._
 
+  val is_sub = io.alu_control === ALU_SUB || io.alu_control === ALU_CMP || io.alu_control === ALU_CMPU
+  val op2_inv = Mux(is_sub, ~io.B, io.B)
+  val adder_result_ext = Wire(UInt((width + 1).W))
+  adder_result_ext := io.A +& op2_inv + is_sub.asUInt
+
+  val adder_result = adder_result_ext(width-1, 0)
+  val sub_overflow_check = (io.A(width - 1) =/= io.B(width - 1)) && (io.A(width - 1) =/= adder_result(width - 1))
+  val slt = adder_result(width-1) ^ sub_overflow_check
+  val sltu = !adder_result_ext(width)
+
   io.result := MuxLookup(io.alu_control, 0.U)(Seq(
-    // ALU_ADD  -> (alu_add + 1.U),
-    ALU_ADD  -> alu_add,
-    ALU_SUB  -> alu_sub,
+    ALU_ADD  -> adder_result,
+    ALU_SUB  -> adder_result,
     ALU_SLL  -> (io.A << io.B(4, 0)),
     ALU_SRL  -> (io.A >> io.B(4, 0)),
     ALU_SRA  -> (io.A.asSInt >> io.B(4, 0)).asUInt,
     ALU_AND  -> (io.A & io.B),
     ALU_OR   -> (io.A | io.B),
     ALU_XOR  -> (io.A ^ io.B),
-    ALU_CMP  -> (io.A.asSInt < io.B.asSInt).asUInt,
-    ALU_CMPU -> (io.A < io.B).asUInt
+    ALU_CMP  -> slt.asUInt,
+    ALU_CMPU -> sltu.asUInt
   ))
 
   io.zero_flag := (io.result === 0.U)
   io.negative_flag := io.result(width - 1)
 
-  val add_overflow = (io.A(width - 1) === io.B(width - 1)) && (io.A(width - 1) =/= alu_add(width - 1))
-  val sub_overflow = (io.A(width - 1) =/= io.B(width - 1)) && (io.A(width - 1) =/= alu_sub(width - 1))
+  val add_overflow = (io.A(width - 1) === io.B(width - 1)) && (io.A(width - 1) =/= adder_result(width - 1))
   
   io.overflow_flag := Mux(io.alu_control === ALU_ADD, add_overflow, 
-                      Mux(io.alu_control === ALU_SUB, sub_overflow, false.B))
-  
-  io.carry_flag := Mux(io.alu_control === ALU_ADD, (io.A > (0.U(width.W) - 1.U - io.B)), false.B)
+                      Mux(io.alu_control === ALU_SUB, sub_overflow_check, false.B))
+  io.carry_flag := Mux(io.alu_control === ALU_ADD, adder_result_ext(width), false.B)
 }

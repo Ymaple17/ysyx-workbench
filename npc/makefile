@@ -23,8 +23,8 @@ VSRC_CACHE_NETLIST = $(VSRC_CACHE_NPC_DIR)/ysyx_25020039.netlist.syn.v
 
 CONFIG_PIPELINE_CHISEL_SOC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_SOC .config | cut -d'=' -f2)
 CONFIG_PIPELINE_CHISEL_NPC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_NPC .config | cut -d'=' -f2)
-# CONFIG_NVBOARD_VAL             := $(shell grep CONFIG_NVBOARD .config | cut -d'=' -f2)
-CONFIG_NVBOARD_VAL             := y
+CONFIG_NVBOARD_VAL             := $(shell grep CONFIG_NVBOARD .config | cut -d'=' -f2)
+# CONFIG_NVBOARD_VAL             := y
 
 VERILATOR_FLAGS =
 
@@ -76,7 +76,7 @@ INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
 OBJ_DIR   = obj_dir
 EXEC      = $(OBJ_DIR)/V$(TOP_MODULE)
 BUILD_DIR ?= build
-PROGRAM  ?= ../test.bin
+PROGRAM  ?= test.bin
 
 CFLAGS       = -Wall -std=c++17 -g
 CXXFLAGS     = $(CFLAGS)
@@ -289,15 +289,9 @@ $(IVERILOG_BIN_NETLIST_IV): $(VSRC_CACHE_NETLIST) $(CELLS) $(MEM_HEX)
 sim-iverilog-netlist: $(MEM_HEX) $(IVERILOG_BIN_NETLIST_IV)
 	cd $(IVERILOG_DIR) && $(VVP) -n $(abspath $(IVERILOG_BIN_NETLIST_IV))
 
-sta:
-	@if [ -z "$(wildcard $(VSRC_CACHE_SOC_DIR)/*.sv $(VSRC_CACHE_SOC_DIR)/*.v)" ]; then \
-		echo "[ERROR] $(VSRC_CACHE_SOC_DIR)/ 为空，请先运行 make soc"; \
-		exit 1; \
-	fi
-	rm -rf ../yosys-sta/result/ysyx_25020039-500MHz
-	$(MAKE) -C ../yosys-sta sta DESIGN=ysyx_25020039 \
-		RTL_FILES="$(abspath $(filter-out %/SRAM.sv %/DPI_Mem.v %/SimUART.v, \
-		$(shell find $(VSRC_CACHE_SOC_DIR) -name "*.v" -o -name "*.sv")))"
+sta: verilog
+	$(MAKE) -C ../yosys-sta sta DESIGN=ysyx_25020039 CLK_FREQ_MHZ=500 CLK_PORT_NAME=clock \
+		RTL_FILES=$(abspath $(VERILOG_OUT)) 
 	cat ../yosys-sta/result/ysyx_25020039-500MHz/synth_stat.txt
 
 IVERILOG_BIN_NETLIST = obj_dir/sim_netlist.vvp

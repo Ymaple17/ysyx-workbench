@@ -95,7 +95,11 @@ class ICache(val set : Int, val way : Int, val block_size : Int, val conf: CoreC
 
     // decode
     tagA := Mux(io.in.arvalid, io.in.araddr(31,m+n), in_addr(31,m+n))
-    index := Mux(io.in.arvalid, io.in.araddr(m+n-1,m), in_addr(m+n-1,m))
+    if (n > 0) {
+        index := Mux(io.in.arvalid, io.in.araddr(m+n-1,m), in_addr(m+n-1,m))
+    } else {
+        index := 0.U
+    }
     offset := Mux(io.in.arvalid, io.in.araddr(m-1,0), in_addr(m-1,0))
     base_addr := Mux(io.in.arvalid,io.in.araddr,in_addr) - offset
 

@@ -47,7 +47,7 @@ class Core(val conf :CoreConfig) extends Module{
       io.ebreak.get := wbu.io.ebreak.get
     }
 
-    val icache = Module(new ICache(4,4,32,conf))//2 1 8
+    val icache = Module(new ICache(2,1,8,conf))//2 1 8
     val refile = Module(new Refile(conf))
     val csr = Module(new CSR(conf))
 

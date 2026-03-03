@@ -104,14 +104,17 @@ bool difftest_check_reg(){
     ref_difftest_regcpy(&ref, DIFFTEST_TO_DUT);
     // assert(&ref != NULL);
     if (cpu.pc != ref.pc) {
-        printf("\n[difftest] ========== PC MISMATCH ==========\n");
+        printf("\n[difftest] ========== PC MISMATCH (Fetch/Commit) ==========\n");
         printf("[difftest] PC: REF = 0x%08x, DUT = 0x%08x\n", ref.pc, cpu.pc);
-        printf("[difftest] ====================================\n\n");
+        printf("[difftest] ================================================\n");
+        for (int i = 0; i < 16; i++) {
+             printf("[difftest] %-4s: REF = 0x%08x, DUT = 0x%08x\n", regs[i], ref.gpr[i], cpu.gpr[i]);
+        }
         return false;
     }
 
     // 检查所有通用寄存器
-    for (int i = 0; i < NR_GPRs; i++) {
+    for (int i = 0; i < 16; i++) {
         if (cpu.gpr[i] != ref.gpr[i]) {
             printf("\n[difftest] ========== REGISTER MISMATCH ==========\n");
             printf("[difftest] PC = 0x%08x\n", cpu.pc);

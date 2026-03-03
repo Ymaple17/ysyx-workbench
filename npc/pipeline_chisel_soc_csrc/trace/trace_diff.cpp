@@ -74,10 +74,10 @@ void trace_diff_load(const char *ref_so_file, long long img_size) {
     chk_memcpy(CONFIG_FLASH_BASE, flash_guest_to_host(CONFIG_FLASH_BASE), img_size, DIFFTEST_TO_REF);
     
     extern uint32_t cpu_pc;
-    extern uint32_t cpu_gpr[32];
+    // extern uint32_t cpu_gpr[32];
     
     chk_state.pc = cpu_pc;
-    for(int i=0; i<32; i++) chk_state.gpr[i] = cpu_gpr[i];
+    for(int i=0; i<16; i++) chk_state.gpr[i] = cpu_gpr[i];
     
     // Sync state TO the reference model
     chk_regcpy(&chk_state, DIFFTEST_TO_REF);
@@ -96,7 +96,7 @@ void trace_diff_check_inst(uint64_t n) {
 
     // 3. Compare with DUT State (Architectural)
     extern uint32_t cpu_pc;
-    extern uint32_t cpu_gpr[32];
+    // extern uint32_t cpu_gpr[32];
     if (cpu_pc != chk_state.pc) {
         printf(ANSI_RED "[trace_diff] PC Mismatch! \n" ANSI_RESET);
         printf("Expected (Ref WB): " ANSI_GREEN "0x%08x" ANSI_RESET "\n", chk_state.pc);
@@ -104,7 +104,7 @@ void trace_diff_check_inst(uint64_t n) {
         npc_state.state = NPC_ABORT;
     }
     
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 16; i++) {
         if (cpu_gpr[i] != chk_state.gpr[i]) {
              printf(ANSI_RED "[trace_diff] GPR[%d] Mismatch! \n" ANSI_RESET, i);
              printf("Expected: 0x%08x, Actual: 0x%08x\n", chk_state.gpr[i], cpu_gpr[i]);

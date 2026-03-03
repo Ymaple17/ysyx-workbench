@@ -76,7 +76,7 @@ INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
 OBJ_DIR   = obj_dir
 EXEC      = $(OBJ_DIR)/V$(TOP_MODULE)
 BUILD_DIR ?= build
-PROGRAM  ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
+PROGRAM  ?= ../test.bin
 
 CFLAGS       = -Wall -std=c++17 -g
 CXXFLAGS     = $(CFLAGS)

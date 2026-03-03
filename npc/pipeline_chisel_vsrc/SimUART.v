@@ -1,6 +1,5 @@
 
 
-(* blackbox *)
 module SimUART(
     input clk,
     input wen,

@@ -68,7 +68,7 @@ static inline bool is_mmio_addr(uint32_t addr) {
 static inline void update_cpu_state() {
     cpu.pc = read_pc_from_top();
     cpu_pc = cpu.pc;
-    for(int i = 0; i < 32; i++){
+    for(int i = 0; i < 16; i++){
         uint32_t val = read_gpr_from_top(i);
         cpu.gpr[i] = val;
         cpu_gpr[i] = val;
@@ -162,13 +162,21 @@ void device_update();
 #ifdef CONFIG_DIFFTEST
 extern void (*ref_difftest_regcpy)(void *dut, bool direction);
 
+extern const char *regs[];
+
 static void check_pc_and_sync(word_t wbu_pc) {
     CPU_State ref_state;
     ref_difftest_regcpy(&ref_state, DIFFTEST_TO_DUT);
+
+    // printf("[difftest] Check PC DUT=0x%08x REF=0x%08x\n", wbu_pc, ref_state.pc);
+
     if (wbu_pc != ref_state.pc) {
         printf("\n[difftest] ========== PC MISMATCH (Fetch/Commit) ==========\n");
         printf("[difftest] PC: REF = 0x%08x, DUT = 0x%08x\n", ref_state.pc, wbu_pc);
         printf("[difftest] ================================================\n");
+        for (int i = 0; i < 16; i++) {
+             printf("[difftest] %-4s: REF = 0x%08x, DUT = 0x%08x\n", regs[i], ref_state.gpr[i], cpu.gpr[i]);
+        }
         npc_state.state = NPC_ABORT;
     }
 }

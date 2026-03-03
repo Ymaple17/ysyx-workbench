@@ -1008,9 +1008,33 @@ module ysyx_25020039_ICache(
   assign io_out_rready = ~(_next_state_T_13 | _next_state_T_15) & _next_state_T_17;
 endmodule
 
+// VCS coverage exclude_file
+module ysyx_25020039_rf_16x32(
+  input  [3:0]  R0_addr,
+  input         R0_en,
+                R0_clk,
+  output [31:0] R0_data,
+  input  [3:0]  R1_addr,
+  input         R1_en,
+                R1_clk,
+  output [31:0] R1_data,
+  input  [3:0]  W0_addr,
+  input         W0_en,
+                W0_clk,
+  input  [31:0] W0_data
+);
+
+  reg [31:0] Memory[0:15];
+  always @(posedge W0_clk) begin
+    if (W0_en & 1'h1)
+      Memory[W0_addr] <= W0_data;
+  end // always @(posedge)
+  assign R0_data = R0_en ? Memory[R0_addr] : 32'bx;
+  assign R1_data = R1_en ? Memory[R1_addr] : 32'bx;
+endmodule
+
 module ysyx_25020039_Refile(
   input         clock,
-                reset,
   input  [4:0]  io_read_raddr1,
                 io_read_raddr2,
   output [31:0] io_read_rdata1,
@@ -1020,153 +1044,24 @@ module ysyx_25020039_Refile(
   input         io_write_wen
 );
 
-  reg  [31:0] rf_0;
-  reg  [31:0] rf_1;
-  reg  [31:0] rf_2;
-  reg  [31:0] rf_3;
-  reg  [31:0] rf_4;
-  reg  [31:0] rf_5;
-  reg  [31:0] rf_6;
-  reg  [31:0] rf_7;
-  reg  [31:0] rf_8;
-  reg  [31:0] rf_9;
-  reg  [31:0] rf_10;
-  reg  [31:0] rf_11;
-  reg  [31:0] rf_12;
-  reg  [31:0] rf_13;
-  reg  [31:0] rf_14;
-  reg  [31:0] rf_15;
-  reg  [31:0] casez_tmp;
-  always_comb begin
-    casez (io_read_raddr1[3:0])
-      4'b0000:
-        casez_tmp = rf_0;
-      4'b0001:
-        casez_tmp = rf_1;
-      4'b0010:
-        casez_tmp = rf_2;
-      4'b0011:
-        casez_tmp = rf_3;
-      4'b0100:
-        casez_tmp = rf_4;
-      4'b0101:
-        casez_tmp = rf_5;
-      4'b0110:
-        casez_tmp = rf_6;
-      4'b0111:
-        casez_tmp = rf_7;
-      4'b1000:
-        casez_tmp = rf_8;
-      4'b1001:
-        casez_tmp = rf_9;
-      4'b1010:
-        casez_tmp = rf_10;
-      4'b1011:
-        casez_tmp = rf_11;
-      4'b1100:
-        casez_tmp = rf_12;
-      4'b1101:
-        casez_tmp = rf_13;
-      4'b1110:
-        casez_tmp = rf_14;
-      default:
-        casez_tmp = rf_15;
-    endcase
-  end // always_comb
-  reg  [31:0] casez_tmp_0;
-  always_comb begin
-    casez (io_read_raddr2[3:0])
-      4'b0000:
-        casez_tmp_0 = rf_0;
-      4'b0001:
-        casez_tmp_0 = rf_1;
-      4'b0010:
-        casez_tmp_0 = rf_2;
-      4'b0011:
-        casez_tmp_0 = rf_3;
-      4'b0100:
-        casez_tmp_0 = rf_4;
-      4'b0101:
-        casez_tmp_0 = rf_5;
-      4'b0110:
-        casez_tmp_0 = rf_6;
-      4'b0111:
-        casez_tmp_0 = rf_7;
-      4'b1000:
-        casez_tmp_0 = rf_8;
-      4'b1001:
-        casez_tmp_0 = rf_9;
-      4'b1010:
-        casez_tmp_0 = rf_10;
-      4'b1011:
-        casez_tmp_0 = rf_11;
-      4'b1100:
-        casez_tmp_0 = rf_12;
-      4'b1101:
-        casez_tmp_0 = rf_13;
-      4'b1110:
-        casez_tmp_0 = rf_14;
-      default:
-        casez_tmp_0 = rf_15;
-    endcase
-  end // always_comb
-  wire        _GEN = io_write_wen & (|io_write_waddr);
-  always @(posedge clock) begin
-    if (reset) begin
-      rf_0 <= 32'h0;
-      rf_1 <= 32'h0;
-      rf_2 <= 32'h0;
-      rf_3 <= 32'h0;
-      rf_4 <= 32'h0;
-      rf_5 <= 32'h0;
-      rf_6 <= 32'h0;
-      rf_7 <= 32'h0;
-      rf_8 <= 32'h0;
-      rf_9 <= 32'h0;
-      rf_10 <= 32'h0;
-      rf_11 <= 32'h0;
-      rf_12 <= 32'h0;
-      rf_13 <= 32'h0;
-      rf_14 <= 32'h0;
-      rf_15 <= 32'h0;
-    end
-    else begin
-      if (_GEN & io_write_waddr[3:0] == 4'h0)
-        rf_0 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h1)
-        rf_1 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h2)
-        rf_2 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h3)
-        rf_3 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h4)
-        rf_4 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h5)
-        rf_5 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h6)
-        rf_6 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h7)
-        rf_7 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h8)
-        rf_8 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'h9)
-        rf_9 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'hA)
-        rf_10 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'hB)
-        rf_11 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'hC)
-        rf_12 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'hD)
-        rf_13 <= io_write_wdata;
-      if (_GEN & io_write_waddr[3:0] == 4'hE)
-        rf_14 <= io_write_wdata;
-      if (_GEN & (&(io_write_waddr[3:0])))
-        rf_15 <= io_write_wdata;
-    end
-  end // always @(posedge)
-  assign io_read_rdata1 = io_read_raddr1 == 5'h0 ? 32'h0 : casez_tmp;
-  assign io_read_rdata2 = io_read_raddr2 == 5'h0 ? 32'h0 : casez_tmp_0;
+  wire [31:0] _ysyx_25020039_rf_ext_R0_data;
+  wire [31:0] _ysyx_25020039_rf_ext_R1_data;
+  ysyx_25020039_rf_16x32 ysyx_25020039_rf_ext (
+    .R0_addr (io_read_raddr2[3:0]),
+    .R0_en   (1'h1),
+    .R0_clk  (clock),
+    .R0_data (_ysyx_25020039_rf_ext_R0_data),
+    .R1_addr (io_read_raddr1[3:0]),
+    .R1_en   (1'h1),
+    .R1_clk  (clock),
+    .R1_data (_ysyx_25020039_rf_ext_R1_data),
+    .W0_addr (io_write_waddr[3:0]),
+    .W0_en   (io_write_wen & (|io_write_waddr)),
+    .W0_clk  (clock),
+    .W0_data (io_write_wdata)
+  );
+  assign io_read_rdata1 = io_read_raddr1 == 5'h0 ? 32'h0 : _ysyx_25020039_rf_ext_R1_data;
+  assign io_read_rdata2 = io_read_raddr2 == 5'h0 ? 32'h0 : _ysyx_25020039_rf_ext_R0_data;
 endmodule
 
 module ysyx_25020039_CSR(
@@ -1919,7 +1814,6 @@ module ysyx_25020039_Core(
   );
   ysyx_25020039_Refile refile (
     .clock          (clock),
-    .reset          (reset),
     .io_read_raddr1 (_idu_io_refile_raddr1),
     .io_read_raddr2 (_idu_io_refile_raddr2),
     .io_read_rdata1 (_refile_io_read_rdata1),

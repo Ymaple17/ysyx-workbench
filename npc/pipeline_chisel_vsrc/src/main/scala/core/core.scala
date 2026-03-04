@@ -48,6 +48,7 @@ class Core(val conf :CoreConfig) extends Module{
     }
 
     val icache = Module(new ICache(1,1,4,conf))//2 1 8
+    //val icache = Module(new ICache(1,1,4,conf))//2 1 8
     val refile = Module(new Refile(conf))
     val csr = Module(new CSR(conf))
 

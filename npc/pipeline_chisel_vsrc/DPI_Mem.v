@@ -13,7 +13,7 @@ module DPI_Mem(
 );
 
 `ifdef __ICARUS__
-  reg [7:0] mem [0:128*1024-1];
+  reg [7:0] mem [0:64*1024-1];
   initial begin
     $readmemh("mem.hex", mem);
   end

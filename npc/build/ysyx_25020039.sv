@@ -1001,7 +1001,7 @@ module ysyx_25020039_ICache(
 endmodule
 
 // VCS coverage exclude_file
-module ysyx_25020039_rf_16x32(
+module ysyx_25020039_rf_15x32(
   input  [3:0]  R0_addr,
   input         R0_en,
                 R0_clk,
@@ -1016,7 +1016,7 @@ module ysyx_25020039_rf_16x32(
   input  [31:0] W0_data
 );
 
-  reg [31:0] Memory[0:15];
+  reg [31:0] Memory[0:14];
   always @(posedge W0_clk) begin
     if (W0_en & 1'h1)
       Memory[W0_addr] <= W0_data;
@@ -1038,22 +1038,22 @@ module ysyx_25020039_Refile(
 
   wire [31:0] _ysyx_25020039_rf_ext_R0_data;
   wire [31:0] _ysyx_25020039_rf_ext_R1_data;
-  ysyx_25020039_rf_16x32 ysyx_25020039_rf_ext (
-    .R0_addr (io_read_raddr2[3:0]),
-    .R0_en   (1'h1),
+  ysyx_25020039_rf_15x32 ysyx_25020039_rf_ext (
+    .R0_addr (io_read_raddr2[3:0] - 4'h1),
+    .R0_en   (|io_read_raddr2),
     .R0_clk  (clock),
     .R0_data (_ysyx_25020039_rf_ext_R0_data),
-    .R1_addr (io_read_raddr1[3:0]),
-    .R1_en   (1'h1),
+    .R1_addr (io_read_raddr1[3:0] - 4'h1),
+    .R1_en   (|io_read_raddr1),
     .R1_clk  (clock),
     .R1_data (_ysyx_25020039_rf_ext_R1_data),
-    .W0_addr (io_write_waddr[3:0]),
+    .W0_addr (io_write_waddr[3:0] - 4'h1),
     .W0_en   (io_write_wen & (|io_write_waddr)),
     .W0_clk  (clock),
     .W0_data (io_write_wdata)
   );
-  assign io_read_rdata1 = io_read_raddr1 == 5'h0 ? 32'h0 : _ysyx_25020039_rf_ext_R1_data;
-  assign io_read_rdata2 = io_read_raddr2 == 5'h0 ? 32'h0 : _ysyx_25020039_rf_ext_R0_data;
+  assign io_read_rdata1 = (|io_read_raddr1) ? _ysyx_25020039_rf_ext_R1_data : 32'h0;
+  assign io_read_rdata2 = (|io_read_raddr2) ? _ysyx_25020039_rf_ext_R0_data : 32'h0;
 endmodule
 
 module ysyx_25020039_CSR(

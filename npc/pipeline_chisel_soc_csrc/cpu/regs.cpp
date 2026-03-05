@@ -12,26 +12,8 @@ uint32_t cpu_pc = 0x30000000;
 
 
 uint32_t read_gpr_from_top(int idx) {
-    if (idx == 0) return 0;
+    //if (idx == 0) return 0;
     return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__ysyx_25020039_rf_ext__DOT__Memory[idx];
-    // switch(idx) {
-    //     case 1: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_1;
-    //     case 2: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_2;
-    //     case 3: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_3;
-    //     case 4: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_4;
-    //     case 5: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_5;
-    //     case 6: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_6;
-    //     case 7: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_7;
-    //     case 8: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_8;
-    //     case 9: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_9;
-    //     case 10: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_10;
-    //     case 11: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_11;
-    //     case 12: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_12;
-    //     case 13: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_13;
-    //     case 14: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_14;
-    //     case 15: return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_15;
-    //     default: return 0;
-    // }
 }
 
 uint32_t read_pc_from_top() {
@@ -39,8 +21,9 @@ uint32_t read_pc_from_top() {
 }
 
 static inline void refresh_cpu_regs() {
-  for (int i = 0; i < 16; i++) {
-    cpu_gpr[i] = read_gpr_from_top(i);
+  cpu_gpr[0] = 0;
+  for (int i = 1; i < 16; i++) {
+    cpu_gpr[i] = read_gpr_from_top(i - 1);
   }
   cpu_pc = read_pc_from_top();
 }

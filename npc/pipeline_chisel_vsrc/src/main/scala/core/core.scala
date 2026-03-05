@@ -47,12 +47,11 @@ class Core(val conf :CoreConfig) extends Module{
       io.ebreak.get := wbu.io.ebreak.get
     }
 
-    val icache = Module(new ICache(1,1,4,conf))//2 1 8
-    //val icache = Module(new ICache(1,1,4,conf))//2 1 8
+    val icache = Module(new ICache(1,1,4,conf))
     val refile = Module(new Refile(conf))
     val csr = Module(new CSR(conf))
 
-    val state = RegEnable(wbu.io.state_write,0.U.asTypeOf(new State),wbu.io.state_write_en)
+    val state = RegEnable(wbu.io.state_write, 0.U.asTypeOf(new State), wbu.io.state_write_en)
     ifu.io.state := state
     idu.io.state := state
     exu.io.state := state
@@ -60,67 +59,71 @@ class Core(val conf :CoreConfig) extends Module{
     wbu.io.state_read := state
 
     val is_irq = RegNext(wbu.io.state_write_en && (wbu.io.state_write.state), false.B)
-    csr.io.irq := is_irq
+    csr.io.irq    := is_irq
     csr.io.irq_no := RegNext(wbu.io.state_write.state_num, 0.U)
     csr.io.irq_pc := RegNext(wbu.io.in.bits.pc, 0.U)
 
-    //pipeline connect
+    // pipeline connect
     def PipelineConnect[T <: Data, T2 <: Data](prevOut: DecoupledIO[T], thisIn: DecoupledIO[T], is_flush: Bool) = {
       prevOut.ready := thisIn.ready
-      thisIn.bits := RegEnable(prevOut.bits, 0.U.asTypeOf(prevOut.bits), prevOut.valid && thisIn.ready)
-      thisIn.valid := RegEnable(prevOut.valid,false.B, thisIn.ready) && !is_flush
+      thisIn.bits   := RegEnable(prevOut.bits, 0.U.asTypeOf(prevOut.bits), prevOut.valid && thisIn.ready)
+      thisIn.valid  := RegEnable(prevOut.valid, false.B, thisIn.ready) && !is_flush
     }
 
     def IFU_Connect[T <: Data, T2 <: Data](prevOut: DecoupledIO[T], thisIn: DecoupledIO[T]) = {
       prevOut.ready := thisIn.ready
-      val resetPC = if(conf.ysyxsoc){ "h3000_0000".U(32.W) }else if(conf.npc){ "h8000_0000".U(32.W)} else { "h0000_0000".U(32.W) }
-      thisIn.bits := RegEnable(prevOut.bits, resetPC.asTypeOf(new IFUPC_IO), prevOut.valid && thisIn.ready)
+      val resetPC = if(conf.ysyxsoc){ "h3000_0000".U(32.W) }
+                    else if(conf.npc){ "h8000_0000".U(32.W) }
+                    else             { "h0000_0000".U(32.W) }
+      thisIn.bits  := RegEnable(prevOut.bits, resetPC.asTypeOf(new IFUPC_IO), prevOut.valid && thisIn.ready)
       thisIn.valid := RegEnable(prevOut.valid, false.B, thisIn.ready)
     }
 
-    IFU_Connect(ifu.io.pc ,ifu.io.in)
-    PipelineConnect(ifu.io.out, idu.io.in, idu.io.is_flush)
-    PipelineConnect(idu.io.out, exu.io.in, exu.io.is_flush)
-    PipelineConnect(exu.io.out, lsu.io.in, lsu.io.is_flush)
-    PipelineConnect(lsu.io.out, wbu.io.in, wbu.io.is_flush)
+    IFU_Connect(ifu.io.pc, ifu.io.in)
+    PipelineConnect(ifu.io.out,  idu.io.in,  idu.io.is_flush)
+    PipelineConnect(idu.io.out,  exu.io.in,  exu.io.is_flush)
+    PipelineConnect(exu.io.out,  lsu.io.in,  lsu.io.is_flush)
+    PipelineConnect(lsu.io.out,  wbu.io.in,  wbu.io.is_flush)
 
-    //data conflict
+    // data conflict helpers
     def dataConflict(rs: UInt, rd: UInt) = (rs === rd)
-  
+
     def dataConflictWithStage(stage: IDU_IO, rd: UInt, is_write: Bool, stage_work: Bool) = {
-      val rs1 = stage.refile.raddr1
-      val rs2 = stage.refile.raddr2
-      val stage_working = (stage.in.valid) & stage_work
-      val rs1_ren = stage.rs1_ren
-      val rs2_ren = stage.rs2_ren
-      ((rs1_ren & (rs1 =/= 0.U) & dataConflict(rs1, rd)) || (rs2_ren & (rs2 =/= 0.U) & dataConflict(rs2, rd))) && is_write && stage_working
+      val rs1          = stage.refile.raddr1
+      val rs2          = stage.refile.raddr2
+      val stage_working = stage.in.valid & stage_work
+      val rs1_ren      = stage.rs1_ren
+      val rs2_ren      = stage.rs2_ren
+      ((rs1_ren & (rs1 =/= 0.U) & dataConflict(rs1, rd)) ||
+       (rs2_ren & (rs2 =/= 0.U) & dataConflict(rs2, rd))) && is_write && stage_working
     }
 
-    //exu raw
+    // RAW detection per stage
     val exu_raw = Wire(Bool())
     val exu_raw_rs1 = Wire(Bool())
     val exu_raw_rs2 = Wire(Bool())
-    exu_raw_rs1 := exu_raw && dataConflict(exu.io.in.bits.waddr,idu.io.refile.raddr1)
-    exu_raw_rs2 := exu_raw && dataConflict(exu.io.in.bits.waddr,idu.io.refile.raddr2)
+    exu_raw     := dataConflictWithStage(idu.io, exu.io.in.bits.waddr, exu.io.in.bits.signals.wbu.reg_write, exu.io.in.valid)
+    exu_raw_rs1 := exu_raw && dataConflict(exu.io.in.bits.waddr, idu.io.refile.raddr1)
+    exu_raw_rs2 := exu_raw && dataConflict(exu.io.in.bits.waddr, idu.io.refile.raddr2)
 
-    //lsu raw
     val lsu_raw = Wire(Bool())
     val lsu_raw_rs1 = Wire(Bool())
     val lsu_raw_rs2 = Wire(Bool())
-    lsu_raw_rs1 := lsu_raw && dataConflict(lsu.io.in.bits.waddr,idu.io.refile.raddr1)
-    lsu_raw_rs2 := lsu_raw && dataConflict(lsu.io.in.bits.waddr,idu.io.refile.raddr2)
+    lsu_raw     := dataConflictWithStage(idu.io, lsu.io.in.bits.waddr, lsu.io.in.bits.signals.wbu.reg_write, lsu.io.in.valid)
+    lsu_raw_rs1 := lsu_raw && dataConflict(lsu.io.in.bits.waddr, idu.io.refile.raddr1)
+    lsu_raw_rs2 := lsu_raw && dataConflict(lsu.io.in.bits.waddr, idu.io.refile.raddr2)
 
-    //wbu raw
     val wbu_raw = Wire(Bool())
     val wbu_raw_rs1 = Wire(Bool())
     val wbu_raw_rs2 = Wire(Bool())
-    wbu_raw_rs1 := wbu_raw && dataConflict(wbu.io.in.bits.waddr,idu.io.refile.raddr1)
-    wbu_raw_rs2 := wbu_raw && dataConflict(wbu.io.in.bits.waddr,idu.io.refile.raddr2)
+    wbu_raw     := dataConflictWithStage(idu.io, wbu.io.in.bits.waddr, wbu.io.in.bits.signals.wbu.reg_write, wbu.io.in.valid)
+    wbu_raw_rs1 := wbu_raw && dataConflict(wbu.io.in.bits.waddr, idu.io.refile.raddr1)
+    wbu_raw_rs2 := wbu_raw && dataConflict(wbu.io.in.bits.waddr, idu.io.refile.raddr2)
 
-    val is_raw = exu_raw || lsu_raw || wbu_raw
     val is_raw_rs1 = exu_raw_rs1 || lsu_raw_rs1 || wbu_raw_rs1
     val is_raw_rs2 = exu_raw_rs2 || lsu_raw_rs2 || wbu_raw_rs2
 
+    // forward availability per stage per rs
     val exu_forward_rd1 = Wire(Bool())
     val exu_forward_rd2 = Wire(Bool())
     val lsu_forward_rd1 = Wire(Bool())
@@ -128,43 +131,24 @@ class Core(val conf :CoreConfig) extends Module{
     val wbu_forward_rd1 = Wire(Bool())
     val wbu_forward_rd2 = Wire(Bool())
 
-    val exu_forward_data = Wire(UInt(32.W))
-    val lsu_forward_data = Wire(UInt(32.W))
-    val wbu_forward_data = Wire(UInt(32.W))
-    val rd1_forward_en = Wire(Bool())
-    val rd2_forward_en = Wire(Bool())
-    val rd1_forward_data = Wire(UInt(32.W))
-    val rd2_forward_data = Wire(UInt(32.W))
-    val rd1_forward_data_read = RegEnable(rd1_forward_data, 0.U(32.W), rd1_forward_en)
-    val rd2_forward_data_read = RegEnable(rd2_forward_data, 0.U(32.W), rd2_forward_en)
-    val forward_count1 = RegInit(0.U(1.W))
-    val forward_count2 = RegInit(0.U(1.W))
-    val forward_count1_write = Wire(UInt(1.W))
-    val forward_count2_write = Wire(UInt(1.W))
-    forward_count1_write := forward_count1
-    forward_count2_write := forward_count2
-
-    when(RegNext(idu.io.in.ready, false.B) && idu.io.in.valid){
-      forward_count1_write := (idu.io.rs1_ren & is_raw_rs1).asUInt - rd1_forward_en.asUInt
-      forward_count2_write := (idu.io.rs2_ren & is_raw_rs2).asUInt - rd2_forward_en.asUInt
-      forward_count1 := forward_count1_write
-      forward_count2 := forward_count2_write
-    }.elsewhen(idu.io.in.valid){
-      when(rd1_forward_en && forward_count1 =/= 0.U){forward_count1 := forward_count1 - 1.U}
-      when(rd2_forward_en && forward_count2 =/= 0.U){forward_count2 := forward_count2 - 1.U}
-    }
-
-    exu_raw := dataConflictWithStage(idu.io, exu.io.in.bits.waddr, exu.io.in.bits.signals.wbu.reg_write, exu.io.in.valid)
     exu_forward_rd1 := exu_raw_rs1 && (exu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL)
     exu_forward_rd2 := exu_raw_rs2 && (exu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL)
 
-    lsu_raw := dataConflictWithStage(idu.io, lsu.io.in.bits.waddr, lsu.io.in.bits.signals.wbu.reg_write, lsu.io.in.valid)
     lsu_forward_rd1 := lsu_raw_rs1 && (lsu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL || lsu.io.dmem.rvalid)
     lsu_forward_rd2 := lsu_raw_rs2 && (lsu.io.in.bits.signals.wbu.reg_write_sel =/= MEM_SEL || lsu.io.dmem.rvalid)
 
-    wbu_raw := dataConflictWithStage(idu.io, wbu.io.in.bits.waddr, wbu.io.in.bits.signals.wbu.reg_write, wbu.io.in.valid)
     wbu_forward_rd1 := wbu_raw_rs1
     wbu_forward_rd2 := wbu_raw_rs2
+
+    // stall: RAW exists but no stage can forward yet
+    val rs1_stall = is_raw_rs1 && !exu_forward_rd1 && !lsu_forward_rd1 && !wbu_forward_rd1
+    val rs2_stall = is_raw_rs2 && !exu_forward_rd2 && !lsu_forward_rd2 && !wbu_forward_rd2
+    idu.io.is_stall := rs1_stall || rs2_stall
+
+    // forward data per stage
+    val exu_forward_data = Wire(UInt(32.W))
+    val lsu_forward_data = Wire(UInt(32.W))
+    val wbu_forward_data = Wire(UInt(32.W))
 
     exu_forward_data := MuxLookup(exu.io.in.bits.signals.wbu.reg_write_sel, 0.U)(Seq(
       ALU_SEL  -> exu.io.out.bits.alu_result,
@@ -183,52 +167,44 @@ class Core(val conf :CoreConfig) extends Module{
 
     wbu_forward_data := wbu.io.refile.wdata
 
-    rd1_forward_en := MuxCase(false.B, Seq(
-      exu_raw_rs1 -> exu_forward_rd1,
-      lsu_raw_rs1 -> lsu_forward_rd1,
-      wbu_raw_rs1 -> wbu_forward_rd1
-    ))
+    // select forward data with priority: exu > lsu > wbu
+    val rd1_forward_data = Wire(UInt(32.W))
+    val rd2_forward_data = Wire(UInt(32.W))
 
-    rd2_forward_en := MuxCase(false.B, Seq(
-      exu_raw_rs2 -> exu_forward_rd2,
-      lsu_raw_rs2 -> lsu_forward_rd2,
-      wbu_raw_rs2 -> wbu_forward_rd2
-    ))
-
-    rd1_forward_data := Mux(rd1_forward_en, MuxCase(0.U, Seq(
+    rd1_forward_data := MuxCase(idu.io.out.bits.rd1, Seq(
       exu_forward_rd1 -> exu_forward_data,
       lsu_forward_rd1 -> lsu_forward_data,
       wbu_forward_rd1 -> wbu_forward_data
-    )), idu.io.out.bits.rd1)
+    ))
 
-    rd2_forward_data := Mux(rd2_forward_en, MuxCase(0.U, Seq(
+    rd2_forward_data := MuxCase(idu.io.out.bits.rd2, Seq(
       exu_forward_rd2 -> exu_forward_data,
       lsu_forward_rd2 -> lsu_forward_data,
       wbu_forward_rd2 -> wbu_forward_data
-    )), idu.io.out.bits.rd2)
+    ))
 
-    exu.io.in.bits.rd1 := RegEnable(Mux(rd1_forward_en || ~is_raw_rs1, rd1_forward_data, rd1_forward_data_read), 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
-    exu.io.in.bits.rd2 := RegEnable(Mux(rd2_forward_en || ~is_raw_rs2, rd2_forward_data, rd2_forward_data_read), 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
-    idu.io.is_stall := ~(~is_raw || (((forward_count1_write === 0.U) || (forward_count1 === 1.U && rd1_forward_en)) && ((forward_count2_write === 0.U) || (forward_count2 === 1.U && rd2_forward_en))))
+    // latch into EXU input register; RegEnable holds value when stalling (exu.in.ready=false)
+    exu.io.in.bits.rd1 := RegEnable(rd1_forward_data, 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
+    exu.io.in.bits.rd2 := RegEnable(rd2_forward_data, 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
 
-    //hazard
+    // hazard / branch
     val correct_pc = Wire(UInt(32.W))
     val pc_src = exu.io.pc.bits.pc_src
     correct_pc := MuxLookup(pc_src, exu.io.pc.bits.pc4)(Seq(
-      PC_PLUS4 -> exu.io.pc.bits.pc4,
-      PC_IMM   -> exu.io.pc.bits.pc4_imm,
-      PC_RS2   -> exu.io.pc.bits.pc4_rs2,
-      MEPC     -> csr.io.read.mepc
+      PC_IMM -> exu.io.pc.bits.pc4_imm,
+      PC_RS2 -> exu.io.pc.bits.pc4_rs2,
+      MEPC   -> csr.io.read.mepc
     ))
 
-    val is_jump = exu.io.in.bits.signals.exu.jump =/= JUMP_NONE & exu.io.out.valid 
+    val is_jump = exu.io.in.bits.signals.exu.jump =/= JUMP_NONE & exu.io.out.valid
     exu.io.pc.ready := true.B
     val is_ch = Wire(Bool())
-    val is_ch_r = RegNext(is_ch, false.B)
     is_ch := is_jump & pc_src =/= PC_PLUS4
 
     val is_fencei = RegNext(icache.io.fencei.valid & icache.io.fencei.ready, false.B)
-    ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(is_ch, correct_pc, Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
+    ifu.io.correct_pc := Mux(is_irq,    csr.io.read.mtvec,
+                         Mux(is_ch,     correct_pc,
+                         Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
 
     ifu.io.is_flush := is_ch || is_irq || is_fencei
     idu.io.is_flush := is_ch || is_irq

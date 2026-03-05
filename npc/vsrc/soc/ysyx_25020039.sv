@@ -1115,11 +1115,6 @@ module ysyx_25020039_Core(
 );
 
   wire        idu_io_is_flush;
-  wire        rd2_forward_en;
-  wire        rd1_forward_en;
-  wire        wbu_raw;
-  wire        lsu_raw;
-  wire        exu_raw;
   wire [31:0] _csr_io_read_rdata;
   wire [31:0] _csr_io_read_mtvec;
   wire [31:0] _csr_io_read_mepc;
@@ -1280,46 +1275,36 @@ module ysyx_25020039_Core(
   reg         wbu_io_in_bits_r_state_state;
   reg         wbu_io_in_valid_r;
   wire        wbu_io_in_valid = wbu_io_in_valid_r & ~is_irq;
-  wire        _exu_raw_T_2 = exu_io_in_bits_r_waddr == _idu_io_refile_raddr1;
-  wire        exu_raw_rs1 = exu_raw & _exu_raw_T_2;
-  wire        _exu_raw_T_6 = exu_io_in_bits_r_waddr == _idu_io_refile_raddr2;
-  wire        exu_raw_rs2 = exu_raw & _exu_raw_T_6;
-  wire        _lsu_raw_T_2 = lsu_io_in_bits_r_waddr == _idu_io_refile_raddr1;
-  wire        lsu_raw_rs1 = lsu_raw & _lsu_raw_T_2;
-  wire        _lsu_raw_T_6 = lsu_io_in_bits_r_waddr == _idu_io_refile_raddr2;
-  wire        lsu_raw_rs2 = lsu_raw & _lsu_raw_T_6;
-  wire        _wbu_raw_T_2 = wbu_io_in_bits_r_waddr == _idu_io_refile_raddr1;
-  wire        wbu_raw_rs1 = wbu_raw & _wbu_raw_T_2;
-  wire        _wbu_raw_T_6 = wbu_io_in_bits_r_waddr == _idu_io_refile_raddr2;
-  wire        wbu_raw_rs2 = wbu_raw & _wbu_raw_T_6;
-  wire        is_raw_rs1 = exu_raw_rs1 | lsu_raw_rs1 | wbu_raw_rs1;
-  wire        is_raw_rs2 = exu_raw_rs2 | lsu_raw_rs2 | wbu_raw_rs2;
-  reg  [31:0] rd1_forward_data_read;
-  reg  [31:0] rd2_forward_data_read;
-  reg         forward_count1;
-  reg         forward_count2;
-  reg         REG;
-  wire        _GEN = REG & idu_io_in_valid;
-  wire        _forward_count1_write_T_1 = (_idu_io_rs1_ren & is_raw_rs1) - rd1_forward_en;
-  wire        _forward_count2_write_T_1 = (_idu_io_rs2_ren & is_raw_rs2) - rd2_forward_en;
-  assign exu_raw =
-    (_idu_io_rs1_ren & (|_idu_io_refile_raddr1) & _exu_raw_T_2 | _idu_io_rs2_ren
-     & (|_idu_io_refile_raddr2) & _exu_raw_T_6) & exu_io_in_bits_r_signals_wbu_reg_write
+  wire        _exu_raw_rs1_T = _idu_io_refile_raddr1 == exu_io_in_bits_r_waddr;
+  wire        _exu_raw_rs2_T = _idu_io_refile_raddr2 == exu_io_in_bits_r_waddr;
+  wire        exu_raw =
+    (_idu_io_rs1_ren & (|_idu_io_refile_raddr1) & _exu_raw_rs1_T | _idu_io_rs2_ren
+     & (|_idu_io_refile_raddr2) & _exu_raw_rs2_T) & exu_io_in_bits_r_signals_wbu_reg_write
     & idu_io_in_valid & exu_io_in_valid;
+  wire        exu_raw_rs1 = exu_raw & _exu_raw_rs1_T;
+  wire        exu_raw_rs2 = exu_raw & _exu_raw_rs2_T;
+  wire        _lsu_raw_rs1_T = _idu_io_refile_raddr1 == lsu_io_in_bits_r_waddr;
+  wire        _lsu_raw_rs2_T = _idu_io_refile_raddr2 == lsu_io_in_bits_r_waddr;
+  wire        lsu_raw =
+    (_idu_io_rs1_ren & (|_idu_io_refile_raddr1) & _lsu_raw_rs1_T | _idu_io_rs2_ren
+     & (|_idu_io_refile_raddr2) & _lsu_raw_rs2_T) & lsu_io_in_bits_r_signals_wbu_reg_write
+    & idu_io_in_valid & lsu_io_in_valid;
+  wire        lsu_raw_rs1 = lsu_raw & _lsu_raw_rs1_T;
+  wire        lsu_raw_rs2 = lsu_raw & _lsu_raw_rs2_T;
+  wire        _wbu_raw_rs1_T = _idu_io_refile_raddr1 == wbu_io_in_bits_r_waddr;
+  wire        _wbu_raw_rs2_T = _idu_io_refile_raddr2 == wbu_io_in_bits_r_waddr;
+  wire        wbu_raw =
+    (_idu_io_rs1_ren & (|_idu_io_refile_raddr1) & _wbu_raw_rs1_T | _idu_io_rs2_ren
+     & (|_idu_io_refile_raddr2) & _wbu_raw_rs2_T) & wbu_io_in_bits_r_signals_wbu_reg_write
+    & idu_io_in_valid & wbu_io_in_valid;
+  wire        wbu_raw_rs1 = wbu_raw & _wbu_raw_rs1_T;
+  wire        wbu_raw_rs2 = wbu_raw & _wbu_raw_rs2_T;
   wire        _exu_forward_rd2_T = exu_io_in_bits_r_signals_wbu_reg_write_sel != 3'h4;
   wire        exu_forward_rd1 = exu_raw_rs1 & _exu_forward_rd2_T;
   wire        exu_forward_rd2 = exu_raw_rs2 & _exu_forward_rd2_T;
-  assign lsu_raw =
-    (_idu_io_rs1_ren & (|_idu_io_refile_raddr1) & _lsu_raw_T_2 | _idu_io_rs2_ren
-     & (|_idu_io_refile_raddr2) & _lsu_raw_T_6) & lsu_io_in_bits_r_signals_wbu_reg_write
-    & idu_io_in_valid & lsu_io_in_valid;
   wire        _lsu_forward_rd2_T = lsu_io_in_bits_r_signals_wbu_reg_write_sel != 3'h4;
   wire        lsu_forward_rd1 = lsu_raw_rs1 & (_lsu_forward_rd2_T | io_dmem_rvalid);
   wire        lsu_forward_rd2 = lsu_raw_rs2 & (_lsu_forward_rd2_T | io_dmem_rvalid);
-  assign wbu_raw =
-    (_idu_io_rs1_ren & (|_idu_io_refile_raddr1) & _wbu_raw_T_2 | _idu_io_rs2_ren
-     & (|_idu_io_refile_raddr2) & _wbu_raw_T_6) & wbu_io_in_bits_r_signals_wbu_reg_write
-    & idu_io_in_valid & wbu_io_in_valid;
   reg  [31:0] casez_tmp;
   always_comb begin
     casez (lsu_io_in_bits_r_signals_wbu_reg_write_sel)
@@ -1341,10 +1326,6 @@ module ysyx_25020039_Core(
         casez_tmp = 32'h0;
     endcase
   end // always_comb
-  assign rd1_forward_en =
-    exu_raw_rs1 ? exu_forward_rd1 : lsu_raw_rs1 ? lsu_forward_rd1 : wbu_raw_rs1;
-  assign rd2_forward_en =
-    exu_raw_rs2 ? exu_forward_rd2 : lsu_raw_rs2 ? lsu_forward_rd2 : wbu_raw_rs2;
   reg  [31:0] exu_io_in_bits_rd1_r;
   reg  [31:0] exu_io_in_bits_rd2_r;
   wire        is_ch =
@@ -1362,14 +1343,6 @@ module ysyx_25020039_Core(
               : exu_io_in_bits_r_signals_wbu_reg_write_sel == 3'h1
                   ? _exu_io_out_bits_alu_result
                   : 32'h0;
-  wire [31:0] _rd1_forward_data_T_2 =
-    exu_forward_rd1
-      ? exu_forward_data
-      : lsu_forward_rd1 ? casez_tmp : wbu_raw_rs1 ? _wbu_io_refile_wdata : 32'h0;
-  wire [31:0] _rd2_forward_data_T_2 =
-    exu_forward_rd2
-      ? exu_forward_data
-      : lsu_forward_rd2 ? casez_tmp : wbu_raw_rs2 ? _wbu_io_refile_wdata : 32'h0;
   always @(posedge clock) begin
     if (reset) begin
       is_irq <= 1'h0;
@@ -1433,11 +1406,6 @@ module ysyx_25020039_Core(
       wbu_io_in_bits_r_is_ebreak <= 1'h0;
       wbu_io_in_bits_r_state_state <= 1'h0;
       wbu_io_in_valid_r <= 1'h0;
-      rd1_forward_data_read <= 32'h0;
-      rd2_forward_data_read <= 32'h0;
-      forward_count1 <= 1'h0;
-      forward_count2 <= 1'h0;
-      REG <= 1'h0;
       exu_io_in_bits_rd1_r <= 32'h0;
       exu_io_in_bits_rd2_r <= 32'h0;
       is_fencei <= 1'h0;
@@ -1478,13 +1446,17 @@ module ysyx_25020039_Core(
         exu_io_in_bits_r_is_ebreak <= _idu_io_out_bits_is_ebreak;
         exu_io_in_bits_r_state_state <= _idu_io_out_bits_state_state;
         exu_io_in_bits_rd1_r <=
-          rd1_forward_en | ~is_raw_rs1
-            ? (rd1_forward_en ? _rd1_forward_data_T_2 : _idu_io_out_bits_rd1)
-            : rd1_forward_data_read;
+          exu_forward_rd1
+            ? exu_forward_data
+            : lsu_forward_rd1
+                ? casez_tmp
+                : wbu_raw_rs1 ? _wbu_io_refile_wdata : _idu_io_out_bits_rd1;
         exu_io_in_bits_rd2_r <=
-          rd2_forward_en | ~is_raw_rs2
-            ? (rd2_forward_en ? _rd2_forward_data_T_2 : _idu_io_out_bits_rd2)
-            : rd2_forward_data_read;
+          exu_forward_rd2
+            ? exu_forward_data
+            : lsu_forward_rd2
+                ? casez_tmp
+                : wbu_raw_rs2 ? _wbu_io_refile_wdata : _idu_io_out_bits_rd2;
       end
       if (_exu_io_in_ready)
         exu_io_in_valid_r <= _idu_io_out_valid;
@@ -1529,21 +1501,6 @@ module ysyx_25020039_Core(
         wbu_io_in_bits_r_state_state <= _lsu_io_out_bits_state_state;
       end
       wbu_io_in_valid_r <= _lsu_io_out_valid;
-      if (rd1_forward_en)
-        rd1_forward_data_read <= _rd1_forward_data_T_2;
-      if (rd2_forward_en)
-        rd2_forward_data_read <= _rd2_forward_data_T_2;
-      if (_GEN) begin
-        forward_count1 <= _forward_count1_write_T_1;
-        forward_count2 <= _forward_count2_write_T_1;
-      end
-      else begin
-        if (idu_io_in_valid & rd1_forward_en & forward_count1)
-          forward_count1 <= forward_count1 - 1'h1;
-        if (idu_io_in_valid & rd2_forward_en & forward_count2)
-          forward_count2 <= forward_count2 - 1'h1;
-      end
-      REG <= _idu_io_in_ready;
       is_fencei <= _idu_io_ifu_signals_valid & _icache_io_fencei_ready;
     end
   end // always @(posedge)
@@ -1619,11 +1576,9 @@ module ysyx_25020039_Core(
     .io_rs1_ren                            (_idu_io_rs1_ren),
     .io_rs2_ren                            (_idu_io_rs2_ren),
     .io_is_stall
-      (~(~(exu_raw | lsu_raw | wbu_raw)
-         | (~(_GEN ? _forward_count1_write_T_1 : forward_count1) | forward_count1
-            & rd1_forward_en)
-         & (~(_GEN ? _forward_count2_write_T_1 : forward_count2) | forward_count2
-            & rd2_forward_en)))
+      ((exu_raw_rs1 | lsu_raw_rs1 | wbu_raw_rs1) & ~exu_forward_rd1 & ~lsu_forward_rd1
+       & ~wbu_raw_rs1 | (exu_raw_rs2 | lsu_raw_rs2 | wbu_raw_rs2) & ~exu_forward_rd2
+       & ~lsu_forward_rd2 & ~wbu_raw_rs2)
   );
   ysyx_25020039_EXU exu (
     .io_in_ready                           (_exu_io_in_ready),

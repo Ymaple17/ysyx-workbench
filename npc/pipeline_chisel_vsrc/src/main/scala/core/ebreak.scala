@@ -24,10 +24,14 @@ class Ebreak extends BlackBox with HasBlackBoxInline {
       |     end
       |  end
       |`else
+      |`ifdef SIMULATION
       |import "DPI-C" function void sim_exit();
+      |`endif
       |always @(*) begin
       |   if (is_ebreak) begin
+      |`ifdef SIMULATION
       |      sim_exit();
+      |`endif
       |  end
       | end
       |`endif

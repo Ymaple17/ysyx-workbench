@@ -13,10 +13,14 @@ module ysyx_25020039_Ebreak(
      end
   end
 `else
+`ifdef SIMULATION
 import "DPI-C" function void sim_exit();
+`endif
 always @(*) begin
    if (is_ebreak) begin
+`ifdef SIMULATION
       sim_exit();
+`endif
   end
  end
 `endif

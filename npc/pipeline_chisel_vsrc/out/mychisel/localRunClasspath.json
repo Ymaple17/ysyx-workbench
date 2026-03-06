@@ -1,8 +1,8 @@
 {
     "value": [
         "ref:v0:a0213a8e:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/resources",
-        "ref:v0:e30231cd:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/out/mychisel/compile.dest/classes"
+        "ref:v0:4144f07f:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/out/mychisel/compile.dest/classes"
     ],
-    "valueHash": 1704775457,
-    "inputsHash": -579711042
+    "valueHash": -2007420987,
+    "inputsHash": 1073958523
 }

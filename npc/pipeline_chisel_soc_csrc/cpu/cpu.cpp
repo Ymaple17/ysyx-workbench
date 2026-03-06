@@ -36,7 +36,7 @@ static bool g_print_step = false;
 extern "C" void sim_exit(){
     print_perf_stats(main_time / 2);
     uint32_t pc_val = read_pc_from_top();
-    uint32_t a0_val = read_gpr_from_top(10);
+    uint32_t a0_val = read_gpr_from_top(9);
     cpu.pc = pc_val;
     cpu.gpr[10] = a0_val;
     cpu_pc = pc_val;

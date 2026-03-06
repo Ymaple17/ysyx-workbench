@@ -25,8 +25,8 @@
         "qref:v1:bec2c4d4:/home/qiu/.cache/coursier/v1/https/repo1.maven.org/maven2/com/lihaoyi/upickle-core_2.13/3.3.1/upickle-core_2.13-3.3.1.jar",
         "ref:v0:c984eca8:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/compile-resources",
         "ref:v0:a0213a8e:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/resources",
-        "ref:v0:825893a3:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/out/mychisel/compile.dest/classes"
+        "ref:v0:4144f07f:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/out/mychisel/compile.dest/classes"
     ],
-    "valueHash": -1043060752,
-    "inputsHash": 496852350
+    "valueHash": 48628462,
+    "inputsHash": 1294680553
 }

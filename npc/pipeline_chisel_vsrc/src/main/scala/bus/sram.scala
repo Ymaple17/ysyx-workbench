@@ -32,7 +32,7 @@ class DPI_Mem extends BlackBox with HasBlackBoxInline {
       |);
       |
       |`ifdef __ICARUS__
-      |  reg [7:0] mem [0:100*1024-1];
+      |  reg [7:0] mem [0:88*1024-1];
       |  initial begin
       |    $readmemh("mem.hex", mem);
       |  end
@@ -41,7 +41,7 @@ class DPI_Mem extends BlackBox with HasBlackBoxInline {
       |  
       |    always @(*) begin
       |     if (ren) begin
-      |        if (raddr >= 32'h80000000 && raddr < 32'h80000000 +100*1024) begin
+      |        if (raddr >= 32'h80000000 && raddr < 32'h80000000 +88*1024) begin
       |            rdata_reg[7:0]   = mem[(raddr - 32'h80000000)];
       |            rdata_reg[15:8]  = mem[(raddr - 32'h80000000) + 1];
       |            rdata_reg[23:16] = mem[(raddr - 32'h80000000) + 2];
@@ -60,7 +60,7 @@ class DPI_Mem extends BlackBox with HasBlackBoxInline {
       |             $write("%c", wdata[7:0]);
       |        end
       |
-      |        else if (waddr >= 32'h80000000 && waddr < 32'h80000000 + 100*1024) begin
+      |        else if (waddr >= 32'h80000000 && waddr < 32'h80000000 + 88*1024) begin
       |            if (wmask[0]) mem[(waddr - 32'h80000000)]     <= wdata[7:0];
       |            if (wmask[1]) mem[(waddr - 32'h80000000) + 1] <= wdata[15:8];
       |            if (wmask[2]) mem[(waddr - 32'h80000000) + 2] <= wdata[23:16];

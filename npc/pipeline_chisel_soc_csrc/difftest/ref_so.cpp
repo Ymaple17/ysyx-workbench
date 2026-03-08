@@ -19,7 +19,7 @@ const char* img_path = NULL;
 
 static uint32_t get_gpr(int idx) {
     if (idx == 0) return 0;
-    return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_ext__DOT__Memory[idx];
+    return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__ysyx_25020039_rf_ext__DOT__Memory[idx];
 }
 
 static uint32_t get_pc() {
@@ -83,8 +83,8 @@ void ref_so_regcpy(void *dut, bool direction) {
         
         top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__ifu__DOT__pc_reg = s->pc;
 
-        for (int i=1; i<32; i++) {
-            top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__rf_ext__DOT__Memory[i] = s->gpr[i];
+        for (int i=1; i<16; i++) {
+            top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__ysyx_25020039_rf_ext__DOT__Memory[i] = s->gpr[i];
         }
     } else {
         // Copy REF -> DUT (Checking)

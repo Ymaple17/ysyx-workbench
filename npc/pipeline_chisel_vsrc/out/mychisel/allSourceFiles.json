@@ -2,7 +2,7 @@
     "value": [
         "ref:v0:eff58b7c:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/npc.scala",
         "ref:v0:9c369299:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/top.scala",
-        "ref:v0:50c932be:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/ifu.scala",
+        "ref:v0:acf0c79b:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/ifu.scala",
         "ref:v0:634de740:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/control.scala",
         "ref:v0:16abee21:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/core.scala",
         "ref:v0:a695f03c:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/core/icache.scala",
@@ -24,6 +24,6 @@
         "ref:v0:574b2ee1:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/bus/sram.scala",
         "ref:v0:3c431473:/home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc/src/main/scala/config.scala"
     ],
-    "valueHash": 752149852,
-    "inputsHash": -804355054
+    "valueHash": 712499899,
+    "inputsHash": 559150736
 }

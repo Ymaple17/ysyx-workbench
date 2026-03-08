@@ -45,12 +45,17 @@ class ALU(val width: Int) extends Module {
   val slt = adder_result(width-1) ^ sub_overflow_check
   val sltu = !adder_result_ext(width)
 
+  val shamt = io.B(4, 0)
+  val shin = Mux(io.alu_control === ALU_SLL, Reverse(io.A), io.A)
+  val shift_right_logic = (Cat(Mux(io.alu_control === ALU_SRA, io.A(width-1), 0.U), shin).asSInt >> shamt).asUInt
+  val shift_result = Mux(io.alu_control === ALU_SLL, Reverse(shift_right_logic(width-1, 0)), shift_right_logic(width-1, 0))
+
   io.result := MuxLookup(io.alu_control, 0.U)(Seq(
     ALU_ADD  -> adder_result,
     ALU_SUB  -> adder_result,
-    ALU_SLL  -> (io.A << io.B(4, 0)),
-    ALU_SRL  -> (io.A >> io.B(4, 0)),
-    ALU_SRA  -> (io.A.asSInt >> io.B(4, 0)).asUInt,
+    ALU_SLL  -> shift_result,
+    ALU_SRL  -> shift_result,
+    ALU_SRA  -> shift_result,
     ALU_AND  -> (io.A & io.B),
     ALU_OR   -> (io.A | io.B),
     ALU_XOR  -> (io.A ^ io.B),

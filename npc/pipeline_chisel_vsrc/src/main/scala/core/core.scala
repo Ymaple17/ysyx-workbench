@@ -73,8 +73,7 @@ class Core(val conf :CoreConfig) extends Module{
     def IFU_Connect[T <: Data, T2 <: Data](prevOut: DecoupledIO[T], thisIn: DecoupledIO[T]) = {
       prevOut.ready := thisIn.ready
       val resetPC = if(conf.ysyxsoc){ "h3000_0000".U(32.W) }
-                    else if(conf.npc){ "h8000_0000".U(32.W) }
-                    else             { "h0000_0000".U(32.W) }
+                    else { "h8000_0000".U(32.W) }
       thisIn.bits  := RegEnable(prevOut.bits, resetPC.asTypeOf(new IFUPC_IO), prevOut.valid && thisIn.ready)
       thisIn.valid := RegEnable(prevOut.valid, false.B, thisIn.ready)
     }
@@ -123,7 +122,6 @@ class Core(val conf :CoreConfig) extends Module{
     val is_raw_rs1 = exu_raw_rs1 || lsu_raw_rs1 || wbu_raw_rs1
     val is_raw_rs2 = exu_raw_rs2 || lsu_raw_rs2 || wbu_raw_rs2
 
-    // forward availability per stage per rs
     val exu_forward_rd1 = Wire(Bool())
     val exu_forward_rd2 = Wire(Bool())
     val lsu_forward_rd1 = Wire(Bool())
@@ -140,7 +138,7 @@ class Core(val conf :CoreConfig) extends Module{
     wbu_forward_rd1 := wbu_raw_rs1
     wbu_forward_rd2 := wbu_raw_rs2
 
-    // stall: RAW exists but no stage can forward yet
+    // stall
     val rs1_stall = is_raw_rs1 && !exu_forward_rd1 && !lsu_forward_rd1 && !wbu_forward_rd1
     val rs2_stall = is_raw_rs2 && !exu_forward_rd2 && !lsu_forward_rd2 && !wbu_forward_rd2
     idu.io.is_stall := rs1_stall || rs2_stall
@@ -183,7 +181,6 @@ class Core(val conf :CoreConfig) extends Module{
       wbu_forward_rd2 -> wbu_forward_data
     ))
 
-    // latch into EXU input register; RegEnable holds value when stalling (exu.in.ready=false)
     exu.io.in.bits.rd1 := RegEnable(rd1_forward_data, 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
     exu.io.in.bits.rd2 := RegEnable(rd2_forward_data, 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
 

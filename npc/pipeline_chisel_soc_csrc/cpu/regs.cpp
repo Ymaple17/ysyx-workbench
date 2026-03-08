@@ -12,7 +12,7 @@ uint32_t cpu_pc = 0x30000000;
 
 
 uint32_t read_gpr_from_top(int idx) {
-    //if (idx == 0) return 0;
+    if (idx == 0) return 0;
     return top->rootp->ysyxSoCFull__DOT__asic__DOT__cpu__DOT__cpu__DOT__core__DOT__refile__DOT__ysyx_25020039_rf_ext__DOT__Memory[idx];
 }
 
@@ -21,9 +21,8 @@ uint32_t read_pc_from_top() {
 }
 
 static inline void refresh_cpu_regs() {
-  cpu_gpr[0] = 0;
-  for (int i = 1; i < 16; i++) {
-    cpu_gpr[i] = read_gpr_from_top(i - 1);
+  for (int i = 0; i < 16; i++) {
+    cpu_gpr[i] = read_gpr_from_top(i);
   }
   cpu_pc = read_pc_from_top();
 }

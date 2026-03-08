@@ -483,8 +483,30 @@ module ysyx_25020039_ALU(
     io_alu_control == 4'h1 | io_alu_control == 4'h3 | io_alu_control == 4'h5;
   wire [32:0] _adder_result_ext_T_1 =
     {1'h0, io_A} + {1'h0, {32{is_sub}} ^ io_B} + {32'h0, is_sub};
-  wire [31:0] _GEN = {27'h0, io_B[4:0]};
-  wire [62:0] _io_result_T_1 = {31'h0, io_A} << io_B[4:0];
+  wire [31:0] _shin_T_9 = {16'h0, io_A[31:16]} | {io_A[15:0], 16'h0};
+  wire [31:0] _shin_T_19 =
+    {8'h0, _shin_T_9[31:8] & 24'hFF00FF} | {_shin_T_9[23:0] & 24'hFF00FF, 8'h0};
+  wire [31:0] _shin_T_29 =
+    {4'h0, _shin_T_19[31:4] & 28'hF0F0F0F} | {_shin_T_19[27:0] & 28'hF0F0F0F, 4'h0};
+  wire [31:0] _shin_T_39 =
+    {2'h0, _shin_T_29[31:2] & 30'h33333333} | {_shin_T_29[29:0] & 30'h33333333, 2'h0};
+  wire [32:0] _shift_right_logic_T_5 =
+    $signed($signed({io_alu_control == 4'h7 & io_A[31],
+                     io_alu_control == 4'h9
+                       ? {1'h0, _shin_T_39[31:1] & 31'h55555555}
+                         | {_shin_T_39[30:0] & 31'h55555555, 1'h0}
+                       : io_A}) >>> io_B[4:0]);
+  wire [31:0] _shift_result_T_10 =
+    {16'h0, _shift_right_logic_T_5[31:16]} | {_shift_right_logic_T_5[15:0], 16'h0};
+  wire [31:0] _shift_result_T_20 =
+    {8'h0, _shift_result_T_10[31:8] & 24'hFF00FF}
+    | {_shift_result_T_10[23:0] & 24'hFF00FF, 8'h0};
+  wire [31:0] _shift_result_T_30 =
+    {4'h0, _shift_result_T_20[31:4] & 28'hF0F0F0F}
+    | {_shift_result_T_20[27:0] & 28'hF0F0F0F, 4'h0};
+  wire [31:0] _shift_result_T_40 =
+    {2'h0, _shift_result_T_30[31:2] & 30'h33333333}
+    | {_shift_result_T_30[29:0] & 30'h33333333, 2'h0};
   always_comb begin
     casez (io_alu_control)
       4'b0000:
@@ -505,11 +527,13 @@ module ysyx_25020039_ALU(
       4'b0110:
         casez_tmp = io_A | io_B;
       4'b0111:
-        casez_tmp = $signed($signed(io_A) >>> _GEN);
+        casez_tmp = _shift_right_logic_T_5[31:0];
       4'b1000:
-        casez_tmp = io_A >> _GEN;
+        casez_tmp = _shift_right_logic_T_5[31:0];
       4'b1001:
-        casez_tmp = _io_result_T_1[31:0];
+        casez_tmp =
+          {1'h0, _shift_result_T_40[31:1] & 31'h55555555}
+          | {_shift_result_T_40[30:0] & 31'h55555555, 1'h0};
       4'b1010:
         casez_tmp = 32'h0;
       4'b1011:
@@ -946,7 +970,7 @@ module ysyx_25020039_ICache(
 endmodule
 
 // VCS coverage exclude_file
-module ysyx_25020039_rf_15x32(
+module ysyx_25020039_rf_16x32(
   input  [3:0]  R0_addr,
   input         R0_en,
                 R0_clk,
@@ -961,7 +985,7 @@ module ysyx_25020039_rf_15x32(
   input  [31:0] W0_data
 );
 
-  reg [31:0] Memory[0:14];
+  reg [31:0] Memory[0:15];
   always @(posedge W0_clk) begin
     if (W0_en & 1'h1)
       Memory[W0_addr] <= W0_data;
@@ -983,22 +1007,22 @@ module ysyx_25020039_Refile(
 
   wire [31:0] _ysyx_25020039_rf_ext_R0_data;
   wire [31:0] _ysyx_25020039_rf_ext_R1_data;
-  ysyx_25020039_rf_15x32 ysyx_25020039_rf_ext (
-    .R0_addr (io_read_raddr2[3:0] - 4'h1),
-    .R0_en   (|io_read_raddr2),
+  ysyx_25020039_rf_16x32 ysyx_25020039_rf_ext (
+    .R0_addr (io_read_raddr2[3:0]),
+    .R0_en   (1'h1),
     .R0_clk  (clock),
     .R0_data (_ysyx_25020039_rf_ext_R0_data),
-    .R1_addr (io_read_raddr1[3:0] - 4'h1),
-    .R1_en   (|io_read_raddr1),
+    .R1_addr (io_read_raddr1[3:0]),
+    .R1_en   (1'h1),
     .R1_clk  (clock),
     .R1_data (_ysyx_25020039_rf_ext_R1_data),
-    .W0_addr (io_write_waddr[3:0] - 4'h1),
+    .W0_addr (io_write_waddr[3:0]),
     .W0_en   (io_write_wen & (|io_write_waddr)),
     .W0_clk  (clock),
     .W0_data (io_write_wdata)
   );
-  assign io_read_rdata1 = (|io_read_raddr1) ? _ysyx_25020039_rf_ext_R1_data : 32'h0;
-  assign io_read_rdata2 = (|io_read_raddr2) ? _ysyx_25020039_rf_ext_R0_data : 32'h0;
+  assign io_read_rdata1 = io_read_raddr1 == 5'h0 ? 32'h0 : _ysyx_25020039_rf_ext_R1_data;
+  assign io_read_rdata2 = io_read_raddr2 == 5'h0 ? 32'h0 : _ysyx_25020039_rf_ext_R0_data;
 endmodule
 
 module ysyx_25020039_CSR(
@@ -2009,17 +2033,14 @@ module ysyx_25020039_Clint(
   input         io_rready
 );
 
-  reg [31:0] rdata;
   reg [63:0] mtime;
   reg        state;
   always @(posedge clock) begin
     if (reset) begin
-      rdata <= 32'h0;
       mtime <= 64'h0;
       state <= 1'h0;
     end
     else begin
-      rdata <= io_araddr == 32'hA0000048 ? mtime[31:0] : mtime[63:32];
       mtime <= mtime + 64'h1;
       if (state)
         state <= ~io_rready;
@@ -2028,7 +2049,7 @@ module ysyx_25020039_Clint(
     end
   end // always @(posedge)
   assign io_arready = ~state;
-  assign io_rdata = rdata;
+  assign io_rdata = io_araddr == 32'hA0000048 ? mtime[31:0] : mtime[63:32];
   assign io_rvalid = state;
 endmodule
 

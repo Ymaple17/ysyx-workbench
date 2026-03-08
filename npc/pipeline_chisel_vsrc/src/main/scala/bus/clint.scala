@@ -9,8 +9,6 @@ class Clint(coreConfig: CoreConfig) extends Module{
 
   val io = IO(new AXI4Slave)
   io.setDefaults()
-  val rdata = RegInit(0.U(32.W))
-  io.rdata := rdata
   val ADDR = if(coreConfig.npc) "ha0000048".U else "h02000000".U
   
   val mtime = RegInit(0.U(64.W))
@@ -27,7 +25,7 @@ class Clint(coreConfig: CoreConfig) extends Module{
   state := next_state
 
   io.arready := false.B
-  rdata := Mux(io.araddr === ADDR, mtime(31, 0), mtime(63, 32))
+  io.rdata := Mux(io.araddr === ADDR, mtime(31, 0), mtime(63, 32))
 
   switch(state){
     is(s_IDLE){

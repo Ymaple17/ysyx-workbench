@@ -742,12 +742,45 @@ module ysyx_25020039_LSU(
   wire        io_dmem_arvalid_0 = is_load & ~(|state) & idle & ~ar_handshake_done;
   wire        io_dmem_awvalid_0 = is_store & ~(|state) & idle & ~aw_handshake_done;
   wire        io_dmem_wvalid_0 = is_store & ~(|state) & idle & ~w_handshake_done;
-  wire [2:0]  _data_offset_T =
-    io_in_bits_alu_result[2:0] - {io_in_bits_alu_result[2], 2'h0};
-  wire [14:0] _mem_wmask_T_1 = {7'h0, io_in_bits_signals_lsu_mem_wmask} << _data_offset_T;
-  wire [31:0] rword = io_dmem_rdata >> {26'h0, _data_offset_T, 3'h0};
-  wire [94:0] _io_dmem_wdata_T_2 =
-    {63'h0, io_in_bits_rd2} << {89'h0, _data_offset_T, 3'h0};
+  reg  [3:0]  casez_tmp;
+  always_comb begin
+    casez (io_in_bits_alu_result[1:0])
+      2'b00:
+        casez_tmp = io_in_bits_signals_lsu_mem_wmask[3:0];
+      2'b01:
+        casez_tmp = {io_in_bits_signals_lsu_mem_wmask[2:0], 1'h0};
+      2'b10:
+        casez_tmp = {io_in_bits_signals_lsu_mem_wmask[1:0], 2'h0};
+      default:
+        casez_tmp = {io_in_bits_signals_lsu_mem_wmask[0], 3'h0};
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_0;
+  always_comb begin
+    casez (io_in_bits_alu_result[1:0])
+      2'b00:
+        casez_tmp_0 = io_dmem_rdata;
+      2'b01:
+        casez_tmp_0 = {8'h0, io_dmem_rdata[31:8]};
+      2'b10:
+        casez_tmp_0 = {16'h0, io_dmem_rdata[31:16]};
+      default:
+        casez_tmp_0 = {24'h0, io_dmem_rdata[31:24]};
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_1;
+  always_comb begin
+    casez (io_in_bits_alu_result[1:0])
+      2'b00:
+        casez_tmp_1 = io_in_bits_rd2;
+      2'b01:
+        casez_tmp_1 = {io_in_bits_rd2[23:0], 8'h0};
+      2'b10:
+        casez_tmp_1 = {io_in_bits_rd2[15:0], 16'h0};
+      default:
+        casez_tmp_1 = {io_in_bits_rd2[7:0], 24'h0};
+    endcase
+  end // always_comb
   assign idle = io_in_valid & ~io_is_flush;
   wire        ready = _ready_T | ~is_load & ~is_store;
   wire        _GEN = (|state) | io_is_flush;
@@ -795,14 +828,14 @@ module ysyx_25020039_LSU(
   assign io_out_bits_imm_ext = io_in_bits_imm_ext;
   assign io_out_bits_mem_read =
     _io_out_bits_mem_read_T_8
-      ? {16'h0, rword[15:0]}
+      ? {16'h0, casez_tmp_0[15:0]}
       : _io_out_bits_mem_read_T_6
-          ? {24'h0, rword[7:0]}
+          ? {24'h0, casez_tmp_0[7:0]}
           : _io_out_bits_mem_read_T_4
-              ? rword
+              ? casez_tmp_0
               : _io_out_bits_mem_read_T_2
-                  ? {{16{rword[15]}}, rword[15:0]}
-                  : {{24{rword[7]}}, rword[7:0]};
+                  ? {{16{casez_tmp_0[15]}}, casez_tmp_0[15:0]}
+                  : {{24{casez_tmp_0[7]}}, casez_tmp_0[7:0]};
   assign io_out_bits_waddr = io_in_bits_waddr;
   assign io_out_bits_csr_waddr = io_in_bits_csr_waddr;
   assign io_out_bits_is_ebreak = io_in_bits_is_ebreak;
@@ -832,8 +865,8 @@ module ysyx_25020039_LSU(
        : io_in_bits_signals_lsu_mem_wmask == 8'h3
            ? 2'h1
            : {io_in_bits_signals_lsu_mem_wmask != 8'h1, 1'h0}};
-  assign io_dmem_wdata = _io_dmem_wdata_T_2[31:0];
-  assign io_dmem_wstrb = _mem_wmask_T_1[3:0];
+  assign io_dmem_wdata = casez_tmp_1;
+  assign io_dmem_wstrb = casez_tmp;
   assign io_dmem_wvalid = io_dmem_wvalid_0;
   assign io_dmem_bready = is_store & _io_dmem_bready_T | _io_dmem_bready_T_2;
 endmodule

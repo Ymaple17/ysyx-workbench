@@ -128,19 +128,32 @@ class LSU(val conf: CoreConfig) extends Module{
   io.dmem.arsize := arsize
   io.dmem.awsize := awsize
 
-  val temp_addr = Wire(UInt(32.W))
-  val data_offset = Wire(UInt(32.W))
-  temp_addr := io.in.bits.alu_result & (~3.U(32.W))
-  data_offset := io.in.bits.alu_result - temp_addr
-
+  val shift_amount = io.in.bits.alu_result(1, 0)
+  
   val mem_wmask = Wire(UInt(4.W))
   val rd_offset = Wire(UInt(32.W))
-  mem_wmask := io.in.bits.signals.lsu.mem_wmask << data_offset(2,0)
-  rd_offset := io.dmem.rdata >> (data_offset(2,0) << 3)
+  
+  mem_wmask := MuxLookup(shift_amount, io.in.bits.signals.lsu.mem_wmask)(Seq(
+    1.U -> (io.in.bits.signals.lsu.mem_wmask << 1),
+    2.U -> (io.in.bits.signals.lsu.mem_wmask << 2),
+    3.U -> (io.in.bits.signals.lsu.mem_wmask << 3)
+  ))
+
+  rd_offset := MuxLookup(shift_amount, io.dmem.rdata)(Seq(
+    1.U -> (io.dmem.rdata >> 8),
+    2.U -> (io.dmem.rdata >> 16),
+    3.U -> (io.dmem.rdata >> 24)
+  ))
 
   io.dmem.araddr := io.in.bits.alu_result
   io.dmem.awaddr := io.in.bits.alu_result
-  io.dmem.wdata := io.in.bits.rd2 << (data_offset(2,0) << 3)
+  
+  io.dmem.wdata := MuxLookup(shift_amount, io.in.bits.rd2)(Seq(
+    1.U -> (io.in.bits.rd2 << 8),
+    2.U -> (io.in.bits.rd2 << 16),
+    3.U -> (io.in.bits.rd2 << 24)
+  ))
+
   io.dmem.wstrb := mem_wmask
 
   //LSU

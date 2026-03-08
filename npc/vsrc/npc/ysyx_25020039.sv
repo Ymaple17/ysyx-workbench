@@ -157,11 +157,10 @@ module ysyx_25020039_Control(
     _control_signals_T_9 | _control_signals_T_11 | _control_signals_T_13
     | _control_signals_T_15 | _GEN_10;
   wire        _GEN_12 = _control_signals_T_5 | _control_signals_T_7;
-  wire        _GEN_13 = _control_signals_T_3 | _GEN_12;
-  wire        _GEN_14 = _control_signals_T_1 | _GEN_13;
-  wire        _GEN_15 =
+  wire        _GEN_13 = _control_signals_T_1 | _control_signals_T_3 | _GEN_12;
+  wire        _GEN_14 =
     _control_signals_T_59 | _control_signals_T_61 | _control_signals_T_811 | _GEN_8;
-  wire        _GEN_16 =
+  wire        _GEN_15 =
     _control_signals_T_7 | _control_signals_T_9 | _control_signals_T_11
     | _control_signals_T_13 | _control_signals_T_15 | _control_signals_T_17
     | _control_signals_T_19 | _control_signals_T_21 | _control_signals_T_23
@@ -170,15 +169,15 @@ module ysyx_25020039_Control(
     | _control_signals_T_37 | _control_signals_T_39 | _control_signals_T_41
     | _control_signals_T_43 | _control_signals_T_45 | _control_signals_T_47
     | _control_signals_T_49 | _control_signals_T_51 | _control_signals_T_53
-    | _control_signals_T_55 | _control_signals_T_57 | _GEN_15;
-  wire        _GEN_17 =
-    _control_signals_T_1 | _control_signals_T_3 | _control_signals_T_5 | _GEN_16;
-  wire        _GEN_18 = _control_signals_T_3 | _control_signals_T_5;
-  wire        _GEN_19 =
+    | _control_signals_T_55 | _control_signals_T_57 | _GEN_14;
+  wire        _GEN_16 =
+    _control_signals_T_1 | _control_signals_T_3 | _control_signals_T_5 | _GEN_15;
+  wire        _GEN_17 = _control_signals_T_3 | _control_signals_T_5;
+  wire        _GEN_18 =
     _control_signals_T_21 | _control_signals_T_23 | _control_signals_T_25
     | _control_signals_T_27 | _control_signals_T_29 | _control_signals_T_31
     | _control_signals_T_33 | _control_signals_T_35 | _control_signals_T_37;
-  wire        _GEN_20 = _control_signals_T_81 | _control_signals_T_759;
+  wire        _GEN_19 = _control_signals_T_81 | _control_signals_T_759;
   assign io_signals_ifu_bits_is_fencei =
     ~(_control_signals_T_1 | _control_signals_T_3 | _control_signals_T_5
       | _control_signals_T_7 | _control_signals_T_9 | _control_signals_T_11
@@ -193,7 +192,7 @@ module ysyx_25020039_Control(
       | _control_signals_T_61 | _control_signals_T_811 | _control_signals_T_65
       | _control_signals_T_67 | _control_signals_T_69 | _control_signals_T_71
       | _control_signals_T_428 | _control_signals_T_637 | _control_signals_T_77
-      | _control_signals_T_79 | _GEN_20) & io_inst == 32'h100F;
+      | _control_signals_T_79 | _GEN_19) & io_inst == 32'h100F;
   assign io_signals_idu_imm_type =
     _GEN_1
       ? 3'h1
@@ -201,74 +200,69 @@ module ysyx_25020039_Control(
           ? 3'h2
           : _control_signals_T_7 ? 3'h0 : _GEN_11 ? 3'h4 : _GEN_4 | ~_GEN_9 ? 3'h0 : 3'h3;
   assign io_signals_idu_rs1_ren =
-    ~(_control_signals_T_1 | _GEN_18)
-    & (_GEN_16 | ~_GEN_7 & (_control_signals_T_81 | _control_signals_T_759));
+    ~(_control_signals_T_1 | _GEN_17)
+    & (_GEN_15 | ~_GEN_7 & (_control_signals_T_81 | _control_signals_T_759));
   assign io_signals_idu_rs2_ren =
-    ~_GEN_14
-    & (_GEN_11 | ~_GEN_19
+    ~_GEN_13
+    & (_GEN_11 | ~_GEN_18
        & (_control_signals_T_39 | _control_signals_T_41 | _control_signals_T_43
           | _control_signals_T_45 | _control_signals_T_47 | _control_signals_T_49
           | _control_signals_T_51 | _control_signals_T_53 | _control_signals_T_55
           | _control_signals_T_57 | _GEN_2 | _control_signals_T_811));
-  assign io_signals_exu_alu_srcA = _control_signals_T_1 ? 2'h0 : {1'h0, _GEN_18};
+  assign io_signals_exu_alu_srcA =
+    _control_signals_T_1 ? 2'h2 : _GEN_17 ? 2'h1 : {~_GEN_15, 1'h0};
   assign io_signals_exu_alu_srcB =
-    _control_signals_T_1
-      ? 2'h0
-      : _GEN_13
-          ? 2'h1
-          : _GEN_11 ? 2'h0 : _GEN_19 ? 2'h1 : _GEN_3 ? 2'h0 : {1'h0, _GEN_15};
+    _GEN_13 ? 2'h1 : _GEN_11 ? 2'h0 : _GEN_18 ? 2'h1 : _GEN_3 ? 2'h0 : {1'h0, _GEN_14};
   assign io_signals_exu_alu_control =
-    _control_signals_T_1
-      ? 4'hA
-      : _GEN_13
-          ? 4'h0
-          : _control_signals_T_9 | _control_signals_T_11
-              ? 4'h1
-              : _control_signals_T_13 | _control_signals_T_15
-                  ? 4'h3
-                  : _GEN_10
-                      ? 4'h5
-                      : _control_signals_T_21
-                          ? 4'h0
-                          : _control_signals_T_23
-                              ? 4'h3
-                              : _control_signals_T_25
-                                  ? 4'h5
-                                  : _control_signals_T_27
-                                      ? 4'h4
-                                      : _control_signals_T_29
-                                          ? 4'h6
-                                          : _control_signals_T_31
-                                              ? 4'h2
-                                              : _control_signals_T_33
-                                                  ? 4'h9
-                                                  : _control_signals_T_35
-                                                      ? 4'h8
-                                                      : _control_signals_T_37
-                                                          ? 4'h7
-                                                          : _control_signals_T_39
-                                                              ? 4'h0
-                                                              : _control_signals_T_41
-                                                                  ? 4'h1
-                                                                  : _control_signals_T_43
-                                                                      ? 4'h9
-                                                                      : _control_signals_T_45
-                                                                          ? 4'h3
-                                                                          : _control_signals_T_47
-                                                                              ? 4'h5
-                                                                              : _control_signals_T_49
-                                                                                  ? 4'h4
-                                                                                  : _control_signals_T_51
-                                                                                      ? 4'h8
-                                                                                      : _control_signals_T_53
-                                                                                          ? 4'h7
-                                                                                          : _control_signals_T_55
-                                                                                              ? 4'h6
-                                                                                              : _control_signals_T_57
-                                                                                                  ? 4'h2
-                                                                                                  : _GEN_15
-                                                                                                      ? 4'h0
-                                                                                                      : 4'hA;
+    _GEN_13
+      ? 4'h0
+      : _control_signals_T_9 | _control_signals_T_11
+          ? 4'h1
+          : _control_signals_T_13 | _control_signals_T_15
+              ? 4'h3
+              : _GEN_10
+                  ? 4'h5
+                  : _control_signals_T_21
+                      ? 4'h0
+                      : _control_signals_T_23
+                          ? 4'h3
+                          : _control_signals_T_25
+                              ? 4'h5
+                              : _control_signals_T_27
+                                  ? 4'h4
+                                  : _control_signals_T_29
+                                      ? 4'h6
+                                      : _control_signals_T_31
+                                          ? 4'h2
+                                          : _control_signals_T_33
+                                              ? 4'h9
+                                              : _control_signals_T_35
+                                                  ? 4'h8
+                                                  : _control_signals_T_37
+                                                      ? 4'h7
+                                                      : _control_signals_T_39
+                                                          ? 4'h0
+                                                          : _control_signals_T_41
+                                                              ? 4'h1
+                                                              : _control_signals_T_43
+                                                                  ? 4'h9
+                                                                  : _control_signals_T_45
+                                                                      ? 4'h3
+                                                                      : _control_signals_T_47
+                                                                          ? 4'h5
+                                                                          : _control_signals_T_49
+                                                                              ? 4'h4
+                                                                              : _control_signals_T_51
+                                                                                  ? 4'h8
+                                                                                  : _control_signals_T_53
+                                                                                      ? 4'h7
+                                                                                      : _control_signals_T_55
+                                                                                          ? 4'h6
+                                                                                          : _control_signals_T_57
+                                                                                              ? 4'h2
+                                                                                              : _GEN_14
+                                                                                                  ? 4'h0
+                                                                                                  : 4'hA;
   assign io_signals_exu_jump =
     _GEN_1
       ? 4'hF
@@ -337,32 +331,30 @@ module ysyx_25020039_Control(
        | _control_signals_T_65 | _control_signals_T_67 | _control_signals_T_69
        | _control_signals_T_71 | _control_signals_T_428);
   assign io_signals_wbu_reg_write =
-    _GEN_14 | ~_GEN_11
+    _GEN_13 | ~_GEN_11
     & (_GEN_4 | ~_GEN_9
        & (_GEN_8 | ~_GEN_7 & (_control_signals_T_81 | _control_signals_T_759)));
   assign io_signals_wbu_reg_write_sel =
-    _control_signals_T_1
-      ? 3'h2
-      : _control_signals_T_3
-          ? 3'h1
-          : _GEN_12
-              ? 3'h3
-              : _GEN_11
-                  ? 3'h0
-                  : _GEN_4
-                      ? 3'h1
-                      : _GEN_9 ? 3'h0 : _GEN_8 ? 3'h4 : _GEN_7 | ~_GEN_20 ? 3'h0 : 3'h5;
+    _GEN_1
+      ? 3'h1
+      : _GEN_12
+          ? 3'h3
+          : _GEN_11
+              ? 3'h0
+              : _GEN_4
+                  ? 3'h1
+                  : _GEN_9 ? 3'h0 : _GEN_8 ? 3'h4 : _GEN_7 | ~_GEN_19 ? 3'h0 : 3'h5;
   assign io_signals_wbu_csr_write =
-    ~_GEN_17
+    ~_GEN_16
     & (_control_signals_T_637 | ~_GEN_6
        & (_control_signals_T_81 | _control_signals_T_759));
   assign io_signals_wbu_csr_sel =
-    _GEN_17
+    _GEN_16
       ? 2'h0
       : _control_signals_T_637
           ? 2'h3
           : _GEN_6 ? 2'h0 : _control_signals_T_81 ? 2'h1 : {_control_signals_T_759, 1'h0};
-  assign io_irq = ~_GEN_17 & _control_signals_T_637;
+  assign io_irq = ~_GEN_16 & _control_signals_T_637;
 endmodule
 
 module ysyx_25020039_IMM(
@@ -631,7 +623,9 @@ module ysyx_25020039_EXU(
   wire        _alu_io_zero_flag;
   ysyx_25020039_ALU alu (
     .io_A
-      (io_in_bits_signals_exu_alu_srcA == 2'h1 ? io_in_bits_pc : io_in_bits_rd1),
+      (io_in_bits_signals_exu_alu_srcA == 2'h2
+         ? 32'h0
+         : io_in_bits_signals_exu_alu_srcA == 2'h1 ? io_in_bits_pc : io_in_bits_rd1),
     .io_B
       (io_in_bits_signals_exu_alu_srcB == 2'h1 ? io_in_bits_imm_ext : io_in_bits_rd2),
     .io_alu_control (io_in_bits_signals_exu_alu_control),
@@ -830,7 +824,6 @@ module ysyx_25020039_WBU(
                 io_in_bits_alu_result,
                 io_in_bits_csr_rd1,
                 io_in_bits_pc,
-                io_in_bits_imm_ext,
                 io_in_bits_mem_read,
   input  [4:0]  io_in_bits_waddr,
   input  [11:0] io_in_bits_csr_waddr,
@@ -868,9 +861,7 @@ module ysyx_25020039_WBU(
           ? io_in_bits_mem_read
           : io_in_bits_signals_wbu_reg_write_sel == 3'h3
               ? io_in_bits_pc + 32'h4
-              : io_in_bits_signals_wbu_reg_write_sel == 3'h2
-                  ? io_in_bits_imm_ext
-                  : io_in_bits_alu_result;
+              : io_in_bits_alu_result;
   assign io_refile_waddr = io_in_bits_waddr;
   assign io_refile_wen = io_in_bits_signals_wbu_reg_write & io_in_valid & ~io_is_flush;
   assign io_csr_wdata = casez_tmp;
@@ -1259,7 +1250,6 @@ module ysyx_25020039_Core(
   reg  [31:0] wbu_io_in_bits_r_alu_result;
   reg  [31:0] wbu_io_in_bits_r_csr_rd1;
   reg  [31:0] wbu_io_in_bits_r_pc;
-  reg  [31:0] wbu_io_in_bits_r_imm_ext;
   reg  [31:0] wbu_io_in_bits_r_mem_read;
   reg  [4:0]  wbu_io_in_bits_r_waddr;
   reg  [11:0] wbu_io_in_bits_r_csr_waddr;
@@ -1391,7 +1381,6 @@ module ysyx_25020039_Core(
       wbu_io_in_bits_r_alu_result <= 32'h0;
       wbu_io_in_bits_r_csr_rd1 <= 32'h0;
       wbu_io_in_bits_r_pc <= 32'h0;
-      wbu_io_in_bits_r_imm_ext <= 32'h0;
       wbu_io_in_bits_r_mem_read <= 32'h0;
       wbu_io_in_bits_r_waddr <= 5'h0;
       wbu_io_in_bits_r_csr_waddr <= 12'h0;
@@ -1485,7 +1474,6 @@ module ysyx_25020039_Core(
         wbu_io_in_bits_r_alu_result <= _lsu_io_out_bits_alu_result;
         wbu_io_in_bits_r_csr_rd1 <= _lsu_io_out_bits_csr_rd1;
         wbu_io_in_bits_r_pc <= _lsu_io_out_bits_pc;
-        wbu_io_in_bits_r_imm_ext <= _lsu_io_out_bits_imm_ext;
         wbu_io_in_bits_r_mem_read <= _lsu_io_out_bits_mem_read;
         wbu_io_in_bits_r_waddr <= _lsu_io_out_bits_waddr;
         wbu_io_in_bits_r_csr_waddr <= _lsu_io_out_bits_csr_waddr;
@@ -1688,7 +1676,6 @@ module ysyx_25020039_Core(
     .io_in_bits_alu_result                (wbu_io_in_bits_r_alu_result),
     .io_in_bits_csr_rd1                   (wbu_io_in_bits_r_csr_rd1),
     .io_in_bits_pc                        (wbu_io_in_bits_r_pc),
-    .io_in_bits_imm_ext                   (wbu_io_in_bits_r_imm_ext),
     .io_in_bits_mem_read                  (wbu_io_in_bits_r_mem_read),
     .io_in_bits_waddr                     (wbu_io_in_bits_r_waddr),
     .io_in_bits_csr_waddr                 (wbu_io_in_bits_r_csr_waddr),
@@ -1819,7 +1806,6 @@ module ysyx_25020039_Xbar(
 
   reg  [2:0]  state;
   wire        is_dmem = io_dmem_arvalid | io_dmem_awvalid;
-  wire        is_imem = io_imem_arvalid & {is_dmem, state} == 4'h0;
   wire        _next_state_T =
     io_dmem_arvalid & io_dmem_araddr > 32'hA00003F7 & io_dmem_araddr < 32'hA0000400
     | io_dmem_awvalid & io_dmem_awaddr > 32'hA00003F7 & io_dmem_awaddr < 32'hA0000400;
@@ -1836,7 +1822,7 @@ module ysyx_25020039_Xbar(
     casez (state)
       3'b000:
         casez_tmp =
-          is_imem
+          io_imem_arvalid
             ? 3'h1
             : is_dmem & _next_state_T
                 ? 3'h4
@@ -1859,21 +1845,22 @@ module ysyx_25020039_Xbar(
   end // always_comb
   wire        _GEN = is_dmem & _next_state_T;
   wire        _GEN_0 = is_dmem & _next_state_T_2;
-  wire        _GEN_1 = is_imem | _GEN;
+  wire        _GEN_1 = io_imem_arvalid | _GEN;
   wire        _GEN_2 = _GEN | _GEN_0;
   wire        _GEN_3 = _GEN_0 | ~is_dmem;
-  wire        _GEN_4 = is_imem | _GEN_2;
+  wire        _GEN_4 = io_imem_arvalid | _GEN_2;
   wire        _GEN_5 =
     _next_state_T_17 ? _GEN_4 | ~is_dmem : _next_state_T_19 | ~_next_state_T_21;
   wire        _GEN_6 = _next_state_T_19 | _next_state_T_21;
   wire        _GEN_7 = _next_state_T_19 | _next_state_T_21 | _next_state_T_23;
-  wire        _GEN_8 = _next_state_T_17 ? is_imem | ~_GEN : _GEN_7 | ~_next_state_T_25;
+  wire        _GEN_8 =
+    _next_state_T_17 ? io_imem_arvalid | ~_GEN : _GEN_7 | ~_next_state_T_25;
   reg  [31:0] casez_tmp_0;
   always_comb begin
     casez (state)
       3'b000:
         casez_tmp_0 =
-          is_imem
+          io_imem_arvalid
             ? 32'h0
             : _GEN
                 ? io_uart_rdata
@@ -1902,15 +1889,17 @@ module ysyx_25020039_Xbar(
       state <= casez_tmp;
   end // always @(posedge)
   assign io_imem_arready =
-    _next_state_T_17 ? is_imem & io_soc_arready : _next_state_T_19 & io_soc_arready;
+    _next_state_T_17
+      ? io_imem_arvalid & io_soc_arready
+      : _next_state_T_19 & io_soc_arready;
   assign io_imem_rdata =
-    (_next_state_T_17 ? is_imem : _next_state_T_19) ? io_soc_rdata : 32'h0;
+    (_next_state_T_17 ? io_imem_arvalid : _next_state_T_19) ? io_soc_rdata : 32'h0;
   assign io_imem_rvalid =
-    _next_state_T_17 ? is_imem & io_soc_rvalid : _next_state_T_19 & io_soc_rvalid;
-  assign io_imem_rlast = _next_state_T_17 ? is_imem : _next_state_T_19;
+    _next_state_T_17 ? io_imem_arvalid & io_soc_rvalid : _next_state_T_19 & io_soc_rvalid;
+  assign io_imem_rlast = _next_state_T_17 ? io_imem_arvalid : _next_state_T_19;
   assign io_dmem_arready =
     _next_state_T_17
-      ? ~is_imem
+      ? ~io_imem_arvalid
         & (_GEN ? io_uart_arready : _GEN_0 ? io_clint_arready : is_dmem & io_soc_arready)
       : ~_next_state_T_19
         & (_next_state_T_21
@@ -1919,13 +1908,13 @@ module ysyx_25020039_Xbar(
   assign io_dmem_rdata = casez_tmp_0;
   assign io_dmem_rresp =
     _next_state_T_17
-      ? (is_imem ? 2'h0 : _GEN ? io_uart_rresp : _GEN_3 ? 2'h0 : io_soc_rresp)
+      ? (io_imem_arvalid ? 2'h0 : _GEN ? io_uart_rresp : _GEN_3 ? 2'h0 : io_soc_rresp)
       : _next_state_T_19
           ? 2'h0
           : _next_state_T_21 ? io_soc_rresp : _GEN_9 ? 2'h0 : io_uart_rresp;
   assign io_dmem_rvalid =
     _next_state_T_17
-      ? ~is_imem
+      ? ~io_imem_arvalid
         & (_GEN ? io_uart_rvalid : _GEN_0 ? io_clint_rvalid : is_dmem & io_soc_rvalid)
       : ~_next_state_T_19
         & (_next_state_T_21
@@ -1933,42 +1922,42 @@ module ysyx_25020039_Xbar(
              : _next_state_T_23 ? io_clint_rvalid : _next_state_T_25 & io_uart_rvalid);
   assign io_dmem_awready =
     _next_state_T_17
-      ? ~is_imem & (_GEN ? io_uart_awready : ~_GEN_0 & is_dmem & io_soc_awready)
+      ? ~io_imem_arvalid & (_GEN ? io_uart_awready : ~_GEN_0 & is_dmem & io_soc_awready)
       : ~_next_state_T_19
         & (_next_state_T_21
              ? io_soc_awready
              : ~_next_state_T_23 & _next_state_T_25 & io_uart_awready);
   assign io_dmem_wready =
     _next_state_T_17
-      ? ~is_imem & (_GEN ? io_uart_wready : ~_GEN_0 & is_dmem & io_soc_wready)
+      ? ~io_imem_arvalid & (_GEN ? io_uart_wready : ~_GEN_0 & is_dmem & io_soc_wready)
       : ~_next_state_T_19
         & (_next_state_T_21
              ? io_soc_wready
              : ~_next_state_T_23 & _next_state_T_25 & io_uart_wready);
   assign io_dmem_bresp =
     _next_state_T_17
-      ? (is_imem ? 2'h0 : _GEN ? io_uart_bresp : _GEN_3 ? 2'h0 : io_soc_bresp)
+      ? (io_imem_arvalid ? 2'h0 : _GEN ? io_uart_bresp : _GEN_3 ? 2'h0 : io_soc_bresp)
       : _next_state_T_19
           ? 2'h0
           : _next_state_T_21 ? io_soc_bresp : _GEN_9 ? 2'h0 : io_uart_bresp;
   assign io_dmem_bvalid =
     _next_state_T_17
-      ? ~is_imem & (_GEN ? io_uart_bvalid : ~_GEN_0 & is_dmem & io_soc_bvalid)
+      ? ~io_imem_arvalid & (_GEN ? io_uart_bvalid : ~_GEN_0 & is_dmem & io_soc_bvalid)
       : ~_next_state_T_19
         & (_next_state_T_21
              ? io_soc_bvalid
              : ~_next_state_T_23 & _next_state_T_25 & io_uart_bvalid);
   assign io_soc_araddr =
     _next_state_T_17
-      ? (is_imem ? io_imem_araddr : _GEN_2 | ~is_dmem ? 32'h0 : io_dmem_araddr)
+      ? (io_imem_arvalid ? io_imem_araddr : _GEN_2 | ~is_dmem ? 32'h0 : io_dmem_araddr)
       : _next_state_T_19 ? io_imem_araddr : _next_state_T_21 ? io_dmem_araddr : 32'h0;
   assign io_soc_arvalid =
     _next_state_T_17
-      ? (is_imem ? io_imem_arvalid : ~_GEN_2 & is_dmem & io_dmem_arvalid)
+      ? (io_imem_arvalid ? io_imem_arvalid : ~_GEN_2 & is_dmem & io_dmem_arvalid)
       : _next_state_T_19 ? io_imem_arvalid : _next_state_T_21 & io_dmem_arvalid;
   assign io_soc_rready =
     _next_state_T_17
-      ? (is_imem ? io_imem_rready : ~_GEN_2 & is_dmem & io_dmem_rready)
+      ? (io_imem_arvalid ? io_imem_rready : ~_GEN_2 & is_dmem & io_dmem_rready)
       : _next_state_T_19 ? io_imem_rready : _next_state_T_21 & io_dmem_rready;
   assign io_soc_awaddr = _GEN_5 ? 32'h0 : io_dmem_awaddr;
   assign io_soc_awvalid =
@@ -2000,25 +1989,25 @@ module ysyx_25020039_Xbar(
   assign io_uart_araddr = _GEN_8 ? 32'h0 : io_dmem_araddr;
   assign io_uart_arvalid =
     _next_state_T_17
-      ? ~is_imem & _GEN & io_dmem_arvalid
+      ? ~io_imem_arvalid & _GEN & io_dmem_arvalid
       : ~_GEN_7 & _next_state_T_25 & io_dmem_arvalid;
   assign io_uart_rready =
     _next_state_T_17
-      ? ~is_imem & _GEN & io_dmem_rready
+      ? ~io_imem_arvalid & _GEN & io_dmem_rready
       : ~_GEN_7 & _next_state_T_25 & io_dmem_rready;
   assign io_uart_awaddr = _GEN_8 ? 32'h0 : io_dmem_awaddr;
   assign io_uart_awvalid =
     _next_state_T_17
-      ? ~is_imem & _GEN & io_dmem_awvalid
+      ? ~io_imem_arvalid & _GEN & io_dmem_awvalid
       : ~_GEN_7 & _next_state_T_25 & io_dmem_awvalid;
   assign io_uart_wdata = _GEN_8 ? 32'h0 : io_dmem_wdata;
   assign io_uart_wvalid =
     _next_state_T_17
-      ? ~is_imem & _GEN & io_dmem_wvalid
+      ? ~io_imem_arvalid & _GEN & io_dmem_wvalid
       : ~_GEN_7 & _next_state_T_25 & io_dmem_wvalid;
   assign io_uart_bready =
     _next_state_T_17
-      ? ~is_imem & _GEN & io_dmem_bready
+      ? ~io_imem_arvalid & _GEN & io_dmem_bready
       : ~_GEN_7 & _next_state_T_25 & io_dmem_bready;
 endmodule
 

@@ -1,20 +1,4 @@
 {
   "mill.scalalib.ZincWorkerModule.worker": {},
-  "mychisel.sources": {
-    "mychisel.allSources": {
-      "mychisel.allSourceFiles": {
-        "mychisel.compile": {
-          "mychisel.localRunClasspath": {
-            "mychisel.allLocalMainClasses": {},
-            "mychisel.localClasspath": {
-              "mychisel.runClasspath": {
-                "mychisel.runMain": {}
-              }
-            }
-          },
-          "mychisel.finalMainClassOpt": {}
-        }
-      }
-    }
-  }
+  "mychisel.runMain": {}
 }

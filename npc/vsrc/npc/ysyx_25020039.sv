@@ -23,10 +23,10 @@ module ysyx_25020039_IFU(
 
   wire        idle;
   reg  [31:0] pc_reg;
+  wire [31:0] current_pc = io_in_valid ? io_in_bits_next_pc : pc_reg;
   reg         first_cycle;
   reg  [1:0]  state;
   wire        _io_imem_arvalid_T = state == 2'h0;
-  wire [31:0] io_imem_araddr_0 = io_in_valid ? io_in_bits_next_pc : pc_reg;
   wire        ready = io_imem_rvalid & state != 2'h2;
   assign idle = io_in_valid & io_imem_arready & ~io_is_flush;
   wire        work = ready & io_out_ready;
@@ -52,15 +52,11 @@ module ysyx_25020039_IFU(
   assign io_in_ready = io_in_ready_0;
   assign io_out_valid = ready & io_in_valid;
   assign io_out_bits_inst = io_imem_rdata;
-  assign io_out_bits_pc = io_imem_araddr_0;
+  assign io_out_bits_pc = current_pc;
   assign io_pc_valid = ~reset & io_pc_ready;
   assign io_pc_bits_next_pc =
-    io_is_flush
-      ? io_correct_pc
-      : first_cycle
-          ? 32'h80000000
-          : io_in_valid ? io_in_bits_next_pc + 32'h4 : pc_reg + 32'h4;
-  assign io_imem_araddr = io_imem_araddr_0;
+    io_is_flush ? io_correct_pc : first_cycle ? 32'h80000000 : current_pc + 32'h4;
+  assign io_imem_araddr = current_pc;
   assign io_imem_arvalid = idle & _io_imem_arvalid_T;
 endmodule
 

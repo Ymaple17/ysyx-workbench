@@ -151,14 +151,14 @@ class Core(val conf :CoreConfig) extends Module{
     exu_forward_data := MuxLookup(exu.io.in.bits.signals.wbu.reg_write_sel, 0.U)(Seq(
       ALU_SEL  -> exu.io.out.bits.alu_result,
       IMM_SEL  -> exu.io.out.bits.imm_ext,
-      PC4_SEL  -> (exu.io.out.bits.pc + 4.U),
+      PC4_SEL  -> exu.io.out.bits.pc_plus4,
       CSR_DATA -> exu.io.out.bits.csr_rd1
     ))
 
     lsu_forward_data := MuxLookup(lsu.io.in.bits.signals.wbu.reg_write_sel, 0.U)(Seq(
       ALU_SEL  -> lsu.io.out.bits.alu_result,
       IMM_SEL  -> lsu.io.out.bits.imm_ext,
-      PC4_SEL  -> (lsu.io.out.bits.pc + 4.U),
+      PC4_SEL  -> lsu.io.out.bits.pc_plus4,
       CSR_DATA -> lsu.io.out.bits.csr_rd1,
       MEM_SEL  -> lsu.io.out.bits.mem_read
     ))

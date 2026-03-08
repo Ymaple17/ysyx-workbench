@@ -25,9 +25,11 @@ class EXU_LSU_IO extends Bundle{
   val csr_rd1 = Output(UInt(32.W))
   val pc = Output(UInt(32.W))
   val next_pc = Output(UInt(32.W))
+  val pc_plus4 = Output(UInt(32.W))
   val imm_ext = Output(UInt(32.W))
   val rd1 = Output(UInt(32.W))
   val rd2 = Output(UInt(32.W))
+
   val waddr = Output(UInt(5.W))
   val csr_waddr = Output(UInt(12.W))
   val is_ebreak = Output(Bool())
@@ -83,6 +85,7 @@ class EXU(val conf: CoreConfig) extends Module{
     io.out.bits.alu_result := alu.io.result
     io.out.bits.csr_rd1 := io.in.bits.csr_rd1
     io.out.bits.pc := io.in.bits.pc
+    io.out.bits.pc_plus4 := io.in.bits.pc + 4.U
 
     io.out.bits.next_pc := MuxLookup(exu_pc.io.pc_src, io.in.bits.pc + 4.U)(Seq(
       PC_PLUS4 -> (io.in.bits.pc + 4.U),

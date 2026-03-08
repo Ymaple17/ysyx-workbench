@@ -31,7 +31,7 @@ class WBU(val conf: CoreConfig) extends Module{
 
     io.refile.wdata := MuxLookup(io.in.bits.signals.wbu.reg_write_sel, io.in.bits.alu_result)(Seq(
       ALU_SEL -> io.in.bits.alu_result,
-      PC4_SEL -> (io.in.bits.pc + 4.U),
+      PC4_SEL -> io.in.bits.pc_plus4,
       MEM_SEL -> io.in.bits.mem_read,
       CSR_DATA -> io.in.bits.csr_rd1
     ))

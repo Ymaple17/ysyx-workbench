@@ -52,11 +52,9 @@ class IFU(val conf: CoreConfig) extends Module{
       pc_reg := io.in.bits.next_pc
     }
 
-    val current_pc = Mux(io.in.valid, io.in.bits.next_pc, pc_reg)
-
     val first_cycle = RegNext(reset.asBool, true.B)
     val pc_plus4 = Wire(UInt(32.W))
-    pc_plus4 := Mux(first_cycle,pc_init, current_pc + 4.U)
+    pc_plus4 := Mux(first_cycle,pc_init,Mux(io.in.valid, io.in.bits.next_pc + 4.U, pc_reg + 4.U))
     val idle = (Wire(Bool()))
     val work = (Wire(Bool()))
     val ready = (Wire(Bool()))
@@ -75,10 +73,10 @@ class IFU(val conf: CoreConfig) extends Module{
     io.imem.arvalid := idle && state === s_idle
     io.imem.rready := work || (state === s_flush)
 
-    io.imem.araddr := current_pc
+    io.imem.araddr := Mux(io.in.valid, io.in.bits.next_pc, pc_reg)
     
     
-    io.out.bits.pc := current_pc
+    io.out.bits.pc := Mux(io.in.valid, io.in.bits.next_pc, pc_reg)
     
     
     io.out.bits.inst := io.imem.rdata

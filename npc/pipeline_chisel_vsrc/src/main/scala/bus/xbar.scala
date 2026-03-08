@@ -42,19 +42,15 @@ class Xbar(coreConfig: CoreConfig) extends Module{
   val state = RegInit(s_SELECT)
   val next_state = WireDefault(s_SELECT)
 
-  val is_dmem = Wire(Bool())
-  val is_imem = Wire(Bool())
-  is_dmem := Mux(io.dmem.arvalid | io.dmem.awvalid, true.B, false.B)
-  
-  val busy = state =/= s_SELECT
-  is_imem := Mux(io.imem.arvalid, Mux(is_dmem || busy, false.B, true.B), false.B)
+  val is_dmem = io.dmem.arvalid | io.dmem.awvalid
+  val is_imem = io.imem.arvalid
 
   next_state := MuxLookup(state, s_SELECT)(Seq(
     s_SELECT -> MuxCase(s_SELECT, Seq(
-      (is_imem) -> s_IFUREAD,
+      is_imem -> s_IFUREAD,
       (is_dmem & (uart_read | uart_write)) -> s_UART,
       (is_dmem & (clint_read | clint_write)) -> s_CLINT,
-      (is_dmem) -> s_LSUREAD
+      is_dmem -> s_LSUREAD
     )),
     s_IFUREAD -> Mux((io.soc.rvalid & io.soc.rlast), Mux(io.imem.arvalid, s_IFUREAD, s_SELECT), s_IFUREAD),
     s_LSUREAD -> Mux(io.soc.rvalid | io.soc.bvalid, s_SELECT, s_LSUREAD),

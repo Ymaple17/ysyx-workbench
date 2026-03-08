@@ -55,8 +55,6 @@ class EXU(val conf: CoreConfig) extends Module{
 
     val alu = Module(new ALU(conf.xlen))
     val exu_pc = Module(new PC(conf))
-    val jump_pc = Wire(new JUMP_PC_IO)
-    jump_pc.next_pc := jump_pc.pc + jump_pc.imm & (~1.U(32.W))
 
     val alu_srcA = Wire(UInt(conf.xlen.W))
     val alu_srcB = Wire(UInt(conf.xlen.W))
@@ -76,13 +74,8 @@ class EXU(val conf: CoreConfig) extends Module{
     exu_pc.io.zero_flag := alu.io.zero_flag
     exu_pc.io.cmp_flag := alu.io.result(0)
 
-    jump_pc.pc := io.in.bits.pc
-    jump_pc.imm := io.in.bits.imm_ext
-
-    io.pc.bits.pc4 := io.in.bits.pc + 4.U
-    io.pc.bits.pc4_imm := jump_pc.next_pc
-    io.pc.bits.pc4_rs2 := alu.io.result & (~1.U(32.W))
-    io.pc.bits.pc_src := exu_pc.io.pc_src
+    val jump_pc_imm = io.in.bits.pc + io.in.bits.imm_ext
+    val jump_pc_next = jump_pc_imm & (~1.U(32.W))
 
     //LSU
     io.out.bits.signals := io.in.bits.signals
@@ -92,9 +85,14 @@ class EXU(val conf: CoreConfig) extends Module{
 
     io.out.bits.next_pc := MuxLookup(exu_pc.io.pc_src, io.in.bits.pc + 4.U)(Seq(
       PC_PLUS4 -> (io.in.bits.pc + 4.U),
-      PC_IMM   -> jump_pc.next_pc,
+      PC_IMM   -> (jump_pc_next),
       PC_RS2   -> (alu.io.result & (~1.U(32.W)))
     ))
+
+    io.pc.bits.pc4 := io.in.bits.pc + 4.U
+    io.pc.bits.pc4_imm := jump_pc_next
+    io.pc.bits.pc4_rs2 := alu.io.result & (~1.U(32.W))
+    io.pc.bits.pc_src := exu_pc.io.pc_src
 
     io.out.bits.imm_ext := io.in.bits.imm_ext
     io.out.bits.rd1 := io.in.bits.rd1

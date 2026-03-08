@@ -1848,7 +1848,6 @@ module ysyx_25020039_Xbar(
 
   reg  [2:0] state;
   wire       is_dmem = io_dmem_arvalid | io_dmem_awvalid;
-  wire       is_imem = io_imem_arvalid & {is_dmem, state} == 4'h0;
   wire       _next_state_T_2 =
     (|(io_dmem_araddr[31:25])) & io_dmem_araddr < 32'h2010000 | (|(io_dmem_awaddr[31:25]))
     & io_dmem_awaddr < 32'h2010000;
@@ -1861,7 +1860,9 @@ module ysyx_25020039_Xbar(
     casez (state)
       3'b000:
         casez_tmp =
-          is_imem ? 3'h1 : is_dmem & _next_state_T_2 ? 3'h3 : {1'h0, is_dmem, 1'h0};
+          io_imem_arvalid
+            ? 3'h1
+            : is_dmem & _next_state_T_2 ? 3'h3 : {1'h0, is_dmem, 1'h0};
       3'b001:
         casez_tmp = io_soc_rvalid & io_soc_rlast ? {2'h0, io_imem_arvalid} : 3'h1;
       3'b010:
@@ -1881,7 +1882,7 @@ module ysyx_25020039_Xbar(
   wire       _GEN = is_dmem & _next_state_T_2;
   wire       _GEN_0 = _GEN | ~is_dmem;
   wire [1:0] _GEN_1 = {1'h0, is_dmem};
-  wire       _GEN_2 = is_imem | _GEN;
+  wire       _GEN_2 = io_imem_arvalid | _GEN;
   wire [1:0] _GEN_3 = {1'h0, _next_state_T_19};
   wire       _GEN_4 =
     _next_state_T_15 ? _GEN_2 | ~is_dmem : _next_state_T_17 | ~_next_state_T_19;
@@ -1893,28 +1894,30 @@ module ysyx_25020039_Xbar(
       state <= casez_tmp;
   end // always @(posedge)
   assign io_imem_arready =
-    _next_state_T_15 ? is_imem & io_soc_arready : _next_state_T_17 & io_soc_arready;
+    _next_state_T_15
+      ? io_imem_arvalid & io_soc_arready
+      : _next_state_T_17 & io_soc_arready;
   assign io_imem_rdata =
-    (_next_state_T_15 ? is_imem : _next_state_T_17) ? io_soc_rdata : 32'h0;
+    (_next_state_T_15 ? io_imem_arvalid : _next_state_T_17) ? io_soc_rdata : 32'h0;
   assign io_imem_rvalid =
-    _next_state_T_15 ? is_imem & io_soc_rvalid : _next_state_T_17 & io_soc_rvalid;
+    _next_state_T_15 ? io_imem_arvalid & io_soc_rvalid : _next_state_T_17 & io_soc_rvalid;
   assign io_imem_rlast =
-    _next_state_T_15 ? is_imem & io_soc_rlast : _next_state_T_17 & io_soc_rlast;
+    _next_state_T_15 ? io_imem_arvalid & io_soc_rlast : _next_state_T_17 & io_soc_rlast;
   assign io_dmem_arready =
     _next_state_T_15
-      ? ~is_imem & (_GEN ? io_clint_arready : is_dmem & io_soc_arready)
+      ? ~io_imem_arvalid & (_GEN ? io_clint_arready : is_dmem & io_soc_arready)
       : ~_next_state_T_17
         & (_next_state_T_19 ? io_soc_arready : _next_state_T_21 & io_clint_arready);
   assign io_dmem_rdata =
     _next_state_T_15
-      ? (is_imem ? 32'h0 : _GEN ? io_clint_rdata : is_dmem ? io_soc_rdata : 32'h0)
+      ? (io_imem_arvalid ? 32'h0 : _GEN ? io_clint_rdata : is_dmem ? io_soc_rdata : 32'h0)
       : _next_state_T_17
           ? 32'h0
           : _next_state_T_19 ? io_soc_rdata : _next_state_T_21 ? io_clint_rdata : 32'h0;
   assign io_dmem_rresp = _GEN_4 ? 2'h0 : io_soc_rresp;
   assign io_dmem_rvalid =
     _next_state_T_15
-      ? ~is_imem & (_GEN ? io_clint_rvalid : is_dmem & io_soc_rvalid)
+      ? ~io_imem_arvalid & (_GEN ? io_clint_rvalid : is_dmem & io_soc_rvalid)
       : ~_next_state_T_17
         & (_next_state_T_19 ? io_soc_rvalid : _next_state_T_21 & io_clint_rvalid);
   assign io_dmem_awready =
@@ -1932,23 +1935,23 @@ module ysyx_25020039_Xbar(
       : ~_next_state_T_17 & _next_state_T_19 & io_soc_bvalid;
   assign io_soc_araddr =
     _next_state_T_15
-      ? (is_imem ? io_imem_araddr : _GEN_0 ? 32'h0 : io_dmem_araddr)
+      ? (io_imem_arvalid ? io_imem_araddr : _GEN_0 ? 32'h0 : io_dmem_araddr)
       : _next_state_T_17 ? io_imem_araddr : _next_state_T_19 ? io_dmem_araddr : 32'h0;
   assign io_soc_arvalid =
     _next_state_T_15
-      ? (is_imem ? io_imem_arvalid : ~_GEN & is_dmem & io_dmem_arvalid)
+      ? (io_imem_arvalid ? io_imem_arvalid : ~_GEN & is_dmem & io_dmem_arvalid)
       : _next_state_T_17 ? io_imem_arvalid : _next_state_T_19 & io_dmem_arvalid;
   assign io_soc_arsize =
     _next_state_T_15
-      ? (is_imem ? io_imem_arsize : _GEN_0 ? 3'h0 : io_dmem_arsize)
+      ? (io_imem_arvalid ? io_imem_arsize : _GEN_0 ? 3'h0 : io_dmem_arsize)
       : _next_state_T_17 ? io_imem_arsize : _next_state_T_19 ? io_dmem_arsize : 3'h0;
   assign io_soc_arburst =
     _next_state_T_15
-      ? (is_imem ? io_imem_arburst : _GEN ? 2'h0 : _GEN_1)
+      ? (io_imem_arvalid ? io_imem_arburst : _GEN ? 2'h0 : _GEN_1)
       : _next_state_T_17 ? io_imem_arburst : _GEN_3;
   assign io_soc_rready =
     _next_state_T_15
-      ? (is_imem ? io_imem_rready : ~_GEN & is_dmem & io_dmem_rready)
+      ? (io_imem_arvalid ? io_imem_rready : ~_GEN & is_dmem & io_dmem_rready)
       : _next_state_T_17 ? io_imem_rready : _next_state_T_19 & io_dmem_rready;
   assign io_soc_awaddr = _GEN_4 ? 32'h0 : io_dmem_awaddr;
   assign io_soc_awvalid =
@@ -1971,16 +1974,16 @@ module ysyx_25020039_Xbar(
       ? ~_GEN_2 & is_dmem & io_dmem_bready
       : ~_next_state_T_17 & _next_state_T_19 & io_dmem_bready;
   assign io_clint_araddr =
-    (_next_state_T_15 ? is_imem | ~_GEN : _GEN_5 | ~_next_state_T_21)
+    (_next_state_T_15 ? io_imem_arvalid | ~_GEN : _GEN_5 | ~_next_state_T_21)
       ? 32'h0
       : io_dmem_araddr;
   assign io_clint_arvalid =
     _next_state_T_15
-      ? ~is_imem & _GEN & io_dmem_arvalid
+      ? ~io_imem_arvalid & _GEN & io_dmem_arvalid
       : ~_GEN_5 & _next_state_T_21 & io_dmem_arvalid;
   assign io_clint_rready =
     _next_state_T_15
-      ? ~is_imem & _GEN & io_dmem_rready
+      ? ~io_imem_arvalid & _GEN & io_dmem_rready
       : ~_GEN_5 & _next_state_T_21 & io_dmem_rready;
 endmodule
 

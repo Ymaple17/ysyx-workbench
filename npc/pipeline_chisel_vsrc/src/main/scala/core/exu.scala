@@ -60,7 +60,8 @@ class EXU(val conf: CoreConfig) extends Module{
     val alu_srcB = Wire(UInt(conf.xlen.W))
     alu_srcA := MuxLookup(io.in.bits.signals.exu.alu_srcA, io.in.bits.rd1)(Seq(
         ALU_A_RD1 -> io.in.bits.rd1,
-        ALU_A_PC -> io.in.bits.pc
+        ALU_A_PC -> io.in.bits.pc,
+        ALU_A_NONE -> 0.U
     ))
     alu_srcB := MuxLookup(io.in.bits.signals.exu.alu_srcB, io.in.bits.rd2)(Seq(
         ALU_B_RD2 -> io.in.bits.rd2,

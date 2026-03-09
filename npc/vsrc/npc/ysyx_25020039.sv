@@ -23,10 +23,10 @@ module ysyx_25020039_IFU(
 
   wire        idle;
   reg  [31:0] pc_reg;
-  wire [31:0] current_pc = io_in_valid ? io_in_bits_next_pc : pc_reg;
   reg         first_cycle;
   reg  [1:0]  state;
   wire        _io_imem_arvalid_T = state == 2'h0;
+  wire [31:0] io_imem_araddr_0 = io_in_valid ? io_in_bits_next_pc : pc_reg;
   wire        ready = io_imem_rvalid & state != 2'h2;
   assign idle = io_in_valid & io_imem_arready & ~io_is_flush;
   wire        work = ready & io_out_ready;
@@ -52,11 +52,15 @@ module ysyx_25020039_IFU(
   assign io_in_ready = io_in_ready_0;
   assign io_out_valid = ready & io_in_valid;
   assign io_out_bits_inst = io_imem_rdata;
-  assign io_out_bits_pc = current_pc;
+  assign io_out_bits_pc = io_imem_araddr_0;
   assign io_pc_valid = ~reset & io_pc_ready;
   assign io_pc_bits_next_pc =
-    io_is_flush ? io_correct_pc : first_cycle ? 32'h80000000 : current_pc + 32'h4;
-  assign io_imem_araddr = current_pc;
+    io_is_flush
+      ? io_correct_pc
+      : first_cycle
+          ? 32'h80000000
+          : io_in_valid ? io_in_bits_next_pc + 32'h4 : pc_reg + 32'h4;
+  assign io_imem_araddr = io_imem_araddr_0;
   assign io_imem_arvalid = idle & _io_imem_arvalid_T;
 endmodule
 
@@ -2051,15 +2055,15 @@ module ysyx_25020039_Clint(
   input         io_rready
 );
 
-  reg [63:0] mtime;
+  reg [31:0] mtime;
   reg        state;
   always @(posedge clock) begin
     if (reset) begin
-      mtime <= 64'h0;
+      mtime <= 32'h0;
       state <= 1'h0;
     end
     else begin
-      mtime <= mtime + 64'h1;
+      mtime <= mtime + 32'h1;
       if (state)
         state <= ~io_rready;
       else
@@ -2067,7 +2071,7 @@ module ysyx_25020039_Clint(
     end
   end // always @(posedge)
   assign io_arready = ~state;
-  assign io_rdata = io_araddr == 32'hA0000048 ? mtime[31:0] : mtime[63:32];
+  assign io_rdata = io_araddr == 32'hA0000048 ? mtime : 32'h0;
   assign io_rvalid = state;
 endmodule
 

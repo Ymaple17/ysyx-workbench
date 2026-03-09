@@ -19,7 +19,6 @@ class LSU_WBU_IO extends Bundle{
   val csr_rd1 = UInt(32.W)
   val pc = UInt(32.W)
   val next_pc = UInt(32.W)
-  val pc_plus4 = UInt(32.W)
   val imm_ext = UInt(32.W)
   val mem_read = UInt(32.W)
   val waddr = UInt(5.W)
@@ -164,7 +163,6 @@ class LSU(val conf: CoreConfig) extends Module{
   io.out.bits.csr_rd1 := io.in.bits.csr_rd1
   io.out.bits.pc := io.in.bits.pc
   io.out.bits.next_pc := io.in.bits.next_pc
-  io.out.bits.pc_plus4 := io.in.bits.pc_plus4
   io.out.bits.imm_ext := io.in.bits.imm_ext
   io.out.bits.waddr := io.in.bits.waddr
   io.out.bits.csr_waddr := io.in.bits.csr_waddr

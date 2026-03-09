@@ -606,7 +606,6 @@ module ysyx_25020039_EXU(
   output [31:0] io_out_bits_alu_result,
                 io_out_bits_csr_rd1,
                 io_out_bits_pc,
-                io_out_bits_pc_plus4,
                 io_out_bits_imm_ext,
                 io_out_bits_rd1,
                 io_out_bits_rd2,
@@ -622,7 +621,6 @@ module ysyx_25020039_EXU(
 
   wire [31:0] _alu_io_result;
   wire        _alu_io_zero_flag;
-  wire [31:0] _io_pc_bits_pc4_T = io_in_bits_pc + 32'h4;
   ysyx_25020039_ALU alu (
     .io_A
       (io_in_bits_signals_exu_alu_srcA == 2'h2
@@ -653,7 +651,6 @@ module ysyx_25020039_EXU(
   assign io_out_bits_alu_result = _alu_io_result;
   assign io_out_bits_csr_rd1 = io_in_bits_csr_rd1;
   assign io_out_bits_pc = io_in_bits_pc;
-  assign io_out_bits_pc_plus4 = _io_pc_bits_pc4_T;
   assign io_out_bits_imm_ext = io_in_bits_imm_ext;
   assign io_out_bits_rd1 = io_in_bits_rd1;
   assign io_out_bits_rd2 = io_in_bits_rd2;
@@ -663,7 +660,7 @@ module ysyx_25020039_EXU(
   assign io_out_bits_state_state = io_in_bits_state_state;
   assign io_pc_bits_pc4_imm = io_in_bits_pc + io_in_bits_imm_ext & 32'hFFFFFFFE;
   assign io_pc_bits_pc4_rs2 = _alu_io_result & 32'hFFFFFFFE;
-  assign io_pc_bits_pc4 = _io_pc_bits_pc4_T;
+  assign io_pc_bits_pc4 = io_in_bits_pc + 32'h4;
 endmodule
 
 module ysyx_25020039_LSU(
@@ -682,7 +679,6 @@ module ysyx_25020039_LSU(
   input  [31:0] io_in_bits_alu_result,
                 io_in_bits_csr_rd1,
                 io_in_bits_pc,
-                io_in_bits_pc_plus4,
                 io_in_bits_imm_ext,
                 io_in_bits_rd1,
                 io_in_bits_rd2,
@@ -699,7 +695,6 @@ module ysyx_25020039_LSU(
                 io_out_bits_alu_result,
                 io_out_bits_csr_rd1,
                 io_out_bits_pc,
-                io_out_bits_pc_plus4,
                 io_out_bits_imm_ext,
                 io_out_bits_mem_read,
   output [4:0]  io_out_bits_waddr,
@@ -830,7 +825,6 @@ module ysyx_25020039_LSU(
   assign io_out_bits_alu_result = io_in_bits_alu_result;
   assign io_out_bits_csr_rd1 = io_in_bits_csr_rd1;
   assign io_out_bits_pc = io_in_bits_pc;
-  assign io_out_bits_pc_plus4 = io_in_bits_pc_plus4;
   assign io_out_bits_imm_ext = io_in_bits_imm_ext;
   assign io_out_bits_mem_read =
     _io_out_bits_mem_read_T_8
@@ -887,7 +881,6 @@ module ysyx_25020039_WBU(
                 io_in_bits_alu_result,
                 io_in_bits_csr_rd1,
                 io_in_bits_pc,
-                io_in_bits_pc_plus4,
                 io_in_bits_mem_read,
   input  [4:0]  io_in_bits_waddr,
   input  [11:0] io_in_bits_csr_waddr,
@@ -926,7 +919,7 @@ module ysyx_25020039_WBU(
       : io_in_bits_signals_wbu_reg_write_sel == 3'h4
           ? io_in_bits_mem_read
           : io_in_bits_signals_wbu_reg_write_sel == 3'h3
-              ? io_in_bits_pc_plus4
+              ? io_in_bits_pc + 32'h4
               : io_in_bits_alu_result;
   assign io_refile_waddr = io_in_bits_waddr;
   assign io_refile_wen = io_in_bits_signals_wbu_reg_write & io_in_valid & ~io_is_flush;
@@ -1197,7 +1190,6 @@ module ysyx_25020039_Core(
   wire [31:0] _lsu_io_out_bits_alu_result;
   wire [31:0] _lsu_io_out_bits_csr_rd1;
   wire [31:0] _lsu_io_out_bits_pc;
-  wire [31:0] _lsu_io_out_bits_pc_plus4;
   wire [31:0] _lsu_io_out_bits_imm_ext;
   wire [31:0] _lsu_io_out_bits_mem_read;
   wire [4:0]  _lsu_io_out_bits_waddr;
@@ -1217,7 +1209,6 @@ module ysyx_25020039_Core(
   wire [31:0] _exu_io_out_bits_alu_result;
   wire [31:0] _exu_io_out_bits_csr_rd1;
   wire [31:0] _exu_io_out_bits_pc;
-  wire [31:0] _exu_io_out_bits_pc_plus4;
   wire [31:0] _exu_io_out_bits_imm_ext;
   wire [31:0] _exu_io_out_bits_rd1;
   wire [31:0] _exu_io_out_bits_rd2;
@@ -1307,7 +1298,6 @@ module ysyx_25020039_Core(
   reg  [31:0] lsu_io_in_bits_r_alu_result;
   reg  [31:0] lsu_io_in_bits_r_csr_rd1;
   reg  [31:0] lsu_io_in_bits_r_pc;
-  reg  [31:0] lsu_io_in_bits_r_pc_plus4;
   reg  [31:0] lsu_io_in_bits_r_imm_ext;
   reg  [31:0] lsu_io_in_bits_r_rd1;
   reg  [31:0] lsu_io_in_bits_r_rd2;
@@ -1325,7 +1315,6 @@ module ysyx_25020039_Core(
   reg  [31:0] wbu_io_in_bits_r_alu_result;
   reg  [31:0] wbu_io_in_bits_r_csr_rd1;
   reg  [31:0] wbu_io_in_bits_r_pc;
-  reg  [31:0] wbu_io_in_bits_r_pc_plus4;
   reg  [31:0] wbu_io_in_bits_r_mem_read;
   reg  [4:0]  wbu_io_in_bits_r_waddr;
   reg  [11:0] wbu_io_in_bits_r_csr_waddr;
@@ -1373,7 +1362,7 @@ module ysyx_25020039_Core(
       3'b010:
         casez_tmp = _lsu_io_out_bits_imm_ext;
       3'b011:
-        casez_tmp = _lsu_io_out_bits_pc_plus4;
+        casez_tmp = _lsu_io_out_bits_pc + 32'h4;
       3'b100:
         casez_tmp = _lsu_io_out_bits_mem_read;
       3'b101:
@@ -1395,7 +1384,7 @@ module ysyx_25020039_Core(
     exu_io_in_bits_r_signals_wbu_reg_write_sel == 3'h5
       ? _exu_io_out_bits_csr_rd1
       : exu_io_in_bits_r_signals_wbu_reg_write_sel == 3'h3
-          ? _exu_io_out_bits_pc_plus4
+          ? _exu_io_out_bits_pc + 32'h4
           : exu_io_in_bits_r_signals_wbu_reg_write_sel == 3'h2
               ? _exu_io_out_bits_imm_ext
               : exu_io_in_bits_r_signals_wbu_reg_write_sel == 3'h1
@@ -1441,7 +1430,6 @@ module ysyx_25020039_Core(
       lsu_io_in_bits_r_alu_result <= 32'h0;
       lsu_io_in_bits_r_csr_rd1 <= 32'h0;
       lsu_io_in_bits_r_pc <= 32'h0;
-      lsu_io_in_bits_r_pc_plus4 <= 32'h0;
       lsu_io_in_bits_r_imm_ext <= 32'h0;
       lsu_io_in_bits_r_rd1 <= 32'h0;
       lsu_io_in_bits_r_rd2 <= 32'h0;
@@ -1458,7 +1446,6 @@ module ysyx_25020039_Core(
       wbu_io_in_bits_r_alu_result <= 32'h0;
       wbu_io_in_bits_r_csr_rd1 <= 32'h0;
       wbu_io_in_bits_r_pc <= 32'h0;
-      wbu_io_in_bits_r_pc_plus4 <= 32'h0;
       wbu_io_in_bits_r_mem_read <= 32'h0;
       wbu_io_in_bits_r_waddr <= 5'h0;
       wbu_io_in_bits_r_csr_waddr <= 12'h0;
@@ -1532,7 +1519,6 @@ module ysyx_25020039_Core(
         lsu_io_in_bits_r_alu_result <= _exu_io_out_bits_alu_result;
         lsu_io_in_bits_r_csr_rd1 <= _exu_io_out_bits_csr_rd1;
         lsu_io_in_bits_r_pc <= _exu_io_out_bits_pc;
-        lsu_io_in_bits_r_pc_plus4 <= _exu_io_out_bits_pc_plus4;
         lsu_io_in_bits_r_imm_ext <= _exu_io_out_bits_imm_ext;
         lsu_io_in_bits_r_rd1 <= _exu_io_out_bits_rd1;
         lsu_io_in_bits_r_rd2 <= _exu_io_out_bits_rd2;
@@ -1553,7 +1539,6 @@ module ysyx_25020039_Core(
         wbu_io_in_bits_r_alu_result <= _lsu_io_out_bits_alu_result;
         wbu_io_in_bits_r_csr_rd1 <= _lsu_io_out_bits_csr_rd1;
         wbu_io_in_bits_r_pc <= _lsu_io_out_bits_pc;
-        wbu_io_in_bits_r_pc_plus4 <= _lsu_io_out_bits_pc_plus4;
         wbu_io_in_bits_r_mem_read <= _lsu_io_out_bits_mem_read;
         wbu_io_in_bits_r_waddr <= _lsu_io_out_bits_waddr;
         wbu_io_in_bits_r_csr_waddr <= _lsu_io_out_bits_csr_waddr;
@@ -1677,7 +1662,6 @@ module ysyx_25020039_Core(
     .io_out_bits_alu_result                (_exu_io_out_bits_alu_result),
     .io_out_bits_csr_rd1                   (_exu_io_out_bits_csr_rd1),
     .io_out_bits_pc                        (_exu_io_out_bits_pc),
-    .io_out_bits_pc_plus4                  (_exu_io_out_bits_pc_plus4),
     .io_out_bits_imm_ext                   (_exu_io_out_bits_imm_ext),
     .io_out_bits_rd1                       (_exu_io_out_bits_rd1),
     .io_out_bits_rd2                       (_exu_io_out_bits_rd2),
@@ -1706,7 +1690,6 @@ module ysyx_25020039_Core(
     .io_in_bits_alu_result                 (lsu_io_in_bits_r_alu_result),
     .io_in_bits_csr_rd1                    (lsu_io_in_bits_r_csr_rd1),
     .io_in_bits_pc                         (lsu_io_in_bits_r_pc),
-    .io_in_bits_pc_plus4                   (lsu_io_in_bits_r_pc_plus4),
     .io_in_bits_imm_ext                    (lsu_io_in_bits_r_imm_ext),
     .io_in_bits_rd1                        (lsu_io_in_bits_r_rd1),
     .io_in_bits_rd2                        (lsu_io_in_bits_r_rd2),
@@ -1723,7 +1706,6 @@ module ysyx_25020039_Core(
     .io_out_bits_alu_result                (_lsu_io_out_bits_alu_result),
     .io_out_bits_csr_rd1                   (_lsu_io_out_bits_csr_rd1),
     .io_out_bits_pc                        (_lsu_io_out_bits_pc),
-    .io_out_bits_pc_plus4                  (_lsu_io_out_bits_pc_plus4),
     .io_out_bits_imm_ext                   (_lsu_io_out_bits_imm_ext),
     .io_out_bits_mem_read                  (_lsu_io_out_bits_mem_read),
     .io_out_bits_waddr                     (_lsu_io_out_bits_waddr),
@@ -1761,7 +1743,6 @@ module ysyx_25020039_Core(
     .io_in_bits_alu_result                (wbu_io_in_bits_r_alu_result),
     .io_in_bits_csr_rd1                   (wbu_io_in_bits_r_csr_rd1),
     .io_in_bits_pc                        (wbu_io_in_bits_r_pc),
-    .io_in_bits_pc_plus4                  (wbu_io_in_bits_r_pc_plus4),
     .io_in_bits_mem_read                  (wbu_io_in_bits_r_mem_read),
     .io_in_bits_waddr                     (wbu_io_in_bits_r_waddr),
     .io_in_bits_csr_waddr                 (wbu_io_in_bits_r_csr_waddr),
@@ -2037,15 +2018,15 @@ module ysyx_25020039_Clint(
   input         io_rready
 );
 
-  reg [63:0] mtime;
+  reg [31:0] mtime;
   reg        state;
   always @(posedge clock) begin
     if (reset) begin
-      mtime <= 64'h0;
+      mtime <= 32'h0;
       state <= 1'h0;
     end
     else begin
-      mtime <= mtime + 64'h1;
+      mtime <= mtime + 32'h1;
       if (state)
         state <= ~io_rready;
       else
@@ -2053,7 +2034,7 @@ module ysyx_25020039_Clint(
     end
   end // always @(posedge)
   assign io_arready = ~state;
-  assign io_rdata = io_araddr == 32'h2000000 ? mtime[31:0] : mtime[63:32];
+  assign io_rdata = io_araddr == 32'h2000000 ? mtime : 32'h0;
   assign io_rvalid = state;
 endmodule
 

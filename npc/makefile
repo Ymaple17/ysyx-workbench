@@ -77,6 +77,7 @@ else ifeq ($(CONFIG_CHISEL_RISCV32E_VAL),y)
   CSRC = $(CSRC_CHISEL_RISCV32E)
   CHISEL_WORK_DIR := chisel_vsrc
   CHISEL_BUILD_TOOL := sbt
+#   CHISEL_BUILD_TOOL := none
   $(info [INFO] Using chisel_riscv32e implementation, build with sbt)
 else ifeq ($(CONFIG_MINIRV_VAL),y)
   VSRC = $(VSRC_MINIRISCV) $(VSRC_MINIRV_PERIP) $(VSRC_MINIRV_TOP)

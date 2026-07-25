@@ -27,9 +27,13 @@ void add_mmio_map(const char *name, uint32_t addr, void *space, uint32_t len, io
 
 /* bus interface */
 uint64_t mmio_read(uint32_t addr, int len) {
-  return map_read(addr, len, fetch_mmio_map(addr));
+  IOMap *map = fetch_mmio_map(addr);
+  if (map == NULL) return 0;
+  return map_read(addr, len, map);
 }
 
 void mmio_write(uint32_t addr, int len, uint64_t data) {
-  map_write(addr, len, data, fetch_mmio_map(addr));
+  IOMap *map = fetch_mmio_map(addr);
+  if (map == NULL) return;
+  map_write(addr, len, data, map);
 }

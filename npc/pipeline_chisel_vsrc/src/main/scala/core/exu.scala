@@ -114,9 +114,3 @@ class EXU(val conf: CoreConfig) extends Module{
       PM(conf, clock, EVENT_EXU_COMP, 1.U, io.out.valid && io.out.ready)
     }
 }
-
-
-
-
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   

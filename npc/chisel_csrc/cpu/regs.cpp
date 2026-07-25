@@ -10,7 +10,7 @@ extern Vtop* top;
 uint32_t cpu_gpr[32] = {0};
 uint32_t cpu_pc = 0x80000000;
 //#define cpu_gpr top->rootp->top__DOT__u_RegisterFile__DOT__rg
-#define cpu_gpr top->rootp->top__DOT__npc__DOT__regfile_ext__DOT__Memory
+#define cpu_gpr top->rootp->top__DOT__core__DOT__refile__DOT__rf_ext__DOT__Memory
 
  
 const char *regs[] = {
@@ -30,7 +30,7 @@ void print_register_values() {
   }
   printf("\n");
   printf("Program Counter:\n");
-  printf(ANSI_FG_RED "%-4s: " ANSI_FG_BLUE "0x%08x" ANSI_NONE"\n", "$pc", top->imem_pc);
+  printf(ANSI_FG_RED "%-4s: " ANSI_FG_BLUE "0x%08x" ANSI_NONE"\n", "$pc", top->io_imem_pc);
 }
 
 uint32_t isa_reg_str2val(const char *s, bool *success) {

@@ -28,7 +28,7 @@ static vluint64_t main_time = 0;
 static bool g_print_step = false;
  
 extern "C" void sim_exit(){
-  set_npc_state(NPC_END, top->imem_pc, cpu_gpr[10]);
+  set_npc_state(NPC_END, top->io_imem_pc, cpu_gpr[10]);
 }
 
 static inline bool in_pmem(uint32_t addr) {
@@ -40,8 +40,8 @@ double sc_time_stamp(){
 }
 
 void init_npc_cpu(){
-  top->clk = 0;
-  top->rst = 1;
+  top->clock = 0;
+  top->reset = 1;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -50,7 +50,7 @@ void init_npc_cpu(){
   #endif
   main_time++;
 
-  top->clk = 1;
+  top->clock = 1;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -58,7 +58,7 @@ void init_npc_cpu(){
     }
   #endif
   main_time++;
-  top->clk = 0;
+  top->clock = 0;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -67,16 +67,7 @@ void init_npc_cpu(){
   #endif
   main_time++;
   
-  top->rst = 0;
-  top->eval(); 
-  #ifdef ENABLE_WAVEFORM
-    if (tfp != nullptr) {
-      tfp->dump(main_time);
-    }
-  #endif
-  main_time++;
-
-  top->clk = 1;
+  top->reset = 0;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if (tfp != nullptr) {
@@ -89,7 +80,7 @@ void init_npc_cpu(){
 
 void exec_once(){
   //negedge
-  top->clk = 0;
+  top->clock = 0;
   top->eval(); 
   #ifdef ENABLE_WAVEFORM
     if(tfp != nullptr && main_time > WAVE_time){
@@ -100,17 +91,17 @@ void exec_once(){
 
   //posedge
   
-  top->clk = 1;
+  top->clock = 1;
   top->eval(); 
-  cpu.pc = top->imem_pc;//rv32e
+  cpu.pc = top->io_imem_pc;//rv32e
   #ifdef CONFIG_ITRACE 
-    uint32_t current_inst = top->instr;
-    itrace_inst(top->imem_pc, current_inst);
+    uint32_t current_inst = top->io_instr;
+    itrace_inst(top->io_imem_pc, current_inst);
     display_inst();
   #endif
   for(int i = 0; i < 32; i++){
     //cpu.gpr[i] = top->rootp->top__DOT__u_RegisterFile__DOT__rg[i];//rv32e
-    cpu.gpr[i] = top->rootp->top__DOT__npc__DOT__regfile_ext__DOT__Memory[i];//chisel
+    cpu.gpr[i] = top->rootp->top__DOT__core__DOT__refile__DOT__rf_ext__DOT__Memory[i];//chisel
   }
   #ifdef ENABLE_WAVEFORM
     if(tfp != nullptr && main_time > WAVE_time){
@@ -132,9 +123,9 @@ static void execute(uint64_t n) {
 
 #ifdef CONFIG_DIFFTEST
       #ifdef CONFIG_MUL
-        if (top->instr_complete) {
+        if (top->io_instr_complete) {
       #endif
-      if (top->wen && !in_pmem(top->mem_addr)) {
+      if (top->io_mem_valid && !in_pmem(top->io_mem_addr)) {
         difftest_skip_ref();
       } else { 
         difftest_one_exec(); 
@@ -149,7 +140,7 @@ static void execute(uint64_t n) {
     }
     // if (g_print_step) {
       
-    //   printf("execute at pc = 0x%08x\n", top->imem_pc);
+    //   printf("execute at pc = 0x%08x\n", top->io_imem_pc);
     // }
     if (npc_state.state != NPC_RUNNING) {
       break;
@@ -183,7 +174,7 @@ void cpu_exec(uint64_t n){
           difftest_one_exec();
         #endif
         printf("npc: " ANSI_FG_GREEN "%s" ANSI_RESET " at pc = 0x%08x\n", 
-               out, top->imem_pc); 
+               out, top->io_imem_pc); 
       }
       else{
         out = (char *)"ABORT";
@@ -191,18 +182,18 @@ void cpu_exec(uint64_t n){
           difftest_one_exec(); 
         #endif
         printf("npc: " ANSI_FG_RED "%s" ANSI_RESET " at pc = 0x%08x\n", 
-               out, top->imem_pc); 
+               out, top->io_imem_pc); 
       }
       break;
     case NPC_ABORT: 
       out = (char *)"ABORT"; 
       printf("npc: " ANSI_FG_RED "%s" ANSI_RESET " at pc = 0x%08x\n", 
-             out, top->imem_pc); 
+             out, top->io_imem_pc); 
       break;
     default: 
       out = (char *)"HIT BAD TRAP"; 
       printf("npc: " ANSI_FG_RED "%s" ANSI_RESET " at pc = 0x%08x\n", 
-             out, top->imem_pc); 
+             out, top->io_imem_pc); 
       break;
   }
 }

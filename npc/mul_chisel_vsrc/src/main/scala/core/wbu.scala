@@ -41,7 +41,7 @@ class WBU(val conf: CoreConfig) extends Module{
     io.csr.wen := io.in.bits.signals.wbu.csr_write & io.in.valid
     io.csr.waddr := io.in.bits.csr_waddr
 
-    //single control
+    //mul control
     io.in.ready := true.B
 
   }

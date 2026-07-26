@@ -100,8 +100,9 @@ class EXU(val conf: CoreConfig) extends Module{
     io.out.bits.csr_rd1 := io.in.bits.csr_rd1
     io.out.bits.csr_waddr := io.in.bits.csr_waddr
 
-    //single control
-    io.in.ready := true.B
-    io.out.valid := true.B
+
+    //mul control
+    io.in.ready := io.out.ready
+    io.out.valid := io.in.valid
     io.pc.valid := io.out.valid && io.in.ready
 }

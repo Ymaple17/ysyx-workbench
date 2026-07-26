@@ -12,37 +12,70 @@ class IFU_IDU_IO extends Bundle{
   val pc = Output(UInt(32.W))
 }
 
+class IFU_ICACHE_IO extends Bundle{
+  val araddr = Output(UInt(32.W))
+  val arready = Input(Bool())
+  val arvalid = Output(Bool())
+  val rvalid = Input(Bool())
+  val rready = Output(Bool())
+  val rdata = Input(UInt(32.W))
+  val rresp = Input(UInt(2.W))
+}
+
 class IFU_IO(xlen: Int) extends Bundle{
   val in = Flipped(Decoupled(new IFU_PC_IO))
   val out = Decoupled(new IFU_IDU_IO)
   val pc = Decoupled(new IFU_PC_IO)
   
-  val imem_rdata = Input(UInt(xlen.W))
-  val imem_raddr = Output(UInt(xlen.W))
+  val imem = new IFU_ICACHE_IO
 }
 
 class IFU(val conf: CoreConfig) extends Module{
 
-    val io = IO(new IFU_IO(conf.xlen))
+  val io = IO(new IFU_IO(conf.xlen))
 
-    val pc_init = "h8000_0000".U(conf.xlen.W)
+  val pc_init = "h8000_0000".U(conf.xlen.W)
 
-    val pc_reg = RegInit(pc_init)
-    when(io.in.fire) {
-      pc_reg := io.in.bits.next_pc
-    }
+  val pc_reg = RegInit(pc_init)
+  val inst_reg = RegInit(0.U(conf.xlen.W))
 
-    val current_pc = pc_reg
-    val pc_plus4 = current_pc + 4.U(conf.xlen.W)
+  val s_IDLE :: s_WAIT :: s_DATA :: Nil = Enum(3)
+  val state = RegInit(s_IDLE)
+  val next_state = WireDefault(s_IDLE)
 
-    io.imem_raddr := current_pc
+  next_state := MuxLookup(state, s_IDLE)(Seq(
+    s_IDLE -> Mux(io.imem.arvalid && io.imem.arready, s_WAIT, s_IDLE),
+    s_WAIT -> Mux(io.imem.rvalid, s_DATA, s_WAIT),
+    s_DATA -> Mux(io.out.valid && io.out.ready, s_IDLE, s_DATA)
+  ))
+  state := next_state
 
-    io.out.bits.inst := io.imem_rdata
-    io.out.bits.pc := current_pc
-    io.out.valid := true.B
+  //AR
+  io.imem.araddr := pc_reg
+  io.imem.arvalid := (state === s_IDLE)
+  //R
+  io.imem.rready := (state === s_WAIT)
 
-    io.pc.bits.next_pc := Mux(io.in.valid, io.in.bits.next_pc, pc_plus4)
-    io.pc.valid := true.B
+  when(io.imem.rvalid && io.imem.rready){
+    inst_reg := io.imem.rdata
+  }
 
-    io.in.ready := true.B
+  //IDU
+  io.out.bits.inst := inst_reg
+  io.out.bits.pc := pc_reg
+  io.out.valid := (state === s_DATA)
+
+  val pc_plus4 = pc_reg + 4.U(conf.xlen.W)
+  val next_pc = Mux(io.in.valid, pc_plus4, pc_reg)
+
+  //PC
+  io.pc.bits.next_pc := next_pc
+  io.pc.valid := (state === s_DATA) && io.out.ready
+
+  when(io.out.valid && io.out.ready){
+    pc_reg := next_pc
+  }
+
+  io.in.ready := io.out.valid && io.out.ready
+
 }

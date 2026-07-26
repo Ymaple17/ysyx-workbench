@@ -62,11 +62,11 @@ class IDU(val conf: CoreConfig) extends Module{
     io.csr.raddr := io.in.bits.inst(31,20)
 
     //ifu signals
-    io.ifu_signals.valid := control.io.signals.ifu.valid
+    io.ifu_signals.valid := io.in.valid && control.io.signals.ifu.valid
     io.ifu_signals.bits := control.io.signals.ifu.bits
     control.io.signals.ifu.ready := io.ifu_signals.ready
 
-    //single control
-    io.in.ready := true.B
-    io.out.valid := true.B
+    //mul control
+    io.in.ready := io.out.ready
+    io.out.valid := io.in.valid
 }

@@ -3,6 +3,7 @@ package sim
 import chisel3._
 import chisel3.util._
 import chisel3.util.random.LFSR
+import bus._
 
 class Pmem extends BlackBox with HasBlackBoxInline {
   val io = IO(new Bundle {
@@ -113,7 +114,7 @@ class SRAM extends Module{
 
   val pmem = Module(new Pmem)
   pmem.io.clk := clock
-  pmem.io.rst := reset.asBool()
+  pmem.io.rst := reset.asBool
   pmem.io.ren := false.B
   pmem.io.wen := false.B
   pmem.io.raddr := 0.U
@@ -162,11 +163,11 @@ class SRAM extends Module{
     r_delay_cnt := 0.U
   }
 
-  when(rstate === s_R_WAIT) {
+  when(r_state === s_R_WAIT) {
     when(r_delay_cnt =/= 0.U) {
       r_delay_cnt := r_delay_cnt - 1.U
     }.otherwise {
-      when(isValidAddr(araddr_reg)) {
+      when(is_valid_addr(araddr_reg)) {
         pmem.io.ren   := true.B
         pmem.io.raddr := araddr_reg & "hfffffffc".U
         rdata_reg    := pmem.io.rdata

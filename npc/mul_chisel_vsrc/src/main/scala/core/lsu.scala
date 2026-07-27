@@ -3,6 +3,7 @@ package core
 import chisel3._
 import chisel3.util._
 import common.MEM_READ._
+import common.MEM_WMASK._
 import unit.WBU_signals
 import bus._
 
@@ -28,7 +29,7 @@ class LSU_IO (xlen: Int) extends Bundle{
   val in = Flipped(Decoupled(new EXU_LSU_IO))
   val out = Decoupled(new LSU_WBU_IO)
   
-  val dmem = new AXI4Slave
+  val dmem = new AXI4Master
 }
 
 class LSU(val conf: CoreConfig) extends Module{
@@ -43,7 +44,7 @@ class LSU(val conf: CoreConfig) extends Module{
   io.dmem.awburst := 1.U //INCR
   io.dmem.wlast := true.B
 
-  val mem_valid = io.in.bits.signals.lsu.mem_valid
+  val mem_valid = io.in.valid && io.in.bits.signals.lsu.mem_valid
   val mem_write = io.in.bits.signals.lsu.mem_write
   val is_load = !mem_write & mem_valid
   val is_store = mem_write & mem_valid
@@ -73,8 +74,8 @@ class LSU(val conf: CoreConfig) extends Module{
   mem_wmask := io.in.bits.signals.lsu.mem_wmask << data_offset
 
   val store_data_shifted = io.in.bits.rd2 << (data_offset << 3)
-  val rd_offset = io.dmem_raddr >> (data_offset << 3)  
-  
+  val rd_offset = io.dmem.rdata >> (data_offset << 3)  
+
   io.dmem.araddr := io.in.bits.alu_result
   io.dmem.awaddr := io.in.bits.alu_result
   io.dmem.wdata := store_data_shifted
@@ -99,7 +100,7 @@ class LSU(val conf: CoreConfig) extends Module{
   val addr_done = Mux(is_load,ar_done || ar_fire,Mux(is_store,(aw_done && w_done) || (aw_fire && w_fire),true.B))
 
   next_state := MuxLookup(state, s_IDLE)(Seq(
-    s_IDLE -> Mux(io.in.valid && addr_done && mem_valid, s_WAIT, s_IDLE),
+    s_IDLE -> Mux(addr_done && mem_valid, s_WAIT, s_IDLE),
     s_WAIT -> Mux((is_load && r_fire) || (is_store && b_fire), s_IDLE, s_WAIT)
   ))
   state := next_state
@@ -110,7 +111,7 @@ class LSU(val conf: CoreConfig) extends Module{
     when(w_fire) { w_done := true.B }
   }
 
-  when(next_state === s_IDLE){
+  when(state === s_WAIT && next_state === s_IDLE){
     ar_done := false.B
     aw_done := false.B
     w_done := false.B
@@ -149,7 +150,7 @@ class LSU(val conf: CoreConfig) extends Module{
   io.out.bits.csr_rd1 := io.in.bits.csr_rd1
   io.out.bits.csr_waddr := io.in.bits.csr_waddr
 
-  val ready = no_mem || (is_load && r_fire) || (is_store && b_fire)
+  val ready = (state === s_IDLE && no_mem) || (is_load && r_fire) || (is_store && b_fire)
 
   io.in.ready := io.out.ready && ready
   io.out.valid := io.in.valid && ready

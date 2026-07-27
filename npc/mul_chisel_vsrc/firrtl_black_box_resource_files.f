@@ -1,2 +1,3 @@
 ./Ebreak.v
-./pmem_dpi.v
+./Pmem.v
+./Sim_Uart.v

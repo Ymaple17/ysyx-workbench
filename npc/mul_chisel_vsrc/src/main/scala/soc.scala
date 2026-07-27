@@ -25,6 +25,8 @@ class ysyx_25020039(val coreConfig: CoreConfig) extends Module {
 
   if (!coreConfig.useDPIC) io.ebreak.get := core.io.ebreak.get
 
+  core.io.interrupt := io.interrupt
+
   //core <-> xbar
   core.io.imem <> xbar.io.imem
   core.io.dmem <> xbar.io.dmem
@@ -38,6 +40,6 @@ class ysyx_25020039(val coreConfig: CoreConfig) extends Module {
     xbar.io.soc <> io.master.get
   } else {
     val sram = Module(new SRAM)
-    xbar.io.soc <> sram.io.soc
+    xbar.io.soc <> sram.io.sram
   }
 }

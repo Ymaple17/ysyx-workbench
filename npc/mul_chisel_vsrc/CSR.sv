@@ -14,14 +14,48 @@ module CSR(
   input         io_write_wen
 );
 
-  reg  [31:0]      rf_0;
-  reg  [31:0]      rf_1;
-  reg  [31:0]      rf_2;
-  reg  [31:0]      rf_3;
-  reg  [31:0]      rf_4;
-  reg  [31:0]      rf_5;
-  wire [7:0][31:0] _GEN =
-    {{rf_0}, {rf_0}, {rf_5}, {rf_4}, {rf_3}, {rf_2}, {rf_1}, {rf_0}};
+  reg  [31:0] rf_0;
+  reg  [31:0] rf_1;
+  reg  [31:0] rf_2;
+  reg  [31:0] rf_3;
+  reg  [31:0] rf_4;
+  reg  [31:0] rf_5;
+  reg  [31:0] casez_tmp;
+  always_comb begin
+    casez (io_read_raddr == 12'hF12
+             ? 3'h5
+             : io_read_raddr == 12'hF11
+                 ? 3'h4
+                 : io_read_raddr == 12'h342
+                     ? 3'h3
+                     : io_read_raddr == 12'h341 ? 3'h2 : {2'h0, io_read_raddr == 12'h305})
+      3'b000:
+        casez_tmp = rf_0;
+      3'b001:
+        casez_tmp = rf_1;
+      3'b010:
+        casez_tmp = rf_2;
+      3'b011:
+        casez_tmp = rf_3;
+      3'b100:
+        casez_tmp = rf_4;
+      3'b101:
+        casez_tmp = rf_5;
+      3'b110:
+        casez_tmp = rf_0;
+      default:
+        casez_tmp = rf_0;
+    endcase
+  end // always_comb
+  wire [2:0]  in_waddr =
+    io_write_waddr == 12'hF12
+      ? 3'h5
+      : io_write_waddr == 12'hF11
+          ? 3'h4
+          : io_write_waddr == 12'h342
+              ? 3'h3
+              : io_write_waddr == 12'h341 ? 3'h2 : {2'h0, io_write_waddr == 12'h305};
+  wire        _GEN = io_write_wen & ~io_irq;
   always @(posedge clock) begin
     if (reset) begin
       rf_0 <= 32'h1800;
@@ -32,45 +66,27 @@ module CSR(
       rf_5 <= 32'h25020039;
     end
     else begin
-      automatic logic [2:0] in_waddr;
-      automatic logic       _GEN_0;
-      in_waddr =
-        io_write_waddr == 12'hF12
-          ? 3'h5
-          : io_write_waddr == 12'hF11
-              ? 3'h4
-              : io_write_waddr == 12'h342
-                  ? 3'h3
-                  : io_write_waddr == 12'h341 ? 3'h2 : {2'h0, io_write_waddr == 12'h305};
-      _GEN_0 = io_write_wen & ~io_irq;
-      if (_GEN_0 & in_waddr == 3'h0)
+      if (_GEN & in_waddr == 3'h0)
         rf_0 <= io_write_wdata;
-      if (_GEN_0 & in_waddr == 3'h1)
+      if (_GEN & in_waddr == 3'h1)
         rf_1 <= io_write_wdata;
       if (io_irq) begin
         rf_2 <= io_irq_pc;
         rf_3 <= {24'h0, io_irq_no};
       end
       else begin
-        if (_GEN_0 & in_waddr == 3'h2)
+        if (_GEN & in_waddr == 3'h2)
           rf_2 <= io_write_wdata;
-        if (_GEN_0 & in_waddr == 3'h3)
+        if (_GEN & in_waddr == 3'h3)
           rf_3 <= io_write_wdata;
       end
-      if (_GEN_0 & in_waddr == 3'h4)
+      if (_GEN & in_waddr == 3'h4)
         rf_4 <= io_write_wdata;
-      if (_GEN_0 & in_waddr == 3'h5)
+      if (_GEN & in_waddr == 3'h5)
         rf_5 <= io_write_wdata;
     end
   end // always @(posedge)
-  assign io_read_rdata =
-    _GEN[io_read_raddr == 12'hF12
-           ? 3'h5
-           : io_read_raddr == 12'hF11
-               ? 3'h4
-               : io_read_raddr == 12'h342
-                   ? 3'h3
-                   : io_read_raddr == 12'h341 ? 3'h2 : {2'h0, io_read_raddr == 12'h305}];
+  assign io_read_rdata = casez_tmp;
   assign io_read_mtvec = rf_1;
   assign io_read_mepc = rf_2;
 endmodule

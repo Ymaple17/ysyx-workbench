@@ -2,11 +2,11 @@
 #include "../include/common.h"
 #include "../include/state.h"
 #include "../include/timer.h"
-#include "Vtop.h"
+#include "Vysyx_25020039.h"
 #include "../../include/generated/autoconf.h"
 
 #define memory_size 128*1024*1024
-extern Vtop* top;
+extern Vysyx_25020039* top;
 #define CONFIG_RTC_MMIO 0xa0000048
 #define CONFIG_SERIAL_MMIO 0xa00003f8
 #define CONFIG_I8042_DATA_MMIO 0xa0000060
@@ -53,10 +53,10 @@ void pmem_write(uint32_t addr, int len, uint64_t data) {
   host_write(guest_to_host(addr), len, data);
 }
 
-extern "C" int paddr_read (uint32_t raddr) {
+extern "C" int paddr_read(uint32_t raddr, int len) {
   if(raddr >= CONFIG_RTC_MMIO&&raddr<CONFIG_RTC_MMIO+8){
     difftest_skip_ref();
-    return mmio_read(raddr, 4);
+    return mmio_read(raddr, len);
   }
   // if(raddr == CONFIG_RTC_MMIO + 4){
   //   return mmio_read(raddr, 4) << 32;
@@ -66,7 +66,7 @@ extern "C" int paddr_read (uint32_t raddr) {
 	//   return mmio_read (raddr, 8);
 	// }
    if(raddr == CONFIG_I8042_DATA_MMIO){
-    return mmio_read(raddr, 4);
+    return mmio_read(raddr, len);
   }
 
   if(raddr >=CONFIG_SERIAL_MMIO&&raddr<CONFIG_SERIAL_MMIO+8){
@@ -80,7 +80,7 @@ extern "C" int paddr_read (uint32_t raddr) {
   } 
 
   if (raddr >= 0x80000000 && raddr <0x80000000 + memory_size) {
-    return host_read (guest_to_host (raddr & ~0x3u), 4);
+    return host_read (guest_to_host (raddr & ~0x3u), len);
   }
     printf ("read 越界地址为: 0x%08x\n", raddr);
     npc_state.state = NPC_ABORT;
@@ -89,34 +89,22 @@ extern "C" int paddr_read (uint32_t raddr) {
 
 
 
-extern "C" void paddr_write(uint32_t waddr, uint32_t wdata, uint8_t wmask) {
-  wmask &= 0x0F;
-  if ((waddr >= CONFIG_VGA_CTL_MMIO && waddr < CONFIG_VGA_CTL_MMIO + 8) ||
-      (waddr >= CONFIG_FB_ADDR && waddr <CONFIG_FB_ADDR + 300 * 400 * 4)) {
-    for (int i = 0; i < 4; i++) {
-      if (wmask & (1 << i)) {
-        mmio_write((waddr & ~0x3) + i, 1, (wdata >> (8 * i)) & 0xFF);
-      }
-    }
+extern "C" void paddr_write(uint32_t waddr, uint32_t wdata, int len) {
+  if (waddr >= CONFIG_VGA_CTL_MMIO && waddr < CONFIG_VGA_CTL_MMIO + 8) {
+    mmio_write(waddr & ~0x3, len, wdata);
+    return;
+  }
+  if (waddr >= CONFIG_FB_ADDR && waddr < CONFIG_FB_ADDR + 300 * 400 * 4) {
+    mmio_write(waddr & ~0x3, len, wdata);
     return;
   }
   if (waddr >= CONFIG_SERIAL_MMIO && waddr < CONFIG_SERIAL_MMIO + 8) {
-    //printf("PC=0x%08x 重复写入串口: 数据=0x%02x\n", top->imem_pc, (wdata & 0xFF));
-    for (int i = 0; i < 4; i++) {
-      if (wmask & (1 << i)) {
-        mmio_write(waddr + i, 1, (wdata >> (8 * i)) & 0xFF);
-      }
-    }
+    mmio_write(waddr, len, wdata);
     return;
   }
 
   if (waddr >= MEM_BASE && waddr < MEM_BASE + memory_size) {
-    for (int i = 0; i < 4; i++) { 
-      if ((wmask >> i) & 0x1) {
-        host_write(guest_to_host((waddr & ~0x3u) + i), 1, wdata);
-      }
-      wdata >>= 8;
-    }
+    host_write(guest_to_host(waddr), len, wdata);
     return;
   }
   printf("write越界地址为: 0x%08x\n", waddr);

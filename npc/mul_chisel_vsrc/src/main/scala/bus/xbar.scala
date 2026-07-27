@@ -36,7 +36,10 @@ class Xbar(coreConfig: CoreConfig) extends Module{
 
     val s_SELECT :: s_IMEM :: s_DMEM :: s_CLINT :: s_UART :: Nil = Enum(5)
     val state = RegInit(s_SELECT)
-    val next_state = WireDefault(s_SELECT) 
+    val next_state = WireDefault(s_SELECT)
+
+    val is_dmem = io.dmem.arvalid || io.dmem.awvalid
+    val is_imem = io.imem.arvalid && !is_dmem && (state === s_SELECT)
 
     next_state := MuxLookup(state, s_SELECT)(Seq(
         s_SELECT -> MuxCase(s_SELECT, Seq(
@@ -45,15 +48,12 @@ class Xbar(coreConfig: CoreConfig) extends Module{
             (is_dmem && (clint_read || clint_write)) -> s_CLINT,
             (is_dmem) -> s_DMEM
         )),
-        s_IMEM -> Mux(io.soc.rvalid && io.soc.rlast, Mux(io.imem.arvalid, s_IMEM, s_SELECT), s_IMEM),
-        s_DMEM -> Mux(io.soc.rvalid || io.soc.bvalid, s_SELECT, s_DMEM),
-        s_CLINT -> Mux(io.clint.rvalid || io.clint.bvalid, s_SELECT, s_CLINT),
-        s_UART -> (if(coreConfig.npc) Mux(io.uart.get.rvalid || io.uart.get.bvalid, s_SELECT, s_UART) else s_SELECT)
+        s_IMEM -> Mux(io.soc.rvalid && io.soc.rready && io.soc.rlast, Mux(io.imem.arvalid, s_IMEM, s_SELECT), s_IMEM),
+        s_DMEM -> Mux((io.soc.rvalid && io.soc.rready) || (io.soc.bvalid && io.soc.bready), s_SELECT, s_DMEM),
+        s_CLINT -> Mux((io.clint.rvalid && io.clint.rready) || (io.clint.bvalid && io.clint.bready), s_SELECT, s_CLINT),
+        s_UART -> (if(coreConfig.npc) Mux((io.uart.get.rvalid && io.uart.get.rready) || (io.uart.get.bvalid && io.uart.get.bready), s_SELECT, s_UART) else s_SELECT)
     ))
     state := next_state
-
-    val is_dmem = io.dmem.arvalid || io.dmem.awvalid
-    val is_imem = io.imem.arvalid && !is_dmem && (state === s_SELECT)
 
     io.imem.setDefaults()
     io.dmem.setDefaults()

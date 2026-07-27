@@ -8,7 +8,7 @@ endif
 include .config
 include Makefile.diff
 
-VSRC_CHISEL_MUL = $(shell find mul_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
+VSRC_CHISEL_MUL = $(filter-out %/pmem_dpi.v %/top.sv, $(shell find mul_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv"))
 CSRC_CHISEL_MUL = $(shell find mul_chisel_csrc -name "*.cpp" -o -name "*.c")#mul_chisel
 
 VSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
@@ -44,13 +44,12 @@ VSRC_SOC_TOP = ../ysyxSoC/build/ysyxSoCFull.v
 VERILATOR_FLAGS =
 
 ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
-  VSRC = $(VSRC_CHISEL_MUL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
+  VSRC = $(VSRC_CHISEL_MUL)
   CSRC = $(CSRC_CHISEL_MUL)
   CHISEL_WORK_DIR := mul_chisel_vsrc
-  CHISEL_BUILD_TOOL := sbt
-  TOP_MODULE = ysyxSoCFull
-  VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
-  CFLAGS += -std=c++17
+#   CHISEL_BUILD_TOOL := sbt
+  CHISEL_BUILD_TOOL := none
+  TOP_MODULE = ysyx_25020039
   $(info [INFO] Using chisel_mul implementation, build with sbt)
 else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
   ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
@@ -129,6 +128,11 @@ else ifeq ($(CONFIG_MUL_VAL),y)
     -Imul_csrc \
     -I$(NPC_HOME)/mul_csrc/include \
     -I$(NPC_HOME)/include
+else ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
+  C_INCLUDE_DIRS += \
+    -Imul_chisel_csrc \
+    -I$(NPC_HOME)/mul_chisel_csrc/include \
+    -I$(NPC_HOME)/include
 else ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
   C_INCLUDE_DIRS += \
     -Ipipeline_chisel_soc_csrc \
@@ -171,10 +175,7 @@ else ifeq ($(CONFIG_MUL_VAL),y)
   V_INCLUDE_DIRS += -Imul_vsrc \
                     -Imul_vsrc/include
 else ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
-  V_INCLUDE_DIRS += -Imul_chisel_vsrc \
-                    -I../ortl \
-                    -I../ysyxSoC/perip/uart16550/rtl \
-                    -I../ysyxSoC/perip/spi/rtl
+  V_INCLUDE_DIRS += -Imul_chisel_vsrc
 else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
   V_INCLUDE_DIRS += -Ipipeline_chisel_vsrc \
                     -I../ortl \

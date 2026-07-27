@@ -61,7 +61,10 @@ class AXI4Master extends Bundle {
     awsize   := 0.U
     awburst  := 0.U
 
-    wready   := false.B
+    wdata    := 0.U
+    wstrb    := 0.U
+    wvalid   := false.B
+    wlast    := false.B
 
     bready   := false.B
   }

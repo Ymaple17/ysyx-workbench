@@ -11,4 +11,8 @@ rf_32x32.sv
 Refile.sv
 CSR.sv
 Core.sv
-top.sv
+Xbar.sv
+Clint.sv
+UART.sv
+SRAM.sv
+ysyx_25020039.sv

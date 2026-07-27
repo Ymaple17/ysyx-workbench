@@ -29,14 +29,14 @@ class WBU(val conf: CoreConfig) extends Module{
       CSR_DATA -> io.in.bits.csr_rd1
     ))
 
+    io.refile.wen := io.in.bits.signals.wbu.reg_write & io.in.valid
+    io.refile.waddr := io.in.bits.waddr
+
     io.csr.wdata := MuxLookup(io.in.bits.signals.wbu.csr_sel, 0.U)(Seq(
       CSR_RD1 -> io.in.bits.rd1,
       CSR_XOR -> (io.in.bits.rd1 | io.in.bits.csr_rd1),
       CSR_PC  -> io.in.bits.pc
     ))
-
-    io.refile.wen := io.in.bits.signals.wbu.reg_write & io.in.valid
-    io.refile.waddr := io.in.bits.waddr
 
     io.csr.wen := io.in.bits.signals.wbu.csr_write & io.in.valid
     io.csr.waddr := io.in.bits.csr_waddr

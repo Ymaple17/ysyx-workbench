@@ -94,7 +94,7 @@ class UART extends Module{
     }
 
     when(io.wvalid && io.wready) {
-        when(is_write(awddr_reg)) {
+        when(is_write(awaddr_reg)) {
             uart.io.wen := true.B
             uart.io.waddr := awaddr_reg
             uart.io.wdata := io.wdata(7, 0)

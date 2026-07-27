@@ -2,16 +2,29 @@
 module Core(
   input         clock,
                 reset,
-  output        io_ebreak,
-  output [31:0] io_imem_pc,
-                io_instr,
-  output        io_wen,
-  output [31:0] io_mem_addr,
-  output        io_mem_valid
+  output [31:0] io_imem_araddr,
+  output        io_imem_arvalid,
+  input         io_imem_arready,
+  input  [31:0] io_imem_rdata,
+  input         io_imem_rvalid,
+  output        io_imem_rready,
+  output [31:0] io_dmem_araddr,
+  output        io_dmem_arvalid,
+  input         io_dmem_arready,
+  input  [31:0] io_dmem_rdata,
+  input         io_dmem_rvalid,
+  output        io_dmem_rready,
+  output [31:0] io_dmem_awaddr,
+  output        io_dmem_awvalid,
+  input         io_dmem_awready,
+  output [31:0] io_dmem_wdata,
+  output [3:0]  io_dmem_wstrb,
+  output        io_dmem_wvalid,
+  input         io_dmem_wready,
+                io_dmem_bvalid,
+  output        io_dmem_bready
 );
 
-  wire [31:0] _dmem_rdata;
-  wire [31:0] _imem_rdata;
   wire [31:0] _csr_io_read_rdata;
   wire [31:0] _csr_io_read_mtvec;
   wire [31:0] _csr_io_read_mepc;
@@ -23,6 +36,8 @@ module Core(
   wire [31:0] _wbu_io_csr_wdata;
   wire [11:0] _wbu_io_csr_waddr;
   wire        _wbu_io_csr_wen;
+  wire        _lsu_io_in_ready;
+  wire        _lsu_io_out_valid;
   wire        _lsu_io_out_bits_signals_wbu_reg_write;
   wire [2:0]  _lsu_io_out_bits_signals_wbu_reg_write_sel;
   wire        _lsu_io_out_bits_signals_wbu_csr_write;
@@ -38,11 +53,8 @@ module Core(
   wire        _lsu_io_out_bits_is_ebreak;
   wire [31:0] _lsu_io_out_bits_csr_rd1;
   wire [11:0] _lsu_io_out_bits_csr_waddr;
-  wire        _lsu_io_dmem_valid;
-  wire        _lsu_io_dmem_wen;
-  wire [31:0] _lsu_io_dmem_waddr;
-  wire [31:0] _lsu_io_dmem_wdata;
-  wire [7:0]  _lsu_io_dmem_wmask;
+  wire        _exu_io_in_ready;
+  wire        _exu_io_out_valid;
   wire [7:0]  _exu_io_out_bits_signals_lsu_mem_wmask;
   wire [2:0]  _exu_io_out_bits_signals_lsu_mem_rd;
   wire        _exu_io_out_bits_signals_lsu_mem_write;
@@ -66,6 +78,8 @@ module Core(
   wire [31:0] _exu_io_pc_bits_pc4_rs2;
   wire [31:0] _exu_io_pc_bits_pc4;
   wire [2:0]  _exu_io_pc_bits_pc_src;
+  wire        _idu_io_in_ready;
+  wire        _idu_io_out_valid;
   wire [1:0]  _idu_io_out_bits_signals_exu_alu_srcA;
   wire [1:0]  _idu_io_out_bits_signals_exu_alu_srcB;
   wire [3:0]  _idu_io_out_bits_signals_exu_alu_control;
@@ -91,14 +105,15 @@ module Core(
   wire [4:0]  _idu_io_refile_raddr1;
   wire [4:0]  _idu_io_refile_raddr2;
   wire [11:0] _idu_io_csr_raddr;
+  wire        _ifu_io_out_valid;
   wire [31:0] _ifu_io_out_bits_inst;
   wire [31:0] _ifu_io_out_bits_pc;
-  wire [31:0] _ifu_io_imem_raddr;
+  wire        is_irq = _lsu_io_out_bits_signals_wbu_irq & _lsu_io_out_valid;
   IFU ifu (
     .clock              (clock),
     .reset              (reset),
     .io_in_bits_next_pc
-      (_lsu_io_out_bits_signals_wbu_irq
+      (is_irq
          ? _csr_io_read_mtvec
          : _exu_io_pc_bits_pc_src == 3'h4
              ? _csr_io_read_mepc
@@ -107,14 +122,24 @@ module Core(
                  : _exu_io_pc_bits_pc_src == 3'h1
                      ? _exu_io_pc_bits_pc4_imm
                      : _exu_io_pc_bits_pc4),
+    .io_out_ready       (_idu_io_in_ready),
+    .io_out_valid       (_ifu_io_out_valid),
     .io_out_bits_inst   (_ifu_io_out_bits_inst),
     .io_out_bits_pc     (_ifu_io_out_bits_pc),
-    .io_imem_rdata      (_imem_rdata),
-    .io_imem_raddr      (_ifu_io_imem_raddr)
+    .io_imem_araddr     (io_imem_araddr),
+    .io_imem_arready    (io_imem_arready),
+    .io_imem_arvalid    (io_imem_arvalid),
+    .io_imem_rvalid     (io_imem_rvalid),
+    .io_imem_rready     (io_imem_rready),
+    .io_imem_rdata      (io_imem_rdata)
   );
   IDU idu (
+    .io_in_ready                           (_idu_io_in_ready),
+    .io_in_valid                           (_ifu_io_out_valid),
     .io_in_bits_inst                       (_ifu_io_out_bits_inst),
     .io_in_bits_pc                         (_ifu_io_out_bits_pc),
+    .io_out_ready                          (_exu_io_in_ready),
+    .io_out_valid                          (_idu_io_out_valid),
     .io_out_bits_signals_exu_alu_srcA      (_idu_io_out_bits_signals_exu_alu_srcA),
     .io_out_bits_signals_exu_alu_srcB      (_idu_io_out_bits_signals_exu_alu_srcB),
     .io_out_bits_signals_exu_alu_control   (_idu_io_out_bits_signals_exu_alu_control),
@@ -145,6 +170,8 @@ module Core(
     .io_csr_rdata                          (_csr_io_read_rdata)
   );
   EXU exu (
+    .io_in_ready                           (_exu_io_in_ready),
+    .io_in_valid                           (_idu_io_out_valid),
     .io_in_bits_signals_exu_alu_srcA       (_idu_io_out_bits_signals_exu_alu_srcA),
     .io_in_bits_signals_exu_alu_srcB       (_idu_io_out_bits_signals_exu_alu_srcB),
     .io_in_bits_signals_exu_alu_control    (_idu_io_out_bits_signals_exu_alu_control),
@@ -167,6 +194,8 @@ module Core(
     .io_in_bits_is_ebreak                  (_idu_io_out_bits_is_ebreak),
     .io_in_bits_csr_rd1                    (_idu_io_out_bits_csr_rd1),
     .io_in_bits_csr_waddr                  (_idu_io_out_bits_csr_waddr),
+    .io_out_ready                          (_lsu_io_in_ready),
+    .io_out_valid                          (_exu_io_out_valid),
     .io_out_bits_signals_lsu_mem_wmask     (_exu_io_out_bits_signals_lsu_mem_wmask),
     .io_out_bits_signals_lsu_mem_rd        (_exu_io_out_bits_signals_lsu_mem_rd),
     .io_out_bits_signals_lsu_mem_write     (_exu_io_out_bits_signals_lsu_mem_write),
@@ -192,6 +221,10 @@ module Core(
     .io_pc_bits_pc_src                     (_exu_io_pc_bits_pc_src)
   );
   LSU lsu (
+    .clock                                 (clock),
+    .reset                                 (reset),
+    .io_in_ready                           (_lsu_io_in_ready),
+    .io_in_valid                           (_exu_io_out_valid),
     .io_in_bits_signals_lsu_mem_wmask      (_exu_io_out_bits_signals_lsu_mem_wmask),
     .io_in_bits_signals_lsu_mem_rd         (_exu_io_out_bits_signals_lsu_mem_rd),
     .io_in_bits_signals_lsu_mem_write      (_exu_io_out_bits_signals_lsu_mem_write),
@@ -211,6 +244,7 @@ module Core(
     .io_in_bits_is_ebreak                  (_exu_io_out_bits_is_ebreak),
     .io_in_bits_csr_rd1                    (_exu_io_out_bits_csr_rd1),
     .io_in_bits_csr_waddr                  (_exu_io_out_bits_csr_waddr),
+    .io_out_valid                          (_lsu_io_out_valid),
     .io_out_bits_signals_wbu_reg_write     (_lsu_io_out_bits_signals_wbu_reg_write),
     .io_out_bits_signals_wbu_reg_write_sel (_lsu_io_out_bits_signals_wbu_reg_write_sel),
     .io_out_bits_signals_wbu_csr_write     (_lsu_io_out_bits_signals_wbu_csr_write),
@@ -226,14 +260,24 @@ module Core(
     .io_out_bits_is_ebreak                 (_lsu_io_out_bits_is_ebreak),
     .io_out_bits_csr_rd1                   (_lsu_io_out_bits_csr_rd1),
     .io_out_bits_csr_waddr                 (_lsu_io_out_bits_csr_waddr),
-    .io_dmem_valid                         (_lsu_io_dmem_valid),
-    .io_dmem_wen                           (_lsu_io_dmem_wen),
-    .io_dmem_waddr                         (_lsu_io_dmem_waddr),
-    .io_dmem_wdata                         (_lsu_io_dmem_wdata),
-    .io_dmem_wmask                         (_lsu_io_dmem_wmask),
-    .io_dmem_raddr                         (_dmem_rdata)
+    .io_dmem_araddr                        (io_dmem_araddr),
+    .io_dmem_arvalid                       (io_dmem_arvalid),
+    .io_dmem_arready                       (io_dmem_arready),
+    .io_dmem_rdata                         (io_dmem_rdata),
+    .io_dmem_rvalid                        (io_dmem_rvalid),
+    .io_dmem_rready                        (io_dmem_rready),
+    .io_dmem_awaddr                        (io_dmem_awaddr),
+    .io_dmem_awvalid                       (io_dmem_awvalid),
+    .io_dmem_awready                       (io_dmem_awready),
+    .io_dmem_wdata                         (io_dmem_wdata),
+    .io_dmem_wstrb                         (io_dmem_wstrb),
+    .io_dmem_wvalid                        (io_dmem_wvalid),
+    .io_dmem_wready                        (io_dmem_wready),
+    .io_dmem_bvalid                        (io_dmem_bvalid),
+    .io_dmem_bready                        (io_dmem_bready)
   );
   WBU wbu (
+    .io_in_valid                          (_lsu_io_out_valid),
     .io_in_bits_signals_wbu_reg_write     (_lsu_io_out_bits_signals_wbu_reg_write),
     .io_in_bits_signals_wbu_reg_write_sel (_lsu_io_out_bits_signals_wbu_reg_write_sel),
     .io_in_bits_signals_wbu_csr_write     (_lsu_io_out_bits_signals_wbu_csr_write),
@@ -267,7 +311,7 @@ module Core(
   CSR csr (
     .clock          (clock),
     .reset          (reset),
-    .io_irq         (_lsu_io_out_bits_signals_wbu_irq),
+    .io_irq         (is_irq),
     .io_irq_no      (_lsu_io_out_bits_signals_wbu_irq_num),
     .io_irq_pc      (_lsu_io_out_bits_pc),
     .io_read_raddr  (_idu_io_csr_raddr),
@@ -278,29 +322,5 @@ module Core(
     .io_write_waddr (_wbu_io_csr_waddr),
     .io_write_wen   (_wbu_io_csr_wen)
   );
-  Pmem imem (
-    .wen   (1'h0),
-    .valid (1'h1),
-    .raddr (_ifu_io_imem_raddr),
-    .waddr (32'h0),
-    .wdata (32'h0),
-    .wmask (8'h0),
-    .rdata (_imem_rdata)
-  );
-  Pmem dmem (
-    .wen   (_lsu_io_dmem_wen),
-    .valid (_lsu_io_dmem_valid),
-    .raddr (_lsu_io_dmem_waddr),
-    .waddr (_lsu_io_dmem_waddr),
-    .wdata (_lsu_io_dmem_wdata),
-    .wmask (_lsu_io_dmem_wmask),
-    .rdata (_dmem_rdata)
-  );
-  assign io_ebreak = _lsu_io_out_bits_is_ebreak;
-  assign io_imem_pc = _ifu_io_imem_raddr;
-  assign io_instr = _ifu_io_out_bits_inst;
-  assign io_wen = _lsu_io_dmem_wen;
-  assign io_mem_addr = _lsu_io_dmem_waddr;
-  assign io_mem_valid = _lsu_io_dmem_valid;
 endmodule
 

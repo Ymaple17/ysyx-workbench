@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <dlfcn.h>
 #include "verilated_vcd_c.h" 
-#include "Vtop.h"
+#include "Vysyx_25020039.h"
 #include "svdpi.h"
 #include "../include/common.h"
 #include "../include/state.h"

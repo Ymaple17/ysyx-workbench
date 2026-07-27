@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include "verilated_fst_c.h"
-#include "Vtop.h"
+#include "Vysyx_25020039.h"
 #include "svdpi.h"
 #include "include/common.h"
 #include "include/init.h"
@@ -17,7 +17,7 @@
 void difftest_init(const char* ref_so_file, word_t img_size);
 const char* img_path = NULL;
 void init_disasm();
-Vtop *top = new Vtop("top");
+Vysyx_25020039 *top = new Vysyx_25020039("top");
 #ifdef ENABLE_WAVEFORM
 VerilatedFstC* tfp = new VerilatedFstC;
 #else
@@ -47,7 +47,7 @@ int main(int argc, char **argv){
     init_device();
   #endif
   npc_state.state = NPC_RUNNING;
-  #ifdef CONFIG_DIFFTEST
+  #ifdef DIFFTEST
     difftest_init(STR2(DIFFTEST_LIB), img_size);
   #endif
   sdb_mainloop();

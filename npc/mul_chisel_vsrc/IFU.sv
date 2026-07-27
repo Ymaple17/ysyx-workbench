@@ -3,21 +3,52 @@ module IFU(
   input         clock,
                 reset,
   input  [31:0] io_in_bits_next_pc,
+  input         io_out_ready,
+  output        io_out_valid,
   output [31:0] io_out_bits_inst,
                 io_out_bits_pc,
-  input  [31:0] io_imem_rdata,
-  output [31:0] io_imem_raddr
+                io_imem_araddr,
+  input         io_imem_arready,
+  output        io_imem_arvalid,
+  input         io_imem_rvalid,
+  output        io_imem_rready,
+  input  [31:0] io_imem_rdata
 );
 
-  reg [31:0] pc_reg;
+  reg  [31:0] pc_reg;
+  reg  [31:0] inst_reg;
+  reg  [1:0]  state;
+  wire        io_imem_arvalid_0 = state == 2'h0;
+  wire        io_imem_rready_0 = state == 2'h1;
+  wire        io_out_valid_0 = state == 2'h2;
+  reg         first_fetched;
+  wire        _io_in_ready_T = io_out_valid_0 & io_out_ready;
   always @(posedge clock) begin
-    if (reset)
+    if (reset) begin
       pc_reg <= 32'h80000000;
-    else
-      pc_reg <= io_in_bits_next_pc;
+      inst_reg <= 32'h0;
+      state <= 2'h0;
+      first_fetched <= 1'h0;
+    end
+    else begin
+      if (_io_in_ready_T)
+        pc_reg <= first_fetched ? io_in_bits_next_pc : pc_reg + 32'h4;
+      if (io_imem_rvalid & io_imem_rready_0)
+        inst_reg <= io_imem_rdata;
+      state <=
+        io_out_valid_0
+          ? {~_io_in_ready_T, 1'h0}
+          : io_imem_rready_0
+              ? (io_imem_rvalid ? 2'h2 : 2'h1)
+              : {1'h0, io_imem_arvalid_0 & io_imem_arready};
+      first_fetched <= _io_in_ready_T | first_fetched;
+    end
   end // always @(posedge)
-  assign io_out_bits_inst = io_imem_rdata;
+  assign io_out_valid = io_out_valid_0;
+  assign io_out_bits_inst = inst_reg;
   assign io_out_bits_pc = pc_reg;
-  assign io_imem_raddr = pc_reg;
+  assign io_imem_araddr = pc_reg;
+  assign io_imem_arvalid = io_imem_arvalid_0;
+  assign io_imem_rready = io_imem_rready_0;
 endmodule
 

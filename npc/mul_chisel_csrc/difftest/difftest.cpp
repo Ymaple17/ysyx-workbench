@@ -30,7 +30,7 @@ void panic(const char* fmt, ...) {
 }
 
 void difftest_init(const char* ref_so_file, word_t img_size){
-    #ifdef CONFIG_DIFFTEST
+    #ifdef DIFFTEST
     assert(ref_so_file != NULL);
     assert(img_size >= 0);
     printf("[difftest] initializing diifferential testing, the ref-so-file is %s, img-size is %d\n", ref_so_file, img_size);

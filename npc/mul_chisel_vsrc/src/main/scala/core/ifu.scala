@@ -16,33 +16,11 @@ class IFU_ICACHE_IO extends Bundle{
   val araddr = Output(UInt(32.W))
   val arready = Input(Bool())
   val arvalid = Output(Bool())
+
   val rvalid = Input(Bool())
   val rready = Output(Bool())
   val rdata = Input(UInt(32.W))
   val rresp = Input(UInt(2.W))
-  // extra AXI fields for BulkConnect compatibility
-  val arid    = Output(UInt(4.W))
-  val arlen   = Output(UInt(8.W))
-  val arsize  = Output(UInt(3.W))
-  val arburst = Output(UInt(2.W))
-  val rlast   = Input(Bool())
-  val rid     = Input(UInt(4.W))
-  val awaddr  = Output(UInt(32.W))
-  val awvalid = Output(Bool())
-  val awid    = Output(UInt(4.W))
-  val awlen   = Output(UInt(8.W))
-  val awsize  = Output(UInt(3.W))
-  val awburst = Output(UInt(2.W))
-  val awready = Input(Bool())
-  val wdata   = Output(UInt(32.W))
-  val wstrb   = Output(UInt(4.W))
-  val wvalid  = Output(Bool())
-  val wlast   = Output(Bool())
-  val wready  = Input(Bool())
-  val bresp   = Input(UInt(2.W))
-  val bvalid  = Input(Bool())
-  val bid     = Input(UInt(4.W))
-  val bready  = Output(Bool())
 }
 
 class IFU_IO(xlen: Int) extends Bundle{
@@ -76,26 +54,8 @@ class IFU(val conf: CoreConfig) extends Module{
   //AR
   io.imem.araddr := pc_reg
   io.imem.arvalid := (state === s_IDLE)
-  io.imem.arid := 0.U
-  io.imem.arlen := 0.U
-  io.imem.arsize := 0.U
-  io.imem.arburst := 1.U
   //R
   io.imem.rready := (state === s_WAIT)
-  // AW (unused by IFU)
-  io.imem.awaddr := 0.U
-  io.imem.awvalid := false.B
-  io.imem.awid := 0.U
-  io.imem.awlen := 0.U
-  io.imem.awsize := 0.U
-  io.imem.awburst := 0.U
-  // W (unused by IFU)
-  io.imem.wdata := 0.U
-  io.imem.wstrb := 0.U
-  io.imem.wvalid := false.B
-  io.imem.wlast := false.B
-  // B (unused by IFU)
-  io.imem.bready := false.B
 
   when(io.imem.rvalid && io.imem.rready){
     inst_reg := io.imem.rdata

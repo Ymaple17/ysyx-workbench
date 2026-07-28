@@ -1,4 +1,21 @@
-[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/lsu.scala:102:7: addr_done is already defined as value addr_done[0m
-[0m[[0m[31merror[0m] [0m[0m  val addr_done = Mux(is_load,ar_done || ar_fire,Mux(is_store,(aw_done && w_done) || (aw_fire && w_fire),true.B))[0m
-[0m[[0m[31merror[0m] [0m[0m      ^[0m
-[0m[[0m[31merror[0m] [0m[0mone error found[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/core.scala:28:27: not found: type ICache[0m
+[0m[[0m[31merror[0m] [0m[0m  val icache = Module(new ICache(set = 64, way = 4, block_size = 64, conf = conf))[0m
+[0m[[0m[31merror[0m] [0m[0m                          ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/core.scala:28:34: not found: value set[0m
+[0m[[0m[31merror[0m] [0m[0m  val icache = Module(new ICache(set = 64, way = 4, block_size = 64, conf = conf))[0m
+[0m[[0m[31merror[0m] [0m[0m                                 ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/core.scala:28:44: not found: value way[0m
+[0m[[0m[31merror[0m] [0m[0m  val icache = Module(new ICache(set = 64, way = 4, block_size = 64, conf = conf))[0m
+[0m[[0m[31merror[0m] [0m[0m                                           ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/core.scala:28:53: not found: value block_size[0m
+[0m[[0m[31merror[0m] [0m[0m  val icache = Module(new ICache(set = 64, way = 4, block_size = 64, conf = conf))[0m
+[0m[[0m[31merror[0m] [0m[0m                                                    ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/core/core.scala:28:75: reassignment to val[0m
+[0m[[0m[31merror[0m] [0m[0m  val icache = Module(new ICache(set = 64, way = 4, block_size = 64, conf = conf))[0m
+[0m[[0m[31merror[0m] [0m[0m                                                                          ^[0m
+[0m[[0m[31merror[0m] [0m[0m/home/qiu/ysyx-workbench/npc/mul_chisel_vsrc/src/main/scala/unit/icache.scala:201:18: type mismatch;[0m
+[0m[[0m[31merror[0m] [0m[0m found   : chisel3.Bool[0m
+[0m[[0m[31merror[0m] [0m[0m required: Boolean[0m
+[0m[[0m[31merror[0m] [0m[0m    while(io.out.rvalid){[0m
+[0m[[0m[31merror[0m] [0m[0m                 ^[0m
+[0m[[0m[31merror[0m] [0m[0m6 errors found[0m

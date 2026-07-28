@@ -47,8 +47,8 @@ ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
   VSRC = $(VSRC_CHISEL_MUL)
   CSRC = $(CSRC_CHISEL_MUL)
   CHISEL_WORK_DIR := mul_chisel_vsrc
-#   CHISEL_BUILD_TOOL := sbt
-  CHISEL_BUILD_TOOL := none
+   CHISEL_BUILD_TOOL := sbt
+#   CHISEL_BUILD_TOOL := none
   TOP_MODULE = ysyx_25020039
   $(info [INFO] Using chisel_mul implementation, build with sbt)
 else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)

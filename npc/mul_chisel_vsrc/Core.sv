@@ -25,6 +25,9 @@ module Core(
   output        io_dmem_bready
 );
 
+  wire        _icache_io_in_arready;
+  wire        _icache_io_in_rvalid;
+  wire [31:0] _icache_io_in_rdata;
   wire [31:0] _csr_io_read_rdata;
   wire [31:0] _csr_io_read_mtvec;
   wire [31:0] _csr_io_read_mepc;
@@ -102,12 +105,17 @@ module Core(
   wire        _idu_io_out_bits_is_ebreak;
   wire [31:0] _idu_io_out_bits_csr_rd1;
   wire [11:0] _idu_io_out_bits_csr_waddr;
+  wire        _idu_io_ifu_signals_valid;
+  wire        _idu_io_ifu_signals_bits_is_fencei;
   wire [4:0]  _idu_io_refile_raddr1;
   wire [4:0]  _idu_io_refile_raddr2;
   wire [11:0] _idu_io_csr_raddr;
   wire        _ifu_io_out_valid;
   wire [31:0] _ifu_io_out_bits_inst;
   wire [31:0] _ifu_io_out_bits_pc;
+  wire [31:0] _ifu_io_imem_araddr;
+  wire        _ifu_io_imem_arvalid;
+  wire        _ifu_io_imem_rready;
   wire        is_irq = _lsu_io_out_bits_signals_wbu_irq & _lsu_io_out_valid;
   IFU ifu (
     .clock              (clock),
@@ -126,12 +134,12 @@ module Core(
     .io_out_valid       (_ifu_io_out_valid),
     .io_out_bits_inst   (_ifu_io_out_bits_inst),
     .io_out_bits_pc     (_ifu_io_out_bits_pc),
-    .io_imem_araddr     (io_imem_araddr),
-    .io_imem_arready    (io_imem_arready),
-    .io_imem_arvalid    (io_imem_arvalid),
-    .io_imem_rvalid     (io_imem_rvalid),
-    .io_imem_rready     (io_imem_rready),
-    .io_imem_rdata      (io_imem_rdata)
+    .io_imem_araddr     (_ifu_io_imem_araddr),
+    .io_imem_arready    (_icache_io_in_arready),
+    .io_imem_arvalid    (_ifu_io_imem_arvalid),
+    .io_imem_rvalid     (_icache_io_in_rvalid),
+    .io_imem_rready     (_ifu_io_imem_rready),
+    .io_imem_rdata      (_icache_io_in_rdata)
   );
   IDU idu (
     .io_in_ready                           (_idu_io_in_ready),
@@ -162,6 +170,8 @@ module Core(
     .io_out_bits_is_ebreak                 (_idu_io_out_bits_is_ebreak),
     .io_out_bits_csr_rd1                   (_idu_io_out_bits_csr_rd1),
     .io_out_bits_csr_waddr                 (_idu_io_out_bits_csr_waddr),
+    .io_ifu_signals_valid                  (_idu_io_ifu_signals_valid),
+    .io_ifu_signals_bits_is_fencei         (_idu_io_ifu_signals_bits_is_fencei),
     .io_refile_raddr1                      (_idu_io_refile_raddr1),
     .io_refile_raddr2                      (_idu_io_refile_raddr2),
     .io_refile_rdata1                      (_refile_io_read_rdata1),
@@ -321,6 +331,24 @@ module Core(
     .io_write_wdata (_wbu_io_csr_wdata),
     .io_write_waddr (_wbu_io_csr_waddr),
     .io_write_wen   (_wbu_io_csr_wen)
+  );
+  ICache icache (
+    .clock                    (clock),
+    .reset                    (reset),
+    .io_in_araddr             (_ifu_io_imem_araddr),
+    .io_in_arready            (_icache_io_in_arready),
+    .io_in_arvalid            (_ifu_io_imem_arvalid),
+    .io_in_rvalid             (_icache_io_in_rvalid),
+    .io_in_rready             (_ifu_io_imem_rready),
+    .io_in_rdata              (_icache_io_in_rdata),
+    .io_out_araddr            (io_imem_araddr),
+    .io_out_arvalid           (io_imem_arvalid),
+    .io_out_arready           (io_imem_arready),
+    .io_out_rdata             (io_imem_rdata),
+    .io_out_rvalid            (io_imem_rvalid),
+    .io_out_rready            (io_imem_rready),
+    .io_fencei_valid          (_idu_io_ifu_signals_valid),
+    .io_fencei_bits_is_fencei (_idu_io_ifu_signals_bits_is_fencei)
   );
 endmodule
 

@@ -28,6 +28,8 @@ module IDU(
   output        io_out_bits_is_ebreak,
   output [31:0] io_out_bits_csr_rd1,
   output [11:0] io_out_bits_csr_waddr,
+  output        io_ifu_signals_valid,
+                io_ifu_signals_bits_is_fencei,
   output [4:0]  io_refile_raddr1,
                 io_refile_raddr2,
   input  [31:0] io_refile_rdata1,
@@ -38,22 +40,23 @@ module IDU(
 
   wire [2:0] _control_io_signals_idu_imm_type;
   Control control (
-    .io_inst                      (io_in_bits_inst),
-    .io_signals_idu_imm_type      (_control_io_signals_idu_imm_type),
-    .io_signals_exu_alu_srcA      (io_out_bits_signals_exu_alu_srcA),
-    .io_signals_exu_alu_srcB      (io_out_bits_signals_exu_alu_srcB),
-    .io_signals_exu_alu_control   (io_out_bits_signals_exu_alu_control),
-    .io_signals_exu_jump          (io_out_bits_signals_exu_jump),
-    .io_signals_lsu_mem_wmask     (io_out_bits_signals_lsu_mem_wmask),
-    .io_signals_lsu_mem_rd        (io_out_bits_signals_lsu_mem_rd),
-    .io_signals_lsu_mem_write     (io_out_bits_signals_lsu_mem_write),
-    .io_signals_lsu_mem_valid     (io_out_bits_signals_lsu_mem_valid),
-    .io_signals_wbu_reg_write     (io_out_bits_signals_wbu_reg_write),
-    .io_signals_wbu_reg_write_sel (io_out_bits_signals_wbu_reg_write_sel),
-    .io_signals_wbu_csr_write     (io_out_bits_signals_wbu_csr_write),
-    .io_signals_wbu_csr_sel       (io_out_bits_signals_wbu_csr_sel),
-    .io_signals_wbu_irq           (io_out_bits_signals_wbu_irq),
-    .io_signals_wbu_irq_num       (io_out_bits_signals_wbu_irq_num)
+    .io_inst                       (io_in_bits_inst),
+    .io_signals_ifu_bits_is_fencei (io_ifu_signals_bits_is_fencei),
+    .io_signals_idu_imm_type       (_control_io_signals_idu_imm_type),
+    .io_signals_exu_alu_srcA       (io_out_bits_signals_exu_alu_srcA),
+    .io_signals_exu_alu_srcB       (io_out_bits_signals_exu_alu_srcB),
+    .io_signals_exu_alu_control    (io_out_bits_signals_exu_alu_control),
+    .io_signals_exu_jump           (io_out_bits_signals_exu_jump),
+    .io_signals_lsu_mem_wmask      (io_out_bits_signals_lsu_mem_wmask),
+    .io_signals_lsu_mem_rd         (io_out_bits_signals_lsu_mem_rd),
+    .io_signals_lsu_mem_write      (io_out_bits_signals_lsu_mem_write),
+    .io_signals_lsu_mem_valid      (io_out_bits_signals_lsu_mem_valid),
+    .io_signals_wbu_reg_write      (io_out_bits_signals_wbu_reg_write),
+    .io_signals_wbu_reg_write_sel  (io_out_bits_signals_wbu_reg_write_sel),
+    .io_signals_wbu_csr_write      (io_out_bits_signals_wbu_csr_write),
+    .io_signals_wbu_csr_sel        (io_out_bits_signals_wbu_csr_sel),
+    .io_signals_wbu_irq            (io_out_bits_signals_wbu_irq),
+    .io_signals_wbu_irq_num        (io_out_bits_signals_wbu_irq_num)
   );
   IMM imm (
     .io_inst     (io_in_bits_inst),
@@ -69,6 +72,7 @@ module IDU(
   assign io_out_bits_is_ebreak = io_in_bits_inst == 32'h100073;
   assign io_out_bits_csr_rd1 = io_csr_rdata;
   assign io_out_bits_csr_waddr = io_in_bits_inst[31:20];
+  assign io_ifu_signals_valid = io_in_valid;
   assign io_refile_raddr1 = io_in_bits_inst[19:15];
   assign io_refile_raddr2 = io_in_bits_inst[24:20];
   assign io_csr_raddr = io_in_bits_inst[31:20];

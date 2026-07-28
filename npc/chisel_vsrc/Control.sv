@@ -29,12 +29,12 @@ module Control(
   wire        _control_T_13 = _GEN == 10'h67;
   wire        _control_T_15 = _GEN == 10'h123;
   wire        _control_T_17 = _GEN == 10'h23;
-  wire        _control_T_153 = _GEN == 10'hA3;
+  wire        _control_T_157 = _GEN == 10'hA3;
   wire        _control_T_21 = _GEN == 10'h103;
   wire        _control_T_23 = _GEN == 10'h83;
   wire        _control_T_25 = _GEN == 10'h283;
   wire        _control_T_27 = _GEN == 10'h3;
-  wire        _control_T_428 = _GEN == 10'h203;
+  wire        _control_T_439 = _GEN == 10'h203;
   wire        _control_T_31 = _GEN == 10'hE3;
   wire        _control_T_33 = _GEN == 10'h63;
   wire        _control_T_35 = _GEN == 10'h263;
@@ -56,13 +56,13 @@ module Control(
   wire        _control_T_67 = _GEN_0 == 17'h293;
   wire        _control_T_69 = _GEN_0 == 17'h2B3;
   wire        _control_T_71 = _GEN_0 == 17'h8293;
-  wire        _control_T_766 = _GEN_0 == 17'h82B3;
+  wire        _control_T_786 = _GEN_0 == 17'h82B3;
   wire        _control_T_75 = _GEN == 10'hF3;
-  wire        _control_T_724 = _GEN == 10'h173;
-  wire        _control_T_603 = io_inst == 32'h73;
+  wire        _control_T_743 = _GEN == 10'h173;
+  wire        _control_T_619 = io_inst == 32'h73;
   wire        _GEN_1 =
-    _control_T_21 | _control_T_23 | _control_T_25 | _control_T_27 | _control_T_428;
-  wire        _GEN_2 = _control_T_15 | _control_T_17 | _control_T_153 | _GEN_1;
+    _control_T_21 | _control_T_23 | _control_T_25 | _control_T_27 | _control_T_439;
+  wire        _GEN_2 = _control_T_15 | _control_T_17 | _control_T_157 | _GEN_1;
   wire        _GEN_3 = _control_T_5 | _control_T_7 | _control_T_9;
   wire        _GEN_4 = _control_T_3 | _GEN_3;
   wire        _GEN_5 = _control_T_11 | _control_T_13;
@@ -71,30 +71,30 @@ module Control(
   wire        _GEN_7 =
     _control_T_31 | _control_T_33 | _control_T_35 | _control_T_37 | _control_T_39
     | _control_T_41;
-  wire        _GEN_8 = _control_T_15 | _control_T_17 | _control_T_153;
-  wire        _GEN_9 = _control_T_75 | _control_T_724;
-  wire        _GEN_10 = _control_T_71 | _control_T_766;
+  wire        _GEN_8 = _control_T_15 | _control_T_17 | _control_T_157;
+  wire        _GEN_9 = _control_T_75 | _control_T_743;
+  wire        _GEN_10 = _control_T_71 | _control_T_786;
   wire        _GEN_11 =
     _control_T_43 | _control_T_45 | _control_T_47 | _control_T_49 | _control_T_51
     | _control_T_53 | _control_T_55 | _control_T_57 | _control_T_59 | _control_T_61
     | _control_T_63 | _control_T_65 | _control_T_67 | _control_T_69 | _GEN_10;
   wire        _GEN_12 =
     _control_T_1 | _control_T_3 | _control_T_5 | _control_T_7 | _control_T_9
-    | _control_T_11 | _control_T_13 | _control_T_15 | _control_T_17 | _control_T_153
-    | _control_T_21 | _control_T_23 | _control_T_25 | _control_T_27 | _control_T_428
+    | _control_T_11 | _control_T_13 | _control_T_15 | _control_T_17 | _control_T_157
+    | _control_T_21 | _control_T_23 | _control_T_25 | _control_T_27 | _control_T_439
     | _control_T_31 | _control_T_33 | _control_T_35 | _control_T_37 | _control_T_39
     | _control_T_41 | _GEN_11;
   wire        _GEN_13 = _control_T_11 | _control_T_13 | _GEN_2;
   wire        _GEN_14 = _control_T_3 | _control_T_5 | _control_T_7;
   wire        _GEN_15 =
     _control_T_1 | _control_T_3 | _control_T_5 | _control_T_7 | _control_T_9
-    | _control_T_11 | _control_T_13 | _control_T_15 | _control_T_17 | _control_T_153
-    | _control_T_21 | _control_T_23 | _control_T_25 | _control_T_27 | _control_T_428
+    | _control_T_11 | _control_T_13 | _control_T_15 | _control_T_17 | _control_T_157
+    | _control_T_21 | _control_T_23 | _control_T_25 | _control_T_27 | _control_T_439
     | _control_T_31 | _control_T_33 | _control_T_35 | _control_T_37 | _control_T_39
     | _control_T_41 | _control_T_43 | _control_T_45 | _control_T_47 | _control_T_49
     | _control_T_51 | _control_T_53 | _control_T_55 | _control_T_57 | _control_T_59
     | _control_T_61 | _control_T_63 | _control_T_65 | _control_T_67 | _control_T_69
-    | _control_T_71 | _control_T_766 | _GEN_9;
+    | _control_T_71 | _control_T_786 | _GEN_9;
   assign io_signals_idu_imm_type =
     _control_T_1
       ? 3'h1
@@ -208,8 +208,8 @@ module Control(
                                             | _control_T_61 | _control_T_63
                                             | _control_T_65 | _control_T_67
                                             | _control_T_69 | _control_T_71
-                                            | _control_T_766 | _control_T_75
-                                            | _control_T_724 | _control_T_603
+                                            | _control_T_786 | _control_T_75
+                                            | _control_T_743 | _control_T_619
                                             | io_inst != 32'h30200073
                                               ? 4'hF
                                               : 4'hA;
@@ -218,7 +218,7 @@ module Control(
       ? 8'h1
       : _control_T_15
           ? 8'hF
-          : _control_T_17 ? 8'h1 : _control_T_153 ? 8'h3 : _GEN_1 ? 8'hF : 8'h1;
+          : _control_T_17 ? 8'h1 : _control_T_157 ? 8'h3 : _GEN_1 ? 8'hF : 8'h1;
   assign io_signals_lsu_mem_rd =
     _control_T_1 | _control_T_3 | _control_T_5 | _control_T_7 | _control_T_9
     | _control_T_11 | _control_T_13 | _GEN_8
@@ -227,20 +227,20 @@ module Control(
           ? 3'h3
           : _control_T_23
               ? 3'h2
-              : _control_T_25 ? 3'h5 : _control_T_27 ? 3'h1 : {_control_T_428, 2'h0};
+              : _control_T_25 ? 3'h5 : _control_T_27 ? 3'h1 : {_control_T_439, 2'h0};
   assign io_signals_lsu_mem_write =
-    ~_GEN_6 & (_control_T_15 | _control_T_17 | _control_T_153);
+    ~_GEN_6 & (_control_T_15 | _control_T_17 | _control_T_157);
   assign io_signals_lsu_mem_valid =
     ~_GEN_6
-    & (_control_T_15 | _control_T_17 | _control_T_153 | _control_T_21 | _control_T_23
-       | _control_T_25 | _control_T_27 | _control_T_428);
+    & (_control_T_15 | _control_T_17 | _control_T_157 | _control_T_21 | _control_T_23
+       | _control_T_25 | _control_T_27 | _control_T_439);
   assign io_signals_wbu_reg_write =
     _GEN_6 | ~_GEN_8
     & (_GEN_1 | ~_GEN_7
        & (_control_T_43 | _control_T_45 | _control_T_47 | _control_T_49 | _control_T_51
           | _control_T_53 | _control_T_55 | _control_T_57 | _control_T_59 | _control_T_61
           | _control_T_63 | _control_T_65 | _control_T_67 | _control_T_69 | _control_T_71
-          | _control_T_766 | _control_T_75 | _control_T_724));
+          | _control_T_786 | _control_T_75 | _control_T_743));
   assign io_signals_wbu_reg_write_sel =
     _control_T_1 | _GEN_14
       ? 3'h1
@@ -251,10 +251,10 @@ module Control(
               : _GEN_8
                   ? 3'h0
                   : _GEN_1 ? 3'h4 : _GEN_7 ? 3'h0 : _GEN_11 ? 3'h1 : _GEN_9 ? 3'h5 : 3'h0;
-  assign io_signals_wbu_csr_write = ~_GEN_12 & (_GEN_9 | _control_T_603);
+  assign io_signals_wbu_csr_write = ~_GEN_12 & (_GEN_9 | _control_T_619);
   assign io_signals_wbu_csr_sel =
-    _GEN_12 ? 2'h0 : _control_T_75 ? 2'h1 : _control_T_724 ? 2'h2 : {2{_control_T_603}};
-  assign io_signals_wbu_irq = ~_GEN_15 & _control_T_603;
-  assign io_signals_wbu_irq_num = _GEN_15 | ~_control_T_603 ? 8'h0 : 8'hB;
+    _GEN_12 ? 2'h0 : _control_T_75 ? 2'h1 : _control_T_743 ? 2'h2 : {2{_control_T_619}};
+  assign io_signals_wbu_irq = ~_GEN_15 & _control_T_619;
+  assign io_signals_wbu_irq_num = _GEN_15 | ~_control_T_619 ? 8'h0 : 8'hB;
 endmodule
 

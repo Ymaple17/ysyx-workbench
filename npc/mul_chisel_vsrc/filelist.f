@@ -10,6 +10,7 @@ WBU.sv
 rf_32x32.sv
 Refile.sv
 CSR.sv
+ICache.sv
 Core.sv
 Xbar.sv
 Clint.sv

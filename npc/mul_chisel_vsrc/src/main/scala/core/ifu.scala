@@ -35,7 +35,7 @@ class IFU(val conf: CoreConfig) extends Module{
 
   val io = IO(new IFU_IO(conf.xlen))
 
-  val pc_init = "h8000_0000".U(conf.xlen.W)
+  val pc_init = if(conf.ysyxsoc){ "h3000_0000".U(32.W) }else if(conf.npc){ "h8000_0000".U(32.W)} else { "h0000_0000".U(32.W) }
 
   val pc_reg = RegInit(pc_init)
   val inst_reg = RegInit(0.U(conf.xlen.W))

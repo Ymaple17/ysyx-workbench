@@ -4,18 +4,23 @@ module Xbar(
                 reset,
   input  [31:0] io_imem_araddr,
   input         io_imem_arvalid,
+  input  [7:0]  io_imem_arlen,
+  input  [2:0]  io_imem_arsize,
+  input  [1:0]  io_imem_arburst,
   output        io_imem_arready,
   output [31:0] io_imem_rdata,
   output        io_imem_rvalid,
   input         io_imem_rready,
   input  [31:0] io_dmem_araddr,
   input         io_dmem_arvalid,
+  input  [2:0]  io_dmem_arsize,
   output        io_dmem_arready,
   output [31:0] io_dmem_rdata,
   output        io_dmem_rvalid,
   input         io_dmem_rready,
   input  [31:0] io_dmem_awaddr,
   input         io_dmem_awvalid,
+  input  [2:0]  io_dmem_awsize,
   output        io_dmem_awready,
   input  [31:0] io_dmem_wdata,
   input  [3:0]  io_dmem_wstrb,
@@ -25,16 +30,23 @@ module Xbar(
   input         io_dmem_bready,
   output [31:0] io_soc_araddr,
   output        io_soc_arvalid,
+  output [7:0]  io_soc_arlen,
+  output [2:0]  io_soc_arsize,
+  output [1:0]  io_soc_arburst,
   input         io_soc_arready,
   input  [31:0] io_soc_rdata,
   input         io_soc_rvalid,
+                io_soc_rlast,
   output        io_soc_rready,
   output [31:0] io_soc_awaddr,
   output        io_soc_awvalid,
+  output [2:0]  io_soc_awsize,
+  output [1:0]  io_soc_awburst,
   input         io_soc_awready,
   output [31:0] io_soc_wdata,
   output [3:0]  io_soc_wstrb,
   output        io_soc_wvalid,
+                io_soc_wlast,
   input         io_soc_wready,
                 io_soc_bvalid,
   output        io_soc_bready,
@@ -43,61 +55,37 @@ module Xbar(
   input         io_clint_arready,
   input  [31:0] io_clint_rdata,
   input         io_clint_rvalid,
-  output        io_clint_rready,
-                io_uart_arvalid,
-  input         io_uart_arready,
-                io_uart_rvalid,
-  output        io_uart_rready,
-  output [31:0] io_uart_awaddr,
-  output        io_uart_awvalid,
-  input         io_uart_awready,
-  output [31:0] io_uart_wdata,
-  output        io_uart_wvalid,
-  input         io_uart_wready,
-                io_uart_bvalid,
-  output        io_uart_bready
+  output        io_clint_rready
 );
 
-  wire       io_uart_rready_0;
-  wire       io_uart_bready_0;
   wire       io_clint_rready_0;
   wire       io_soc_rready_0;
   wire       io_soc_bready_0;
   reg  [2:0] state;
   wire       is_dmem = io_dmem_arvalid | io_dmem_awvalid;
-  wire       _next_state_T_24 = state == 3'h0;
-  wire       is_imem = io_imem_arvalid & ~is_dmem & _next_state_T_24;
-  wire       _next_state_T =
-    io_dmem_arvalid & io_dmem_araddr > 32'hA00003F7 & io_dmem_araddr < 32'hA0000400
-    | io_dmem_awvalid & io_dmem_awaddr > 32'hA00003F7 & io_dmem_awaddr < 32'hA0000400;
+  wire       _next_state_T_20 = state == 3'h0;
+  wire       is_imem = io_imem_arvalid & ~is_dmem & _next_state_T_20;
   wire       _next_state_T_2 =
-    io_dmem_arvalid & io_dmem_araddr > 32'hA0000047 & io_dmem_araddr < 32'hA0000050
-    | io_dmem_awvalid & io_dmem_awaddr > 32'hA0000047 & io_dmem_awaddr < 32'hA0000050;
-  wire       _next_state_T_26 = state == 3'h1;
-  wire       _next_state_T_28 = state == 3'h2;
-  wire       _next_state_T_30 = state == 3'h3;
-  wire       _next_state_T_32 = state == 3'h4;
+    (|(io_dmem_araddr[31:25])) & io_dmem_araddr < 32'h2010000 | (|(io_dmem_awaddr[31:25]))
+    & io_dmem_awaddr < 32'h2010000;
+  wire       _next_state_T_22 = state == 3'h1;
+  wire       _next_state_T_24 = state == 3'h2;
+  wire       _next_state_T_26 = state == 3'h3;
   reg  [2:0] casez_tmp;
   wire       _next_state_T_12 = io_soc_rvalid & io_soc_rready_0;
   always_comb begin
     casez (state)
       3'b000:
         casez_tmp =
-          is_imem
-            ? 3'h1
-            : is_dmem & _next_state_T
-                ? 3'h4
-                : is_dmem & _next_state_T_2 ? 3'h3 : {1'h0, is_dmem, 1'h0};
+          is_imem ? 3'h1 : is_dmem & _next_state_T_2 ? 3'h3 : {1'h0, is_dmem, 1'h0};
       3'b001:
-        casez_tmp = _next_state_T_12 ? {2'h0, io_imem_arvalid} : 3'h1;
+        casez_tmp = _next_state_T_12 & io_soc_rlast ? {2'h0, io_imem_arvalid} : 3'h1;
       3'b010:
         casez_tmp = {1'h0, ~(_next_state_T_12 | io_soc_bvalid & io_soc_bready_0), 1'h0};
       3'b011:
         casez_tmp = io_clint_rvalid & io_clint_rready_0 ? 3'h0 : 3'h3;
       3'b100:
-        casez_tmp =
-          {~(io_uart_rvalid & io_uart_rready_0 | io_uart_bvalid & io_uart_bready_0),
-           2'h0};
+        casez_tmp = 3'h0;
       3'b101:
         casez_tmp = 3'h0;
       3'b110:
@@ -106,36 +94,27 @@ module Xbar(
         casez_tmp = 3'h0;
     endcase
   end // always_comb
-  wire       _GEN = is_dmem & _next_state_T;
-  wire       _GEN_0 = is_dmem & _next_state_T_2;
-  wire       _GEN_1 = is_imem | _GEN;
-  wire       _GEN_2 = _GEN | _GEN_0;
-  wire       _GEN_3 = is_imem | _GEN_2;
+  wire       _GEN = is_dmem & _next_state_T_2;
+  wire       _GEN_0 = is_imem | _GEN;
+  wire [1:0] _GEN_1 = {1'h0, is_dmem};
+  wire       _GEN_2 = _GEN | ~is_dmem;
+  wire       _GEN_3 = _next_state_T_20 ? is_imem : _next_state_T_22;
   assign io_soc_bready_0 =
-    _next_state_T_24
-      ? ~_GEN_3 & is_dmem & io_dmem_bready
-      : ~_next_state_T_26 & _next_state_T_28 & io_dmem_bready;
+    _next_state_T_20
+      ? ~_GEN_0 & is_dmem & io_dmem_bready
+      : ~_next_state_T_22 & _next_state_T_24 & io_dmem_bready;
   wire       _GEN_4 =
-    _next_state_T_24 ? _GEN_3 | ~is_dmem : _next_state_T_26 | ~_next_state_T_28;
+    _next_state_T_20 ? _GEN_0 | ~is_dmem : _next_state_T_22 | ~_next_state_T_24;
+  wire [1:0] _GEN_5 = {1'h0, _next_state_T_24};
   assign io_soc_rready_0 =
-    _next_state_T_24
-      ? (is_imem ? io_imem_rready : ~_GEN_2 & is_dmem & io_dmem_rready)
-      : _next_state_T_26 ? io_imem_rready : _next_state_T_28 & io_dmem_rready;
-  wire       _GEN_5 = _next_state_T_26 | _next_state_T_28;
+    _next_state_T_20
+      ? (is_imem ? io_imem_rready : ~_GEN & is_dmem & io_dmem_rready)
+      : _next_state_T_22 ? io_imem_rready : _next_state_T_24 & io_dmem_rready;
+  wire       _GEN_6 = _next_state_T_22 | _next_state_T_24;
   assign io_clint_rready_0 =
-    _next_state_T_24
-      ? ~_GEN_1 & _GEN_0 & io_dmem_rready
-      : ~_GEN_5 & _next_state_T_30 & io_dmem_rready;
-  wire       _GEN_6 = _next_state_T_26 | _next_state_T_28 | _next_state_T_30;
-  assign io_uart_bready_0 =
-    _next_state_T_24
-      ? ~is_imem & _GEN & io_dmem_bready
-      : ~_GEN_6 & _next_state_T_32 & io_dmem_bready;
-  wire       _GEN_7 = _next_state_T_24 ? is_imem | ~_GEN : _GEN_6 | ~_next_state_T_32;
-  assign io_uart_rready_0 =
-    _next_state_T_24
+    _next_state_T_20
       ? ~is_imem & _GEN & io_dmem_rready
-      : ~_GEN_6 & _next_state_T_32 & io_dmem_rready;
+      : ~_GEN_6 & _next_state_T_26 & io_dmem_rready;
   always @(posedge clock) begin
     if (reset)
       state <= 3'h0;
@@ -143,99 +122,81 @@ module Xbar(
       state <= casez_tmp;
   end // always @(posedge)
   assign io_imem_arready =
-    _next_state_T_24 ? is_imem & io_soc_arready : _next_state_T_26 & io_soc_arready;
-  assign io_imem_rdata =
-    (_next_state_T_24 ? is_imem : _next_state_T_26) ? io_soc_rdata : 32'h0;
+    _next_state_T_20 ? is_imem & io_soc_arready : _next_state_T_22 & io_soc_arready;
+  assign io_imem_rdata = _GEN_3 ? io_soc_rdata : 32'h0;
   assign io_imem_rvalid =
-    _next_state_T_24 ? is_imem & io_soc_rvalid : _next_state_T_26 & io_soc_rvalid;
+    _next_state_T_20 ? is_imem & io_soc_rvalid : _next_state_T_22 & io_soc_rvalid;
   assign io_dmem_arready =
-    _next_state_T_24
-      ? ~is_imem
-        & (_GEN ? io_uart_arready : _GEN_0 ? io_clint_arready : is_dmem & io_soc_arready)
-      : ~_next_state_T_26
-        & (_next_state_T_28
-             ? io_soc_arready
-             : _next_state_T_30 ? io_clint_arready : _next_state_T_32 & io_uart_arready);
+    _next_state_T_20
+      ? ~is_imem & (_GEN ? io_clint_arready : is_dmem & io_soc_arready)
+      : ~_next_state_T_22
+        & (_next_state_T_24 ? io_soc_arready : _next_state_T_26 & io_clint_arready);
   assign io_dmem_rdata =
-    _next_state_T_24
-      ? (_GEN_1 ? 32'h0 : _GEN_0 ? io_clint_rdata : is_dmem ? io_soc_rdata : 32'h0)
-      : _next_state_T_26
+    _next_state_T_20
+      ? (is_imem ? 32'h0 : _GEN ? io_clint_rdata : is_dmem ? io_soc_rdata : 32'h0)
+      : _next_state_T_22
           ? 32'h0
-          : _next_state_T_28 ? io_soc_rdata : _next_state_T_30 ? io_clint_rdata : 32'h0;
+          : _next_state_T_24 ? io_soc_rdata : _next_state_T_26 ? io_clint_rdata : 32'h0;
   assign io_dmem_rvalid =
-    _next_state_T_24
-      ? ~is_imem
-        & (_GEN ? io_uart_rvalid : _GEN_0 ? io_clint_rvalid : is_dmem & io_soc_rvalid)
-      : ~_next_state_T_26
-        & (_next_state_T_28
-             ? io_soc_rvalid
-             : _next_state_T_30 ? io_clint_rvalid : _next_state_T_32 & io_uart_rvalid);
+    _next_state_T_20
+      ? ~is_imem & (_GEN ? io_clint_rvalid : is_dmem & io_soc_rvalid)
+      : ~_next_state_T_22
+        & (_next_state_T_24 ? io_soc_rvalid : _next_state_T_26 & io_clint_rvalid);
   assign io_dmem_awready =
-    _next_state_T_24
-      ? ~is_imem & (_GEN ? io_uart_awready : ~_GEN_0 & is_dmem & io_soc_awready)
-      : ~_next_state_T_26
-        & (_next_state_T_28
-             ? io_soc_awready
-             : ~_next_state_T_30 & _next_state_T_32 & io_uart_awready);
+    _next_state_T_20
+      ? ~_GEN_0 & is_dmem & io_soc_awready
+      : ~_next_state_T_22 & _next_state_T_24 & io_soc_awready;
   assign io_dmem_wready =
-    _next_state_T_24
-      ? ~is_imem & (_GEN ? io_uart_wready : ~_GEN_0 & is_dmem & io_soc_wready)
-      : ~_next_state_T_26
-        & (_next_state_T_28
-             ? io_soc_wready
-             : ~_next_state_T_30 & _next_state_T_32 & io_uart_wready);
+    _next_state_T_20
+      ? ~_GEN_0 & is_dmem & io_soc_wready
+      : ~_next_state_T_22 & _next_state_T_24 & io_soc_wready;
   assign io_dmem_bvalid =
-    _next_state_T_24
-      ? ~is_imem & (_GEN ? io_uart_bvalid : ~_GEN_0 & is_dmem & io_soc_bvalid)
-      : ~_next_state_T_26
-        & (_next_state_T_28
-             ? io_soc_bvalid
-             : ~_next_state_T_30 & _next_state_T_32 & io_uart_bvalid);
+    _next_state_T_20
+      ? ~_GEN_0 & is_dmem & io_soc_bvalid
+      : ~_next_state_T_22 & _next_state_T_24 & io_soc_bvalid;
   assign io_soc_araddr =
-    _next_state_T_24
-      ? (is_imem ? io_imem_araddr : _GEN_2 | ~is_dmem ? 32'h0 : io_dmem_araddr)
-      : _next_state_T_26 ? io_imem_araddr : _next_state_T_28 ? io_dmem_araddr : 32'h0;
+    _next_state_T_20
+      ? (is_imem ? io_imem_araddr : _GEN_2 ? 32'h0 : io_dmem_araddr)
+      : _next_state_T_22 ? io_imem_araddr : _next_state_T_24 ? io_dmem_araddr : 32'h0;
   assign io_soc_arvalid =
-    _next_state_T_24
-      ? (is_imem ? io_imem_arvalid : ~_GEN_2 & is_dmem & io_dmem_arvalid)
-      : _next_state_T_26 ? io_imem_arvalid : _next_state_T_28 & io_dmem_arvalid;
+    _next_state_T_20
+      ? (is_imem ? io_imem_arvalid : ~_GEN & is_dmem & io_dmem_arvalid)
+      : _next_state_T_22 ? io_imem_arvalid : _next_state_T_24 & io_dmem_arvalid;
+  assign io_soc_arlen = _GEN_3 ? io_imem_arlen : 8'h0;
+  assign io_soc_arsize =
+    _next_state_T_20
+      ? (is_imem ? io_imem_arsize : _GEN_2 ? 3'h0 : io_dmem_arsize)
+      : _next_state_T_22 ? io_imem_arsize : _next_state_T_24 ? io_dmem_arsize : 3'h0;
+  assign io_soc_arburst =
+    _next_state_T_20
+      ? (is_imem ? io_imem_arburst : _GEN ? 2'h0 : _GEN_1)
+      : _next_state_T_22 ? io_imem_arburst : _GEN_5;
   assign io_soc_rready = io_soc_rready_0;
   assign io_soc_awaddr = _GEN_4 ? 32'h0 : io_dmem_awaddr;
   assign io_soc_awvalid =
-    _next_state_T_24
-      ? ~_GEN_3 & is_dmem & io_dmem_awvalid
-      : ~_next_state_T_26 & _next_state_T_28 & io_dmem_awvalid;
+    _next_state_T_20
+      ? ~_GEN_0 & is_dmem & io_dmem_awvalid
+      : ~_next_state_T_22 & _next_state_T_24 & io_dmem_awvalid;
+  assign io_soc_awsize = _GEN_4 ? 3'h0 : io_dmem_awsize;
+  assign io_soc_awburst =
+    _next_state_T_20 ? (_GEN_0 ? 2'h0 : _GEN_1) : _next_state_T_22 ? 2'h0 : _GEN_5;
   assign io_soc_wdata = _GEN_4 ? 32'h0 : io_dmem_wdata;
   assign io_soc_wstrb = _GEN_4 ? 4'h0 : io_dmem_wstrb;
   assign io_soc_wvalid =
-    _next_state_T_24
-      ? ~_GEN_3 & is_dmem & io_dmem_wvalid
-      : ~_next_state_T_26 & _next_state_T_28 & io_dmem_wvalid;
+    _next_state_T_20
+      ? ~_GEN_0 & is_dmem & io_dmem_wvalid
+      : ~_next_state_T_22 & _next_state_T_24 & io_dmem_wvalid;
+  assign io_soc_wlast =
+    _next_state_T_20 ? ~_GEN_0 & is_dmem : ~_next_state_T_22 & _next_state_T_24;
   assign io_soc_bready = io_soc_bready_0;
   assign io_clint_araddr =
-    (_next_state_T_24 ? _GEN_1 | ~_GEN_0 : _GEN_5 | ~_next_state_T_30)
+    (_next_state_T_20 ? is_imem | ~_GEN : _GEN_6 | ~_next_state_T_26)
       ? 32'h0
       : io_dmem_araddr;
   assign io_clint_arvalid =
-    _next_state_T_24
-      ? ~_GEN_1 & _GEN_0 & io_dmem_arvalid
-      : ~_GEN_5 & _next_state_T_30 & io_dmem_arvalid;
-  assign io_clint_rready = io_clint_rready_0;
-  assign io_uart_arvalid =
-    _next_state_T_24
+    _next_state_T_20
       ? ~is_imem & _GEN & io_dmem_arvalid
-      : ~_GEN_6 & _next_state_T_32 & io_dmem_arvalid;
-  assign io_uart_rready = io_uart_rready_0;
-  assign io_uart_awaddr = _GEN_7 ? 32'h0 : io_dmem_awaddr;
-  assign io_uart_awvalid =
-    _next_state_T_24
-      ? ~is_imem & _GEN & io_dmem_awvalid
-      : ~_GEN_6 & _next_state_T_32 & io_dmem_awvalid;
-  assign io_uart_wdata = _GEN_7 ? 32'h0 : io_dmem_wdata;
-  assign io_uart_wvalid =
-    _next_state_T_24
-      ? ~is_imem & _GEN & io_dmem_wvalid
-      : ~_GEN_6 & _next_state_T_32 & io_dmem_wvalid;
-  assign io_uart_bready = io_uart_bready_0;
+      : ~_GEN_6 & _next_state_T_26 & io_dmem_arvalid;
+  assign io_clint_rready = io_clint_rready_0;
 endmodule
 

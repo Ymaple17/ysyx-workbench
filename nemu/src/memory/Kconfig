@@ -1,8 +1,22 @@
 menu "Memory Configuration"
 
+choice
+  prompt "Memory Map Mode"
+  default MEM_MAP_NPC
+
+config MEM_MAP_NPC
+  bool "NPC Mode (0x80000000)"
+
+config MEM_MAP_SOC
+  bool "SOC Mode (0x30000000)"
+
+endchoice
+
 config MBASE
   hex "Memory base address"
   default 0x0        if ISA_x86
+  default 0x80000000 if MEM_MAP_NPC
+  default 0x30000000 if MEM_MAP_SOC
   default 0x80000000
 
 config MSIZE

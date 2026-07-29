@@ -14,6 +14,4 @@ ICache.sv
 Core.sv
 Xbar.sv
 Clint.sv
-UART.sv
-SRAM.sv
 ysyx_25020039.sv

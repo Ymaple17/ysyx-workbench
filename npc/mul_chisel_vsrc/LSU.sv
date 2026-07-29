@@ -41,12 +41,14 @@ module LSU(
   output [11:0] io_out_bits_csr_waddr,
   output [31:0] io_dmem_araddr,
   output        io_dmem_arvalid,
+  output [2:0]  io_dmem_arsize,
   input         io_dmem_arready,
   input  [31:0] io_dmem_rdata,
   input         io_dmem_rvalid,
   output        io_dmem_rready,
   output [31:0] io_dmem_awaddr,
   output        io_dmem_awvalid,
+  output [2:0]  io_dmem_awsize,
   input         io_dmem_awready,
   output [31:0] io_dmem_wdata,
   output [3:0]  io_dmem_wstrb,
@@ -61,6 +63,27 @@ module LSU(
   wire        mem_valid = io_in_valid & io_in_bits_signals_lsu_mem_valid;
   wire        is_load = ~io_in_bits_signals_lsu_mem_write & mem_valid;
   wire        is_store = io_in_bits_signals_lsu_mem_write & mem_valid;
+  reg  [2:0]  casez_tmp;
+  always_comb begin
+    casez (io_in_bits_signals_lsu_mem_rd)
+      3'b000:
+        casez_tmp = 3'h3;
+      3'b001:
+        casez_tmp = 3'h0;
+      3'b010:
+        casez_tmp = 3'h1;
+      3'b011:
+        casez_tmp = 3'h2;
+      3'b100:
+        casez_tmp = 3'h0;
+      3'b101:
+        casez_tmp = 3'h1;
+      3'b110:
+        casez_tmp = 3'h3;
+      default:
+        casez_tmp = 3'h3;
+    endcase
+  end // always_comb
   wire [10:0] _mem_wmask_T =
     {3'h0, io_in_bits_signals_lsu_mem_wmask} << io_in_bits_alu_result[1:0];
   wire [62:0] store_data_shifted =
@@ -131,9 +154,16 @@ module LSU(
   assign io_out_bits_csr_waddr = io_in_bits_csr_waddr;
   assign io_dmem_araddr = io_in_bits_alu_result;
   assign io_dmem_arvalid = io_dmem_arvalid_0;
+  assign io_dmem_arsize = casez_tmp;
   assign io_dmem_rready = io_dmem_rready_0;
   assign io_dmem_awaddr = io_in_bits_alu_result;
   assign io_dmem_awvalid = io_dmem_awvalid_0;
+  assign io_dmem_awsize =
+    io_in_bits_signals_lsu_mem_wmask == 8'hF
+      ? 3'h2
+      : io_in_bits_signals_lsu_mem_wmask == 8'h3
+          ? 3'h1
+          : io_in_bits_signals_lsu_mem_wmask == 8'h1 ? 3'h0 : 3'h7;
   assign io_dmem_wdata = store_data_shifted[31:0];
   assign io_dmem_wstrb = _mem_wmask_T[3:0];
   assign io_dmem_wvalid = io_dmem_wvalid_0;

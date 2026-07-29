@@ -25,8 +25,12 @@ class Core(val conf: CoreConfig) extends Module {
 
   val refile = Module(new Refile(conf))
   val csr = Module(new CSR(conf))
-
   val icache = Module(new ICache(set = 64, way = 4, block_size = 64, conf = conf))
+
+  ifu.io.imem <> icache.io.in
+  icache.io.fencei <> idu.io.ifu_signals
+  icache.io.out <> io.imem
+
 
   //stage connect
   ifu.io.out <> idu.io.in
@@ -60,9 +64,6 @@ class Core(val conf: CoreConfig) extends Module {
   idu.io.csr <> csr.io.read
   wbu.io.csr <> csr.io.write
 
-  ifu.io.imem <> icache.io.in
-  icache.io.fencei <> idu.io.ifu_signals
-  icache.io.out <> io.imem
   io.dmem <> lsu.io.dmem
   
   if (!conf.useDPIC) {

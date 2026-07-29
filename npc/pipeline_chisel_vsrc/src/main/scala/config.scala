@@ -1,9 +1,9 @@
 package core
 
 class CoreConfig (val xlen : Int){ 
-  def useDPIC : Boolean = false
-  def ysyxsoc : Boolean = false
-  def npc     : Boolean = true
+  def useDPIC : Boolean = true
+  def ysyxsoc : Boolean = true
+  def npc     : Boolean = false
   def statistics : Boolean = false
 }
 

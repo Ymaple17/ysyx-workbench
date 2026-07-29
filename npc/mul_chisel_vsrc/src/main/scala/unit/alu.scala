@@ -21,6 +21,7 @@ class ALU(val width: Int) extends Module{
 
     io.result := MuxLookup(io.alu_control, 0.U)(Seq(
         ALU_ADD -> (io.A + io.B),
+        // ALU_ADD -> (io.A + 1.U),
         ALU_SUB -> (io.A - io.B),
         ALU_AND -> (io.A & io.B),
         ALU_OR  -> (io.A | io.B),

@@ -2,10 +2,10 @@ mainmenu "NPC Configuration"
 
 choice
     prompt "Architecture Selection"
-    default MUL_SOC
+    default MUL
 
-config MUL_SOC
-    bool "Enable mul_soc implementation (Default)"
+config MUL
+    bool "Enable riscv32_mul implementation"
 
 config CHISEL_MUL
     bool "Enable Chisel riscv32_mul implementation"
@@ -19,9 +19,6 @@ config CHISEL_RISCV32E
 config PIPELINE_SOC
     bool "Enable pipeline_soc implementation"
 
-config MUL
-    bool "Enable riscv32_mul implementation"
-
 config SINGLE
     bool "Enable riscv32e_vsrc implementation"
 
@@ -30,6 +27,32 @@ config MINIRV
 
 endchoice
 
+
+if MUL
+    choice
+        prompt "Mul Run Mode"
+        default MUL_SOC
+
+        config MUL_SOC
+            bool "SOC Mode"
+
+        config MUL_NPC
+            bool "NPC Mode"
+    endchoice
+endif
+
+if CHISEL_MUL
+    choice
+        prompt "Mul Chisel Run Mode"
+        default MUL_CHISEL_SOC
+
+        config MUL_CHISEL_SOC
+            bool "SOC Mode"
+
+        config MUL_CHISEL_NPC
+            bool "NPC Mode"
+    endchoice
+endif
 
 if PIPELINE_CHISEL
     choice

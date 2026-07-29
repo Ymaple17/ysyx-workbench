@@ -20,7 +20,7 @@ module Clint(
       state <= 1'h0;
     end
     else begin
-      rdata <= io_araddr == 32'hA0000048 ? mtime[31:0] : mtime[63:32];
+      rdata <= io_araddr == 32'h2000000 ? mtime[31:0] : mtime[63:32];
       mtime <= mtime + 64'h1;
       if (state)
         state <= ~io_rready;

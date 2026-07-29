@@ -25,7 +25,7 @@ module IFU(
   wire        _io_in_ready_T = io_out_valid_0 & io_out_ready;
   always @(posedge clock) begin
     if (reset) begin
-      pc_reg <= 32'h80000000;
+      pc_reg <= 32'h30000000;
       inst_reg <= 32'h0;
       state <= 2'h0;
       first_fetched <= 1'h0;

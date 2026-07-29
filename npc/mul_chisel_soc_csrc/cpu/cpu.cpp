@@ -166,9 +166,10 @@ extern void (*ref_difftest_regcpy)(void *dut, bool direction);
 extern void (*ref_difftest_memcpy)(word_t addr, void *buf, word_t n, bool direction);
 static bool dt_check_pending = false;
 static bool dt_skip_ref = false;
+static bool prev_need_skip = false;
 #endif
 
-#define HANG_TIMEOUT_CYCLES 100000
+#define HANG_TIMEOUT_CYCLES 10000
 #define PC_STUCK_COMMITS 20000
 
 static void execute(uint64_t n) {
@@ -207,31 +208,6 @@ static void execute(uint64_t n) {
 #endif
 
 #ifdef DIFFTEST
-        if (dt_check_pending) {
-          update_cpu_state();
-          CPU_State ref_state;
-          ref_difftest_regcpy(&ref_state, DIFFTEST_TO_DUT);
-          cpu.pc = ref_state.pc;
-          cpu_pc = cpu.pc;
-
-          if (dt_skip_ref) {
-            difftest_skip_ref();
-            dt_skip_ref = false;
-          } else if (!difftest_check_reg()) {
-            printf("\n[difftest] ========== MISMATCH at commit PC = 0x%08x ==========\n", commit_pc);
-            for (int i = 0; i < 32; i++) {
-              if (cpu.gpr[i] != ref_state.gpr[i]) {
-                printf("[difftest] %-4s: REF = 0x%08x, DUT = 0x%08x\n",
-                       regs[i], ref_state.gpr[i], cpu.gpr[i]);
-              }
-            }
-            printf("[difftest] =========================================\n\n");
-            npc_state.state = NPC_ABORT;
-            break;
-          }
-          dt_check_pending = false;
-        }
-
         uint32_t inst = 0;
         ref_difftest_memcpy(commit_pc, &inst, 4, DIFFTEST_TO_DUT);
         bool is_store = ((inst & 0x7f) == 0x23);
@@ -251,12 +227,36 @@ static void execute(uint64_t n) {
           need_skip = is_mmio_addr(eaddr);
         }
 
-        if (!need_skip) {
-          dt_skip_ref = false;
-          difftest_one_exec();
-        } else {
-          dt_skip_ref = true;
+        if (dt_check_pending) {
+          update_cpu_state();
+          CPU_State ref_state;
+          ref_difftest_regcpy(&ref_state, DIFFTEST_TO_DUT);
+
+          if (prev_need_skip) {
+            ref_difftest_regcpy(&cpu, DIFFTEST_TO_REF);
+          } else {
+            cpu.pc = ref_state.pc;
+            cpu_pc = cpu.pc;
+            if (!difftest_check_reg()) {
+              printf("\n[difftest] ========== MISMATCH at commit PC = 0x%08x ==========\n", commit_pc);
+              for (int i = 0; i < 32; i++) {
+                if (cpu.gpr[i] != ref_state.gpr[i]) {
+                  printf("[difftest] %-4s: REF = 0x%08x, DUT = 0x%08x\n",
+                         regs[i], ref_state.gpr[i], cpu.gpr[i]);
+                }
+              }
+              printf("[difftest] =========================================\n\n");
+              npc_state.state = NPC_ABORT;
+              break;
+            }
+          }
+          dt_check_pending = false;
         }
+
+        if (!need_skip) {
+          difftest_one_exec();
+        }
+        prev_need_skip = need_skip;
         dt_check_pending = true;
 #endif
       }

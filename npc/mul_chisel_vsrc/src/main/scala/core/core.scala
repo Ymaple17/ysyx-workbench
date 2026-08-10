@@ -10,6 +10,7 @@ import unit._
 class Core_IO(conf: CoreConfig) extends Bundle {
   val interrupt = Input(Bool())
   val ebreak    = if (!conf.useDPIC) Some(Output(Bool())) else None
+  val commit_valid = if (conf.npc) Some(Output(Bool())) else None
   val imem      = new AXI4Master
   val dmem      = new AXI4Master
 }
@@ -65,6 +66,10 @@ class Core(val conf: CoreConfig) extends Module {
   wbu.io.csr <> csr.io.write
 
   io.dmem <> lsu.io.dmem
+
+  if (conf.npc) {
+    io.commit_valid.get := lsu.io.out.valid
+  }
   
   if (!conf.useDPIC) {
     io.ebreak.get := idu.io.out.bits.is_ebreak && idu.io.in.valid

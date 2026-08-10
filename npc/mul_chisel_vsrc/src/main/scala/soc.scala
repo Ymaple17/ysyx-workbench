@@ -9,6 +9,7 @@ class NPC_IO(conf: CoreConfig) extends Bundle {
   val master  = if (conf.ysyxsoc) Some(new AXI4Master) else None
   val slave   = if (conf.ysyxsoc) Some(new AXI4Slave)  else None
   val ebreak  = if (!conf.useDPIC) Some(Output(Bool())) else None
+  val commit_valid = if (conf.npc) Some(Output(Bool())) else None
 }
 
 class ysyx_25020039(val coreConfig: CoreConfig) extends Module {
@@ -24,6 +25,7 @@ class ysyx_25020039(val coreConfig: CoreConfig) extends Module {
   val uart = if (coreConfig.npc) Some(Module(new UART)) else None
 
   if (!coreConfig.useDPIC) io.ebreak.get := core.io.ebreak.get
+  if (coreConfig.npc) io.commit_valid.get := core.io.commit_valid.get
 
   core.io.interrupt := io.interrupt
 

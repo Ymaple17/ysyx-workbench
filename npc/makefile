@@ -16,6 +16,10 @@ VSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_vsrc -maxdepth 1 -name "*.v"
 CSRC_PIPELINE_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find pipeline_chisel_soc_csrc -name "*.cpp" -o -name "*.c"))#pipeline_chisel
 CSRC_PIPELINE_CHISEL_NPC = $(shell find pipeline_chisel_npc_csrc -name "*.cpp" -o -name "*.c")#pipeline_chisel
 
+VSRC_IOID_CHISEL = $(shell find ioid_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
+CSRC_IOID_CHISEL = $(shell find ioid_chisel_csrc -name "*.cpp" -o -name "*.c")#ioid_chisel
+CSRC_IOID_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find ioid_chisel_soc_csrc -name "*.cpp" -o -name "*.c"))#ioid_chisel_soc
+
 VSRC_CHISEL_RISCV32E = $(shell find chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#chisel
 CSRC_CHISEL_RISCV32E = $(shell find chisel_csrc -name "*.cpp" -o -name "*.c")#chisel
 
@@ -41,6 +45,9 @@ CONFIG_PIPELINE_SOC_VAL := $(shell grep CONFIG_PIPELINE_SOC .config | cut -d'=' 
 
 CONFIG_PIPELINE_CHISEL_SOC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_SOC .config | cut -d'=' -f2)
 CONFIG_PIPELINE_CHISEL_NPC_VAL := $(shell grep CONFIG_PIPELINE_CHISEL_NPC .config | cut -d'=' -f2)
+CONFIG_IOID_CHISEL_VAL := $(shell grep -w CONFIG_IOID_CHISEL .config | cut -d'=' -f2)
+CONFIG_IOID_CHISEL_SOC_VAL := $(shell grep -w CONFIG_IOID_CHISEL_SOC .config | cut -d'=' -f2)
+CONFIG_IOID_CHISEL_NPC_VAL := $(shell grep -w CONFIG_IOID_CHISEL_NPC .config | cut -d'=' -f2)
 
 VSRC_MINIRV_PERIP = $(shell find ../ysyxSoC/perip -name "*.v" -o -name "*.sv")
 VSRC_MINIRV_TOP = ../ysyxSoC/ready-to-run/D-stage/ysyxSoCFull.v
@@ -86,6 +93,28 @@ else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
 #     CHISEL_BUILD_TOOL := none
     TOP_MODULE = ysyx_25020039
     $(info [INFO] Using pipeline_chisel NPC Mode)
+  endif
+else ifeq ($(CONFIG_IOID_CHISEL_VAL),y)
+  ifeq ($(CONFIG_IOID_CHISEL_SOC_VAL),y)
+    VSRC = $(VSRC_IOID_CHISEL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
+    CSRC = $(CSRC_IOID_CHISEL_SOC)
+    CHISEL_WORK_DIR := ioid_chisel_vsrc
+    CHISEL_BUILD_TOOL := mill
+#     CHISEL_BUILD_TOOL := none
+    CHISEL_MAIN := TopMainSoC
+    TOP_MODULE = ysyxSoCFull
+    VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
+    CFLAGS += -std=c++17
+    $(info [INFO] Using ioid_chisel SOC Mode)
+  else
+    VSRC = $(VSRC_IOID_CHISEL)
+    CSRC = $(CSRC_IOID_CHISEL)
+    CHISEL_WORK_DIR := ioid_chisel_vsrc
+    CHISEL_BUILD_TOOL := mill
+    CHISEL_MAIN := TopMain
+#   CHISEL_BUILD_TOOL := none
+    TOP_MODULE = ysyx_25020039
+    $(info [INFO] Using ioid_chisel NPC Mode)
   endif
 else ifeq ($(CONFIG_CHISEL_RISCV32E_VAL),y)
   VSRC = $(VSRC_CHISEL_RISCV32E)
@@ -174,6 +203,16 @@ else ifeq ($(CONFIG_PIPELINE_CHISEL_NPC_VAL),y)
     -Ipipeline_chisel_npc_csrc \
     -I$(NPC_HOME)/pipeline_chisel_npc_csrc/include \
     -I$(NPC_HOME)/include
+else ifeq ($(CONFIG_IOID_CHISEL_SOC_VAL),y)
+  C_INCLUDE_DIRS += \
+    -Iioid_chisel_soc_csrc \
+    -I$(NPC_HOME)/ioid_chisel_soc_csrc/include \
+    -I$(NPC_HOME)/include
+else ifeq ($(CONFIG_IOID_CHISEL_VAL),y)
+  C_INCLUDE_DIRS += \
+    -Iioid_chisel_csrc \
+    -I$(NPC_HOME)/ioid_chisel_csrc/include \
+    -I$(NPC_HOME)/include
 else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
   C_INCLUDE_DIRS += \
     -Ipipeline_soc_csrc \
@@ -223,6 +262,13 @@ else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
                     -I../ortl \
                     -I../ysyxSoC/perip/uart16550/rtl \
                     -I../ysyxSoC/perip/spi/rtl
+else ifeq ($(CONFIG_IOID_CHISEL_SOC_VAL),y)
+  V_INCLUDE_DIRS += -Iioid_chisel_vsrc \
+                    -I../ortl \
+                    -I../ysyxSoC/perip/uart16550/rtl \
+                    -I../ysyxSoC/perip/spi/rtl
+else ifeq ($(CONFIG_IOID_CHISEL_VAL),y)
+  V_INCLUDE_DIRS += -Iioid_chisel_vsrc
 else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
   V_INCLUDE_DIRS += -Ipipeline_soc_vsrc \
                     -Ipipeline_soc_vsrc/include \
@@ -257,7 +303,7 @@ ifeq ($(CONFIG_NVBOARD_VAL),y)
 
   CFLAGS += -DCONFIG_NVBOARD -DNVBOARD $(NVBOARD_USR_INC_PATH)
   NXDC_FILES = constr/top.nxdc
-  SRC_AUTO_BIND = $(OBJ_DIR)/auto_bind.cpp
+  SRC_AUTO_BIND = $(abspath $(BUILD_DIR)/auto_bind.cpp)
   $(SRC_AUTO_BIND): $(NXDC_FILES)
 	python3 $(NVBOARD_HOME)/scripts/auto_pin_bind.py $^ $@
   
@@ -291,6 +337,11 @@ else
   $(info [INFO] CONFIG_DIFFTEST is disabled)
 endif
 
+ifdef CONFIG_AXI_MONITOR
+  CFLAGS += -DCONFIG_AXI_MONITOR
+  $(info [INFO] AXI protocol monitor enabled)
+endif
+
 ifdef CONFIG_ITRACE
   LIBCAPSTONE = tools/capstone/libcapstone.so.6
   CFLAGS += -DCONFIG_ITRACE -Itools/capstone/include
@@ -308,7 +359,7 @@ ifdef CHISEL_WORK_DIR
 	$(info [CHISEL] Check build tool: $(CHISEL_BUILD_TOOL))
 	cd $(CHISEL_WORK_DIR) && \
 	if [ "$(CHISEL_BUILD_TOOL)" = "mill" ]; then \
-	    ./mill -i mychisel.runMain TopMain; \
+	    ./mill -i mychisel.runMain $(CHISEL_MAIN); \
 	elif [ "$(CHISEL_BUILD_TOOL)" = "sbt" ]; then \
 	    sbt run; \
 	else \
@@ -318,6 +369,8 @@ ifdef CHISEL_WORK_DIR
 else
 	$(info [CHISEL] Not a Chisel configuration, skip SV generation)
 endif
+
+CHISEL_MAIN ?= TopMain
 
 chisel-clean:
 ifdef CHISEL_WORK_DIR
@@ -337,10 +390,17 @@ endif
 
 $(shell mkdir -p $(BUILD_DIR) $(OBJ_DIR))
 
+CONFIG_HASH := $(shell md5sum .config | cut -d' ' -f1)
+TOP_STAMP = $(OBJ_DIR)/.build_stamp
+$(TOP_STAMP): .config
+	@rm -rf $(OBJ_DIR)
+	@mkdir -p $(OBJ_DIR)
+	@echo "$(TOP_MODULE) $(CONFIG_HASH)" > $@
+
 all: chisel-gen $(EXEC)
 	$(info [SUCCESS] Build completed: $(EXEC))
 
-$(EXEC): $(VSRC) $(CSRC) $(NVBOARD_ARCHIVE)
+$(EXEC): $(VSRC) $(CSRC) $(NVBOARD_ARCHIVE) $(TOP_STAMP)
 	$(info [BUILD] Compiling Verilator simulation with $(VSRC))
 	$(VERILATOR) --cc $(VSRC) --exe $(CSRC) \
 		$(INCLUDE_DIRS) \

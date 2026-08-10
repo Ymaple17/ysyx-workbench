@@ -3,6 +3,8 @@ package core
 import chisel3._
 import chisel3.util._
 import unit._
+import common.JUMP_TYPE._
+import core.PerfEvents._
 
 class IDU_EXU_IO extends Bundle{
   val signals = new Bundle{
@@ -69,4 +71,29 @@ class IDU(val conf: CoreConfig) extends Module{
     //mul control
     io.in.ready := io.out.ready
     io.out.valid := io.in.valid
+
+  if(conf.statistics){
+    val sigs = control.io.signals
+    val fire = io.out.valid && io.out.ready
+
+    val is_load = sigs.lsu.mem_valid && !sigs.lsu.mem_write
+    val is_store = sigs.lsu.mem_valid && sigs.lsu.mem_write
+    val is_csr = sigs.wbu.csr_write
+    val jump = sigs.exu.jump
+
+    val is_branch = (jump === JUMP_BEQ || jump === JUMP_BNE || jump === JUMP_BLT || jump === JUMP_BGE || jump === JUMP_BLTU || jump === JUMP_BGEU)
+    val is_jump = (jump === JUMP_JAL || jump === JUMP_JALR)
+
+    val is_other = (jump === JUMP_MERT) || (io.ifu_signals.valid && io.ifu_signals.bits.is_fencei) || (io.out.bits.is_ebreak)
+
+    val is_compute = !is_load && !is_store && !is_csr && !is_branch && !is_jump && !is_other
+
+    PM(conf, clock, EVENT_INST_TYPE_LOAD, 1.U, fire && is_load)
+    PM(conf, clock, EVENT_INST_TYPE_STORE, 1.U, fire && is_store)
+    PM(conf, clock, EVENT_INST_TYPE_CSR, 1.U, fire && is_csr)
+    PM(conf, clock, EVENT_INST_TYPE_BRANCH, 1.U, fire && is_branch)
+    PM(conf, clock, EVENT_INST_TYPE_JUMP, 1.U, fire && is_jump)
+    PM(conf, clock, EVENT_INST_TYPE_OTHER, 1.U, fire && is_other)
+    PM(conf, clock, EVENT_INST_TYPE_COMPUTE, 1.U, fire && is_compute)
+  }
 }

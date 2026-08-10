@@ -10,8 +10,10 @@
 #include "../include/trace.h"
 #include "../include/regs.h"
 #include "../include/memory.h"
+#include "../include/perf.h"
 #include "../../include/generated/autoconf.h"
 #include "../include/difftest.h"
+#include "../monitor/axi_monitor.h"
 
 #define MAX_INST_TO_PRINT 10
 CPU_State cpu;
@@ -25,7 +27,7 @@ extern VerilatedFstC* tfp;
 extern void* tfp;
 #endif
 
-static vluint64_t main_time = 0;
+vluint64_t main_time = 0;
 static bool g_print_step = false;
 
 #define COMMIT_FIFO_DEPTH 64
@@ -53,6 +55,7 @@ static inline word_t commit_pc_pop() {
 }
 
 extern "C" void sim_exit(){
+  print_perf_stats(main_time / 2);
   set_npc_state(NPC_END, read_pc_from_top(), read_gpr_from_top(10));
 }
 
@@ -122,6 +125,10 @@ void init_npc_cpu(){
   main_time++;
   rst_done = true;
 
+#ifdef CONFIG_AXI_MONITOR
+  axi_monitor_init();
+#endif
+
   cpu.pc = 0x80000000;
   cpu_pc = 0x80000000;
 }
@@ -181,7 +188,11 @@ static void execute(uint64_t n) {
       device_update();
     #endif
 
-      bool lsu_valid = top->rootp->ysyx_25020039__DOT__core__DOT___lsu_io_out_valid;
+    #ifdef CONFIG_AXI_MONITOR
+      axi_monitor_check();
+    #endif
+
+      bool lsu_valid = top->io_commit_valid;
       bool reset = top->reset;
 
       if (lsu_valid && !reset && rst_done) {

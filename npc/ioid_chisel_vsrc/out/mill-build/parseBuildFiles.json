@@ -1,0 +1,17 @@
+{
+    "value": {
+        "seenScripts": [
+            [
+                "/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/build.mill",
+                "import mill._\nimport mill.define.Sources\nimport mill.modules.Util\nimport mill.scalalib.TestModule.ScalaTest\nimport scalalib._\n// support BSP\nimport mill.bsp._\n\n// Note: This project requires .mill-jvm-opts file containing:\n//   -Dchisel.project.root=${PWD}\n// This is needed because Chisel needs to know the project root directory\n// to properly generate and handle test directories and output files.\n// See: https://github.com/com-lihaoyi/mill/issues/3840\n\nobject `mychisel` extends SbtModule { m =>\n  override def millSourcePath = super.millSourcePath / os.up\n  override def scalaVersion = \"2.13.16\"\n  override def scalacOptions = Seq(\n    \"-language:reflectiveCalls\",\n    \"-deprecation\",\n    \"-feature\",\n    \"-Xcheckinit\",\n    \"-Ymacro-annotations\",\n  )\n  override def ivyDeps = Agg(\n    ivy\"org.chipsalliance::chisel:7.0.0-RC1\",\n  )\n  override def scalacPluginIvyDeps = Agg(\n    ivy\"org.chipsalliance:::chisel-plugin:7.0.0-RC1\",\n  )\n  object test extends SbtTests with TestModule.ScalaTest {\n    override def ivyDeps = m.ivyDeps() ++ Agg(\n      ivy\"org.scalatest::scalatest::3.2.19\"\n    )\n  }\n}\n"
+            ]
+        ],
+        "repos": [],
+        "ivyDeps": [],
+        "errors": [],
+        "metaBuild": false,
+        "buildFile": "build.mill"
+    },
+    "valueHash": -1645981556,
+    "inputsHash": -1394209499
+}

@@ -2,6 +2,7 @@ package core
 
 import chisel3._
 import chisel3.util._
+import core.PerfEvents._
 
 class IFU_PC_IO extends Bundle{
   val next_pc = Output(UInt(32.W))
@@ -83,4 +84,18 @@ class IFU(val conf: CoreConfig) extends Module{
 
   io.in.ready := io.out.valid && io.out.ready
 
+  if(conf.statistics){
+    PM(conf, clock, EVENT_IFU_FETCH, 1.U, io.imem.arvalid && io.imem.arready)
+    PM(conf, clock, EVENT_IFU_STALL_ICACHE, 1.U, state === s_WAIT && !io.imem.rvalid)
+    PM(conf, clock, EVENT_IFU_STALL_IDU, 1.U, state === s_DATA && !io.out.ready)
+  }
+
+  // ========== AXI Monitor: retained counters (C++ reads them) ==========
+  if (conf.axiMonitor) {
+    val ar_stall_cnt = dontTouch(RegInit(0.U(8.W)))
+    when(io.imem.arvalid && !io.imem.arready) { ar_stall_cnt := ar_stall_cnt + 1.U }.otherwise { ar_stall_cnt := 0.U }
+    val r_stall_cnt  = dontTouch(RegInit(0.U(8.W)))
+    when(state === s_WAIT && !io.imem.rvalid) { r_stall_cnt := r_stall_cnt + 1.U }.otherwise { r_stall_cnt := 0.U }
+  }
 }
+

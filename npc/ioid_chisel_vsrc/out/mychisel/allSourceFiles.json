@@ -1,0 +1,31 @@
+{
+    "value": [
+        "ref:v0:4340e788:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/common/inst.scala",
+        "ref:v0:9a23faa5:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/common/consts.scala",
+        "ref:v0:447c2af7:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/soc.scala",
+        "ref:v0:531c9d50:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/top.scala",
+        "ref:v0:ed5c0752:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/sim/ebreak.scala",
+        "ref:v0:c756660f:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/sim/sram.scala",
+        "ref:v0:8bbd9a63:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/core/ifu.scala",
+        "ref:v0:405bc6fc:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/core/core.scala",
+        "ref:v0:9bf0048d:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/core/lsu.scala",
+        "ref:v0:11189565:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/core/wbu.scala",
+        "ref:v0:ab23741e:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/core/idu.scala",
+        "ref:v0:91df52c9:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/core/refile.scala",
+        "ref:v0:8fe7e39e:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/core/exu.scala",
+        "ref:v0:de1f5799:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/core/csr.scala",
+        "ref:v0:1b782e97:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/bus/xbar.scala",
+        "ref:v0:d642432b:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/bus/uart.scala",
+        "ref:v0:22402da9:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/bus/clint.scala",
+        "ref:v0:345c9519:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/bus/axi.scala",
+        "ref:v0:989fc59c:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/config.scala",
+        "ref:v0:5e041fe8:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/unit/control.scala",
+        "ref:v0:a28d1b9e:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/unit/icache.scala",
+        "ref:v0:9924ba50:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/unit/imm.scala",
+        "ref:v0:45b2dce3:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/unit/alu.scala",
+        "ref:v0:36ada0f6:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/unit/PerfMonitor.scala",
+        "ref:v0:1978bc75:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/scala/unit/pc.scala"
+    ],
+    "valueHash": -1356189569,
+    "inputsHash": 1974063253
+}

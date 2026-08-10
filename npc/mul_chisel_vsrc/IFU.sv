@@ -15,17 +15,19 @@ module IFU(
   input  [31:0] io_imem_rdata
 );
 
+  wire        io_imem_arvalid_0;
   reg  [31:0] pc_reg;
   reg  [31:0] inst_reg;
   reg  [1:0]  state;
-  wire        io_imem_arvalid_0 = state == 2'h0;
+  wire        _next_state_T = io_imem_arvalid_0 & io_imem_arready;
+  assign io_imem_arvalid_0 = state == 2'h0;
   wire        io_imem_rready_0 = state == 2'h1;
   wire        io_out_valid_0 = state == 2'h2;
   reg         first_fetched;
   wire        _io_in_ready_T = io_out_valid_0 & io_out_ready;
   always @(posedge clock) begin
     if (reset) begin
-      pc_reg <= 32'h30000000;
+      pc_reg <= 32'h80000000;
       inst_reg <= 32'h0;
       state <= 2'h0;
       first_fetched <= 1'h0;
@@ -38,12 +40,28 @@ module IFU(
       state <=
         io_out_valid_0
           ? {~_io_in_ready_T, 1'h0}
-          : io_imem_rready_0
-              ? (io_imem_rvalid ? 2'h2 : 2'h1)
-              : {1'h0, io_imem_arvalid_0 & io_imem_arready};
+          : io_imem_rready_0 ? (io_imem_rvalid ? 2'h2 : 2'h1) : {1'h0, _next_state_T};
       first_fetched <= _io_in_ready_T | first_fetched;
     end
   end // always @(posedge)
+  PerfMonitor pm (
+    .clock    (clock),
+    .event_id (32'h0),
+    .data     (64'h1),
+    .enable   (_next_state_T)
+  );
+  PerfMonitor pm_1 (
+    .clock    (clock),
+    .event_id (32'h1),
+    .data     (64'h1),
+    .enable   (io_imem_rready_0 & ~io_imem_rvalid)
+  );
+  PerfMonitor pm_2 (
+    .clock    (clock),
+    .event_id (32'h2),
+    .data     (64'h1),
+    .enable   (io_out_valid_0 & ~io_out_ready)
+  );
   assign io_out_valid = io_out_valid_0;
   assign io_out_bits_inst = inst_reg;
   assign io_out_bits_pc = pc_reg;

@@ -6,6 +6,7 @@ import unit._
 import common.ALU_SRCA._
 import common.ALU_SRCB._
 import common.PC_SEL._
+import core.PerfEvents._
 
 
 class EXU_PC_IO extends Bundle{
@@ -105,4 +106,8 @@ class EXU(val conf: CoreConfig) extends Module{
     io.in.ready := io.out.ready
     io.out.valid := io.in.valid
     io.pc.valid := io.out.valid && io.in.ready
+
+    if(conf.statistics){
+      PM(conf, clock, EVENT_EXU_COMP, 1.U, io.out.valid && io.out.ready)
+    }
 }

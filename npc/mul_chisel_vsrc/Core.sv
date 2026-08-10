@@ -2,25 +2,21 @@
 module Core(
   input         clock,
                 reset,
+  output        io_commit_valid,
   output [31:0] io_imem_araddr,
   output        io_imem_arvalid,
-  output [7:0]  io_imem_arlen,
-  output [2:0]  io_imem_arsize,
-  output [1:0]  io_imem_arburst,
   input         io_imem_arready,
   input  [31:0] io_imem_rdata,
   input         io_imem_rvalid,
   output        io_imem_rready,
   output [31:0] io_dmem_araddr,
   output        io_dmem_arvalid,
-  output [2:0]  io_dmem_arsize,
   input         io_dmem_arready,
   input  [31:0] io_dmem_rdata,
   input         io_dmem_rvalid,
   output        io_dmem_rready,
   output [31:0] io_dmem_awaddr,
   output        io_dmem_awvalid,
-  output [2:0]  io_dmem_awsize,
   input         io_dmem_awready,
   output [31:0] io_dmem_wdata,
   output [3:0]  io_dmem_wstrb,
@@ -147,6 +143,7 @@ module Core(
     .io_imem_rdata      (_icache_io_in_rdata)
   );
   IDU idu (
+    .clock                                 (clock),
     .io_in_ready                           (_idu_io_in_ready),
     .io_in_valid                           (_ifu_io_out_valid),
     .io_in_bits_inst                       (_ifu_io_out_bits_inst),
@@ -185,6 +182,7 @@ module Core(
     .io_csr_rdata                          (_csr_io_read_rdata)
   );
   EXU exu (
+    .clock                                 (clock),
     .io_in_ready                           (_exu_io_in_ready),
     .io_in_valid                           (_idu_io_out_valid),
     .io_in_bits_signals_exu_alu_srcA       (_idu_io_out_bits_signals_exu_alu_srcA),
@@ -277,14 +275,12 @@ module Core(
     .io_out_bits_csr_waddr                 (_lsu_io_out_bits_csr_waddr),
     .io_dmem_araddr                        (io_dmem_araddr),
     .io_dmem_arvalid                       (io_dmem_arvalid),
-    .io_dmem_arsize                        (io_dmem_arsize),
     .io_dmem_arready                       (io_dmem_arready),
     .io_dmem_rdata                         (io_dmem_rdata),
     .io_dmem_rvalid                        (io_dmem_rvalid),
     .io_dmem_rready                        (io_dmem_rready),
     .io_dmem_awaddr                        (io_dmem_awaddr),
     .io_dmem_awvalid                       (io_dmem_awvalid),
-    .io_dmem_awsize                        (io_dmem_awsize),
     .io_dmem_awready                       (io_dmem_awready),
     .io_dmem_wdata                         (io_dmem_wdata),
     .io_dmem_wstrb                         (io_dmem_wstrb),
@@ -350,9 +346,6 @@ module Core(
     .io_in_rdata              (_icache_io_in_rdata),
     .io_out_araddr            (io_imem_araddr),
     .io_out_arvalid           (io_imem_arvalid),
-    .io_out_arlen             (io_imem_arlen),
-    .io_out_arsize            (io_imem_arsize),
-    .io_out_arburst           (io_imem_arburst),
     .io_out_arready           (io_imem_arready),
     .io_out_rdata             (io_imem_rdata),
     .io_out_rvalid            (io_imem_rvalid),
@@ -360,5 +353,6 @@ module Core(
     .io_fencei_valid          (_idu_io_ifu_signals_valid),
     .io_fencei_bits_is_fencei (_idu_io_ifu_signals_bits_is_fencei)
   );
+  assign io_commit_valid = _lsu_io_out_valid;
 endmodule
 

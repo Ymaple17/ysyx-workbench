@@ -1,0 +1,8 @@
+{
+    "value": [
+        0,
+        "Multiple main classes found (TopMain,TopMainSoC) please explicitly specify which one to use by overriding `mainClass` or using `runMain <main-class> <...args>` instead of `run`"
+    ],
+    "valueHash": 1518694300,
+    "inputsHash": -270218778
+}

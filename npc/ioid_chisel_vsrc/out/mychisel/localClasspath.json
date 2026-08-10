@@ -1,0 +1,9 @@
+{
+    "value": [
+        "ref:v0:c984eca8:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/compile-resources",
+        "ref:v0:c984eca8:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/src/main/resources",
+        "ref:v0:a3fa2c40:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/out/mychisel/compile.dest/classes"
+    ],
+    "valueHash": 1274354558,
+    "inputsHash": 1198180811
+}

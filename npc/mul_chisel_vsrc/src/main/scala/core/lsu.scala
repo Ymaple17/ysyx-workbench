@@ -6,6 +6,7 @@ import common.MEM_READ._
 import common.MEM_WMASK._
 import unit.WBU_signals
 import bus._
+import core.PerfEvents._
 
 class LSU_WBU_IO extends Bundle{
   val signals = new Bundle{
@@ -154,4 +155,18 @@ class LSU(val conf: CoreConfig) extends Module{
 
   io.in.ready := io.out.ready && ready
   io.out.valid := io.in.valid && ready
+
+  if(conf.statistics){
+    PM(conf, clock, EVENT_LSU_READ, 1.U, io.dmem.arvalid && io.dmem.arready)
+    PM(conf, clock, EVENT_LSU_WRITE, 1.U, io.dmem.awvalid && io.dmem.awready)
+    PM(conf, clock, EVENT_LSU_LATENCY, 1.U, state === s_WAIT)
+  }
+
+  // ========== AXI Monitor: counters read by C++ monitor ==========
+  if (conf.axiMonitor) {
+    val r_stall = dontTouch(RegInit(0.U(8.W)))
+    when(state === s_WAIT && is_load && !io.dmem.rvalid)  { r_stall := r_stall + 1.U }.otherwise { r_stall := 0.U }
+    val b_stall = dontTouch(RegInit(0.U(8.W)))
+    when(state === s_WAIT && is_store && !io.dmem.bvalid) { b_stall := b_stall + 1.U }.otherwise { b_stall := 0.U }
+  }
 }

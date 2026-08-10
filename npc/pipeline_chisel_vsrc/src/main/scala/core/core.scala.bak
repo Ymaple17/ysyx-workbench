@@ -1,0 +1,110 @@
+package core
+
+import chisel3._
+import chisel3.util._
+import bus._
+import REG_WRITE_SEL._
+import JUMP._
+import PC_SEL._
+
+class Core_IO(val conf :CoreConfig) extends Bundle{
+  val imem = new AXI4Master
+  val dmem = new AXI4Master
+  val ebreak = if(!conf.useDPIC) Some(Output(Bool())) else None
+}
+
+class Core(val conf :CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_Core"
+
+    val io = IO(new Core_IO(conf))
+    val ifu = Module(new IFU(conf))
+    val idu = Module(new IDU(conf))
+    val exu = Module(new EXU(conf))
+    val lsu = Module(new LSU(conf))
+    val wbu = Module(new WBU(conf))
+    val icache = Module(new ICache(4,1,8,conf))
+    val refile = Module(new Refile(conf))
+    val csr = Module(new CSR(conf))
+
+    if (!conf.useDPIC) io.ebreak.get := wbu.io.ebreak.get
+
+    // 级间流水寄存器
+    def StageConnect[T <: Data](prev: DecoupledIO[T], next: DecoupledIO[T], flush: Bool): Unit = {
+      prev.ready := next.ready
+      next.bits  := RegEnable(prev.bits, 0.U.asTypeOf(prev.bits), prev.valid && next.ready)
+      next.valid := RegEnable(prev.valid, false.B, next.ready) && !flush
+    }
+    val resetPC = if(conf.ysyxsoc){ "h3000_0000".U(32.W) }else if(conf.npc){ "h8000_0000".U(32.W)} else { "h0000_0000".U(32.W) }
+    ifu.io.pc.ready := ifu.io.in.ready
+    ifu.io.in.bits := RegEnable(ifu.io.pc.bits, resetPC.asTypeOf(new IFUPC_IO), ifu.io.pc.valid && ifu.io.in.ready)
+    ifu.io.in.valid := RegEnable(ifu.io.pc.valid, false.B, ifu.io.in.ready)
+    StageConnect(ifu.io.out, idu.io.in, idu.io.is_flush)
+    StageConnect(idu.io.out, exu.io.in, exu.io.is_flush)
+    StageConnect(exu.io.out, lsu.io.in, lsu.io.is_flush)
+    StageConnect(lsu.io.out, wbu.io.in, wbu.io.is_flush)
+
+    // 数据冒险：前递（最年轻优先）+ load 未回数时停顿
+    def wbData(sig: WBU_signals, alu: UInt, imm: UInt, pc4: UInt, csr: UInt, mem: UInt): UInt =
+      MuxLookup(sig.reg_write_sel, 0.U)(Seq(
+        ALU_SEL -> alu, IMM_SEL -> imm, PC4_SEL -> pc4, CSR_DATA -> csr, MEM_SEL -> mem))
+
+    val exu_wen = exu.io.in.valid && exu.io.in.bits.signals.wbu.reg_write
+    val lsu_wen = lsu.io.in.valid && lsu.io.in.bits.signals.wbu.reg_write
+    val wbu_wen = wbu.io.in.valid && wbu.io.in.bits.signals.wbu.reg_write
+    val exu_is_load = exu.io.in.bits.signals.wbu.reg_write_sel === MEM_SEL
+    val lsu_is_load = lsu.io.in.bits.signals.wbu.reg_write_sel === MEM_SEL
+    val exu_wdata = wbData(exu.io.in.bits.signals.wbu, exu.io.out.bits.alu_result, exu.io.out.bits.imm_ext, exu.io.out.bits.pc + 4.U, exu.io.out.bits.csr_rd1, 0.U)
+    val lsu_wdata = wbData(lsu.io.in.bits.signals.wbu, lsu.io.out.bits.alu_result, lsu.io.out.bits.imm_ext, lsu.io.out.bits.pc + 4.U, lsu.io.out.bits.csr_rd1, lsu.io.out.bits.mem_read)
+
+    def rsFwd(rs: UInt, ren: Bool, fallback: UInt): UInt = {
+      val hit_wbu = wbu_wen && ren && rs =/= 0.U && rs === wbu.io.in.bits.waddr
+      val hit_lsu = lsu_wen && ren && rs =/= 0.U && rs === lsu.io.in.bits.waddr
+      val hit_exu = exu_wen && ren && rs =/= 0.U && rs === exu.io.in.bits.waddr && !exu_is_load
+      MuxCase(fallback, Seq(hit_wbu -> wbu.io.refile.wdata, hit_lsu -> lsu_wdata, hit_exu -> exu_wdata))
+    }
+    def rsStall(rs: UInt, ren: Bool): Bool = {
+      val hit_wbu = wbu_wen && ren && rs =/= 0.U && rs === wbu.io.in.bits.waddr
+      val hit_lsu = lsu_wen && ren && rs =/= 0.U && rs === lsu.io.in.bits.waddr && !hit_wbu
+      val hit_exu = exu_wen && ren && rs =/= 0.U && rs === exu.io.in.bits.waddr && !hit_wbu && !hit_lsu
+      (hit_lsu && lsu_is_load && !lsu.io.dmem.rvalid) || (hit_exu && exu_is_load)
+    }
+    idu.io.is_stall := rsStall(idu.io.refile.raddr1, idu.io.rs1_ren) || rsStall(idu.io.refile.raddr2, idu.io.rs2_ren)
+    exu.io.in.bits.rd1 := RegEnable(rsFwd(idu.io.refile.raddr1, idu.io.rs1_ren, idu.io.out.bits.rd1), 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
+    exu.io.in.bits.rd2 := RegEnable(rsFwd(idu.io.refile.raddr2, idu.io.rs2_ren, idu.io.out.bits.rd2), 0.U(32.W), idu.io.out.valid && exu.io.in.ready)
+
+    // 异常：WBU 直接提交，同拍生效
+    val is_irq = wbu.io.in.valid && wbu.io.in.bits.state.state
+    csr.io.irq := is_irq
+    csr.io.irq_no := wbu.io.in.bits.state.state_num
+    csr.io.irq_pc := wbu.io.in.bits.pc
+
+    // 分支/冲刷
+    val pc_src = exu.io.pc.bits.pc_src
+    val correct_pc = MuxLookup(pc_src, exu.io.pc.bits.pc4)(Seq(
+        PC_PLUS4 -> exu.io.pc.bits.pc4,
+        PC_IMM  -> exu.io.pc.bits.pc4_imm,
+        PC_RS2  -> exu.io.pc.bits.pc4_rs2,
+        MEPC -> csr.io.read.mepc
+    ))
+    val is_jump = exu.io.in.bits.signals.exu.jump =/= JUMP_NONE && exu.io.pc.valid
+    val is_ch = is_jump && pc_src =/= PC_PLUS4
+    val is_ch_r = RegNext(is_ch, false.B)
+    val is_fencei = RegNext(icache.io.fencei.valid & icache.io.fencei.ready, false.B)
+    ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(is_ch_r, RegNext(correct_pc, 0.U), Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
+    ifu.io.is_flush := is_ch_r || is_irq || is_fencei
+    idu.io.is_flush := is_ch_r || is_irq
+    exu.io.is_flush := is_ch_r || is_irq
+    lsu.io.is_flush := is_irq
+    wbu.io.is_flush := is_irq
+    exu.io.pc.ready := true.B
+
+    // 直连
+    ifu.io.imem <> icache.io.in
+    icache.io.out <> io.imem
+    icache.io.fencei <> idu.io.ifu_signals
+    idu.io.refile :<>= refile.io.read
+    idu.io.csr :<>= csr.io.read
+    lsu.io.dmem <> io.dmem
+    wbu.io.refile :<>= refile.io.write
+    wbu.io.csr :<>= csr.io.write
+}

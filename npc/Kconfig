@@ -13,6 +13,9 @@ config CHISEL_MUL
 config PIPELINE_CHISEL
     bool "Enable Pipeline Chisel implementation"
 
+config IOID_CHISEL
+    bool "Enable IOID Chisel implementation"
+
 config CHISEL_RISCV32E
     bool "Enable Chisel riscv32e implementation"
 
@@ -67,6 +70,19 @@ if PIPELINE_CHISEL
     endchoice
 endif
 
+if IOID_CHISEL
+    choice
+        prompt "IOID Chisel Run Mode"
+        default IOID_CHISEL_NPC
+
+        config IOID_CHISEL_SOC
+            bool "SOC Mode"
+
+        config IOID_CHISEL_NPC
+            bool "NPC Mode"
+    endchoice
+endif
+
 
 config BATCH_MODE
     bool "Enable Batch Execution (Disable Stepping)"
@@ -98,6 +114,13 @@ config TRACE_DIFF
 
 
 
+
+config AXI_MONITOR
+    bool "Enable AXI protocol monitor"
+    default n
+    help
+      Enable real-time AXI protocol monitoring and stall detection.
+      Reports protocol violations with module and signal names.
 
 config MTRACE
     bool "Enable memory tracing"

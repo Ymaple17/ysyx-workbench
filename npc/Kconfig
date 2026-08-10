@@ -2,73 +2,12 @@ mainmenu "NPC Configuration"
 
 choice
     prompt "Architecture Selection"
-    default MUL
-
-config MUL
-    bool "Enable riscv32_mul implementation"
-
-config CHISEL_MUL
-    bool "Enable Chisel riscv32_mul implementation"
-
-config PIPELINE_CHISEL
-    bool "Enable Pipeline Chisel implementation"
+    default IOID_CHISEL
 
 config IOID_CHISEL
     bool "Enable IOID Chisel implementation"
 
-config CHISEL_RISCV32E
-    bool "Enable Chisel riscv32e implementation"
-
-config PIPELINE_SOC
-    bool "Enable pipeline_soc implementation"
-
-config SINGLE
-    bool "Enable riscv32e_vsrc implementation"
-
-config MINIRV
-    bool "Enable Mini-RV32I"
-
 endchoice
-
-
-if MUL
-    choice
-        prompt "Mul Run Mode"
-        default MUL_SOC
-
-        config MUL_SOC
-            bool "SOC Mode"
-
-        config MUL_NPC
-            bool "NPC Mode"
-    endchoice
-endif
-
-if CHISEL_MUL
-    choice
-        prompt "Mul Chisel Run Mode"
-        default MUL_CHISEL_SOC
-
-        config MUL_CHISEL_SOC
-            bool "SOC Mode"
-
-        config MUL_CHISEL_NPC
-            bool "NPC Mode"
-    endchoice
-endif
-
-if PIPELINE_CHISEL
-    choice
-        prompt "Pipeline Chisel Run Mode"
-        default PIPELINE_CHISEL_SOC
-
-        config PIPELINE_CHISEL_SOC
-            bool "SOC Mode"
-
-        config PIPELINE_CHISEL_NPC
-            bool "NPC Mode"
-    endchoice
-endif
 
 if IOID_CHISEL
     choice
@@ -82,7 +21,6 @@ if IOID_CHISEL
             bool "NPC Mode"
     endchoice
 endif
-
 
 config BATCH_MODE
     bool "Enable Batch Execution (Disable Stepping)"
@@ -106,22 +44,6 @@ config ITRACE
     help
       Enable real-time tracing of executed instructions.
 
-config TRACE_DIFF
-    bool "Enable Trace Diff"
-    default n
-    help
-      Enable trace difference comparison for debugging.
-
-
-
-
-config AXI_MONITOR
-    bool "Enable AXI protocol monitor"
-    default n
-    help
-      Enable real-time AXI protocol monitoring and stall detection.
-      Reports protocol violations with module and signal names.
-
 config MTRACE
     bool "Enable memory tracing"
     default n
@@ -130,4 +52,3 @@ config MTRACE
 config DEVICE
     tristate "Enable device support"
     default y
-    

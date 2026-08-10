@@ -13,7 +13,6 @@
 #include "../include/perf.h"
 #include "../../include/generated/autoconf.h"
 #include "../include/difftest.h"
-#include "../monitor/axi_monitor.h"
 
 #define MAX_INST_TO_PRINT 10
 CPU_State cpu;
@@ -102,10 +101,6 @@ void init_npc_cpu(){
   main_time++;
   rst_done = true;
 
-#ifdef CONFIG_AXI_MONITOR
-  axi_monitor_init();
-#endif
-
   cpu.pc = 0x80000000;
   cpu_pc = 0x80000000;
 }
@@ -153,10 +148,6 @@ static void execute(uint64_t n) {
       exec_once();
     #ifdef CONFIG_DEVICE
       device_update();
-    #endif
-
-    #ifdef CONFIG_AXI_MONITOR
-      axi_monitor_check();
     #endif
 
       bool wbu_valid = top->rootp->ysyx_25020039__DOT__core__DOT__wbu_io_in_valid;

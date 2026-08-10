@@ -1,4 +1,3 @@
-
 # -----------------------------------------------------------------------
 # Library Generation (Compiling NPC as a .so for difftest)
 # -----------------------------------------------------------------------
@@ -6,11 +5,7 @@
 # Sources for the shared object: Exclude DUT-specific files
 CSRC_LIB = $(filter-out %/sim_cpu.cpp %/sim_main.cpp %/trace_diff.cpp %/difftest.cpp %/ref.cpp, $(CSRC)) 
 # Add the reference wrapper
-ifeq ($(CONFIG_MUL_CHISEL_SOC_VAL),y)
-CSRC_LIB += $(CHISEL_WORK_DIR)/../mul_chisel_soc_csrc/difftest/ref_so.cpp
-else ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
-CSRC_LIB += $(CHISEL_WORK_DIR)/../pipeline_chisel_soc_csrc/difftest/ref_so.cpp
-endif
+CSRC_LIB += $(CHISEL_WORK_DIR)/../ioid_chisel_soc_csrc/difftest/ref_so.cpp
 
 NPC_SO = $(BUILD_DIR)/npc-ref.so
 

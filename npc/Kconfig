@@ -2,22 +2,22 @@ mainmenu "NPC Configuration"
 
 choice
     prompt "Architecture Selection"
-    default IOID_CHISEL
+    default PIPELINE_CHISEL
 
-config IOID_CHISEL
-    bool "Enable IOID Chisel implementation"
+config PIPELINE_CHISEL
+    bool "Enable Pipeline Chisel implementation"
 
 endchoice
 
-if IOID_CHISEL
+if PIPELINE_CHISEL
     choice
-        prompt "IOID Chisel Run Mode"
-        default IOID_CHISEL_NPC
+        prompt "Pipeline Chisel Run Mode"
+        default PIPELINE_CHISEL_NPC
 
-        config IOID_CHISEL_SOC
+        config PIPELINE_CHISEL_SOC
             bool "SOC Mode"
 
-        config IOID_CHISEL_NPC
+        config PIPELINE_CHISEL_NPC
             bool "NPC Mode"
     endchoice
 endif

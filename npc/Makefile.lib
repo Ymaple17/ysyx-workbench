@@ -5,7 +5,7 @@
 # Sources for the shared object: Exclude DUT-specific files
 CSRC_LIB = $(filter-out %/sim_cpu.cpp %/sim_main.cpp %/trace_diff.cpp %/difftest.cpp %/ref.cpp, $(CSRC)) 
 # Add the reference wrapper
-CSRC_LIB += $(CHISEL_WORK_DIR)/../ioid_chisel_soc_csrc/difftest/ref_so.cpp
+CSRC_LIB += $(CHISEL_WORK_DIR)/../pipeline_chisel_soc_csrc/difftest/ref_so.cpp
 
 NPC_SO = $(BUILD_DIR)/npc-ref.so
 

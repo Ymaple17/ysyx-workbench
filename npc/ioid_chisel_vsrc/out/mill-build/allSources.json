@@ -1,8 +1,0 @@
-{
-    "value": [
-        "ref:v0:b6ec3cda:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/build.mill",
-        "ref:v0:d278e56e:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/out/mill-build/generateScriptSources.dest"
-    ],
-    "valueHash": -1353711385,
-    "inputsHash": 92047492
-}

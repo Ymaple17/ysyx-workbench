@@ -16,3 +16,4 @@ npc/obj_dir
 /fceux-am
 /nvboard
 /am-kernels
+!/patch/**/*

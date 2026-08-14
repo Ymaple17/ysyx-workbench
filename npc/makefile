@@ -20,6 +20,11 @@ VSRC_CACHE_NETLIST = $(VSRC_CACHE_NPC_DIR)/ysyx_25020039.netlist.syn.v
 CSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_csrc -name "*.cpp" -o -name "*.c")
 CSRC_PIPELINE_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find pipeline_chisel_soc_csrc -name "*.cpp" -o -name "*.c"))
 
+ifndef CONFIG_ITRACE
+CSRC_PIPELINE_CHISEL := $(filter-out %/disasm.cpp %/itrace.cpp, $(CSRC_PIPELINE_CHISEL))
+CSRC_PIPELINE_CHISEL_SOC := $(filter-out %/disasm.cpp %/itrace.cpp, $(CSRC_PIPELINE_CHISEL_SOC))
+endif
+
 CONFIG_PIPELINE_CHISEL_VAL := $(shell grep -w CONFIG_PIPELINE_CHISEL .config | cut -d'=' -f2)
 CONFIG_PIPELINE_CHISEL_SOC_VAL := $(shell grep -w CONFIG_PIPELINE_CHISEL_SOC .config | cut -d'=' -f2)
 CONFIG_PIPELINE_CHISEL_NPC_VAL := $(shell grep -w CONFIG_PIPELINE_CHISEL_NPC .config | cut -d'=' -f2)

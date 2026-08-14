@@ -39,6 +39,7 @@ class LSU_IO (xlen: Int) extends Bundle{
 }
 
 class LSU(val conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_LSU"
 
   val io = IO(new LSU_IO(conf.xlen))
 

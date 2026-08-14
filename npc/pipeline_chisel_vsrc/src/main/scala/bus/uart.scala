@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 
 class Sim_Uart extends BlackBox with HasBlackBoxInline {
+    override def desiredName = "ysyx_25020039_Sim_Uart"
     val io = IO(new Bundle {
         val clk   = Input(Clock())
         val wen   = Input(Bool())
@@ -11,9 +12,9 @@ class Sim_Uart extends BlackBox with HasBlackBoxInline {
         val wdata = Input(UInt(8.W))
     })
 
-    setInline("Sim_Uart.v",
+    setInline("ysyx_25020039_Sim_Uart.v",
         """
-        |module Sim_Uart(
+        |module ysyx_25020039_Sim_Uart(
         |    input clk,
         |    input wen,
         |    input [31:0] waddr,
@@ -30,6 +31,7 @@ class Sim_Uart extends BlackBox with HasBlackBoxInline {
 }
 
 class UART extends Module{
+    override def desiredName = "ysyx_25020039_UART"
     val io = IO(new AXI4Slave)
     io.setDefaults()
 

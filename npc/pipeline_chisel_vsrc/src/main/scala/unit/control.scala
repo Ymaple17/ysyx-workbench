@@ -143,6 +143,7 @@ class Control_IO extends Bundle{
 }
 
 class Control extends Module{
+    override def desiredName = "ysyx_25020039_Control"
 
     val io = IO(new Control_IO)
 

@@ -5,6 +5,7 @@ import chisel3.util._
 import core._
 
 class Clint(coreConfig: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_Clint"
 
     val io = IO(new AXI4Slave)
     io.setDefaults()

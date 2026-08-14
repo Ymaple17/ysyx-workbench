@@ -22,6 +22,7 @@ class State extends Bundle{
 }
 
 class Core(val conf: CoreConfig) extends Module {
+    override def desiredName = "ysyx_25020039_Core"
   val io = IO(new Core_IO(conf))
 
   val ifu = Module(new IFU(conf))

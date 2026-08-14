@@ -51,6 +51,7 @@ class JUMP_PC_IO extends Bundle{
 }
 
 class EXU(val conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_EXU"
 
     val io = IO(new EXU_IO)
 

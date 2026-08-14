@@ -12,6 +12,7 @@ class IMM_IO extends Bundle{
 
 
 class IMM extends Module{
+    override def desiredName = "ysyx_25020039_IMM"
     val io = IO(new IMM_IO)
 
     val imm_I = io.inst(31, 20).asSInt

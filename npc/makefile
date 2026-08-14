@@ -8,9 +8,17 @@ endif
 include .config
 include Makefile.diff
 
-VSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
-CSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_csrc -name "*.cpp" -o -name "*.c")#pipeline_chisel
-CSRC_PIPELINE_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find pipeline_chisel_soc_csrc -name "*.cpp" -o -name "*.c"))#pipeline_chisel_soc
+CHISEL_WORK_DIR := pipeline_chisel_vsrc
+
+VSRC_CACHE_DIR     = vsrc
+VSRC_CACHE_NPC_DIR = $(VSRC_CACHE_DIR)/npc
+VSRC_CACHE_SOC_DIR = $(VSRC_CACHE_DIR)/soc
+VSRC_CACHE_NPC     = $(VSRC_CACHE_NPC_DIR)/ysyx_25020039.sv
+VSRC_CACHE_SOC     = $(VSRC_CACHE_SOC_DIR)/ysyx_25020039.sv
+VSRC_CACHE_NETLIST = $(VSRC_CACHE_NPC_DIR)/ysyx_25020039.netlist.syn.v
+
+CSRC_PIPELINE_CHISEL = $(shell find pipeline_chisel_csrc -name "*.cpp" -o -name "*.c")
+CSRC_PIPELINE_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find pipeline_chisel_soc_csrc -name "*.cpp" -o -name "*.c"))
 
 CONFIG_PIPELINE_CHISEL_VAL := $(shell grep -w CONFIG_PIPELINE_CHISEL .config | cut -d'=' -f2)
 CONFIG_PIPELINE_CHISEL_SOC_VAL := $(shell grep -w CONFIG_PIPELINE_CHISEL_SOC .config | cut -d'=' -f2)
@@ -24,25 +32,21 @@ VERILATOR_FLAGS =
 
 ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
   ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
-    VSRC = $(VSRC_PIPELINE_CHISEL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
+    VSRC = $(shell find $(VSRC_CACHE_SOC_DIR) -name "*.v" -o -name "*.sv" 2>/dev/null) \
+           $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
     CSRC = $(CSRC_PIPELINE_CHISEL_SOC)
-    CHISEL_WORK_DIR := pipeline_chisel_vsrc
     CHISEL_BUILD_TOOL := mill
-#     CHISEL_BUILD_TOOL := none
     CHISEL_MAIN := TopMainSoC
     TOP_MODULE = ysyxSoCFull
     VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
     CFLAGS += -std=c++17
     $(info [INFO] Using pipeline_chisel SOC Mode)
   else
-    VSRC = $(VSRC_PIPELINE_CHISEL)
+    VSRC = $(shell find $(VSRC_CACHE_NPC_DIR) -name "*.v" -o -name "*.sv" 2>/dev/null)
     CSRC = $(CSRC_PIPELINE_CHISEL)
-    CHISEL_WORK_DIR := pipeline_chisel_vsrc
     CHISEL_BUILD_TOOL := mill
     CHISEL_MAIN := TopMain
-#   CHISEL_BUILD_TOOL := none
     TOP_MODULE = ysyx_25020039
-    CHISEL_ENV := USE_DPIC=true
     $(info [INFO] Using pipeline_chisel NPC Mode)
   endif
 endif
@@ -64,12 +68,12 @@ endif
 V_INCLUDE_DIRS =
 
 ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
-  V_INCLUDE_DIRS += -Ipipeline_chisel_vsrc \
+  V_INCLUDE_DIRS += -I$(VSRC_CACHE_SOC_DIR) \
                     -I../ortl \
                     -I../ysyxSoC/perip/uart16550/rtl \
                     -I../ysyxSoC/perip/spi/rtl
 else ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
-  V_INCLUDE_DIRS += -Ipipeline_chisel_vsrc
+  V_INCLUDE_DIRS += -I$(VSRC_CACHE_NPC_DIR)
 endif
 
 INCLUDE_DIRS = $(C_INCLUDE_DIRS) $(V_INCLUDE_DIRS)
@@ -138,39 +142,28 @@ else
   $(info [INFO] CONFIG_ITRACE is disabled)
 endif
 
-chisel-gen:
-ifdef CHISEL_WORK_DIR
-	$(info [CHISEL] Check build tool: $(CHISEL_BUILD_TOOL))
-	cd $(CHISEL_WORK_DIR) && \
-	if [ "$(CHISEL_BUILD_TOOL)" = "mill" ]; then \
-	    $(CHISEL_ENV) ./mill -i mychisel.runMain $(CHISEL_MAIN); \
-	elif [ "$(CHISEL_BUILD_TOOL)" = "sbt" ]; then \
-	    $(CHISEL_ENV) sbt run; \
-	else \
-	    $(info [CHISEL]  pipeline_chisel: skip all build commands, SV/Verilog files are ready!) \
-	    true; \
-	fi
-else
-	$(info [CHISEL] Not a Chisel configuration, skip SV generation)
-endif
+# -----------------------------------------------------------------------
+# Local RTL regeneration (requires mill; NOT needed by CI)
+#   make npc   -> regenerate NPC-mode RTL into vsrc/npc  (PC reset 0x80000000)
+#   make soc   -> regenerate SoC-mode RTL into vsrc/soc  (PC reset 0x30000000)
+# -----------------------------------------------------------------------
 
-CHISEL_MAIN ?= TopMain
+npc:
+	@mkdir -p $(VSRC_CACHE_NPC_DIR)
+	cd $(CHISEL_WORK_DIR) && USE_DPIC=false ./mill -i mychisel.runMain TopMain
+	@cp $(CHISEL_WORK_DIR)/ysyx_25020039.sv $(VSRC_CACHE_NPC_DIR)/
+	@echo "[INFO] NPC-mode RTL updated: $(VSRC_CACHE_NPC)"
+
+soc:
+	@mkdir -p $(VSRC_CACHE_SOC_DIR)
+	cd $(CHISEL_WORK_DIR) && USE_DPIC=true ./mill -i mychisel.runMain TopMainSoC
+	@cp $(CHISEL_WORK_DIR)/ysyx_25020039.sv $(VSRC_CACHE_SOC_DIR)/
+	@echo "[INFO] SoC-mode RTL updated: $(VSRC_CACHE_SOC)"
+
+chisel-gen: soc
 
 chisel-clean:
-ifdef CHISEL_WORK_DIR
-	$(info [CHISEL] Check build tool: $(CHISEL_BUILD_TOOL))
-	cd $(CHISEL_WORK_DIR) && \
-	if [ "$(CHISEL_BUILD_TOOL)" = "mill" ]; then \
-	    mill -i clean; \
-	elif [ "$(CHISEL_BUILD_TOOL)" = "sbt" ]; then \
-	    sbt clean; \
-	else \
-	    $(info [CHISEL]  pipeline_chisel: skip clean commands, no build artifacts to clean!) \
-	    true; \
-	fi
-else
-	$(info [CHISEL] Not a Chisel configuration, skip Chisel clean)
-endif
+	cd $(CHISEL_WORK_DIR) && ./mill -i clean
 
 $(shell mkdir -p $(BUILD_DIR) $(OBJ_DIR))
 
@@ -181,7 +174,7 @@ $(TOP_STAMP): .config
 	@mkdir -p $(OBJ_DIR)
 	@echo "$(TOP_MODULE) $(CONFIG_HASH)" > $@
 
-all: chisel-gen $(EXEC)
+all: $(EXEC)
 	$(info [SUCCESS] Build completed: $(EXEC))
 
 $(EXEC): $(VSRC) $(CSRC) $(NVBOARD_ARCHIVE) $(TOP_STAMP)
@@ -208,17 +201,16 @@ $(PROGRAM):
 		echo "[INFO] Created empty program: $@"; \
 	fi
 
-clean: chisel-clean
+clean:
 	$(info [CLEAN] Removing build artifacts...)
-	rm -rf $(OBJ_DIR) $(VSRC_CACHE_DIR) $(BUILD_DIR)/iverilog
+	rm -rf $(OBJ_DIR) $(BUILD_DIR)/iverilog
 ifdef CONFIG_WAVEFORM
 	rm -f $(CONFIG_WAVEFORM_FILE)
 endif
 
 sta:
-	$(MAKE) chisel-gen
 	rm -rf ../yosys-sta/result/ysyx_25020039-500MHz
-	$(MAKE) -C ../yosys-sta sta DESIGN=ysyx_25020039 RTL_FILES="$(abspath $(filter-out %/SRAM.sv %/DPI_Mem.v, $(VSRC_PIPELINE_CHISEL)))"
+	$(MAKE) -C ../yosys-sta sta DESIGN=ysyx_25020039 RTL_FILES="$(abspath $(VSRC_CACHE_SOC))"
 	cat ../yosys-sta/result/ysyx_25020039-500MHz/synth_stat.txt
 
 #IMG ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.elf
@@ -236,12 +228,12 @@ build-microbench:
 	@echo "[BUILD] Building microbench with ARCH=riscv32e-npc mainargs=$(mainargs)..."
 	@$(MAKE) -C $(MICROBENCH_DIR) ARCH=riscv32e-npc mainargs=$(mainargs) insert-arg
 
-iverilog: chisel-gen build-microbench
+iverilog: build-microbench
 	@echo "[BUILD] Compiling with Icarus Verilog..."
 	@mkdir -p $(OBJ_DIR)
 	@echo "[INFO] Converting $(IMG_BIN) to mem.hex (byte-wise)..."
 	@hexdump -v -e '1/1 "%02x\n"' $(IMG_BIN) > mem.hex
-	iverilog -g2012 -D__ICARUS__ -D MAINARGS=\"$(mainargs)\" -o $(OBJ_DIR)/sim.vvp tb_top.sv $(VSRC_PIPELINE_CHISEL)
+	iverilog -g2012 -D__ICARUS__ -D MAINARGS=\"$(mainargs)\" -o $(OBJ_DIR)/sim.vvp tb_top.sv $(VSRC_CACHE_NPC)
 	@echo "[RUN] Running simulation with mainargs=$(mainargs)..."
 	vvp $(OBJ_DIR)/sim.vvp $(mainargs)
 
@@ -250,14 +242,10 @@ iverilog: chisel-gen build-microbench
 #   make verilog                    -> build/ysyx_25020039.sv (PC reset 0x30000000)
 #   make sim-iverilog IMG=xxx       -> iverilog sim, program at 0x80000000
 #   make sim-iverilog-netlist IMG=xxx NETLIST=yyy CELLS=zzz
+#
+# NOTE: CI has no mill/sbt. The RTL in vsrc/npc and vsrc/soc is committed
+# and used directly; regenerate it locally with 'make npc' / 'make soc'.
 # -----------------------------------------------------------------------
-
-VSRC_CACHE_DIR     = vsrc
-VSRC_CACHE_NPC_DIR = $(VSRC_CACHE_DIR)/npc
-VSRC_CACHE_SOC_DIR = $(VSRC_CACHE_DIR)/soc
-VSRC_CACHE_NPC     = $(VSRC_CACHE_NPC_DIR)/ysyx_25020039.sv
-VSRC_CACHE_SOC     = $(VSRC_CACHE_SOC_DIR)/ysyx_25020039.sv
-VSRC_CACHE_NETLIST = $(VSRC_CACHE_NPC_DIR)/ysyx_25020039.netlist.syn.v
 
 VERILOG_OUT = $(BUILD_DIR)/ysyx_25020039.sv
 
@@ -269,42 +257,30 @@ CELLS ?= ../yosys-sta/nangate45/sim/cells.v
 NETLIST ?= $(VSRC_CACHE_NETLIST)
 IMG   ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 
-$(shell mkdir -p $(BUILD_DIR) $(VSRC_CACHE_NPC_DIR) $(VSRC_CACHE_SOC_DIR) $(BUILD_DIR)/iverilog)
-
-CHISEL_SRCS = $(shell find $(CHISEL_WORK_DIR)/src -name "*.scala") $(CHISEL_WORK_DIR)/build.mill
-
-# NPC-mode RTL generation (PC reset = 0x80000000)
-$(VSRC_CACHE_NPC): $(CHISEL_SRCS)
-	@mkdir -p $(VSRC_CACHE_NPC_DIR)
-	cd $(CHISEL_WORK_DIR) && USE_DPIC=false ./mill -i mychisel.runMain TopMain
-	@cp $(CHISEL_WORK_DIR)/*.sv $(VSRC_CACHE_NPC_DIR)/
-	@cp $(CHISEL_WORK_DIR)/*.v $(VSRC_CACHE_NPC_DIR)/
-	@echo "[INFO] NPC-mode RTL cached in $(VSRC_CACHE_NPC_DIR)"
-
-# SoC-mode RTL generation (PC reset = 0x30000000)
-$(VSRC_CACHE_SOC): $(CHISEL_SRCS)
-	@mkdir -p $(VSRC_CACHE_SOC_DIR)
-	cd $(CHISEL_WORK_DIR) && USE_DPIC=true ./mill -i mychisel.runMain TopMainSoC
-	@cp $(CHISEL_WORK_DIR)/*.sv $(VSRC_CACHE_SOC_DIR)/
-	@cp $(CHISEL_WORK_DIR)/Ebreak.v $(VSRC_CACHE_SOC_DIR)/
-	@rm -f $(VSRC_CACHE_SOC_DIR)/SRAM.sv $(VSRC_CACHE_SOC_DIR)/UART.sv $(VSRC_CACHE_SOC_DIR)/Pmem.v $(VSRC_CACHE_SOC_DIR)/PerfMonitor.v
-	@echo "[INFO] SoC-mode RTL cached in $(VSRC_CACHE_SOC_DIR)"
+$(shell mkdir -p $(BUILD_DIR) $(BUILD_DIR)/iverilog)
 
 # generate the single-file verilog for SoC integration / CI
-verilog: $(VSRC_CACHE_SOC)
+verilog:
 	@mkdir -p $(BUILD_DIR)
-	@cat $(VSRC_CACHE_SOC_DIR)/Ebreak.v $(VSRC_CACHE_SOC_DIR)/*.sv > $(VERILOG_OUT)
+	@if [ ! -f "$(VSRC_CACHE_SOC)" ]; then \
+		echo "[ERROR] $(VSRC_CACHE_SOC) does not exist. Please run 'make soc' locally and commit the result."; \
+		exit 1; \
+	fi
+	@cat $(VSRC_CACHE_SOC) > $(VERILOG_OUT)
 	@echo "[INFO] Generated verilog: $(VERILOG_OUT)"
 
 $(MEM_HEX): $(IMG)
 	@mkdir -p $(dir $@)
 	hexdump -v -e '1/1 "%02x\n"' $< > $@
 
-$(IVERILOG_BIN): $(VSRC_CACHE_NPC) $(MEM_HEX)
+$(IVERILOG_BIN): $(MEM_HEX)
+	@if [ ! -f "$(VSRC_CACHE_NPC)" ]; then \
+		echo "[ERROR] $(VSRC_CACHE_NPC) does not exist. Please run 'make npc' locally and commit the result."; \
+		exit 1; \
+	fi
 	$(IVERILOG) -g2012 -D__ICARUS__ -o $@ \
 		tb_top.sv \
-		$(wildcard $(VSRC_CACHE_NPC_DIR)/*.sv) \
-		$(wildcard $(VSRC_CACHE_NPC_DIR)/*.v)
+		$(VSRC_CACHE_NPC)
 
 sim-iverilog: $(MEM_HEX) $(IVERILOG_BIN)
 	cd $(BUILD_DIR)/iverilog && $(VVP) -n $(abspath $(IVERILOG_BIN))
@@ -313,7 +289,7 @@ sim-iverilog: $(MEM_HEX) $(IVERILOG_BIN)
 $(VSRC_CACHE_NETLIST): $(VSRC_CACHE_NPC)
 	rm -rf ../yosys-sta/result/ysyx_25020039-500MHz
 	$(MAKE) -C ../yosys-sta syn DESIGN=ysyx_25020039 PDK=nangate45 \
-		RTL_FILES="$(abspath $(wildcard $(VSRC_CACHE_NPC_DIR)/*.sv)) $(abspath $(wildcard $(VSRC_CACHE_NPC_DIR)/*.v))"
+		RTL_FILES="$(abspath $(VSRC_CACHE_NPC))"
 	@cp ../yosys-sta/result/ysyx_25020039-500MHz/ysyx_25020039.netlist.syn.v $@
 
 ifeq ($(NETLIST),$(VSRC_CACHE_NETLIST))
@@ -322,14 +298,13 @@ else
   NETLIST_PREREQ =
 endif
 
-$(IVERILOG_BIN_NETLIST_IV): $(MEM_HEX) $(VSRC_CACHE_NPC) $(NETLIST_PREREQ)
+$(IVERILOG_BIN_NETLIST_IV): $(MEM_HEX) $(NETLIST_PREREQ)
 	@echo "[BUILD] Compiling netlist with Icarus Verilog..."
 	$(IVERILOG) -g2012 -D__ICARUS__ -o $@ \
 		tb_top.sv \
 		$(NETLIST) \
 		$(CELLS) \
-		$(wildcard $(VSRC_CACHE_NPC_DIR)/*.sv) \
-		$(wildcard $(VSRC_CACHE_NPC_DIR)/*.v)
+		$(VSRC_CACHE_NPC)
 
 sim-iverilog-netlist: $(IVERILOG_BIN_NETLIST_IV)
 	cd $(BUILD_DIR)/iverilog && $(VVP) -n $(abspath $(IVERILOG_BIN_NETLIST_IV))
@@ -337,33 +312,7 @@ sim-iverilog-netlist: $(IVERILOG_BIN_NETLIST_IV)
 IVERILOG = iverilog
 VVP = vvp
 
-NETLIST_FILE = ../yosys-sta/result/ysyx_25020039-500MHz/ysyx_25020039.netlist.syn.v
-CELLS_FILE = ../yosys-sta/nangate45/sim/cells.v
-IVERILOG_BIN_NETLIST = $(OBJ_DIR)/sim_netlist.vvp
-
-$(NETLIST_FILE): chisel-gen
-	@echo "[SYNTH] Generating Netlist..."
-	@mkdir -p $(OBJ_DIR)
-	@python3 scripts/filter_sram.py $(CHISEL_WORK_DIR)/ysyx_25020039.sv $(OBJ_DIR)/ysyx_25020039_no_sram.sv $(OBJ_DIR)/SRAM.sv
-	@rm -rf ../yosys-sta/result/ysyx_25020039-500MHz
-	$(MAKE) -C ../yosys-sta syn DESIGN=ysyx_25020039 PDK=nangate45 RTL_FILES="$(abspath $(filter-out %/SRAM.sv %/DPI_Mem.v %/SimUART.v %/ysyx_25020039.sv, $(VSRC_PIPELINE_CHISEL))) $(abspath $(OBJ_DIR)/ysyx_25020039_no_sram.sv) $(abspath scripts/blackbox_sim.v)"
-
-$(IVERILOG_BIN_NETLIST): $(NETLIST_FILE) tb_top.sv
-	@echo "[BUILD] Compiling netlist with Icarus Verilog..."
-	@iverilog -g2012 -D__ICARUS__ -o $@ \
-		tb_top.sv \
-		$(NETLIST_FILE) \
-		$(CELLS_FILE) \
-		$(OBJ_DIR)/SRAM.sv \
-		$(CHISEL_WORK_DIR)/DPI_Mem.v \
-		$(filter-out %/ysyx_25020039.sv %/SRAM.sv %/DPI_Mem.v, $(VSRC_PIPELINE_CHISEL))
-
-sim-netlist: $(IVERILOG_BIN_NETLIST)
-	@echo "[RUN] Running netlist simulation..."
-	@riscv64-linux-gnu-objcopy -O verilog --adjust-vma=-0x80000000 $(IMG) mem.hex
-	@vvp -n $<
-
 include Makefile.lib
 include $(NPC_HOME)/scripts/config.mk
 
-.PHONY: all sim run chisel-gen chisel-clean clean sta verilog sim-iverilog sim-iverilog-netlist
+.PHONY: all sim run npc soc chisel-gen chisel-clean clean sta verilog sim-iverilog sim-iverilog-netlist

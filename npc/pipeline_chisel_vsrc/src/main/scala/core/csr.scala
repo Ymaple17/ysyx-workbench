@@ -42,6 +42,7 @@ class CSR_IO(xlen: Int) extends Bundle{
 }
 
 class CSR(conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_CSR"
     import CSR_REG._
     val io = IO(new CSR_IO(conf.xlen))
     val xlen = conf.xlen

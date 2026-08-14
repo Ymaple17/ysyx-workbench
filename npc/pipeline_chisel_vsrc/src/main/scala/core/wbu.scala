@@ -21,6 +21,7 @@ class WBU_IO(conf: CoreConfig) extends Bundle{
 }
 
 class WBU(val conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_WBU"
     val io = IO(new WBU_IO(conf))
 
     val ebreak = if (conf.useDPIC) Some(Module(new Ebreak)) else None

@@ -23,6 +23,7 @@ class ICache_Set(val tag_size : Int, val block_size : Int, val way : Int) extend
 }
 
 class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreConfig) extends Module {
+    override def desiredName = "ysyx_25020039_ICache"
 
     val io = IO(new ICache_IO)
 

@@ -13,6 +13,7 @@ class Xbar_IO(coreConfig: CoreConfig) extends Bundle {
 }
 
 class Xbar(coreConfig: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_Xbar"
     val io = IO(new Xbar_IO(coreConfig))
 
     val clint_read = Wire(Bool())

@@ -42,6 +42,7 @@ class IDU_IO(xlen: Int) extends Bundle{
 }
 
 class IDU(val conf: CoreConfig) extends Module{
+    override def desiredName = "ysyx_25020039_IDU"
 
     val io = IO(new IDU_IO(conf.xlen))
 

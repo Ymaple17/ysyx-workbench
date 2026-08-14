@@ -22,15 +22,16 @@ object PerfEvents {
 }
 
 class PerfMonitor extends BlackBox with HasBlackBoxInline {
+    override def desiredName = "ysyx_25020039_PerfMonitor"
   val io = IO(new Bundle {
     val clock    = Input(Clock())
     val event_id = Input(UInt(32.W))
     val data     = Input(UInt(64.W))
     val enable   = Input(Bool())
   })
-  setInline("PerfMonitor.v",
+  setInline("ysyx_25020039_PerfMonitor.v",
     """
-      |module PerfMonitor(
+      |module ysyx_25020039_PerfMonitor(
       |    input clock,
       |    input [31:0] event_id,
       |    input [63:0] data,

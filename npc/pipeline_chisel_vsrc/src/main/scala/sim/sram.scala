@@ -6,6 +6,7 @@ import chisel3.util.random.LFSR
 import bus._
 
 class Pmem extends BlackBox with HasBlackBoxInline {
+  override def desiredName = "ysyx_25020039_Pmem"
   val io = IO(new Bundle {
     val clk   = Input(Clock())
     val rst   = Input(Bool())
@@ -18,9 +19,9 @@ class Pmem extends BlackBox with HasBlackBoxInline {
     val rdata = Output(UInt(32.W))
   })
 
-  setInline("Pmem.v",
+  setInline("ysyx_25020039_Pmem.v",
     """
-      |module Pmem(
+      |module ysyx_25020039_Pmem(
       |  input         clk,
       |  input         rst,
       |  input         ren,
@@ -110,6 +111,7 @@ class SRAM_IO extends Bundle{
 }
 
 class SRAM extends Module{
+    override def desiredName = "ysyx_25020039_SRAM"
   val io = IO(new SRAM_IO)
 
   val pmem = Module(new Pmem)

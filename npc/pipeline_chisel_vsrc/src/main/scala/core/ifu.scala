@@ -41,7 +41,7 @@ class IFU_IO(xlen: Int) extends Bundle{
 }
 
 class IFU(val conf: CoreConfig) extends Module{
-    // override def desiredName = "ysyx_25020039_IFU"
+    override def desiredName = "ysyx_25020039_IFU"
 
     val io = IO(new IFU_IO(conf.xlen))
 

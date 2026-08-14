@@ -4,13 +4,14 @@ import chisel3._
 import chisel3.util._
 
 class Ebreak extends BlackBox with HasBlackBoxInline {
+  override def desiredName = "ysyx_25020039_Ebreak"
   val io = IO(new Bundle {
     val is_ebreak = Input(Bool())
   })
   setInline(
-    "Ebreak.v",
+    "ysyx_25020039_Ebreak.v",
     """
-      |module Ebreak(
+      |module ysyx_25020039_Ebreak(
       |  input is_ebreak
       |);
       |

@@ -16,6 +16,7 @@ class ALU_IO(width: Int) extends Bundle {
 }
 
 class ALU(val width: Int) extends Module{
+    override def desiredName = "ysyx_25020039_ALU"
 
     val io = IO(new ALU_IO(width))
 

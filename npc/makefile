@@ -39,7 +39,6 @@ ifeq ($(CONFIG_PIPELINE_CHISEL_VAL),y)
     CHISEL_MAIN := TopMainSoC
     TOP_MODULE = ysyxSoCFull
     VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
-    CFLAGS += -std=c++17
     $(info [INFO] Using pipeline_chisel SOC Mode)
   else
     VSRC = $(shell find $(VSRC_CACHE_NPC_DIR) -name "*.v" -o -name "*.sv" 2>/dev/null)
@@ -83,7 +82,7 @@ BUILD_DIR ?= build
 PROGRAM ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 # PROGRAM ?= ../am-kernels/kernels/char-test/char-test.bin
 
-CFLAGS = -Wall -std=c++11 -g
+CFLAGS = -Wall -std=c++17 -g
 CXXFLAGS = $(CFLAGS)
 LDFLAGS_BASE = -lreadline -lSDL2 -ldl
 VERILATOR_FLAGS += -Wno-WIDTHEXPAND -Wno-PINMISSING

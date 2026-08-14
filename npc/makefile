@@ -85,7 +85,7 @@ PROGRAM ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 CFLAGS = -Wall -std=c++17 -g
 CXXFLAGS = $(CFLAGS)
 LDFLAGS_BASE = -lreadline -lSDL2 -ldl
-VERILATOR_FLAGS += -Wno-WIDTHEXPAND -Wno-PINMISSING
+VERILATOR_FLAGS += -Wno-WIDTHEXPAND -Wno-PINMISSING --public-flat-rw
 ifeq ($(CONFIG_NVBOARD_VAL),y)
   ifndef NVBOARD_HOME
     $(error NVBOARD_HOME is not set)

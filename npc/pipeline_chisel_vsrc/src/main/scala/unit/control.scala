@@ -153,7 +153,7 @@ class Control extends Module{
 
     //IFU signals
     io.signals.ifu.bits.is_fencei := control(15).asBool
-    io.signals.ifu.valid := false.B
+    io.signals.ifu.valid := true.B
 
     //IDU signals
     io.signals.idu.imm_type := control(6).asUInt

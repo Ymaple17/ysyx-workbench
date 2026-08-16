@@ -52,3 +52,4 @@ config MTRACE
 config DEVICE
     tristate "Enable device support"
     default y
+    

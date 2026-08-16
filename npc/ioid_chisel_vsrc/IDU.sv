@@ -40,6 +40,8 @@ module IDU(
   output [31:0] io_out_bits_bp_target,
   output [9:0]  io_out_bits_bp_index,
   output [31:0] io_out_bits_inst,
+  output        io_ifu_signals_valid,
+                io_ifu_signals_bits_is_fencei,
   output [4:0]  io_refile_raddr1,
                 io_refile_raddr2,
   input  [31:0] io_refile_rdata1,
@@ -166,6 +168,8 @@ module IDU(
   assign io_out_bits_bp_target = io_in_bits_bp_target;
   assign io_out_bits_bp_index = io_in_bits_bp_index;
   assign io_out_bits_inst = io_in_bits_inst;
+  assign io_ifu_signals_valid = io_in_valid;
+  assign io_ifu_signals_bits_is_fencei = _control_io_signals_ifu_bits_is_fencei;
   assign io_refile_raddr1 = io_in_bits_inst[19:15];
   assign io_refile_raddr2 = io_in_bits_inst[24:20];
   assign io_csr_raddr = io_in_bits_inst[31:20];

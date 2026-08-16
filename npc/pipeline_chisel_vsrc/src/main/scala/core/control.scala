@@ -346,7 +346,7 @@ class Control(val conf: CoreConfig) extends Module{
     // IRQ signals
     io.irq := control_signals(13).asBool
     io.irq_num := control_signals(14)
-    io.signals.ifu.valid := false.B // default
+    io.signals.ifu.valid := true.B
 }
 
 

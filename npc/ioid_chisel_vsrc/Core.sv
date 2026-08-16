@@ -34,6 +34,7 @@ module Core(
   wire        _icache_io_in_rvalid;
   wire [31:0] _icache_io_in_rdata;
   wire [1:0]  _icache_io_in_rresp;
+  wire        _icache_io_fencei_ready;
   wire [31:0] _csr_io_read_rdata;
   wire [31:0] _csr_io_read_mtvec;
   wire [31:0] _csr_io_read_mepc;
@@ -120,6 +121,8 @@ module Core(
   wire [31:0] _idu_io_out_bits_bp_target;
   wire [9:0]  _idu_io_out_bits_bp_index;
   wire [31:0] _idu_io_out_bits_inst;
+  wire        _idu_io_ifu_signals_valid;
+  wire        _idu_io_ifu_signals_bits_is_fencei;
   wire [4:0]  _idu_io_refile_raddr1;
   wire [4:0]  _idu_io_refile_raddr2;
   wire [11:0] _idu_io_csr_raddr;
@@ -299,6 +302,7 @@ module Core(
     & (is_ch != exu_io_in_bits_r_bp_taken | is_ch & exu_io_in_bits_r_bp_taken
        & exu_io_in_bits_r_bp_target != correct_pc);
   reg         mis_predict_r;
+  reg         is_fencei;
   reg  [31:0] ifu_io_correct_pc_REG;
   assign exu_io_is_flush = is_irq | mis_predict_r;
   wire        _is_ret_update_T = exu_io_in_bits_r_signals_exu_jump == 4'h9;
@@ -398,6 +402,7 @@ module Core(
       csr_io_irq_no_REG <= 8'h0;
       csr_io_irq_pc_REG <= 32'h0;
       mis_predict_r <= 1'h0;
+      is_fencei <= 1'h0;
       ifu_io_correct_pc_REG <= 32'h0;
     end
     else begin
@@ -515,6 +520,7 @@ module Core(
       csr_io_irq_no_REG <= _wbu_io_state_write_state_num;
       csr_io_irq_pc_REG <= wbu_io_in_bits_r_pc;
       mis_predict_r <= mis_predict;
+      is_fencei <= _idu_io_ifu_signals_valid & _icache_io_fencei_ready;
       ifu_io_correct_pc_REG <= correct_pc;
     end
   end // always @(posedge)
@@ -544,9 +550,13 @@ module Core(
     .io_imem_rready              (_ifu_io_imem_rready),
     .io_imem_rdata               (_icache_io_in_rdata),
     .io_imem_rresp               (_icache_io_in_rresp),
-    .io_is_flush                 (is_irq | mis_predict_r),
+    .io_is_flush                 (is_irq | is_fencei | mis_predict_r),
     .io_correct_pc
-      (is_irq ? _csr_io_read_mtvec : mis_predict_r ? ifu_io_correct_pc_REG : 32'h0),
+      (is_irq
+         ? _csr_io_read_mtvec
+         : mis_predict_r
+             ? ifu_io_correct_pc_REG
+             : is_fencei ? ifu_io_in_bits_r_next_pc : 32'h0),
     .io_bpu_update_valid         (is_jump),
     .io_bpu_update_taken         (is_ch),
     .io_bpu_update_pc            (exu_io_in_bits_r_pc),
@@ -606,6 +616,8 @@ module Core(
     .io_out_bits_bp_target                 (_idu_io_out_bits_bp_target),
     .io_out_bits_bp_index                  (_idu_io_out_bits_bp_index),
     .io_out_bits_inst                      (_idu_io_out_bits_inst),
+    .io_ifu_signals_valid                  (_idu_io_ifu_signals_valid),
+    .io_ifu_signals_bits_is_fencei         (_idu_io_ifu_signals_bits_is_fencei),
     .io_refile_raddr1                      (_idu_io_refile_raddr1),
     .io_refile_raddr2                      (_idu_io_refile_raddr2),
     .io_refile_rdata1                      (_refile_io_read_rdata1),
@@ -790,22 +802,25 @@ module Core(
     .io_write_wen   (_wbu_io_csr_wen)
   );
   ICache icache (
-    .clock          (clock),
-    .reset          (reset),
-    .io_in_araddr   (_ifu_io_imem_araddr),
-    .io_in_arready  (_icache_io_in_arready),
-    .io_in_arvalid  (_ifu_io_imem_arvalid),
-    .io_in_rvalid   (_icache_io_in_rvalid),
-    .io_in_rready   (_ifu_io_imem_rready),
-    .io_in_rdata    (_icache_io_in_rdata),
-    .io_in_rresp    (_icache_io_in_rresp),
-    .io_out_araddr  (io_imem_araddr),
-    .io_out_arvalid (io_imem_arvalid),
-    .io_out_arready (io_imem_arready),
-    .io_out_rdata   (io_imem_rdata),
-    .io_out_rresp   (io_imem_rresp),
-    .io_out_rvalid  (io_imem_rvalid),
-    .io_out_rready  (io_imem_rready)
+    .clock                    (clock),
+    .reset                    (reset),
+    .io_in_araddr             (_ifu_io_imem_araddr),
+    .io_in_arready            (_icache_io_in_arready),
+    .io_in_arvalid            (_ifu_io_imem_arvalid),
+    .io_in_rvalid             (_icache_io_in_rvalid),
+    .io_in_rready             (_ifu_io_imem_rready),
+    .io_in_rdata              (_icache_io_in_rdata),
+    .io_in_rresp              (_icache_io_in_rresp),
+    .io_out_araddr            (io_imem_araddr),
+    .io_out_arvalid           (io_imem_arvalid),
+    .io_out_arready           (io_imem_arready),
+    .io_out_rdata             (io_imem_rdata),
+    .io_out_rresp             (io_imem_rresp),
+    .io_out_rvalid            (io_imem_rvalid),
+    .io_out_rready            (io_imem_rready),
+    .io_fencei_ready          (_icache_io_fencei_ready),
+    .io_fencei_valid          (_idu_io_ifu_signals_valid),
+    .io_fencei_bits_is_fencei (_idu_io_ifu_signals_bits_is_fencei)
   );
   PerfMonitor pm (
     .clock    (clock),

@@ -1,9 +1,0 @@
-{
-    "value": [
-        "ref:v0:c984eca8:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/out/clean.json",
-        "ref:v0:c984eca8:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/out/mill",
-        "ref:v0:c984eca8:/home/qiu/ysyx-workbench/npc/ioid_chisel_vsrc/out/mychisel"
-    ],
-    "valueHash": 1727266900,
-    "inputsHash": 898034763
-}

@@ -224,13 +224,6 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
         count := count - 1.U
     }
 
-    // ========== AXI Monitor: counters read by C++ monitor ==========
-    if (conf.axiMonitor) {
-      val ar_stall_cnt = dontTouch(RegInit(0.U(8.W)))
-      when(state === s_AXI_AR && io.out.arvalid && !io.out.arready) { ar_stall_cnt := ar_stall_cnt + 1.U }.otherwise { ar_stall_cnt := 0.U }
-      val r_stall_cnt  = dontTouch(RegInit(0.U(8.W)))
-      when(state === s_AXI_R && !io.out.rvalid) { r_stall_cnt := r_stall_cnt + 1.U }.otherwise { r_stall_cnt := 0.U }
-    }
 
     if (conf.statistics) {
       PM(conf, clock, EVENT_ICACHE_MISS, 1.U, state === s_IFU_AR && io.in.arvalid && io.in.arready && !hit)

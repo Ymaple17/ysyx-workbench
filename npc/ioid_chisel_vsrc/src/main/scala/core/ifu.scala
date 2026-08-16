@@ -4,6 +4,8 @@ import chisel3._
 import chisel3.util._
 import common.IRQ_CTRL._
 import core.PerfEvents._
+import unit.BPU
+import common.BPU_Config._
 
 class IFU_PC_IO extends Bundle{
   val next_pc = Output(UInt(32.W))
@@ -14,6 +16,12 @@ class IFU_IDU_IO extends Bundle{
   val pc = Output(UInt(32.W))
   
   val state = Output(new State)
+
+  //bpu
+  val bp_valid = Output(Bool())
+  val bp_taken = Output(Bool())
+  val bp_target = Output(UInt(32.W))
+  val bp_index = Output(UInt(log2Ceil(BHT_SIZE).W)) //预测时的 BHT 索引，随指令流传递
 }
 
 class IFU_ICACHE_IO extends Bundle{
@@ -38,6 +46,15 @@ class IFU_IO(xlen: Int) extends Bundle{
   val correct_pc = Input(UInt(32.W))
 
   val state = Input(new State)
+
+  //bpu
+  val bpu_update_valid = Input(Bool())
+  val bpu_update_taken = Input(Bool())
+  val bpu_update_pc = Input(UInt(32.W))
+  val bpu_update_is_branch = Input(Bool())
+  val bpu_update_index = Input(UInt(log2Ceil(BHT_SIZE).W)) //预测时的索引（随指令流传回）
+  val bpu_update_is_call = Input(Bool()) //被解析的指令是否为函数调用
+  val bpu_update_is_ret = Input(Bool()) //被解析的指令是否为函数返回
 }
 
 class IFU(val conf: CoreConfig) extends Module{
@@ -82,7 +99,31 @@ class IFU(val conf: CoreConfig) extends Module{
     
     io.out.bits.inst := io.imem.rdata
 
-    io.pc.bits.next_pc := Mux(io.is_flush, io.correct_pc, pc_plus4)
+    //bpu（默认启用）
+    val bpu = Module(new BPU(conf))
+    bpu.io.predict_pc := io.in.bits.next_pc
+    bpu.io.predict_inst := io.imem.rdata
+    bpu.io.update_pc := io.bpu_update_pc
+    bpu.io.update_valid := io.bpu_update_valid
+    bpu.io.update_taken := io.bpu_update_taken
+    bpu.io.update_is_branch := io.bpu_update_is_branch
+    bpu.io.update_index := io.bpu_update_index
+    bpu.io.update_is_call := io.bpu_update_is_call
+    bpu.io.update_is_ret := io.bpu_update_is_ret
+
+    //bpu -> idu
+    io.out.bits.bp_valid := bpu.io.bp_valid
+    // 关键：bp_taken 必须用 bp_valid 门控！
+    // bpu.io.bp_taken 对非分支指令也输出 BHT 值（可能为 1），
+    // 若不门控，JALR/普通指令会带着 bp_taken=1 进 EXU，误判"预测正确"而不冲刷
+    io.out.bits.bp_taken := bpu.io.bp_valid && bpu.io.bp_taken
+    io.out.bits.bp_target := bpu.io.bp_target
+    io.out.bits.bp_index := bpu.io.bp_index
+
+    //bpu
+    val bp_bit = io.out.valid && io.out.ready && bpu.io.bp_valid && bpu.io.bp_taken
+    io.pc.bits.next_pc := Mux(io.is_flush, io.correct_pc, Mux(bp_bit, bpu.io.bp_target, pc_plus4))
+
 
     val has_irq = io.imem.rvalid && io.imem.rresp =/= 0.U
     io.out.bits.state.state := Mux(has_irq, true.B, false.B)

@@ -2,51 +2,49 @@
 module ALU(
   input  [31:0] io_A,
                 io_B,
-  input  [3:0]  io_alu_control,
+  input  [4:0]  io_alu_control,
   output [31:0] io_result,
   output        io_zero_flag
 );
 
-  reg  [31:0] casez_tmp;
-  wire [31:0] _GEN = {27'h0, io_B[4:0]};
   wire [62:0] _io_result_T_8 = {31'h0, io_A} << io_B[4:0];
-  always_comb begin
-    casez (io_alu_control)
-      4'b0000:
-        casez_tmp = io_A + io_B;
-      4'b0001:
-        casez_tmp = io_A - io_B;
-      4'b0010:
-        casez_tmp = io_A & io_B;
-      4'b0011:
-        casez_tmp = {31'h0, $signed(io_A) < $signed(io_B)};
-      4'b0100:
-        casez_tmp = io_A ^ io_B;
-      4'b0101:
-        casez_tmp = {31'h0, io_A < io_B};
-      4'b0110:
-        casez_tmp = io_A | io_B;
-      4'b0111:
-        casez_tmp = $signed($signed(io_A) >>> _GEN);
-      4'b1000:
-        casez_tmp = io_A >> _GEN;
-      4'b1001:
-        casez_tmp = _io_result_T_8[31:0];
-      4'b1010:
-        casez_tmp = 32'h0;
-      4'b1011:
-        casez_tmp = 32'h0;
-      4'b1100:
-        casez_tmp = 32'h0;
-      4'b1101:
-        casez_tmp = 32'h0;
-      4'b1110:
-        casez_tmp = 32'h0;
-      default:
-        casez_tmp = 32'h0;
-    endcase
-  end // always_comb
-  assign io_result = casez_tmp;
-  assign io_zero_flag = casez_tmp == 32'h0;
+  wire [31:0] _GEN = {27'h0, io_B[4:0]};
+  wire [63:0] _GEN_0 = {32'h0, io_B};
+  wire [63:0] _io_result_T_31 = {32'h0, io_A} * _GEN_0;
+  wire [63:0] _GEN_1 = {{32{io_A[31]}}, io_A};
+  wire [63:0] _io_result_T_23 = _GEN_1 * {{32{io_B[31]}}, io_B};
+  wire [63:0] _io_result_T_27 = _GEN_1 * _GEN_0;
+  wire [31:0] _io_result_T_60 =
+    io_alu_control == 5'hD
+      ? _io_result_T_31[63:32]
+      : io_alu_control == 5'hC
+          ? _io_result_T_27[63:32]
+          : io_alu_control == 5'hB
+              ? _io_result_T_23[63:32]
+              : io_alu_control == 5'hA
+                  ? _io_result_T_31[31:0]
+                  : io_alu_control == 5'h5
+                      ? {31'h0, io_A < io_B}
+                      : io_alu_control == 5'h3
+                          ? {31'h0, $signed(io_A) < $signed(io_B)}
+                          : io_alu_control == 5'h7
+                              ? $signed($signed(io_A) >>> _GEN)
+                              : io_alu_control == 5'h8
+                                  ? io_A >> _GEN
+                                  : io_alu_control == 5'h9
+                                      ? _io_result_T_8[31:0]
+                                      : io_alu_control == 5'h4
+                                          ? io_A ^ io_B
+                                          : io_alu_control == 5'h6
+                                              ? io_A | io_B
+                                              : io_alu_control == 5'h2
+                                                  ? io_A & io_B
+                                                  : io_alu_control == 5'h1
+                                                      ? io_A - io_B
+                                                      : io_alu_control == 5'h0
+                                                          ? io_A + io_B
+                                                          : 32'h0;
+  assign io_result = _io_result_T_60;
+  assign io_zero_flag = _io_result_T_60 == 32'h0;
 endmodule
 

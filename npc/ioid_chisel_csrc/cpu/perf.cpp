@@ -60,6 +60,15 @@ void print_perf_stats(unsigned long long cycles) {
         printf("AMAT:     %.4f cycles\n", amat);
     }
 
+    printf("\n[BPU Performance]\n");
+    long long bpu_predict = counters[EVENT_BPU_PREDICT];
+    long long bpu_mispred = counters[EVENT_BPU_MISPRED];
+    printf("Predictions:  %lld\n", bpu_predict);
+    printf("Mispredicts:  %lld\n", bpu_mispred);
+    if (bpu_predict > 0) {
+        printf("Hit Rate:     %.2f%%\n", 100.0 * (bpu_predict - bpu_mispred) / bpu_predict);
+    }
+
     printf("\n[LSU Statistics]\n");
     long long total_access = counters[EVENT_LSU_READ] + counters[EVENT_LSU_WRITE];
     printf("Total Accesses: %lld\n", total_access);
@@ -68,6 +77,10 @@ void print_perf_stats(unsigned long long cycles) {
     if (total_access > 0) {
         printf("Average Latency: %.2f cycles\n", (double)counters[EVENT_LSU_LATENCY] / total_access);
     }
+
+    printf("\n[MulDiv Statistics]\n");
+    printf("Mul instructions: %lld\n", counters[EVENT_MUL]);
+    printf("Div instructions: %lld\n", counters[EVENT_DIV]);
     
     printf("============================================\n");
 }

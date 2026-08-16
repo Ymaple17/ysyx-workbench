@@ -55,7 +55,8 @@ void pmem_write(uint32_t addr, int len, uint64_t data) {
 
 extern "C" int paddr_read(uint32_t raddr, int len) {
   if(raddr >= CONFIG_RTC_MMIO&&raddr<CONFIG_RTC_MMIO+8){
-    difftest_skip_ref();
+    // MMIO 跳过的正确实现在 cpu.cpp 的 skip_pending（提交时判定，用 commit_pc 同步）。
+    // difftest_skip_ref 会让 NEMU 静默落后一条指令（同步用的是取指 PC），必须移除。
     return mmio_read(raddr, len);
   }
   // if(raddr == CONFIG_RTC_MMIO + 4){

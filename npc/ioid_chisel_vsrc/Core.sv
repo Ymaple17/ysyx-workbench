@@ -4,9 +4,6 @@ module Core(
                 reset,
   output [31:0] io_imem_araddr,
   output        io_imem_arvalid,
-  output [7:0]  io_imem_arlen,
-  output [2:0]  io_imem_arsize,
-  output [1:0]  io_imem_arburst,
   input         io_imem_arready,
   input  [31:0] io_imem_rdata,
   input  [1:0]  io_imem_rresp,
@@ -14,7 +11,6 @@ module Core(
   output        io_imem_rready,
   output [31:0] io_dmem_araddr,
   output        io_dmem_arvalid,
-  output [2:0]  io_dmem_arsize,
   input         io_dmem_arready,
   input  [31:0] io_dmem_rdata,
   input  [1:0]  io_dmem_rresp,
@@ -22,7 +18,6 @@ module Core(
   output        io_dmem_rready,
   output [31:0] io_dmem_awaddr,
   output        io_dmem_awvalid,
-  output [2:0]  io_dmem_awsize,
   input         io_dmem_awready,
   output [31:0] io_dmem_wdata,
   output [3:0]  io_dmem_wstrb,
@@ -100,7 +95,7 @@ module Core(
   wire        _idu_io_out_valid;
   wire [1:0]  _idu_io_out_bits_signals_exu_alu_srcA;
   wire [1:0]  _idu_io_out_bits_signals_exu_alu_srcB;
-  wire [3:0]  _idu_io_out_bits_signals_exu_alu_control;
+  wire [4:0]  _idu_io_out_bits_signals_exu_alu_control;
   wire [3:0]  _idu_io_out_bits_signals_exu_jump;
   wire [7:0]  _idu_io_out_bits_signals_lsu_mem_wmask;
   wire [2:0]  _idu_io_out_bits_signals_lsu_mem_rd;
@@ -120,6 +115,11 @@ module Core(
   wire [11:0] _idu_io_out_bits_csr_waddr;
   wire        _idu_io_out_bits_state_state;
   wire [7:0]  _idu_io_out_bits_state_state_num;
+  wire        _idu_io_out_bits_bp_valid;
+  wire        _idu_io_out_bits_bp_taken;
+  wire [31:0] _idu_io_out_bits_bp_target;
+  wire [9:0]  _idu_io_out_bits_bp_index;
+  wire [31:0] _idu_io_out_bits_inst;
   wire [4:0]  _idu_io_refile_raddr1;
   wire [4:0]  _idu_io_refile_raddr2;
   wire [11:0] _idu_io_csr_raddr;
@@ -131,6 +131,10 @@ module Core(
   wire [31:0] _ifu_io_out_bits_pc;
   wire        _ifu_io_out_bits_state_state;
   wire [7:0]  _ifu_io_out_bits_state_state_num;
+  wire        _ifu_io_out_bits_bp_valid;
+  wire        _ifu_io_out_bits_bp_taken;
+  wire [31:0] _ifu_io_out_bits_bp_target;
+  wire [9:0]  _ifu_io_out_bits_bp_index;
   wire        _ifu_io_pc_valid;
   wire [31:0] _ifu_io_pc_bits_next_pc;
   wire [31:0] _ifu_io_imem_araddr;
@@ -142,10 +146,14 @@ module Core(
   reg  [31:0] idu_io_in_bits_r_pc;
   reg         idu_io_in_bits_r_state_state;
   reg  [7:0]  idu_io_in_bits_r_state_state_num;
+  reg         idu_io_in_bits_r_bp_valid;
+  reg         idu_io_in_bits_r_bp_taken;
+  reg  [31:0] idu_io_in_bits_r_bp_target;
+  reg  [9:0]  idu_io_in_bits_r_bp_index;
   reg         idu_io_in_valid_r;
   reg  [1:0]  exu_io_in_bits_r_signals_exu_alu_srcA;
   reg  [1:0]  exu_io_in_bits_r_signals_exu_alu_srcB;
-  reg  [3:0]  exu_io_in_bits_r_signals_exu_alu_control;
+  reg  [4:0]  exu_io_in_bits_r_signals_exu_alu_control;
   reg  [3:0]  exu_io_in_bits_r_signals_exu_jump;
   reg  [7:0]  exu_io_in_bits_r_signals_lsu_mem_wmask;
   reg  [2:0]  exu_io_in_bits_r_signals_lsu_mem_rd;
@@ -163,6 +171,11 @@ module Core(
   reg  [11:0] exu_io_in_bits_r_csr_waddr;
   reg         exu_io_in_bits_r_state_state;
   reg  [7:0]  exu_io_in_bits_r_state_state_num;
+  reg         exu_io_in_bits_r_bp_valid;
+  reg         exu_io_in_bits_r_bp_taken;
+  reg  [31:0] exu_io_in_bits_r_bp_target;
+  reg  [9:0]  exu_io_in_bits_r_bp_index;
+  reg  [31:0] exu_io_in_bits_r_inst;
   reg         exu_io_in_valid_r;
   wire        exu_io_in_valid = exu_io_in_valid_r & ~exu_io_is_flush;
   reg  [7:0]  lsu_io_in_bits_r_signals_lsu_mem_wmask;
@@ -271,9 +284,24 @@ module Core(
   reg  [31:0] exu_io_in_bits_rd2_r;
   reg  [7:0]  csr_io_irq_no_REG;
   reg  [31:0] csr_io_irq_pc_REG;
-  reg         is_ch_r;
+  wire [31:0] correct_pc =
+    _exu_io_pc_bits_pc_src == 3'h4
+      ? _csr_io_read_mepc
+      : _exu_io_pc_bits_pc_src == 3'h2
+          ? _exu_io_pc_bits_pc4_rs2
+          : _exu_io_pc_bits_pc_src == 3'h1
+              ? _exu_io_pc_bits_pc4_imm
+              : _exu_io_pc_bits_pc4;
+  wire        is_jump = exu_io_in_bits_r_signals_exu_jump != 4'hF & _exu_io_pc_valid;
+  wire        is_ch = is_jump & (|_exu_io_pc_bits_pc_src);
+  wire        mis_predict =
+    is_jump
+    & (is_ch != exu_io_in_bits_r_bp_taken | is_ch & exu_io_in_bits_r_bp_taken
+       & exu_io_in_bits_r_bp_target != correct_pc);
+  reg         mis_predict_r;
   reg  [31:0] ifu_io_correct_pc_REG;
-  assign exu_io_is_flush = is_ch_r | is_irq;
+  assign exu_io_is_flush = is_irq | mis_predict_r;
+  wire        _is_ret_update_T = exu_io_in_bits_r_signals_exu_jump == 4'h9;
   wire        wbu_wen = wbu_io_in_bits_r_signals_wbu_reg_write & wbu_io_in_valid;
   wire        _exu_io_in_bits_rd2_exu_hit_T_5 =
     exu_io_in_bits_r_signals_wbu_reg_write_sel != 3'h4;
@@ -291,16 +319,20 @@ module Core(
     & _exu_io_in_bits_rd2_lsu_hit_T_3 & ~exu_io_in_bits_rd2_exu_hit;
   always @(posedge clock) begin
     if (reset) begin
-      ifu_io_in_bits_r_next_pc <= 32'h30000000;
+      ifu_io_in_bits_r_next_pc <= 32'h80000000;
       ifu_io_in_valid_r <= 1'h0;
       idu_io_in_bits_r_inst <= 32'h0;
       idu_io_in_bits_r_pc <= 32'h0;
       idu_io_in_bits_r_state_state <= 1'h0;
       idu_io_in_bits_r_state_state_num <= 8'h0;
+      idu_io_in_bits_r_bp_valid <= 1'h0;
+      idu_io_in_bits_r_bp_taken <= 1'h0;
+      idu_io_in_bits_r_bp_target <= 32'h0;
+      idu_io_in_bits_r_bp_index <= 10'h0;
       idu_io_in_valid_r <= 1'h0;
       exu_io_in_bits_r_signals_exu_alu_srcA <= 2'h0;
       exu_io_in_bits_r_signals_exu_alu_srcB <= 2'h0;
-      exu_io_in_bits_r_signals_exu_alu_control <= 4'h0;
+      exu_io_in_bits_r_signals_exu_alu_control <= 5'h0;
       exu_io_in_bits_r_signals_exu_jump <= 4'h0;
       exu_io_in_bits_r_signals_lsu_mem_wmask <= 8'h0;
       exu_io_in_bits_r_signals_lsu_mem_rd <= 3'h0;
@@ -318,6 +350,11 @@ module Core(
       exu_io_in_bits_r_csr_waddr <= 12'h0;
       exu_io_in_bits_r_state_state <= 1'h0;
       exu_io_in_bits_r_state_state_num <= 8'h0;
+      exu_io_in_bits_r_bp_valid <= 1'h0;
+      exu_io_in_bits_r_bp_taken <= 1'h0;
+      exu_io_in_bits_r_bp_target <= 32'h0;
+      exu_io_in_bits_r_bp_index <= 10'h0;
+      exu_io_in_bits_r_inst <= 32'h0;
       exu_io_in_valid_r <= 1'h0;
       lsu_io_in_bits_r_signals_lsu_mem_wmask <= 8'h0;
       lsu_io_in_bits_r_signals_lsu_mem_rd <= 3'h0;
@@ -360,7 +397,7 @@ module Core(
       is_irq <= 1'h0;
       csr_io_irq_no_REG <= 8'h0;
       csr_io_irq_pc_REG <= 32'h0;
-      is_ch_r <= 1'h0;
+      mis_predict_r <= 1'h0;
       ifu_io_correct_pc_REG <= 32'h0;
     end
     else begin
@@ -373,6 +410,10 @@ module Core(
         idu_io_in_bits_r_pc <= _ifu_io_out_bits_pc;
         idu_io_in_bits_r_state_state <= _ifu_io_out_bits_state_state;
         idu_io_in_bits_r_state_state_num <= _ifu_io_out_bits_state_state_num;
+        idu_io_in_bits_r_bp_valid <= _ifu_io_out_bits_bp_valid;
+        idu_io_in_bits_r_bp_taken <= _ifu_io_out_bits_bp_taken;
+        idu_io_in_bits_r_bp_target <= _ifu_io_out_bits_bp_target;
+        idu_io_in_bits_r_bp_index <= _ifu_io_out_bits_bp_index;
       end
       if (_idu_io_in_ready)
         idu_io_in_valid_r <= _ifu_io_out_valid;
@@ -399,6 +440,11 @@ module Core(
         exu_io_in_bits_r_csr_waddr <= _idu_io_out_bits_csr_waddr;
         exu_io_in_bits_r_state_state <= _idu_io_out_bits_state_state;
         exu_io_in_bits_r_state_state_num <= _idu_io_out_bits_state_state_num;
+        exu_io_in_bits_r_bp_valid <= _idu_io_out_bits_bp_valid;
+        exu_io_in_bits_r_bp_taken <= _idu_io_out_bits_bp_taken;
+        exu_io_in_bits_r_bp_target <= _idu_io_out_bits_bp_target;
+        exu_io_in_bits_r_bp_index <= _idu_io_out_bits_bp_index;
+        exu_io_in_bits_r_inst <= _idu_io_out_bits_inst;
         exu_io_in_bits_rd1_r <=
           exu_io_in_bits_rd1_exu_hit
             ? casez_tmp
@@ -468,17 +514,8 @@ module Core(
       is_irq <= _wbu_io_state_write_en & _wbu_io_state_write_state;
       csr_io_irq_no_REG <= _wbu_io_state_write_state_num;
       csr_io_irq_pc_REG <= wbu_io_in_bits_r_pc;
-      is_ch_r <=
-        exu_io_in_bits_r_signals_exu_jump != 4'hF & _exu_io_pc_valid
-        & (|_exu_io_pc_bits_pc_src);
-      ifu_io_correct_pc_REG <=
-        _exu_io_pc_bits_pc_src == 3'h4
-          ? _csr_io_read_mepc
-          : _exu_io_pc_bits_pc_src == 3'h2
-              ? _exu_io_pc_bits_pc4_rs2
-              : _exu_io_pc_bits_pc_src == 3'h1
-                  ? _exu_io_pc_bits_pc4_imm
-                  : _exu_io_pc_bits_pc4;
+      mis_predict_r <= mis_predict;
+      ifu_io_correct_pc_REG <= correct_pc;
     end
   end // always @(posedge)
   IFU ifu (
@@ -493,6 +530,10 @@ module Core(
     .io_out_bits_pc              (_ifu_io_out_bits_pc),
     .io_out_bits_state_state     (_ifu_io_out_bits_state_state),
     .io_out_bits_state_state_num (_ifu_io_out_bits_state_state_num),
+    .io_out_bits_bp_valid        (_ifu_io_out_bits_bp_valid),
+    .io_out_bits_bp_taken        (_ifu_io_out_bits_bp_taken),
+    .io_out_bits_bp_target       (_ifu_io_out_bits_bp_target),
+    .io_out_bits_bp_index        (_ifu_io_out_bits_bp_index),
     .io_pc_ready                 (_ifu_io_in_ready),
     .io_pc_valid                 (_ifu_io_pc_valid),
     .io_pc_bits_next_pc          (_ifu_io_pc_bits_next_pc),
@@ -503,17 +544,39 @@ module Core(
     .io_imem_rready              (_ifu_io_imem_rready),
     .io_imem_rdata               (_icache_io_in_rdata),
     .io_imem_rresp               (_icache_io_in_rresp),
-    .io_is_flush                 (exu_io_is_flush),
+    .io_is_flush                 (is_irq | mis_predict_r),
     .io_correct_pc
-      (is_irq ? _csr_io_read_mtvec : is_ch_r ? ifu_io_correct_pc_REG : 32'h0)
+      (is_irq ? _csr_io_read_mtvec : mis_predict_r ? ifu_io_correct_pc_REG : 32'h0),
+    .io_bpu_update_valid         (is_jump),
+    .io_bpu_update_taken         (is_ch),
+    .io_bpu_update_pc            (exu_io_in_bits_r_pc),
+    .io_bpu_update_is_branch
+      (is_jump
+       & (exu_io_in_bits_r_signals_exu_jump == 4'h0
+          | exu_io_in_bits_r_signals_exu_jump == 4'h1
+          | exu_io_in_bits_r_signals_exu_jump == 4'h4
+          | exu_io_in_bits_r_signals_exu_jump == 4'h5
+          | exu_io_in_bits_r_signals_exu_jump == 4'h6
+          | exu_io_in_bits_r_signals_exu_jump == 4'h7)),
+    .io_bpu_update_index         (exu_io_in_bits_r_bp_index),
+    .io_bpu_update_is_call
+      (is_jump & _is_ret_update_T & exu_io_in_bits_r_inst[11:7] == 5'h1
+       & exu_io_in_bits_r_inst[19:15] != 5'h1),
+    .io_bpu_update_is_ret
+      (is_jump & _is_ret_update_T & exu_io_in_bits_r_inst[19:15] == 5'h1)
   );
   IDU idu (
+    .clock                                 (clock),
     .io_in_ready                           (_idu_io_in_ready),
     .io_in_valid                           (idu_io_in_valid_r & ~exu_io_is_flush),
     .io_in_bits_inst                       (idu_io_in_bits_r_inst),
     .io_in_bits_pc                         (idu_io_in_bits_r_pc),
     .io_in_bits_state_state                (idu_io_in_bits_r_state_state),
     .io_in_bits_state_state_num            (idu_io_in_bits_r_state_state_num),
+    .io_in_bits_bp_valid                   (idu_io_in_bits_r_bp_valid),
+    .io_in_bits_bp_taken                   (idu_io_in_bits_r_bp_taken),
+    .io_in_bits_bp_target                  (idu_io_in_bits_r_bp_target),
+    .io_in_bits_bp_index                   (idu_io_in_bits_r_bp_index),
     .io_out_ready                          (_exu_io_in_ready),
     .io_out_valid                          (_idu_io_out_valid),
     .io_out_bits_signals_exu_alu_srcA      (_idu_io_out_bits_signals_exu_alu_srcA),
@@ -538,6 +601,11 @@ module Core(
     .io_out_bits_csr_waddr                 (_idu_io_out_bits_csr_waddr),
     .io_out_bits_state_state               (_idu_io_out_bits_state_state),
     .io_out_bits_state_state_num           (_idu_io_out_bits_state_state_num),
+    .io_out_bits_bp_valid                  (_idu_io_out_bits_bp_valid),
+    .io_out_bits_bp_taken                  (_idu_io_out_bits_bp_taken),
+    .io_out_bits_bp_target                 (_idu_io_out_bits_bp_target),
+    .io_out_bits_bp_index                  (_idu_io_out_bits_bp_index),
+    .io_out_bits_inst                      (_idu_io_out_bits_inst),
     .io_refile_raddr1                      (_idu_io_refile_raddr1),
     .io_refile_raddr2                      (_idu_io_refile_raddr2),
     .io_refile_rdata1                      (_refile_io_read_rdata1),
@@ -555,6 +623,8 @@ module Core(
        & ~io_dmem_rvalid | idu_io_is_stall_exu_hit_1 & exu_is_load)
   );
   EXU exu (
+    .clock                                 (clock),
+    .reset                                 (reset),
     .io_in_ready                           (_exu_io_in_ready),
     .io_in_valid                           (exu_io_in_valid),
     .io_in_bits_signals_exu_alu_srcA       (exu_io_in_bits_r_signals_exu_alu_srcA),
@@ -648,7 +718,6 @@ module Core(
     .io_out_bits_state_state_num           (_lsu_io_out_bits_state_state_num),
     .io_dmem_araddr                        (io_dmem_araddr),
     .io_dmem_arvalid                       (io_dmem_arvalid),
-    .io_dmem_arsize                        (io_dmem_arsize),
     .io_dmem_arready                       (io_dmem_arready),
     .io_dmem_rdata                         (io_dmem_rdata),
     .io_dmem_rresp                         (io_dmem_rresp),
@@ -656,7 +725,6 @@ module Core(
     .io_dmem_rready                        (io_dmem_rready),
     .io_dmem_awaddr                        (io_dmem_awaddr),
     .io_dmem_awvalid                       (io_dmem_awvalid),
-    .io_dmem_awsize                        (io_dmem_awsize),
     .io_dmem_awready                       (io_dmem_awready),
     .io_dmem_wdata                         (io_dmem_wdata),
     .io_dmem_wstrb                         (io_dmem_wstrb),
@@ -668,6 +736,8 @@ module Core(
     .io_is_flush                           (is_irq)
   );
   WBU wbu (
+    .clock                                (clock),
+    .reset                                (reset),
     .io_in_valid                          (wbu_io_in_valid),
     .io_in_bits_signals_wbu_reg_write     (wbu_io_in_bits_r_signals_wbu_reg_write),
     .io_in_bits_signals_wbu_reg_write_sel (wbu_io_in_bits_r_signals_wbu_reg_write_sel),
@@ -731,14 +801,23 @@ module Core(
     .io_in_rresp    (_icache_io_in_rresp),
     .io_out_araddr  (io_imem_araddr),
     .io_out_arvalid (io_imem_arvalid),
-    .io_out_arlen   (io_imem_arlen),
-    .io_out_arsize  (io_imem_arsize),
-    .io_out_arburst (io_imem_arburst),
     .io_out_arready (io_imem_arready),
     .io_out_rdata   (io_imem_rdata),
     .io_out_rresp   (io_imem_rresp),
     .io_out_rvalid  (io_imem_rvalid),
     .io_out_rready  (io_imem_rready)
+  );
+  PerfMonitor pm (
+    .clock    (clock),
+    .event_id (32'hF),
+    .data     (64'h1),
+    .enable   (is_jump & exu_io_in_bits_r_bp_valid)
+  );
+  PerfMonitor pm_1 (
+    .clock    (clock),
+    .event_id (32'h10),
+    .data     (64'h1),
+    .enable   (mis_predict & exu_io_in_bits_r_bp_valid)
   );
 endmodule
 

@@ -3,6 +3,7 @@ package core
 import chisel3._
 import chisel3.util._
 import unit._
+import common.ALU_OP._
 import common.ALU_SRCA._
 import common.ALU_SRCB._
 import common.PC_SEL._
@@ -87,7 +88,7 @@ class EXU(val conf: CoreConfig) extends Module{
 
     //LSU
     io.out.bits.signals := io.in.bits.signals
-    io.out.bits.alu_result := alu.io.result
+    
     io.out.bits.pc := io.in.bits.pc
 
     io.out.bits.next_pc := MuxLookup(exu_pc.io.pc_src, io.in.bits.pc + 4.U)(Seq(
@@ -109,13 +110,33 @@ class EXU(val conf: CoreConfig) extends Module{
     //state
     io.out.bits.state := io.in.bits.state
 
+    //DIV
+    val is_div = io.in.valid && (io.in.bits.signals.exu.alu_control === ALU_DIV || io.in.bits.signals.exu.alu_control === ALU_DIVU || io.in.bits.signals.exu.alu_control === ALU_REM || io.in.bits.signals.exu.alu_control === ALU_REMU)
+    val is_mul = io.in.valid && (io.in.bits.signals.exu.alu_control === ALU_MUL || io.in.bits.signals.exu.alu_control === ALU_MULH || io.in.bits.signals.exu.alu_control === ALU_MULHSU || io.in.bits.signals.exu.alu_control === ALU_MULHU)
+
+    val div = Module(new DIV)
+    div.io.req_valid := io.in.valid && is_div && div.io.req_ready
+    div.io.a := io.in.bits.rd1
+    div.io.b := io.in.bits.rd2
+    div.io.op := io.in.bits.signals.exu.alu_control
+
+    // ★ busy 必须覆盖"div 指令在 EXU 的整个期间"：
+    //   div 进入的那拍 DIV 还在 IDLE（req_ready=1），若用 !req_ready 当 busy，
+    //   那一拍 in.ready=1，下一条指令会把 div 挤出 EXU（div 结果永远不输出）
+    //   结果拍（div_done=1）释放 busy，让下一条指令同拍进入
+    val div_done = div.io.result_valid              // cnt=0 拍脉冲（结果已锁存完整）
+    val div_busy = is_div && !div_done              // div 在 EXU 期间阻塞输入
 
     //pipeline control
-    io.in.ready := !io.in.valid || io.out.ready
-    io.out.valid := io.in.valid
+    io.in.ready := (!io.in.valid || io.out.ready) && !div_busy
+    io.out.valid := io.in.valid && (!is_div || div_done)
     io.pc.valid := io.out.valid && io.in.ready
+    //ALU / DIV
+    io.out.bits.alu_result := Mux(is_div, div.io.result, alu.io.result)
 
     if(conf.statistics){
       PM(conf, clock, EVENT_EXU_COMP, 1.U, io.out.valid && io.out.ready)
+      PM(conf, clock, EVENT_MUL, 1.U, io.out.valid && io.out.ready && is_mul)
+      PM(conf, clock, EVENT_DIV, 1.U, io.out.valid && io.out.ready && is_div)
     }
 }

@@ -10,6 +10,7 @@
 #include "../include/trace.h"
 #include "../include/regs.h"
 #include "../include/memory.h"
+#include "../include/perf.h"
 #include "../../include/generated/autoconf.h"
 #include "../include/difftest.h"
 
@@ -33,6 +34,7 @@ static vluint64_t main_time = 0;
 static bool g_print_step = false;
 
 extern "C" void sim_exit(){
+  print_perf_stats(main_time / 2);
   set_npc_state(NPC_END, read_pc_from_top(), read_gpr_from_top(10));
 }
 

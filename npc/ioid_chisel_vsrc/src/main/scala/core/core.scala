@@ -8,6 +8,7 @@ import common.JUMP_TYPE._
 import sim._
 import bus._
 import unit._
+import core.PerfEvents._
 
 class Core_IO(conf: CoreConfig) extends Bundle {
   val interrupt = Input(Bool())
@@ -122,19 +123,51 @@ class Core(val conf: CoreConfig) extends Module {
 
   val is_jump = exu.io.in.bits.signals.exu.jump =/= JUMP_NONE && exu.io.pc.valid
   val is_ch = is_jump && pc_src =/= PC_PLUS4
-  val is_ch_r = RegNext(is_ch, false.B)
+
+  //BPU
+  val predict_taken = exu.io.in.bits.bp_taken
+  val predict_target = exu.io.in.bits.bp_target
+  val target_mispredict = is_ch && predict_taken && (predict_target =/= correct_pc)
+
+  val mis_predict = is_jump && ((is_ch =/= predict_taken) || target_mispredict)
+  val mis_predict_r = RegNext(mis_predict, false.B)
+  val is_bp_flush = mis_predict_r
+
   val is_fencei = RegNext(icache.io.fencei.valid & icache.io.fencei.ready, false.B)
-  ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(is_ch_r, RegNext(correct_pc, 0.U), Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
+  // 重定向门控用 mis_predict_r：预测错时回正确目标
+  ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(mis_predict_r, RegNext(correct_pc, 0.U), Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
   
-  ifu.io.is_flush := is_ch_r || is_irq || is_fencei
-  idu.io.is_flush := is_ch_r || is_irq
-  exu.io.is_flush := is_ch_r || is_irq
+  exu.io.pc.ready := true.B
+
+  
+  ifu.io.is_flush := is_irq || is_fencei || is_bp_flush
+  idu.io.is_flush := is_irq || is_bp_flush
+  exu.io.is_flush := is_irq || is_bp_flush
   lsu.io.is_flush := is_irq
   wbu.io.is_flush := is_irq
 
-  exu.io.pc.ready := true.B
+  val jump = exu.io.in.bits.signals.exu.jump
+  val is_branch_update = is_jump && (jump === JUMP_BEQ || jump === JUMP_BNE || jump === JUMP_BLT || jump === JUMP_BGE || jump === JUMP_BLTU || jump === JUMP_BGEU)
 
+  val exu_inst = exu.io.in.bits.inst
+  val is_call_update = is_jump && (jump === JUMP_JALR) && (exu_inst(11,7) === 1.U) && (exu_inst(19,15) =/= 1.U)
+  val is_ret_update = is_jump && (jump === JUMP_JALR) && (exu_inst(19,15) === 1.U)
 
+  ifu.io.bpu_update_valid := is_jump
+  ifu.io.bpu_update_taken := is_ch
+  ifu.io.bpu_update_pc := exu.io.in.bits.pc
+  ifu.io.bpu_update_is_branch := is_branch_update
+  // GShare：更新用预测时的索引（随指令流传来），保证与预测严格一致
+  ifu.io.bpu_update_index := exu.io.in.bits.bp_index
+  ifu.io.bpu_update_is_call := is_call_update
+  ifu.io.bpu_update_is_ret := is_ret_update
+
+  if (conf.statistics) {
+    // BPU 命中率统计：只统计真正做过预测的跳转/分支指令（bp_valid）
+    // 命中率 = (PREDICT - MISPRED) / PREDICT
+    PM(conf, clock, EVENT_BPU_PREDICT, 1.U, is_jump && exu.io.in.bits.bp_valid)
+    PM(conf, clock, EVENT_BPU_MISPRED, 1.U, mis_predict && exu.io.in.bits.bp_valid)
+  }
 
   //connect
   ifu.io.imem <> icache.io.in

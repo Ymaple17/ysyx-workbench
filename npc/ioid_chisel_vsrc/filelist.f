@@ -1,9 +1,11 @@
+IMM.sv
+BPU.sv
 IFU.sv
 Control.sv
-IMM.sv
 IDU.sv
 ALU.sv
 PC.sv
+DIV.sv
 EXU.sv
 LSU.sv
 WBU.sv
@@ -14,4 +16,6 @@ ICache.sv
 Core.sv
 Xbar.sv
 Clint.sv
+UART.sv
+SRAM.sv
 ysyx_25020039.sv

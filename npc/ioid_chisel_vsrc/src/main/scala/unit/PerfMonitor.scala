@@ -19,6 +19,10 @@ object PerfEvents {
   val EVENT_INST_TYPE_JUMP    = 12.U(32.W)
   val EVENT_INST_TYPE_OTHER   = 13.U(32.W)
   val EVENT_ICACHE_MISS       = 14.U(32.W)
+  val EVENT_BPU_PREDICT       = 15.U(32.W)
+  val EVENT_BPU_MISPRED       = 16.U(32.W)
+  val EVENT_MUL               = 17.U(32.W)
+  val EVENT_DIV               = 18.U(32.W)
 }
 
 class PerfMonitor extends BlackBox with HasBlackBoxInline {

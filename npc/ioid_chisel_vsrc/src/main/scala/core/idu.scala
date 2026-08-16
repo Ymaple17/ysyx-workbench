@@ -3,6 +3,7 @@ package core
 import chisel3._
 import chisel3.util._
 import unit._
+import common.BPU_Config._
 import common.JUMP_TYPE._
 import core.PerfEvents._
 
@@ -23,6 +24,13 @@ class IDU_EXU_IO extends Bundle{
   val csr_waddr = Output(UInt(12.W))
 
   val state = Output(new State)
+
+  val bp_valid = Output(Bool())
+  val bp_taken = Output(Bool())
+  val bp_target = Output(UInt(32.W))
+  val bp_index = Output(UInt(log2Ceil(BHT_SIZE).W))
+
+  val inst = Output(UInt(32.W))
 }
 
 class IDU_IO(xlen: Int) extends Bundle{
@@ -88,6 +96,14 @@ class IDU(val conf: CoreConfig) extends Module{
     
     io.in.ready := !io.in.valid || (send && io.out.ready)
     io.out.valid := io.in.valid && send
+
+    //bpu
+    io.out.bits.bp_valid := io.in.bits.bp_valid
+    io.out.bits.bp_taken := io.in.bits.bp_taken
+    io.out.bits.bp_target := io.in.bits.bp_target
+    io.out.bits.bp_index := io.in.bits.bp_index
+
+    io.out.bits.inst := io.in.bits.inst
 
   if(conf.statistics){
     // Performance Counters

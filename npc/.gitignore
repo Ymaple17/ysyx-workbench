@@ -1,0 +1,11 @@
+obj_dir_npc/
+obj_dir/
+*.o
+*.d
+*.fst
+*.vcd
+
+out/
+target/
+*.jar
+build/

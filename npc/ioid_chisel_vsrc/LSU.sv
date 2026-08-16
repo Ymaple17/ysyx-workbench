@@ -41,7 +41,6 @@ module LSU(
   output [7:0]  io_out_bits_state_state_num,
   output [31:0] io_dmem_araddr,
   output        io_dmem_arvalid,
-  output [2:0]  io_dmem_arsize,
   input         io_dmem_arready,
   input  [31:0] io_dmem_rdata,
   input  [1:0]  io_dmem_rresp,
@@ -49,7 +48,6 @@ module LSU(
   output        io_dmem_rready,
   output [31:0] io_dmem_awaddr,
   output        io_dmem_awvalid,
-  output [2:0]  io_dmem_awsize,
   input         io_dmem_awready,
   output [31:0] io_dmem_wdata,
   output [3:0]  io_dmem_wstrb,
@@ -62,40 +60,23 @@ module LSU(
 );
 
   wire        idle;
+  wire        io_dmem_awvalid_0;
+  wire        io_dmem_arvalid_0;
   wire        is_load =
     ~io_in_bits_signals_lsu_mem_write & io_in_bits_signals_lsu_mem_valid;
   wire        is_store =
     io_in_bits_signals_lsu_mem_write & io_in_bits_signals_lsu_mem_valid;
-  reg  [2:0]  casez_tmp;
-  always_comb begin
-    casez (io_in_bits_signals_lsu_mem_rd)
-      3'b000:
-        casez_tmp = 3'h3;
-      3'b001:
-        casez_tmp = 3'h0;
-      3'b010:
-        casez_tmp = 3'h1;
-      3'b011:
-        casez_tmp = 3'h2;
-      3'b100:
-        casez_tmp = 3'h0;
-      3'b101:
-        casez_tmp = 3'h1;
-      3'b110:
-        casez_tmp = 3'h3;
-      default:
-        casez_tmp = 3'h3;
-    endcase
-  end // always_comb
   reg  [1:0]  state;
   reg         ar_handshake_done;
   reg         aw_handshake_done;
   reg         w_handshake_done;
+  wire        _load_handshake_T = io_dmem_arvalid_0 & io_dmem_arready;
+  wire        _aw_done_T = io_dmem_awvalid_0 & io_dmem_awready;
   wire        _ready_T = io_dmem_rvalid | io_dmem_bvalid;
   wire        _io_dmem_bready_T = state == 2'h1;
   wire        _io_dmem_bready_T_2 = state == 2'h2;
-  wire        io_dmem_arvalid_0 = is_load & ~(|state) & idle & ~ar_handshake_done;
-  wire        io_dmem_awvalid_0 = is_store & ~(|state) & idle & ~aw_handshake_done;
+  assign io_dmem_arvalid_0 = is_load & ~(|state) & idle & ~ar_handshake_done;
+  assign io_dmem_awvalid_0 = is_store & ~(|state) & idle & ~aw_handshake_done;
   wire        io_dmem_wvalid_0 = is_store & ~(|state) & idle & ~w_handshake_done;
   wire [10:0] _mem_wmask_T =
     {3'h0, io_in_bits_signals_lsu_mem_wmask} << io_in_bits_alu_result[1:0];
@@ -107,7 +88,6 @@ module LSU(
   assign idle = io_in_valid & ~io_is_flush;
   wire        ready = _ready_T | ~is_load & ~is_store;
   wire        _GEN = (|state) | io_is_flush;
-  wire        _aw_done_T = io_dmem_awvalid_0 & io_dmem_awready;
   wire        _w_done_T = io_dmem_wvalid_0 & io_dmem_wready;
   wire        _GEN_0 = ~(|state) & idle;
   wire        _GEN_1 = io_is_flush | io_dmem_rvalid | io_dmem_bvalid;
@@ -125,9 +105,8 @@ module LSU(
           : _io_dmem_bready_T
               ? (ready ? 2'h0 : io_is_flush ? 2'h2 : 2'h1)
               : ~(|state) & idle
-                & (is_load & (ar_handshake_done | io_dmem_arvalid_0 & io_dmem_arready)
-                   | is_store & (aw_handshake_done | _aw_done_T)
-                   & (w_handshake_done | _w_done_T))
+                & (is_load & (ar_handshake_done | _load_handshake_T) | is_store
+                   & (aw_handshake_done | _aw_done_T) & (w_handshake_done | _w_done_T))
                   ? {1'h0, ~ready}
                   : 2'h0;
       ar_handshake_done <=
@@ -137,6 +116,24 @@ module LSU(
       w_handshake_done <= ~_GEN_1 & (_GEN_0 & _w_done_T | ~_GEN & w_handshake_done);
     end
   end // always @(posedge)
+  PerfMonitor pm (
+    .clock    (clock),
+    .event_id (32'h3),
+    .data     (64'h1),
+    .enable   (_load_handshake_T)
+  );
+  PerfMonitor pm_1 (
+    .clock    (clock),
+    .event_id (32'h4),
+    .data     (64'h1),
+    .enable   (_aw_done_T)
+  );
+  PerfMonitor pm_2 (
+    .clock    (clock),
+    .event_id (32'h5),
+    .data     (64'h1),
+    .enable   (_io_dmem_bready_T)
+  );
   assign io_in_ready = ~io_in_valid | ready;
   assign io_out_valid = io_in_valid & ready;
   assign io_out_bits_signals_wbu_reg_write = io_in_bits_signals_wbu_reg_write;
@@ -166,16 +163,9 @@ module LSU(
     has_saf ? 8'h7 : has_laf ? 8'h5 : io_in_bits_state_state_num;
   assign io_dmem_araddr = io_in_bits_alu_result;
   assign io_dmem_arvalid = io_dmem_arvalid_0;
-  assign io_dmem_arsize = casez_tmp;
   assign io_dmem_rready = is_load & _io_dmem_bready_T | _io_dmem_bready_T_2;
   assign io_dmem_awaddr = io_in_bits_alu_result;
   assign io_dmem_awvalid = io_dmem_awvalid_0;
-  assign io_dmem_awsize =
-    io_in_bits_signals_lsu_mem_wmask == 8'hF
-      ? 3'h2
-      : io_in_bits_signals_lsu_mem_wmask == 8'h3
-          ? 3'h1
-          : io_in_bits_signals_lsu_mem_wmask == 8'h1 ? 3'h0 : 3'h7;
   assign io_dmem_wdata = _io_dmem_wdata_T_1[31:0];
   assign io_dmem_wstrb = _mem_wmask_T[3:0];
   assign io_dmem_wvalid = io_dmem_wvalid_0;

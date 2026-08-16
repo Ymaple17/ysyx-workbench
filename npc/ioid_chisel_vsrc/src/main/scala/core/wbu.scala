@@ -25,7 +25,7 @@ class WBU(val conf: CoreConfig) extends Module{
 
     val ebreak = Module(new Ebreak)
 
-    if(conf.useDPIC) ebreak.io.is_ebreak := io.in.bits.is_ebreak
+    if(conf.useDPIC) ebreak.io.is_ebreak := RegNext(io.in.valid && io.in.bits.is_ebreak && !io.is_flush, false.B)
     
     if(!conf.useDPIC) io.ebreak.get := io.in.bits.is_ebreak && io.in.valid && !io.is_flush
 

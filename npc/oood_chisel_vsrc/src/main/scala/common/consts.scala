@@ -153,4 +153,6 @@ object FENCEI_CTRL{
 object BPU_Config{
     val BHT_SIZE = 1024 //BHT 条目数（BPU/IFU/IDU 的索引宽度共用）
     val RAS_SIZE = 16 //返回地址栈深度
+    val BHT_INIT = 1 // weak not-taken; a taken branch becomes predicted-taken after one update
+    val BHT_COLD_STATIC = true // cold entries use backward-taken / forward-not-taken
 }

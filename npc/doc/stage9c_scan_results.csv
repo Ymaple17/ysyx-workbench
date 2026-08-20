@@ -1,0 +1,6 @@
+tag,rob,rs,fq,n_phys,cp_depth,bht_size,bht_init,cold_static,ipc,total_cycles,commit_inst,ifu_fetch,bpu_hit_pct,bpu_mispred,bp_flush,dir_miss,target_miss,unpred_jalr,fq_full,fq_empty,ifu_pipeline_stall,cdb_conflicts,head_wait,wait_store_commit,result,recommendation,notes
+stage9a_baseline,16,8,4,48,4,1024,0,false,0.4119,1268745,522574,860380,64.16,42840,50756,na,na,na,351450,74796,241856,23999,425522,215525,PASS,baseline,pre Stage9b counters
+stage9b_bpu_fq4,16,8,4,48,4,1024,1,true,0.4121,1267668,522354,858549,64.30,42614,50529,42047,567,7915,350867,75634,241335,23944,424870,215678,PASS,reject,FQ4 with BPU cold-start still has high frontend backpressure
+stage9b_fq8,16,8,8,48,4,1024,1,true,0.4122,1268071,522712,904436,64.43,42492,50408,41909,583,7916,302451,74952,215042,23592,424960,215845,PASS,keep,current recommended point
+stage9c_fq16,16,8,16,48,4,1024,1,true,0.4089,1278120,522624,960319,63.76,43252,51168,42541,711,7916,245932,73302,182876,28439,430792,218997,PASS,reject,deeper FQ lowers backpressure but increases wrong-path work and hurts IPC
+stage9c_bht2048,16,8,8,48,4,2048,1,true,0.4103,1273120,522338,892033,64.59,42267,50182,41663,604,7915,322744,73389,235586,31703,426384,219152,PASS,reject,bigger BHT improves hit rate slightly but hurts IPC and backend pressure

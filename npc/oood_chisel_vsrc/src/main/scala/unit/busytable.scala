@@ -21,6 +21,8 @@ class BusyTable(nPhys: Int = OoOParams.N_PHYS) extends Module {
     val set_addr2 = Input(UInt(physW.W))
     val clr_en   = Input(Bool())
     val clr_addr = Input(UInt(physW.W))
+    val clr_en2  = Input(Bool())
+    val clr_addr2 = Input(UInt(physW.W))
     // flush：一次清多个被杀 new_phys（bit=1 表示清）
     val clr_mask = Input(UInt(nPhys.W))
     // flush 整表重建：1=busy（优先于 set/clr）
@@ -41,6 +43,7 @@ class BusyTable(nPhys: Int = OoOParams.N_PHYS) extends Module {
     when(io.set_en && io.set_addr =/= 0.U) { busy(io.set_addr) := true.B }
     when(io.set_en2 && io.set_addr2 =/= 0.U) { busy(io.set_addr2) := true.B }
     when(io.clr_en && io.clr_addr =/= 0.U) { busy(io.clr_addr) := false.B }
+    when(io.clr_en2 && io.clr_addr2 =/= 0.U) { busy(io.clr_addr2) := false.B }
     for (i <- 1 until nPhys) {
       when(io.clr_mask(i)) { busy(i) := false.B }
     }

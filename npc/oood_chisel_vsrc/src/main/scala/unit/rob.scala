@@ -77,6 +77,13 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     val wb_mem_addr     = Input(UInt(32.W))
     val wb_mem_wdata    = Input(UInt(32.W))
     val wb_actual_taken = Input(Bool())
+    val wb1_fire         = Input(Bool())
+    val wb1_idx          = Input(UInt(ptrW.W))
+    val wb1_val          = Input(UInt(32.W))
+    val wb1_state        = Input(new State)
+    val wb1_mem_addr     = Input(UInt(32.W))
+    val wb1_mem_wdata    = Input(UInt(32.W))
+    val wb1_actual_taken = Input(Bool())
 
     val commit_valid = Output(Bool())
     val commit_idx   = Output(UInt(ptrW.W))
@@ -124,7 +131,8 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
 
   // commit_valid閿涙艾褰查幓鎰唉閿涘潐one閿涘鍨ㄩ張顒佸濮濓絽婀?wb 閸氬奔绔?head閿涘牓銆庢惔蹇撴倱閹峰秴鐣幋?闁偓娴兼埊绱?
   val wb_is_head = io.wb_fire && (io.wb_idx === head) && entries(head).valid
-  io.commit_valid := entries(head).valid && (entries(head).done || wb_is_head)
+  val wb1_is_head = io.wb1_fire && (io.wb1_idx === head) && entries(head).valid
+  io.commit_valid := entries(head).valid && (entries(head).done || wb_is_head || wb1_is_head)
   io.commit_idx := head
   io.commit_bits := entries(head)
 
@@ -148,6 +156,15 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     entries(io.wb_idx).mem_wdata     := io.wb_mem_wdata
     entries(io.wb_idx).addr_ready    := true.B
     entries(io.wb_idx).actual_taken  := io.wb_actual_taken
+  }
+  when(io.wb1_fire && entries(io.wb1_idx).valid) {
+    entries(io.wb1_idx).done          := true.B
+    entries(io.wb1_idx).dest_val      := io.wb1_val
+    entries(io.wb1_idx).state         := io.wb1_state
+    entries(io.wb1_idx).mem_addr      := io.wb1_mem_addr
+    entries(io.wb1_idx).mem_wdata     := io.wb1_mem_wdata
+    entries(io.wb1_idx).addr_ready    := true.B
+    entries(io.wb1_idx).actual_taken  := io.wb1_actual_taken
   }
 
   when(io.flush_all) {

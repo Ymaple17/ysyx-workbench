@@ -127,9 +127,14 @@ module RS(
   input  [2:0]  io_enq1_bits_wbu_reg_write_sel,
   input         io_free_rob_fire,
   input  [3:0]  io_free_rob_idx,
+  input         io_free_rob1_fire,
+  input  [3:0]  io_free_rob1_idx,
   input         io_cdb_valid,
   input  [5:0]  io_cdb_pdest,
   input  [31:0] io_cdb_val,
+  input         io_cdb1_valid,
+  input  [5:0]  io_cdb1_pdest,
+  input  [31:0] io_cdb1_val,
   input         io_flush,
   input  [3:0]  io_flush_idx,
   input         io_flush_all,
@@ -376,21 +381,37 @@ module RS(
        {1'h0, {1'h0, entries_4_valid} + {1'h0, entries_5_valid}}
          + {1'h0, {1'h0, entries_6_valid} + {1'h0, entries_7_valid}}};
   wire        freeByRob_0 =
-    io_free_rob_fire & entries_0_valid & entries_0_rob_idx == io_free_rob_idx;
+    entries_0_valid
+    & (io_free_rob_fire & entries_0_rob_idx == io_free_rob_idx | io_free_rob1_fire
+       & entries_0_rob_idx == io_free_rob1_idx);
   wire        freeByRob_1 =
-    io_free_rob_fire & entries_1_valid & entries_1_rob_idx == io_free_rob_idx;
+    entries_1_valid
+    & (io_free_rob_fire & entries_1_rob_idx == io_free_rob_idx | io_free_rob1_fire
+       & entries_1_rob_idx == io_free_rob1_idx);
   wire        freeByRob_2 =
-    io_free_rob_fire & entries_2_valid & entries_2_rob_idx == io_free_rob_idx;
+    entries_2_valid
+    & (io_free_rob_fire & entries_2_rob_idx == io_free_rob_idx | io_free_rob1_fire
+       & entries_2_rob_idx == io_free_rob1_idx);
   wire        freeByRob_3 =
-    io_free_rob_fire & entries_3_valid & entries_3_rob_idx == io_free_rob_idx;
+    entries_3_valid
+    & (io_free_rob_fire & entries_3_rob_idx == io_free_rob_idx | io_free_rob1_fire
+       & entries_3_rob_idx == io_free_rob1_idx);
   wire        freeByRob_4 =
-    io_free_rob_fire & entries_4_valid & entries_4_rob_idx == io_free_rob_idx;
+    entries_4_valid
+    & (io_free_rob_fire & entries_4_rob_idx == io_free_rob_idx | io_free_rob1_fire
+       & entries_4_rob_idx == io_free_rob1_idx);
   wire        freeByRob_5 =
-    io_free_rob_fire & entries_5_valid & entries_5_rob_idx == io_free_rob_idx;
+    entries_5_valid
+    & (io_free_rob_fire & entries_5_rob_idx == io_free_rob_idx | io_free_rob1_fire
+       & entries_5_rob_idx == io_free_rob1_idx);
   wire        freeByRob_6 =
-    io_free_rob_fire & entries_6_valid & entries_6_rob_idx == io_free_rob_idx;
+    entries_6_valid
+    & (io_free_rob_fire & entries_6_rob_idx == io_free_rob_idx | io_free_rob1_fire
+       & entries_6_rob_idx == io_free_rob1_idx);
   wire        freeByRob_7 =
-    io_free_rob_fire & entries_7_valid & entries_7_rob_idx == io_free_rob_idx;
+    entries_7_valid
+    & (io_free_rob_fire & entries_7_rob_idx == io_free_rob_idx | io_free_rob1_fire
+       & entries_7_rob_idx == io_free_rob1_idx);
   wire        isMulDiv_0 =
     entries_0_valid
     & (entries_0_exu_alu_control == 5'hA | entries_0_exu_alu_control == 5'hB
@@ -2210,114 +2231,187 @@ module RS(
   wire        _GEN = io_cdb_valid & (|io_cdb_pdest);
   wire        _GEN_0 =
     _GEN & entries_0_valid & ~entries_0_src1_ready & entries_0_src1_phys == io_cdb_pdest;
-  wire        _GEN_1 = _GEN_0 | entries_0_src1_ready;
-  wire        _GEN_2 =
+  wire        _GEN_1 =
     _GEN & entries_0_valid & ~entries_0_src2_ready & entries_0_src2_phys == io_cdb_pdest;
-  wire        _GEN_3 = _GEN_2 | entries_0_src2_ready;
-  wire        _GEN_4 =
+  wire        _GEN_2 =
     _GEN & entries_1_valid & ~entries_1_src1_ready & entries_1_src1_phys == io_cdb_pdest;
-  wire        _GEN_5 = _GEN_4 | entries_1_src1_ready;
-  wire        _GEN_6 =
+  wire        _GEN_3 =
     _GEN & entries_1_valid & ~entries_1_src2_ready & entries_1_src2_phys == io_cdb_pdest;
-  wire        _GEN_7 = _GEN_6 | entries_1_src2_ready;
-  wire        _GEN_8 =
+  wire        _GEN_4 =
     _GEN & entries_2_valid & ~entries_2_src1_ready & entries_2_src1_phys == io_cdb_pdest;
-  wire        _GEN_9 = _GEN_8 | entries_2_src1_ready;
-  wire        _GEN_10 =
+  wire        _GEN_5 =
     _GEN & entries_2_valid & ~entries_2_src2_ready & entries_2_src2_phys == io_cdb_pdest;
-  wire        _GEN_11 = _GEN_10 | entries_2_src2_ready;
-  wire        _GEN_12 =
+  wire        _GEN_6 =
     _GEN & entries_3_valid & ~entries_3_src1_ready & entries_3_src1_phys == io_cdb_pdest;
-  wire        _GEN_13 = _GEN_12 | entries_3_src1_ready;
-  wire        _GEN_14 =
+  wire        _GEN_7 =
     _GEN & entries_3_valid & ~entries_3_src2_ready & entries_3_src2_phys == io_cdb_pdest;
-  wire        _GEN_15 = _GEN_14 | entries_3_src2_ready;
-  wire        _GEN_16 =
+  wire        _GEN_8 =
     _GEN & entries_4_valid & ~entries_4_src1_ready & entries_4_src1_phys == io_cdb_pdest;
-  wire        _GEN_17 = _GEN_16 | entries_4_src1_ready;
-  wire        _GEN_18 =
+  wire        _GEN_9 =
     _GEN & entries_4_valid & ~entries_4_src2_ready & entries_4_src2_phys == io_cdb_pdest;
-  wire        _GEN_19 = _GEN_18 | entries_4_src2_ready;
-  wire        _GEN_20 =
+  wire        _GEN_10 =
     _GEN & entries_5_valid & ~entries_5_src1_ready & entries_5_src1_phys == io_cdb_pdest;
-  wire        _GEN_21 = _GEN_20 | entries_5_src1_ready;
-  wire        _GEN_22 =
+  wire        _GEN_11 =
     _GEN & entries_5_valid & ~entries_5_src2_ready & entries_5_src2_phys == io_cdb_pdest;
-  wire        _GEN_23 = _GEN_22 | entries_5_src2_ready;
-  wire        _GEN_24 =
+  wire        _GEN_12 =
     _GEN & entries_6_valid & ~entries_6_src1_ready & entries_6_src1_phys == io_cdb_pdest;
-  wire        _GEN_25 = _GEN_24 | entries_6_src1_ready;
-  wire        _GEN_26 =
+  wire        _GEN_13 =
     _GEN & entries_6_valid & ~entries_6_src2_ready & entries_6_src2_phys == io_cdb_pdest;
-  wire        _GEN_27 = _GEN_26 | entries_6_src2_ready;
-  wire        _GEN_28 =
+  wire        _GEN_14 =
     _GEN & entries_7_valid & ~entries_7_src1_ready & entries_7_src1_phys == io_cdb_pdest;
-  wire        _GEN_29 = _GEN_28 | entries_7_src1_ready;
-  wire        _GEN_30 =
+  wire        _GEN_15 =
     _GEN & entries_7_valid & ~entries_7_src2_ready & entries_7_src2_phys == io_cdb_pdest;
-  wire        _GEN_31 = _GEN_30 | entries_7_src2_ready;
-  wire [3:0]  _GEN_32 = io_flush_idx - io_rob_head;
-  wire        _GEN_33 = ~freeByRob_0 & entries_0_valid;
-  wire        _GEN_34 = ~freeByRob_1 & entries_1_valid;
-  wire        _GEN_35 = ~freeByRob_2 & entries_2_valid;
-  wire        _GEN_36 = ~freeByRob_3 & entries_3_valid;
-  wire        _GEN_37 = ~freeByRob_4 & entries_4_valid;
-  wire        _GEN_38 = ~freeByRob_5 & entries_5_valid;
-  wire        _GEN_39 = ~freeByRob_6 & entries_6_valid;
-  wire        _GEN_40 = ~freeByRob_7 & entries_7_valid;
-  wire        _GEN_41 = io_enq_fire & (|freeOrIssue);
+  wire        _GEN_16 = io_cdb1_valid & (|io_cdb1_pdest);
+  wire        _GEN_17 = ~entries_0_src1_ready & entries_0_src1_phys == io_cdb1_pdest;
+  wire        _GEN_18 = _GEN_16 & entries_0_valid;
+  wire        _GEN_19 =
+    _GEN_18 ? _GEN_17 | _GEN_0 | entries_0_src1_ready : _GEN_0 | entries_0_src1_ready;
+  wire        _GEN_20 = _GEN_16 & entries_0_valid & _GEN_17;
+  wire        _GEN_21 = ~entries_0_src2_ready & entries_0_src2_phys == io_cdb1_pdest;
+  wire        _GEN_22 =
+    _GEN_18 ? _GEN_21 | _GEN_1 | entries_0_src2_ready : _GEN_1 | entries_0_src2_ready;
+  wire        _GEN_23 = _GEN_16 & entries_0_valid & _GEN_21;
+  wire        _GEN_24 = ~entries_1_src1_ready & entries_1_src1_phys == io_cdb1_pdest;
+  wire        _GEN_25 = _GEN_16 & entries_1_valid;
+  wire        _GEN_26 =
+    _GEN_25 ? _GEN_24 | _GEN_2 | entries_1_src1_ready : _GEN_2 | entries_1_src1_ready;
+  wire        _GEN_27 = _GEN_16 & entries_1_valid & _GEN_24;
+  wire        _GEN_28 = ~entries_1_src2_ready & entries_1_src2_phys == io_cdb1_pdest;
+  wire        _GEN_29 =
+    _GEN_25 ? _GEN_28 | _GEN_3 | entries_1_src2_ready : _GEN_3 | entries_1_src2_ready;
+  wire        _GEN_30 = _GEN_16 & entries_1_valid & _GEN_28;
+  wire        _GEN_31 = ~entries_2_src1_ready & entries_2_src1_phys == io_cdb1_pdest;
+  wire        _GEN_32 = _GEN_16 & entries_2_valid;
+  wire        _GEN_33 =
+    _GEN_32 ? _GEN_31 | _GEN_4 | entries_2_src1_ready : _GEN_4 | entries_2_src1_ready;
+  wire        _GEN_34 = _GEN_16 & entries_2_valid & _GEN_31;
+  wire        _GEN_35 = ~entries_2_src2_ready & entries_2_src2_phys == io_cdb1_pdest;
+  wire        _GEN_36 =
+    _GEN_32 ? _GEN_35 | _GEN_5 | entries_2_src2_ready : _GEN_5 | entries_2_src2_ready;
+  wire        _GEN_37 = _GEN_16 & entries_2_valid & _GEN_35;
+  wire        _GEN_38 = ~entries_3_src1_ready & entries_3_src1_phys == io_cdb1_pdest;
+  wire        _GEN_39 = _GEN_16 & entries_3_valid;
+  wire        _GEN_40 =
+    _GEN_39 ? _GEN_38 | _GEN_6 | entries_3_src1_ready : _GEN_6 | entries_3_src1_ready;
+  wire        _GEN_41 = _GEN_16 & entries_3_valid & _GEN_38;
+  wire        _GEN_42 = ~entries_3_src2_ready & entries_3_src2_phys == io_cdb1_pdest;
+  wire        _GEN_43 =
+    _GEN_39 ? _GEN_42 | _GEN_7 | entries_3_src2_ready : _GEN_7 | entries_3_src2_ready;
+  wire        _GEN_44 = _GEN_16 & entries_3_valid & _GEN_42;
+  wire        _GEN_45 = ~entries_4_src1_ready & entries_4_src1_phys == io_cdb1_pdest;
+  wire        _GEN_46 = _GEN_16 & entries_4_valid;
+  wire        _GEN_47 =
+    _GEN_46 ? _GEN_45 | _GEN_8 | entries_4_src1_ready : _GEN_8 | entries_4_src1_ready;
+  wire        _GEN_48 = _GEN_16 & entries_4_valid & _GEN_45;
+  wire        _GEN_49 = ~entries_4_src2_ready & entries_4_src2_phys == io_cdb1_pdest;
+  wire        _GEN_50 =
+    _GEN_46 ? _GEN_49 | _GEN_9 | entries_4_src2_ready : _GEN_9 | entries_4_src2_ready;
+  wire        _GEN_51 = _GEN_16 & entries_4_valid & _GEN_49;
+  wire        _GEN_52 = ~entries_5_src1_ready & entries_5_src1_phys == io_cdb1_pdest;
+  wire        _GEN_53 = _GEN_16 & entries_5_valid;
+  wire        _GEN_54 =
+    _GEN_53 ? _GEN_52 | _GEN_10 | entries_5_src1_ready : _GEN_10 | entries_5_src1_ready;
+  wire        _GEN_55 = _GEN_16 & entries_5_valid & _GEN_52;
+  wire        _GEN_56 = ~entries_5_src2_ready & entries_5_src2_phys == io_cdb1_pdest;
+  wire        _GEN_57 =
+    _GEN_53 ? _GEN_56 | _GEN_11 | entries_5_src2_ready : _GEN_11 | entries_5_src2_ready;
+  wire        _GEN_58 = _GEN_16 & entries_5_valid & _GEN_56;
+  wire        _GEN_59 = ~entries_6_src1_ready & entries_6_src1_phys == io_cdb1_pdest;
+  wire        _GEN_60 = _GEN_16 & entries_6_valid;
+  wire        _GEN_61 =
+    _GEN_60 ? _GEN_59 | _GEN_12 | entries_6_src1_ready : _GEN_12 | entries_6_src1_ready;
+  wire        _GEN_62 = _GEN_16 & entries_6_valid & _GEN_59;
+  wire        _GEN_63 = ~entries_6_src2_ready & entries_6_src2_phys == io_cdb1_pdest;
+  wire        _GEN_64 =
+    _GEN_60 ? _GEN_63 | _GEN_13 | entries_6_src2_ready : _GEN_13 | entries_6_src2_ready;
+  wire        _GEN_65 = _GEN_16 & entries_6_valid & _GEN_63;
+  wire        _GEN_66 = ~entries_7_src1_ready & entries_7_src1_phys == io_cdb1_pdest;
+  wire        _GEN_67 = _GEN_16 & entries_7_valid;
+  wire        _GEN_68 =
+    _GEN_67 ? _GEN_66 | _GEN_14 | entries_7_src1_ready : _GEN_14 | entries_7_src1_ready;
+  wire        _GEN_69 = _GEN_16 & entries_7_valid & _GEN_66;
+  wire        _GEN_70 = ~entries_7_src2_ready & entries_7_src2_phys == io_cdb1_pdest;
+  wire        _GEN_71 =
+    _GEN_67 ? _GEN_70 | _GEN_15 | entries_7_src2_ready : _GEN_15 | entries_7_src2_ready;
+  wire        _GEN_72 = _GEN_16 & entries_7_valid & _GEN_70;
+  wire [3:0]  _GEN_73 = io_flush_idx - io_rob_head;
+  wire        _GEN_74 = ~freeByRob_0 & entries_0_valid;
+  wire        _GEN_75 = ~freeByRob_1 & entries_1_valid;
+  wire        _GEN_76 = ~freeByRob_2 & entries_2_valid;
+  wire        _GEN_77 = ~freeByRob_3 & entries_3_valid;
+  wire        _GEN_78 = ~freeByRob_4 & entries_4_valid;
+  wire        _GEN_79 = ~freeByRob_5 & entries_5_valid;
+  wire        _GEN_80 = ~freeByRob_6 & entries_6_valid;
+  wire        _GEN_81 = ~freeByRob_7 & entries_7_valid;
+  wire        _GEN_82 = io_enq_fire & (|freeOrIssue);
   wire        cdbHit1 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq_bits_src1_ready
     & io_enq_bits_src1_phys == io_cdb_pdest;
   wire        cdbHit2 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq_bits_src2_ready
     & io_enq_bits_src2_phys == io_cdb_pdest;
-  wire        e_src1_ready = cdbHit1 | io_enq_bits_src1_ready;
-  wire        e_src2_ready = cdbHit2 | io_enq_bits_src2_ready;
-  wire        _GEN_42 = _GEN_41 & enqIdx == 3'h0;
-  wire        _GEN_43 = _GEN_41 & enqIdx == 3'h1;
-  wire        _GEN_44 = _GEN_41 & enqIdx == 3'h2;
-  wire        _GEN_45 = _GEN_41 & enqIdx == 3'h3;
-  wire        _GEN_46 = _GEN_41 & enqIdx == 3'h4;
-  wire        _GEN_47 = _GEN_41 & enqIdx == 3'h5;
-  wire        _GEN_48 = _GEN_41 & enqIdx == 3'h6;
-  wire        _GEN_49 = _GEN_41 & (&enqIdx);
-  wire        _GEN_50 = io_enq1_fire & (|(freeOrIssue & _freeMask1_T));
+  wire        cdb1Hit1 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq_bits_src1_ready
+    & io_enq_bits_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit2 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq_bits_src2_ready
+    & io_enq_bits_src2_phys == io_cdb1_pdest;
+  wire        e_src1_ready = cdb1Hit1 | cdbHit1 | io_enq_bits_src1_ready;
+  wire        e_src2_ready = cdb1Hit2 | cdbHit2 | io_enq_bits_src2_ready;
+  wire        _GEN_83 = _GEN_82 & enqIdx == 3'h0;
+  wire        _GEN_84 = _GEN_82 & enqIdx == 3'h1;
+  wire        _GEN_85 = _GEN_82 & enqIdx == 3'h2;
+  wire        _GEN_86 = _GEN_82 & enqIdx == 3'h3;
+  wire        _GEN_87 = _GEN_82 & enqIdx == 3'h4;
+  wire        _GEN_88 = _GEN_82 & enqIdx == 3'h5;
+  wire        _GEN_89 = _GEN_82 & enqIdx == 3'h6;
+  wire        _GEN_90 = _GEN_82 & (&enqIdx);
+  wire        _GEN_91 = io_enq1_fire & (|(freeOrIssue & _freeMask1_T));
   wire        cdbHit1_1 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq1_bits_src1_ready
     & io_enq1_bits_src1_phys == io_cdb_pdest;
   wire        cdbHit2_1 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq1_bits_src2_ready
     & io_enq1_bits_src2_phys == io_cdb_pdest;
-  wire        e_1_src1_ready = cdbHit1_1 | io_enq1_bits_src1_ready;
-  wire        e_1_src2_ready = cdbHit2_1 | io_enq1_bits_src2_ready;
-  wire        _GEN_51 = enq1Idx == 3'h0;
-  wire        _GEN_52 = _GEN_51 | _GEN_42;
-  wire        _GEN_53 = _GEN_50 & _GEN_51;
-  wire        _GEN_54 = enq1Idx == 3'h1;
-  wire        _GEN_55 = _GEN_54 | _GEN_43;
-  wire        _GEN_56 = _GEN_50 & _GEN_54;
-  wire        _GEN_57 = enq1Idx == 3'h2;
-  wire        _GEN_58 = _GEN_57 | _GEN_44;
-  wire        _GEN_59 = _GEN_50 & _GEN_57;
-  wire        _GEN_60 = enq1Idx == 3'h3;
-  wire        _GEN_61 = _GEN_60 | _GEN_45;
-  wire        _GEN_62 = _GEN_50 & _GEN_60;
-  wire        _GEN_63 = enq1Idx == 3'h4;
-  wire        _GEN_64 = _GEN_63 | _GEN_46;
-  wire        _GEN_65 = _GEN_50 & _GEN_63;
-  wire        _GEN_66 = enq1Idx == 3'h5;
-  wire        _GEN_67 = _GEN_66 | _GEN_47;
-  wire        _GEN_68 = _GEN_50 & _GEN_66;
-  wire        _GEN_69 = enq1Idx == 3'h6;
-  wire        _GEN_70 = _GEN_69 | _GEN_48;
-  wire        _GEN_71 = _GEN_50 & _GEN_69;
-  wire        _GEN_72 = (&enq1Idx) | _GEN_49;
-  wire        _GEN_73 = _GEN_50 & (&enq1Idx);
-  wire [31:0] e_src1_val = cdbHit1 ? io_cdb_val : io_enq_bits_src1_val;
-  wire [31:0] e_src2_val = cdbHit2 ? io_cdb_val : io_enq_bits_src2_val;
-  wire [31:0] e_1_src1_val = cdbHit1_1 ? io_cdb_val : io_enq1_bits_src1_val;
-  wire [31:0] e_1_src2_val = cdbHit2_1 ? io_cdb_val : io_enq1_bits_src2_val;
+  wire        cdb1Hit1_1 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq1_bits_src1_ready
+    & io_enq1_bits_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit2_1 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq1_bits_src2_ready
+    & io_enq1_bits_src2_phys == io_cdb1_pdest;
+  wire        e_1_src1_ready = cdb1Hit1_1 | cdbHit1_1 | io_enq1_bits_src1_ready;
+  wire        e_1_src2_ready = cdb1Hit2_1 | cdbHit2_1 | io_enq1_bits_src2_ready;
+  wire        _GEN_92 = enq1Idx == 3'h0;
+  wire        _GEN_93 = _GEN_92 | _GEN_83;
+  wire        _GEN_94 = _GEN_91 & _GEN_92;
+  wire        _GEN_95 = enq1Idx == 3'h1;
+  wire        _GEN_96 = _GEN_95 | _GEN_84;
+  wire        _GEN_97 = _GEN_91 & _GEN_95;
+  wire        _GEN_98 = enq1Idx == 3'h2;
+  wire        _GEN_99 = _GEN_98 | _GEN_85;
+  wire        _GEN_100 = _GEN_91 & _GEN_98;
+  wire        _GEN_101 = enq1Idx == 3'h3;
+  wire        _GEN_102 = _GEN_101 | _GEN_86;
+  wire        _GEN_103 = _GEN_91 & _GEN_101;
+  wire        _GEN_104 = enq1Idx == 3'h4;
+  wire        _GEN_105 = _GEN_104 | _GEN_87;
+  wire        _GEN_106 = _GEN_91 & _GEN_104;
+  wire        _GEN_107 = enq1Idx == 3'h5;
+  wire        _GEN_108 = _GEN_107 | _GEN_88;
+  wire        _GEN_109 = _GEN_91 & _GEN_107;
+  wire        _GEN_110 = enq1Idx == 3'h6;
+  wire        _GEN_111 = _GEN_110 | _GEN_89;
+  wire        _GEN_112 = _GEN_91 & _GEN_110;
+  wire        _GEN_113 = (&enq1Idx) | _GEN_90;
+  wire        _GEN_114 = _GEN_91 & (&enq1Idx);
+  wire [31:0] e_src1_val =
+    cdb1Hit1 ? io_cdb1_val : cdbHit1 ? io_cdb_val : io_enq_bits_src1_val;
+  wire [31:0] e_src2_val =
+    cdb1Hit2 ? io_cdb1_val : cdbHit2 ? io_cdb_val : io_enq_bits_src2_val;
+  wire [31:0] e_1_src1_val =
+    cdb1Hit1_1 ? io_cdb1_val : cdbHit1_1 ? io_cdb_val : io_enq1_bits_src1_val;
+  wire [31:0] e_1_src2_val =
+    cdb1Hit2_1 ? io_cdb1_val : cdbHit2_1 ? io_cdb_val : io_enq1_bits_src2_val;
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
@@ -2557,46 +2651,78 @@ module RS(
       entries_0_valid <=
         io_flush
           ? ~(io_flush_all | entries_0_valid
-              & (freeByRob_0 | _legacyOH_hasOlder_T_386 > _GEN_32)) & entries_0_valid
-          : _GEN_50 ? _GEN_52 | _GEN_33 : _GEN_42 | _GEN_33;
+              & (freeByRob_0 | _legacyOH_hasOlder_T_386 > _GEN_73)) & entries_0_valid
+          : _GEN_91 ? _GEN_93 | _GEN_74 : _GEN_83 | _GEN_74;
       if (io_flush) begin
-        if (_GEN_0)
-          entries_0_src1_val <= io_cdb_val;
-        if (_GEN_2)
-          entries_0_src2_val <= io_cdb_val;
-        if (_GEN_4)
-          entries_1_src1_val <= io_cdb_val;
-        if (_GEN_6)
-          entries_1_src2_val <= io_cdb_val;
-        if (_GEN_8)
-          entries_2_src1_val <= io_cdb_val;
-        if (_GEN_10)
-          entries_2_src2_val <= io_cdb_val;
-        if (_GEN_12)
-          entries_3_src1_val <= io_cdb_val;
-        if (_GEN_14)
-          entries_3_src2_val <= io_cdb_val;
-        if (_GEN_16)
-          entries_4_src1_val <= io_cdb_val;
-        if (_GEN_18)
-          entries_4_src2_val <= io_cdb_val;
         if (_GEN_20)
-          entries_5_src1_val <= io_cdb_val;
-        if (_GEN_22)
-          entries_5_src2_val <= io_cdb_val;
-        if (_GEN_24)
-          entries_6_src1_val <= io_cdb_val;
-        if (_GEN_26)
-          entries_6_src2_val <= io_cdb_val;
-        if (_GEN_28)
-          entries_7_src1_val <= io_cdb_val;
+          entries_0_src1_val <= io_cdb1_val;
+        else if (_GEN_0)
+          entries_0_src1_val <= io_cdb_val;
+        if (_GEN_23)
+          entries_0_src2_val <= io_cdb1_val;
+        else if (_GEN_1)
+          entries_0_src2_val <= io_cdb_val;
+        if (_GEN_27)
+          entries_1_src1_val <= io_cdb1_val;
+        else if (_GEN_2)
+          entries_1_src1_val <= io_cdb_val;
         if (_GEN_30)
+          entries_1_src2_val <= io_cdb1_val;
+        else if (_GEN_3)
+          entries_1_src2_val <= io_cdb_val;
+        if (_GEN_34)
+          entries_2_src1_val <= io_cdb1_val;
+        else if (_GEN_4)
+          entries_2_src1_val <= io_cdb_val;
+        if (_GEN_37)
+          entries_2_src2_val <= io_cdb1_val;
+        else if (_GEN_5)
+          entries_2_src2_val <= io_cdb_val;
+        if (_GEN_41)
+          entries_3_src1_val <= io_cdb1_val;
+        else if (_GEN_6)
+          entries_3_src1_val <= io_cdb_val;
+        if (_GEN_44)
+          entries_3_src2_val <= io_cdb1_val;
+        else if (_GEN_7)
+          entries_3_src2_val <= io_cdb_val;
+        if (_GEN_48)
+          entries_4_src1_val <= io_cdb1_val;
+        else if (_GEN_8)
+          entries_4_src1_val <= io_cdb_val;
+        if (_GEN_51)
+          entries_4_src2_val <= io_cdb1_val;
+        else if (_GEN_9)
+          entries_4_src2_val <= io_cdb_val;
+        if (_GEN_55)
+          entries_5_src1_val <= io_cdb1_val;
+        else if (_GEN_10)
+          entries_5_src1_val <= io_cdb_val;
+        if (_GEN_58)
+          entries_5_src2_val <= io_cdb1_val;
+        else if (_GEN_11)
+          entries_5_src2_val <= io_cdb_val;
+        if (_GEN_62)
+          entries_6_src1_val <= io_cdb1_val;
+        else if (_GEN_12)
+          entries_6_src1_val <= io_cdb_val;
+        if (_GEN_65)
+          entries_6_src2_val <= io_cdb1_val;
+        else if (_GEN_13)
+          entries_6_src2_val <= io_cdb_val;
+        if (_GEN_69)
+          entries_7_src1_val <= io_cdb1_val;
+        else if (_GEN_14)
+          entries_7_src1_val <= io_cdb_val;
+        if (_GEN_72)
+          entries_7_src2_val <= io_cdb1_val;
+        else if (_GEN_15)
           entries_7_src2_val <= io_cdb_val;
       end
       else begin
         entries_0_issued <=
-          _GEN_50 ? ~_GEN_52 & entries_0_issued : ~_GEN_42 & entries_0_issued;
-        if (_GEN_53) begin
+          _GEN_91 ? ~_GEN_93 & entries_0_issued : ~_GEN_83 & entries_0_issued;
+        if (_GEN_94) begin
           entries_0_rob_idx <= io_enq1_bits_rob_idx;
           entries_0_cp_idx <= io_enq1_bits_cp_idx;
           entries_0_src1_phys <= io_enq1_bits_src1_phys;
@@ -2623,7 +2749,7 @@ module RS(
           entries_0_wbu_reg_write <= io_enq1_bits_wbu_reg_write;
           entries_0_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
         end
-        else if (_GEN_42) begin
+        else if (_GEN_83) begin
           entries_0_rob_idx <= io_enq_bits_rob_idx;
           entries_0_cp_idx <= io_enq_bits_cp_idx;
           entries_0_src1_phys <= io_enq_bits_src1_phys;
@@ -2651,14 +2777,18 @@ module RS(
           entries_0_wbu_reg_write_sel <= io_enq_bits_wbu_reg_write_sel;
         end
         else begin
-          if (_GEN_0)
+          if (_GEN_20)
+            entries_0_src1_val <= io_cdb1_val;
+          else if (_GEN_0)
             entries_0_src1_val <= io_cdb_val;
-          if (_GEN_2)
+          if (_GEN_23)
+            entries_0_src2_val <= io_cdb1_val;
+          else if (_GEN_1)
             entries_0_src2_val <= io_cdb_val;
         end
         entries_1_issued <=
-          _GEN_50 ? ~_GEN_55 & entries_1_issued : ~_GEN_43 & entries_1_issued;
-        if (_GEN_56) begin
+          _GEN_91 ? ~_GEN_96 & entries_1_issued : ~_GEN_84 & entries_1_issued;
+        if (_GEN_97) begin
           entries_1_rob_idx <= io_enq1_bits_rob_idx;
           entries_1_cp_idx <= io_enq1_bits_cp_idx;
           entries_1_src1_phys <= io_enq1_bits_src1_phys;
@@ -2685,7 +2815,7 @@ module RS(
           entries_1_wbu_reg_write <= io_enq1_bits_wbu_reg_write;
           entries_1_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
         end
-        else if (_GEN_43) begin
+        else if (_GEN_84) begin
           entries_1_rob_idx <= io_enq_bits_rob_idx;
           entries_1_cp_idx <= io_enq_bits_cp_idx;
           entries_1_src1_phys <= io_enq_bits_src1_phys;
@@ -2713,14 +2843,18 @@ module RS(
           entries_1_wbu_reg_write_sel <= io_enq_bits_wbu_reg_write_sel;
         end
         else begin
-          if (_GEN_4)
+          if (_GEN_27)
+            entries_1_src1_val <= io_cdb1_val;
+          else if (_GEN_2)
             entries_1_src1_val <= io_cdb_val;
-          if (_GEN_6)
+          if (_GEN_30)
+            entries_1_src2_val <= io_cdb1_val;
+          else if (_GEN_3)
             entries_1_src2_val <= io_cdb_val;
         end
         entries_2_issued <=
-          _GEN_50 ? ~_GEN_58 & entries_2_issued : ~_GEN_44 & entries_2_issued;
-        if (_GEN_59) begin
+          _GEN_91 ? ~_GEN_99 & entries_2_issued : ~_GEN_85 & entries_2_issued;
+        if (_GEN_100) begin
           entries_2_rob_idx <= io_enq1_bits_rob_idx;
           entries_2_cp_idx <= io_enq1_bits_cp_idx;
           entries_2_src1_phys <= io_enq1_bits_src1_phys;
@@ -2747,7 +2881,7 @@ module RS(
           entries_2_wbu_reg_write <= io_enq1_bits_wbu_reg_write;
           entries_2_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
         end
-        else if (_GEN_44) begin
+        else if (_GEN_85) begin
           entries_2_rob_idx <= io_enq_bits_rob_idx;
           entries_2_cp_idx <= io_enq_bits_cp_idx;
           entries_2_src1_phys <= io_enq_bits_src1_phys;
@@ -2775,14 +2909,18 @@ module RS(
           entries_2_wbu_reg_write_sel <= io_enq_bits_wbu_reg_write_sel;
         end
         else begin
-          if (_GEN_8)
+          if (_GEN_34)
+            entries_2_src1_val <= io_cdb1_val;
+          else if (_GEN_4)
             entries_2_src1_val <= io_cdb_val;
-          if (_GEN_10)
+          if (_GEN_37)
+            entries_2_src2_val <= io_cdb1_val;
+          else if (_GEN_5)
             entries_2_src2_val <= io_cdb_val;
         end
         entries_3_issued <=
-          _GEN_50 ? ~_GEN_61 & entries_3_issued : ~_GEN_45 & entries_3_issued;
-        if (_GEN_62) begin
+          _GEN_91 ? ~_GEN_102 & entries_3_issued : ~_GEN_86 & entries_3_issued;
+        if (_GEN_103) begin
           entries_3_rob_idx <= io_enq1_bits_rob_idx;
           entries_3_cp_idx <= io_enq1_bits_cp_idx;
           entries_3_src1_phys <= io_enq1_bits_src1_phys;
@@ -2809,7 +2947,7 @@ module RS(
           entries_3_wbu_reg_write <= io_enq1_bits_wbu_reg_write;
           entries_3_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
         end
-        else if (_GEN_45) begin
+        else if (_GEN_86) begin
           entries_3_rob_idx <= io_enq_bits_rob_idx;
           entries_3_cp_idx <= io_enq_bits_cp_idx;
           entries_3_src1_phys <= io_enq_bits_src1_phys;
@@ -2837,14 +2975,18 @@ module RS(
           entries_3_wbu_reg_write_sel <= io_enq_bits_wbu_reg_write_sel;
         end
         else begin
-          if (_GEN_12)
+          if (_GEN_41)
+            entries_3_src1_val <= io_cdb1_val;
+          else if (_GEN_6)
             entries_3_src1_val <= io_cdb_val;
-          if (_GEN_14)
+          if (_GEN_44)
+            entries_3_src2_val <= io_cdb1_val;
+          else if (_GEN_7)
             entries_3_src2_val <= io_cdb_val;
         end
         entries_4_issued <=
-          _GEN_50 ? ~_GEN_64 & entries_4_issued : ~_GEN_46 & entries_4_issued;
-        if (_GEN_65) begin
+          _GEN_91 ? ~_GEN_105 & entries_4_issued : ~_GEN_87 & entries_4_issued;
+        if (_GEN_106) begin
           entries_4_rob_idx <= io_enq1_bits_rob_idx;
           entries_4_cp_idx <= io_enq1_bits_cp_idx;
           entries_4_src1_phys <= io_enq1_bits_src1_phys;
@@ -2871,7 +3013,7 @@ module RS(
           entries_4_wbu_reg_write <= io_enq1_bits_wbu_reg_write;
           entries_4_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
         end
-        else if (_GEN_46) begin
+        else if (_GEN_87) begin
           entries_4_rob_idx <= io_enq_bits_rob_idx;
           entries_4_cp_idx <= io_enq_bits_cp_idx;
           entries_4_src1_phys <= io_enq_bits_src1_phys;
@@ -2899,14 +3041,18 @@ module RS(
           entries_4_wbu_reg_write_sel <= io_enq_bits_wbu_reg_write_sel;
         end
         else begin
-          if (_GEN_16)
+          if (_GEN_48)
+            entries_4_src1_val <= io_cdb1_val;
+          else if (_GEN_8)
             entries_4_src1_val <= io_cdb_val;
-          if (_GEN_18)
+          if (_GEN_51)
+            entries_4_src2_val <= io_cdb1_val;
+          else if (_GEN_9)
             entries_4_src2_val <= io_cdb_val;
         end
         entries_5_issued <=
-          _GEN_50 ? ~_GEN_67 & entries_5_issued : ~_GEN_47 & entries_5_issued;
-        if (_GEN_68) begin
+          _GEN_91 ? ~_GEN_108 & entries_5_issued : ~_GEN_88 & entries_5_issued;
+        if (_GEN_109) begin
           entries_5_rob_idx <= io_enq1_bits_rob_idx;
           entries_5_cp_idx <= io_enq1_bits_cp_idx;
           entries_5_src1_phys <= io_enq1_bits_src1_phys;
@@ -2933,7 +3079,7 @@ module RS(
           entries_5_wbu_reg_write <= io_enq1_bits_wbu_reg_write;
           entries_5_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
         end
-        else if (_GEN_47) begin
+        else if (_GEN_88) begin
           entries_5_rob_idx <= io_enq_bits_rob_idx;
           entries_5_cp_idx <= io_enq_bits_cp_idx;
           entries_5_src1_phys <= io_enq_bits_src1_phys;
@@ -2961,14 +3107,18 @@ module RS(
           entries_5_wbu_reg_write_sel <= io_enq_bits_wbu_reg_write_sel;
         end
         else begin
-          if (_GEN_20)
+          if (_GEN_55)
+            entries_5_src1_val <= io_cdb1_val;
+          else if (_GEN_10)
             entries_5_src1_val <= io_cdb_val;
-          if (_GEN_22)
+          if (_GEN_58)
+            entries_5_src2_val <= io_cdb1_val;
+          else if (_GEN_11)
             entries_5_src2_val <= io_cdb_val;
         end
         entries_6_issued <=
-          _GEN_50 ? ~_GEN_70 & entries_6_issued : ~_GEN_48 & entries_6_issued;
-        if (_GEN_71) begin
+          _GEN_91 ? ~_GEN_111 & entries_6_issued : ~_GEN_89 & entries_6_issued;
+        if (_GEN_112) begin
           entries_6_rob_idx <= io_enq1_bits_rob_idx;
           entries_6_cp_idx <= io_enq1_bits_cp_idx;
           entries_6_src1_phys <= io_enq1_bits_src1_phys;
@@ -2995,7 +3145,7 @@ module RS(
           entries_6_wbu_reg_write <= io_enq1_bits_wbu_reg_write;
           entries_6_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
         end
-        else if (_GEN_48) begin
+        else if (_GEN_89) begin
           entries_6_rob_idx <= io_enq_bits_rob_idx;
           entries_6_cp_idx <= io_enq_bits_cp_idx;
           entries_6_src1_phys <= io_enq_bits_src1_phys;
@@ -3023,14 +3173,18 @@ module RS(
           entries_6_wbu_reg_write_sel <= io_enq_bits_wbu_reg_write_sel;
         end
         else begin
-          if (_GEN_24)
+          if (_GEN_62)
+            entries_6_src1_val <= io_cdb1_val;
+          else if (_GEN_12)
             entries_6_src1_val <= io_cdb_val;
-          if (_GEN_26)
+          if (_GEN_65)
+            entries_6_src2_val <= io_cdb1_val;
+          else if (_GEN_13)
             entries_6_src2_val <= io_cdb_val;
         end
         entries_7_issued <=
-          _GEN_50 ? ~_GEN_72 & entries_7_issued : ~_GEN_49 & entries_7_issued;
-        if (_GEN_73) begin
+          _GEN_91 ? ~_GEN_113 & entries_7_issued : ~_GEN_90 & entries_7_issued;
+        if (_GEN_114) begin
           entries_7_rob_idx <= io_enq1_bits_rob_idx;
           entries_7_cp_idx <= io_enq1_bits_cp_idx;
           entries_7_src1_phys <= io_enq1_bits_src1_phys;
@@ -3057,7 +3211,7 @@ module RS(
           entries_7_wbu_reg_write <= io_enq1_bits_wbu_reg_write;
           entries_7_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
         end
-        else if (_GEN_49) begin
+        else if (_GEN_90) begin
           entries_7_rob_idx <= io_enq_bits_rob_idx;
           entries_7_cp_idx <= io_enq_bits_cp_idx;
           entries_7_src1_phys <= io_enq_bits_src1_phys;
@@ -3085,79 +3239,83 @@ module RS(
           entries_7_wbu_reg_write_sel <= io_enq_bits_wbu_reg_write_sel;
         end
         else begin
-          if (_GEN_28)
+          if (_GEN_69)
+            entries_7_src1_val <= io_cdb1_val;
+          else if (_GEN_14)
             entries_7_src1_val <= io_cdb_val;
-          if (_GEN_30)
+          if (_GEN_72)
+            entries_7_src2_val <= io_cdb1_val;
+          else if (_GEN_15)
             entries_7_src2_val <= io_cdb_val;
         end
       end
       entries_0_src1_ready <=
-        io_flush ? _GEN_1 : _GEN_53 ? e_1_src1_ready : _GEN_42 ? e_src1_ready : _GEN_1;
+        io_flush ? _GEN_19 : _GEN_94 ? e_1_src1_ready : _GEN_83 ? e_src1_ready : _GEN_19;
       entries_0_src2_ready <=
-        io_flush ? _GEN_3 : _GEN_53 ? e_1_src2_ready : _GEN_42 ? e_src2_ready : _GEN_3;
+        io_flush ? _GEN_22 : _GEN_94 ? e_1_src2_ready : _GEN_83 ? e_src2_ready : _GEN_22;
       entries_1_valid <=
         io_flush
           ? ~(io_flush_all | entries_1_valid
-              & (freeByRob_1 | _legacyOH_hasOlder_T_392 > _GEN_32)) & entries_1_valid
-          : _GEN_50 ? _GEN_55 | _GEN_34 : _GEN_43 | _GEN_34;
+              & (freeByRob_1 | _legacyOH_hasOlder_T_392 > _GEN_73)) & entries_1_valid
+          : _GEN_91 ? _GEN_96 | _GEN_75 : _GEN_84 | _GEN_75;
       entries_1_src1_ready <=
-        io_flush ? _GEN_5 : _GEN_56 ? e_1_src1_ready : _GEN_43 ? e_src1_ready : _GEN_5;
+        io_flush ? _GEN_26 : _GEN_97 ? e_1_src1_ready : _GEN_84 ? e_src1_ready : _GEN_26;
       entries_1_src2_ready <=
-        io_flush ? _GEN_7 : _GEN_56 ? e_1_src2_ready : _GEN_43 ? e_src2_ready : _GEN_7;
+        io_flush ? _GEN_29 : _GEN_97 ? e_1_src2_ready : _GEN_84 ? e_src2_ready : _GEN_29;
       entries_2_valid <=
         io_flush
           ? ~(io_flush_all | entries_2_valid
-              & (freeByRob_2 | _legacyOH_hasOlder_T_398 > _GEN_32)) & entries_2_valid
-          : _GEN_50 ? _GEN_58 | _GEN_35 : _GEN_44 | _GEN_35;
+              & (freeByRob_2 | _legacyOH_hasOlder_T_398 > _GEN_73)) & entries_2_valid
+          : _GEN_91 ? _GEN_99 | _GEN_76 : _GEN_85 | _GEN_76;
       entries_2_src1_ready <=
-        io_flush ? _GEN_9 : _GEN_59 ? e_1_src1_ready : _GEN_44 ? e_src1_ready : _GEN_9;
+        io_flush ? _GEN_33 : _GEN_100 ? e_1_src1_ready : _GEN_85 ? e_src1_ready : _GEN_33;
       entries_2_src2_ready <=
-        io_flush ? _GEN_11 : _GEN_59 ? e_1_src2_ready : _GEN_44 ? e_src2_ready : _GEN_11;
+        io_flush ? _GEN_36 : _GEN_100 ? e_1_src2_ready : _GEN_85 ? e_src2_ready : _GEN_36;
       entries_3_valid <=
         io_flush
           ? ~(io_flush_all | entries_3_valid
-              & (freeByRob_3 | _legacyOH_hasOlder_T_404 > _GEN_32)) & entries_3_valid
-          : _GEN_50 ? _GEN_61 | _GEN_36 : _GEN_45 | _GEN_36;
+              & (freeByRob_3 | _legacyOH_hasOlder_T_404 > _GEN_73)) & entries_3_valid
+          : _GEN_91 ? _GEN_102 | _GEN_77 : _GEN_86 | _GEN_77;
       entries_3_src1_ready <=
-        io_flush ? _GEN_13 : _GEN_62 ? e_1_src1_ready : _GEN_45 ? e_src1_ready : _GEN_13;
+        io_flush ? _GEN_40 : _GEN_103 ? e_1_src1_ready : _GEN_86 ? e_src1_ready : _GEN_40;
       entries_3_src2_ready <=
-        io_flush ? _GEN_15 : _GEN_62 ? e_1_src2_ready : _GEN_45 ? e_src2_ready : _GEN_15;
+        io_flush ? _GEN_43 : _GEN_103 ? e_1_src2_ready : _GEN_86 ? e_src2_ready : _GEN_43;
       entries_4_valid <=
         io_flush
           ? ~(io_flush_all | entries_4_valid
-              & (freeByRob_4 | _legacyOH_hasOlder_T_410 > _GEN_32)) & entries_4_valid
-          : _GEN_50 ? _GEN_64 | _GEN_37 : _GEN_46 | _GEN_37;
+              & (freeByRob_4 | _legacyOH_hasOlder_T_410 > _GEN_73)) & entries_4_valid
+          : _GEN_91 ? _GEN_105 | _GEN_78 : _GEN_87 | _GEN_78;
       entries_4_src1_ready <=
-        io_flush ? _GEN_17 : _GEN_65 ? e_1_src1_ready : _GEN_46 ? e_src1_ready : _GEN_17;
+        io_flush ? _GEN_47 : _GEN_106 ? e_1_src1_ready : _GEN_87 ? e_src1_ready : _GEN_47;
       entries_4_src2_ready <=
-        io_flush ? _GEN_19 : _GEN_65 ? e_1_src2_ready : _GEN_46 ? e_src2_ready : _GEN_19;
+        io_flush ? _GEN_50 : _GEN_106 ? e_1_src2_ready : _GEN_87 ? e_src2_ready : _GEN_50;
       entries_5_valid <=
         io_flush
           ? ~(io_flush_all | entries_5_valid
-              & (freeByRob_5 | _legacyOH_hasOlder_T_416 > _GEN_32)) & entries_5_valid
-          : _GEN_50 ? _GEN_67 | _GEN_38 : _GEN_47 | _GEN_38;
+              & (freeByRob_5 | _legacyOH_hasOlder_T_416 > _GEN_73)) & entries_5_valid
+          : _GEN_91 ? _GEN_108 | _GEN_79 : _GEN_88 | _GEN_79;
       entries_5_src1_ready <=
-        io_flush ? _GEN_21 : _GEN_68 ? e_1_src1_ready : _GEN_47 ? e_src1_ready : _GEN_21;
+        io_flush ? _GEN_54 : _GEN_109 ? e_1_src1_ready : _GEN_88 ? e_src1_ready : _GEN_54;
       entries_5_src2_ready <=
-        io_flush ? _GEN_23 : _GEN_68 ? e_1_src2_ready : _GEN_47 ? e_src2_ready : _GEN_23;
+        io_flush ? _GEN_57 : _GEN_109 ? e_1_src2_ready : _GEN_88 ? e_src2_ready : _GEN_57;
       entries_6_valid <=
         io_flush
           ? ~(io_flush_all | entries_6_valid
-              & (freeByRob_6 | _legacyOH_hasOlder_T_422 > _GEN_32)) & entries_6_valid
-          : _GEN_50 ? _GEN_70 | _GEN_39 : _GEN_48 | _GEN_39;
+              & (freeByRob_6 | _legacyOH_hasOlder_T_422 > _GEN_73)) & entries_6_valid
+          : _GEN_91 ? _GEN_111 | _GEN_80 : _GEN_89 | _GEN_80;
       entries_6_src1_ready <=
-        io_flush ? _GEN_25 : _GEN_71 ? e_1_src1_ready : _GEN_48 ? e_src1_ready : _GEN_25;
+        io_flush ? _GEN_61 : _GEN_112 ? e_1_src1_ready : _GEN_89 ? e_src1_ready : _GEN_61;
       entries_6_src2_ready <=
-        io_flush ? _GEN_27 : _GEN_71 ? e_1_src2_ready : _GEN_48 ? e_src2_ready : _GEN_27;
+        io_flush ? _GEN_64 : _GEN_112 ? e_1_src2_ready : _GEN_89 ? e_src2_ready : _GEN_64;
       entries_7_valid <=
         io_flush
           ? ~(io_flush_all | entries_7_valid
-              & (freeByRob_7 | _legacyOH_hasOlder_T_428 > _GEN_32)) & entries_7_valid
-          : _GEN_50 ? _GEN_72 | _GEN_40 : _GEN_49 | _GEN_40;
+              & (freeByRob_7 | _legacyOH_hasOlder_T_428 > _GEN_73)) & entries_7_valid
+          : _GEN_91 ? _GEN_113 | _GEN_81 : _GEN_90 | _GEN_81;
       entries_7_src1_ready <=
-        io_flush ? _GEN_29 : _GEN_73 ? e_1_src1_ready : _GEN_49 ? e_src1_ready : _GEN_29;
+        io_flush ? _GEN_68 : _GEN_114 ? e_1_src1_ready : _GEN_90 ? e_src1_ready : _GEN_68;
       entries_7_src2_ready <=
-        io_flush ? _GEN_31 : _GEN_73 ? e_1_src2_ready : _GEN_49 ? e_src2_ready : _GEN_31;
+        io_flush ? _GEN_71 : _GEN_114 ? e_1_src2_ready : _GEN_90 ? e_src2_ready : _GEN_71;
     end
   end // always @(posedge)
   assign io_count = io_count_0;

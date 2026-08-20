@@ -61,6 +61,7 @@ module LSU(
   wire        fwd_done = is_load & io_st_fwd_valid & ~io_st_fwd_wait;
   wire        _io_bus_busy_T = state == 2'h1;
   wire        _io_bus_busy_T_1 = state == 2'h2;
+  wire        bus_data_valid = is_load & _io_bus_busy_T & io_dmem_rvalid;
   assign io_dmem_arvalid_0 = can_issue_load & ~(|state) & idle & ~ar_handshake_done;
   wire [31:0] rword = io_dmem_rdata >> {27'h0, io_in_bits_alu_result[1:0], 3'h0};
   reg  [31:0] casez_tmp;
@@ -84,9 +85,9 @@ module LSU(
         casez_tmp = io_st_fwd_data;
     endcase
   end // always_comb
-  wire        has_laf = io_dmem_rvalid & (|io_dmem_rresp);
+  wire        has_laf = bus_data_valid & (|io_dmem_rresp);
   assign idle = io_in_valid & ~io_is_flush;
-  wire        ready = ~is_load | fwd_done | io_dmem_rvalid;
+  wire        ready = ~is_load | fwd_done | bus_data_valid;
   wire        work = ready & io_out_ready;
   always @(posedge clock) begin
     if (reset) begin
@@ -127,6 +128,24 @@ module LSU(
     .data     (64'h1),
     .enable   (_io_bus_busy_T & (~ready | io_out_ready))
   );
+  PerfMonitor pm_3 (
+    .clock    (clock),
+    .event_id (32'h21),
+    .data     (64'h1),
+    .enable   (io_in_valid & is_load & io_st_fwd_wait & ~io_is_flush)
+  );
+  PerfMonitor pm_4 (
+    .clock    (clock),
+    .event_id (32'h22),
+    .data     (64'h1),
+    .enable   (work & fwd_done)
+  );
+  PerfMonitor pm_5 (
+    .clock    (clock),
+    .event_id (32'h23),
+    .data     (64'h1),
+    .enable   (_io_bus_busy_T & ~io_dmem_rvalid)
+  );
   assign io_in_ready = ~io_in_valid | work;
   assign io_out_valid = io_in_valid & ready;
   assign io_out_bits_signals_wbu_reg_write = io_in_bits_signals_wbu_reg_write;
@@ -156,7 +175,9 @@ module LSU(
   assign io_out_bits_store_data = io_in_bits_rd2;
   assign io_dmem_araddr = io_in_bits_alu_result;
   assign io_dmem_arvalid = io_dmem_arvalid_0;
-  assign io_dmem_rready = is_load & _io_bus_busy_T & io_out_ready | _io_bus_busy_T_1;
+  assign io_dmem_rready =
+    bus_data_valid & io_out_ready | _io_bus_busy_T_1 | ~(|state) & io_dmem_rvalid
+    & ~ar_handshake_done;
   assign io_bus_busy =
     _io_bus_busy_T | _io_bus_busy_T_1 | is_load & idle
     & (ar_handshake_done | io_dmem_arvalid_0);

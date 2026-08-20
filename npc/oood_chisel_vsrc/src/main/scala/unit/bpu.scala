@@ -41,19 +41,26 @@ class BPU(val conf: CoreConfig) extends Module {
     imm.io.imm_type := Mux(is_jal, ImmJ, ImmB)
 
     //2-bits饱和计数器
-    val bht = RegInit(VecInit(Seq.fill(BHT_SIZE)(0.U(2.W)))) //2-bits饱和计数器
+    val bht = RegInit(VecInit(Seq.fill(BHT_SIZE)(BHT_INIT.U(2.W)))) //2-bits饱和计数器
+    val bht_valid = RegInit(VecInit(Seq.fill(BHT_SIZE)(false.B)))
     val ghr = RegInit(0.U(log2Ceil(BHT_SIZE).W)) //全局历史（与 BHT 索引同宽）
     // GShare 索引 = PC[10:2] ^ ghr
     // 关键：更新必须用"预测时的同一个索引"（update_index 随指令流传递），
     // 否则 EXU 更新时 ghr 已被中间的分支改掉，写错条目
     val bht_index = io.predict_pc(log2Ceil(BHT_SIZE) + 1, 2) ^ ghr
     val bht_value = bht(bht_index) //BHT预测值
-    val bht_predict_taken = bht_value(1) //预测是否跳转 0=不跳 1=跳
+    val bht_trained = bht_valid(bht_index)
+    val bht_counter_taken = bht_value(1) //预测是否跳转 0=不跳 1=跳
+    val cold_static_taken = imm.io.imm_ext(31) // backward-taken / forward-not-taken
+    val bht_predict_taken =
+        if (BHT_COLD_STATIC) Mux(bht_trained, bht_counter_taken, cold_static_taken)
+        else bht_counter_taken
 
     //更新BHT：直接用预测时传递的索引，不重新计算
     when(io.update_valid && io.update_is_branch) {
         val update_value = bht(io.update_index)
         bht(io.update_index) := Mux(io.update_taken, Mux(update_value === 3.U, 3.U, update_value + 1.U), Mux(update_value === 0.U, 0.U, update_value - 1.U))
+        bht_valid(io.update_index) := true.B
         // 更新全局历史寄存器
         ghr := Cat(ghr(log2Ceil(BHT_SIZE) - 2, 0), io.update_taken)
     }

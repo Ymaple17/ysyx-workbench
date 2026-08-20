@@ -63,6 +63,10 @@ void print_perf_stats(unsigned long long cycles) {
     long long bpu_mispred = counters[EVENT_BPU_MISPRED];
     printf("Predictions:  %lld\n", bpu_predict);
     printf("Mispredicts:  %lld\n", bpu_mispred);
+    printf("BP Flushes:   %lld\n", counters[EVENT_BP_FLUSH]);
+    printf("Direction Miss:    %lld\n", counters[EVENT_BPU_DIR_MISPRED]);
+    printf("Target Miss:       %lld\n", counters[EVENT_BPU_TARGET_MISPRED]);
+    printf("Unpredicted JALR:  %lld\n", counters[EVENT_BPU_UNPREDICTED]);
     if (bpu_predict > 0) {
         printf("Hit Rate:     %.2f%%\n", 100.0 * (bpu_predict - bpu_mispred) / bpu_predict);
         printf("Mispredict Rate: %.2f%%\n", 100.0 * bpu_mispred / bpu_predict);
@@ -73,14 +77,43 @@ void print_perf_stats(unsigned long long cycles) {
     printf("FL Empty: %lld\n", counters[EVENT_FL_EMPTY]);
     printf("RS Full:  %lld\n", counters[EVENT_RS_FULL]);
     printf("FQ Full:  %lld\n", counters[EVENT_FQ_FULL]);
+    printf("FQ Empty: %lld\n", counters[EVENT_FQ_EMPTY]);
+
+    printf("\n[Writeback / Commit Bottlenecks]\n");
+    printf("CDB Conflicts:       %lld\n", counters[EVENT_CDB_CONFLICT]);
+    printf("CDB Blocked Results: %lld\n", counters[EVENT_CDB_BLOCKED]);
+    printf("Head Not Ready:      %lld\n", counters[EVENT_COMMIT_HEAD_WAIT]);
+    printf("Wait Store Commit:   %lld\n", counters[EVENT_COMMIT_WAIT_STORE]);
+    printf("Wait Fence/Icache:   %lld\n", counters[EVENT_COMMIT_WAIT_FENCE]);
+    printf("Wait BP Recovery:    %lld\n", counters[EVENT_COMMIT_WAIT_BP]);
+    printf("Wait Flush/IRQ:      %lld\n", counters[EVENT_COMMIT_WAIT_FLUSH]);
+    printf("StoreBuffer Full:    %lld\n", counters[EVENT_STORE_BUFFER_FULL]);
 
     printf("\n[LSU Statistics]\n");
     long long total_access = counters[EVENT_LSU_READ] + counters[EVENT_LSU_WRITE];
     printf("Total Accesses: %lld\n", total_access);
     printf("Reads: %lld\n", counters[EVENT_LSU_READ]);
     printf("Writes: %lld\n", counters[EVENT_LSU_WRITE]);
+    printf("StoreBuffer Enq:   %lld\n", counters[EVENT_STORE_BUFFER_ENQ]);
+    printf("StoreBuffer Drain: %lld\n", counters[EVENT_STORE_BUFFER_DRAIN]);
+    printf("StoreBuffer Fwd:   %lld\n", counters[EVENT_STORE_BUFFER_FORWARD]);
+    printf("SQ Wait Cycles: %lld\n", counters[EVENT_LSU_SQ_WAIT]);
+    printf("SQ Forwards:    %lld\n", counters[EVENT_LSU_SQ_FORWARD]);
+    printf("Bus Wait Cycles: %lld\n", counters[EVENT_LSU_BUS_WAIT]);
     if (total_access > 0) {
         printf("Average Latency: %.2f cycles\n", (double)counters[EVENT_LSU_LATENCY] / total_access);
+    }
+
+    printf("\n[DCache Performance]\n");
+    long long dcache_access = counters[EVENT_DCACHE_ACCESS];
+    long long dcache_hit = counters[EVENT_DCACHE_HIT];
+    long long dcache_miss = counters[EVENT_DCACHE_MISS];
+    printf("DCache Accesses: %lld\n", dcache_access);
+    printf("DCache Hits:     %lld\n", dcache_hit);
+    printf("DCache Misses:   %lld\n", dcache_miss);
+    printf("DCache Bypass:   %lld\n", counters[EVENT_DCACHE_BYPASS]);
+    if (dcache_access > 0) {
+        printf("DCache Hit Rate: %.2f%%\n", 100.0 * dcache_hit / dcache_access);
     }
 
     printf("\n[MulDiv Statistics]\n");

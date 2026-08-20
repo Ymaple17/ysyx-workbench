@@ -12,7 +12,10 @@ module PRF(
   output [31:0] io_rdata4,
   input         io_wen1,
   input  [5:0]  io_waddr1,
-  input  [31:0] io_wdata1
+  input  [31:0] io_wdata1,
+  input         io_wen2,
+  input  [5:0]  io_waddr2,
+  input  [31:0] io_wdata2
 );
 
   reg  [31:0] rf_0;
@@ -596,6 +599,7 @@ module PRF(
     endcase
   end // always_comb
   wire        _GEN = io_wen1 & (|io_waddr1);
+  wire        _GEN_0 = io_wen2 & (|io_waddr2);
   always @(posedge clock) begin
     if (reset) begin
       rf_0 <= 32'h0;
@@ -648,101 +652,197 @@ module PRF(
       rf_47 <= 32'h0;
     end
     else begin
-      if (_GEN & ~(|io_waddr1))
+      if (_GEN_0 & ~(|io_waddr2))
+        rf_0 <= io_wdata2;
+      else if (_GEN & ~(|io_waddr1))
         rf_0 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h1)
+      if (_GEN_0 & io_waddr2 == 6'h1)
+        rf_1 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h1)
         rf_1 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h2)
+      if (_GEN_0 & io_waddr2 == 6'h2)
+        rf_2 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h2)
         rf_2 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h3)
+      if (_GEN_0 & io_waddr2 == 6'h3)
+        rf_3 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h3)
         rf_3 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h4)
+      if (_GEN_0 & io_waddr2 == 6'h4)
+        rf_4 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h4)
         rf_4 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h5)
+      if (_GEN_0 & io_waddr2 == 6'h5)
+        rf_5 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h5)
         rf_5 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h6)
+      if (_GEN_0 & io_waddr2 == 6'h6)
+        rf_6 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h6)
         rf_6 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h7)
+      if (_GEN_0 & io_waddr2 == 6'h7)
+        rf_7 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h7)
         rf_7 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h8)
+      if (_GEN_0 & io_waddr2 == 6'h8)
+        rf_8 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h8)
         rf_8 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h9)
+      if (_GEN_0 & io_waddr2 == 6'h9)
+        rf_9 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h9)
         rf_9 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'hA)
+      if (_GEN_0 & io_waddr2 == 6'hA)
+        rf_10 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'hA)
         rf_10 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'hB)
+      if (_GEN_0 & io_waddr2 == 6'hB)
+        rf_11 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'hB)
         rf_11 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'hC)
+      if (_GEN_0 & io_waddr2 == 6'hC)
+        rf_12 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'hC)
         rf_12 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'hD)
+      if (_GEN_0 & io_waddr2 == 6'hD)
+        rf_13 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'hD)
         rf_13 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'hE)
+      if (_GEN_0 & io_waddr2 == 6'hE)
+        rf_14 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'hE)
         rf_14 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'hF)
+      if (_GEN_0 & io_waddr2 == 6'hF)
+        rf_15 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'hF)
         rf_15 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h10)
+      if (_GEN_0 & io_waddr2 == 6'h10)
+        rf_16 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h10)
         rf_16 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h11)
+      if (_GEN_0 & io_waddr2 == 6'h11)
+        rf_17 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h11)
         rf_17 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h12)
+      if (_GEN_0 & io_waddr2 == 6'h12)
+        rf_18 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h12)
         rf_18 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h13)
+      if (_GEN_0 & io_waddr2 == 6'h13)
+        rf_19 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h13)
         rf_19 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h14)
+      if (_GEN_0 & io_waddr2 == 6'h14)
+        rf_20 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h14)
         rf_20 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h15)
+      if (_GEN_0 & io_waddr2 == 6'h15)
+        rf_21 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h15)
         rf_21 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h16)
+      if (_GEN_0 & io_waddr2 == 6'h16)
+        rf_22 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h16)
         rf_22 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h17)
+      if (_GEN_0 & io_waddr2 == 6'h17)
+        rf_23 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h17)
         rf_23 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h18)
+      if (_GEN_0 & io_waddr2 == 6'h18)
+        rf_24 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h18)
         rf_24 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h19)
+      if (_GEN_0 & io_waddr2 == 6'h19)
+        rf_25 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h19)
         rf_25 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h1A)
+      if (_GEN_0 & io_waddr2 == 6'h1A)
+        rf_26 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h1A)
         rf_26 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h1B)
+      if (_GEN_0 & io_waddr2 == 6'h1B)
+        rf_27 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h1B)
         rf_27 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h1C)
+      if (_GEN_0 & io_waddr2 == 6'h1C)
+        rf_28 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h1C)
         rf_28 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h1D)
+      if (_GEN_0 & io_waddr2 == 6'h1D)
+        rf_29 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h1D)
         rf_29 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h1E)
+      if (_GEN_0 & io_waddr2 == 6'h1E)
+        rf_30 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h1E)
         rf_30 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h1F)
+      if (_GEN_0 & io_waddr2 == 6'h1F)
+        rf_31 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h1F)
         rf_31 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h20)
+      if (_GEN_0 & io_waddr2 == 6'h20)
+        rf_32 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h20)
         rf_32 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h21)
+      if (_GEN_0 & io_waddr2 == 6'h21)
+        rf_33 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h21)
         rf_33 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h22)
+      if (_GEN_0 & io_waddr2 == 6'h22)
+        rf_34 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h22)
         rf_34 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h23)
+      if (_GEN_0 & io_waddr2 == 6'h23)
+        rf_35 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h23)
         rf_35 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h24)
+      if (_GEN_0 & io_waddr2 == 6'h24)
+        rf_36 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h24)
         rf_36 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h25)
+      if (_GEN_0 & io_waddr2 == 6'h25)
+        rf_37 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h25)
         rf_37 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h26)
+      if (_GEN_0 & io_waddr2 == 6'h26)
+        rf_38 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h26)
         rf_38 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h27)
+      if (_GEN_0 & io_waddr2 == 6'h27)
+        rf_39 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h27)
         rf_39 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h28)
+      if (_GEN_0 & io_waddr2 == 6'h28)
+        rf_40 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h28)
         rf_40 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h29)
+      if (_GEN_0 & io_waddr2 == 6'h29)
+        rf_41 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h29)
         rf_41 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h2A)
+      if (_GEN_0 & io_waddr2 == 6'h2A)
+        rf_42 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h2A)
         rf_42 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h2B)
+      if (_GEN_0 & io_waddr2 == 6'h2B)
+        rf_43 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h2B)
         rf_43 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h2C)
+      if (_GEN_0 & io_waddr2 == 6'h2C)
+        rf_44 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h2C)
         rf_44 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h2D)
+      if (_GEN_0 & io_waddr2 == 6'h2D)
+        rf_45 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h2D)
         rf_45 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h2E)
+      if (_GEN_0 & io_waddr2 == 6'h2E)
+        rf_46 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h2E)
         rf_46 <= io_wdata1;
-      if (_GEN & io_waddr1 == 6'h2F)
+      if (_GEN_0 & io_waddr2 == 6'h2F)
+        rf_47 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h2F)
         rf_47 <= io_wdata1;
     end
   end // always @(posedge)

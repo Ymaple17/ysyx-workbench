@@ -59,6 +59,14 @@ module ROB(
   input  [31:0] io_wb_mem_addr,
                 io_wb_mem_wdata,
   input         io_wb_actual_taken,
+                io_wb1_fire,
+  input  [3:0]  io_wb1_idx,
+  input  [31:0] io_wb1_val,
+  input         io_wb1_state_state,
+  input  [7:0]  io_wb1_state_state_num,
+  input  [31:0] io_wb1_mem_addr,
+                io_wb1_mem_wdata,
+  input         io_wb1_actual_taken,
   output        io_commit_valid,
   output [3:0]  io_commit_idx,
   output [31:0] io_commit_bits_pc,
@@ -106,9 +114,6 @@ module ROB(
                 io_entries_0_new_phys,
   output        io_entries_0_is_fencei,
                 io_entries_0_state_state,
-  output [31:0] io_entries_0_mem_addr,
-                io_entries_0_mem_wdata,
-  output        io_entries_0_addr_ready,
                 io_entries_1_valid,
                 io_entries_1_done,
   output [31:0] io_entries_1_pc,
@@ -123,9 +128,6 @@ module ROB(
                 io_entries_1_new_phys,
   output        io_entries_1_is_fencei,
                 io_entries_1_state_state,
-  output [31:0] io_entries_1_mem_addr,
-                io_entries_1_mem_wdata,
-  output        io_entries_1_addr_ready,
                 io_entries_2_valid,
                 io_entries_2_done,
   output [31:0] io_entries_2_pc,
@@ -140,9 +142,6 @@ module ROB(
                 io_entries_2_new_phys,
   output        io_entries_2_is_fencei,
                 io_entries_2_state_state,
-  output [31:0] io_entries_2_mem_addr,
-                io_entries_2_mem_wdata,
-  output        io_entries_2_addr_ready,
                 io_entries_3_valid,
                 io_entries_3_done,
   output [31:0] io_entries_3_pc,
@@ -157,9 +156,6 @@ module ROB(
                 io_entries_3_new_phys,
   output        io_entries_3_is_fencei,
                 io_entries_3_state_state,
-  output [31:0] io_entries_3_mem_addr,
-                io_entries_3_mem_wdata,
-  output        io_entries_3_addr_ready,
                 io_entries_4_valid,
                 io_entries_4_done,
   output [31:0] io_entries_4_pc,
@@ -174,9 +170,6 @@ module ROB(
                 io_entries_4_new_phys,
   output        io_entries_4_is_fencei,
                 io_entries_4_state_state,
-  output [31:0] io_entries_4_mem_addr,
-                io_entries_4_mem_wdata,
-  output        io_entries_4_addr_ready,
                 io_entries_5_valid,
                 io_entries_5_done,
   output [31:0] io_entries_5_pc,
@@ -191,9 +184,6 @@ module ROB(
                 io_entries_5_new_phys,
   output        io_entries_5_is_fencei,
                 io_entries_5_state_state,
-  output [31:0] io_entries_5_mem_addr,
-                io_entries_5_mem_wdata,
-  output        io_entries_5_addr_ready,
                 io_entries_6_valid,
                 io_entries_6_done,
   output [31:0] io_entries_6_pc,
@@ -208,9 +198,6 @@ module ROB(
                 io_entries_6_new_phys,
   output        io_entries_6_is_fencei,
                 io_entries_6_state_state,
-  output [31:0] io_entries_6_mem_addr,
-                io_entries_6_mem_wdata,
-  output        io_entries_6_addr_ready,
                 io_entries_7_valid,
                 io_entries_7_done,
   output [31:0] io_entries_7_pc,
@@ -225,9 +212,6 @@ module ROB(
                 io_entries_7_new_phys,
   output        io_entries_7_is_fencei,
                 io_entries_7_state_state,
-  output [31:0] io_entries_7_mem_addr,
-                io_entries_7_mem_wdata,
-  output        io_entries_7_addr_ready,
                 io_entries_8_valid,
                 io_entries_8_done,
   output [31:0] io_entries_8_pc,
@@ -242,9 +226,6 @@ module ROB(
                 io_entries_8_new_phys,
   output        io_entries_8_is_fencei,
                 io_entries_8_state_state,
-  output [31:0] io_entries_8_mem_addr,
-                io_entries_8_mem_wdata,
-  output        io_entries_8_addr_ready,
                 io_entries_9_valid,
                 io_entries_9_done,
   output [31:0] io_entries_9_pc,
@@ -259,9 +240,6 @@ module ROB(
                 io_entries_9_new_phys,
   output        io_entries_9_is_fencei,
                 io_entries_9_state_state,
-  output [31:0] io_entries_9_mem_addr,
-                io_entries_9_mem_wdata,
-  output        io_entries_9_addr_ready,
                 io_entries_10_valid,
                 io_entries_10_done,
   output [31:0] io_entries_10_pc,
@@ -276,9 +254,6 @@ module ROB(
                 io_entries_10_new_phys,
   output        io_entries_10_is_fencei,
                 io_entries_10_state_state,
-  output [31:0] io_entries_10_mem_addr,
-                io_entries_10_mem_wdata,
-  output        io_entries_10_addr_ready,
                 io_entries_11_valid,
                 io_entries_11_done,
   output [31:0] io_entries_11_pc,
@@ -293,9 +268,6 @@ module ROB(
                 io_entries_11_new_phys,
   output        io_entries_11_is_fencei,
                 io_entries_11_state_state,
-  output [31:0] io_entries_11_mem_addr,
-                io_entries_11_mem_wdata,
-  output        io_entries_11_addr_ready,
                 io_entries_12_valid,
                 io_entries_12_done,
   output [31:0] io_entries_12_pc,
@@ -310,9 +282,6 @@ module ROB(
                 io_entries_12_new_phys,
   output        io_entries_12_is_fencei,
                 io_entries_12_state_state,
-  output [31:0] io_entries_12_mem_addr,
-                io_entries_12_mem_wdata,
-  output        io_entries_12_addr_ready,
                 io_entries_13_valid,
                 io_entries_13_done,
   output [31:0] io_entries_13_pc,
@@ -327,9 +296,6 @@ module ROB(
                 io_entries_13_new_phys,
   output        io_entries_13_is_fencei,
                 io_entries_13_state_state,
-  output [31:0] io_entries_13_mem_addr,
-                io_entries_13_mem_wdata,
-  output        io_entries_13_addr_ready,
                 io_entries_14_valid,
                 io_entries_14_done,
   output [31:0] io_entries_14_pc,
@@ -344,9 +310,6 @@ module ROB(
                 io_entries_14_new_phys,
   output        io_entries_14_is_fencei,
                 io_entries_14_state_state,
-  output [31:0] io_entries_14_mem_addr,
-                io_entries_14_mem_wdata,
-  output        io_entries_14_addr_ready,
                 io_entries_15_valid,
                 io_entries_15_done,
   output [31:0] io_entries_15_pc,
@@ -361,9 +324,6 @@ module ROB(
                 io_entries_15_new_phys,
   output        io_entries_15_is_fencei,
                 io_entries_15_state_state,
-  output [31:0] io_entries_15_mem_addr,
-                io_entries_15_mem_wdata,
-  output        io_entries_15_addr_ready,
   output [3:0]  io_head,
   output [4:0]  io_count
 );
@@ -1947,39 +1907,124 @@ module ROB(
         casez_tmp_28 = entries_15_valid;
     endcase
   end // always_comb
+  reg         casez_tmp_29;
+  always_comb begin
+    casez (io_wb1_idx)
+      4'b0000:
+        casez_tmp_29 = entries_0_valid;
+      4'b0001:
+        casez_tmp_29 = entries_1_valid;
+      4'b0010:
+        casez_tmp_29 = entries_2_valid;
+      4'b0011:
+        casez_tmp_29 = entries_3_valid;
+      4'b0100:
+        casez_tmp_29 = entries_4_valid;
+      4'b0101:
+        casez_tmp_29 = entries_5_valid;
+      4'b0110:
+        casez_tmp_29 = entries_6_valid;
+      4'b0111:
+        casez_tmp_29 = entries_7_valid;
+      4'b1000:
+        casez_tmp_29 = entries_8_valid;
+      4'b1001:
+        casez_tmp_29 = entries_9_valid;
+      4'b1010:
+        casez_tmp_29 = entries_10_valid;
+      4'b1011:
+        casez_tmp_29 = entries_11_valid;
+      4'b1100:
+        casez_tmp_29 = entries_12_valid;
+      4'b1101:
+        casez_tmp_29 = entries_13_valid;
+      4'b1110:
+        casez_tmp_29 = entries_14_valid;
+      default:
+        casez_tmp_29 = entries_15_valid;
+    endcase
+  end // always_comb
   wire        _GEN = io_wb_fire & casez_tmp_28;
   wire        _GEN_0 = _GEN & io_wb_idx == 4'h0;
-  wire        _GEN_1 = _GEN_0 | entries_0_done;
-  wire        _GEN_2 = _GEN & io_wb_idx == 4'h1;
-  wire        _GEN_3 = _GEN_2 | entries_1_done;
-  wire        _GEN_4 = _GEN & io_wb_idx == 4'h2;
-  wire        _GEN_5 = _GEN_4 | entries_2_done;
-  wire        _GEN_6 = _GEN & io_wb_idx == 4'h3;
-  wire        _GEN_7 = _GEN_6 | entries_3_done;
-  wire        _GEN_8 = _GEN & io_wb_idx == 4'h4;
-  wire        _GEN_9 = _GEN_8 | entries_4_done;
-  wire        _GEN_10 = _GEN & io_wb_idx == 4'h5;
-  wire        _GEN_11 = _GEN_10 | entries_5_done;
-  wire        _GEN_12 = _GEN & io_wb_idx == 4'h6;
-  wire        _GEN_13 = _GEN_12 | entries_6_done;
-  wire        _GEN_14 = _GEN & io_wb_idx == 4'h7;
-  wire        _GEN_15 = _GEN_14 | entries_7_done;
-  wire        _GEN_16 = _GEN & io_wb_idx == 4'h8;
-  wire        _GEN_17 = _GEN_16 | entries_8_done;
-  wire        _GEN_18 = _GEN & io_wb_idx == 4'h9;
-  wire        _GEN_19 = _GEN_18 | entries_9_done;
-  wire        _GEN_20 = _GEN & io_wb_idx == 4'hA;
-  wire        _GEN_21 = _GEN_20 | entries_10_done;
-  wire        _GEN_22 = _GEN & io_wb_idx == 4'hB;
-  wire        _GEN_23 = _GEN_22 | entries_11_done;
-  wire        _GEN_24 = _GEN & io_wb_idx == 4'hC;
-  wire        _GEN_25 = _GEN_24 | entries_12_done;
-  wire        _GEN_26 = _GEN & io_wb_idx == 4'hD;
-  wire        _GEN_27 = _GEN_26 | entries_13_done;
-  wire        _GEN_28 = _GEN & io_wb_idx == 4'hE;
-  wire        _GEN_29 = _GEN_28 | entries_14_done;
-  wire        _GEN_30 = _GEN & (&io_wb_idx);
-  wire        _GEN_31 = _GEN_30 | entries_15_done;
+  wire        _GEN_1 = _GEN & io_wb_idx == 4'h1;
+  wire        _GEN_2 = _GEN & io_wb_idx == 4'h2;
+  wire        _GEN_3 = _GEN & io_wb_idx == 4'h3;
+  wire        _GEN_4 = _GEN & io_wb_idx == 4'h4;
+  wire        _GEN_5 = _GEN & io_wb_idx == 4'h5;
+  wire        _GEN_6 = _GEN & io_wb_idx == 4'h6;
+  wire        _GEN_7 = _GEN & io_wb_idx == 4'h7;
+  wire        _GEN_8 = _GEN & io_wb_idx == 4'h8;
+  wire        _GEN_9 = _GEN & io_wb_idx == 4'h9;
+  wire        _GEN_10 = _GEN & io_wb_idx == 4'hA;
+  wire        _GEN_11 = _GEN & io_wb_idx == 4'hB;
+  wire        _GEN_12 = _GEN & io_wb_idx == 4'hC;
+  wire        _GEN_13 = _GEN & io_wb_idx == 4'hD;
+  wire        _GEN_14 = _GEN & io_wb_idx == 4'hE;
+  wire        _GEN_15 = _GEN & (&io_wb_idx);
+  wire        _GEN_16 = io_wb1_fire & casez_tmp_29;
+  wire        _GEN_17 = io_wb1_idx == 4'h0;
+  wire        _GEN_18 = _GEN_17 | _GEN_0;
+  wire        _GEN_19 = _GEN_16 ? _GEN_18 | entries_0_done : _GEN_0 | entries_0_done;
+  wire        _GEN_20 = io_wb1_idx == 4'h1;
+  wire        _GEN_21 = _GEN_20 | _GEN_1;
+  wire        _GEN_22 = _GEN_16 ? _GEN_21 | entries_1_done : _GEN_1 | entries_1_done;
+  wire        _GEN_23 = io_wb1_idx == 4'h2;
+  wire        _GEN_24 = _GEN_23 | _GEN_2;
+  wire        _GEN_25 = _GEN_16 ? _GEN_24 | entries_2_done : _GEN_2 | entries_2_done;
+  wire        _GEN_26 = io_wb1_idx == 4'h3;
+  wire        _GEN_27 = _GEN_26 | _GEN_3;
+  wire        _GEN_28 = _GEN_16 ? _GEN_27 | entries_3_done : _GEN_3 | entries_3_done;
+  wire        _GEN_29 = io_wb1_idx == 4'h4;
+  wire        _GEN_30 = _GEN_29 | _GEN_4;
+  wire        _GEN_31 = _GEN_16 ? _GEN_30 | entries_4_done : _GEN_4 | entries_4_done;
+  wire        _GEN_32 = io_wb1_idx == 4'h5;
+  wire        _GEN_33 = _GEN_32 | _GEN_5;
+  wire        _GEN_34 = _GEN_16 ? _GEN_33 | entries_5_done : _GEN_5 | entries_5_done;
+  wire        _GEN_35 = io_wb1_idx == 4'h6;
+  wire        _GEN_36 = _GEN_35 | _GEN_6;
+  wire        _GEN_37 = _GEN_16 ? _GEN_36 | entries_6_done : _GEN_6 | entries_6_done;
+  wire        _GEN_38 = io_wb1_idx == 4'h7;
+  wire        _GEN_39 = _GEN_38 | _GEN_7;
+  wire        _GEN_40 = _GEN_16 ? _GEN_39 | entries_7_done : _GEN_7 | entries_7_done;
+  wire        _GEN_41 = io_wb1_idx == 4'h8;
+  wire        _GEN_42 = _GEN_41 | _GEN_8;
+  wire        _GEN_43 = _GEN_16 ? _GEN_42 | entries_8_done : _GEN_8 | entries_8_done;
+  wire        _GEN_44 = io_wb1_idx == 4'h9;
+  wire        _GEN_45 = _GEN_44 | _GEN_9;
+  wire        _GEN_46 = _GEN_16 ? _GEN_45 | entries_9_done : _GEN_9 | entries_9_done;
+  wire        _GEN_47 = io_wb1_idx == 4'hA;
+  wire        _GEN_48 = _GEN_47 | _GEN_10;
+  wire        _GEN_49 = _GEN_16 ? _GEN_48 | entries_10_done : _GEN_10 | entries_10_done;
+  wire        _GEN_50 = io_wb1_idx == 4'hB;
+  wire        _GEN_51 = _GEN_50 | _GEN_11;
+  wire        _GEN_52 = _GEN_16 ? _GEN_51 | entries_11_done : _GEN_11 | entries_11_done;
+  wire        _GEN_53 = io_wb1_idx == 4'hC;
+  wire        _GEN_54 = _GEN_53 | _GEN_12;
+  wire        _GEN_55 = _GEN_16 ? _GEN_54 | entries_12_done : _GEN_12 | entries_12_done;
+  wire        _GEN_56 = io_wb1_idx == 4'hD;
+  wire        _GEN_57 = _GEN_56 | _GEN_13;
+  wire        _GEN_58 = _GEN_16 ? _GEN_57 | entries_13_done : _GEN_13 | entries_13_done;
+  wire        _GEN_59 = io_wb1_idx == 4'hE;
+  wire        _GEN_60 = _GEN_59 | _GEN_14;
+  wire        _GEN_61 = _GEN_16 ? _GEN_60 | entries_14_done : _GEN_14 | entries_14_done;
+  wire        _GEN_62 = (&io_wb1_idx) | _GEN_15;
+  wire        _GEN_63 = _GEN_16 ? _GEN_62 | entries_15_done : _GEN_15 | entries_15_done;
+  wire        _GEN_64 = _GEN_16 & _GEN_17;
+  wire        _GEN_65 = _GEN_16 & _GEN_20;
+  wire        _GEN_66 = _GEN_16 & _GEN_23;
+  wire        _GEN_67 = _GEN_16 & _GEN_26;
+  wire        _GEN_68 = _GEN_16 & _GEN_29;
+  wire        _GEN_69 = _GEN_16 & _GEN_32;
+  wire        _GEN_70 = _GEN_16 & _GEN_35;
+  wire        _GEN_71 = _GEN_16 & _GEN_38;
+  wire        _GEN_72 = _GEN_16 & _GEN_41;
+  wire        _GEN_73 = _GEN_16 & _GEN_44;
+  wire        _GEN_74 = _GEN_16 & _GEN_47;
+  wire        _GEN_75 = _GEN_16 & _GEN_50;
+  wire        _GEN_76 = _GEN_16 & _GEN_53;
+  wire        _GEN_77 = _GEN_16 & _GEN_56;
+  wire        _GEN_78 = _GEN_16 & _GEN_59;
+  wire        _GEN_79 = _GEN_16 & (&io_wb1_idx);
   wire [3:0]  _flushAge_T = io_flush_idx - id;
   wire [3:0]  idxAge = 4'h0 - id;
   wire        after = {1'h0, idxAge} < count & idxAge > _flushAge_T;
@@ -2013,106 +2058,106 @@ module ROB(
   wire        after_14 = {1'h0, _idxAge_T_28} < count & _idxAge_T_28 > _flushAge_T;
   wire [3:0]  _idxAge_T_30 = 4'hF - id;
   wire        after_15 = {1'h0, _idxAge_T_30} < count & _idxAge_T_30 > _flushAge_T;
-  wire        _GEN_32 = id == 4'h0;
-  wire        _GEN_33 = id == 4'h1;
-  wire        _GEN_34 = id == 4'h2;
-  wire        _GEN_35 = id == 4'h3;
-  wire        _GEN_36 = id == 4'h4;
-  wire        _GEN_37 = id == 4'h5;
-  wire        _GEN_38 = id == 4'h6;
-  wire        _GEN_39 = id == 4'h7;
-  wire        _GEN_40 = id == 4'h8;
-  wire        _GEN_41 = id == 4'h9;
-  wire        _GEN_42 = id == 4'hA;
-  wire        _GEN_43 = id == 4'hB;
-  wire        _GEN_44 = id == 4'hC;
-  wire        _GEN_45 = id == 4'hD;
-  wire        _GEN_46 = id == 4'hE;
-  wire [4:0]  _GEN_47 = {4'h0, do_cm};
+  wire        _GEN_80 = id == 4'h0;
+  wire        _GEN_81 = id == 4'h1;
+  wire        _GEN_82 = id == 4'h2;
+  wire        _GEN_83 = id == 4'h3;
+  wire        _GEN_84 = id == 4'h4;
+  wire        _GEN_85 = id == 4'h5;
+  wire        _GEN_86 = id == 4'h6;
+  wire        _GEN_87 = id == 4'h7;
+  wire        _GEN_88 = id == 4'h8;
+  wire        _GEN_89 = id == 4'h9;
+  wire        _GEN_90 = id == 4'hA;
+  wire        _GEN_91 = id == 4'hB;
+  wire        _GEN_92 = id == 4'hC;
+  wire        _GEN_93 = id == 4'hD;
+  wire        _GEN_94 = id == 4'hE;
+  wire [4:0]  _GEN_95 = {4'h0, do_cm};
   wire [3:0]  tail1 = (&tail) ? 4'h0 : _tail1_T_1;
   wire        do_enq0 = io_enq_fire & ~(count[4]);
   wire        do_enq1 = io_enq1_fire & (do_enq0 ? count < 5'hF : ~(count[4]));
   wire [3:0]  enq1Idx = do_enq0 ? tail1 : tail;
-  wire        _GEN_48 = do_enq0 & tail == 4'h0;
-  wire        _GEN_49 = do_enq0 & tail == 4'h1;
-  wire        _GEN_50 = do_enq0 & tail == 4'h2;
-  wire        _GEN_51 = do_enq0 & tail == 4'h3;
-  wire        _GEN_52 = do_enq0 & tail == 4'h4;
-  wire        _GEN_53 = do_enq0 & tail == 4'h5;
-  wire        _GEN_54 = do_enq0 & tail == 4'h6;
-  wire        _GEN_55 = do_enq0 & tail == 4'h7;
-  wire        _GEN_56 = do_enq0 & tail == 4'h8;
-  wire        _GEN_57 = do_enq0 & tail == 4'h9;
-  wire        _GEN_58 = do_enq0 & tail == 4'hA;
-  wire        _GEN_59 = do_enq0 & tail == 4'hB;
-  wire        _GEN_60 = do_enq0 & tail == 4'hC;
-  wire        _GEN_61 = do_enq0 & tail == 4'hD;
-  wire        _GEN_62 = do_enq0 & tail == 4'hE;
-  wire        _GEN_63 = do_enq0 & (&tail);
-  wire        _GEN_64 = enq1Idx == 4'h0;
-  wire        _GEN_65 = _GEN_64 | _GEN_48;
-  wire        _GEN_66 = io_flush_all | io_flush;
-  wire        _GEN_67 = do_enq1 & _GEN_64;
-  wire        _GEN_68 = _GEN_66 | ~(_GEN_67 | _GEN_48);
-  wire        _GEN_69 = enq1Idx == 4'h1;
-  wire        _GEN_70 = _GEN_69 | _GEN_49;
-  wire        _GEN_71 = do_enq1 & _GEN_69;
-  wire        _GEN_72 = _GEN_66 | ~(_GEN_71 | _GEN_49);
-  wire        _GEN_73 = enq1Idx == 4'h2;
-  wire        _GEN_74 = _GEN_73 | _GEN_50;
-  wire        _GEN_75 = do_enq1 & _GEN_73;
-  wire        _GEN_76 = _GEN_66 | ~(_GEN_75 | _GEN_50);
-  wire        _GEN_77 = enq1Idx == 4'h3;
-  wire        _GEN_78 = _GEN_77 | _GEN_51;
-  wire        _GEN_79 = do_enq1 & _GEN_77;
-  wire        _GEN_80 = _GEN_66 | ~(_GEN_79 | _GEN_51);
-  wire        _GEN_81 = enq1Idx == 4'h4;
-  wire        _GEN_82 = _GEN_81 | _GEN_52;
-  wire        _GEN_83 = do_enq1 & _GEN_81;
-  wire        _GEN_84 = _GEN_66 | ~(_GEN_83 | _GEN_52);
-  wire        _GEN_85 = enq1Idx == 4'h5;
-  wire        _GEN_86 = _GEN_85 | _GEN_53;
-  wire        _GEN_87 = do_enq1 & _GEN_85;
-  wire        _GEN_88 = _GEN_66 | ~(_GEN_87 | _GEN_53);
-  wire        _GEN_89 = enq1Idx == 4'h6;
-  wire        _GEN_90 = _GEN_89 | _GEN_54;
-  wire        _GEN_91 = do_enq1 & _GEN_89;
-  wire        _GEN_92 = _GEN_66 | ~(_GEN_91 | _GEN_54);
-  wire        _GEN_93 = enq1Idx == 4'h7;
-  wire        _GEN_94 = _GEN_93 | _GEN_55;
-  wire        _GEN_95 = do_enq1 & _GEN_93;
-  wire        _GEN_96 = _GEN_66 | ~(_GEN_95 | _GEN_55);
-  wire        _GEN_97 = enq1Idx == 4'h8;
-  wire        _GEN_98 = _GEN_97 | _GEN_56;
-  wire        _GEN_99 = do_enq1 & _GEN_97;
-  wire        _GEN_100 = _GEN_66 | ~(_GEN_99 | _GEN_56);
-  wire        _GEN_101 = enq1Idx == 4'h9;
-  wire        _GEN_102 = _GEN_101 | _GEN_57;
-  wire        _GEN_103 = do_enq1 & _GEN_101;
-  wire        _GEN_104 = _GEN_66 | ~(_GEN_103 | _GEN_57);
-  wire        _GEN_105 = enq1Idx == 4'hA;
-  wire        _GEN_106 = _GEN_105 | _GEN_58;
-  wire        _GEN_107 = do_enq1 & _GEN_105;
-  wire        _GEN_108 = _GEN_66 | ~(_GEN_107 | _GEN_58);
-  wire        _GEN_109 = enq1Idx == 4'hB;
-  wire        _GEN_110 = _GEN_109 | _GEN_59;
-  wire        _GEN_111 = do_enq1 & _GEN_109;
-  wire        _GEN_112 = _GEN_66 | ~(_GEN_111 | _GEN_59);
-  wire        _GEN_113 = enq1Idx == 4'hC;
-  wire        _GEN_114 = _GEN_113 | _GEN_60;
-  wire        _GEN_115 = do_enq1 & _GEN_113;
-  wire        _GEN_116 = _GEN_66 | ~(_GEN_115 | _GEN_60);
-  wire        _GEN_117 = enq1Idx == 4'hD;
-  wire        _GEN_118 = _GEN_117 | _GEN_61;
+  wire        _GEN_96 = do_enq0 & tail == 4'h0;
+  wire        _GEN_97 = do_enq0 & tail == 4'h1;
+  wire        _GEN_98 = do_enq0 & tail == 4'h2;
+  wire        _GEN_99 = do_enq0 & tail == 4'h3;
+  wire        _GEN_100 = do_enq0 & tail == 4'h4;
+  wire        _GEN_101 = do_enq0 & tail == 4'h5;
+  wire        _GEN_102 = do_enq0 & tail == 4'h6;
+  wire        _GEN_103 = do_enq0 & tail == 4'h7;
+  wire        _GEN_104 = do_enq0 & tail == 4'h8;
+  wire        _GEN_105 = do_enq0 & tail == 4'h9;
+  wire        _GEN_106 = do_enq0 & tail == 4'hA;
+  wire        _GEN_107 = do_enq0 & tail == 4'hB;
+  wire        _GEN_108 = do_enq0 & tail == 4'hC;
+  wire        _GEN_109 = do_enq0 & tail == 4'hD;
+  wire        _GEN_110 = do_enq0 & tail == 4'hE;
+  wire        _GEN_111 = do_enq0 & (&tail);
+  wire        _GEN_112 = enq1Idx == 4'h0;
+  wire        _GEN_113 = _GEN_112 | _GEN_96;
+  wire        _GEN_114 = io_flush_all | io_flush;
+  wire        _GEN_115 = do_enq1 & _GEN_112;
+  wire        _GEN_116 = _GEN_114 | ~(_GEN_115 | _GEN_96);
+  wire        _GEN_117 = enq1Idx == 4'h1;
+  wire        _GEN_118 = _GEN_117 | _GEN_97;
   wire        _GEN_119 = do_enq1 & _GEN_117;
-  wire        _GEN_120 = _GEN_66 | ~(_GEN_119 | _GEN_61);
-  wire        _GEN_121 = enq1Idx == 4'hE;
-  wire        _GEN_122 = _GEN_121 | _GEN_62;
+  wire        _GEN_120 = _GEN_114 | ~(_GEN_119 | _GEN_97);
+  wire        _GEN_121 = enq1Idx == 4'h2;
+  wire        _GEN_122 = _GEN_121 | _GEN_98;
   wire        _GEN_123 = do_enq1 & _GEN_121;
-  wire        _GEN_124 = _GEN_66 | ~(_GEN_123 | _GEN_62);
-  wire        _GEN_125 = (&enq1Idx) | _GEN_63;
-  wire        _GEN_126 = do_enq1 & (&enq1Idx);
-  wire        _GEN_127 = _GEN_66 | ~(_GEN_126 | _GEN_63);
+  wire        _GEN_124 = _GEN_114 | ~(_GEN_123 | _GEN_98);
+  wire        _GEN_125 = enq1Idx == 4'h3;
+  wire        _GEN_126 = _GEN_125 | _GEN_99;
+  wire        _GEN_127 = do_enq1 & _GEN_125;
+  wire        _GEN_128 = _GEN_114 | ~(_GEN_127 | _GEN_99);
+  wire        _GEN_129 = enq1Idx == 4'h4;
+  wire        _GEN_130 = _GEN_129 | _GEN_100;
+  wire        _GEN_131 = do_enq1 & _GEN_129;
+  wire        _GEN_132 = _GEN_114 | ~(_GEN_131 | _GEN_100);
+  wire        _GEN_133 = enq1Idx == 4'h5;
+  wire        _GEN_134 = _GEN_133 | _GEN_101;
+  wire        _GEN_135 = do_enq1 & _GEN_133;
+  wire        _GEN_136 = _GEN_114 | ~(_GEN_135 | _GEN_101);
+  wire        _GEN_137 = enq1Idx == 4'h6;
+  wire        _GEN_138 = _GEN_137 | _GEN_102;
+  wire        _GEN_139 = do_enq1 & _GEN_137;
+  wire        _GEN_140 = _GEN_114 | ~(_GEN_139 | _GEN_102);
+  wire        _GEN_141 = enq1Idx == 4'h7;
+  wire        _GEN_142 = _GEN_141 | _GEN_103;
+  wire        _GEN_143 = do_enq1 & _GEN_141;
+  wire        _GEN_144 = _GEN_114 | ~(_GEN_143 | _GEN_103);
+  wire        _GEN_145 = enq1Idx == 4'h8;
+  wire        _GEN_146 = _GEN_145 | _GEN_104;
+  wire        _GEN_147 = do_enq1 & _GEN_145;
+  wire        _GEN_148 = _GEN_114 | ~(_GEN_147 | _GEN_104);
+  wire        _GEN_149 = enq1Idx == 4'h9;
+  wire        _GEN_150 = _GEN_149 | _GEN_105;
+  wire        _GEN_151 = do_enq1 & _GEN_149;
+  wire        _GEN_152 = _GEN_114 | ~(_GEN_151 | _GEN_105);
+  wire        _GEN_153 = enq1Idx == 4'hA;
+  wire        _GEN_154 = _GEN_153 | _GEN_106;
+  wire        _GEN_155 = do_enq1 & _GEN_153;
+  wire        _GEN_156 = _GEN_114 | ~(_GEN_155 | _GEN_106);
+  wire        _GEN_157 = enq1Idx == 4'hB;
+  wire        _GEN_158 = _GEN_157 | _GEN_107;
+  wire        _GEN_159 = do_enq1 & _GEN_157;
+  wire        _GEN_160 = _GEN_114 | ~(_GEN_159 | _GEN_107);
+  wire        _GEN_161 = enq1Idx == 4'hC;
+  wire        _GEN_162 = _GEN_161 | _GEN_108;
+  wire        _GEN_163 = do_enq1 & _GEN_161;
+  wire        _GEN_164 = _GEN_114 | ~(_GEN_163 | _GEN_108);
+  wire        _GEN_165 = enq1Idx == 4'hD;
+  wire        _GEN_166 = _GEN_165 | _GEN_109;
+  wire        _GEN_167 = do_enq1 & _GEN_165;
+  wire        _GEN_168 = _GEN_114 | ~(_GEN_167 | _GEN_109);
+  wire        _GEN_169 = enq1Idx == 4'hE;
+  wire        _GEN_170 = _GEN_169 | _GEN_110;
+  wire        _GEN_171 = do_enq1 & _GEN_169;
+  wire        _GEN_172 = _GEN_114 | ~(_GEN_171 | _GEN_110);
+  wire        _GEN_173 = (&enq1Idx) | _GEN_111;
+  wire        _GEN_174 = do_enq1 & (&enq1Idx);
+  wire        _GEN_175 = _GEN_114 | ~(_GEN_174 | _GEN_111);
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
@@ -2587,79 +2632,143 @@ module ROB(
       entries_0_valid <=
         ~io_flush_all
         & (io_flush
-             ? (do_cm ? ~(_GEN_32 | after) & entries_0_valid : ~after & entries_0_valid)
-             : ~(do_cm & _GEN_32)
-               & (do_enq1 ? _GEN_65 | entries_0_valid : _GEN_48 | entries_0_valid));
+             ? (do_cm ? ~(_GEN_80 | after) & entries_0_valid : ~after & entries_0_valid)
+             : ~(do_cm & _GEN_80)
+               & (do_enq1 ? _GEN_113 | entries_0_valid : _GEN_96 | entries_0_valid));
       entries_0_done <=
-        _GEN_66 ? _GEN_1 : do_enq1 ? ~_GEN_65 & _GEN_1 : ~_GEN_48 & _GEN_1;
-      if (_GEN_66) begin
-        if (_GEN_0) begin
+        _GEN_114 ? _GEN_19 : do_enq1 ? ~_GEN_113 & _GEN_19 : ~_GEN_96 & _GEN_19;
+      if (_GEN_114) begin
+        if (_GEN_64) begin
+          entries_0_state_state <= io_wb1_state_state;
+          entries_0_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_0) begin
           entries_0_state_state <= io_wb_state_state;
           entries_0_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_2) begin
+        if (_GEN_65) begin
+          entries_1_state_state <= io_wb1_state_state;
+          entries_1_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_1) begin
           entries_1_state_state <= io_wb_state_state;
           entries_1_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_4) begin
+        if (_GEN_66) begin
+          entries_2_state_state <= io_wb1_state_state;
+          entries_2_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_2) begin
           entries_2_state_state <= io_wb_state_state;
           entries_2_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_6) begin
+        if (_GEN_67) begin
+          entries_3_state_state <= io_wb1_state_state;
+          entries_3_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_3) begin
           entries_3_state_state <= io_wb_state_state;
           entries_3_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_8) begin
+        if (_GEN_68) begin
+          entries_4_state_state <= io_wb1_state_state;
+          entries_4_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_4) begin
           entries_4_state_state <= io_wb_state_state;
           entries_4_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_10) begin
+        if (_GEN_69) begin
+          entries_5_state_state <= io_wb1_state_state;
+          entries_5_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_5) begin
           entries_5_state_state <= io_wb_state_state;
           entries_5_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_12) begin
+        if (_GEN_70) begin
+          entries_6_state_state <= io_wb1_state_state;
+          entries_6_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_6) begin
           entries_6_state_state <= io_wb_state_state;
           entries_6_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_14) begin
+        if (_GEN_71) begin
+          entries_7_state_state <= io_wb1_state_state;
+          entries_7_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_7) begin
           entries_7_state_state <= io_wb_state_state;
           entries_7_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_16) begin
+        if (_GEN_72) begin
+          entries_8_state_state <= io_wb1_state_state;
+          entries_8_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_8) begin
           entries_8_state_state <= io_wb_state_state;
           entries_8_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_18) begin
+        if (_GEN_73) begin
+          entries_9_state_state <= io_wb1_state_state;
+          entries_9_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_9) begin
           entries_9_state_state <= io_wb_state_state;
           entries_9_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_20) begin
+        if (_GEN_74) begin
+          entries_10_state_state <= io_wb1_state_state;
+          entries_10_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_10) begin
           entries_10_state_state <= io_wb_state_state;
           entries_10_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_22) begin
+        if (_GEN_75) begin
+          entries_11_state_state <= io_wb1_state_state;
+          entries_11_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_11) begin
           entries_11_state_state <= io_wb_state_state;
           entries_11_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_24) begin
+        if (_GEN_76) begin
+          entries_12_state_state <= io_wb1_state_state;
+          entries_12_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_12) begin
           entries_12_state_state <= io_wb_state_state;
           entries_12_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_26) begin
+        if (_GEN_77) begin
+          entries_13_state_state <= io_wb1_state_state;
+          entries_13_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_13) begin
           entries_13_state_state <= io_wb_state_state;
           entries_13_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_28) begin
+        if (_GEN_78) begin
+          entries_14_state_state <= io_wb1_state_state;
+          entries_14_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_14) begin
           entries_14_state_state <= io_wb_state_state;
           entries_14_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_30) begin
+        if (_GEN_79) begin
+          entries_15_state_state <= io_wb1_state_state;
+          entries_15_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_15) begin
           entries_15_state_state <= io_wb_state_state;
           entries_15_state_state_num <= io_wb_state_state_num;
         end
       end
       else begin
-        if (_GEN_67) begin
+        if (_GEN_115) begin
           entries_0_pc <= io_enq1_bits_pc;
           entries_0_inst <= io_enq1_bits_inst;
           entries_0_reg_write <= io_enq1_bits_reg_write;
@@ -2683,7 +2792,7 @@ module ROB(
           entries_0_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_0_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_48) begin
+        else if (_GEN_96) begin
           entries_0_pc <= io_enq_bits_pc;
           entries_0_inst <= io_enq_bits_inst;
           entries_0_reg_write <= io_enq_bits_reg_write;
@@ -2707,11 +2816,15 @@ module ROB(
           entries_0_csr_waddr <= io_enq_bits_csr_waddr;
           entries_0_csr_rd1 <= io_enq_bits_csr_rd1;
         end
+        else if (_GEN_64) begin
+          entries_0_state_state <= io_wb1_state_state;
+          entries_0_state_state_num <= io_wb1_state_state_num;
+        end
         else if (_GEN_0) begin
           entries_0_state_state <= io_wb_state_state;
           entries_0_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_71) begin
+        if (_GEN_119) begin
           entries_1_pc <= io_enq1_bits_pc;
           entries_1_inst <= io_enq1_bits_inst;
           entries_1_reg_write <= io_enq1_bits_reg_write;
@@ -2735,7 +2848,7 @@ module ROB(
           entries_1_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_1_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_49) begin
+        else if (_GEN_97) begin
           entries_1_pc <= io_enq_bits_pc;
           entries_1_inst <= io_enq_bits_inst;
           entries_1_reg_write <= io_enq_bits_reg_write;
@@ -2759,11 +2872,15 @@ module ROB(
           entries_1_csr_waddr <= io_enq_bits_csr_waddr;
           entries_1_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_2) begin
+        else if (_GEN_65) begin
+          entries_1_state_state <= io_wb1_state_state;
+          entries_1_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_1) begin
           entries_1_state_state <= io_wb_state_state;
           entries_1_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_75) begin
+        if (_GEN_123) begin
           entries_2_pc <= io_enq1_bits_pc;
           entries_2_inst <= io_enq1_bits_inst;
           entries_2_reg_write <= io_enq1_bits_reg_write;
@@ -2787,7 +2904,7 @@ module ROB(
           entries_2_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_2_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_50) begin
+        else if (_GEN_98) begin
           entries_2_pc <= io_enq_bits_pc;
           entries_2_inst <= io_enq_bits_inst;
           entries_2_reg_write <= io_enq_bits_reg_write;
@@ -2811,11 +2928,15 @@ module ROB(
           entries_2_csr_waddr <= io_enq_bits_csr_waddr;
           entries_2_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_4) begin
+        else if (_GEN_66) begin
+          entries_2_state_state <= io_wb1_state_state;
+          entries_2_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_2) begin
           entries_2_state_state <= io_wb_state_state;
           entries_2_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_79) begin
+        if (_GEN_127) begin
           entries_3_pc <= io_enq1_bits_pc;
           entries_3_inst <= io_enq1_bits_inst;
           entries_3_reg_write <= io_enq1_bits_reg_write;
@@ -2839,7 +2960,7 @@ module ROB(
           entries_3_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_3_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_51) begin
+        else if (_GEN_99) begin
           entries_3_pc <= io_enq_bits_pc;
           entries_3_inst <= io_enq_bits_inst;
           entries_3_reg_write <= io_enq_bits_reg_write;
@@ -2863,11 +2984,15 @@ module ROB(
           entries_3_csr_waddr <= io_enq_bits_csr_waddr;
           entries_3_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_6) begin
+        else if (_GEN_67) begin
+          entries_3_state_state <= io_wb1_state_state;
+          entries_3_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_3) begin
           entries_3_state_state <= io_wb_state_state;
           entries_3_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_83) begin
+        if (_GEN_131) begin
           entries_4_pc <= io_enq1_bits_pc;
           entries_4_inst <= io_enq1_bits_inst;
           entries_4_reg_write <= io_enq1_bits_reg_write;
@@ -2891,7 +3016,7 @@ module ROB(
           entries_4_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_4_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_52) begin
+        else if (_GEN_100) begin
           entries_4_pc <= io_enq_bits_pc;
           entries_4_inst <= io_enq_bits_inst;
           entries_4_reg_write <= io_enq_bits_reg_write;
@@ -2915,11 +3040,15 @@ module ROB(
           entries_4_csr_waddr <= io_enq_bits_csr_waddr;
           entries_4_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_8) begin
+        else if (_GEN_68) begin
+          entries_4_state_state <= io_wb1_state_state;
+          entries_4_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_4) begin
           entries_4_state_state <= io_wb_state_state;
           entries_4_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_87) begin
+        if (_GEN_135) begin
           entries_5_pc <= io_enq1_bits_pc;
           entries_5_inst <= io_enq1_bits_inst;
           entries_5_reg_write <= io_enq1_bits_reg_write;
@@ -2943,7 +3072,7 @@ module ROB(
           entries_5_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_5_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_53) begin
+        else if (_GEN_101) begin
           entries_5_pc <= io_enq_bits_pc;
           entries_5_inst <= io_enq_bits_inst;
           entries_5_reg_write <= io_enq_bits_reg_write;
@@ -2967,11 +3096,15 @@ module ROB(
           entries_5_csr_waddr <= io_enq_bits_csr_waddr;
           entries_5_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_10) begin
+        else if (_GEN_69) begin
+          entries_5_state_state <= io_wb1_state_state;
+          entries_5_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_5) begin
           entries_5_state_state <= io_wb_state_state;
           entries_5_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_91) begin
+        if (_GEN_139) begin
           entries_6_pc <= io_enq1_bits_pc;
           entries_6_inst <= io_enq1_bits_inst;
           entries_6_reg_write <= io_enq1_bits_reg_write;
@@ -2995,7 +3128,7 @@ module ROB(
           entries_6_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_6_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_54) begin
+        else if (_GEN_102) begin
           entries_6_pc <= io_enq_bits_pc;
           entries_6_inst <= io_enq_bits_inst;
           entries_6_reg_write <= io_enq_bits_reg_write;
@@ -3019,11 +3152,15 @@ module ROB(
           entries_6_csr_waddr <= io_enq_bits_csr_waddr;
           entries_6_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_12) begin
+        else if (_GEN_70) begin
+          entries_6_state_state <= io_wb1_state_state;
+          entries_6_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_6) begin
           entries_6_state_state <= io_wb_state_state;
           entries_6_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_95) begin
+        if (_GEN_143) begin
           entries_7_pc <= io_enq1_bits_pc;
           entries_7_inst <= io_enq1_bits_inst;
           entries_7_reg_write <= io_enq1_bits_reg_write;
@@ -3047,7 +3184,7 @@ module ROB(
           entries_7_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_7_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_55) begin
+        else if (_GEN_103) begin
           entries_7_pc <= io_enq_bits_pc;
           entries_7_inst <= io_enq_bits_inst;
           entries_7_reg_write <= io_enq_bits_reg_write;
@@ -3071,11 +3208,15 @@ module ROB(
           entries_7_csr_waddr <= io_enq_bits_csr_waddr;
           entries_7_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_14) begin
+        else if (_GEN_71) begin
+          entries_7_state_state <= io_wb1_state_state;
+          entries_7_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_7) begin
           entries_7_state_state <= io_wb_state_state;
           entries_7_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_99) begin
+        if (_GEN_147) begin
           entries_8_pc <= io_enq1_bits_pc;
           entries_8_inst <= io_enq1_bits_inst;
           entries_8_reg_write <= io_enq1_bits_reg_write;
@@ -3099,7 +3240,7 @@ module ROB(
           entries_8_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_8_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_56) begin
+        else if (_GEN_104) begin
           entries_8_pc <= io_enq_bits_pc;
           entries_8_inst <= io_enq_bits_inst;
           entries_8_reg_write <= io_enq_bits_reg_write;
@@ -3123,11 +3264,15 @@ module ROB(
           entries_8_csr_waddr <= io_enq_bits_csr_waddr;
           entries_8_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_16) begin
+        else if (_GEN_72) begin
+          entries_8_state_state <= io_wb1_state_state;
+          entries_8_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_8) begin
           entries_8_state_state <= io_wb_state_state;
           entries_8_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_103) begin
+        if (_GEN_151) begin
           entries_9_pc <= io_enq1_bits_pc;
           entries_9_inst <= io_enq1_bits_inst;
           entries_9_reg_write <= io_enq1_bits_reg_write;
@@ -3151,7 +3296,7 @@ module ROB(
           entries_9_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_9_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_57) begin
+        else if (_GEN_105) begin
           entries_9_pc <= io_enq_bits_pc;
           entries_9_inst <= io_enq_bits_inst;
           entries_9_reg_write <= io_enq_bits_reg_write;
@@ -3175,11 +3320,15 @@ module ROB(
           entries_9_csr_waddr <= io_enq_bits_csr_waddr;
           entries_9_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_18) begin
+        else if (_GEN_73) begin
+          entries_9_state_state <= io_wb1_state_state;
+          entries_9_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_9) begin
           entries_9_state_state <= io_wb_state_state;
           entries_9_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_107) begin
+        if (_GEN_155) begin
           entries_10_pc <= io_enq1_bits_pc;
           entries_10_inst <= io_enq1_bits_inst;
           entries_10_reg_write <= io_enq1_bits_reg_write;
@@ -3203,7 +3352,7 @@ module ROB(
           entries_10_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_10_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_58) begin
+        else if (_GEN_106) begin
           entries_10_pc <= io_enq_bits_pc;
           entries_10_inst <= io_enq_bits_inst;
           entries_10_reg_write <= io_enq_bits_reg_write;
@@ -3227,11 +3376,15 @@ module ROB(
           entries_10_csr_waddr <= io_enq_bits_csr_waddr;
           entries_10_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_20) begin
+        else if (_GEN_74) begin
+          entries_10_state_state <= io_wb1_state_state;
+          entries_10_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_10) begin
           entries_10_state_state <= io_wb_state_state;
           entries_10_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_111) begin
+        if (_GEN_159) begin
           entries_11_pc <= io_enq1_bits_pc;
           entries_11_inst <= io_enq1_bits_inst;
           entries_11_reg_write <= io_enq1_bits_reg_write;
@@ -3255,7 +3408,7 @@ module ROB(
           entries_11_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_11_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_59) begin
+        else if (_GEN_107) begin
           entries_11_pc <= io_enq_bits_pc;
           entries_11_inst <= io_enq_bits_inst;
           entries_11_reg_write <= io_enq_bits_reg_write;
@@ -3279,11 +3432,15 @@ module ROB(
           entries_11_csr_waddr <= io_enq_bits_csr_waddr;
           entries_11_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_22) begin
+        else if (_GEN_75) begin
+          entries_11_state_state <= io_wb1_state_state;
+          entries_11_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_11) begin
           entries_11_state_state <= io_wb_state_state;
           entries_11_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_115) begin
+        if (_GEN_163) begin
           entries_12_pc <= io_enq1_bits_pc;
           entries_12_inst <= io_enq1_bits_inst;
           entries_12_reg_write <= io_enq1_bits_reg_write;
@@ -3307,7 +3464,7 @@ module ROB(
           entries_12_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_12_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_60) begin
+        else if (_GEN_108) begin
           entries_12_pc <= io_enq_bits_pc;
           entries_12_inst <= io_enq_bits_inst;
           entries_12_reg_write <= io_enq_bits_reg_write;
@@ -3331,11 +3488,15 @@ module ROB(
           entries_12_csr_waddr <= io_enq_bits_csr_waddr;
           entries_12_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_24) begin
+        else if (_GEN_76) begin
+          entries_12_state_state <= io_wb1_state_state;
+          entries_12_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_12) begin
           entries_12_state_state <= io_wb_state_state;
           entries_12_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_119) begin
+        if (_GEN_167) begin
           entries_13_pc <= io_enq1_bits_pc;
           entries_13_inst <= io_enq1_bits_inst;
           entries_13_reg_write <= io_enq1_bits_reg_write;
@@ -3359,7 +3520,7 @@ module ROB(
           entries_13_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_13_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_61) begin
+        else if (_GEN_109) begin
           entries_13_pc <= io_enq_bits_pc;
           entries_13_inst <= io_enq_bits_inst;
           entries_13_reg_write <= io_enq_bits_reg_write;
@@ -3383,11 +3544,15 @@ module ROB(
           entries_13_csr_waddr <= io_enq_bits_csr_waddr;
           entries_13_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_26) begin
+        else if (_GEN_77) begin
+          entries_13_state_state <= io_wb1_state_state;
+          entries_13_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_13) begin
           entries_13_state_state <= io_wb_state_state;
           entries_13_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_123) begin
+        if (_GEN_171) begin
           entries_14_pc <= io_enq1_bits_pc;
           entries_14_inst <= io_enq1_bits_inst;
           entries_14_reg_write <= io_enq1_bits_reg_write;
@@ -3411,7 +3576,7 @@ module ROB(
           entries_14_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_14_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_62) begin
+        else if (_GEN_110) begin
           entries_14_pc <= io_enq_bits_pc;
           entries_14_inst <= io_enq_bits_inst;
           entries_14_reg_write <= io_enq_bits_reg_write;
@@ -3435,11 +3600,15 @@ module ROB(
           entries_14_csr_waddr <= io_enq_bits_csr_waddr;
           entries_14_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_28) begin
+        else if (_GEN_78) begin
+          entries_14_state_state <= io_wb1_state_state;
+          entries_14_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_14) begin
           entries_14_state_state <= io_wb_state_state;
           entries_14_state_state_num <= io_wb_state_state_num;
         end
-        if (_GEN_126) begin
+        if (_GEN_174) begin
           entries_15_pc <= io_enq1_bits_pc;
           entries_15_inst <= io_enq1_bits_inst;
           entries_15_reg_write <= io_enq1_bits_reg_write;
@@ -3463,7 +3632,7 @@ module ROB(
           entries_15_csr_waddr <= io_enq1_bits_csr_waddr;
           entries_15_csr_rd1 <= io_enq1_bits_csr_rd1;
         end
-        else if (_GEN_63) begin
+        else if (_GEN_111) begin
           entries_15_pc <= io_enq_bits_pc;
           entries_15_inst <= io_enq_bits_inst;
           entries_15_reg_write <= io_enq_bits_reg_write;
@@ -3487,21 +3656,34 @@ module ROB(
           entries_15_csr_waddr <= io_enq_bits_csr_waddr;
           entries_15_csr_rd1 <= io_enq_bits_csr_rd1;
         end
-        else if (_GEN_30) begin
+        else if (_GEN_79) begin
+          entries_15_state_state <= io_wb1_state_state;
+          entries_15_state_state_num <= io_wb1_state_state_num;
+        end
+        else if (_GEN_15) begin
           entries_15_state_state <= io_wb_state_state;
           entries_15_state_state_num <= io_wb_state_state_num;
         end
       end
-      if (_GEN_68) begin
-        if (_GEN_0)
+      if (_GEN_116) begin
+        if (_GEN_64)
+          entries_0_dest_val <= io_wb1_val;
+        else if (_GEN_0)
           entries_0_dest_val <= io_wb_val;
       end
       else
         entries_0_dest_val <= 32'h0;
       entries_0_actual_taken <=
-        _GEN_68 & (_GEN_0 ? io_wb_actual_taken : entries_0_actual_taken);
-      if (_GEN_68) begin
-        if (_GEN_0) begin
+        _GEN_116
+        & (_GEN_64
+             ? io_wb1_actual_taken
+             : _GEN_0 ? io_wb_actual_taken : entries_0_actual_taken);
+      if (_GEN_116) begin
+        if (_GEN_64) begin
+          entries_0_mem_addr <= io_wb1_mem_addr;
+          entries_0_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_0) begin
           entries_0_mem_addr <= io_wb_mem_addr;
           entries_0_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3510,27 +3692,38 @@ module ROB(
         entries_0_mem_addr <= 32'h0;
         entries_0_mem_wdata <= 32'h0;
       end
-      entries_0_addr_ready <= _GEN_68 & (_GEN_0 | entries_0_addr_ready);
+      entries_0_addr_ready <=
+        _GEN_116
+        & (_GEN_16 ? _GEN_18 | entries_0_addr_ready : _GEN_0 | entries_0_addr_ready);
       entries_1_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_33 | after_1) & entries_1_valid
+                  ? ~(_GEN_81 | after_1) & entries_1_valid
                   : ~after_1 & entries_1_valid)
-             : ~(do_cm & _GEN_33)
-               & (do_enq1 ? _GEN_70 | entries_1_valid : _GEN_49 | entries_1_valid));
+             : ~(do_cm & _GEN_81)
+               & (do_enq1 ? _GEN_118 | entries_1_valid : _GEN_97 | entries_1_valid));
       entries_1_done <=
-        _GEN_66 ? _GEN_3 : do_enq1 ? ~_GEN_70 & _GEN_3 : ~_GEN_49 & _GEN_3;
-      if (_GEN_72) begin
-        if (_GEN_2)
+        _GEN_114 ? _GEN_22 : do_enq1 ? ~_GEN_118 & _GEN_22 : ~_GEN_97 & _GEN_22;
+      if (_GEN_120) begin
+        if (_GEN_65)
+          entries_1_dest_val <= io_wb1_val;
+        else if (_GEN_1)
           entries_1_dest_val <= io_wb_val;
       end
       else
         entries_1_dest_val <= 32'h0;
       entries_1_actual_taken <=
-        _GEN_72 & (_GEN_2 ? io_wb_actual_taken : entries_1_actual_taken);
-      if (_GEN_72) begin
-        if (_GEN_2) begin
+        _GEN_120
+        & (_GEN_65
+             ? io_wb1_actual_taken
+             : _GEN_1 ? io_wb_actual_taken : entries_1_actual_taken);
+      if (_GEN_120) begin
+        if (_GEN_65) begin
+          entries_1_mem_addr <= io_wb1_mem_addr;
+          entries_1_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_1) begin
           entries_1_mem_addr <= io_wb_mem_addr;
           entries_1_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3539,27 +3732,38 @@ module ROB(
         entries_1_mem_addr <= 32'h0;
         entries_1_mem_wdata <= 32'h0;
       end
-      entries_1_addr_ready <= _GEN_72 & (_GEN_2 | entries_1_addr_ready);
+      entries_1_addr_ready <=
+        _GEN_120
+        & (_GEN_16 ? _GEN_21 | entries_1_addr_ready : _GEN_1 | entries_1_addr_ready);
       entries_2_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_34 | after_2) & entries_2_valid
+                  ? ~(_GEN_82 | after_2) & entries_2_valid
                   : ~after_2 & entries_2_valid)
-             : ~(do_cm & _GEN_34)
-               & (do_enq1 ? _GEN_74 | entries_2_valid : _GEN_50 | entries_2_valid));
+             : ~(do_cm & _GEN_82)
+               & (do_enq1 ? _GEN_122 | entries_2_valid : _GEN_98 | entries_2_valid));
       entries_2_done <=
-        _GEN_66 ? _GEN_5 : do_enq1 ? ~_GEN_74 & _GEN_5 : ~_GEN_50 & _GEN_5;
-      if (_GEN_76) begin
-        if (_GEN_4)
+        _GEN_114 ? _GEN_25 : do_enq1 ? ~_GEN_122 & _GEN_25 : ~_GEN_98 & _GEN_25;
+      if (_GEN_124) begin
+        if (_GEN_66)
+          entries_2_dest_val <= io_wb1_val;
+        else if (_GEN_2)
           entries_2_dest_val <= io_wb_val;
       end
       else
         entries_2_dest_val <= 32'h0;
       entries_2_actual_taken <=
-        _GEN_76 & (_GEN_4 ? io_wb_actual_taken : entries_2_actual_taken);
-      if (_GEN_76) begin
-        if (_GEN_4) begin
+        _GEN_124
+        & (_GEN_66
+             ? io_wb1_actual_taken
+             : _GEN_2 ? io_wb_actual_taken : entries_2_actual_taken);
+      if (_GEN_124) begin
+        if (_GEN_66) begin
+          entries_2_mem_addr <= io_wb1_mem_addr;
+          entries_2_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_2) begin
           entries_2_mem_addr <= io_wb_mem_addr;
           entries_2_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3568,27 +3772,38 @@ module ROB(
         entries_2_mem_addr <= 32'h0;
         entries_2_mem_wdata <= 32'h0;
       end
-      entries_2_addr_ready <= _GEN_76 & (_GEN_4 | entries_2_addr_ready);
+      entries_2_addr_ready <=
+        _GEN_124
+        & (_GEN_16 ? _GEN_24 | entries_2_addr_ready : _GEN_2 | entries_2_addr_ready);
       entries_3_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_35 | after_3) & entries_3_valid
+                  ? ~(_GEN_83 | after_3) & entries_3_valid
                   : ~after_3 & entries_3_valid)
-             : ~(do_cm & _GEN_35)
-               & (do_enq1 ? _GEN_78 | entries_3_valid : _GEN_51 | entries_3_valid));
+             : ~(do_cm & _GEN_83)
+               & (do_enq1 ? _GEN_126 | entries_3_valid : _GEN_99 | entries_3_valid));
       entries_3_done <=
-        _GEN_66 ? _GEN_7 : do_enq1 ? ~_GEN_78 & _GEN_7 : ~_GEN_51 & _GEN_7;
-      if (_GEN_80) begin
-        if (_GEN_6)
+        _GEN_114 ? _GEN_28 : do_enq1 ? ~_GEN_126 & _GEN_28 : ~_GEN_99 & _GEN_28;
+      if (_GEN_128) begin
+        if (_GEN_67)
+          entries_3_dest_val <= io_wb1_val;
+        else if (_GEN_3)
           entries_3_dest_val <= io_wb_val;
       end
       else
         entries_3_dest_val <= 32'h0;
       entries_3_actual_taken <=
-        _GEN_80 & (_GEN_6 ? io_wb_actual_taken : entries_3_actual_taken);
-      if (_GEN_80) begin
-        if (_GEN_6) begin
+        _GEN_128
+        & (_GEN_67
+             ? io_wb1_actual_taken
+             : _GEN_3 ? io_wb_actual_taken : entries_3_actual_taken);
+      if (_GEN_128) begin
+        if (_GEN_67) begin
+          entries_3_mem_addr <= io_wb1_mem_addr;
+          entries_3_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_3) begin
           entries_3_mem_addr <= io_wb_mem_addr;
           entries_3_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3597,27 +3812,38 @@ module ROB(
         entries_3_mem_addr <= 32'h0;
         entries_3_mem_wdata <= 32'h0;
       end
-      entries_3_addr_ready <= _GEN_80 & (_GEN_6 | entries_3_addr_ready);
+      entries_3_addr_ready <=
+        _GEN_128
+        & (_GEN_16 ? _GEN_27 | entries_3_addr_ready : _GEN_3 | entries_3_addr_ready);
       entries_4_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_36 | after_4) & entries_4_valid
+                  ? ~(_GEN_84 | after_4) & entries_4_valid
                   : ~after_4 & entries_4_valid)
-             : ~(do_cm & _GEN_36)
-               & (do_enq1 ? _GEN_82 | entries_4_valid : _GEN_52 | entries_4_valid));
+             : ~(do_cm & _GEN_84)
+               & (do_enq1 ? _GEN_130 | entries_4_valid : _GEN_100 | entries_4_valid));
       entries_4_done <=
-        _GEN_66 ? _GEN_9 : do_enq1 ? ~_GEN_82 & _GEN_9 : ~_GEN_52 & _GEN_9;
-      if (_GEN_84) begin
-        if (_GEN_8)
+        _GEN_114 ? _GEN_31 : do_enq1 ? ~_GEN_130 & _GEN_31 : ~_GEN_100 & _GEN_31;
+      if (_GEN_132) begin
+        if (_GEN_68)
+          entries_4_dest_val <= io_wb1_val;
+        else if (_GEN_4)
           entries_4_dest_val <= io_wb_val;
       end
       else
         entries_4_dest_val <= 32'h0;
       entries_4_actual_taken <=
-        _GEN_84 & (_GEN_8 ? io_wb_actual_taken : entries_4_actual_taken);
-      if (_GEN_84) begin
-        if (_GEN_8) begin
+        _GEN_132
+        & (_GEN_68
+             ? io_wb1_actual_taken
+             : _GEN_4 ? io_wb_actual_taken : entries_4_actual_taken);
+      if (_GEN_132) begin
+        if (_GEN_68) begin
+          entries_4_mem_addr <= io_wb1_mem_addr;
+          entries_4_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_4) begin
           entries_4_mem_addr <= io_wb_mem_addr;
           entries_4_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3626,27 +3852,38 @@ module ROB(
         entries_4_mem_addr <= 32'h0;
         entries_4_mem_wdata <= 32'h0;
       end
-      entries_4_addr_ready <= _GEN_84 & (_GEN_8 | entries_4_addr_ready);
+      entries_4_addr_ready <=
+        _GEN_132
+        & (_GEN_16 ? _GEN_30 | entries_4_addr_ready : _GEN_4 | entries_4_addr_ready);
       entries_5_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_37 | after_5) & entries_5_valid
+                  ? ~(_GEN_85 | after_5) & entries_5_valid
                   : ~after_5 & entries_5_valid)
-             : ~(do_cm & _GEN_37)
-               & (do_enq1 ? _GEN_86 | entries_5_valid : _GEN_53 | entries_5_valid));
+             : ~(do_cm & _GEN_85)
+               & (do_enq1 ? _GEN_134 | entries_5_valid : _GEN_101 | entries_5_valid));
       entries_5_done <=
-        _GEN_66 ? _GEN_11 : do_enq1 ? ~_GEN_86 & _GEN_11 : ~_GEN_53 & _GEN_11;
-      if (_GEN_88) begin
-        if (_GEN_10)
+        _GEN_114 ? _GEN_34 : do_enq1 ? ~_GEN_134 & _GEN_34 : ~_GEN_101 & _GEN_34;
+      if (_GEN_136) begin
+        if (_GEN_69)
+          entries_5_dest_val <= io_wb1_val;
+        else if (_GEN_5)
           entries_5_dest_val <= io_wb_val;
       end
       else
         entries_5_dest_val <= 32'h0;
       entries_5_actual_taken <=
-        _GEN_88 & (_GEN_10 ? io_wb_actual_taken : entries_5_actual_taken);
-      if (_GEN_88) begin
-        if (_GEN_10) begin
+        _GEN_136
+        & (_GEN_69
+             ? io_wb1_actual_taken
+             : _GEN_5 ? io_wb_actual_taken : entries_5_actual_taken);
+      if (_GEN_136) begin
+        if (_GEN_69) begin
+          entries_5_mem_addr <= io_wb1_mem_addr;
+          entries_5_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_5) begin
           entries_5_mem_addr <= io_wb_mem_addr;
           entries_5_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3655,27 +3892,38 @@ module ROB(
         entries_5_mem_addr <= 32'h0;
         entries_5_mem_wdata <= 32'h0;
       end
-      entries_5_addr_ready <= _GEN_88 & (_GEN_10 | entries_5_addr_ready);
+      entries_5_addr_ready <=
+        _GEN_136
+        & (_GEN_16 ? _GEN_33 | entries_5_addr_ready : _GEN_5 | entries_5_addr_ready);
       entries_6_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_38 | after_6) & entries_6_valid
+                  ? ~(_GEN_86 | after_6) & entries_6_valid
                   : ~after_6 & entries_6_valid)
-             : ~(do_cm & _GEN_38)
-               & (do_enq1 ? _GEN_90 | entries_6_valid : _GEN_54 | entries_6_valid));
+             : ~(do_cm & _GEN_86)
+               & (do_enq1 ? _GEN_138 | entries_6_valid : _GEN_102 | entries_6_valid));
       entries_6_done <=
-        _GEN_66 ? _GEN_13 : do_enq1 ? ~_GEN_90 & _GEN_13 : ~_GEN_54 & _GEN_13;
-      if (_GEN_92) begin
-        if (_GEN_12)
+        _GEN_114 ? _GEN_37 : do_enq1 ? ~_GEN_138 & _GEN_37 : ~_GEN_102 & _GEN_37;
+      if (_GEN_140) begin
+        if (_GEN_70)
+          entries_6_dest_val <= io_wb1_val;
+        else if (_GEN_6)
           entries_6_dest_val <= io_wb_val;
       end
       else
         entries_6_dest_val <= 32'h0;
       entries_6_actual_taken <=
-        _GEN_92 & (_GEN_12 ? io_wb_actual_taken : entries_6_actual_taken);
-      if (_GEN_92) begin
-        if (_GEN_12) begin
+        _GEN_140
+        & (_GEN_70
+             ? io_wb1_actual_taken
+             : _GEN_6 ? io_wb_actual_taken : entries_6_actual_taken);
+      if (_GEN_140) begin
+        if (_GEN_70) begin
+          entries_6_mem_addr <= io_wb1_mem_addr;
+          entries_6_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_6) begin
           entries_6_mem_addr <= io_wb_mem_addr;
           entries_6_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3684,27 +3932,38 @@ module ROB(
         entries_6_mem_addr <= 32'h0;
         entries_6_mem_wdata <= 32'h0;
       end
-      entries_6_addr_ready <= _GEN_92 & (_GEN_12 | entries_6_addr_ready);
+      entries_6_addr_ready <=
+        _GEN_140
+        & (_GEN_16 ? _GEN_36 | entries_6_addr_ready : _GEN_6 | entries_6_addr_ready);
       entries_7_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_39 | after_7) & entries_7_valid
+                  ? ~(_GEN_87 | after_7) & entries_7_valid
                   : ~after_7 & entries_7_valid)
-             : ~(do_cm & _GEN_39)
-               & (do_enq1 ? _GEN_94 | entries_7_valid : _GEN_55 | entries_7_valid));
+             : ~(do_cm & _GEN_87)
+               & (do_enq1 ? _GEN_142 | entries_7_valid : _GEN_103 | entries_7_valid));
       entries_7_done <=
-        _GEN_66 ? _GEN_15 : do_enq1 ? ~_GEN_94 & _GEN_15 : ~_GEN_55 & _GEN_15;
-      if (_GEN_96) begin
-        if (_GEN_14)
+        _GEN_114 ? _GEN_40 : do_enq1 ? ~_GEN_142 & _GEN_40 : ~_GEN_103 & _GEN_40;
+      if (_GEN_144) begin
+        if (_GEN_71)
+          entries_7_dest_val <= io_wb1_val;
+        else if (_GEN_7)
           entries_7_dest_val <= io_wb_val;
       end
       else
         entries_7_dest_val <= 32'h0;
       entries_7_actual_taken <=
-        _GEN_96 & (_GEN_14 ? io_wb_actual_taken : entries_7_actual_taken);
-      if (_GEN_96) begin
-        if (_GEN_14) begin
+        _GEN_144
+        & (_GEN_71
+             ? io_wb1_actual_taken
+             : _GEN_7 ? io_wb_actual_taken : entries_7_actual_taken);
+      if (_GEN_144) begin
+        if (_GEN_71) begin
+          entries_7_mem_addr <= io_wb1_mem_addr;
+          entries_7_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_7) begin
           entries_7_mem_addr <= io_wb_mem_addr;
           entries_7_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3713,27 +3972,38 @@ module ROB(
         entries_7_mem_addr <= 32'h0;
         entries_7_mem_wdata <= 32'h0;
       end
-      entries_7_addr_ready <= _GEN_96 & (_GEN_14 | entries_7_addr_ready);
+      entries_7_addr_ready <=
+        _GEN_144
+        & (_GEN_16 ? _GEN_39 | entries_7_addr_ready : _GEN_7 | entries_7_addr_ready);
       entries_8_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_40 | after_8) & entries_8_valid
+                  ? ~(_GEN_88 | after_8) & entries_8_valid
                   : ~after_8 & entries_8_valid)
-             : ~(do_cm & _GEN_40)
-               & (do_enq1 ? _GEN_98 | entries_8_valid : _GEN_56 | entries_8_valid));
+             : ~(do_cm & _GEN_88)
+               & (do_enq1 ? _GEN_146 | entries_8_valid : _GEN_104 | entries_8_valid));
       entries_8_done <=
-        _GEN_66 ? _GEN_17 : do_enq1 ? ~_GEN_98 & _GEN_17 : ~_GEN_56 & _GEN_17;
-      if (_GEN_100) begin
-        if (_GEN_16)
+        _GEN_114 ? _GEN_43 : do_enq1 ? ~_GEN_146 & _GEN_43 : ~_GEN_104 & _GEN_43;
+      if (_GEN_148) begin
+        if (_GEN_72)
+          entries_8_dest_val <= io_wb1_val;
+        else if (_GEN_8)
           entries_8_dest_val <= io_wb_val;
       end
       else
         entries_8_dest_val <= 32'h0;
       entries_8_actual_taken <=
-        _GEN_100 & (_GEN_16 ? io_wb_actual_taken : entries_8_actual_taken);
-      if (_GEN_100) begin
-        if (_GEN_16) begin
+        _GEN_148
+        & (_GEN_72
+             ? io_wb1_actual_taken
+             : _GEN_8 ? io_wb_actual_taken : entries_8_actual_taken);
+      if (_GEN_148) begin
+        if (_GEN_72) begin
+          entries_8_mem_addr <= io_wb1_mem_addr;
+          entries_8_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_8) begin
           entries_8_mem_addr <= io_wb_mem_addr;
           entries_8_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3742,27 +4012,38 @@ module ROB(
         entries_8_mem_addr <= 32'h0;
         entries_8_mem_wdata <= 32'h0;
       end
-      entries_8_addr_ready <= _GEN_100 & (_GEN_16 | entries_8_addr_ready);
+      entries_8_addr_ready <=
+        _GEN_148
+        & (_GEN_16 ? _GEN_42 | entries_8_addr_ready : _GEN_8 | entries_8_addr_ready);
       entries_9_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_41 | after_9) & entries_9_valid
+                  ? ~(_GEN_89 | after_9) & entries_9_valid
                   : ~after_9 & entries_9_valid)
-             : ~(do_cm & _GEN_41)
-               & (do_enq1 ? _GEN_102 | entries_9_valid : _GEN_57 | entries_9_valid));
+             : ~(do_cm & _GEN_89)
+               & (do_enq1 ? _GEN_150 | entries_9_valid : _GEN_105 | entries_9_valid));
       entries_9_done <=
-        _GEN_66 ? _GEN_19 : do_enq1 ? ~_GEN_102 & _GEN_19 : ~_GEN_57 & _GEN_19;
-      if (_GEN_104) begin
-        if (_GEN_18)
+        _GEN_114 ? _GEN_46 : do_enq1 ? ~_GEN_150 & _GEN_46 : ~_GEN_105 & _GEN_46;
+      if (_GEN_152) begin
+        if (_GEN_73)
+          entries_9_dest_val <= io_wb1_val;
+        else if (_GEN_9)
           entries_9_dest_val <= io_wb_val;
       end
       else
         entries_9_dest_val <= 32'h0;
       entries_9_actual_taken <=
-        _GEN_104 & (_GEN_18 ? io_wb_actual_taken : entries_9_actual_taken);
-      if (_GEN_104) begin
-        if (_GEN_18) begin
+        _GEN_152
+        & (_GEN_73
+             ? io_wb1_actual_taken
+             : _GEN_9 ? io_wb_actual_taken : entries_9_actual_taken);
+      if (_GEN_152) begin
+        if (_GEN_73) begin
+          entries_9_mem_addr <= io_wb1_mem_addr;
+          entries_9_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_9) begin
           entries_9_mem_addr <= io_wb_mem_addr;
           entries_9_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3771,27 +4052,38 @@ module ROB(
         entries_9_mem_addr <= 32'h0;
         entries_9_mem_wdata <= 32'h0;
       end
-      entries_9_addr_ready <= _GEN_104 & (_GEN_18 | entries_9_addr_ready);
+      entries_9_addr_ready <=
+        _GEN_152
+        & (_GEN_16 ? _GEN_45 | entries_9_addr_ready : _GEN_9 | entries_9_addr_ready);
       entries_10_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_42 | after_10) & entries_10_valid
+                  ? ~(_GEN_90 | after_10) & entries_10_valid
                   : ~after_10 & entries_10_valid)
-             : ~(do_cm & _GEN_42)
-               & (do_enq1 ? _GEN_106 | entries_10_valid : _GEN_58 | entries_10_valid));
+             : ~(do_cm & _GEN_90)
+               & (do_enq1 ? _GEN_154 | entries_10_valid : _GEN_106 | entries_10_valid));
       entries_10_done <=
-        _GEN_66 ? _GEN_21 : do_enq1 ? ~_GEN_106 & _GEN_21 : ~_GEN_58 & _GEN_21;
-      if (_GEN_108) begin
-        if (_GEN_20)
+        _GEN_114 ? _GEN_49 : do_enq1 ? ~_GEN_154 & _GEN_49 : ~_GEN_106 & _GEN_49;
+      if (_GEN_156) begin
+        if (_GEN_74)
+          entries_10_dest_val <= io_wb1_val;
+        else if (_GEN_10)
           entries_10_dest_val <= io_wb_val;
       end
       else
         entries_10_dest_val <= 32'h0;
       entries_10_actual_taken <=
-        _GEN_108 & (_GEN_20 ? io_wb_actual_taken : entries_10_actual_taken);
-      if (_GEN_108) begin
-        if (_GEN_20) begin
+        _GEN_156
+        & (_GEN_74
+             ? io_wb1_actual_taken
+             : _GEN_10 ? io_wb_actual_taken : entries_10_actual_taken);
+      if (_GEN_156) begin
+        if (_GEN_74) begin
+          entries_10_mem_addr <= io_wb1_mem_addr;
+          entries_10_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_10) begin
           entries_10_mem_addr <= io_wb_mem_addr;
           entries_10_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3800,27 +4092,38 @@ module ROB(
         entries_10_mem_addr <= 32'h0;
         entries_10_mem_wdata <= 32'h0;
       end
-      entries_10_addr_ready <= _GEN_108 & (_GEN_20 | entries_10_addr_ready);
+      entries_10_addr_ready <=
+        _GEN_156
+        & (_GEN_16 ? _GEN_48 | entries_10_addr_ready : _GEN_10 | entries_10_addr_ready);
       entries_11_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_43 | after_11) & entries_11_valid
+                  ? ~(_GEN_91 | after_11) & entries_11_valid
                   : ~after_11 & entries_11_valid)
-             : ~(do_cm & _GEN_43)
-               & (do_enq1 ? _GEN_110 | entries_11_valid : _GEN_59 | entries_11_valid));
+             : ~(do_cm & _GEN_91)
+               & (do_enq1 ? _GEN_158 | entries_11_valid : _GEN_107 | entries_11_valid));
       entries_11_done <=
-        _GEN_66 ? _GEN_23 : do_enq1 ? ~_GEN_110 & _GEN_23 : ~_GEN_59 & _GEN_23;
-      if (_GEN_112) begin
-        if (_GEN_22)
+        _GEN_114 ? _GEN_52 : do_enq1 ? ~_GEN_158 & _GEN_52 : ~_GEN_107 & _GEN_52;
+      if (_GEN_160) begin
+        if (_GEN_75)
+          entries_11_dest_val <= io_wb1_val;
+        else if (_GEN_11)
           entries_11_dest_val <= io_wb_val;
       end
       else
         entries_11_dest_val <= 32'h0;
       entries_11_actual_taken <=
-        _GEN_112 & (_GEN_22 ? io_wb_actual_taken : entries_11_actual_taken);
-      if (_GEN_112) begin
-        if (_GEN_22) begin
+        _GEN_160
+        & (_GEN_75
+             ? io_wb1_actual_taken
+             : _GEN_11 ? io_wb_actual_taken : entries_11_actual_taken);
+      if (_GEN_160) begin
+        if (_GEN_75) begin
+          entries_11_mem_addr <= io_wb1_mem_addr;
+          entries_11_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_11) begin
           entries_11_mem_addr <= io_wb_mem_addr;
           entries_11_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3829,27 +4132,38 @@ module ROB(
         entries_11_mem_addr <= 32'h0;
         entries_11_mem_wdata <= 32'h0;
       end
-      entries_11_addr_ready <= _GEN_112 & (_GEN_22 | entries_11_addr_ready);
+      entries_11_addr_ready <=
+        _GEN_160
+        & (_GEN_16 ? _GEN_51 | entries_11_addr_ready : _GEN_11 | entries_11_addr_ready);
       entries_12_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_44 | after_12) & entries_12_valid
+                  ? ~(_GEN_92 | after_12) & entries_12_valid
                   : ~after_12 & entries_12_valid)
-             : ~(do_cm & _GEN_44)
-               & (do_enq1 ? _GEN_114 | entries_12_valid : _GEN_60 | entries_12_valid));
+             : ~(do_cm & _GEN_92)
+               & (do_enq1 ? _GEN_162 | entries_12_valid : _GEN_108 | entries_12_valid));
       entries_12_done <=
-        _GEN_66 ? _GEN_25 : do_enq1 ? ~_GEN_114 & _GEN_25 : ~_GEN_60 & _GEN_25;
-      if (_GEN_116) begin
-        if (_GEN_24)
+        _GEN_114 ? _GEN_55 : do_enq1 ? ~_GEN_162 & _GEN_55 : ~_GEN_108 & _GEN_55;
+      if (_GEN_164) begin
+        if (_GEN_76)
+          entries_12_dest_val <= io_wb1_val;
+        else if (_GEN_12)
           entries_12_dest_val <= io_wb_val;
       end
       else
         entries_12_dest_val <= 32'h0;
       entries_12_actual_taken <=
-        _GEN_116 & (_GEN_24 ? io_wb_actual_taken : entries_12_actual_taken);
-      if (_GEN_116) begin
-        if (_GEN_24) begin
+        _GEN_164
+        & (_GEN_76
+             ? io_wb1_actual_taken
+             : _GEN_12 ? io_wb_actual_taken : entries_12_actual_taken);
+      if (_GEN_164) begin
+        if (_GEN_76) begin
+          entries_12_mem_addr <= io_wb1_mem_addr;
+          entries_12_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_12) begin
           entries_12_mem_addr <= io_wb_mem_addr;
           entries_12_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3858,27 +4172,38 @@ module ROB(
         entries_12_mem_addr <= 32'h0;
         entries_12_mem_wdata <= 32'h0;
       end
-      entries_12_addr_ready <= _GEN_116 & (_GEN_24 | entries_12_addr_ready);
+      entries_12_addr_ready <=
+        _GEN_164
+        & (_GEN_16 ? _GEN_54 | entries_12_addr_ready : _GEN_12 | entries_12_addr_ready);
       entries_13_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_45 | after_13) & entries_13_valid
+                  ? ~(_GEN_93 | after_13) & entries_13_valid
                   : ~after_13 & entries_13_valid)
-             : ~(do_cm & _GEN_45)
-               & (do_enq1 ? _GEN_118 | entries_13_valid : _GEN_61 | entries_13_valid));
+             : ~(do_cm & _GEN_93)
+               & (do_enq1 ? _GEN_166 | entries_13_valid : _GEN_109 | entries_13_valid));
       entries_13_done <=
-        _GEN_66 ? _GEN_27 : do_enq1 ? ~_GEN_118 & _GEN_27 : ~_GEN_61 & _GEN_27;
-      if (_GEN_120) begin
-        if (_GEN_26)
+        _GEN_114 ? _GEN_58 : do_enq1 ? ~_GEN_166 & _GEN_58 : ~_GEN_109 & _GEN_58;
+      if (_GEN_168) begin
+        if (_GEN_77)
+          entries_13_dest_val <= io_wb1_val;
+        else if (_GEN_13)
           entries_13_dest_val <= io_wb_val;
       end
       else
         entries_13_dest_val <= 32'h0;
       entries_13_actual_taken <=
-        _GEN_120 & (_GEN_26 ? io_wb_actual_taken : entries_13_actual_taken);
-      if (_GEN_120) begin
-        if (_GEN_26) begin
+        _GEN_168
+        & (_GEN_77
+             ? io_wb1_actual_taken
+             : _GEN_13 ? io_wb_actual_taken : entries_13_actual_taken);
+      if (_GEN_168) begin
+        if (_GEN_77) begin
+          entries_13_mem_addr <= io_wb1_mem_addr;
+          entries_13_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_13) begin
           entries_13_mem_addr <= io_wb_mem_addr;
           entries_13_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3887,27 +4212,38 @@ module ROB(
         entries_13_mem_addr <= 32'h0;
         entries_13_mem_wdata <= 32'h0;
       end
-      entries_13_addr_ready <= _GEN_120 & (_GEN_26 | entries_13_addr_ready);
+      entries_13_addr_ready <=
+        _GEN_168
+        & (_GEN_16 ? _GEN_57 | entries_13_addr_ready : _GEN_13 | entries_13_addr_ready);
       entries_14_valid <=
         ~io_flush_all
         & (io_flush
              ? (do_cm
-                  ? ~(_GEN_46 | after_14) & entries_14_valid
+                  ? ~(_GEN_94 | after_14) & entries_14_valid
                   : ~after_14 & entries_14_valid)
-             : ~(do_cm & _GEN_46)
-               & (do_enq1 ? _GEN_122 | entries_14_valid : _GEN_62 | entries_14_valid));
+             : ~(do_cm & _GEN_94)
+               & (do_enq1 ? _GEN_170 | entries_14_valid : _GEN_110 | entries_14_valid));
       entries_14_done <=
-        _GEN_66 ? _GEN_29 : do_enq1 ? ~_GEN_122 & _GEN_29 : ~_GEN_62 & _GEN_29;
-      if (_GEN_124) begin
-        if (_GEN_28)
+        _GEN_114 ? _GEN_61 : do_enq1 ? ~_GEN_170 & _GEN_61 : ~_GEN_110 & _GEN_61;
+      if (_GEN_172) begin
+        if (_GEN_78)
+          entries_14_dest_val <= io_wb1_val;
+        else if (_GEN_14)
           entries_14_dest_val <= io_wb_val;
       end
       else
         entries_14_dest_val <= 32'h0;
       entries_14_actual_taken <=
-        _GEN_124 & (_GEN_28 ? io_wb_actual_taken : entries_14_actual_taken);
-      if (_GEN_124) begin
-        if (_GEN_28) begin
+        _GEN_172
+        & (_GEN_78
+             ? io_wb1_actual_taken
+             : _GEN_14 ? io_wb_actual_taken : entries_14_actual_taken);
+      if (_GEN_172) begin
+        if (_GEN_78) begin
+          entries_14_mem_addr <= io_wb1_mem_addr;
+          entries_14_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_14) begin
           entries_14_mem_addr <= io_wb_mem_addr;
           entries_14_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3916,7 +4252,9 @@ module ROB(
         entries_14_mem_addr <= 32'h0;
         entries_14_mem_wdata <= 32'h0;
       end
-      entries_14_addr_ready <= _GEN_124 & (_GEN_28 | entries_14_addr_ready);
+      entries_14_addr_ready <=
+        _GEN_172
+        & (_GEN_16 ? _GEN_60 | entries_14_addr_ready : _GEN_14 | entries_14_addr_ready);
       entries_15_valid <=
         ~io_flush_all
         & (io_flush
@@ -3924,19 +4262,28 @@ module ROB(
                   ? ~((&id) | after_15) & entries_15_valid
                   : ~after_15 & entries_15_valid)
              : ~(do_cm & (&id))
-               & (do_enq1 ? _GEN_125 | entries_15_valid : _GEN_63 | entries_15_valid));
+               & (do_enq1 ? _GEN_173 | entries_15_valid : _GEN_111 | entries_15_valid));
       entries_15_done <=
-        _GEN_66 ? _GEN_31 : do_enq1 ? ~_GEN_125 & _GEN_31 : ~_GEN_63 & _GEN_31;
-      if (_GEN_127) begin
-        if (_GEN_30)
+        _GEN_114 ? _GEN_63 : do_enq1 ? ~_GEN_173 & _GEN_63 : ~_GEN_111 & _GEN_63;
+      if (_GEN_175) begin
+        if (_GEN_79)
+          entries_15_dest_val <= io_wb1_val;
+        else if (_GEN_15)
           entries_15_dest_val <= io_wb_val;
       end
       else
         entries_15_dest_val <= 32'h0;
       entries_15_actual_taken <=
-        _GEN_127 & (_GEN_30 ? io_wb_actual_taken : entries_15_actual_taken);
-      if (_GEN_127) begin
-        if (_GEN_30) begin
+        _GEN_175
+        & (_GEN_79
+             ? io_wb1_actual_taken
+             : _GEN_15 ? io_wb_actual_taken : entries_15_actual_taken);
+      if (_GEN_175) begin
+        if (_GEN_79) begin
+          entries_15_mem_addr <= io_wb1_mem_addr;
+          entries_15_mem_wdata <= io_wb1_mem_wdata;
+        end
+        else if (_GEN_15) begin
           entries_15_mem_addr <= io_wb_mem_addr;
           entries_15_mem_wdata <= io_wb_mem_wdata;
         end
@@ -3945,7 +4292,9 @@ module ROB(
         entries_15_mem_addr <= 32'h0;
         entries_15_mem_wdata <= 32'h0;
       end
-      entries_15_addr_ready <= _GEN_127 & (_GEN_30 | entries_15_addr_ready);
+      entries_15_addr_ready <=
+        _GEN_175
+        & (_GEN_16 ? _GEN_62 | entries_15_addr_ready : _GEN_15 | entries_15_addr_ready);
       if (io_flush_all) begin
         id <= 4'h0;
         tail <= 4'h0;
@@ -3993,8 +4342,8 @@ module ROB(
                               + {1'h0, after_13 & entries_13_valid}}
                              + {1'h0,
                                 {1'h0, after_14 & entries_14_valid}
-                                  + {1'h0, after_15 & entries_15_valid}}}}) - _GEN_47
-              : count + {4'h0, do_enq0} + {4'h0, do_enq1} - _GEN_47;
+                                  + {1'h0, after_15 & entries_15_valid}}}}) - _GEN_95
+              : count + {4'h0, do_enq0} + {4'h0, do_enq1} - _GEN_95;
     end
   end // always @(posedge)
   PerfMonitor pm (
@@ -4007,7 +4356,9 @@ module ROB(
   assign io_space = 5'h10 - count;
   assign io_enq1_idx = _tail1_T_1;
   assign io_commit_valid =
-    casez_tmp & (casez_tmp_0 | io_wb_fire & io_wb_idx == id & casez_tmp);
+    casez_tmp
+    & (casez_tmp_0 | io_wb_fire & io_wb_idx == id & casez_tmp | io_wb1_fire
+       & io_wb1_idx == id & casez_tmp);
   assign io_commit_idx = id;
   assign io_commit_bits_pc = casez_tmp_1;
   assign io_commit_bits_inst = casez_tmp_2;
@@ -4050,9 +4401,6 @@ module ROB(
   assign io_entries_0_new_phys = entries_0_new_phys;
   assign io_entries_0_is_fencei = entries_0_is_fencei;
   assign io_entries_0_state_state = entries_0_state_state;
-  assign io_entries_0_mem_addr = entries_0_mem_addr;
-  assign io_entries_0_mem_wdata = entries_0_mem_wdata;
-  assign io_entries_0_addr_ready = entries_0_addr_ready;
   assign io_entries_1_valid = entries_1_valid;
   assign io_entries_1_done = entries_1_done;
   assign io_entries_1_pc = entries_1_pc;
@@ -4067,9 +4415,6 @@ module ROB(
   assign io_entries_1_new_phys = entries_1_new_phys;
   assign io_entries_1_is_fencei = entries_1_is_fencei;
   assign io_entries_1_state_state = entries_1_state_state;
-  assign io_entries_1_mem_addr = entries_1_mem_addr;
-  assign io_entries_1_mem_wdata = entries_1_mem_wdata;
-  assign io_entries_1_addr_ready = entries_1_addr_ready;
   assign io_entries_2_valid = entries_2_valid;
   assign io_entries_2_done = entries_2_done;
   assign io_entries_2_pc = entries_2_pc;
@@ -4084,9 +4429,6 @@ module ROB(
   assign io_entries_2_new_phys = entries_2_new_phys;
   assign io_entries_2_is_fencei = entries_2_is_fencei;
   assign io_entries_2_state_state = entries_2_state_state;
-  assign io_entries_2_mem_addr = entries_2_mem_addr;
-  assign io_entries_2_mem_wdata = entries_2_mem_wdata;
-  assign io_entries_2_addr_ready = entries_2_addr_ready;
   assign io_entries_3_valid = entries_3_valid;
   assign io_entries_3_done = entries_3_done;
   assign io_entries_3_pc = entries_3_pc;
@@ -4101,9 +4443,6 @@ module ROB(
   assign io_entries_3_new_phys = entries_3_new_phys;
   assign io_entries_3_is_fencei = entries_3_is_fencei;
   assign io_entries_3_state_state = entries_3_state_state;
-  assign io_entries_3_mem_addr = entries_3_mem_addr;
-  assign io_entries_3_mem_wdata = entries_3_mem_wdata;
-  assign io_entries_3_addr_ready = entries_3_addr_ready;
   assign io_entries_4_valid = entries_4_valid;
   assign io_entries_4_done = entries_4_done;
   assign io_entries_4_pc = entries_4_pc;
@@ -4118,9 +4457,6 @@ module ROB(
   assign io_entries_4_new_phys = entries_4_new_phys;
   assign io_entries_4_is_fencei = entries_4_is_fencei;
   assign io_entries_4_state_state = entries_4_state_state;
-  assign io_entries_4_mem_addr = entries_4_mem_addr;
-  assign io_entries_4_mem_wdata = entries_4_mem_wdata;
-  assign io_entries_4_addr_ready = entries_4_addr_ready;
   assign io_entries_5_valid = entries_5_valid;
   assign io_entries_5_done = entries_5_done;
   assign io_entries_5_pc = entries_5_pc;
@@ -4135,9 +4471,6 @@ module ROB(
   assign io_entries_5_new_phys = entries_5_new_phys;
   assign io_entries_5_is_fencei = entries_5_is_fencei;
   assign io_entries_5_state_state = entries_5_state_state;
-  assign io_entries_5_mem_addr = entries_5_mem_addr;
-  assign io_entries_5_mem_wdata = entries_5_mem_wdata;
-  assign io_entries_5_addr_ready = entries_5_addr_ready;
   assign io_entries_6_valid = entries_6_valid;
   assign io_entries_6_done = entries_6_done;
   assign io_entries_6_pc = entries_6_pc;
@@ -4152,9 +4485,6 @@ module ROB(
   assign io_entries_6_new_phys = entries_6_new_phys;
   assign io_entries_6_is_fencei = entries_6_is_fencei;
   assign io_entries_6_state_state = entries_6_state_state;
-  assign io_entries_6_mem_addr = entries_6_mem_addr;
-  assign io_entries_6_mem_wdata = entries_6_mem_wdata;
-  assign io_entries_6_addr_ready = entries_6_addr_ready;
   assign io_entries_7_valid = entries_7_valid;
   assign io_entries_7_done = entries_7_done;
   assign io_entries_7_pc = entries_7_pc;
@@ -4169,9 +4499,6 @@ module ROB(
   assign io_entries_7_new_phys = entries_7_new_phys;
   assign io_entries_7_is_fencei = entries_7_is_fencei;
   assign io_entries_7_state_state = entries_7_state_state;
-  assign io_entries_7_mem_addr = entries_7_mem_addr;
-  assign io_entries_7_mem_wdata = entries_7_mem_wdata;
-  assign io_entries_7_addr_ready = entries_7_addr_ready;
   assign io_entries_8_valid = entries_8_valid;
   assign io_entries_8_done = entries_8_done;
   assign io_entries_8_pc = entries_8_pc;
@@ -4186,9 +4513,6 @@ module ROB(
   assign io_entries_8_new_phys = entries_8_new_phys;
   assign io_entries_8_is_fencei = entries_8_is_fencei;
   assign io_entries_8_state_state = entries_8_state_state;
-  assign io_entries_8_mem_addr = entries_8_mem_addr;
-  assign io_entries_8_mem_wdata = entries_8_mem_wdata;
-  assign io_entries_8_addr_ready = entries_8_addr_ready;
   assign io_entries_9_valid = entries_9_valid;
   assign io_entries_9_done = entries_9_done;
   assign io_entries_9_pc = entries_9_pc;
@@ -4203,9 +4527,6 @@ module ROB(
   assign io_entries_9_new_phys = entries_9_new_phys;
   assign io_entries_9_is_fencei = entries_9_is_fencei;
   assign io_entries_9_state_state = entries_9_state_state;
-  assign io_entries_9_mem_addr = entries_9_mem_addr;
-  assign io_entries_9_mem_wdata = entries_9_mem_wdata;
-  assign io_entries_9_addr_ready = entries_9_addr_ready;
   assign io_entries_10_valid = entries_10_valid;
   assign io_entries_10_done = entries_10_done;
   assign io_entries_10_pc = entries_10_pc;
@@ -4220,9 +4541,6 @@ module ROB(
   assign io_entries_10_new_phys = entries_10_new_phys;
   assign io_entries_10_is_fencei = entries_10_is_fencei;
   assign io_entries_10_state_state = entries_10_state_state;
-  assign io_entries_10_mem_addr = entries_10_mem_addr;
-  assign io_entries_10_mem_wdata = entries_10_mem_wdata;
-  assign io_entries_10_addr_ready = entries_10_addr_ready;
   assign io_entries_11_valid = entries_11_valid;
   assign io_entries_11_done = entries_11_done;
   assign io_entries_11_pc = entries_11_pc;
@@ -4237,9 +4555,6 @@ module ROB(
   assign io_entries_11_new_phys = entries_11_new_phys;
   assign io_entries_11_is_fencei = entries_11_is_fencei;
   assign io_entries_11_state_state = entries_11_state_state;
-  assign io_entries_11_mem_addr = entries_11_mem_addr;
-  assign io_entries_11_mem_wdata = entries_11_mem_wdata;
-  assign io_entries_11_addr_ready = entries_11_addr_ready;
   assign io_entries_12_valid = entries_12_valid;
   assign io_entries_12_done = entries_12_done;
   assign io_entries_12_pc = entries_12_pc;
@@ -4254,9 +4569,6 @@ module ROB(
   assign io_entries_12_new_phys = entries_12_new_phys;
   assign io_entries_12_is_fencei = entries_12_is_fencei;
   assign io_entries_12_state_state = entries_12_state_state;
-  assign io_entries_12_mem_addr = entries_12_mem_addr;
-  assign io_entries_12_mem_wdata = entries_12_mem_wdata;
-  assign io_entries_12_addr_ready = entries_12_addr_ready;
   assign io_entries_13_valid = entries_13_valid;
   assign io_entries_13_done = entries_13_done;
   assign io_entries_13_pc = entries_13_pc;
@@ -4271,9 +4583,6 @@ module ROB(
   assign io_entries_13_new_phys = entries_13_new_phys;
   assign io_entries_13_is_fencei = entries_13_is_fencei;
   assign io_entries_13_state_state = entries_13_state_state;
-  assign io_entries_13_mem_addr = entries_13_mem_addr;
-  assign io_entries_13_mem_wdata = entries_13_mem_wdata;
-  assign io_entries_13_addr_ready = entries_13_addr_ready;
   assign io_entries_14_valid = entries_14_valid;
   assign io_entries_14_done = entries_14_done;
   assign io_entries_14_pc = entries_14_pc;
@@ -4288,9 +4597,6 @@ module ROB(
   assign io_entries_14_new_phys = entries_14_new_phys;
   assign io_entries_14_is_fencei = entries_14_is_fencei;
   assign io_entries_14_state_state = entries_14_state_state;
-  assign io_entries_14_mem_addr = entries_14_mem_addr;
-  assign io_entries_14_mem_wdata = entries_14_mem_wdata;
-  assign io_entries_14_addr_ready = entries_14_addr_ready;
   assign io_entries_15_valid = entries_15_valid;
   assign io_entries_15_done = entries_15_done;
   assign io_entries_15_pc = entries_15_pc;
@@ -4305,9 +4611,6 @@ module ROB(
   assign io_entries_15_new_phys = entries_15_new_phys;
   assign io_entries_15_is_fencei = entries_15_is_fencei;
   assign io_entries_15_state_state = entries_15_state_state;
-  assign io_entries_15_mem_addr = entries_15_mem_addr;
-  assign io_entries_15_mem_wdata = entries_15_mem_wdata;
-  assign io_entries_15_addr_ready = entries_15_addr_ready;
   assign io_head = id;
   assign io_count = count;
 endmodule

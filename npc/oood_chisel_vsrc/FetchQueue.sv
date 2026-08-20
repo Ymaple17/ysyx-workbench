@@ -33,7 +33,7 @@ module FetchQueue(
   output [31:0] io_deq1_bits_bp_target,
   output [9:0]  io_deq1_bits_bp_index,
   input         io_flush,
-  output [2:0]  io_count
+  output [3:0]  io_count
 );
 
   reg  [31:0] entries_0_inst;
@@ -68,219 +68,379 @@ module FetchQueue(
   reg         entries_3_bp_taken;
   reg  [31:0] entries_3_bp_target;
   reg  [9:0]  entries_3_bp_index;
-  reg  [1:0]  head;
-  reg  [1:0]  tail;
-  reg  [2:0]  count;
-  wire        io_enq_ready_0 = count != 3'h4 & ~io_flush;
+  reg  [31:0] entries_4_inst;
+  reg  [31:0] entries_4_pc;
+  reg         entries_4_state_state;
+  reg  [7:0]  entries_4_state_state_num;
+  reg         entries_4_bp_valid;
+  reg         entries_4_bp_taken;
+  reg  [31:0] entries_4_bp_target;
+  reg  [9:0]  entries_4_bp_index;
+  reg  [31:0] entries_5_inst;
+  reg  [31:0] entries_5_pc;
+  reg         entries_5_state_state;
+  reg  [7:0]  entries_5_state_state_num;
+  reg         entries_5_bp_valid;
+  reg         entries_5_bp_taken;
+  reg  [31:0] entries_5_bp_target;
+  reg  [9:0]  entries_5_bp_index;
+  reg  [31:0] entries_6_inst;
+  reg  [31:0] entries_6_pc;
+  reg         entries_6_state_state;
+  reg  [7:0]  entries_6_state_state_num;
+  reg         entries_6_bp_valid;
+  reg         entries_6_bp_taken;
+  reg  [31:0] entries_6_bp_target;
+  reg  [9:0]  entries_6_bp_index;
+  reg  [31:0] entries_7_inst;
+  reg  [31:0] entries_7_pc;
+  reg         entries_7_state_state;
+  reg  [7:0]  entries_7_state_state_num;
+  reg         entries_7_bp_valid;
+  reg         entries_7_bp_taken;
+  reg  [31:0] entries_7_bp_target;
+  reg  [9:0]  entries_7_bp_index;
+  reg  [2:0]  head;
+  reg  [2:0]  tail;
+  reg  [3:0]  count;
+  wire        io_enq_ready_0 = count != 4'h8 & ~io_flush;
   wire        io_deq_valid_0 = (|count) & ~io_flush;
   reg  [31:0] casez_tmp;
   always_comb begin
     casez (head)
-      2'b00:
+      3'b000:
         casez_tmp = entries_0_inst;
-      2'b01:
+      3'b001:
         casez_tmp = entries_1_inst;
-      2'b10:
+      3'b010:
         casez_tmp = entries_2_inst;
-      default:
+      3'b011:
         casez_tmp = entries_3_inst;
+      3'b100:
+        casez_tmp = entries_4_inst;
+      3'b101:
+        casez_tmp = entries_5_inst;
+      3'b110:
+        casez_tmp = entries_6_inst;
+      default:
+        casez_tmp = entries_7_inst;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_0;
   always_comb begin
     casez (head)
-      2'b00:
+      3'b000:
         casez_tmp_0 = entries_0_pc;
-      2'b01:
+      3'b001:
         casez_tmp_0 = entries_1_pc;
-      2'b10:
+      3'b010:
         casez_tmp_0 = entries_2_pc;
-      default:
+      3'b011:
         casez_tmp_0 = entries_3_pc;
+      3'b100:
+        casez_tmp_0 = entries_4_pc;
+      3'b101:
+        casez_tmp_0 = entries_5_pc;
+      3'b110:
+        casez_tmp_0 = entries_6_pc;
+      default:
+        casez_tmp_0 = entries_7_pc;
     endcase
   end // always_comb
   reg         casez_tmp_1;
   always_comb begin
     casez (head)
-      2'b00:
+      3'b000:
         casez_tmp_1 = entries_0_state_state;
-      2'b01:
+      3'b001:
         casez_tmp_1 = entries_1_state_state;
-      2'b10:
+      3'b010:
         casez_tmp_1 = entries_2_state_state;
-      default:
+      3'b011:
         casez_tmp_1 = entries_3_state_state;
+      3'b100:
+        casez_tmp_1 = entries_4_state_state;
+      3'b101:
+        casez_tmp_1 = entries_5_state_state;
+      3'b110:
+        casez_tmp_1 = entries_6_state_state;
+      default:
+        casez_tmp_1 = entries_7_state_state;
     endcase
   end // always_comb
   reg  [7:0]  casez_tmp_2;
   always_comb begin
     casez (head)
-      2'b00:
+      3'b000:
         casez_tmp_2 = entries_0_state_state_num;
-      2'b01:
+      3'b001:
         casez_tmp_2 = entries_1_state_state_num;
-      2'b10:
+      3'b010:
         casez_tmp_2 = entries_2_state_state_num;
-      default:
+      3'b011:
         casez_tmp_2 = entries_3_state_state_num;
+      3'b100:
+        casez_tmp_2 = entries_4_state_state_num;
+      3'b101:
+        casez_tmp_2 = entries_5_state_state_num;
+      3'b110:
+        casez_tmp_2 = entries_6_state_state_num;
+      default:
+        casez_tmp_2 = entries_7_state_state_num;
     endcase
   end // always_comb
   reg         casez_tmp_3;
   always_comb begin
     casez (head)
-      2'b00:
+      3'b000:
         casez_tmp_3 = entries_0_bp_valid;
-      2'b01:
+      3'b001:
         casez_tmp_3 = entries_1_bp_valid;
-      2'b10:
+      3'b010:
         casez_tmp_3 = entries_2_bp_valid;
-      default:
+      3'b011:
         casez_tmp_3 = entries_3_bp_valid;
+      3'b100:
+        casez_tmp_3 = entries_4_bp_valid;
+      3'b101:
+        casez_tmp_3 = entries_5_bp_valid;
+      3'b110:
+        casez_tmp_3 = entries_6_bp_valid;
+      default:
+        casez_tmp_3 = entries_7_bp_valid;
     endcase
   end // always_comb
   reg         casez_tmp_4;
   always_comb begin
     casez (head)
-      2'b00:
+      3'b000:
         casez_tmp_4 = entries_0_bp_taken;
-      2'b01:
+      3'b001:
         casez_tmp_4 = entries_1_bp_taken;
-      2'b10:
+      3'b010:
         casez_tmp_4 = entries_2_bp_taken;
-      default:
+      3'b011:
         casez_tmp_4 = entries_3_bp_taken;
+      3'b100:
+        casez_tmp_4 = entries_4_bp_taken;
+      3'b101:
+        casez_tmp_4 = entries_5_bp_taken;
+      3'b110:
+        casez_tmp_4 = entries_6_bp_taken;
+      default:
+        casez_tmp_4 = entries_7_bp_taken;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_5;
   always_comb begin
     casez (head)
-      2'b00:
+      3'b000:
         casez_tmp_5 = entries_0_bp_target;
-      2'b01:
+      3'b001:
         casez_tmp_5 = entries_1_bp_target;
-      2'b10:
+      3'b010:
         casez_tmp_5 = entries_2_bp_target;
-      default:
+      3'b011:
         casez_tmp_5 = entries_3_bp_target;
+      3'b100:
+        casez_tmp_5 = entries_4_bp_target;
+      3'b101:
+        casez_tmp_5 = entries_5_bp_target;
+      3'b110:
+        casez_tmp_5 = entries_6_bp_target;
+      default:
+        casez_tmp_5 = entries_7_bp_target;
     endcase
   end // always_comb
   reg  [9:0]  casez_tmp_6;
   always_comb begin
     casez (head)
-      2'b00:
+      3'b000:
         casez_tmp_6 = entries_0_bp_index;
-      2'b01:
+      3'b001:
         casez_tmp_6 = entries_1_bp_index;
-      2'b10:
+      3'b010:
         casez_tmp_6 = entries_2_bp_index;
-      default:
+      3'b011:
         casez_tmp_6 = entries_3_bp_index;
+      3'b100:
+        casez_tmp_6 = entries_4_bp_index;
+      3'b101:
+        casez_tmp_6 = entries_5_bp_index;
+      3'b110:
+        casez_tmp_6 = entries_6_bp_index;
+      default:
+        casez_tmp_6 = entries_7_bp_index;
     endcase
   end // always_comb
-  wire        io_deq1_valid_0 = (|(count[2:1])) & ~io_flush;
-  wire [1:0]  _io_deq1_bits_T = head + 2'h1;
+  wire        io_deq1_valid_0 = (|(count[3:1])) & ~io_flush;
+  wire [2:0]  _io_deq1_bits_T = head + 3'h1;
   reg  [31:0] casez_tmp_7;
   always_comb begin
     casez (_io_deq1_bits_T)
-      2'b00:
+      3'b000:
         casez_tmp_7 = entries_0_inst;
-      2'b01:
+      3'b001:
         casez_tmp_7 = entries_1_inst;
-      2'b10:
+      3'b010:
         casez_tmp_7 = entries_2_inst;
-      default:
+      3'b011:
         casez_tmp_7 = entries_3_inst;
+      3'b100:
+        casez_tmp_7 = entries_4_inst;
+      3'b101:
+        casez_tmp_7 = entries_5_inst;
+      3'b110:
+        casez_tmp_7 = entries_6_inst;
+      default:
+        casez_tmp_7 = entries_7_inst;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_8;
   always_comb begin
     casez (_io_deq1_bits_T)
-      2'b00:
+      3'b000:
         casez_tmp_8 = entries_0_pc;
-      2'b01:
+      3'b001:
         casez_tmp_8 = entries_1_pc;
-      2'b10:
+      3'b010:
         casez_tmp_8 = entries_2_pc;
-      default:
+      3'b011:
         casez_tmp_8 = entries_3_pc;
+      3'b100:
+        casez_tmp_8 = entries_4_pc;
+      3'b101:
+        casez_tmp_8 = entries_5_pc;
+      3'b110:
+        casez_tmp_8 = entries_6_pc;
+      default:
+        casez_tmp_8 = entries_7_pc;
     endcase
   end // always_comb
   reg         casez_tmp_9;
   always_comb begin
     casez (_io_deq1_bits_T)
-      2'b00:
+      3'b000:
         casez_tmp_9 = entries_0_state_state;
-      2'b01:
+      3'b001:
         casez_tmp_9 = entries_1_state_state;
-      2'b10:
+      3'b010:
         casez_tmp_9 = entries_2_state_state;
-      default:
+      3'b011:
         casez_tmp_9 = entries_3_state_state;
+      3'b100:
+        casez_tmp_9 = entries_4_state_state;
+      3'b101:
+        casez_tmp_9 = entries_5_state_state;
+      3'b110:
+        casez_tmp_9 = entries_6_state_state;
+      default:
+        casez_tmp_9 = entries_7_state_state;
     endcase
   end // always_comb
   reg  [7:0]  casez_tmp_10;
   always_comb begin
     casez (_io_deq1_bits_T)
-      2'b00:
+      3'b000:
         casez_tmp_10 = entries_0_state_state_num;
-      2'b01:
+      3'b001:
         casez_tmp_10 = entries_1_state_state_num;
-      2'b10:
+      3'b010:
         casez_tmp_10 = entries_2_state_state_num;
-      default:
+      3'b011:
         casez_tmp_10 = entries_3_state_state_num;
+      3'b100:
+        casez_tmp_10 = entries_4_state_state_num;
+      3'b101:
+        casez_tmp_10 = entries_5_state_state_num;
+      3'b110:
+        casez_tmp_10 = entries_6_state_state_num;
+      default:
+        casez_tmp_10 = entries_7_state_state_num;
     endcase
   end // always_comb
   reg         casez_tmp_11;
   always_comb begin
     casez (_io_deq1_bits_T)
-      2'b00:
+      3'b000:
         casez_tmp_11 = entries_0_bp_valid;
-      2'b01:
+      3'b001:
         casez_tmp_11 = entries_1_bp_valid;
-      2'b10:
+      3'b010:
         casez_tmp_11 = entries_2_bp_valid;
-      default:
+      3'b011:
         casez_tmp_11 = entries_3_bp_valid;
+      3'b100:
+        casez_tmp_11 = entries_4_bp_valid;
+      3'b101:
+        casez_tmp_11 = entries_5_bp_valid;
+      3'b110:
+        casez_tmp_11 = entries_6_bp_valid;
+      default:
+        casez_tmp_11 = entries_7_bp_valid;
     endcase
   end // always_comb
   reg         casez_tmp_12;
   always_comb begin
     casez (_io_deq1_bits_T)
-      2'b00:
+      3'b000:
         casez_tmp_12 = entries_0_bp_taken;
-      2'b01:
+      3'b001:
         casez_tmp_12 = entries_1_bp_taken;
-      2'b10:
+      3'b010:
         casez_tmp_12 = entries_2_bp_taken;
-      default:
+      3'b011:
         casez_tmp_12 = entries_3_bp_taken;
+      3'b100:
+        casez_tmp_12 = entries_4_bp_taken;
+      3'b101:
+        casez_tmp_12 = entries_5_bp_taken;
+      3'b110:
+        casez_tmp_12 = entries_6_bp_taken;
+      default:
+        casez_tmp_12 = entries_7_bp_taken;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_13;
   always_comb begin
     casez (_io_deq1_bits_T)
-      2'b00:
+      3'b000:
         casez_tmp_13 = entries_0_bp_target;
-      2'b01:
+      3'b001:
         casez_tmp_13 = entries_1_bp_target;
-      2'b10:
+      3'b010:
         casez_tmp_13 = entries_2_bp_target;
-      default:
+      3'b011:
         casez_tmp_13 = entries_3_bp_target;
+      3'b100:
+        casez_tmp_13 = entries_4_bp_target;
+      3'b101:
+        casez_tmp_13 = entries_5_bp_target;
+      3'b110:
+        casez_tmp_13 = entries_6_bp_target;
+      default:
+        casez_tmp_13 = entries_7_bp_target;
     endcase
   end // always_comb
   reg  [9:0]  casez_tmp_14;
   always_comb begin
     casez (_io_deq1_bits_T)
-      2'b00:
+      3'b000:
         casez_tmp_14 = entries_0_bp_index;
-      2'b01:
+      3'b001:
         casez_tmp_14 = entries_1_bp_index;
-      2'b10:
+      3'b010:
         casez_tmp_14 = entries_2_bp_index;
-      default:
+      3'b011:
         casez_tmp_14 = entries_3_bp_index;
+      3'b100:
+        casez_tmp_14 = entries_4_bp_index;
+      3'b101:
+        casez_tmp_14 = entries_5_bp_index;
+      3'b110:
+        casez_tmp_14 = entries_6_bp_index;
+      default:
+        casez_tmp_14 = entries_7_bp_index;
     endcase
   end // always_comb
   wire        do_enq = io_enq_ready_0 & io_enq_valid;
@@ -321,12 +481,44 @@ module FetchQueue(
       entries_3_bp_taken <= 1'h0;
       entries_3_bp_target <= 32'h0;
       entries_3_bp_index <= 10'h0;
-      head <= 2'h0;
-      tail <= 2'h0;
-      count <= 3'h0;
+      entries_4_inst <= 32'h0;
+      entries_4_pc <= 32'h0;
+      entries_4_state_state <= 1'h0;
+      entries_4_state_state_num <= 8'h0;
+      entries_4_bp_valid <= 1'h0;
+      entries_4_bp_taken <= 1'h0;
+      entries_4_bp_target <= 32'h0;
+      entries_4_bp_index <= 10'h0;
+      entries_5_inst <= 32'h0;
+      entries_5_pc <= 32'h0;
+      entries_5_state_state <= 1'h0;
+      entries_5_state_state_num <= 8'h0;
+      entries_5_bp_valid <= 1'h0;
+      entries_5_bp_taken <= 1'h0;
+      entries_5_bp_target <= 32'h0;
+      entries_5_bp_index <= 10'h0;
+      entries_6_inst <= 32'h0;
+      entries_6_pc <= 32'h0;
+      entries_6_state_state <= 1'h0;
+      entries_6_state_state_num <= 8'h0;
+      entries_6_bp_valid <= 1'h0;
+      entries_6_bp_taken <= 1'h0;
+      entries_6_bp_target <= 32'h0;
+      entries_6_bp_index <= 10'h0;
+      entries_7_inst <= 32'h0;
+      entries_7_pc <= 32'h0;
+      entries_7_state_state <= 1'h0;
+      entries_7_state_state_num <= 8'h0;
+      entries_7_bp_valid <= 1'h0;
+      entries_7_bp_taken <= 1'h0;
+      entries_7_bp_target <= 32'h0;
+      entries_7_bp_index <= 10'h0;
+      head <= 3'h0;
+      tail <= 3'h0;
+      count <= 4'h0;
     end
     else begin
-      if (io_flush | ~(do_enq & tail == 2'h0)) begin
+      if (io_flush | ~(do_enq & tail == 3'h0)) begin
       end
       else begin
         entries_0_inst <= io_enq_bits_inst;
@@ -338,7 +530,7 @@ module FetchQueue(
         entries_0_bp_target <= io_enq_bits_bp_target;
         entries_0_bp_index <= io_enq_bits_bp_index;
       end
-      if (io_flush | ~(do_enq & tail == 2'h1)) begin
+      if (io_flush | ~(do_enq & tail == 3'h1)) begin
       end
       else begin
         entries_1_inst <= io_enq_bits_inst;
@@ -350,7 +542,7 @@ module FetchQueue(
         entries_1_bp_target <= io_enq_bits_bp_target;
         entries_1_bp_index <= io_enq_bits_bp_index;
       end
-      if (io_flush | ~(do_enq & tail == 2'h2)) begin
+      if (io_flush | ~(do_enq & tail == 3'h2)) begin
       end
       else begin
         entries_2_inst <= io_enq_bits_inst;
@@ -362,7 +554,7 @@ module FetchQueue(
         entries_2_bp_target <= io_enq_bits_bp_target;
         entries_2_bp_index <= io_enq_bits_bp_index;
       end
-      if (io_flush | ~(do_enq & (&tail))) begin
+      if (io_flush | ~(do_enq & tail == 3'h3)) begin
       end
       else begin
         entries_3_inst <= io_enq_bits_inst;
@@ -374,17 +566,65 @@ module FetchQueue(
         entries_3_bp_target <= io_enq_bits_bp_target;
         entries_3_bp_index <= io_enq_bits_bp_index;
       end
+      if (io_flush | ~(do_enq & tail == 3'h4)) begin
+      end
+      else begin
+        entries_4_inst <= io_enq_bits_inst;
+        entries_4_pc <= io_enq_bits_pc;
+        entries_4_state_state <= io_enq_bits_state_state;
+        entries_4_state_state_num <= io_enq_bits_state_state_num;
+        entries_4_bp_valid <= io_enq_bits_bp_valid;
+        entries_4_bp_taken <= io_enq_bits_bp_taken;
+        entries_4_bp_target <= io_enq_bits_bp_target;
+        entries_4_bp_index <= io_enq_bits_bp_index;
+      end
+      if (io_flush | ~(do_enq & tail == 3'h5)) begin
+      end
+      else begin
+        entries_5_inst <= io_enq_bits_inst;
+        entries_5_pc <= io_enq_bits_pc;
+        entries_5_state_state <= io_enq_bits_state_state;
+        entries_5_state_state_num <= io_enq_bits_state_state_num;
+        entries_5_bp_valid <= io_enq_bits_bp_valid;
+        entries_5_bp_taken <= io_enq_bits_bp_taken;
+        entries_5_bp_target <= io_enq_bits_bp_target;
+        entries_5_bp_index <= io_enq_bits_bp_index;
+      end
+      if (io_flush | ~(do_enq & tail == 3'h6)) begin
+      end
+      else begin
+        entries_6_inst <= io_enq_bits_inst;
+        entries_6_pc <= io_enq_bits_pc;
+        entries_6_state_state <= io_enq_bits_state_state;
+        entries_6_state_state_num <= io_enq_bits_state_state_num;
+        entries_6_bp_valid <= io_enq_bits_bp_valid;
+        entries_6_bp_taken <= io_enq_bits_bp_taken;
+        entries_6_bp_target <= io_enq_bits_bp_target;
+        entries_6_bp_index <= io_enq_bits_bp_index;
+      end
+      if (io_flush | ~(do_enq & (&tail))) begin
+      end
+      else begin
+        entries_7_inst <= io_enq_bits_inst;
+        entries_7_pc <= io_enq_bits_pc;
+        entries_7_state_state <= io_enq_bits_state_state;
+        entries_7_state_state_num <= io_enq_bits_state_state_num;
+        entries_7_bp_valid <= io_enq_bits_bp_valid;
+        entries_7_bp_taken <= io_enq_bits_bp_taken;
+        entries_7_bp_target <= io_enq_bits_bp_target;
+        entries_7_bp_index <= io_enq_bits_bp_index;
+      end
       if (io_flush) begin
-        head <= 2'h0;
-        tail <= 2'h0;
+        head <= 3'h0;
+        tail <= 3'h0;
       end
       else begin
         if (|deqCount)
-          head <= head + deqCount;
+          head <= head + {1'h0, deqCount};
         if (do_enq)
-          tail <= tail + 2'h1;
+          tail <= tail + 3'h1;
       end
-      count <= io_flush ? 3'h0 : count + {2'h0, do_enq} - {1'h0, deqCount};
+      count <= io_flush ? 4'h0 : count + {3'h0, do_enq} - {2'h0, deqCount};
     end
   end // always @(posedge)
   assign io_enq_ready = io_enq_ready_0;

@@ -122,8 +122,11 @@ class LSU(val conf: CoreConfig) extends Module{
     ar_handshake_done := false.B
   }
 
+  val bus_data_valid = is_load && (state === s_WORK) && io.dmem.rvalid
+  val stale_resp = (state === s_IDLE) && io.dmem.rvalid && !ar_handshake_done
+
   io.dmem.arvalid := can_issue_load && (state === s_IDLE) && idle && !ar_handshake_done
-  io.dmem.rready := (is_load && (state === s_WORK) && io.out.ready) || state === s_FLUSH
+  io.dmem.rready := (bus_data_valid && io.out.ready) || state === s_FLUSH || stale_resp
   io.dmem.arsize := arsize
   io.dmem.araddr := io.in.bits.alu_result
 
@@ -175,14 +178,14 @@ class LSU(val conf: CoreConfig) extends Module{
   ))
   io.out.bits.mem_read := Mux(fwd_done, fwd_ext, mem_from_bus)
 
-  val has_laf = io.dmem.rvalid && io.dmem.rresp =/= 0.U
+  val has_laf = bus_data_valid && io.dmem.rresp =/= 0.U
   io.out.bits.state := io.in.bits.state
   io.out.bits.state.state := has_laf || io.in.bits.state.state
   io.out.bits.state.state_num := Mux(has_laf, IRQ_LAF, io.in.bits.state.state_num)
 
   idle := io.in.valid && !io.is_flush
   // store / 非访存：单拍；load 前递：单拍；load 等 store：不 ready；load 总线：等 rvalid
-  ready := not_bus || fwd_done || io.dmem.rvalid
+  ready := not_bus || fwd_done || bus_data_valid
   work := ready && io.out.ready
   io.in.ready := !io.in.valid || (ready && io.out.ready)
   io.out.valid := io.in.valid && ready
@@ -194,5 +197,8 @@ class LSU(val conf: CoreConfig) extends Module{
     PM(conf, clock, EVENT_LSU_READ, 1.U, io.dmem.arvalid && io.dmem.arready)
     PM(conf, clock, EVENT_LSU_WRITE, 1.U, false.B)
     PM(conf, clock, EVENT_LSU_LATENCY, 1.U, state === s_WORK && (!ready || io.out.ready))
+    PM(conf, clock, EVENT_LSU_SQ_WAIT, 1.U, io.in.valid && is_load && io.st_fwd_wait && !io.is_flush)
+    PM(conf, clock, EVENT_LSU_SQ_FORWARD, 1.U, work && fwd_done)
+    PM(conf, clock, EVENT_LSU_BUS_WAIT, 1.U, state === s_WORK && !io.dmem.rvalid)
   }
 }

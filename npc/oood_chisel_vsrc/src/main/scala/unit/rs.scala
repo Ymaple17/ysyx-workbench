@@ -84,10 +84,15 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
 
     val free_rob_fire = Input(Bool())
     val free_rob_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
+    val free_rob1_fire = Input(Bool())
+    val free_rob1_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
 
     val cdb_valid = Input(Bool())
     val cdb_pdest = Input(UInt(OoOParams.PHYS_W.W))
     val cdb_val   = Input(UInt(32.W))
+    val cdb1_valid = Input(Bool())
+    val cdb1_pdest = Input(UInt(OoOParams.PHYS_W.W))
+    val cdb1_val   = Input(UInt(32.W))
 
     val flush     = Input(Bool())
     val flush_idx = Input(UInt(OoOParams.ROB_PTR_W.W))
@@ -103,7 +108,10 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
 
   val freeByRob = Wire(Vec(n, Bool()))
   for (i <- 0 until n) {
-    freeByRob(i) := io.free_rob_fire && entries(i).valid && (entries(i).rob_idx === io.free_rob_idx)
+    freeByRob(i) := entries(i).valid && (
+      (io.free_rob_fire && entries(i).rob_idx === io.free_rob_idx) ||
+      (io.free_rob1_fire && entries(i).rob_idx === io.free_rob1_idx)
+    )
   }
 
   val canIssue = Wire(Vec(n, Bool()))
@@ -193,6 +201,20 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
       }
     }
   }
+  when(io.cdb1_valid && (io.cdb1_pdest =/= 0.U)) {
+    for (i <- 0 until n) {
+      when(entries(i).valid) {
+        when(!entries(i).src1_ready && entries(i).src1_phys === io.cdb1_pdest) {
+          entries(i).src1_ready := true.B
+          entries(i).src1_val   := io.cdb1_val
+        }
+        when(!entries(i).src2_ready && entries(i).src2_phys === io.cdb1_pdest) {
+          entries(i).src2_ready := true.B
+          entries(i).src2_val   := io.cdb1_val
+        }
+      }
+    }
+  }
 
   when(io.flush) {
     when(io.flush_all) {
@@ -221,13 +243,25 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
         !io.enq_bits.src1_ready && (io.enq_bits.src1_phys === io.cdb_pdest)
       val cdbHit2 = io.cdb_valid && (io.cdb_pdest =/= 0.U) &&
         !io.enq_bits.src2_ready && (io.enq_bits.src2_phys === io.cdb_pdest)
+      val cdb1Hit1 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
+        !io.enq_bits.src1_ready && (io.enq_bits.src1_phys === io.cdb1_pdest)
+      val cdb1Hit2 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
+        !io.enq_bits.src2_ready && (io.enq_bits.src2_phys === io.cdb1_pdest)
       when(cdbHit1) {
         e.src1_ready := true.B
         e.src1_val   := io.cdb_val
       }
+      when(cdb1Hit1) {
+        e.src1_ready := true.B
+        e.src1_val   := io.cdb1_val
+      }
       when(cdbHit2) {
         e.src2_ready := true.B
         e.src2_val   := io.cdb_val
+      }
+      when(cdb1Hit2) {
+        e.src2_ready := true.B
+        e.src2_val   := io.cdb1_val
       }
       entries(enqIdx) := e
     }
@@ -239,13 +273,25 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
         !io.enq1_bits.src1_ready && (io.enq1_bits.src1_phys === io.cdb_pdest)
       val cdbHit2 = io.cdb_valid && (io.cdb_pdest =/= 0.U) &&
         !io.enq1_bits.src2_ready && (io.enq1_bits.src2_phys === io.cdb_pdest)
+      val cdb1Hit1 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
+        !io.enq1_bits.src1_ready && (io.enq1_bits.src1_phys === io.cdb1_pdest)
+      val cdb1Hit2 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
+        !io.enq1_bits.src2_ready && (io.enq1_bits.src2_phys === io.cdb1_pdest)
       when(cdbHit1) {
         e.src1_ready := true.B
         e.src1_val   := io.cdb_val
       }
+      when(cdb1Hit1) {
+        e.src1_ready := true.B
+        e.src1_val   := io.cdb1_val
+      }
       when(cdbHit2) {
         e.src2_ready := true.B
         e.src2_val   := io.cdb_val
+      }
+      when(cdb1Hit2) {
+        e.src2_ready := true.B
+        e.src2_val   := io.cdb1_val
       }
       entries(enq1Idx) := e
     }

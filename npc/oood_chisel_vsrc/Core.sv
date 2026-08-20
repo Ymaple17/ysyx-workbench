@@ -64,8 +64,11 @@ module Core(
                 io_arch_rdata_31
 );
 
+  wire         io_dmem_bready_0;
+  wire         fencei_commit_ready;
+  wire         cm_writing_gap;
+  wire         store_side_empty;
   wire         store_commit_ready;
-  reg  [1:0]   cm_st_state;
   wire         ifu_io_is_flush;
   wire [3:0]   flush_idx;
   wire         fwd_ok;
@@ -75,19 +78,20 @@ module Core(
   reg          ext_irq_flush_REG;
   reg          mret_flush_REG;
   reg          fencei_flush_REG;
+  wire         can_wb1;
   wire         can_wb;
-  wire         exu_div_io_out_ready;
-  wire         lsu_io_out_ready;
-  wire         exu_io_out_ready;
+  wire [5:0]   wb_sel1_pdest;
+  wire         wb_sel1_signals_wbu_reg_write;
   wire [5:0]   wb_sel_pdest;
   wire         wb_sel_signals_wbu_reg_write;
-  wire [2:0]   _wb_has_cand_T;
-  reg  [5:0]   lsu_io_in_bits_r_pdest;
-  reg  [2:0]   lsu_io_in_bits_r_signals_wbu_reg_write_sel;
-  reg          lsu_io_in_bits_r_signals_wbu_reg_write;
+  wire [2:0]   wb_cand_mask1;
+  wire [2:0]   wb_cand_mask;
   wire         lsu_io_in_valid;
   wire         hold_div;
   wire         hold_alu;
+  reg  [5:0]   lsu_stage_bits_pdest;
+  reg  [2:0]   lsu_stage_bits_signals_wbu_reg_write_sel;
+  reg          lsu_stage_bits_signals_wbu_reg_write;
   reg  [5:0]   d_div_bits_pdest;
   reg  [2:0]   d_div_bits_signals_wbu_reg_write_sel;
   reg          d_div_bits_signals_wbu_reg_write;
@@ -96,6 +100,21 @@ module Core(
   reg          d_alu_bits_signals_wbu_reg_write;
   wire         lane1_block;
   wire         lane0_block;
+  wire         _stbuf_io_enq_ready;
+  wire         _stbuf_io_ld_wait;
+  wire         _stbuf_io_ld_fwd_valid;
+  wire [31:0]  _stbuf_io_ld_fwd_data;
+  wire [31:0]  _stbuf_io_dmem_awaddr;
+  wire         _stbuf_io_dmem_awvalid;
+  wire [31:0]  _stbuf_io_dmem_wdata;
+  wire [3:0]   _stbuf_io_dmem_wstrb;
+  wire         _stbuf_io_dmem_wvalid;
+  wire         _stbuf_io_dmem_bready;
+  wire         _stbuf_io_deq_valid;
+  wire [31:0]  _stbuf_io_deq_addr;
+  wire         _stbuf_io_empty;
+  wire         _stbuf_io_busy;
+  wire [15:0]  _sq_io_unresolved_mask;
   wire         _sq_io_fwd_valid;
   wire [31:0]  _sq_io_fwd_data;
   wire         _sq_io_wait_load;
@@ -229,9 +248,6 @@ module Core(
   wire [5:0]   _rob_io_entries_0_new_phys;
   wire         _rob_io_entries_0_is_fencei;
   wire         _rob_io_entries_0_state_state;
-  wire [31:0]  _rob_io_entries_0_mem_addr;
-  wire [31:0]  _rob_io_entries_0_mem_wdata;
-  wire         _rob_io_entries_0_addr_ready;
   wire         _rob_io_entries_1_valid;
   wire         _rob_io_entries_1_done;
   wire [31:0]  _rob_io_entries_1_pc;
@@ -246,9 +262,6 @@ module Core(
   wire [5:0]   _rob_io_entries_1_new_phys;
   wire         _rob_io_entries_1_is_fencei;
   wire         _rob_io_entries_1_state_state;
-  wire [31:0]  _rob_io_entries_1_mem_addr;
-  wire [31:0]  _rob_io_entries_1_mem_wdata;
-  wire         _rob_io_entries_1_addr_ready;
   wire         _rob_io_entries_2_valid;
   wire         _rob_io_entries_2_done;
   wire [31:0]  _rob_io_entries_2_pc;
@@ -263,9 +276,6 @@ module Core(
   wire [5:0]   _rob_io_entries_2_new_phys;
   wire         _rob_io_entries_2_is_fencei;
   wire         _rob_io_entries_2_state_state;
-  wire [31:0]  _rob_io_entries_2_mem_addr;
-  wire [31:0]  _rob_io_entries_2_mem_wdata;
-  wire         _rob_io_entries_2_addr_ready;
   wire         _rob_io_entries_3_valid;
   wire         _rob_io_entries_3_done;
   wire [31:0]  _rob_io_entries_3_pc;
@@ -280,9 +290,6 @@ module Core(
   wire [5:0]   _rob_io_entries_3_new_phys;
   wire         _rob_io_entries_3_is_fencei;
   wire         _rob_io_entries_3_state_state;
-  wire [31:0]  _rob_io_entries_3_mem_addr;
-  wire [31:0]  _rob_io_entries_3_mem_wdata;
-  wire         _rob_io_entries_3_addr_ready;
   wire         _rob_io_entries_4_valid;
   wire         _rob_io_entries_4_done;
   wire [31:0]  _rob_io_entries_4_pc;
@@ -297,9 +304,6 @@ module Core(
   wire [5:0]   _rob_io_entries_4_new_phys;
   wire         _rob_io_entries_4_is_fencei;
   wire         _rob_io_entries_4_state_state;
-  wire [31:0]  _rob_io_entries_4_mem_addr;
-  wire [31:0]  _rob_io_entries_4_mem_wdata;
-  wire         _rob_io_entries_4_addr_ready;
   wire         _rob_io_entries_5_valid;
   wire         _rob_io_entries_5_done;
   wire [31:0]  _rob_io_entries_5_pc;
@@ -314,9 +318,6 @@ module Core(
   wire [5:0]   _rob_io_entries_5_new_phys;
   wire         _rob_io_entries_5_is_fencei;
   wire         _rob_io_entries_5_state_state;
-  wire [31:0]  _rob_io_entries_5_mem_addr;
-  wire [31:0]  _rob_io_entries_5_mem_wdata;
-  wire         _rob_io_entries_5_addr_ready;
   wire         _rob_io_entries_6_valid;
   wire         _rob_io_entries_6_done;
   wire [31:0]  _rob_io_entries_6_pc;
@@ -331,9 +332,6 @@ module Core(
   wire [5:0]   _rob_io_entries_6_new_phys;
   wire         _rob_io_entries_6_is_fencei;
   wire         _rob_io_entries_6_state_state;
-  wire [31:0]  _rob_io_entries_6_mem_addr;
-  wire [31:0]  _rob_io_entries_6_mem_wdata;
-  wire         _rob_io_entries_6_addr_ready;
   wire         _rob_io_entries_7_valid;
   wire         _rob_io_entries_7_done;
   wire [31:0]  _rob_io_entries_7_pc;
@@ -348,9 +346,6 @@ module Core(
   wire [5:0]   _rob_io_entries_7_new_phys;
   wire         _rob_io_entries_7_is_fencei;
   wire         _rob_io_entries_7_state_state;
-  wire [31:0]  _rob_io_entries_7_mem_addr;
-  wire [31:0]  _rob_io_entries_7_mem_wdata;
-  wire         _rob_io_entries_7_addr_ready;
   wire         _rob_io_entries_8_valid;
   wire         _rob_io_entries_8_done;
   wire [31:0]  _rob_io_entries_8_pc;
@@ -365,9 +360,6 @@ module Core(
   wire [5:0]   _rob_io_entries_8_new_phys;
   wire         _rob_io_entries_8_is_fencei;
   wire         _rob_io_entries_8_state_state;
-  wire [31:0]  _rob_io_entries_8_mem_addr;
-  wire [31:0]  _rob_io_entries_8_mem_wdata;
-  wire         _rob_io_entries_8_addr_ready;
   wire         _rob_io_entries_9_valid;
   wire         _rob_io_entries_9_done;
   wire [31:0]  _rob_io_entries_9_pc;
@@ -382,9 +374,6 @@ module Core(
   wire [5:0]   _rob_io_entries_9_new_phys;
   wire         _rob_io_entries_9_is_fencei;
   wire         _rob_io_entries_9_state_state;
-  wire [31:0]  _rob_io_entries_9_mem_addr;
-  wire [31:0]  _rob_io_entries_9_mem_wdata;
-  wire         _rob_io_entries_9_addr_ready;
   wire         _rob_io_entries_10_valid;
   wire         _rob_io_entries_10_done;
   wire [31:0]  _rob_io_entries_10_pc;
@@ -399,9 +388,6 @@ module Core(
   wire [5:0]   _rob_io_entries_10_new_phys;
   wire         _rob_io_entries_10_is_fencei;
   wire         _rob_io_entries_10_state_state;
-  wire [31:0]  _rob_io_entries_10_mem_addr;
-  wire [31:0]  _rob_io_entries_10_mem_wdata;
-  wire         _rob_io_entries_10_addr_ready;
   wire         _rob_io_entries_11_valid;
   wire         _rob_io_entries_11_done;
   wire [31:0]  _rob_io_entries_11_pc;
@@ -416,9 +402,6 @@ module Core(
   wire [5:0]   _rob_io_entries_11_new_phys;
   wire         _rob_io_entries_11_is_fencei;
   wire         _rob_io_entries_11_state_state;
-  wire [31:0]  _rob_io_entries_11_mem_addr;
-  wire [31:0]  _rob_io_entries_11_mem_wdata;
-  wire         _rob_io_entries_11_addr_ready;
   wire         _rob_io_entries_12_valid;
   wire         _rob_io_entries_12_done;
   wire [31:0]  _rob_io_entries_12_pc;
@@ -433,9 +416,6 @@ module Core(
   wire [5:0]   _rob_io_entries_12_new_phys;
   wire         _rob_io_entries_12_is_fencei;
   wire         _rob_io_entries_12_state_state;
-  wire [31:0]  _rob_io_entries_12_mem_addr;
-  wire [31:0]  _rob_io_entries_12_mem_wdata;
-  wire         _rob_io_entries_12_addr_ready;
   wire         _rob_io_entries_13_valid;
   wire         _rob_io_entries_13_done;
   wire [31:0]  _rob_io_entries_13_pc;
@@ -450,9 +430,6 @@ module Core(
   wire [5:0]   _rob_io_entries_13_new_phys;
   wire         _rob_io_entries_13_is_fencei;
   wire         _rob_io_entries_13_state_state;
-  wire [31:0]  _rob_io_entries_13_mem_addr;
-  wire [31:0]  _rob_io_entries_13_mem_wdata;
-  wire         _rob_io_entries_13_addr_ready;
   wire         _rob_io_entries_14_valid;
   wire         _rob_io_entries_14_done;
   wire [31:0]  _rob_io_entries_14_pc;
@@ -467,9 +444,6 @@ module Core(
   wire [5:0]   _rob_io_entries_14_new_phys;
   wire         _rob_io_entries_14_is_fencei;
   wire         _rob_io_entries_14_state_state;
-  wire [31:0]  _rob_io_entries_14_mem_addr;
-  wire [31:0]  _rob_io_entries_14_mem_wdata;
-  wire         _rob_io_entries_14_addr_ready;
   wire         _rob_io_entries_15_valid;
   wire         _rob_io_entries_15_done;
   wire [31:0]  _rob_io_entries_15_pc;
@@ -484,9 +458,6 @@ module Core(
   wire [5:0]   _rob_io_entries_15_new_phys;
   wire         _rob_io_entries_15_is_fencei;
   wire         _rob_io_entries_15_state_state;
-  wire [31:0]  _rob_io_entries_15_mem_addr;
-  wire [31:0]  _rob_io_entries_15_mem_wdata;
-  wire         _rob_io_entries_15_addr_ready;
   wire [3:0]   _rob_io_head;
   wire [4:0]   _rob_io_count;
   wire [1:0]   _rename_io_cp_idx0;
@@ -569,6 +540,12 @@ module Core(
   wire [31:0]  _prf_io_rdata2;
   wire [31:0]  _prf_io_rdata3;
   wire [31:0]  _prf_io_rdata4;
+  wire         _dcache_io_cpu_arready;
+  wire [31:0]  _dcache_io_cpu_rdata;
+  wire [1:0]   _dcache_io_cpu_rresp;
+  wire         _dcache_io_cpu_rvalid;
+  wire         _dcache_io_mem_arvalid;
+  wire         _dcache_io_mem_rready;
   wire         _icache_io_in_arready;
   wire         _icache_io_in_rvalid;
   wire [31:0]  _icache_io_in_rdata;
@@ -578,6 +555,8 @@ module Core(
   wire [31:0]  _csr_io_read_mtvec;
   wire [31:0]  _csr_io_read_mepc;
   wire [31:0]  _csr_io_read1_rdata;
+  wire [31:0]  _wbu1_io_refile_wdata;
+  wire         _wbu1_io_refile_wen;
   wire [31:0]  _wbu_io_refile_wdata;
   wire         _wbu_io_refile_wen;
   wire         _lsu_io_in_ready;
@@ -596,6 +575,7 @@ module Core(
   wire [5:0]   _lsu_io_out_bits_pdest;
   wire         _lsu_io_out_bits_br_taken;
   wire [31:0]  _lsu_io_out_bits_store_data;
+  wire [31:0]  _lsu_io_dmem_araddr;
   wire         _lsu_io_dmem_arvalid;
   wire         _lsu_io_dmem_rready;
   wire         _lsu_io_bus_busy;
@@ -1102,7 +1082,7 @@ module Core(
   end // always_comb
   reg  [31:0]  casez_tmp_5;
   always_comb begin
-    casez (lsu_io_in_bits_r_signals_wbu_reg_write_sel)
+    casez (lsu_stage_bits_signals_wbu_reg_write_sel)
       3'b000:
         casez_tmp_5 = 32'h0;
       3'b001:
@@ -1125,6 +1105,11 @@ module Core(
   wire         _id_s1_rdy_cdb_hit_T_4 = id_psrc1 == wb_sel_pdest;
   wire         id_src1_cdb_hit =
     _id1_s2_rdy_cdb_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_cdb_hit_T_4;
+  wire         _id1_s2_rdy_cdb1_hit_T = fwd_ok & can_wb1;
+  wire         _id_s1_rdy_cdb1_hit_T_4 = id_psrc1 == wb_sel1_pdest;
+  wire         id_src1_cdb1_hit =
+    _id1_s2_rdy_cdb1_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_cdb1_hit_T_4
+    & ~id_src1_cdb_hit;
   wire         _id1_s2_rdy_exu_hit_T =
     fwd_ok & d_alu_bits_signals_wbu_reg_write & hold_alu & _exu_io_out_valid
     & (|d_alu_bits_pdest);
@@ -1132,7 +1117,7 @@ module Core(
   wire         _id1_s2_rdy_exu_hit_T_6 = d_alu_bits_signals_wbu_reg_write_sel != 3'h4;
   wire         id_src1_exu_hit =
     _id1_s2_rdy_exu_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_exu_hit_T_4
-    & _id1_s2_rdy_exu_hit_T_6 & ~id_src1_cdb_hit;
+    & _id1_s2_rdy_exu_hit_T_6 & ~id_src1_cdb_hit & ~id_src1_cdb1_hit;
   wire         _id1_s2_rdy_div_hit_T =
     fwd_ok & d_div_bits_signals_wbu_reg_write & hold_div & _exu_div_io_out_valid
     & (|d_div_bits_pdest);
@@ -1140,109 +1125,158 @@ module Core(
   wire         _id1_s2_rdy_div_hit_T_6 = d_div_bits_signals_wbu_reg_write_sel != 3'h4;
   wire         id_src1_div_hit =
     _id1_s2_rdy_div_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_div_hit_T_4
-    & _id1_s2_rdy_div_hit_T_6 & ~id_src1_cdb_hit & ~id_src1_exu_hit;
+    & _id1_s2_rdy_div_hit_T_6 & ~id_src1_cdb_hit & ~id_src1_cdb1_hit & ~id_src1_exu_hit;
   wire         _id1_s2_rdy_lsu_hit_T =
-    fwd_ok & lsu_io_in_bits_r_signals_wbu_reg_write & lsu_io_in_valid & _lsu_io_out_valid
-    & (|lsu_io_in_bits_r_pdest);
-  wire         _id_s1_rdy_lsu_hit_T_4 = id_psrc1 == lsu_io_in_bits_r_pdest;
+    fwd_ok & lsu_stage_bits_signals_wbu_reg_write & lsu_io_in_valid & _lsu_io_out_valid
+    & (|lsu_stage_bits_pdest);
+  wire         _id_s1_rdy_lsu_hit_T_4 = id_psrc1 == lsu_stage_bits_pdest;
   wire         id_src1_lsu_hit =
     _id1_s2_rdy_lsu_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_lsu_hit_T_4
-    & ~id_src1_exu_hit & ~id_src1_div_hit & ~id_src1_cdb_hit;
+    & ~id_src1_exu_hit & ~id_src1_div_hit & ~id_src1_cdb_hit & ~id_src1_cdb1_hit;
   wire         _id1_s2_rdy_wbu_hit_T =
-    fwd_ok & wb_sel_signals_wbu_reg_write & (|_wb_has_cand_T) & (|wb_sel_pdest);
+    fwd_ok & can_wb & wb_sel_signals_wbu_reg_write & (|wb_sel_pdest);
   wire         _id_s1_rdy_wbu_hit_T_4 = id_psrc1 == wb_sel_pdest;
+  wire         id_src1_wbu_hit =
+    _id1_s2_rdy_wbu_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_wbu_hit_T_4
+    & ~id_src1_exu_hit & ~id_src1_div_hit & ~id_src1_lsu_hit & ~id_src1_cdb_hit
+    & ~id_src1_cdb1_hit;
+  wire         _id1_s2_rdy_wbu1_hit_T =
+    fwd_ok & can_wb1 & wb_sel1_signals_wbu_reg_write & (|wb_sel1_pdest);
+  wire         _id_s1_rdy_wbu1_hit_T_4 = id_psrc1 == wb_sel1_pdest;
   wire [31:0]  id_src1 =
     id_src1_cdb_hit
       ? _wbu_io_refile_wdata
-      : id_src1_exu_hit
-          ? casez_tmp_3
-          : id_src1_div_hit
-              ? casez_tmp_4
-              : id_src1_lsu_hit
-                  ? casez_tmp_5
-                  : _id1_s2_rdy_wbu_hit_T & _idu_io_rs1_ren & (|id_psrc1)
-                    & _id_s1_rdy_wbu_hit_T_4 & ~id_src1_exu_hit & ~id_src1_div_hit
-                    & ~id_src1_lsu_hit & ~id_src1_cdb_hit
-                      ? _wbu_io_refile_wdata
-                      : _prf_io_rdata1;
+      : id_src1_cdb1_hit
+          ? _wbu1_io_refile_wdata
+          : id_src1_exu_hit
+              ? casez_tmp_3
+              : id_src1_div_hit
+                  ? casez_tmp_4
+                  : id_src1_lsu_hit
+                      ? casez_tmp_5
+                      : id_src1_wbu_hit
+                          ? _wbu_io_refile_wdata
+                          : _id1_s2_rdy_wbu1_hit_T & _idu_io_rs1_ren & (|id_psrc1)
+                            & _id_s1_rdy_wbu1_hit_T_4 & ~id_src1_exu_hit
+                            & ~id_src1_div_hit & ~id_src1_lsu_hit & ~id_src1_wbu_hit
+                            & ~id_src1_cdb_hit & ~id_src1_cdb1_hit
+                              ? _wbu1_io_refile_wdata
+                              : _prf_io_rdata1;
   wire         _id_s2_rdy_cdb_hit_T_4 = id_psrc2 == wb_sel_pdest;
   wire         id_src2_cdb_hit =
     _id1_s2_rdy_cdb_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_cdb_hit_T_4;
+  wire         _id_s2_rdy_cdb1_hit_T_4 = id_psrc2 == wb_sel1_pdest;
+  wire         id_src2_cdb1_hit =
+    _id1_s2_rdy_cdb1_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_cdb1_hit_T_4
+    & ~id_src2_cdb_hit;
   wire         _id_s2_rdy_exu_hit_T_4 = id_psrc2 == d_alu_bits_pdest;
   wire         id_src2_exu_hit =
     _id1_s2_rdy_exu_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_exu_hit_T_4
-    & _id1_s2_rdy_exu_hit_T_6 & ~id_src2_cdb_hit;
+    & _id1_s2_rdy_exu_hit_T_6 & ~id_src2_cdb_hit & ~id_src2_cdb1_hit;
   wire         _id_s2_rdy_div_hit_T_4 = id_psrc2 == d_div_bits_pdest;
   wire         id_src2_div_hit =
     _id1_s2_rdy_div_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_div_hit_T_4
-    & _id1_s2_rdy_div_hit_T_6 & ~id_src2_cdb_hit & ~id_src2_exu_hit;
-  wire         _id_s2_rdy_lsu_hit_T_4 = id_psrc2 == lsu_io_in_bits_r_pdest;
+    & _id1_s2_rdy_div_hit_T_6 & ~id_src2_cdb_hit & ~id_src2_cdb1_hit & ~id_src2_exu_hit;
+  wire         _id_s2_rdy_lsu_hit_T_4 = id_psrc2 == lsu_stage_bits_pdest;
   wire         id_src2_lsu_hit =
     _id1_s2_rdy_lsu_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_lsu_hit_T_4
-    & ~id_src2_exu_hit & ~id_src2_div_hit & ~id_src2_cdb_hit;
+    & ~id_src2_exu_hit & ~id_src2_div_hit & ~id_src2_cdb_hit & ~id_src2_cdb1_hit;
   wire         _id_s2_rdy_wbu_hit_T_4 = id_psrc2 == wb_sel_pdest;
-  wire         _id1_s2_rdy_lsu_hit_T_6 =
-    lsu_io_in_bits_r_signals_wbu_reg_write_sel != 3'h4;
+  wire         id_src2_wbu_hit =
+    _id1_s2_rdy_wbu_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_wbu_hit_T_4
+    & ~id_src2_exu_hit & ~id_src2_div_hit & ~id_src2_lsu_hit & ~id_src2_cdb_hit
+    & ~id_src2_cdb1_hit;
+  wire         _id_s2_rdy_wbu1_hit_T_4 = id_psrc2 == wb_sel1_pdest;
+  wire         _id1_s2_rdy_lsu_hit_T_6 = lsu_stage_bits_signals_wbu_reg_write_sel != 3'h4;
   wire         id1_dep1 = id_doren & _idu1_io_rs1_ren & id1_psrc1 == _rename_io_dest_phys;
   wire         id1_dep2 = id_doren & _idu1_io_rs2_ren & id1_psrc2 == _rename_io_dest_phys;
   wire         _id1_s1_rdy_cdb_hit_T_4 = id1_psrc1 == wb_sel_pdest;
   wire         id1_src1_cdb_hit =
     _id1_s2_rdy_cdb_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_cdb_hit_T_4;
+  wire         _id1_s1_rdy_cdb1_hit_T_4 = id1_psrc1 == wb_sel1_pdest;
+  wire         id1_src1_cdb1_hit =
+    _id1_s2_rdy_cdb1_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_cdb1_hit_T_4
+    & ~id1_src1_cdb_hit;
   wire         _id1_s1_rdy_exu_hit_T_4 = id1_psrc1 == d_alu_bits_pdest;
   wire         id1_src1_exu_hit =
     _id1_s2_rdy_exu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_exu_hit_T_4
-    & _id1_s2_rdy_exu_hit_T_6 & ~id1_src1_cdb_hit;
+    & _id1_s2_rdy_exu_hit_T_6 & ~id1_src1_cdb_hit & ~id1_src1_cdb1_hit;
   wire         _id1_s1_rdy_div_hit_T_4 = id1_psrc1 == d_div_bits_pdest;
   wire         id1_src1_div_hit =
     _id1_s2_rdy_div_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_div_hit_T_4
-    & _id1_s2_rdy_div_hit_T_6 & ~id1_src1_cdb_hit & ~id1_src1_exu_hit;
-  wire         _id1_s1_rdy_lsu_hit_T_4 = id1_psrc1 == lsu_io_in_bits_r_pdest;
+    & _id1_s2_rdy_div_hit_T_6 & ~id1_src1_cdb_hit & ~id1_src1_cdb1_hit
+    & ~id1_src1_exu_hit;
+  wire         _id1_s1_rdy_lsu_hit_T_4 = id1_psrc1 == lsu_stage_bits_pdest;
   wire         id1_src1_lsu_hit =
     _id1_s2_rdy_lsu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_lsu_hit_T_4
-    & ~id1_src1_exu_hit & ~id1_src1_div_hit & ~id1_src1_cdb_hit;
+    & ~id1_src1_exu_hit & ~id1_src1_div_hit & ~id1_src1_cdb_hit & ~id1_src1_cdb1_hit;
   wire         _id1_s1_rdy_wbu_hit_T_4 = id1_psrc1 == wb_sel_pdest;
+  wire         id1_src1_wbu_hit =
+    _id1_s2_rdy_wbu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_wbu_hit_T_4
+    & ~id1_src1_exu_hit & ~id1_src1_div_hit & ~id1_src1_lsu_hit & ~id1_src1_cdb_hit
+    & ~id1_src1_cdb1_hit;
+  wire         _id1_s1_rdy_wbu1_hit_T_4 = id1_psrc1 == wb_sel1_pdest;
   wire [31:0]  id1_src1 =
     id1_dep1
       ? 32'h0
       : id1_src1_cdb_hit
           ? _wbu_io_refile_wdata
-          : id1_src1_exu_hit
-              ? casez_tmp_3
-              : id1_src1_div_hit
-                  ? casez_tmp_4
-                  : id1_src1_lsu_hit
-                      ? casez_tmp_5
-                      : _id1_s2_rdy_wbu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
-                        & _id1_s1_rdy_wbu_hit_T_4 & ~id1_src1_exu_hit & ~id1_src1_div_hit
-                        & ~id1_src1_lsu_hit & ~id1_src1_cdb_hit
-                          ? _wbu_io_refile_wdata
-                          : _prf_io_rdata3;
+          : id1_src1_cdb1_hit
+              ? _wbu1_io_refile_wdata
+              : id1_src1_exu_hit
+                  ? casez_tmp_3
+                  : id1_src1_div_hit
+                      ? casez_tmp_4
+                      : id1_src1_lsu_hit
+                          ? casez_tmp_5
+                          : id1_src1_wbu_hit
+                              ? _wbu_io_refile_wdata
+                              : _id1_s2_rdy_wbu1_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
+                                & _id1_s1_rdy_wbu1_hit_T_4 & ~id1_src1_exu_hit
+                                & ~id1_src1_div_hit & ~id1_src1_lsu_hit
+                                & ~id1_src1_wbu_hit & ~id1_src1_cdb_hit
+                                & ~id1_src1_cdb1_hit
+                                  ? _wbu1_io_refile_wdata
+                                  : _prf_io_rdata3;
   wire         _id1_s2_rdy_cdb_hit_T_4 = id1_psrc2 == wb_sel_pdest;
   wire         id1_src2_cdb_hit =
     _id1_s2_rdy_cdb_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_cdb_hit_T_4;
+  wire         _id1_s2_rdy_cdb1_hit_T_4 = id1_psrc2 == wb_sel1_pdest;
+  wire         id1_src2_cdb1_hit =
+    _id1_s2_rdy_cdb1_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_cdb1_hit_T_4
+    & ~id1_src2_cdb_hit;
   wire         _id1_s2_rdy_exu_hit_T_4 = id1_psrc2 == d_alu_bits_pdest;
   wire         id1_src2_exu_hit =
     _id1_s2_rdy_exu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_exu_hit_T_4
-    & _id1_s2_rdy_exu_hit_T_6 & ~id1_src2_cdb_hit;
+    & _id1_s2_rdy_exu_hit_T_6 & ~id1_src2_cdb_hit & ~id1_src2_cdb1_hit;
   wire         _id1_s2_rdy_div_hit_T_4 = id1_psrc2 == d_div_bits_pdest;
   wire         id1_src2_div_hit =
     _id1_s2_rdy_div_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_div_hit_T_4
-    & _id1_s2_rdy_div_hit_T_6 & ~id1_src2_cdb_hit & ~id1_src2_exu_hit;
-  wire         _id1_s2_rdy_lsu_hit_T_4 = id1_psrc2 == lsu_io_in_bits_r_pdest;
+    & _id1_s2_rdy_div_hit_T_6 & ~id1_src2_cdb_hit & ~id1_src2_cdb1_hit
+    & ~id1_src2_exu_hit;
+  wire         _id1_s2_rdy_lsu_hit_T_4 = id1_psrc2 == lsu_stage_bits_pdest;
   wire         id1_src2_lsu_hit =
     _id1_s2_rdy_lsu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_lsu_hit_T_4
-    & ~id1_src2_exu_hit & ~id1_src2_div_hit & ~id1_src2_cdb_hit;
+    & ~id1_src2_exu_hit & ~id1_src2_div_hit & ~id1_src2_cdb_hit & ~id1_src2_cdb1_hit;
   wire         _id1_s2_rdy_wbu_hit_T_4 = id1_psrc2 == wb_sel_pdest;
+  wire         id1_src2_wbu_hit =
+    _id1_s2_rdy_wbu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_wbu_hit_T_4
+    & ~id1_src2_exu_hit & ~id1_src2_div_hit & ~id1_src2_lsu_hit & ~id1_src2_cdb_hit
+    & ~id1_src2_cdb1_hit;
+  wire         _id1_s2_rdy_wbu1_hit_T_4 = id1_psrc2 == wb_sel1_pdest;
   wire         id1_s1_rdy =
     ~_idu1_io_rs1_ren | ~id1_dep1
     & (_busy_io_ready3 | _id1_s2_rdy_cdb_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
-       & _id1_s1_rdy_cdb_hit_T_4 | _id1_s2_rdy_exu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
-       & _id1_s1_rdy_exu_hit_T_4 & _id1_s2_rdy_exu_hit_T_6 | _id1_s2_rdy_div_hit_T
-       & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_div_hit_T_4
-       & _id1_s2_rdy_div_hit_T_6 | _id1_s2_rdy_lsu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
-       & _id1_s1_rdy_lsu_hit_T_4 & (_id1_s2_rdy_lsu_hit_T_6 | _lsu_io_out_valid)
-       | _id1_s2_rdy_wbu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
-       & _id1_s1_rdy_wbu_hit_T_4);
+       & _id1_s1_rdy_cdb_hit_T_4 | _id1_s2_rdy_cdb1_hit_T & _idu1_io_rs1_ren
+       & (|id1_psrc1) & _id1_s1_rdy_cdb1_hit_T_4 | _id1_s2_rdy_exu_hit_T
+       & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_exu_hit_T_4
+       & _id1_s2_rdy_exu_hit_T_6 | _id1_s2_rdy_div_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
+       & _id1_s1_rdy_div_hit_T_4 & _id1_s2_rdy_div_hit_T_6 | _id1_s2_rdy_lsu_hit_T
+       & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_lsu_hit_T_4
+       & (_id1_s2_rdy_lsu_hit_T_6 | _lsu_io_out_valid) | _id1_s2_rdy_wbu_hit_T
+       & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_wbu_hit_T_4
+       | _id1_s2_rdy_wbu1_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
+       & _id1_s1_rdy_wbu1_hit_T_4);
   wire [15:0]  _csr_inflight_T_16 =
     {_rob_io_entries_15_valid & _rob_io_entries_15_csr_write,
      _rob_io_entries_14_valid & _rob_io_entries_14_csr_write,
@@ -1346,6 +1380,20 @@ module Core(
     d_div_valid
       ? d_div_bits_rob_idx
       : d_lsu_valid ? d_lsu_bits_rob_idx : d_alu_bits_rob_idx;
+  reg          lsu_stage_valid;
+  reg  [2:0]   lsu_stage_bits_signals_lsu_mem_rd;
+  reg          lsu_stage_bits_signals_lsu_mem_write;
+  reg          lsu_stage_bits_signals_lsu_mem_valid;
+  reg  [31:0]  lsu_stage_bits_alu_result;
+  reg  [31:0]  lsu_stage_bits_pc;
+  reg  [31:0]  lsu_stage_bits_imm_ext;
+  reg  [31:0]  lsu_stage_bits_rd2;
+  reg  [4:0]   lsu_stage_bits_waddr;
+  reg  [31:0]  lsu_stage_bits_csr_rd1;
+  reg          lsu_stage_bits_state_state;
+  reg  [7:0]   lsu_stage_bits_state_state_num;
+  reg  [3:0]   lsu_stage_bits_rob_idx;
+  reg          lsu_stage_bits_br_taken;
   wire         mis_predict_dbg;
   wire         _flush_lsu_T = mis_predict_dbg | fencei_flush_REG;
   wire [3:0]   _after_flushAgeNow_T_62 = flush_idx - _rob_io_head;
@@ -1356,31 +1404,27 @@ module Core(
     is_irq | (_flush_lsu_T | mret_flush_REG) & d_div_valid & d_div_bits_rob_idx
     - _rob_io_head > _after_flushAgeNow_T_62;
   wire         flush_lsu =
-    is_irq | (_flush_lsu_T | mret_flush_REG) & d_lsu_valid & d_lsu_bits_rob_idx
-    - _rob_io_head > _after_flushAgeNow_T_62;
+    is_irq | (_flush_lsu_T | mret_flush_REG) & lsu_stage_valid & lsu_stage_bits_rob_idx
+    - _rob_io_head > _after_flushAgeNow_T_62 | (_flush_lsu_T | mret_flush_REG)
+    & d_lsu_valid & d_lsu_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_62;
   assign hold_alu = d_alu_valid & ~flush_alu;
   assign hold_div = d_div_valid & ~flush_div;
   wire         hold_lsu = d_lsu_valid & ~flush_lsu;
-  reg          valid;
-  assign lsu_io_in_valid = valid & ~flush_lsu;
-  reg  [2:0]   lsu_io_in_bits_r_signals_lsu_mem_rd;
-  reg          lsu_io_in_bits_r_signals_lsu_mem_write;
-  reg          lsu_io_in_bits_r_signals_lsu_mem_valid;
-  reg  [31:0]  lsu_io_in_bits_r_alu_result;
-  reg  [31:0]  lsu_io_in_bits_r_pc;
-  reg  [31:0]  lsu_io_in_bits_r_imm_ext;
-  reg  [31:0]  lsu_io_in_bits_r_rd2;
-  reg  [4:0]   lsu_io_in_bits_r_waddr;
-  reg  [31:0]  lsu_io_in_bits_r_csr_rd1;
-  reg          lsu_io_in_bits_r_state_state;
-  reg  [7:0]   lsu_io_in_bits_r_state_state_num;
-  reg  [3:0]   lsu_io_in_bits_r_rob_idx;
-  reg          lsu_io_in_bits_r_br_taken;
-  wire         alu_leave = hold_alu & _exu_io_out_valid & exu_io_out_ready;
-  wire         div_leave = hold_div & _exu_div_io_out_valid & exu_div_io_out_ready;
-  wire         lsu_leave = hold_lsu & _lsu_io_out_valid & lsu_io_out_ready;
-  assign _wb_has_cand_T = {_exu_div_io_out_valid, _lsu_io_out_valid, _exu_io_out_valid};
+  assign lsu_io_in_valid = lsu_stage_valid & ~flush_lsu;
+  wire         sq_io_ld_valid =
+    lsu_io_in_valid & lsu_stage_bits_signals_lsu_mem_valid
+    & ~lsu_stage_bits_signals_lsu_mem_write;
+  assign wb_cand_mask = {_exu_div_io_out_valid, _lsu_io_out_valid, _exu_io_out_valid};
+  wire [1:0]   _wb_cand_count_T_5 =
+    {1'h0, _exu_io_out_valid} + {1'h0, _lsu_io_out_valid} + {1'h0, _exu_div_io_out_valid};
   wire [1:0]   wb_cand_idx = _exu_io_out_valid ? 2'h0 : _lsu_io_out_valid ? 2'h1 : 2'h2;
+  wire [3:0]   _wb_cand_mask1_T = 4'h1 << wb_cand_idx;
+  wire [2:0]   _wb_cand_mask1_T_2 = ~(_wb_cand_mask1_T[2:0]);
+  assign wb_cand_mask1 = wb_cand_mask & _wb_cand_mask1_T_2;
+  wire [1:0]   wb_cand_idx1 =
+    _exu_io_out_valid & _wb_cand_mask1_T_2[0]
+      ? 2'h0
+      : _lsu_io_out_valid & _wb_cand_mask1_T_2[1] ? 2'h1 : 2'h2;
   wire         _lsu_io_out_ready_T = wb_cand_idx == 2'h1;
   wire         _exu_div_io_out_ready_T = wb_cand_idx == 2'h2;
   assign wb_sel_signals_wbu_reg_write =
@@ -1393,6 +1437,14 @@ module Core(
     _exu_div_io_out_ready_T
       ? _exu_div_io_out_bits_alu_result
       : _lsu_io_out_ready_T ? _lsu_io_out_bits_alu_result : _exu_io_out_bits_alu_result;
+  wire [31:0]  wb_sel_pc =
+    _exu_div_io_out_ready_T
+      ? _exu_div_io_out_bits_pc
+      : _lsu_io_out_ready_T ? _lsu_io_out_bits_pc : _exu_io_out_bits_pc;
+  wire [4:0]   wb_sel_waddr =
+    _exu_div_io_out_ready_T
+      ? _exu_div_io_out_bits_waddr
+      : _lsu_io_out_ready_T ? _lsu_io_out_bits_waddr : _exu_io_out_bits_waddr;
   wire         wb_sel_state_state =
     _exu_div_io_out_ready_T
       ? _exu_div_io_out_bits_state_state
@@ -1415,14 +1467,60 @@ module Core(
     _exu_div_io_out_ready_T
       ? _exu_div_io_out_bits_rd2
       : _lsu_io_out_ready_T ? _lsu_io_out_bits_store_data : _exu_io_out_bits_rd2;
-  assign exu_io_out_ready = (|_wb_has_cand_T) & wb_cand_idx == 2'h0;
-  assign lsu_io_out_ready = (|_wb_has_cand_T) & _lsu_io_out_ready_T;
-  assign exu_div_io_out_ready = (|_wb_has_cand_T) & _exu_div_io_out_ready_T;
-  wire [3:0]   _wb_young_mret_T_5 = wb_sel_rob_idx - _rob_io_head;
-  wire         _head_wb_store_T = wb_sel_rob_idx == _rob_io_head;
+  wire         _lsu_io_out_ready_T_2 = wb_cand_idx1 == 2'h1;
+  wire         _exu_div_io_out_ready_T_2 = wb_cand_idx1 == 2'h2;
+  assign wb_sel1_signals_wbu_reg_write =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_signals_wbu_reg_write
+      : _lsu_io_out_ready_T_2
+          ? _lsu_io_out_bits_signals_wbu_reg_write
+          : _exu_io_out_bits_signals_wbu_reg_write;
+  wire [31:0]  wb_sel1_alu_result =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_alu_result
+      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_alu_result : _exu_io_out_bits_alu_result;
+  wire [31:0]  wb_sel1_pc =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_pc
+      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_pc : _exu_io_out_bits_pc;
+  wire [4:0]   wb_sel1_waddr =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_waddr
+      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_waddr : _exu_io_out_bits_waddr;
+  wire         wb_sel1_state_state =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_state_state
+      : _lsu_io_out_ready_T_2
+          ? _lsu_io_out_bits_state_state
+          : _exu_io_out_bits_state_state;
+  wire [7:0]   wb_sel1_state_state_num =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_state_state_num
+      : _lsu_io_out_ready_T_2
+          ? _lsu_io_out_bits_state_state_num
+          : _exu_io_out_bits_state_state_num;
+  wire [3:0]   wb_sel1_rob_idx =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_rob_idx
+      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_rob_idx : _exu_io_out_bits_rob_idx;
+  assign wb_sel1_pdest =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_pdest
+      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_pdest : _exu_io_out_bits_pdest;
+  wire [31:0]  wb_sel1_store_data =
+    _exu_div_io_out_ready_T_2
+      ? _exu_div_io_out_bits_rd2
+      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_store_data : _exu_io_out_bits_rd2;
+  wire         exu_io_out_ready =
+    (|wb_cand_mask) & wb_cand_idx == 2'h0 | (|wb_cand_mask1) & wb_cand_idx1 == 2'h0;
+  wire         lsu_io_out_ready =
+    (|wb_cand_mask) & _lsu_io_out_ready_T | (|wb_cand_mask1) & _lsu_io_out_ready_T_2;
+  wire         exu_div_io_out_ready =
+    (|wb_cand_mask) & _exu_div_io_out_ready_T | (|wb_cand_mask1)
+    & _exu_div_io_out_ready_T_2;
   reg          casez_tmp_6;
   always_comb begin
-    casez (_rob_io_head)
+    casez (wb_sel_rob_idx)
       4'b0000:
         casez_tmp_6 = _rob_io_entries_0_valid;
       4'b0001:
@@ -1459,7 +1557,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_7;
   always_comb begin
-    casez (_rob_io_head)
+    casez (wb_sel_rob_idx)
       4'b0000:
         casez_tmp_7 = _rob_io_entries_0_done;
       4'b0001:
@@ -1496,7 +1594,7 @@ module Core(
   end // always_comb
   reg  [31:0]  casez_tmp_8;
   always_comb begin
-    casez (_rob_io_head)
+    casez (wb_sel_rob_idx)
       4'b0000:
         casez_tmp_8 = _rob_io_entries_0_pc;
       4'b0001:
@@ -1531,239 +1629,789 @@ module Core(
         casez_tmp_8 = _rob_io_entries_15_pc;
     endcase
   end // always_comb
-  reg  [3:0]   casez_tmp_9;
+  reg          casez_tmp_9;
   always_comb begin
-    casez (_rob_io_head)
+    casez (wb_sel_rob_idx)
       4'b0000:
-        casez_tmp_9 = _rob_io_entries_0_jump;
+        casez_tmp_9 = _rob_io_entries_0_mem_valid;
       4'b0001:
-        casez_tmp_9 = _rob_io_entries_1_jump;
+        casez_tmp_9 = _rob_io_entries_1_mem_valid;
       4'b0010:
-        casez_tmp_9 = _rob_io_entries_2_jump;
+        casez_tmp_9 = _rob_io_entries_2_mem_valid;
       4'b0011:
-        casez_tmp_9 = _rob_io_entries_3_jump;
+        casez_tmp_9 = _rob_io_entries_3_mem_valid;
       4'b0100:
-        casez_tmp_9 = _rob_io_entries_4_jump;
+        casez_tmp_9 = _rob_io_entries_4_mem_valid;
       4'b0101:
-        casez_tmp_9 = _rob_io_entries_5_jump;
+        casez_tmp_9 = _rob_io_entries_5_mem_valid;
       4'b0110:
-        casez_tmp_9 = _rob_io_entries_6_jump;
+        casez_tmp_9 = _rob_io_entries_6_mem_valid;
       4'b0111:
-        casez_tmp_9 = _rob_io_entries_7_jump;
+        casez_tmp_9 = _rob_io_entries_7_mem_valid;
       4'b1000:
-        casez_tmp_9 = _rob_io_entries_8_jump;
+        casez_tmp_9 = _rob_io_entries_8_mem_valid;
       4'b1001:
-        casez_tmp_9 = _rob_io_entries_9_jump;
+        casez_tmp_9 = _rob_io_entries_9_mem_valid;
       4'b1010:
-        casez_tmp_9 = _rob_io_entries_10_jump;
+        casez_tmp_9 = _rob_io_entries_10_mem_valid;
       4'b1011:
-        casez_tmp_9 = _rob_io_entries_11_jump;
+        casez_tmp_9 = _rob_io_entries_11_mem_valid;
       4'b1100:
-        casez_tmp_9 = _rob_io_entries_12_jump;
+        casez_tmp_9 = _rob_io_entries_12_mem_valid;
       4'b1101:
-        casez_tmp_9 = _rob_io_entries_13_jump;
+        casez_tmp_9 = _rob_io_entries_13_mem_valid;
       4'b1110:
-        casez_tmp_9 = _rob_io_entries_14_jump;
+        casez_tmp_9 = _rob_io_entries_14_mem_valid;
       default:
-        casez_tmp_9 = _rob_io_entries_15_jump;
+        casez_tmp_9 = _rob_io_entries_15_mem_valid;
     endcase
   end // always_comb
   reg          casez_tmp_10;
   always_comb begin
-    casez (_rob_io_head)
+    casez (wb_sel_rob_idx)
       4'b0000:
-        casez_tmp_10 = _rob_io_entries_0_is_fencei;
+        casez_tmp_10 = _rob_io_entries_0_mem_write;
       4'b0001:
-        casez_tmp_10 = _rob_io_entries_1_is_fencei;
+        casez_tmp_10 = _rob_io_entries_1_mem_write;
       4'b0010:
-        casez_tmp_10 = _rob_io_entries_2_is_fencei;
+        casez_tmp_10 = _rob_io_entries_2_mem_write;
       4'b0011:
-        casez_tmp_10 = _rob_io_entries_3_is_fencei;
+        casez_tmp_10 = _rob_io_entries_3_mem_write;
       4'b0100:
-        casez_tmp_10 = _rob_io_entries_4_is_fencei;
+        casez_tmp_10 = _rob_io_entries_4_mem_write;
       4'b0101:
-        casez_tmp_10 = _rob_io_entries_5_is_fencei;
+        casez_tmp_10 = _rob_io_entries_5_mem_write;
       4'b0110:
-        casez_tmp_10 = _rob_io_entries_6_is_fencei;
+        casez_tmp_10 = _rob_io_entries_6_mem_write;
       4'b0111:
-        casez_tmp_10 = _rob_io_entries_7_is_fencei;
+        casez_tmp_10 = _rob_io_entries_7_mem_write;
       4'b1000:
-        casez_tmp_10 = _rob_io_entries_8_is_fencei;
+        casez_tmp_10 = _rob_io_entries_8_mem_write;
       4'b1001:
-        casez_tmp_10 = _rob_io_entries_9_is_fencei;
+        casez_tmp_10 = _rob_io_entries_9_mem_write;
       4'b1010:
-        casez_tmp_10 = _rob_io_entries_10_is_fencei;
+        casez_tmp_10 = _rob_io_entries_10_mem_write;
       4'b1011:
-        casez_tmp_10 = _rob_io_entries_11_is_fencei;
+        casez_tmp_10 = _rob_io_entries_11_mem_write;
       4'b1100:
-        casez_tmp_10 = _rob_io_entries_12_is_fencei;
+        casez_tmp_10 = _rob_io_entries_12_mem_write;
       4'b1101:
-        casez_tmp_10 = _rob_io_entries_13_is_fencei;
+        casez_tmp_10 = _rob_io_entries_13_mem_write;
       4'b1110:
-        casez_tmp_10 = _rob_io_entries_14_is_fencei;
+        casez_tmp_10 = _rob_io_entries_14_mem_write;
       default:
-        casez_tmp_10 = _rob_io_entries_15_is_fencei;
+        casez_tmp_10 = _rob_io_entries_15_mem_write;
     endcase
   end // always_comb
-  reg          casez_tmp_11;
-  always_comb begin
-    casez (_rob_io_head)
-      4'b0000:
-        casez_tmp_11 = _rob_io_entries_0_state_state;
-      4'b0001:
-        casez_tmp_11 = _rob_io_entries_1_state_state;
-      4'b0010:
-        casez_tmp_11 = _rob_io_entries_2_state_state;
-      4'b0011:
-        casez_tmp_11 = _rob_io_entries_3_state_state;
-      4'b0100:
-        casez_tmp_11 = _rob_io_entries_4_state_state;
-      4'b0101:
-        casez_tmp_11 = _rob_io_entries_5_state_state;
-      4'b0110:
-        casez_tmp_11 = _rob_io_entries_6_state_state;
-      4'b0111:
-        casez_tmp_11 = _rob_io_entries_7_state_state;
-      4'b1000:
-        casez_tmp_11 = _rob_io_entries_8_state_state;
-      4'b1001:
-        casez_tmp_11 = _rob_io_entries_9_state_state;
-      4'b1010:
-        casez_tmp_11 = _rob_io_entries_10_state_state;
-      4'b1011:
-        casez_tmp_11 = _rob_io_entries_11_state_state;
-      4'b1100:
-        casez_tmp_11 = _rob_io_entries_12_state_state;
-      4'b1101:
-        casez_tmp_11 = _rob_io_entries_13_state_state;
-      4'b1110:
-        casez_tmp_11 = _rob_io_entries_14_state_state;
-      default:
-        casez_tmp_11 = _rob_io_entries_15_state_state;
-    endcase
-  end // always_comb
-  reg          casez_tmp_12;
+  reg  [7:0]   casez_tmp_11;
   always_comb begin
     casez (wb_sel_rob_idx)
       4'b0000:
-        casez_tmp_12 = _rob_io_entries_0_valid;
+        casez_tmp_11 = _rob_io_entries_0_mem_wmask;
       4'b0001:
-        casez_tmp_12 = _rob_io_entries_1_valid;
+        casez_tmp_11 = _rob_io_entries_1_mem_wmask;
       4'b0010:
-        casez_tmp_12 = _rob_io_entries_2_valid;
+        casez_tmp_11 = _rob_io_entries_2_mem_wmask;
       4'b0011:
-        casez_tmp_12 = _rob_io_entries_3_valid;
+        casez_tmp_11 = _rob_io_entries_3_mem_wmask;
       4'b0100:
-        casez_tmp_12 = _rob_io_entries_4_valid;
+        casez_tmp_11 = _rob_io_entries_4_mem_wmask;
       4'b0101:
-        casez_tmp_12 = _rob_io_entries_5_valid;
+        casez_tmp_11 = _rob_io_entries_5_mem_wmask;
       4'b0110:
-        casez_tmp_12 = _rob_io_entries_6_valid;
+        casez_tmp_11 = _rob_io_entries_6_mem_wmask;
       4'b0111:
-        casez_tmp_12 = _rob_io_entries_7_valid;
+        casez_tmp_11 = _rob_io_entries_7_mem_wmask;
       4'b1000:
-        casez_tmp_12 = _rob_io_entries_8_valid;
+        casez_tmp_11 = _rob_io_entries_8_mem_wmask;
       4'b1001:
-        casez_tmp_12 = _rob_io_entries_9_valid;
+        casez_tmp_11 = _rob_io_entries_9_mem_wmask;
       4'b1010:
-        casez_tmp_12 = _rob_io_entries_10_valid;
+        casez_tmp_11 = _rob_io_entries_10_mem_wmask;
       4'b1011:
-        casez_tmp_12 = _rob_io_entries_11_valid;
+        casez_tmp_11 = _rob_io_entries_11_mem_wmask;
       4'b1100:
-        casez_tmp_12 = _rob_io_entries_12_valid;
+        casez_tmp_11 = _rob_io_entries_12_mem_wmask;
       4'b1101:
-        casez_tmp_12 = _rob_io_entries_13_valid;
+        casez_tmp_11 = _rob_io_entries_13_mem_wmask;
       4'b1110:
-        casez_tmp_12 = _rob_io_entries_14_valid;
+        casez_tmp_11 = _rob_io_entries_14_mem_wmask;
       default:
-        casez_tmp_12 = _rob_io_entries_15_valid;
+        casez_tmp_11 = _rob_io_entries_15_mem_wmask;
     endcase
   end // always_comb
-  reg          casez_tmp_13;
+  reg  [4:0]   casez_tmp_12;
   always_comb begin
     casez (wb_sel_rob_idx)
       4'b0000:
-        casez_tmp_13 = _rob_io_entries_0_done;
+        casez_tmp_12 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_13 = _rob_io_entries_1_done;
+        casez_tmp_12 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_13 = _rob_io_entries_2_done;
+        casez_tmp_12 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_13 = _rob_io_entries_3_done;
+        casez_tmp_12 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_13 = _rob_io_entries_4_done;
+        casez_tmp_12 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_13 = _rob_io_entries_5_done;
+        casez_tmp_12 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_13 = _rob_io_entries_6_done;
+        casez_tmp_12 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_13 = _rob_io_entries_7_done;
+        casez_tmp_12 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_13 = _rob_io_entries_8_done;
+        casez_tmp_12 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_13 = _rob_io_entries_9_done;
+        casez_tmp_12 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_13 = _rob_io_entries_10_done;
+        casez_tmp_12 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_13 = _rob_io_entries_11_done;
+        casez_tmp_12 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_13 = _rob_io_entries_12_done;
+        casez_tmp_12 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_13 = _rob_io_entries_13_done;
+        casez_tmp_12 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_13 = _rob_io_entries_14_done;
+        casez_tmp_12 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_13 = _rob_io_entries_15_done;
+        casez_tmp_12 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
+  reg  [5:0]   casez_tmp_13;
+  always_comb begin
+    casez (wb_sel_rob_idx)
+      4'b0000:
+        casez_tmp_13 = _rob_io_entries_0_new_phys;
+      4'b0001:
+        casez_tmp_13 = _rob_io_entries_1_new_phys;
+      4'b0010:
+        casez_tmp_13 = _rob_io_entries_2_new_phys;
+      4'b0011:
+        casez_tmp_13 = _rob_io_entries_3_new_phys;
+      4'b0100:
+        casez_tmp_13 = _rob_io_entries_4_new_phys;
+      4'b0101:
+        casez_tmp_13 = _rob_io_entries_5_new_phys;
+      4'b0110:
+        casez_tmp_13 = _rob_io_entries_6_new_phys;
+      4'b0111:
+        casez_tmp_13 = _rob_io_entries_7_new_phys;
+      4'b1000:
+        casez_tmp_13 = _rob_io_entries_8_new_phys;
+      4'b1001:
+        casez_tmp_13 = _rob_io_entries_9_new_phys;
+      4'b1010:
+        casez_tmp_13 = _rob_io_entries_10_new_phys;
+      4'b1011:
+        casez_tmp_13 = _rob_io_entries_11_new_phys;
+      4'b1100:
+        casez_tmp_13 = _rob_io_entries_12_new_phys;
+      4'b1101:
+        casez_tmp_13 = _rob_io_entries_13_new_phys;
+      4'b1110:
+        casez_tmp_13 = _rob_io_entries_14_new_phys;
+      default:
+        casez_tmp_13 = _rob_io_entries_15_new_phys;
+    endcase
+  end // always_comb
+  reg          casez_tmp_14;
+  always_comb begin
+    casez (wb_sel1_rob_idx)
+      4'b0000:
+        casez_tmp_14 = _rob_io_entries_0_valid;
+      4'b0001:
+        casez_tmp_14 = _rob_io_entries_1_valid;
+      4'b0010:
+        casez_tmp_14 = _rob_io_entries_2_valid;
+      4'b0011:
+        casez_tmp_14 = _rob_io_entries_3_valid;
+      4'b0100:
+        casez_tmp_14 = _rob_io_entries_4_valid;
+      4'b0101:
+        casez_tmp_14 = _rob_io_entries_5_valid;
+      4'b0110:
+        casez_tmp_14 = _rob_io_entries_6_valid;
+      4'b0111:
+        casez_tmp_14 = _rob_io_entries_7_valid;
+      4'b1000:
+        casez_tmp_14 = _rob_io_entries_8_valid;
+      4'b1001:
+        casez_tmp_14 = _rob_io_entries_9_valid;
+      4'b1010:
+        casez_tmp_14 = _rob_io_entries_10_valid;
+      4'b1011:
+        casez_tmp_14 = _rob_io_entries_11_valid;
+      4'b1100:
+        casez_tmp_14 = _rob_io_entries_12_valid;
+      4'b1101:
+        casez_tmp_14 = _rob_io_entries_13_valid;
+      4'b1110:
+        casez_tmp_14 = _rob_io_entries_14_valid;
+      default:
+        casez_tmp_14 = _rob_io_entries_15_valid;
+    endcase
+  end // always_comb
+  reg          casez_tmp_15;
+  always_comb begin
+    casez (wb_sel1_rob_idx)
+      4'b0000:
+        casez_tmp_15 = _rob_io_entries_0_done;
+      4'b0001:
+        casez_tmp_15 = _rob_io_entries_1_done;
+      4'b0010:
+        casez_tmp_15 = _rob_io_entries_2_done;
+      4'b0011:
+        casez_tmp_15 = _rob_io_entries_3_done;
+      4'b0100:
+        casez_tmp_15 = _rob_io_entries_4_done;
+      4'b0101:
+        casez_tmp_15 = _rob_io_entries_5_done;
+      4'b0110:
+        casez_tmp_15 = _rob_io_entries_6_done;
+      4'b0111:
+        casez_tmp_15 = _rob_io_entries_7_done;
+      4'b1000:
+        casez_tmp_15 = _rob_io_entries_8_done;
+      4'b1001:
+        casez_tmp_15 = _rob_io_entries_9_done;
+      4'b1010:
+        casez_tmp_15 = _rob_io_entries_10_done;
+      4'b1011:
+        casez_tmp_15 = _rob_io_entries_11_done;
+      4'b1100:
+        casez_tmp_15 = _rob_io_entries_12_done;
+      4'b1101:
+        casez_tmp_15 = _rob_io_entries_13_done;
+      4'b1110:
+        casez_tmp_15 = _rob_io_entries_14_done;
+      default:
+        casez_tmp_15 = _rob_io_entries_15_done;
+    endcase
+  end // always_comb
+  reg  [31:0]  casez_tmp_16;
+  always_comb begin
+    casez (wb_sel1_rob_idx)
+      4'b0000:
+        casez_tmp_16 = _rob_io_entries_0_pc;
+      4'b0001:
+        casez_tmp_16 = _rob_io_entries_1_pc;
+      4'b0010:
+        casez_tmp_16 = _rob_io_entries_2_pc;
+      4'b0011:
+        casez_tmp_16 = _rob_io_entries_3_pc;
+      4'b0100:
+        casez_tmp_16 = _rob_io_entries_4_pc;
+      4'b0101:
+        casez_tmp_16 = _rob_io_entries_5_pc;
+      4'b0110:
+        casez_tmp_16 = _rob_io_entries_6_pc;
+      4'b0111:
+        casez_tmp_16 = _rob_io_entries_7_pc;
+      4'b1000:
+        casez_tmp_16 = _rob_io_entries_8_pc;
+      4'b1001:
+        casez_tmp_16 = _rob_io_entries_9_pc;
+      4'b1010:
+        casez_tmp_16 = _rob_io_entries_10_pc;
+      4'b1011:
+        casez_tmp_16 = _rob_io_entries_11_pc;
+      4'b1100:
+        casez_tmp_16 = _rob_io_entries_12_pc;
+      4'b1101:
+        casez_tmp_16 = _rob_io_entries_13_pc;
+      4'b1110:
+        casez_tmp_16 = _rob_io_entries_14_pc;
+      default:
+        casez_tmp_16 = _rob_io_entries_15_pc;
+    endcase
+  end // always_comb
+  reg          casez_tmp_17;
+  always_comb begin
+    casez (wb_sel1_rob_idx)
+      4'b0000:
+        casez_tmp_17 = _rob_io_entries_0_mem_valid;
+      4'b0001:
+        casez_tmp_17 = _rob_io_entries_1_mem_valid;
+      4'b0010:
+        casez_tmp_17 = _rob_io_entries_2_mem_valid;
+      4'b0011:
+        casez_tmp_17 = _rob_io_entries_3_mem_valid;
+      4'b0100:
+        casez_tmp_17 = _rob_io_entries_4_mem_valid;
+      4'b0101:
+        casez_tmp_17 = _rob_io_entries_5_mem_valid;
+      4'b0110:
+        casez_tmp_17 = _rob_io_entries_6_mem_valid;
+      4'b0111:
+        casez_tmp_17 = _rob_io_entries_7_mem_valid;
+      4'b1000:
+        casez_tmp_17 = _rob_io_entries_8_mem_valid;
+      4'b1001:
+        casez_tmp_17 = _rob_io_entries_9_mem_valid;
+      4'b1010:
+        casez_tmp_17 = _rob_io_entries_10_mem_valid;
+      4'b1011:
+        casez_tmp_17 = _rob_io_entries_11_mem_valid;
+      4'b1100:
+        casez_tmp_17 = _rob_io_entries_12_mem_valid;
+      4'b1101:
+        casez_tmp_17 = _rob_io_entries_13_mem_valid;
+      4'b1110:
+        casez_tmp_17 = _rob_io_entries_14_mem_valid;
+      default:
+        casez_tmp_17 = _rob_io_entries_15_mem_valid;
+    endcase
+  end // always_comb
+  reg          casez_tmp_18;
+  always_comb begin
+    casez (wb_sel1_rob_idx)
+      4'b0000:
+        casez_tmp_18 = _rob_io_entries_0_mem_write;
+      4'b0001:
+        casez_tmp_18 = _rob_io_entries_1_mem_write;
+      4'b0010:
+        casez_tmp_18 = _rob_io_entries_2_mem_write;
+      4'b0011:
+        casez_tmp_18 = _rob_io_entries_3_mem_write;
+      4'b0100:
+        casez_tmp_18 = _rob_io_entries_4_mem_write;
+      4'b0101:
+        casez_tmp_18 = _rob_io_entries_5_mem_write;
+      4'b0110:
+        casez_tmp_18 = _rob_io_entries_6_mem_write;
+      4'b0111:
+        casez_tmp_18 = _rob_io_entries_7_mem_write;
+      4'b1000:
+        casez_tmp_18 = _rob_io_entries_8_mem_write;
+      4'b1001:
+        casez_tmp_18 = _rob_io_entries_9_mem_write;
+      4'b1010:
+        casez_tmp_18 = _rob_io_entries_10_mem_write;
+      4'b1011:
+        casez_tmp_18 = _rob_io_entries_11_mem_write;
+      4'b1100:
+        casez_tmp_18 = _rob_io_entries_12_mem_write;
+      4'b1101:
+        casez_tmp_18 = _rob_io_entries_13_mem_write;
+      4'b1110:
+        casez_tmp_18 = _rob_io_entries_14_mem_write;
+      default:
+        casez_tmp_18 = _rob_io_entries_15_mem_write;
+    endcase
+  end // always_comb
+  reg  [7:0]   casez_tmp_19;
+  always_comb begin
+    casez (wb_sel1_rob_idx)
+      4'b0000:
+        casez_tmp_19 = _rob_io_entries_0_mem_wmask;
+      4'b0001:
+        casez_tmp_19 = _rob_io_entries_1_mem_wmask;
+      4'b0010:
+        casez_tmp_19 = _rob_io_entries_2_mem_wmask;
+      4'b0011:
+        casez_tmp_19 = _rob_io_entries_3_mem_wmask;
+      4'b0100:
+        casez_tmp_19 = _rob_io_entries_4_mem_wmask;
+      4'b0101:
+        casez_tmp_19 = _rob_io_entries_5_mem_wmask;
+      4'b0110:
+        casez_tmp_19 = _rob_io_entries_6_mem_wmask;
+      4'b0111:
+        casez_tmp_19 = _rob_io_entries_7_mem_wmask;
+      4'b1000:
+        casez_tmp_19 = _rob_io_entries_8_mem_wmask;
+      4'b1001:
+        casez_tmp_19 = _rob_io_entries_9_mem_wmask;
+      4'b1010:
+        casez_tmp_19 = _rob_io_entries_10_mem_wmask;
+      4'b1011:
+        casez_tmp_19 = _rob_io_entries_11_mem_wmask;
+      4'b1100:
+        casez_tmp_19 = _rob_io_entries_12_mem_wmask;
+      4'b1101:
+        casez_tmp_19 = _rob_io_entries_13_mem_wmask;
+      4'b1110:
+        casez_tmp_19 = _rob_io_entries_14_mem_wmask;
+      default:
+        casez_tmp_19 = _rob_io_entries_15_mem_wmask;
+    endcase
+  end // always_comb
+  reg  [4:0]   casez_tmp_20;
+  always_comb begin
+    casez (wb_sel1_rob_idx)
+      4'b0000:
+        casez_tmp_20 = _rob_io_entries_0_arch_rd;
+      4'b0001:
+        casez_tmp_20 = _rob_io_entries_1_arch_rd;
+      4'b0010:
+        casez_tmp_20 = _rob_io_entries_2_arch_rd;
+      4'b0011:
+        casez_tmp_20 = _rob_io_entries_3_arch_rd;
+      4'b0100:
+        casez_tmp_20 = _rob_io_entries_4_arch_rd;
+      4'b0101:
+        casez_tmp_20 = _rob_io_entries_5_arch_rd;
+      4'b0110:
+        casez_tmp_20 = _rob_io_entries_6_arch_rd;
+      4'b0111:
+        casez_tmp_20 = _rob_io_entries_7_arch_rd;
+      4'b1000:
+        casez_tmp_20 = _rob_io_entries_8_arch_rd;
+      4'b1001:
+        casez_tmp_20 = _rob_io_entries_9_arch_rd;
+      4'b1010:
+        casez_tmp_20 = _rob_io_entries_10_arch_rd;
+      4'b1011:
+        casez_tmp_20 = _rob_io_entries_11_arch_rd;
+      4'b1100:
+        casez_tmp_20 = _rob_io_entries_12_arch_rd;
+      4'b1101:
+        casez_tmp_20 = _rob_io_entries_13_arch_rd;
+      4'b1110:
+        casez_tmp_20 = _rob_io_entries_14_arch_rd;
+      default:
+        casez_tmp_20 = _rob_io_entries_15_arch_rd;
+    endcase
+  end // always_comb
+  reg  [5:0]   casez_tmp_21;
+  always_comb begin
+    casez (wb_sel1_rob_idx)
+      4'b0000:
+        casez_tmp_21 = _rob_io_entries_0_new_phys;
+      4'b0001:
+        casez_tmp_21 = _rob_io_entries_1_new_phys;
+      4'b0010:
+        casez_tmp_21 = _rob_io_entries_2_new_phys;
+      4'b0011:
+        casez_tmp_21 = _rob_io_entries_3_new_phys;
+      4'b0100:
+        casez_tmp_21 = _rob_io_entries_4_new_phys;
+      4'b0101:
+        casez_tmp_21 = _rob_io_entries_5_new_phys;
+      4'b0110:
+        casez_tmp_21 = _rob_io_entries_6_new_phys;
+      4'b0111:
+        casez_tmp_21 = _rob_io_entries_7_new_phys;
+      4'b1000:
+        casez_tmp_21 = _rob_io_entries_8_new_phys;
+      4'b1001:
+        casez_tmp_21 = _rob_io_entries_9_new_phys;
+      4'b1010:
+        casez_tmp_21 = _rob_io_entries_10_new_phys;
+      4'b1011:
+        casez_tmp_21 = _rob_io_entries_11_new_phys;
+      4'b1100:
+        casez_tmp_21 = _rob_io_entries_12_new_phys;
+      4'b1101:
+        casez_tmp_21 = _rob_io_entries_13_new_phys;
+      4'b1110:
+        casez_tmp_21 = _rob_io_entries_14_new_phys;
+      default:
+        casez_tmp_21 = _rob_io_entries_15_new_phys;
+    endcase
+  end // always_comb
+  wire         _can_wb_T =
+    (|wb_cand_mask) & casez_tmp_6 & casez_tmp_8 == wb_sel_pc
+    & casez_tmp_12 == wb_sel_waddr & casez_tmp_13 == wb_sel_pdest;
+  wire         _head_wb0_T = wb_sel_rob_idx == _rob_io_head;
+  wire         head_wb0_raw = _can_wb_T & _head_wb0_T;
+  wire         _can_wb1_T =
+    (|wb_cand_mask1) & casez_tmp_14 & casez_tmp_16 == wb_sel1_pc
+    & casez_tmp_20 == wb_sel1_waddr & casez_tmp_21 == wb_sel1_pdest;
+  wire         _head_wb1_T = wb_sel1_rob_idx == _rob_io_head;
+  wire         _head_is_exc_gap_T =
+    (head_wb0_raw | _can_wb1_T & _head_wb1_T)
+    & (head_wb0_raw ? wb_sel_state_state : wb_sel1_state_state);
+  reg          casez_tmp_22;
+  always_comb begin
+    casez (_rob_io_head)
+      4'b0000:
+        casez_tmp_22 = _rob_io_entries_0_valid;
+      4'b0001:
+        casez_tmp_22 = _rob_io_entries_1_valid;
+      4'b0010:
+        casez_tmp_22 = _rob_io_entries_2_valid;
+      4'b0011:
+        casez_tmp_22 = _rob_io_entries_3_valid;
+      4'b0100:
+        casez_tmp_22 = _rob_io_entries_4_valid;
+      4'b0101:
+        casez_tmp_22 = _rob_io_entries_5_valid;
+      4'b0110:
+        casez_tmp_22 = _rob_io_entries_6_valid;
+      4'b0111:
+        casez_tmp_22 = _rob_io_entries_7_valid;
+      4'b1000:
+        casez_tmp_22 = _rob_io_entries_8_valid;
+      4'b1001:
+        casez_tmp_22 = _rob_io_entries_9_valid;
+      4'b1010:
+        casez_tmp_22 = _rob_io_entries_10_valid;
+      4'b1011:
+        casez_tmp_22 = _rob_io_entries_11_valid;
+      4'b1100:
+        casez_tmp_22 = _rob_io_entries_12_valid;
+      4'b1101:
+        casez_tmp_22 = _rob_io_entries_13_valid;
+      4'b1110:
+        casez_tmp_22 = _rob_io_entries_14_valid;
+      default:
+        casez_tmp_22 = _rob_io_entries_15_valid;
+    endcase
+  end // always_comb
+  reg          casez_tmp_23;
+  always_comb begin
+    casez (_rob_io_head)
+      4'b0000:
+        casez_tmp_23 = _rob_io_entries_0_done;
+      4'b0001:
+        casez_tmp_23 = _rob_io_entries_1_done;
+      4'b0010:
+        casez_tmp_23 = _rob_io_entries_2_done;
+      4'b0011:
+        casez_tmp_23 = _rob_io_entries_3_done;
+      4'b0100:
+        casez_tmp_23 = _rob_io_entries_4_done;
+      4'b0101:
+        casez_tmp_23 = _rob_io_entries_5_done;
+      4'b0110:
+        casez_tmp_23 = _rob_io_entries_6_done;
+      4'b0111:
+        casez_tmp_23 = _rob_io_entries_7_done;
+      4'b1000:
+        casez_tmp_23 = _rob_io_entries_8_done;
+      4'b1001:
+        casez_tmp_23 = _rob_io_entries_9_done;
+      4'b1010:
+        casez_tmp_23 = _rob_io_entries_10_done;
+      4'b1011:
+        casez_tmp_23 = _rob_io_entries_11_done;
+      4'b1100:
+        casez_tmp_23 = _rob_io_entries_12_done;
+      4'b1101:
+        casez_tmp_23 = _rob_io_entries_13_done;
+      4'b1110:
+        casez_tmp_23 = _rob_io_entries_14_done;
+      default:
+        casez_tmp_23 = _rob_io_entries_15_done;
+    endcase
+  end // always_comb
+  reg  [31:0]  casez_tmp_24;
+  always_comb begin
+    casez (_rob_io_head)
+      4'b0000:
+        casez_tmp_24 = _rob_io_entries_0_pc;
+      4'b0001:
+        casez_tmp_24 = _rob_io_entries_1_pc;
+      4'b0010:
+        casez_tmp_24 = _rob_io_entries_2_pc;
+      4'b0011:
+        casez_tmp_24 = _rob_io_entries_3_pc;
+      4'b0100:
+        casez_tmp_24 = _rob_io_entries_4_pc;
+      4'b0101:
+        casez_tmp_24 = _rob_io_entries_5_pc;
+      4'b0110:
+        casez_tmp_24 = _rob_io_entries_6_pc;
+      4'b0111:
+        casez_tmp_24 = _rob_io_entries_7_pc;
+      4'b1000:
+        casez_tmp_24 = _rob_io_entries_8_pc;
+      4'b1001:
+        casez_tmp_24 = _rob_io_entries_9_pc;
+      4'b1010:
+        casez_tmp_24 = _rob_io_entries_10_pc;
+      4'b1011:
+        casez_tmp_24 = _rob_io_entries_11_pc;
+      4'b1100:
+        casez_tmp_24 = _rob_io_entries_12_pc;
+      4'b1101:
+        casez_tmp_24 = _rob_io_entries_13_pc;
+      4'b1110:
+        casez_tmp_24 = _rob_io_entries_14_pc;
+      default:
+        casez_tmp_24 = _rob_io_entries_15_pc;
+    endcase
+  end // always_comb
+  reg  [3:0]   casez_tmp_25;
+  always_comb begin
+    casez (_rob_io_head)
+      4'b0000:
+        casez_tmp_25 = _rob_io_entries_0_jump;
+      4'b0001:
+        casez_tmp_25 = _rob_io_entries_1_jump;
+      4'b0010:
+        casez_tmp_25 = _rob_io_entries_2_jump;
+      4'b0011:
+        casez_tmp_25 = _rob_io_entries_3_jump;
+      4'b0100:
+        casez_tmp_25 = _rob_io_entries_4_jump;
+      4'b0101:
+        casez_tmp_25 = _rob_io_entries_5_jump;
+      4'b0110:
+        casez_tmp_25 = _rob_io_entries_6_jump;
+      4'b0111:
+        casez_tmp_25 = _rob_io_entries_7_jump;
+      4'b1000:
+        casez_tmp_25 = _rob_io_entries_8_jump;
+      4'b1001:
+        casez_tmp_25 = _rob_io_entries_9_jump;
+      4'b1010:
+        casez_tmp_25 = _rob_io_entries_10_jump;
+      4'b1011:
+        casez_tmp_25 = _rob_io_entries_11_jump;
+      4'b1100:
+        casez_tmp_25 = _rob_io_entries_12_jump;
+      4'b1101:
+        casez_tmp_25 = _rob_io_entries_13_jump;
+      4'b1110:
+        casez_tmp_25 = _rob_io_entries_14_jump;
+      default:
+        casez_tmp_25 = _rob_io_entries_15_jump;
+    endcase
+  end // always_comb
+  reg          casez_tmp_26;
+  always_comb begin
+    casez (_rob_io_head)
+      4'b0000:
+        casez_tmp_26 = _rob_io_entries_0_is_fencei;
+      4'b0001:
+        casez_tmp_26 = _rob_io_entries_1_is_fencei;
+      4'b0010:
+        casez_tmp_26 = _rob_io_entries_2_is_fencei;
+      4'b0011:
+        casez_tmp_26 = _rob_io_entries_3_is_fencei;
+      4'b0100:
+        casez_tmp_26 = _rob_io_entries_4_is_fencei;
+      4'b0101:
+        casez_tmp_26 = _rob_io_entries_5_is_fencei;
+      4'b0110:
+        casez_tmp_26 = _rob_io_entries_6_is_fencei;
+      4'b0111:
+        casez_tmp_26 = _rob_io_entries_7_is_fencei;
+      4'b1000:
+        casez_tmp_26 = _rob_io_entries_8_is_fencei;
+      4'b1001:
+        casez_tmp_26 = _rob_io_entries_9_is_fencei;
+      4'b1010:
+        casez_tmp_26 = _rob_io_entries_10_is_fencei;
+      4'b1011:
+        casez_tmp_26 = _rob_io_entries_11_is_fencei;
+      4'b1100:
+        casez_tmp_26 = _rob_io_entries_12_is_fencei;
+      4'b1101:
+        casez_tmp_26 = _rob_io_entries_13_is_fencei;
+      4'b1110:
+        casez_tmp_26 = _rob_io_entries_14_is_fencei;
+      default:
+        casez_tmp_26 = _rob_io_entries_15_is_fencei;
+    endcase
+  end // always_comb
+  reg          casez_tmp_27;
+  always_comb begin
+    casez (_rob_io_head)
+      4'b0000:
+        casez_tmp_27 = _rob_io_entries_0_state_state;
+      4'b0001:
+        casez_tmp_27 = _rob_io_entries_1_state_state;
+      4'b0010:
+        casez_tmp_27 = _rob_io_entries_2_state_state;
+      4'b0011:
+        casez_tmp_27 = _rob_io_entries_3_state_state;
+      4'b0100:
+        casez_tmp_27 = _rob_io_entries_4_state_state;
+      4'b0101:
+        casez_tmp_27 = _rob_io_entries_5_state_state;
+      4'b0110:
+        casez_tmp_27 = _rob_io_entries_6_state_state;
+      4'b0111:
+        casez_tmp_27 = _rob_io_entries_7_state_state;
+      4'b1000:
+        casez_tmp_27 = _rob_io_entries_8_state_state;
+      4'b1001:
+        casez_tmp_27 = _rob_io_entries_9_state_state;
+      4'b1010:
+        casez_tmp_27 = _rob_io_entries_10_state_state;
+      4'b1011:
+        casez_tmp_27 = _rob_io_entries_11_state_state;
+      4'b1100:
+        casez_tmp_27 = _rob_io_entries_12_state_state;
+      4'b1101:
+        casez_tmp_27 = _rob_io_entries_13_state_state;
+      4'b1110:
+        casez_tmp_27 = _rob_io_entries_14_state_state;
+      default:
+        casez_tmp_27 = _rob_io_entries_15_state_state;
+    endcase
+  end // always_comb
+  wire         head_is_exc =
+    casez_tmp_22 & (casez_tmp_23 ? casez_tmp_27 : _head_is_exc_gap_T);
+  wire [3:0]   _can_wb_youngerMret_T_5 = wb_sel_rob_idx - _rob_io_head;
+  wire [3:0]   _can_wb1_youngerMis_T_3 = d_alu_bits_rob_idx - _rob_io_head;
+  wire         _can_wb1_youngerFencei_T = casez_tmp_22 & casez_tmp_26;
+  wire         _can_wb1_youngerMret_T = casez_tmp_25 == 4'hA;
   assign can_wb =
-    (|_wb_has_cand_T) & casez_tmp_12 & ~casez_tmp_13
-    & ~(mis_predict_dbg & _wb_young_mret_T_5 > d_alu_bits_rob_idx - _rob_io_head)
-    & ~(flush_now & _wb_young_mret_T_5 > _after_flushAgeNow_T_62)
-    & ~(casez_tmp_6
-        & (casez_tmp_7
-             ? casez_tmp_11
-             : (|_wb_has_cand_T) & _head_wb_store_T & wb_sel_state_state)
-        & (|_wb_young_mret_T_5))
-    & ~(casez_tmp_6 & casez_tmp_10 & casez_tmp_7 & _icache_io_fencei_ready
-        & ~fencei_flush_REG & (|_wb_young_mret_T_5))
-    & ~(casez_tmp_6 & casez_tmp_9 == 4'hA & casez_tmp_7 & ~mret_flush_REG
-        & (|_wb_young_mret_T_5)) & ~ext_irq_flush_REG;
-  wire         wb_wen =
-    can_wb & _wbu_io_refile_wen & (|wb_sel_pdest)
-    & (|(_exu_div_io_out_ready_T
-           ? _exu_div_io_out_bits_waddr
-           : _lsu_io_out_ready_T ? _lsu_io_out_bits_waddr : _exu_io_out_bits_waddr));
+    _can_wb_T & ~casez_tmp_7
+    & ~(mis_predict_dbg & _can_wb_youngerMret_T_5 > _can_wb1_youngerMis_T_3 | flush_now
+        & _can_wb_youngerMret_T_5 > _after_flushAgeNow_T_62 | head_is_exc
+        & (|_can_wb_youngerMret_T_5) | _can_wb1_youngerFencei_T & casez_tmp_23
+        & fencei_commit_ready & ~fencei_flush_REG & (|_can_wb_youngerMret_T_5)
+        | casez_tmp_22 & _can_wb1_youngerMret_T & casez_tmp_23 & ~mret_flush_REG
+        & (|_can_wb_youngerMret_T_5) | ext_irq_flush_REG);
+  wire [3:0]   _can_wb1_youngerMret_T_5 = wb_sel1_rob_idx - _rob_io_head;
+  assign can_wb1 =
+    _can_wb1_T & ~casez_tmp_15 & ~(can_wb & wb_sel1_rob_idx == wb_sel_rob_idx)
+    & ~(mis_predict_dbg & _can_wb1_youngerMret_T_5 > _can_wb1_youngerMis_T_3 | flush_now
+        & _can_wb1_youngerMret_T_5 > _after_flushAgeNow_T_62 | head_is_exc
+        & (|_can_wb1_youngerMret_T_5) | _can_wb1_youngerFencei_T & casez_tmp_23
+        & fencei_commit_ready & ~fencei_flush_REG & (|_can_wb1_youngerMret_T_5)
+        | casez_tmp_22 & _can_wb1_youngerMret_T & casez_tmp_23 & ~mret_flush_REG
+        & (|_can_wb1_youngerMret_T_5) | ext_irq_flush_REG);
+  wire         wb_wen = can_wb & _wbu_io_refile_wen & (|wb_sel_pdest) & (|wb_sel_waddr);
+  wire         wb1_wen =
+    can_wb1 & _wbu1_io_refile_wen & (|wb_sel1_pdest) & (|wb_sel1_waddr);
+  wire         head_wb0 = can_wb & _head_wb0_T;
+  wire         head_wb_valid = head_wb0 | can_wb1 & _head_wb1_T;
+  wire [31:0]  head_wb_bits_alu_result =
+    head_wb0 ? wb_sel_alu_result : wb_sel1_alu_result;
   wire         cm_is_store =
     _rob_io_commit_bits_mem_valid & _rob_io_commit_bits_mem_write;
+  wire         cm_is_mret = _rob_io_commit_bits_jump == 4'hA;
+  wire         cm_needs_store_drain =
+    _rob_io_commit_bits_is_ebreak | cm_is_mret | _rob_io_commit_bits_state_state;
   wire         bp_commit_block;
   wire         rob_io_commit_fire =
     _rob_io_commit_valid & ~is_irq & ~fencei_flush_REG & ~mret_flush_REG
     & ~ext_irq_flush_REG & ~bp_commit_block & (~cm_is_store | store_commit_ready)
-    & (~_rob_io_commit_bits_is_fencei | _icache_io_fencei_ready);
+    & (~_rob_io_commit_bits_is_fencei | fencei_commit_ready)
+    & (~cm_needs_store_drain | store_side_empty);
   wire         cm_do_ren =
     rob_io_commit_fire & _rob_io_commit_bits_reg_write & (|_rob_io_commit_bits_arch_rd)
     & (|_rob_io_commit_bits_new_phys);
+  wire         wb_store = can_wb & casez_tmp_9 & casez_tmp_10;
+  wire         sq_io_commit_valid = rob_io_commit_fire & cm_is_store;
+  wire         _GEN = _rob_io_commit_valid & cm_is_store;
   wire         _cm_is_jump_T = _rob_io_commit_bits_jump != 4'hF;
   wire         _cm_is_jump_T_2 = _rob_io_commit_bits_jump != 4'hA;
-  wire         cm_wb_same = rob_io_commit_fire & can_wb & _head_wb_store_T;
-  reg  [31:0]  casez_tmp_14;
+  wire         cm_wb_same = rob_io_commit_fire & head_wb_valid;
+  reg  [31:0]  casez_tmp_28;
   always_comb begin
     casez (_rob_io_commit_bits_csr_sel)
       2'b00:
-        casez_tmp_14 = 32'h0;
+        casez_tmp_28 = 32'h0;
       2'b01:
-        casez_tmp_14 = _rob_io_commit_bits_rs1_val;
+        casez_tmp_28 = _rob_io_commit_bits_rs1_val;
       2'b10:
-        casez_tmp_14 = _rob_io_commit_bits_rs1_val | _rob_io_commit_bits_csr_rd1;
+        casez_tmp_28 = _rob_io_commit_bits_rs1_val | _rob_io_commit_bits_csr_rd1;
       default:
-        casez_tmp_14 = _rob_io_commit_bits_pc;
+        casez_tmp_28 = _rob_io_commit_bits_pc;
     endcase
   end // always_comb
-  wire         _head_state_T_1 = (|_wb_has_cand_T) & _head_wb_store_T;
   wire         irq_commit =
     rob_io_commit_fire
-    & (_head_state_T_1 ? wb_sel_state_state : _rob_io_commit_bits_state_state);
+    & (head_wb_valid
+         ? (head_wb0 ? wb_sel_state_state : wb_sel1_state_state)
+         : _rob_io_commit_bits_state_state);
   reg          irq_commit_r;
   reg  [3:0]   irq_rob_r;
   wire [31:0]  correct_pc =
@@ -1778,10 +2426,10 @@ module Core(
     d_alu_valid & d_alu_bits_signals_exu_jump != 4'hF
     & d_alu_bits_signals_exu_jump != 4'hA;
   wire         is_ch = br_done & (|_exu_io_pc_bits_pc_src);
-  assign mis_predict_dbg =
-    br_done
-    & (is_ch != d_alu_bits_bp_taken | is_ch & d_alu_bits_bp_taken
-       & d_alu_bits_bp_target != correct_pc);
+  wire         target_mispredict =
+    is_ch & d_alu_bits_bp_taken & d_alu_bits_bp_target != correct_pc;
+  wire         _mis_predict_T = is_ch != d_alu_bits_bp_taken;
+  assign mis_predict_dbg = br_done & (_mis_predict_T | target_mispredict);
   reg          mis_predict_r;
   reg  [3:0]   mis_rob_r;
   reg  [1:0]   mis_cp_r;
@@ -1789,18 +2437,16 @@ module Core(
     mis_predict_r & _rob_io_commit_idx == ((&mis_rob_r) ? 4'h0 : mis_rob_r + 4'h1);
   wire         fencei_commit = rob_io_commit_fire & _rob_io_commit_bits_is_fencei;
   reg  [31:0]  fencei_pc_r;
-  wire         mret_commit = rob_io_commit_fire & _rob_io_commit_bits_jump == 4'hA;
+  wire         mret_commit = rob_io_commit_fire & cm_is_mret;
   reg  [31:0]  mret_mepc_r;
   wire         ext_irq_fire =
     io_interrupt
     & ~(_rob_io_commit_valid & (~cm_is_store | store_commit_ready)
-        & (~_rob_io_commit_bits_is_fencei | _icache_io_fencei_ready))
-    & ~(casez_tmp_6
-        & (casez_tmp_7
-             ? casez_tmp_11
-             : (|_wb_has_cand_T) & _head_wb_store_T & wb_sel_state_state))
+        & (~_rob_io_commit_bits_is_fencei | fencei_commit_ready)
+        & (~cm_needs_store_drain | store_side_empty))
+    & ~(casez_tmp_22 & (casez_tmp_23 ? casez_tmp_27 : _head_is_exc_gap_T))
     & ~mis_predict_dbg & ~mis_predict_r & ~fencei_flush_REG & ~mret_flush_REG
-    & ~(|cm_st_state) & ~irq_commit_r & ~ext_irq_flush_REG;
+    & ~cm_writing_gap & ~irq_commit_r & ~ext_irq_flush_REG;
   assign is_irq = irq_commit_r | ext_irq_flush_REG;
   wire         csr_io_irq = irq_commit | ext_irq_fire;
   reg  [31:0]  irq_mtvec_r;
@@ -1815,7 +2461,8 @@ module Core(
     is_irq ? irq_rob_r : mis_predict_dbg ? d_alu_bits_rob_idx : mis_rob_r;
   wire         _busy_io_rebuild_mask_T = is_irq | fencei_flush_REG;
   assign ifu_io_is_flush = _busy_io_rebuild_mask_T | mret_flush_REG | mis_predict_dbg;
-  wire         cm_this = rob_io_commit_fire & casez_tmp_6;
+  wire         sq_io_flush = flush_now & ~is_irq & ~fencei_flush_REG & ~mret_flush_REG;
+  wire         cm_this = rob_io_commit_fire & casez_tmp_22;
   wire [3:0]   idx =
     cm_this ? ((&_rob_io_head) ? 4'h0 : _rob_io_head + 4'h1) : _rob_io_head;
   wire [4:0]   kept_n =
@@ -1948,2416 +2595,2416 @@ module Core(
     cm_do_ren & (&_rob_io_commit_bits_arch_rd)
       ? _rob_io_commit_bits_new_phys
       : _rename_io_arch_rat_out_31;
-  reg          casez_tmp_15;
+  reg          casez_tmp_29;
   always_comb begin
     casez (idx)
       4'b0000:
-        casez_tmp_15 = _rob_io_entries_0_valid;
+        casez_tmp_29 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_15 = _rob_io_entries_1_valid;
+        casez_tmp_29 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_15 = _rob_io_entries_2_valid;
+        casez_tmp_29 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_15 = _rob_io_entries_3_valid;
+        casez_tmp_29 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_15 = _rob_io_entries_4_valid;
+        casez_tmp_29 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_15 = _rob_io_entries_5_valid;
+        casez_tmp_29 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_15 = _rob_io_entries_6_valid;
+        casez_tmp_29 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_15 = _rob_io_entries_7_valid;
+        casez_tmp_29 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_15 = _rob_io_entries_8_valid;
+        casez_tmp_29 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_15 = _rob_io_entries_9_valid;
+        casez_tmp_29 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_15 = _rob_io_entries_10_valid;
+        casez_tmp_29 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_15 = _rob_io_entries_11_valid;
+        casez_tmp_29 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_15 = _rob_io_entries_12_valid;
+        casez_tmp_29 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_15 = _rob_io_entries_13_valid;
+        casez_tmp_29 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_15 = _rob_io_entries_14_valid;
+        casez_tmp_29 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_15 = _rob_io_entries_15_valid;
+        casez_tmp_29 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_16;
+  reg          casez_tmp_30;
   always_comb begin
     casez (idx)
       4'b0000:
-        casez_tmp_16 = _rob_io_entries_0_reg_write;
+        casez_tmp_30 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_16 = _rob_io_entries_1_reg_write;
+        casez_tmp_30 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_16 = _rob_io_entries_2_reg_write;
+        casez_tmp_30 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_16 = _rob_io_entries_3_reg_write;
+        casez_tmp_30 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_16 = _rob_io_entries_4_reg_write;
+        casez_tmp_30 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_16 = _rob_io_entries_5_reg_write;
+        casez_tmp_30 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_16 = _rob_io_entries_6_reg_write;
+        casez_tmp_30 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_16 = _rob_io_entries_7_reg_write;
+        casez_tmp_30 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_16 = _rob_io_entries_8_reg_write;
+        casez_tmp_30 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_16 = _rob_io_entries_9_reg_write;
+        casez_tmp_30 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_16 = _rob_io_entries_10_reg_write;
+        casez_tmp_30 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_16 = _rob_io_entries_11_reg_write;
+        casez_tmp_30 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_16 = _rob_io_entries_12_reg_write;
+        casez_tmp_30 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_16 = _rob_io_entries_13_reg_write;
+        casez_tmp_30 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_16 = _rob_io_entries_14_reg_write;
+        casez_tmp_30 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_16 = _rob_io_entries_15_reg_write;
+        casez_tmp_30 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_17;
+  reg  [4:0]   casez_tmp_31;
   always_comb begin
     casez (idx)
       4'b0000:
-        casez_tmp_17 = _rob_io_entries_0_arch_rd;
+        casez_tmp_31 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_17 = _rob_io_entries_1_arch_rd;
+        casez_tmp_31 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_17 = _rob_io_entries_2_arch_rd;
+        casez_tmp_31 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_17 = _rob_io_entries_3_arch_rd;
+        casez_tmp_31 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_17 = _rob_io_entries_4_arch_rd;
+        casez_tmp_31 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_17 = _rob_io_entries_5_arch_rd;
+        casez_tmp_31 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_17 = _rob_io_entries_6_arch_rd;
+        casez_tmp_31 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_17 = _rob_io_entries_7_arch_rd;
+        casez_tmp_31 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_17 = _rob_io_entries_8_arch_rd;
+        casez_tmp_31 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_17 = _rob_io_entries_9_arch_rd;
+        casez_tmp_31 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_17 = _rob_io_entries_10_arch_rd;
+        casez_tmp_31 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_17 = _rob_io_entries_11_arch_rd;
+        casez_tmp_31 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_17 = _rob_io_entries_12_arch_rd;
+        casez_tmp_31 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_17 = _rob_io_entries_13_arch_rd;
+        casez_tmp_31 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_17 = _rob_io_entries_14_arch_rd;
+        casez_tmp_31 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_17 = _rob_io_entries_15_arch_rd;
+        casez_tmp_31 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_18;
+  reg  [5:0]   casez_tmp_32;
   always_comb begin
     casez (idx)
       4'b0000:
-        casez_tmp_18 = _rob_io_entries_0_new_phys;
+        casez_tmp_32 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_18 = _rob_io_entries_1_new_phys;
+        casez_tmp_32 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_18 = _rob_io_entries_2_new_phys;
+        casez_tmp_32 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_18 = _rob_io_entries_3_new_phys;
+        casez_tmp_32 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_18 = _rob_io_entries_4_new_phys;
+        casez_tmp_32 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_18 = _rob_io_entries_5_new_phys;
+        casez_tmp_32 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_18 = _rob_io_entries_6_new_phys;
+        casez_tmp_32 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_18 = _rob_io_entries_7_new_phys;
+        casez_tmp_32 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_18 = _rob_io_entries_8_new_phys;
+        casez_tmp_32 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_18 = _rob_io_entries_9_new_phys;
+        casez_tmp_32 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_18 = _rob_io_entries_10_new_phys;
+        casez_tmp_32 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_18 = _rob_io_entries_11_new_phys;
+        casez_tmp_32 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_18 = _rob_io_entries_12_new_phys;
+        casez_tmp_32 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_18 = _rob_io_entries_13_new_phys;
+        casez_tmp_32 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_18 = _rob_io_entries_14_new_phys;
+        casez_tmp_32 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_18 = _rob_io_entries_15_new_phys;
+        casez_tmp_32 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take = (|kept_n) & casez_tmp_15 & casez_tmp_16 & (|casez_tmp_17);
+  wire         take = (|kept_n) & casez_tmp_29 & casez_tmp_30 & (|casez_tmp_31);
   wire [3:0]   _idx_T_34 = idx + 4'h1;
-  reg          casez_tmp_19;
+  reg          casez_tmp_33;
   always_comb begin
     casez (_idx_T_34)
       4'b0000:
-        casez_tmp_19 = _rob_io_entries_0_valid;
+        casez_tmp_33 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_19 = _rob_io_entries_1_valid;
+        casez_tmp_33 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_19 = _rob_io_entries_2_valid;
+        casez_tmp_33 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_19 = _rob_io_entries_3_valid;
+        casez_tmp_33 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_19 = _rob_io_entries_4_valid;
+        casez_tmp_33 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_19 = _rob_io_entries_5_valid;
+        casez_tmp_33 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_19 = _rob_io_entries_6_valid;
+        casez_tmp_33 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_19 = _rob_io_entries_7_valid;
+        casez_tmp_33 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_19 = _rob_io_entries_8_valid;
+        casez_tmp_33 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_19 = _rob_io_entries_9_valid;
+        casez_tmp_33 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_19 = _rob_io_entries_10_valid;
+        casez_tmp_33 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_19 = _rob_io_entries_11_valid;
+        casez_tmp_33 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_19 = _rob_io_entries_12_valid;
+        casez_tmp_33 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_19 = _rob_io_entries_13_valid;
+        casez_tmp_33 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_19 = _rob_io_entries_14_valid;
+        casez_tmp_33 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_19 = _rob_io_entries_15_valid;
+        casez_tmp_33 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_20;
+  reg          casez_tmp_34;
   always_comb begin
     casez (_idx_T_34)
       4'b0000:
-        casez_tmp_20 = _rob_io_entries_0_reg_write;
+        casez_tmp_34 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_20 = _rob_io_entries_1_reg_write;
+        casez_tmp_34 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_20 = _rob_io_entries_2_reg_write;
+        casez_tmp_34 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_20 = _rob_io_entries_3_reg_write;
+        casez_tmp_34 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_20 = _rob_io_entries_4_reg_write;
+        casez_tmp_34 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_20 = _rob_io_entries_5_reg_write;
+        casez_tmp_34 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_20 = _rob_io_entries_6_reg_write;
+        casez_tmp_34 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_20 = _rob_io_entries_7_reg_write;
+        casez_tmp_34 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_20 = _rob_io_entries_8_reg_write;
+        casez_tmp_34 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_20 = _rob_io_entries_9_reg_write;
+        casez_tmp_34 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_20 = _rob_io_entries_10_reg_write;
+        casez_tmp_34 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_20 = _rob_io_entries_11_reg_write;
+        casez_tmp_34 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_20 = _rob_io_entries_12_reg_write;
+        casez_tmp_34 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_20 = _rob_io_entries_13_reg_write;
+        casez_tmp_34 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_20 = _rob_io_entries_14_reg_write;
+        casez_tmp_34 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_20 = _rob_io_entries_15_reg_write;
+        casez_tmp_34 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_21;
+  reg  [4:0]   casez_tmp_35;
   always_comb begin
     casez (_idx_T_34)
       4'b0000:
-        casez_tmp_21 = _rob_io_entries_0_arch_rd;
+        casez_tmp_35 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_21 = _rob_io_entries_1_arch_rd;
+        casez_tmp_35 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_21 = _rob_io_entries_2_arch_rd;
+        casez_tmp_35 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_21 = _rob_io_entries_3_arch_rd;
+        casez_tmp_35 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_21 = _rob_io_entries_4_arch_rd;
+        casez_tmp_35 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_21 = _rob_io_entries_5_arch_rd;
+        casez_tmp_35 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_21 = _rob_io_entries_6_arch_rd;
+        casez_tmp_35 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_21 = _rob_io_entries_7_arch_rd;
+        casez_tmp_35 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_21 = _rob_io_entries_8_arch_rd;
+        casez_tmp_35 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_21 = _rob_io_entries_9_arch_rd;
+        casez_tmp_35 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_21 = _rob_io_entries_10_arch_rd;
+        casez_tmp_35 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_21 = _rob_io_entries_11_arch_rd;
+        casez_tmp_35 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_21 = _rob_io_entries_12_arch_rd;
+        casez_tmp_35 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_21 = _rob_io_entries_13_arch_rd;
+        casez_tmp_35 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_21 = _rob_io_entries_14_arch_rd;
+        casez_tmp_35 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_21 = _rob_io_entries_15_arch_rd;
+        casez_tmp_35 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_22;
+  reg  [5:0]   casez_tmp_36;
   always_comb begin
     casez (_idx_T_34)
       4'b0000:
-        casez_tmp_22 = _rob_io_entries_0_new_phys;
+        casez_tmp_36 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_22 = _rob_io_entries_1_new_phys;
+        casez_tmp_36 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_22 = _rob_io_entries_2_new_phys;
+        casez_tmp_36 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_22 = _rob_io_entries_3_new_phys;
+        casez_tmp_36 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_22 = _rob_io_entries_4_new_phys;
+        casez_tmp_36 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_22 = _rob_io_entries_5_new_phys;
+        casez_tmp_36 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_22 = _rob_io_entries_6_new_phys;
+        casez_tmp_36 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_22 = _rob_io_entries_7_new_phys;
+        casez_tmp_36 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_22 = _rob_io_entries_8_new_phys;
+        casez_tmp_36 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_22 = _rob_io_entries_9_new_phys;
+        casez_tmp_36 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_22 = _rob_io_entries_10_new_phys;
+        casez_tmp_36 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_22 = _rob_io_entries_11_new_phys;
+        casez_tmp_36 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_22 = _rob_io_entries_12_new_phys;
+        casez_tmp_36 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_22 = _rob_io_entries_13_new_phys;
+        casez_tmp_36 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_22 = _rob_io_entries_14_new_phys;
+        casez_tmp_36 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_22 = _rob_io_entries_15_new_phys;
+        casez_tmp_36 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_1 = (|(kept_n[4:1])) & casez_tmp_19 & casez_tmp_20 & (|casez_tmp_21);
+  wire         take_1 = (|(kept_n[4:1])) & casez_tmp_33 & casez_tmp_34 & (|casez_tmp_35);
   wire [3:0]   _idx_T_36 = idx + 4'h2;
   wire         _take_T_72 = kept_n > 5'h2;
-  reg          casez_tmp_23;
+  reg          casez_tmp_37;
   always_comb begin
     casez (_idx_T_36)
       4'b0000:
-        casez_tmp_23 = _rob_io_entries_0_valid;
+        casez_tmp_37 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_23 = _rob_io_entries_1_valid;
+        casez_tmp_37 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_23 = _rob_io_entries_2_valid;
+        casez_tmp_37 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_23 = _rob_io_entries_3_valid;
+        casez_tmp_37 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_23 = _rob_io_entries_4_valid;
+        casez_tmp_37 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_23 = _rob_io_entries_5_valid;
+        casez_tmp_37 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_23 = _rob_io_entries_6_valid;
+        casez_tmp_37 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_23 = _rob_io_entries_7_valid;
+        casez_tmp_37 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_23 = _rob_io_entries_8_valid;
+        casez_tmp_37 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_23 = _rob_io_entries_9_valid;
+        casez_tmp_37 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_23 = _rob_io_entries_10_valid;
+        casez_tmp_37 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_23 = _rob_io_entries_11_valid;
+        casez_tmp_37 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_23 = _rob_io_entries_12_valid;
+        casez_tmp_37 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_23 = _rob_io_entries_13_valid;
+        casez_tmp_37 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_23 = _rob_io_entries_14_valid;
+        casez_tmp_37 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_23 = _rob_io_entries_15_valid;
+        casez_tmp_37 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_24;
+  reg          casez_tmp_38;
   always_comb begin
     casez (_idx_T_36)
       4'b0000:
-        casez_tmp_24 = _rob_io_entries_0_reg_write;
+        casez_tmp_38 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_24 = _rob_io_entries_1_reg_write;
+        casez_tmp_38 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_24 = _rob_io_entries_2_reg_write;
+        casez_tmp_38 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_24 = _rob_io_entries_3_reg_write;
+        casez_tmp_38 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_24 = _rob_io_entries_4_reg_write;
+        casez_tmp_38 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_24 = _rob_io_entries_5_reg_write;
+        casez_tmp_38 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_24 = _rob_io_entries_6_reg_write;
+        casez_tmp_38 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_24 = _rob_io_entries_7_reg_write;
+        casez_tmp_38 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_24 = _rob_io_entries_8_reg_write;
+        casez_tmp_38 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_24 = _rob_io_entries_9_reg_write;
+        casez_tmp_38 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_24 = _rob_io_entries_10_reg_write;
+        casez_tmp_38 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_24 = _rob_io_entries_11_reg_write;
+        casez_tmp_38 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_24 = _rob_io_entries_12_reg_write;
+        casez_tmp_38 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_24 = _rob_io_entries_13_reg_write;
+        casez_tmp_38 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_24 = _rob_io_entries_14_reg_write;
+        casez_tmp_38 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_24 = _rob_io_entries_15_reg_write;
+        casez_tmp_38 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_25;
+  reg  [4:0]   casez_tmp_39;
   always_comb begin
     casez (_idx_T_36)
       4'b0000:
-        casez_tmp_25 = _rob_io_entries_0_arch_rd;
+        casez_tmp_39 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_25 = _rob_io_entries_1_arch_rd;
+        casez_tmp_39 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_25 = _rob_io_entries_2_arch_rd;
+        casez_tmp_39 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_25 = _rob_io_entries_3_arch_rd;
+        casez_tmp_39 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_25 = _rob_io_entries_4_arch_rd;
+        casez_tmp_39 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_25 = _rob_io_entries_5_arch_rd;
+        casez_tmp_39 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_25 = _rob_io_entries_6_arch_rd;
+        casez_tmp_39 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_25 = _rob_io_entries_7_arch_rd;
+        casez_tmp_39 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_25 = _rob_io_entries_8_arch_rd;
+        casez_tmp_39 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_25 = _rob_io_entries_9_arch_rd;
+        casez_tmp_39 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_25 = _rob_io_entries_10_arch_rd;
+        casez_tmp_39 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_25 = _rob_io_entries_11_arch_rd;
+        casez_tmp_39 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_25 = _rob_io_entries_12_arch_rd;
+        casez_tmp_39 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_25 = _rob_io_entries_13_arch_rd;
+        casez_tmp_39 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_25 = _rob_io_entries_14_arch_rd;
+        casez_tmp_39 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_25 = _rob_io_entries_15_arch_rd;
+        casez_tmp_39 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_26;
+  reg  [5:0]   casez_tmp_40;
   always_comb begin
     casez (_idx_T_36)
       4'b0000:
-        casez_tmp_26 = _rob_io_entries_0_new_phys;
+        casez_tmp_40 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_26 = _rob_io_entries_1_new_phys;
+        casez_tmp_40 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_26 = _rob_io_entries_2_new_phys;
+        casez_tmp_40 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_26 = _rob_io_entries_3_new_phys;
+        casez_tmp_40 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_26 = _rob_io_entries_4_new_phys;
+        casez_tmp_40 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_26 = _rob_io_entries_5_new_phys;
+        casez_tmp_40 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_26 = _rob_io_entries_6_new_phys;
+        casez_tmp_40 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_26 = _rob_io_entries_7_new_phys;
+        casez_tmp_40 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_26 = _rob_io_entries_8_new_phys;
+        casez_tmp_40 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_26 = _rob_io_entries_9_new_phys;
+        casez_tmp_40 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_26 = _rob_io_entries_10_new_phys;
+        casez_tmp_40 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_26 = _rob_io_entries_11_new_phys;
+        casez_tmp_40 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_26 = _rob_io_entries_12_new_phys;
+        casez_tmp_40 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_26 = _rob_io_entries_13_new_phys;
+        casez_tmp_40 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_26 = _rob_io_entries_14_new_phys;
+        casez_tmp_40 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_26 = _rob_io_entries_15_new_phys;
+        casez_tmp_40 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_2 = _take_T_72 & casez_tmp_23 & casez_tmp_24 & (|casez_tmp_25);
+  wire         take_2 = _take_T_72 & casez_tmp_37 & casez_tmp_38 & (|casez_tmp_39);
   wire [3:0]   _idx_T_38 = idx + 4'h3;
-  reg          casez_tmp_27;
+  reg          casez_tmp_41;
   always_comb begin
     casez (_idx_T_38)
       4'b0000:
-        casez_tmp_27 = _rob_io_entries_0_valid;
+        casez_tmp_41 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_27 = _rob_io_entries_1_valid;
+        casez_tmp_41 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_27 = _rob_io_entries_2_valid;
+        casez_tmp_41 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_27 = _rob_io_entries_3_valid;
+        casez_tmp_41 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_27 = _rob_io_entries_4_valid;
+        casez_tmp_41 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_27 = _rob_io_entries_5_valid;
+        casez_tmp_41 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_27 = _rob_io_entries_6_valid;
+        casez_tmp_41 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_27 = _rob_io_entries_7_valid;
+        casez_tmp_41 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_27 = _rob_io_entries_8_valid;
+        casez_tmp_41 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_27 = _rob_io_entries_9_valid;
+        casez_tmp_41 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_27 = _rob_io_entries_10_valid;
+        casez_tmp_41 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_27 = _rob_io_entries_11_valid;
+        casez_tmp_41 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_27 = _rob_io_entries_12_valid;
+        casez_tmp_41 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_27 = _rob_io_entries_13_valid;
+        casez_tmp_41 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_27 = _rob_io_entries_14_valid;
+        casez_tmp_41 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_27 = _rob_io_entries_15_valid;
+        casez_tmp_41 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_28;
+  reg          casez_tmp_42;
   always_comb begin
     casez (_idx_T_38)
       4'b0000:
-        casez_tmp_28 = _rob_io_entries_0_reg_write;
+        casez_tmp_42 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_28 = _rob_io_entries_1_reg_write;
+        casez_tmp_42 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_28 = _rob_io_entries_2_reg_write;
+        casez_tmp_42 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_28 = _rob_io_entries_3_reg_write;
+        casez_tmp_42 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_28 = _rob_io_entries_4_reg_write;
+        casez_tmp_42 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_28 = _rob_io_entries_5_reg_write;
+        casez_tmp_42 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_28 = _rob_io_entries_6_reg_write;
+        casez_tmp_42 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_28 = _rob_io_entries_7_reg_write;
+        casez_tmp_42 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_28 = _rob_io_entries_8_reg_write;
+        casez_tmp_42 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_28 = _rob_io_entries_9_reg_write;
+        casez_tmp_42 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_28 = _rob_io_entries_10_reg_write;
+        casez_tmp_42 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_28 = _rob_io_entries_11_reg_write;
+        casez_tmp_42 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_28 = _rob_io_entries_12_reg_write;
+        casez_tmp_42 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_28 = _rob_io_entries_13_reg_write;
+        casez_tmp_42 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_28 = _rob_io_entries_14_reg_write;
+        casez_tmp_42 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_28 = _rob_io_entries_15_reg_write;
+        casez_tmp_42 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_29;
+  reg  [4:0]   casez_tmp_43;
   always_comb begin
     casez (_idx_T_38)
       4'b0000:
-        casez_tmp_29 = _rob_io_entries_0_arch_rd;
+        casez_tmp_43 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_29 = _rob_io_entries_1_arch_rd;
+        casez_tmp_43 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_29 = _rob_io_entries_2_arch_rd;
+        casez_tmp_43 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_29 = _rob_io_entries_3_arch_rd;
+        casez_tmp_43 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_29 = _rob_io_entries_4_arch_rd;
+        casez_tmp_43 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_29 = _rob_io_entries_5_arch_rd;
+        casez_tmp_43 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_29 = _rob_io_entries_6_arch_rd;
+        casez_tmp_43 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_29 = _rob_io_entries_7_arch_rd;
+        casez_tmp_43 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_29 = _rob_io_entries_8_arch_rd;
+        casez_tmp_43 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_29 = _rob_io_entries_9_arch_rd;
+        casez_tmp_43 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_29 = _rob_io_entries_10_arch_rd;
+        casez_tmp_43 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_29 = _rob_io_entries_11_arch_rd;
+        casez_tmp_43 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_29 = _rob_io_entries_12_arch_rd;
+        casez_tmp_43 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_29 = _rob_io_entries_13_arch_rd;
+        casez_tmp_43 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_29 = _rob_io_entries_14_arch_rd;
+        casez_tmp_43 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_29 = _rob_io_entries_15_arch_rd;
+        casez_tmp_43 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_30;
+  reg  [5:0]   casez_tmp_44;
   always_comb begin
     casez (_idx_T_38)
       4'b0000:
-        casez_tmp_30 = _rob_io_entries_0_new_phys;
+        casez_tmp_44 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_30 = _rob_io_entries_1_new_phys;
+        casez_tmp_44 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_30 = _rob_io_entries_2_new_phys;
+        casez_tmp_44 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_30 = _rob_io_entries_3_new_phys;
+        casez_tmp_44 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_30 = _rob_io_entries_4_new_phys;
+        casez_tmp_44 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_30 = _rob_io_entries_5_new_phys;
+        casez_tmp_44 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_30 = _rob_io_entries_6_new_phys;
+        casez_tmp_44 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_30 = _rob_io_entries_7_new_phys;
+        casez_tmp_44 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_30 = _rob_io_entries_8_new_phys;
+        casez_tmp_44 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_30 = _rob_io_entries_9_new_phys;
+        casez_tmp_44 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_30 = _rob_io_entries_10_new_phys;
+        casez_tmp_44 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_30 = _rob_io_entries_11_new_phys;
+        casez_tmp_44 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_30 = _rob_io_entries_12_new_phys;
+        casez_tmp_44 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_30 = _rob_io_entries_13_new_phys;
+        casez_tmp_44 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_30 = _rob_io_entries_14_new_phys;
+        casez_tmp_44 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_30 = _rob_io_entries_15_new_phys;
+        casez_tmp_44 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_3 = (|(kept_n[4:2])) & casez_tmp_27 & casez_tmp_28 & (|casez_tmp_29);
+  wire         take_3 = (|(kept_n[4:2])) & casez_tmp_41 & casez_tmp_42 & (|casez_tmp_43);
   wire [3:0]   _idx_T_40 = idx + 4'h4;
   wire         _take_T_80 = kept_n > 5'h4;
-  reg          casez_tmp_31;
+  reg          casez_tmp_45;
   always_comb begin
     casez (_idx_T_40)
       4'b0000:
-        casez_tmp_31 = _rob_io_entries_0_valid;
+        casez_tmp_45 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_31 = _rob_io_entries_1_valid;
+        casez_tmp_45 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_31 = _rob_io_entries_2_valid;
+        casez_tmp_45 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_31 = _rob_io_entries_3_valid;
+        casez_tmp_45 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_31 = _rob_io_entries_4_valid;
+        casez_tmp_45 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_31 = _rob_io_entries_5_valid;
+        casez_tmp_45 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_31 = _rob_io_entries_6_valid;
+        casez_tmp_45 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_31 = _rob_io_entries_7_valid;
+        casez_tmp_45 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_31 = _rob_io_entries_8_valid;
+        casez_tmp_45 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_31 = _rob_io_entries_9_valid;
+        casez_tmp_45 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_31 = _rob_io_entries_10_valid;
+        casez_tmp_45 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_31 = _rob_io_entries_11_valid;
+        casez_tmp_45 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_31 = _rob_io_entries_12_valid;
+        casez_tmp_45 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_31 = _rob_io_entries_13_valid;
+        casez_tmp_45 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_31 = _rob_io_entries_14_valid;
+        casez_tmp_45 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_31 = _rob_io_entries_15_valid;
+        casez_tmp_45 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_32;
+  reg          casez_tmp_46;
   always_comb begin
     casez (_idx_T_40)
       4'b0000:
-        casez_tmp_32 = _rob_io_entries_0_reg_write;
+        casez_tmp_46 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_32 = _rob_io_entries_1_reg_write;
+        casez_tmp_46 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_32 = _rob_io_entries_2_reg_write;
+        casez_tmp_46 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_32 = _rob_io_entries_3_reg_write;
+        casez_tmp_46 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_32 = _rob_io_entries_4_reg_write;
+        casez_tmp_46 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_32 = _rob_io_entries_5_reg_write;
+        casez_tmp_46 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_32 = _rob_io_entries_6_reg_write;
+        casez_tmp_46 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_32 = _rob_io_entries_7_reg_write;
+        casez_tmp_46 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_32 = _rob_io_entries_8_reg_write;
+        casez_tmp_46 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_32 = _rob_io_entries_9_reg_write;
+        casez_tmp_46 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_32 = _rob_io_entries_10_reg_write;
+        casez_tmp_46 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_32 = _rob_io_entries_11_reg_write;
+        casez_tmp_46 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_32 = _rob_io_entries_12_reg_write;
+        casez_tmp_46 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_32 = _rob_io_entries_13_reg_write;
+        casez_tmp_46 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_32 = _rob_io_entries_14_reg_write;
+        casez_tmp_46 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_32 = _rob_io_entries_15_reg_write;
+        casez_tmp_46 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_33;
+  reg  [4:0]   casez_tmp_47;
   always_comb begin
     casez (_idx_T_40)
       4'b0000:
-        casez_tmp_33 = _rob_io_entries_0_arch_rd;
+        casez_tmp_47 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_33 = _rob_io_entries_1_arch_rd;
+        casez_tmp_47 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_33 = _rob_io_entries_2_arch_rd;
+        casez_tmp_47 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_33 = _rob_io_entries_3_arch_rd;
+        casez_tmp_47 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_33 = _rob_io_entries_4_arch_rd;
+        casez_tmp_47 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_33 = _rob_io_entries_5_arch_rd;
+        casez_tmp_47 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_33 = _rob_io_entries_6_arch_rd;
+        casez_tmp_47 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_33 = _rob_io_entries_7_arch_rd;
+        casez_tmp_47 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_33 = _rob_io_entries_8_arch_rd;
+        casez_tmp_47 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_33 = _rob_io_entries_9_arch_rd;
+        casez_tmp_47 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_33 = _rob_io_entries_10_arch_rd;
+        casez_tmp_47 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_33 = _rob_io_entries_11_arch_rd;
+        casez_tmp_47 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_33 = _rob_io_entries_12_arch_rd;
+        casez_tmp_47 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_33 = _rob_io_entries_13_arch_rd;
+        casez_tmp_47 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_33 = _rob_io_entries_14_arch_rd;
+        casez_tmp_47 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_33 = _rob_io_entries_15_arch_rd;
+        casez_tmp_47 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_34;
+  reg  [5:0]   casez_tmp_48;
   always_comb begin
     casez (_idx_T_40)
       4'b0000:
-        casez_tmp_34 = _rob_io_entries_0_new_phys;
+        casez_tmp_48 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_34 = _rob_io_entries_1_new_phys;
+        casez_tmp_48 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_34 = _rob_io_entries_2_new_phys;
+        casez_tmp_48 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_34 = _rob_io_entries_3_new_phys;
+        casez_tmp_48 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_34 = _rob_io_entries_4_new_phys;
+        casez_tmp_48 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_34 = _rob_io_entries_5_new_phys;
+        casez_tmp_48 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_34 = _rob_io_entries_6_new_phys;
+        casez_tmp_48 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_34 = _rob_io_entries_7_new_phys;
+        casez_tmp_48 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_34 = _rob_io_entries_8_new_phys;
+        casez_tmp_48 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_34 = _rob_io_entries_9_new_phys;
+        casez_tmp_48 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_34 = _rob_io_entries_10_new_phys;
+        casez_tmp_48 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_34 = _rob_io_entries_11_new_phys;
+        casez_tmp_48 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_34 = _rob_io_entries_12_new_phys;
+        casez_tmp_48 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_34 = _rob_io_entries_13_new_phys;
+        casez_tmp_48 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_34 = _rob_io_entries_14_new_phys;
+        casez_tmp_48 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_34 = _rob_io_entries_15_new_phys;
+        casez_tmp_48 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_4 = _take_T_80 & casez_tmp_31 & casez_tmp_32 & (|casez_tmp_33);
+  wire         take_4 = _take_T_80 & casez_tmp_45 & casez_tmp_46 & (|casez_tmp_47);
   wire [3:0]   _idx_T_42 = idx + 4'h5;
   wire         _take_T_84 = kept_n > 5'h5;
-  reg          casez_tmp_35;
+  reg          casez_tmp_49;
   always_comb begin
     casez (_idx_T_42)
       4'b0000:
-        casez_tmp_35 = _rob_io_entries_0_valid;
+        casez_tmp_49 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_35 = _rob_io_entries_1_valid;
+        casez_tmp_49 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_35 = _rob_io_entries_2_valid;
+        casez_tmp_49 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_35 = _rob_io_entries_3_valid;
+        casez_tmp_49 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_35 = _rob_io_entries_4_valid;
+        casez_tmp_49 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_35 = _rob_io_entries_5_valid;
+        casez_tmp_49 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_35 = _rob_io_entries_6_valid;
+        casez_tmp_49 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_35 = _rob_io_entries_7_valid;
+        casez_tmp_49 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_35 = _rob_io_entries_8_valid;
+        casez_tmp_49 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_35 = _rob_io_entries_9_valid;
+        casez_tmp_49 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_35 = _rob_io_entries_10_valid;
+        casez_tmp_49 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_35 = _rob_io_entries_11_valid;
+        casez_tmp_49 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_35 = _rob_io_entries_12_valid;
+        casez_tmp_49 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_35 = _rob_io_entries_13_valid;
+        casez_tmp_49 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_35 = _rob_io_entries_14_valid;
+        casez_tmp_49 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_35 = _rob_io_entries_15_valid;
+        casez_tmp_49 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_36;
+  reg          casez_tmp_50;
   always_comb begin
     casez (_idx_T_42)
       4'b0000:
-        casez_tmp_36 = _rob_io_entries_0_reg_write;
+        casez_tmp_50 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_36 = _rob_io_entries_1_reg_write;
+        casez_tmp_50 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_36 = _rob_io_entries_2_reg_write;
+        casez_tmp_50 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_36 = _rob_io_entries_3_reg_write;
+        casez_tmp_50 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_36 = _rob_io_entries_4_reg_write;
+        casez_tmp_50 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_36 = _rob_io_entries_5_reg_write;
+        casez_tmp_50 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_36 = _rob_io_entries_6_reg_write;
+        casez_tmp_50 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_36 = _rob_io_entries_7_reg_write;
+        casez_tmp_50 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_36 = _rob_io_entries_8_reg_write;
+        casez_tmp_50 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_36 = _rob_io_entries_9_reg_write;
+        casez_tmp_50 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_36 = _rob_io_entries_10_reg_write;
+        casez_tmp_50 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_36 = _rob_io_entries_11_reg_write;
+        casez_tmp_50 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_36 = _rob_io_entries_12_reg_write;
+        casez_tmp_50 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_36 = _rob_io_entries_13_reg_write;
+        casez_tmp_50 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_36 = _rob_io_entries_14_reg_write;
+        casez_tmp_50 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_36 = _rob_io_entries_15_reg_write;
+        casez_tmp_50 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_37;
+  reg  [4:0]   casez_tmp_51;
   always_comb begin
     casez (_idx_T_42)
       4'b0000:
-        casez_tmp_37 = _rob_io_entries_0_arch_rd;
+        casez_tmp_51 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_37 = _rob_io_entries_1_arch_rd;
+        casez_tmp_51 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_37 = _rob_io_entries_2_arch_rd;
+        casez_tmp_51 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_37 = _rob_io_entries_3_arch_rd;
+        casez_tmp_51 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_37 = _rob_io_entries_4_arch_rd;
+        casez_tmp_51 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_37 = _rob_io_entries_5_arch_rd;
+        casez_tmp_51 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_37 = _rob_io_entries_6_arch_rd;
+        casez_tmp_51 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_37 = _rob_io_entries_7_arch_rd;
+        casez_tmp_51 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_37 = _rob_io_entries_8_arch_rd;
+        casez_tmp_51 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_37 = _rob_io_entries_9_arch_rd;
+        casez_tmp_51 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_37 = _rob_io_entries_10_arch_rd;
+        casez_tmp_51 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_37 = _rob_io_entries_11_arch_rd;
+        casez_tmp_51 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_37 = _rob_io_entries_12_arch_rd;
+        casez_tmp_51 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_37 = _rob_io_entries_13_arch_rd;
+        casez_tmp_51 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_37 = _rob_io_entries_14_arch_rd;
+        casez_tmp_51 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_37 = _rob_io_entries_15_arch_rd;
+        casez_tmp_51 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_38;
+  reg  [5:0]   casez_tmp_52;
   always_comb begin
     casez (_idx_T_42)
       4'b0000:
-        casez_tmp_38 = _rob_io_entries_0_new_phys;
+        casez_tmp_52 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_38 = _rob_io_entries_1_new_phys;
+        casez_tmp_52 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_38 = _rob_io_entries_2_new_phys;
+        casez_tmp_52 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_38 = _rob_io_entries_3_new_phys;
+        casez_tmp_52 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_38 = _rob_io_entries_4_new_phys;
+        casez_tmp_52 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_38 = _rob_io_entries_5_new_phys;
+        casez_tmp_52 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_38 = _rob_io_entries_6_new_phys;
+        casez_tmp_52 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_38 = _rob_io_entries_7_new_phys;
+        casez_tmp_52 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_38 = _rob_io_entries_8_new_phys;
+        casez_tmp_52 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_38 = _rob_io_entries_9_new_phys;
+        casez_tmp_52 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_38 = _rob_io_entries_10_new_phys;
+        casez_tmp_52 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_38 = _rob_io_entries_11_new_phys;
+        casez_tmp_52 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_38 = _rob_io_entries_12_new_phys;
+        casez_tmp_52 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_38 = _rob_io_entries_13_new_phys;
+        casez_tmp_52 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_38 = _rob_io_entries_14_new_phys;
+        casez_tmp_52 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_38 = _rob_io_entries_15_new_phys;
+        casez_tmp_52 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_5 = _take_T_84 & casez_tmp_35 & casez_tmp_36 & (|casez_tmp_37);
+  wire         take_5 = _take_T_84 & casez_tmp_49 & casez_tmp_50 & (|casez_tmp_51);
   wire [3:0]   _idx_T_44 = idx + 4'h6;
   wire         _take_T_88 = kept_n > 5'h6;
-  reg          casez_tmp_39;
+  reg          casez_tmp_53;
   always_comb begin
     casez (_idx_T_44)
       4'b0000:
-        casez_tmp_39 = _rob_io_entries_0_valid;
+        casez_tmp_53 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_39 = _rob_io_entries_1_valid;
+        casez_tmp_53 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_39 = _rob_io_entries_2_valid;
+        casez_tmp_53 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_39 = _rob_io_entries_3_valid;
+        casez_tmp_53 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_39 = _rob_io_entries_4_valid;
+        casez_tmp_53 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_39 = _rob_io_entries_5_valid;
+        casez_tmp_53 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_39 = _rob_io_entries_6_valid;
+        casez_tmp_53 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_39 = _rob_io_entries_7_valid;
+        casez_tmp_53 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_39 = _rob_io_entries_8_valid;
+        casez_tmp_53 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_39 = _rob_io_entries_9_valid;
+        casez_tmp_53 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_39 = _rob_io_entries_10_valid;
+        casez_tmp_53 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_39 = _rob_io_entries_11_valid;
+        casez_tmp_53 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_39 = _rob_io_entries_12_valid;
+        casez_tmp_53 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_39 = _rob_io_entries_13_valid;
+        casez_tmp_53 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_39 = _rob_io_entries_14_valid;
+        casez_tmp_53 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_39 = _rob_io_entries_15_valid;
+        casez_tmp_53 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_40;
+  reg          casez_tmp_54;
   always_comb begin
     casez (_idx_T_44)
       4'b0000:
-        casez_tmp_40 = _rob_io_entries_0_reg_write;
+        casez_tmp_54 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_40 = _rob_io_entries_1_reg_write;
+        casez_tmp_54 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_40 = _rob_io_entries_2_reg_write;
+        casez_tmp_54 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_40 = _rob_io_entries_3_reg_write;
+        casez_tmp_54 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_40 = _rob_io_entries_4_reg_write;
+        casez_tmp_54 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_40 = _rob_io_entries_5_reg_write;
+        casez_tmp_54 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_40 = _rob_io_entries_6_reg_write;
+        casez_tmp_54 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_40 = _rob_io_entries_7_reg_write;
+        casez_tmp_54 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_40 = _rob_io_entries_8_reg_write;
+        casez_tmp_54 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_40 = _rob_io_entries_9_reg_write;
+        casez_tmp_54 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_40 = _rob_io_entries_10_reg_write;
+        casez_tmp_54 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_40 = _rob_io_entries_11_reg_write;
+        casez_tmp_54 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_40 = _rob_io_entries_12_reg_write;
+        casez_tmp_54 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_40 = _rob_io_entries_13_reg_write;
+        casez_tmp_54 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_40 = _rob_io_entries_14_reg_write;
+        casez_tmp_54 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_40 = _rob_io_entries_15_reg_write;
+        casez_tmp_54 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_41;
+  reg  [4:0]   casez_tmp_55;
   always_comb begin
     casez (_idx_T_44)
       4'b0000:
-        casez_tmp_41 = _rob_io_entries_0_arch_rd;
+        casez_tmp_55 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_41 = _rob_io_entries_1_arch_rd;
+        casez_tmp_55 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_41 = _rob_io_entries_2_arch_rd;
+        casez_tmp_55 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_41 = _rob_io_entries_3_arch_rd;
+        casez_tmp_55 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_41 = _rob_io_entries_4_arch_rd;
+        casez_tmp_55 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_41 = _rob_io_entries_5_arch_rd;
+        casez_tmp_55 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_41 = _rob_io_entries_6_arch_rd;
+        casez_tmp_55 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_41 = _rob_io_entries_7_arch_rd;
+        casez_tmp_55 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_41 = _rob_io_entries_8_arch_rd;
+        casez_tmp_55 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_41 = _rob_io_entries_9_arch_rd;
+        casez_tmp_55 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_41 = _rob_io_entries_10_arch_rd;
+        casez_tmp_55 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_41 = _rob_io_entries_11_arch_rd;
+        casez_tmp_55 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_41 = _rob_io_entries_12_arch_rd;
+        casez_tmp_55 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_41 = _rob_io_entries_13_arch_rd;
+        casez_tmp_55 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_41 = _rob_io_entries_14_arch_rd;
+        casez_tmp_55 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_41 = _rob_io_entries_15_arch_rd;
+        casez_tmp_55 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_42;
+  reg  [5:0]   casez_tmp_56;
   always_comb begin
     casez (_idx_T_44)
       4'b0000:
-        casez_tmp_42 = _rob_io_entries_0_new_phys;
+        casez_tmp_56 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_42 = _rob_io_entries_1_new_phys;
+        casez_tmp_56 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_42 = _rob_io_entries_2_new_phys;
+        casez_tmp_56 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_42 = _rob_io_entries_3_new_phys;
+        casez_tmp_56 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_42 = _rob_io_entries_4_new_phys;
+        casez_tmp_56 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_42 = _rob_io_entries_5_new_phys;
+        casez_tmp_56 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_42 = _rob_io_entries_6_new_phys;
+        casez_tmp_56 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_42 = _rob_io_entries_7_new_phys;
+        casez_tmp_56 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_42 = _rob_io_entries_8_new_phys;
+        casez_tmp_56 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_42 = _rob_io_entries_9_new_phys;
+        casez_tmp_56 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_42 = _rob_io_entries_10_new_phys;
+        casez_tmp_56 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_42 = _rob_io_entries_11_new_phys;
+        casez_tmp_56 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_42 = _rob_io_entries_12_new_phys;
+        casez_tmp_56 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_42 = _rob_io_entries_13_new_phys;
+        casez_tmp_56 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_42 = _rob_io_entries_14_new_phys;
+        casez_tmp_56 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_42 = _rob_io_entries_15_new_phys;
+        casez_tmp_56 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_6 = _take_T_88 & casez_tmp_39 & casez_tmp_40 & (|casez_tmp_41);
+  wire         take_6 = _take_T_88 & casez_tmp_53 & casez_tmp_54 & (|casez_tmp_55);
   wire [3:0]   _idx_T_46 = idx + 4'h7;
-  reg          casez_tmp_43;
+  reg          casez_tmp_57;
   always_comb begin
     casez (_idx_T_46)
       4'b0000:
-        casez_tmp_43 = _rob_io_entries_0_valid;
+        casez_tmp_57 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_43 = _rob_io_entries_1_valid;
+        casez_tmp_57 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_43 = _rob_io_entries_2_valid;
+        casez_tmp_57 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_43 = _rob_io_entries_3_valid;
+        casez_tmp_57 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_43 = _rob_io_entries_4_valid;
+        casez_tmp_57 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_43 = _rob_io_entries_5_valid;
+        casez_tmp_57 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_43 = _rob_io_entries_6_valid;
+        casez_tmp_57 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_43 = _rob_io_entries_7_valid;
+        casez_tmp_57 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_43 = _rob_io_entries_8_valid;
+        casez_tmp_57 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_43 = _rob_io_entries_9_valid;
+        casez_tmp_57 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_43 = _rob_io_entries_10_valid;
+        casez_tmp_57 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_43 = _rob_io_entries_11_valid;
+        casez_tmp_57 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_43 = _rob_io_entries_12_valid;
+        casez_tmp_57 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_43 = _rob_io_entries_13_valid;
+        casez_tmp_57 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_43 = _rob_io_entries_14_valid;
+        casez_tmp_57 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_43 = _rob_io_entries_15_valid;
+        casez_tmp_57 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_44;
+  reg          casez_tmp_58;
   always_comb begin
     casez (_idx_T_46)
       4'b0000:
-        casez_tmp_44 = _rob_io_entries_0_reg_write;
+        casez_tmp_58 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_44 = _rob_io_entries_1_reg_write;
+        casez_tmp_58 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_44 = _rob_io_entries_2_reg_write;
+        casez_tmp_58 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_44 = _rob_io_entries_3_reg_write;
+        casez_tmp_58 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_44 = _rob_io_entries_4_reg_write;
+        casez_tmp_58 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_44 = _rob_io_entries_5_reg_write;
+        casez_tmp_58 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_44 = _rob_io_entries_6_reg_write;
+        casez_tmp_58 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_44 = _rob_io_entries_7_reg_write;
+        casez_tmp_58 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_44 = _rob_io_entries_8_reg_write;
+        casez_tmp_58 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_44 = _rob_io_entries_9_reg_write;
+        casez_tmp_58 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_44 = _rob_io_entries_10_reg_write;
+        casez_tmp_58 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_44 = _rob_io_entries_11_reg_write;
+        casez_tmp_58 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_44 = _rob_io_entries_12_reg_write;
+        casez_tmp_58 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_44 = _rob_io_entries_13_reg_write;
+        casez_tmp_58 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_44 = _rob_io_entries_14_reg_write;
+        casez_tmp_58 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_44 = _rob_io_entries_15_reg_write;
+        casez_tmp_58 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_45;
+  reg  [4:0]   casez_tmp_59;
   always_comb begin
     casez (_idx_T_46)
       4'b0000:
-        casez_tmp_45 = _rob_io_entries_0_arch_rd;
+        casez_tmp_59 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_45 = _rob_io_entries_1_arch_rd;
+        casez_tmp_59 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_45 = _rob_io_entries_2_arch_rd;
+        casez_tmp_59 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_45 = _rob_io_entries_3_arch_rd;
+        casez_tmp_59 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_45 = _rob_io_entries_4_arch_rd;
+        casez_tmp_59 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_45 = _rob_io_entries_5_arch_rd;
+        casez_tmp_59 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_45 = _rob_io_entries_6_arch_rd;
+        casez_tmp_59 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_45 = _rob_io_entries_7_arch_rd;
+        casez_tmp_59 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_45 = _rob_io_entries_8_arch_rd;
+        casez_tmp_59 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_45 = _rob_io_entries_9_arch_rd;
+        casez_tmp_59 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_45 = _rob_io_entries_10_arch_rd;
+        casez_tmp_59 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_45 = _rob_io_entries_11_arch_rd;
+        casez_tmp_59 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_45 = _rob_io_entries_12_arch_rd;
+        casez_tmp_59 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_45 = _rob_io_entries_13_arch_rd;
+        casez_tmp_59 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_45 = _rob_io_entries_14_arch_rd;
+        casez_tmp_59 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_45 = _rob_io_entries_15_arch_rd;
+        casez_tmp_59 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_46;
+  reg  [5:0]   casez_tmp_60;
   always_comb begin
     casez (_idx_T_46)
       4'b0000:
-        casez_tmp_46 = _rob_io_entries_0_new_phys;
+        casez_tmp_60 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_46 = _rob_io_entries_1_new_phys;
+        casez_tmp_60 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_46 = _rob_io_entries_2_new_phys;
+        casez_tmp_60 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_46 = _rob_io_entries_3_new_phys;
+        casez_tmp_60 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_46 = _rob_io_entries_4_new_phys;
+        casez_tmp_60 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_46 = _rob_io_entries_5_new_phys;
+        casez_tmp_60 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_46 = _rob_io_entries_6_new_phys;
+        casez_tmp_60 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_46 = _rob_io_entries_7_new_phys;
+        casez_tmp_60 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_46 = _rob_io_entries_8_new_phys;
+        casez_tmp_60 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_46 = _rob_io_entries_9_new_phys;
+        casez_tmp_60 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_46 = _rob_io_entries_10_new_phys;
+        casez_tmp_60 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_46 = _rob_io_entries_11_new_phys;
+        casez_tmp_60 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_46 = _rob_io_entries_12_new_phys;
+        casez_tmp_60 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_46 = _rob_io_entries_13_new_phys;
+        casez_tmp_60 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_46 = _rob_io_entries_14_new_phys;
+        casez_tmp_60 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_46 = _rob_io_entries_15_new_phys;
+        casez_tmp_60 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_7 = (|(kept_n[4:3])) & casez_tmp_43 & casez_tmp_44 & (|casez_tmp_45);
+  wire         take_7 = (|(kept_n[4:3])) & casez_tmp_57 & casez_tmp_58 & (|casez_tmp_59);
   wire [3:0]   _idx_T_48 = idx - 4'h8;
   wire         _take_T_96 = kept_n > 5'h8;
-  reg          casez_tmp_47;
+  reg          casez_tmp_61;
   always_comb begin
     casez (_idx_T_48)
       4'b0000:
-        casez_tmp_47 = _rob_io_entries_0_valid;
+        casez_tmp_61 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_47 = _rob_io_entries_1_valid;
+        casez_tmp_61 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_47 = _rob_io_entries_2_valid;
+        casez_tmp_61 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_47 = _rob_io_entries_3_valid;
+        casez_tmp_61 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_47 = _rob_io_entries_4_valid;
+        casez_tmp_61 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_47 = _rob_io_entries_5_valid;
+        casez_tmp_61 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_47 = _rob_io_entries_6_valid;
+        casez_tmp_61 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_47 = _rob_io_entries_7_valid;
+        casez_tmp_61 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_47 = _rob_io_entries_8_valid;
+        casez_tmp_61 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_47 = _rob_io_entries_9_valid;
+        casez_tmp_61 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_47 = _rob_io_entries_10_valid;
+        casez_tmp_61 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_47 = _rob_io_entries_11_valid;
+        casez_tmp_61 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_47 = _rob_io_entries_12_valid;
+        casez_tmp_61 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_47 = _rob_io_entries_13_valid;
+        casez_tmp_61 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_47 = _rob_io_entries_14_valid;
+        casez_tmp_61 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_47 = _rob_io_entries_15_valid;
+        casez_tmp_61 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_48;
+  reg          casez_tmp_62;
   always_comb begin
     casez (_idx_T_48)
       4'b0000:
-        casez_tmp_48 = _rob_io_entries_0_reg_write;
+        casez_tmp_62 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_48 = _rob_io_entries_1_reg_write;
+        casez_tmp_62 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_48 = _rob_io_entries_2_reg_write;
+        casez_tmp_62 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_48 = _rob_io_entries_3_reg_write;
+        casez_tmp_62 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_48 = _rob_io_entries_4_reg_write;
+        casez_tmp_62 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_48 = _rob_io_entries_5_reg_write;
+        casez_tmp_62 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_48 = _rob_io_entries_6_reg_write;
+        casez_tmp_62 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_48 = _rob_io_entries_7_reg_write;
+        casez_tmp_62 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_48 = _rob_io_entries_8_reg_write;
+        casez_tmp_62 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_48 = _rob_io_entries_9_reg_write;
+        casez_tmp_62 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_48 = _rob_io_entries_10_reg_write;
+        casez_tmp_62 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_48 = _rob_io_entries_11_reg_write;
+        casez_tmp_62 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_48 = _rob_io_entries_12_reg_write;
+        casez_tmp_62 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_48 = _rob_io_entries_13_reg_write;
+        casez_tmp_62 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_48 = _rob_io_entries_14_reg_write;
+        casez_tmp_62 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_48 = _rob_io_entries_15_reg_write;
+        casez_tmp_62 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_49;
+  reg  [4:0]   casez_tmp_63;
   always_comb begin
     casez (_idx_T_48)
       4'b0000:
-        casez_tmp_49 = _rob_io_entries_0_arch_rd;
+        casez_tmp_63 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_49 = _rob_io_entries_1_arch_rd;
+        casez_tmp_63 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_49 = _rob_io_entries_2_arch_rd;
+        casez_tmp_63 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_49 = _rob_io_entries_3_arch_rd;
+        casez_tmp_63 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_49 = _rob_io_entries_4_arch_rd;
+        casez_tmp_63 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_49 = _rob_io_entries_5_arch_rd;
+        casez_tmp_63 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_49 = _rob_io_entries_6_arch_rd;
+        casez_tmp_63 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_49 = _rob_io_entries_7_arch_rd;
+        casez_tmp_63 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_49 = _rob_io_entries_8_arch_rd;
+        casez_tmp_63 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_49 = _rob_io_entries_9_arch_rd;
+        casez_tmp_63 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_49 = _rob_io_entries_10_arch_rd;
+        casez_tmp_63 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_49 = _rob_io_entries_11_arch_rd;
+        casez_tmp_63 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_49 = _rob_io_entries_12_arch_rd;
+        casez_tmp_63 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_49 = _rob_io_entries_13_arch_rd;
+        casez_tmp_63 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_49 = _rob_io_entries_14_arch_rd;
+        casez_tmp_63 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_49 = _rob_io_entries_15_arch_rd;
+        casez_tmp_63 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_50;
+  reg  [5:0]   casez_tmp_64;
   always_comb begin
     casez (_idx_T_48)
       4'b0000:
-        casez_tmp_50 = _rob_io_entries_0_new_phys;
+        casez_tmp_64 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_50 = _rob_io_entries_1_new_phys;
+        casez_tmp_64 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_50 = _rob_io_entries_2_new_phys;
+        casez_tmp_64 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_50 = _rob_io_entries_3_new_phys;
+        casez_tmp_64 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_50 = _rob_io_entries_4_new_phys;
+        casez_tmp_64 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_50 = _rob_io_entries_5_new_phys;
+        casez_tmp_64 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_50 = _rob_io_entries_6_new_phys;
+        casez_tmp_64 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_50 = _rob_io_entries_7_new_phys;
+        casez_tmp_64 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_50 = _rob_io_entries_8_new_phys;
+        casez_tmp_64 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_50 = _rob_io_entries_9_new_phys;
+        casez_tmp_64 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_50 = _rob_io_entries_10_new_phys;
+        casez_tmp_64 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_50 = _rob_io_entries_11_new_phys;
+        casez_tmp_64 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_50 = _rob_io_entries_12_new_phys;
+        casez_tmp_64 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_50 = _rob_io_entries_13_new_phys;
+        casez_tmp_64 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_50 = _rob_io_entries_14_new_phys;
+        casez_tmp_64 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_50 = _rob_io_entries_15_new_phys;
+        casez_tmp_64 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_8 = _take_T_96 & casez_tmp_47 & casez_tmp_48 & (|casez_tmp_49);
+  wire         take_8 = _take_T_96 & casez_tmp_61 & casez_tmp_62 & (|casez_tmp_63);
   wire [3:0]   _idx_T_50 = idx - 4'h7;
   wire         _take_T_100 = kept_n > 5'h9;
-  reg          casez_tmp_51;
+  reg          casez_tmp_65;
   always_comb begin
     casez (_idx_T_50)
       4'b0000:
-        casez_tmp_51 = _rob_io_entries_0_valid;
+        casez_tmp_65 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_51 = _rob_io_entries_1_valid;
+        casez_tmp_65 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_51 = _rob_io_entries_2_valid;
+        casez_tmp_65 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_51 = _rob_io_entries_3_valid;
+        casez_tmp_65 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_51 = _rob_io_entries_4_valid;
+        casez_tmp_65 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_51 = _rob_io_entries_5_valid;
+        casez_tmp_65 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_51 = _rob_io_entries_6_valid;
+        casez_tmp_65 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_51 = _rob_io_entries_7_valid;
+        casez_tmp_65 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_51 = _rob_io_entries_8_valid;
+        casez_tmp_65 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_51 = _rob_io_entries_9_valid;
+        casez_tmp_65 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_51 = _rob_io_entries_10_valid;
+        casez_tmp_65 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_51 = _rob_io_entries_11_valid;
+        casez_tmp_65 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_51 = _rob_io_entries_12_valid;
+        casez_tmp_65 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_51 = _rob_io_entries_13_valid;
+        casez_tmp_65 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_51 = _rob_io_entries_14_valid;
+        casez_tmp_65 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_51 = _rob_io_entries_15_valid;
+        casez_tmp_65 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_52;
+  reg          casez_tmp_66;
   always_comb begin
     casez (_idx_T_50)
       4'b0000:
-        casez_tmp_52 = _rob_io_entries_0_reg_write;
+        casez_tmp_66 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_52 = _rob_io_entries_1_reg_write;
+        casez_tmp_66 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_52 = _rob_io_entries_2_reg_write;
+        casez_tmp_66 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_52 = _rob_io_entries_3_reg_write;
+        casez_tmp_66 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_52 = _rob_io_entries_4_reg_write;
+        casez_tmp_66 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_52 = _rob_io_entries_5_reg_write;
+        casez_tmp_66 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_52 = _rob_io_entries_6_reg_write;
+        casez_tmp_66 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_52 = _rob_io_entries_7_reg_write;
+        casez_tmp_66 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_52 = _rob_io_entries_8_reg_write;
+        casez_tmp_66 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_52 = _rob_io_entries_9_reg_write;
+        casez_tmp_66 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_52 = _rob_io_entries_10_reg_write;
+        casez_tmp_66 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_52 = _rob_io_entries_11_reg_write;
+        casez_tmp_66 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_52 = _rob_io_entries_12_reg_write;
+        casez_tmp_66 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_52 = _rob_io_entries_13_reg_write;
+        casez_tmp_66 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_52 = _rob_io_entries_14_reg_write;
+        casez_tmp_66 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_52 = _rob_io_entries_15_reg_write;
+        casez_tmp_66 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_53;
+  reg  [4:0]   casez_tmp_67;
   always_comb begin
     casez (_idx_T_50)
       4'b0000:
-        casez_tmp_53 = _rob_io_entries_0_arch_rd;
+        casez_tmp_67 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_53 = _rob_io_entries_1_arch_rd;
+        casez_tmp_67 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_53 = _rob_io_entries_2_arch_rd;
+        casez_tmp_67 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_53 = _rob_io_entries_3_arch_rd;
+        casez_tmp_67 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_53 = _rob_io_entries_4_arch_rd;
+        casez_tmp_67 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_53 = _rob_io_entries_5_arch_rd;
+        casez_tmp_67 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_53 = _rob_io_entries_6_arch_rd;
+        casez_tmp_67 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_53 = _rob_io_entries_7_arch_rd;
+        casez_tmp_67 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_53 = _rob_io_entries_8_arch_rd;
+        casez_tmp_67 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_53 = _rob_io_entries_9_arch_rd;
+        casez_tmp_67 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_53 = _rob_io_entries_10_arch_rd;
+        casez_tmp_67 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_53 = _rob_io_entries_11_arch_rd;
+        casez_tmp_67 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_53 = _rob_io_entries_12_arch_rd;
+        casez_tmp_67 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_53 = _rob_io_entries_13_arch_rd;
+        casez_tmp_67 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_53 = _rob_io_entries_14_arch_rd;
+        casez_tmp_67 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_53 = _rob_io_entries_15_arch_rd;
+        casez_tmp_67 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_54;
+  reg  [5:0]   casez_tmp_68;
   always_comb begin
     casez (_idx_T_50)
       4'b0000:
-        casez_tmp_54 = _rob_io_entries_0_new_phys;
+        casez_tmp_68 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_54 = _rob_io_entries_1_new_phys;
+        casez_tmp_68 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_54 = _rob_io_entries_2_new_phys;
+        casez_tmp_68 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_54 = _rob_io_entries_3_new_phys;
+        casez_tmp_68 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_54 = _rob_io_entries_4_new_phys;
+        casez_tmp_68 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_54 = _rob_io_entries_5_new_phys;
+        casez_tmp_68 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_54 = _rob_io_entries_6_new_phys;
+        casez_tmp_68 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_54 = _rob_io_entries_7_new_phys;
+        casez_tmp_68 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_54 = _rob_io_entries_8_new_phys;
+        casez_tmp_68 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_54 = _rob_io_entries_9_new_phys;
+        casez_tmp_68 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_54 = _rob_io_entries_10_new_phys;
+        casez_tmp_68 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_54 = _rob_io_entries_11_new_phys;
+        casez_tmp_68 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_54 = _rob_io_entries_12_new_phys;
+        casez_tmp_68 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_54 = _rob_io_entries_13_new_phys;
+        casez_tmp_68 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_54 = _rob_io_entries_14_new_phys;
+        casez_tmp_68 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_54 = _rob_io_entries_15_new_phys;
+        casez_tmp_68 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_9 = _take_T_100 & casez_tmp_51 & casez_tmp_52 & (|casez_tmp_53);
+  wire         take_9 = _take_T_100 & casez_tmp_65 & casez_tmp_66 & (|casez_tmp_67);
   wire [3:0]   _idx_T_52 = idx - 4'h6;
   wire         _take_T_104 = kept_n > 5'hA;
-  reg          casez_tmp_55;
+  reg          casez_tmp_69;
   always_comb begin
     casez (_idx_T_52)
       4'b0000:
-        casez_tmp_55 = _rob_io_entries_0_valid;
+        casez_tmp_69 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_55 = _rob_io_entries_1_valid;
+        casez_tmp_69 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_55 = _rob_io_entries_2_valid;
+        casez_tmp_69 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_55 = _rob_io_entries_3_valid;
+        casez_tmp_69 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_55 = _rob_io_entries_4_valid;
+        casez_tmp_69 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_55 = _rob_io_entries_5_valid;
+        casez_tmp_69 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_55 = _rob_io_entries_6_valid;
+        casez_tmp_69 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_55 = _rob_io_entries_7_valid;
+        casez_tmp_69 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_55 = _rob_io_entries_8_valid;
+        casez_tmp_69 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_55 = _rob_io_entries_9_valid;
+        casez_tmp_69 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_55 = _rob_io_entries_10_valid;
+        casez_tmp_69 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_55 = _rob_io_entries_11_valid;
+        casez_tmp_69 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_55 = _rob_io_entries_12_valid;
+        casez_tmp_69 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_55 = _rob_io_entries_13_valid;
+        casez_tmp_69 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_55 = _rob_io_entries_14_valid;
+        casez_tmp_69 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_55 = _rob_io_entries_15_valid;
+        casez_tmp_69 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_56;
+  reg          casez_tmp_70;
   always_comb begin
     casez (_idx_T_52)
       4'b0000:
-        casez_tmp_56 = _rob_io_entries_0_reg_write;
+        casez_tmp_70 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_56 = _rob_io_entries_1_reg_write;
+        casez_tmp_70 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_56 = _rob_io_entries_2_reg_write;
+        casez_tmp_70 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_56 = _rob_io_entries_3_reg_write;
+        casez_tmp_70 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_56 = _rob_io_entries_4_reg_write;
+        casez_tmp_70 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_56 = _rob_io_entries_5_reg_write;
+        casez_tmp_70 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_56 = _rob_io_entries_6_reg_write;
+        casez_tmp_70 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_56 = _rob_io_entries_7_reg_write;
+        casez_tmp_70 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_56 = _rob_io_entries_8_reg_write;
+        casez_tmp_70 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_56 = _rob_io_entries_9_reg_write;
+        casez_tmp_70 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_56 = _rob_io_entries_10_reg_write;
+        casez_tmp_70 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_56 = _rob_io_entries_11_reg_write;
+        casez_tmp_70 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_56 = _rob_io_entries_12_reg_write;
+        casez_tmp_70 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_56 = _rob_io_entries_13_reg_write;
+        casez_tmp_70 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_56 = _rob_io_entries_14_reg_write;
+        casez_tmp_70 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_56 = _rob_io_entries_15_reg_write;
+        casez_tmp_70 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_57;
+  reg  [4:0]   casez_tmp_71;
   always_comb begin
     casez (_idx_T_52)
       4'b0000:
-        casez_tmp_57 = _rob_io_entries_0_arch_rd;
+        casez_tmp_71 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_57 = _rob_io_entries_1_arch_rd;
+        casez_tmp_71 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_57 = _rob_io_entries_2_arch_rd;
+        casez_tmp_71 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_57 = _rob_io_entries_3_arch_rd;
+        casez_tmp_71 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_57 = _rob_io_entries_4_arch_rd;
+        casez_tmp_71 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_57 = _rob_io_entries_5_arch_rd;
+        casez_tmp_71 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_57 = _rob_io_entries_6_arch_rd;
+        casez_tmp_71 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_57 = _rob_io_entries_7_arch_rd;
+        casez_tmp_71 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_57 = _rob_io_entries_8_arch_rd;
+        casez_tmp_71 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_57 = _rob_io_entries_9_arch_rd;
+        casez_tmp_71 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_57 = _rob_io_entries_10_arch_rd;
+        casez_tmp_71 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_57 = _rob_io_entries_11_arch_rd;
+        casez_tmp_71 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_57 = _rob_io_entries_12_arch_rd;
+        casez_tmp_71 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_57 = _rob_io_entries_13_arch_rd;
+        casez_tmp_71 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_57 = _rob_io_entries_14_arch_rd;
+        casez_tmp_71 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_57 = _rob_io_entries_15_arch_rd;
+        casez_tmp_71 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_58;
+  reg  [5:0]   casez_tmp_72;
   always_comb begin
     casez (_idx_T_52)
       4'b0000:
-        casez_tmp_58 = _rob_io_entries_0_new_phys;
+        casez_tmp_72 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_58 = _rob_io_entries_1_new_phys;
+        casez_tmp_72 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_58 = _rob_io_entries_2_new_phys;
+        casez_tmp_72 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_58 = _rob_io_entries_3_new_phys;
+        casez_tmp_72 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_58 = _rob_io_entries_4_new_phys;
+        casez_tmp_72 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_58 = _rob_io_entries_5_new_phys;
+        casez_tmp_72 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_58 = _rob_io_entries_6_new_phys;
+        casez_tmp_72 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_58 = _rob_io_entries_7_new_phys;
+        casez_tmp_72 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_58 = _rob_io_entries_8_new_phys;
+        casez_tmp_72 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_58 = _rob_io_entries_9_new_phys;
+        casez_tmp_72 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_58 = _rob_io_entries_10_new_phys;
+        casez_tmp_72 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_58 = _rob_io_entries_11_new_phys;
+        casez_tmp_72 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_58 = _rob_io_entries_12_new_phys;
+        casez_tmp_72 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_58 = _rob_io_entries_13_new_phys;
+        casez_tmp_72 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_58 = _rob_io_entries_14_new_phys;
+        casez_tmp_72 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_58 = _rob_io_entries_15_new_phys;
+        casez_tmp_72 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_10 = _take_T_104 & casez_tmp_55 & casez_tmp_56 & (|casez_tmp_57);
+  wire         take_10 = _take_T_104 & casez_tmp_69 & casez_tmp_70 & (|casez_tmp_71);
   wire [3:0]   _idx_T_54 = idx - 4'h5;
   wire         _take_T_108 = kept_n > 5'hB;
-  reg          casez_tmp_59;
+  reg          casez_tmp_73;
   always_comb begin
     casez (_idx_T_54)
       4'b0000:
-        casez_tmp_59 = _rob_io_entries_0_valid;
+        casez_tmp_73 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_59 = _rob_io_entries_1_valid;
+        casez_tmp_73 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_59 = _rob_io_entries_2_valid;
+        casez_tmp_73 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_59 = _rob_io_entries_3_valid;
+        casez_tmp_73 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_59 = _rob_io_entries_4_valid;
+        casez_tmp_73 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_59 = _rob_io_entries_5_valid;
+        casez_tmp_73 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_59 = _rob_io_entries_6_valid;
+        casez_tmp_73 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_59 = _rob_io_entries_7_valid;
+        casez_tmp_73 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_59 = _rob_io_entries_8_valid;
+        casez_tmp_73 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_59 = _rob_io_entries_9_valid;
+        casez_tmp_73 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_59 = _rob_io_entries_10_valid;
+        casez_tmp_73 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_59 = _rob_io_entries_11_valid;
+        casez_tmp_73 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_59 = _rob_io_entries_12_valid;
+        casez_tmp_73 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_59 = _rob_io_entries_13_valid;
+        casez_tmp_73 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_59 = _rob_io_entries_14_valid;
+        casez_tmp_73 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_59 = _rob_io_entries_15_valid;
+        casez_tmp_73 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_60;
+  reg          casez_tmp_74;
   always_comb begin
     casez (_idx_T_54)
       4'b0000:
-        casez_tmp_60 = _rob_io_entries_0_reg_write;
+        casez_tmp_74 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_60 = _rob_io_entries_1_reg_write;
+        casez_tmp_74 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_60 = _rob_io_entries_2_reg_write;
+        casez_tmp_74 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_60 = _rob_io_entries_3_reg_write;
+        casez_tmp_74 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_60 = _rob_io_entries_4_reg_write;
+        casez_tmp_74 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_60 = _rob_io_entries_5_reg_write;
+        casez_tmp_74 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_60 = _rob_io_entries_6_reg_write;
+        casez_tmp_74 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_60 = _rob_io_entries_7_reg_write;
+        casez_tmp_74 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_60 = _rob_io_entries_8_reg_write;
+        casez_tmp_74 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_60 = _rob_io_entries_9_reg_write;
+        casez_tmp_74 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_60 = _rob_io_entries_10_reg_write;
+        casez_tmp_74 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_60 = _rob_io_entries_11_reg_write;
+        casez_tmp_74 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_60 = _rob_io_entries_12_reg_write;
+        casez_tmp_74 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_60 = _rob_io_entries_13_reg_write;
+        casez_tmp_74 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_60 = _rob_io_entries_14_reg_write;
+        casez_tmp_74 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_60 = _rob_io_entries_15_reg_write;
+        casez_tmp_74 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_61;
+  reg  [4:0]   casez_tmp_75;
   always_comb begin
     casez (_idx_T_54)
       4'b0000:
-        casez_tmp_61 = _rob_io_entries_0_arch_rd;
+        casez_tmp_75 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_61 = _rob_io_entries_1_arch_rd;
+        casez_tmp_75 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_61 = _rob_io_entries_2_arch_rd;
+        casez_tmp_75 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_61 = _rob_io_entries_3_arch_rd;
+        casez_tmp_75 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_61 = _rob_io_entries_4_arch_rd;
+        casez_tmp_75 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_61 = _rob_io_entries_5_arch_rd;
+        casez_tmp_75 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_61 = _rob_io_entries_6_arch_rd;
+        casez_tmp_75 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_61 = _rob_io_entries_7_arch_rd;
+        casez_tmp_75 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_61 = _rob_io_entries_8_arch_rd;
+        casez_tmp_75 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_61 = _rob_io_entries_9_arch_rd;
+        casez_tmp_75 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_61 = _rob_io_entries_10_arch_rd;
+        casez_tmp_75 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_61 = _rob_io_entries_11_arch_rd;
+        casez_tmp_75 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_61 = _rob_io_entries_12_arch_rd;
+        casez_tmp_75 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_61 = _rob_io_entries_13_arch_rd;
+        casez_tmp_75 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_61 = _rob_io_entries_14_arch_rd;
+        casez_tmp_75 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_61 = _rob_io_entries_15_arch_rd;
+        casez_tmp_75 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_62;
+  reg  [5:0]   casez_tmp_76;
   always_comb begin
     casez (_idx_T_54)
       4'b0000:
-        casez_tmp_62 = _rob_io_entries_0_new_phys;
+        casez_tmp_76 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_62 = _rob_io_entries_1_new_phys;
+        casez_tmp_76 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_62 = _rob_io_entries_2_new_phys;
+        casez_tmp_76 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_62 = _rob_io_entries_3_new_phys;
+        casez_tmp_76 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_62 = _rob_io_entries_4_new_phys;
+        casez_tmp_76 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_62 = _rob_io_entries_5_new_phys;
+        casez_tmp_76 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_62 = _rob_io_entries_6_new_phys;
+        casez_tmp_76 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_62 = _rob_io_entries_7_new_phys;
+        casez_tmp_76 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_62 = _rob_io_entries_8_new_phys;
+        casez_tmp_76 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_62 = _rob_io_entries_9_new_phys;
+        casez_tmp_76 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_62 = _rob_io_entries_10_new_phys;
+        casez_tmp_76 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_62 = _rob_io_entries_11_new_phys;
+        casez_tmp_76 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_62 = _rob_io_entries_12_new_phys;
+        casez_tmp_76 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_62 = _rob_io_entries_13_new_phys;
+        casez_tmp_76 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_62 = _rob_io_entries_14_new_phys;
+        casez_tmp_76 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_62 = _rob_io_entries_15_new_phys;
+        casez_tmp_76 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_11 = _take_T_108 & casez_tmp_59 & casez_tmp_60 & (|casez_tmp_61);
+  wire         take_11 = _take_T_108 & casez_tmp_73 & casez_tmp_74 & (|casez_tmp_75);
   wire [3:0]   _idx_T_56 = idx - 4'h4;
   wire         _take_T_112 = kept_n > 5'hC;
-  reg          casez_tmp_63;
+  reg          casez_tmp_77;
   always_comb begin
     casez (_idx_T_56)
       4'b0000:
-        casez_tmp_63 = _rob_io_entries_0_valid;
+        casez_tmp_77 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_63 = _rob_io_entries_1_valid;
+        casez_tmp_77 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_63 = _rob_io_entries_2_valid;
+        casez_tmp_77 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_63 = _rob_io_entries_3_valid;
+        casez_tmp_77 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_63 = _rob_io_entries_4_valid;
+        casez_tmp_77 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_63 = _rob_io_entries_5_valid;
+        casez_tmp_77 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_63 = _rob_io_entries_6_valid;
+        casez_tmp_77 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_63 = _rob_io_entries_7_valid;
+        casez_tmp_77 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_63 = _rob_io_entries_8_valid;
+        casez_tmp_77 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_63 = _rob_io_entries_9_valid;
+        casez_tmp_77 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_63 = _rob_io_entries_10_valid;
+        casez_tmp_77 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_63 = _rob_io_entries_11_valid;
+        casez_tmp_77 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_63 = _rob_io_entries_12_valid;
+        casez_tmp_77 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_63 = _rob_io_entries_13_valid;
+        casez_tmp_77 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_63 = _rob_io_entries_14_valid;
+        casez_tmp_77 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_63 = _rob_io_entries_15_valid;
+        casez_tmp_77 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_64;
+  reg          casez_tmp_78;
   always_comb begin
     casez (_idx_T_56)
       4'b0000:
-        casez_tmp_64 = _rob_io_entries_0_reg_write;
+        casez_tmp_78 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_64 = _rob_io_entries_1_reg_write;
+        casez_tmp_78 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_64 = _rob_io_entries_2_reg_write;
+        casez_tmp_78 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_64 = _rob_io_entries_3_reg_write;
+        casez_tmp_78 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_64 = _rob_io_entries_4_reg_write;
+        casez_tmp_78 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_64 = _rob_io_entries_5_reg_write;
+        casez_tmp_78 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_64 = _rob_io_entries_6_reg_write;
+        casez_tmp_78 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_64 = _rob_io_entries_7_reg_write;
+        casez_tmp_78 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_64 = _rob_io_entries_8_reg_write;
+        casez_tmp_78 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_64 = _rob_io_entries_9_reg_write;
+        casez_tmp_78 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_64 = _rob_io_entries_10_reg_write;
+        casez_tmp_78 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_64 = _rob_io_entries_11_reg_write;
+        casez_tmp_78 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_64 = _rob_io_entries_12_reg_write;
+        casez_tmp_78 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_64 = _rob_io_entries_13_reg_write;
+        casez_tmp_78 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_64 = _rob_io_entries_14_reg_write;
+        casez_tmp_78 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_64 = _rob_io_entries_15_reg_write;
+        casez_tmp_78 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_65;
+  reg  [4:0]   casez_tmp_79;
   always_comb begin
     casez (_idx_T_56)
       4'b0000:
-        casez_tmp_65 = _rob_io_entries_0_arch_rd;
+        casez_tmp_79 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_65 = _rob_io_entries_1_arch_rd;
+        casez_tmp_79 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_65 = _rob_io_entries_2_arch_rd;
+        casez_tmp_79 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_65 = _rob_io_entries_3_arch_rd;
+        casez_tmp_79 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_65 = _rob_io_entries_4_arch_rd;
+        casez_tmp_79 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_65 = _rob_io_entries_5_arch_rd;
+        casez_tmp_79 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_65 = _rob_io_entries_6_arch_rd;
+        casez_tmp_79 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_65 = _rob_io_entries_7_arch_rd;
+        casez_tmp_79 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_65 = _rob_io_entries_8_arch_rd;
+        casez_tmp_79 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_65 = _rob_io_entries_9_arch_rd;
+        casez_tmp_79 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_65 = _rob_io_entries_10_arch_rd;
+        casez_tmp_79 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_65 = _rob_io_entries_11_arch_rd;
+        casez_tmp_79 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_65 = _rob_io_entries_12_arch_rd;
+        casez_tmp_79 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_65 = _rob_io_entries_13_arch_rd;
+        casez_tmp_79 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_65 = _rob_io_entries_14_arch_rd;
+        casez_tmp_79 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_65 = _rob_io_entries_15_arch_rd;
+        casez_tmp_79 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_66;
+  reg  [5:0]   casez_tmp_80;
   always_comb begin
     casez (_idx_T_56)
       4'b0000:
-        casez_tmp_66 = _rob_io_entries_0_new_phys;
+        casez_tmp_80 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_66 = _rob_io_entries_1_new_phys;
+        casez_tmp_80 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_66 = _rob_io_entries_2_new_phys;
+        casez_tmp_80 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_66 = _rob_io_entries_3_new_phys;
+        casez_tmp_80 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_66 = _rob_io_entries_4_new_phys;
+        casez_tmp_80 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_66 = _rob_io_entries_5_new_phys;
+        casez_tmp_80 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_66 = _rob_io_entries_6_new_phys;
+        casez_tmp_80 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_66 = _rob_io_entries_7_new_phys;
+        casez_tmp_80 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_66 = _rob_io_entries_8_new_phys;
+        casez_tmp_80 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_66 = _rob_io_entries_9_new_phys;
+        casez_tmp_80 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_66 = _rob_io_entries_10_new_phys;
+        casez_tmp_80 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_66 = _rob_io_entries_11_new_phys;
+        casez_tmp_80 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_66 = _rob_io_entries_12_new_phys;
+        casez_tmp_80 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_66 = _rob_io_entries_13_new_phys;
+        casez_tmp_80 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_66 = _rob_io_entries_14_new_phys;
+        casez_tmp_80 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_66 = _rob_io_entries_15_new_phys;
+        casez_tmp_80 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_12 = _take_T_112 & casez_tmp_63 & casez_tmp_64 & (|casez_tmp_65);
+  wire         take_12 = _take_T_112 & casez_tmp_77 & casez_tmp_78 & (|casez_tmp_79);
   wire [3:0]   _idx_T_58 = idx - 4'h3;
   wire         _take_T_116 = kept_n > 5'hD;
-  reg          casez_tmp_67;
+  reg          casez_tmp_81;
   always_comb begin
     casez (_idx_T_58)
       4'b0000:
-        casez_tmp_67 = _rob_io_entries_0_valid;
+        casez_tmp_81 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_67 = _rob_io_entries_1_valid;
+        casez_tmp_81 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_67 = _rob_io_entries_2_valid;
+        casez_tmp_81 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_67 = _rob_io_entries_3_valid;
+        casez_tmp_81 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_67 = _rob_io_entries_4_valid;
+        casez_tmp_81 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_67 = _rob_io_entries_5_valid;
+        casez_tmp_81 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_67 = _rob_io_entries_6_valid;
+        casez_tmp_81 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_67 = _rob_io_entries_7_valid;
+        casez_tmp_81 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_67 = _rob_io_entries_8_valid;
+        casez_tmp_81 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_67 = _rob_io_entries_9_valid;
+        casez_tmp_81 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_67 = _rob_io_entries_10_valid;
+        casez_tmp_81 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_67 = _rob_io_entries_11_valid;
+        casez_tmp_81 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_67 = _rob_io_entries_12_valid;
+        casez_tmp_81 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_67 = _rob_io_entries_13_valid;
+        casez_tmp_81 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_67 = _rob_io_entries_14_valid;
+        casez_tmp_81 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_67 = _rob_io_entries_15_valid;
+        casez_tmp_81 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_68;
+  reg          casez_tmp_82;
   always_comb begin
     casez (_idx_T_58)
       4'b0000:
-        casez_tmp_68 = _rob_io_entries_0_reg_write;
+        casez_tmp_82 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_68 = _rob_io_entries_1_reg_write;
+        casez_tmp_82 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_68 = _rob_io_entries_2_reg_write;
+        casez_tmp_82 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_68 = _rob_io_entries_3_reg_write;
+        casez_tmp_82 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_68 = _rob_io_entries_4_reg_write;
+        casez_tmp_82 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_68 = _rob_io_entries_5_reg_write;
+        casez_tmp_82 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_68 = _rob_io_entries_6_reg_write;
+        casez_tmp_82 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_68 = _rob_io_entries_7_reg_write;
+        casez_tmp_82 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_68 = _rob_io_entries_8_reg_write;
+        casez_tmp_82 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_68 = _rob_io_entries_9_reg_write;
+        casez_tmp_82 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_68 = _rob_io_entries_10_reg_write;
+        casez_tmp_82 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_68 = _rob_io_entries_11_reg_write;
+        casez_tmp_82 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_68 = _rob_io_entries_12_reg_write;
+        casez_tmp_82 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_68 = _rob_io_entries_13_reg_write;
+        casez_tmp_82 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_68 = _rob_io_entries_14_reg_write;
+        casez_tmp_82 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_68 = _rob_io_entries_15_reg_write;
+        casez_tmp_82 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_69;
+  reg  [4:0]   casez_tmp_83;
   always_comb begin
     casez (_idx_T_58)
       4'b0000:
-        casez_tmp_69 = _rob_io_entries_0_arch_rd;
+        casez_tmp_83 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_69 = _rob_io_entries_1_arch_rd;
+        casez_tmp_83 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_69 = _rob_io_entries_2_arch_rd;
+        casez_tmp_83 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_69 = _rob_io_entries_3_arch_rd;
+        casez_tmp_83 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_69 = _rob_io_entries_4_arch_rd;
+        casez_tmp_83 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_69 = _rob_io_entries_5_arch_rd;
+        casez_tmp_83 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_69 = _rob_io_entries_6_arch_rd;
+        casez_tmp_83 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_69 = _rob_io_entries_7_arch_rd;
+        casez_tmp_83 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_69 = _rob_io_entries_8_arch_rd;
+        casez_tmp_83 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_69 = _rob_io_entries_9_arch_rd;
+        casez_tmp_83 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_69 = _rob_io_entries_10_arch_rd;
+        casez_tmp_83 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_69 = _rob_io_entries_11_arch_rd;
+        casez_tmp_83 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_69 = _rob_io_entries_12_arch_rd;
+        casez_tmp_83 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_69 = _rob_io_entries_13_arch_rd;
+        casez_tmp_83 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_69 = _rob_io_entries_14_arch_rd;
+        casez_tmp_83 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_69 = _rob_io_entries_15_arch_rd;
+        casez_tmp_83 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_70;
+  reg  [5:0]   casez_tmp_84;
   always_comb begin
     casez (_idx_T_58)
       4'b0000:
-        casez_tmp_70 = _rob_io_entries_0_new_phys;
+        casez_tmp_84 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_70 = _rob_io_entries_1_new_phys;
+        casez_tmp_84 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_70 = _rob_io_entries_2_new_phys;
+        casez_tmp_84 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_70 = _rob_io_entries_3_new_phys;
+        casez_tmp_84 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_70 = _rob_io_entries_4_new_phys;
+        casez_tmp_84 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_70 = _rob_io_entries_5_new_phys;
+        casez_tmp_84 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_70 = _rob_io_entries_6_new_phys;
+        casez_tmp_84 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_70 = _rob_io_entries_7_new_phys;
+        casez_tmp_84 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_70 = _rob_io_entries_8_new_phys;
+        casez_tmp_84 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_70 = _rob_io_entries_9_new_phys;
+        casez_tmp_84 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_70 = _rob_io_entries_10_new_phys;
+        casez_tmp_84 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_70 = _rob_io_entries_11_new_phys;
+        casez_tmp_84 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_70 = _rob_io_entries_12_new_phys;
+        casez_tmp_84 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_70 = _rob_io_entries_13_new_phys;
+        casez_tmp_84 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_70 = _rob_io_entries_14_new_phys;
+        casez_tmp_84 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_70 = _rob_io_entries_15_new_phys;
+        casez_tmp_84 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_13 = _take_T_116 & casez_tmp_67 & casez_tmp_68 & (|casez_tmp_69);
+  wire         take_13 = _take_T_116 & casez_tmp_81 & casez_tmp_82 & (|casez_tmp_83);
   wire [3:0]   _idx_T_60 = idx - 4'h2;
   wire         _take_T_120 = kept_n > 5'hE;
-  reg          casez_tmp_71;
+  reg          casez_tmp_85;
   always_comb begin
     casez (_idx_T_60)
       4'b0000:
-        casez_tmp_71 = _rob_io_entries_0_valid;
+        casez_tmp_85 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_71 = _rob_io_entries_1_valid;
+        casez_tmp_85 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_71 = _rob_io_entries_2_valid;
+        casez_tmp_85 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_71 = _rob_io_entries_3_valid;
+        casez_tmp_85 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_71 = _rob_io_entries_4_valid;
+        casez_tmp_85 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_71 = _rob_io_entries_5_valid;
+        casez_tmp_85 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_71 = _rob_io_entries_6_valid;
+        casez_tmp_85 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_71 = _rob_io_entries_7_valid;
+        casez_tmp_85 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_71 = _rob_io_entries_8_valid;
+        casez_tmp_85 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_71 = _rob_io_entries_9_valid;
+        casez_tmp_85 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_71 = _rob_io_entries_10_valid;
+        casez_tmp_85 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_71 = _rob_io_entries_11_valid;
+        casez_tmp_85 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_71 = _rob_io_entries_12_valid;
+        casez_tmp_85 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_71 = _rob_io_entries_13_valid;
+        casez_tmp_85 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_71 = _rob_io_entries_14_valid;
+        casez_tmp_85 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_71 = _rob_io_entries_15_valid;
+        casez_tmp_85 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_72;
+  reg          casez_tmp_86;
   always_comb begin
     casez (_idx_T_60)
       4'b0000:
-        casez_tmp_72 = _rob_io_entries_0_reg_write;
+        casez_tmp_86 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_72 = _rob_io_entries_1_reg_write;
+        casez_tmp_86 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_72 = _rob_io_entries_2_reg_write;
+        casez_tmp_86 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_72 = _rob_io_entries_3_reg_write;
+        casez_tmp_86 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_72 = _rob_io_entries_4_reg_write;
+        casez_tmp_86 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_72 = _rob_io_entries_5_reg_write;
+        casez_tmp_86 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_72 = _rob_io_entries_6_reg_write;
+        casez_tmp_86 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_72 = _rob_io_entries_7_reg_write;
+        casez_tmp_86 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_72 = _rob_io_entries_8_reg_write;
+        casez_tmp_86 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_72 = _rob_io_entries_9_reg_write;
+        casez_tmp_86 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_72 = _rob_io_entries_10_reg_write;
+        casez_tmp_86 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_72 = _rob_io_entries_11_reg_write;
+        casez_tmp_86 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_72 = _rob_io_entries_12_reg_write;
+        casez_tmp_86 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_72 = _rob_io_entries_13_reg_write;
+        casez_tmp_86 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_72 = _rob_io_entries_14_reg_write;
+        casez_tmp_86 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_72 = _rob_io_entries_15_reg_write;
+        casez_tmp_86 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_73;
+  reg  [4:0]   casez_tmp_87;
   always_comb begin
     casez (_idx_T_60)
       4'b0000:
-        casez_tmp_73 = _rob_io_entries_0_arch_rd;
+        casez_tmp_87 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_73 = _rob_io_entries_1_arch_rd;
+        casez_tmp_87 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_73 = _rob_io_entries_2_arch_rd;
+        casez_tmp_87 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_73 = _rob_io_entries_3_arch_rd;
+        casez_tmp_87 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_73 = _rob_io_entries_4_arch_rd;
+        casez_tmp_87 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_73 = _rob_io_entries_5_arch_rd;
+        casez_tmp_87 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_73 = _rob_io_entries_6_arch_rd;
+        casez_tmp_87 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_73 = _rob_io_entries_7_arch_rd;
+        casez_tmp_87 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_73 = _rob_io_entries_8_arch_rd;
+        casez_tmp_87 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_73 = _rob_io_entries_9_arch_rd;
+        casez_tmp_87 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_73 = _rob_io_entries_10_arch_rd;
+        casez_tmp_87 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_73 = _rob_io_entries_11_arch_rd;
+        casez_tmp_87 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_73 = _rob_io_entries_12_arch_rd;
+        casez_tmp_87 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_73 = _rob_io_entries_13_arch_rd;
+        casez_tmp_87 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_73 = _rob_io_entries_14_arch_rd;
+        casez_tmp_87 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_73 = _rob_io_entries_15_arch_rd;
+        casez_tmp_87 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_74;
+  reg  [5:0]   casez_tmp_88;
   always_comb begin
     casez (_idx_T_60)
       4'b0000:
-        casez_tmp_74 = _rob_io_entries_0_new_phys;
+        casez_tmp_88 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_74 = _rob_io_entries_1_new_phys;
+        casez_tmp_88 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_74 = _rob_io_entries_2_new_phys;
+        casez_tmp_88 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_74 = _rob_io_entries_3_new_phys;
+        casez_tmp_88 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_74 = _rob_io_entries_4_new_phys;
+        casez_tmp_88 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_74 = _rob_io_entries_5_new_phys;
+        casez_tmp_88 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_74 = _rob_io_entries_6_new_phys;
+        casez_tmp_88 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_74 = _rob_io_entries_7_new_phys;
+        casez_tmp_88 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_74 = _rob_io_entries_8_new_phys;
+        casez_tmp_88 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_74 = _rob_io_entries_9_new_phys;
+        casez_tmp_88 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_74 = _rob_io_entries_10_new_phys;
+        casez_tmp_88 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_74 = _rob_io_entries_11_new_phys;
+        casez_tmp_88 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_74 = _rob_io_entries_12_new_phys;
+        casez_tmp_88 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_74 = _rob_io_entries_13_new_phys;
+        casez_tmp_88 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_74 = _rob_io_entries_14_new_phys;
+        casez_tmp_88 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_74 = _rob_io_entries_15_new_phys;
+        casez_tmp_88 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_14 = _take_T_120 & casez_tmp_71 & casez_tmp_72 & (|casez_tmp_73);
+  wire         take_14 = _take_T_120 & casez_tmp_85 & casez_tmp_86 & (|casez_tmp_87);
   wire [3:0]   _idx_T_62 = idx - 4'h1;
-  reg          casez_tmp_75;
+  reg          casez_tmp_89;
   always_comb begin
     casez (_idx_T_62)
       4'b0000:
-        casez_tmp_75 = _rob_io_entries_0_valid;
+        casez_tmp_89 = _rob_io_entries_0_valid;
       4'b0001:
-        casez_tmp_75 = _rob_io_entries_1_valid;
+        casez_tmp_89 = _rob_io_entries_1_valid;
       4'b0010:
-        casez_tmp_75 = _rob_io_entries_2_valid;
+        casez_tmp_89 = _rob_io_entries_2_valid;
       4'b0011:
-        casez_tmp_75 = _rob_io_entries_3_valid;
+        casez_tmp_89 = _rob_io_entries_3_valid;
       4'b0100:
-        casez_tmp_75 = _rob_io_entries_4_valid;
+        casez_tmp_89 = _rob_io_entries_4_valid;
       4'b0101:
-        casez_tmp_75 = _rob_io_entries_5_valid;
+        casez_tmp_89 = _rob_io_entries_5_valid;
       4'b0110:
-        casez_tmp_75 = _rob_io_entries_6_valid;
+        casez_tmp_89 = _rob_io_entries_6_valid;
       4'b0111:
-        casez_tmp_75 = _rob_io_entries_7_valid;
+        casez_tmp_89 = _rob_io_entries_7_valid;
       4'b1000:
-        casez_tmp_75 = _rob_io_entries_8_valid;
+        casez_tmp_89 = _rob_io_entries_8_valid;
       4'b1001:
-        casez_tmp_75 = _rob_io_entries_9_valid;
+        casez_tmp_89 = _rob_io_entries_9_valid;
       4'b1010:
-        casez_tmp_75 = _rob_io_entries_10_valid;
+        casez_tmp_89 = _rob_io_entries_10_valid;
       4'b1011:
-        casez_tmp_75 = _rob_io_entries_11_valid;
+        casez_tmp_89 = _rob_io_entries_11_valid;
       4'b1100:
-        casez_tmp_75 = _rob_io_entries_12_valid;
+        casez_tmp_89 = _rob_io_entries_12_valid;
       4'b1101:
-        casez_tmp_75 = _rob_io_entries_13_valid;
+        casez_tmp_89 = _rob_io_entries_13_valid;
       4'b1110:
-        casez_tmp_75 = _rob_io_entries_14_valid;
+        casez_tmp_89 = _rob_io_entries_14_valid;
       default:
-        casez_tmp_75 = _rob_io_entries_15_valid;
+        casez_tmp_89 = _rob_io_entries_15_valid;
     endcase
   end // always_comb
-  reg          casez_tmp_76;
+  reg          casez_tmp_90;
   always_comb begin
     casez (_idx_T_62)
       4'b0000:
-        casez_tmp_76 = _rob_io_entries_0_reg_write;
+        casez_tmp_90 = _rob_io_entries_0_reg_write;
       4'b0001:
-        casez_tmp_76 = _rob_io_entries_1_reg_write;
+        casez_tmp_90 = _rob_io_entries_1_reg_write;
       4'b0010:
-        casez_tmp_76 = _rob_io_entries_2_reg_write;
+        casez_tmp_90 = _rob_io_entries_2_reg_write;
       4'b0011:
-        casez_tmp_76 = _rob_io_entries_3_reg_write;
+        casez_tmp_90 = _rob_io_entries_3_reg_write;
       4'b0100:
-        casez_tmp_76 = _rob_io_entries_4_reg_write;
+        casez_tmp_90 = _rob_io_entries_4_reg_write;
       4'b0101:
-        casez_tmp_76 = _rob_io_entries_5_reg_write;
+        casez_tmp_90 = _rob_io_entries_5_reg_write;
       4'b0110:
-        casez_tmp_76 = _rob_io_entries_6_reg_write;
+        casez_tmp_90 = _rob_io_entries_6_reg_write;
       4'b0111:
-        casez_tmp_76 = _rob_io_entries_7_reg_write;
+        casez_tmp_90 = _rob_io_entries_7_reg_write;
       4'b1000:
-        casez_tmp_76 = _rob_io_entries_8_reg_write;
+        casez_tmp_90 = _rob_io_entries_8_reg_write;
       4'b1001:
-        casez_tmp_76 = _rob_io_entries_9_reg_write;
+        casez_tmp_90 = _rob_io_entries_9_reg_write;
       4'b1010:
-        casez_tmp_76 = _rob_io_entries_10_reg_write;
+        casez_tmp_90 = _rob_io_entries_10_reg_write;
       4'b1011:
-        casez_tmp_76 = _rob_io_entries_11_reg_write;
+        casez_tmp_90 = _rob_io_entries_11_reg_write;
       4'b1100:
-        casez_tmp_76 = _rob_io_entries_12_reg_write;
+        casez_tmp_90 = _rob_io_entries_12_reg_write;
       4'b1101:
-        casez_tmp_76 = _rob_io_entries_13_reg_write;
+        casez_tmp_90 = _rob_io_entries_13_reg_write;
       4'b1110:
-        casez_tmp_76 = _rob_io_entries_14_reg_write;
+        casez_tmp_90 = _rob_io_entries_14_reg_write;
       default:
-        casez_tmp_76 = _rob_io_entries_15_reg_write;
+        casez_tmp_90 = _rob_io_entries_15_reg_write;
     endcase
   end // always_comb
-  reg  [4:0]   casez_tmp_77;
+  reg  [4:0]   casez_tmp_91;
   always_comb begin
     casez (_idx_T_62)
       4'b0000:
-        casez_tmp_77 = _rob_io_entries_0_arch_rd;
+        casez_tmp_91 = _rob_io_entries_0_arch_rd;
       4'b0001:
-        casez_tmp_77 = _rob_io_entries_1_arch_rd;
+        casez_tmp_91 = _rob_io_entries_1_arch_rd;
       4'b0010:
-        casez_tmp_77 = _rob_io_entries_2_arch_rd;
+        casez_tmp_91 = _rob_io_entries_2_arch_rd;
       4'b0011:
-        casez_tmp_77 = _rob_io_entries_3_arch_rd;
+        casez_tmp_91 = _rob_io_entries_3_arch_rd;
       4'b0100:
-        casez_tmp_77 = _rob_io_entries_4_arch_rd;
+        casez_tmp_91 = _rob_io_entries_4_arch_rd;
       4'b0101:
-        casez_tmp_77 = _rob_io_entries_5_arch_rd;
+        casez_tmp_91 = _rob_io_entries_5_arch_rd;
       4'b0110:
-        casez_tmp_77 = _rob_io_entries_6_arch_rd;
+        casez_tmp_91 = _rob_io_entries_6_arch_rd;
       4'b0111:
-        casez_tmp_77 = _rob_io_entries_7_arch_rd;
+        casez_tmp_91 = _rob_io_entries_7_arch_rd;
       4'b1000:
-        casez_tmp_77 = _rob_io_entries_8_arch_rd;
+        casez_tmp_91 = _rob_io_entries_8_arch_rd;
       4'b1001:
-        casez_tmp_77 = _rob_io_entries_9_arch_rd;
+        casez_tmp_91 = _rob_io_entries_9_arch_rd;
       4'b1010:
-        casez_tmp_77 = _rob_io_entries_10_arch_rd;
+        casez_tmp_91 = _rob_io_entries_10_arch_rd;
       4'b1011:
-        casez_tmp_77 = _rob_io_entries_11_arch_rd;
+        casez_tmp_91 = _rob_io_entries_11_arch_rd;
       4'b1100:
-        casez_tmp_77 = _rob_io_entries_12_arch_rd;
+        casez_tmp_91 = _rob_io_entries_12_arch_rd;
       4'b1101:
-        casez_tmp_77 = _rob_io_entries_13_arch_rd;
+        casez_tmp_91 = _rob_io_entries_13_arch_rd;
       4'b1110:
-        casez_tmp_77 = _rob_io_entries_14_arch_rd;
+        casez_tmp_91 = _rob_io_entries_14_arch_rd;
       default:
-        casez_tmp_77 = _rob_io_entries_15_arch_rd;
+        casez_tmp_91 = _rob_io_entries_15_arch_rd;
     endcase
   end // always_comb
-  reg  [5:0]   casez_tmp_78;
+  reg  [5:0]   casez_tmp_92;
   always_comb begin
     casez (_idx_T_62)
       4'b0000:
-        casez_tmp_78 = _rob_io_entries_0_new_phys;
+        casez_tmp_92 = _rob_io_entries_0_new_phys;
       4'b0001:
-        casez_tmp_78 = _rob_io_entries_1_new_phys;
+        casez_tmp_92 = _rob_io_entries_1_new_phys;
       4'b0010:
-        casez_tmp_78 = _rob_io_entries_2_new_phys;
+        casez_tmp_92 = _rob_io_entries_2_new_phys;
       4'b0011:
-        casez_tmp_78 = _rob_io_entries_3_new_phys;
+        casez_tmp_92 = _rob_io_entries_3_new_phys;
       4'b0100:
-        casez_tmp_78 = _rob_io_entries_4_new_phys;
+        casez_tmp_92 = _rob_io_entries_4_new_phys;
       4'b0101:
-        casez_tmp_78 = _rob_io_entries_5_new_phys;
+        casez_tmp_92 = _rob_io_entries_5_new_phys;
       4'b0110:
-        casez_tmp_78 = _rob_io_entries_6_new_phys;
+        casez_tmp_92 = _rob_io_entries_6_new_phys;
       4'b0111:
-        casez_tmp_78 = _rob_io_entries_7_new_phys;
+        casez_tmp_92 = _rob_io_entries_7_new_phys;
       4'b1000:
-        casez_tmp_78 = _rob_io_entries_8_new_phys;
+        casez_tmp_92 = _rob_io_entries_8_new_phys;
       4'b1001:
-        casez_tmp_78 = _rob_io_entries_9_new_phys;
+        casez_tmp_92 = _rob_io_entries_9_new_phys;
       4'b1010:
-        casez_tmp_78 = _rob_io_entries_10_new_phys;
+        casez_tmp_92 = _rob_io_entries_10_new_phys;
       4'b1011:
-        casez_tmp_78 = _rob_io_entries_11_new_phys;
+        casez_tmp_92 = _rob_io_entries_11_new_phys;
       4'b1100:
-        casez_tmp_78 = _rob_io_entries_12_new_phys;
+        casez_tmp_92 = _rob_io_entries_12_new_phys;
       4'b1101:
-        casez_tmp_78 = _rob_io_entries_13_new_phys;
+        casez_tmp_92 = _rob_io_entries_13_new_phys;
       4'b1110:
-        casez_tmp_78 = _rob_io_entries_14_new_phys;
+        casez_tmp_92 = _rob_io_entries_14_new_phys;
       default:
-        casez_tmp_78 = _rob_io_entries_15_new_phys;
+        casez_tmp_92 = _rob_io_entries_15_new_phys;
     endcase
   end // always_comb
-  wire         take_15 = kept_n[4] & casez_tmp_75 & casez_tmp_76 & (|casez_tmp_77);
+  wire         take_15 = kept_n[4] & casez_tmp_89 & casez_tmp_90 & (|casez_tmp_91);
   wire [110:0] _archUsed_T = 111'h1 << rb_base_1;
   wire [110:0] _archUsed_T_2 = 111'h1 << rb_base_2;
   wire [110:0] _archUsed_T_4 = 111'h1 << rb_base_3;
@@ -4389,569 +5036,9 @@ module Core(
   wire [110:0] _archUsed_T_56 = 111'h1 << rb_base_29;
   wire [110:0] _archUsed_T_58 = 111'h1 << rb_base_30;
   wire [110:0] _archUsed_T_60 = 111'h1 << rb_base_31;
-  reg  [5:0]   casez_tmp_79;
-  always_comb begin
-    casez (idx)
-      4'b0000:
-        casez_tmp_79 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_79 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_79 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_79 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_79 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_79 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_79 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_79 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_79 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_79 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_79 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_79 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_79 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_79 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_79 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_79 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_16 = (|kept_n) & casez_tmp_15 & casez_tmp_16 & (|casez_tmp_17);
-  wire [110:0] _f1_T_2 = 111'h1 << casez_tmp_18;
-  wire [110:0] _freeSteps_1_T_2 = 111'h1 << casez_tmp_79;
-  reg  [5:0]   casez_tmp_80;
-  always_comb begin
-    casez (_idx_T_34)
-      4'b0000:
-        casez_tmp_80 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_80 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_80 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_80 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_80 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_80 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_80 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_80 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_80 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_80 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_80 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_80 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_80 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_80 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_80 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_80 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_17 = (|(kept_n[4:1])) & casez_tmp_19 & casez_tmp_20 & (|casez_tmp_21);
-  wire [110:0] _f1_T_7 = 111'h1 << casez_tmp_22;
-  wire [110:0] _freeSteps_2_T_2 = 111'h1 << casez_tmp_80;
-  reg  [5:0]   casez_tmp_81;
-  always_comb begin
-    casez (_idx_T_36)
-      4'b0000:
-        casez_tmp_81 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_81 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_81 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_81 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_81 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_81 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_81 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_81 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_81 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_81 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_81 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_81 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_81 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_81 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_81 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_81 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_18 = _take_T_72 & casez_tmp_23 & casez_tmp_24 & (|casez_tmp_25);
-  wire [110:0] _f1_T_12 = 111'h1 << casez_tmp_26;
-  wire [110:0] _freeSteps_3_T_2 = 111'h1 << casez_tmp_81;
-  reg  [5:0]   casez_tmp_82;
-  always_comb begin
-    casez (_idx_T_38)
-      4'b0000:
-        casez_tmp_82 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_82 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_82 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_82 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_82 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_82 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_82 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_82 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_82 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_82 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_82 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_82 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_82 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_82 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_82 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_82 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_19 = (|(kept_n[4:2])) & casez_tmp_27 & casez_tmp_28 & (|casez_tmp_29);
-  wire [110:0] _f1_T_17 = 111'h1 << casez_tmp_30;
-  wire [110:0] _freeSteps_4_T_2 = 111'h1 << casez_tmp_82;
-  reg  [5:0]   casez_tmp_83;
-  always_comb begin
-    casez (_idx_T_40)
-      4'b0000:
-        casez_tmp_83 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_83 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_83 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_83 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_83 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_83 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_83 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_83 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_83 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_83 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_83 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_83 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_83 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_83 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_83 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_83 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_20 = _take_T_80 & casez_tmp_31 & casez_tmp_32 & (|casez_tmp_33);
-  wire [110:0] _f1_T_22 = 111'h1 << casez_tmp_34;
-  wire [110:0] _freeSteps_5_T_2 = 111'h1 << casez_tmp_83;
-  reg  [5:0]   casez_tmp_84;
-  always_comb begin
-    casez (_idx_T_42)
-      4'b0000:
-        casez_tmp_84 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_84 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_84 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_84 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_84 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_84 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_84 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_84 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_84 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_84 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_84 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_84 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_84 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_84 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_84 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_84 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_21 = _take_T_84 & casez_tmp_35 & casez_tmp_36 & (|casez_tmp_37);
-  wire [110:0] _f1_T_27 = 111'h1 << casez_tmp_38;
-  wire [110:0] _freeSteps_6_T_2 = 111'h1 << casez_tmp_84;
-  reg  [5:0]   casez_tmp_85;
-  always_comb begin
-    casez (_idx_T_44)
-      4'b0000:
-        casez_tmp_85 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_85 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_85 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_85 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_85 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_85 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_85 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_85 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_85 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_85 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_85 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_85 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_85 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_85 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_85 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_85 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_22 = _take_T_88 & casez_tmp_39 & casez_tmp_40 & (|casez_tmp_41);
-  wire [110:0] _f1_T_32 = 111'h1 << casez_tmp_42;
-  wire [110:0] _freeSteps_7_T_2 = 111'h1 << casez_tmp_85;
-  reg  [5:0]   casez_tmp_86;
-  always_comb begin
-    casez (_idx_T_46)
-      4'b0000:
-        casez_tmp_86 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_86 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_86 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_86 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_86 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_86 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_86 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_86 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_86 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_86 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_86 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_86 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_86 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_86 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_86 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_86 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_23 = (|(kept_n[4:3])) & casez_tmp_43 & casez_tmp_44 & (|casez_tmp_45);
-  wire [110:0] _f1_T_37 = 111'h1 << casez_tmp_46;
-  wire [110:0] _freeSteps_8_T_2 = 111'h1 << casez_tmp_86;
-  reg  [5:0]   casez_tmp_87;
-  always_comb begin
-    casez (_idx_T_48)
-      4'b0000:
-        casez_tmp_87 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_87 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_87 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_87 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_87 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_87 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_87 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_87 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_87 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_87 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_87 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_87 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_87 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_87 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_87 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_87 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_24 = _take_T_96 & casez_tmp_47 & casez_tmp_48 & (|casez_tmp_49);
-  wire [110:0] _f1_T_42 = 111'h1 << casez_tmp_50;
-  wire [110:0] _freeSteps_9_T_2 = 111'h1 << casez_tmp_87;
-  reg  [5:0]   casez_tmp_88;
-  always_comb begin
-    casez (_idx_T_50)
-      4'b0000:
-        casez_tmp_88 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_88 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_88 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_88 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_88 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_88 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_88 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_88 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_88 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_88 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_88 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_88 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_88 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_88 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_88 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_88 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_25 = _take_T_100 & casez_tmp_51 & casez_tmp_52 & (|casez_tmp_53);
-  wire [110:0] _f1_T_47 = 111'h1 << casez_tmp_54;
-  wire [110:0] _freeSteps_10_T_2 = 111'h1 << casez_tmp_88;
-  reg  [5:0]   casez_tmp_89;
-  always_comb begin
-    casez (_idx_T_52)
-      4'b0000:
-        casez_tmp_89 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_89 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_89 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_89 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_89 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_89 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_89 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_89 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_89 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_89 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_89 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_89 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_89 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_89 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_89 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_89 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_26 = _take_T_104 & casez_tmp_55 & casez_tmp_56 & (|casez_tmp_57);
-  wire [110:0] _f1_T_52 = 111'h1 << casez_tmp_58;
-  wire [110:0] _freeSteps_11_T_2 = 111'h1 << casez_tmp_89;
-  reg  [5:0]   casez_tmp_90;
-  always_comb begin
-    casez (_idx_T_54)
-      4'b0000:
-        casez_tmp_90 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_90 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_90 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_90 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_90 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_90 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_90 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_90 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_90 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_90 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_90 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_90 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_90 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_90 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_90 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_90 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_27 = _take_T_108 & casez_tmp_59 & casez_tmp_60 & (|casez_tmp_61);
-  wire [110:0] _f1_T_57 = 111'h1 << casez_tmp_62;
-  wire [110:0] _freeSteps_12_T_2 = 111'h1 << casez_tmp_90;
-  reg  [5:0]   casez_tmp_91;
-  always_comb begin
-    casez (_idx_T_56)
-      4'b0000:
-        casez_tmp_91 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_91 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_91 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_91 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_91 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_91 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_91 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_91 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_91 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_91 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_91 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_91 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_91 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_91 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_91 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_91 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_28 = _take_T_112 & casez_tmp_63 & casez_tmp_64 & (|casez_tmp_65);
-  wire [110:0] _f1_T_62 = 111'h1 << casez_tmp_66;
-  wire [110:0] _freeSteps_13_T_2 = 111'h1 << casez_tmp_91;
-  reg  [5:0]   casez_tmp_92;
-  always_comb begin
-    casez (_idx_T_58)
-      4'b0000:
-        casez_tmp_92 = _rob_io_entries_0_old_phys;
-      4'b0001:
-        casez_tmp_92 = _rob_io_entries_1_old_phys;
-      4'b0010:
-        casez_tmp_92 = _rob_io_entries_2_old_phys;
-      4'b0011:
-        casez_tmp_92 = _rob_io_entries_3_old_phys;
-      4'b0100:
-        casez_tmp_92 = _rob_io_entries_4_old_phys;
-      4'b0101:
-        casez_tmp_92 = _rob_io_entries_5_old_phys;
-      4'b0110:
-        casez_tmp_92 = _rob_io_entries_6_old_phys;
-      4'b0111:
-        casez_tmp_92 = _rob_io_entries_7_old_phys;
-      4'b1000:
-        casez_tmp_92 = _rob_io_entries_8_old_phys;
-      4'b1001:
-        casez_tmp_92 = _rob_io_entries_9_old_phys;
-      4'b1010:
-        casez_tmp_92 = _rob_io_entries_10_old_phys;
-      4'b1011:
-        casez_tmp_92 = _rob_io_entries_11_old_phys;
-      4'b1100:
-        casez_tmp_92 = _rob_io_entries_12_old_phys;
-      4'b1101:
-        casez_tmp_92 = _rob_io_entries_13_old_phys;
-      4'b1110:
-        casez_tmp_92 = _rob_io_entries_14_old_phys;
-      default:
-        casez_tmp_92 = _rob_io_entries_15_old_phys;
-    endcase
-  end // always_comb
-  wire         take_29 = _take_T_116 & casez_tmp_67 & casez_tmp_68 & (|casez_tmp_69);
-  wire [110:0] _f1_T_67 = 111'h1 << casez_tmp_70;
-  wire [110:0] _freeSteps_14_T_2 = 111'h1 << casez_tmp_92;
   reg  [5:0]   casez_tmp_93;
   always_comb begin
-    casez (_idx_T_60)
+    casez (idx)
       4'b0000:
         casez_tmp_93 = _rob_io_entries_0_old_phys;
       4'b0001:
@@ -4986,12 +5073,12 @@ module Core(
         casez_tmp_93 = _rob_io_entries_15_old_phys;
     endcase
   end // always_comb
-  wire         take_30 = _take_T_120 & casez_tmp_71 & casez_tmp_72 & (|casez_tmp_73);
-  wire [110:0] _f1_T_72 = 111'h1 << casez_tmp_74;
-  wire [110:0] _freeSteps_15_T_2 = 111'h1 << casez_tmp_93;
+  wire         take_16 = (|kept_n) & casez_tmp_29 & casez_tmp_30 & (|casez_tmp_31);
+  wire [110:0] _f1_T_2 = 111'h1 << casez_tmp_32;
+  wire [110:0] _freeSteps_1_T_2 = 111'h1 << casez_tmp_93;
   reg  [5:0]   casez_tmp_94;
   always_comb begin
-    casez (_idx_T_62)
+    casez (_idx_T_34)
       4'b0000:
         casez_tmp_94 = _rob_io_entries_0_old_phys;
       4'b0001:
@@ -5026,103 +5113,691 @@ module Core(
         casez_tmp_94 = _rob_io_entries_15_old_phys;
     endcase
   end // always_comb
-  wire         take_31 = kept_n[4] & casez_tmp_75 & casez_tmp_76 & (|casez_tmp_77);
-  wire [110:0] _f1_T_77 = 111'h1 << casez_tmp_78;
-  wire [110:0] _freeSteps_16_T_2 = 111'h1 << casez_tmp_94;
+  wire         take_17 = (|(kept_n[4:1])) & casez_tmp_33 & casez_tmp_34 & (|casez_tmp_35);
+  wire [110:0] _f1_T_7 = 111'h1 << casez_tmp_36;
+  wire [110:0] _freeSteps_2_T_2 = 111'h1 << casez_tmp_94;
+  reg  [5:0]   casez_tmp_95;
+  always_comb begin
+    casez (_idx_T_36)
+      4'b0000:
+        casez_tmp_95 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_95 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_95 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_95 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_95 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_95 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_95 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_95 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_95 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_95 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_95 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_95 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_95 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_95 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_95 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_95 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_18 = _take_T_72 & casez_tmp_37 & casez_tmp_38 & (|casez_tmp_39);
+  wire [110:0] _f1_T_12 = 111'h1 << casez_tmp_40;
+  wire [110:0] _freeSteps_3_T_2 = 111'h1 << casez_tmp_95;
+  reg  [5:0]   casez_tmp_96;
+  always_comb begin
+    casez (_idx_T_38)
+      4'b0000:
+        casez_tmp_96 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_96 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_96 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_96 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_96 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_96 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_96 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_96 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_96 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_96 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_96 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_96 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_96 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_96 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_96 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_96 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_19 = (|(kept_n[4:2])) & casez_tmp_41 & casez_tmp_42 & (|casez_tmp_43);
+  wire [110:0] _f1_T_17 = 111'h1 << casez_tmp_44;
+  wire [110:0] _freeSteps_4_T_2 = 111'h1 << casez_tmp_96;
+  reg  [5:0]   casez_tmp_97;
+  always_comb begin
+    casez (_idx_T_40)
+      4'b0000:
+        casez_tmp_97 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_97 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_97 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_97 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_97 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_97 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_97 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_97 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_97 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_97 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_97 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_97 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_97 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_97 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_97 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_97 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_20 = _take_T_80 & casez_tmp_45 & casez_tmp_46 & (|casez_tmp_47);
+  wire [110:0] _f1_T_22 = 111'h1 << casez_tmp_48;
+  wire [110:0] _freeSteps_5_T_2 = 111'h1 << casez_tmp_97;
+  reg  [5:0]   casez_tmp_98;
+  always_comb begin
+    casez (_idx_T_42)
+      4'b0000:
+        casez_tmp_98 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_98 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_98 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_98 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_98 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_98 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_98 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_98 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_98 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_98 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_98 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_98 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_98 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_98 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_98 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_98 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_21 = _take_T_84 & casez_tmp_49 & casez_tmp_50 & (|casez_tmp_51);
+  wire [110:0] _f1_T_27 = 111'h1 << casez_tmp_52;
+  wire [110:0] _freeSteps_6_T_2 = 111'h1 << casez_tmp_98;
+  reg  [5:0]   casez_tmp_99;
+  always_comb begin
+    casez (_idx_T_44)
+      4'b0000:
+        casez_tmp_99 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_99 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_99 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_99 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_99 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_99 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_99 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_99 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_99 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_99 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_99 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_99 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_99 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_99 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_99 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_99 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_22 = _take_T_88 & casez_tmp_53 & casez_tmp_54 & (|casez_tmp_55);
+  wire [110:0] _f1_T_32 = 111'h1 << casez_tmp_56;
+  wire [110:0] _freeSteps_7_T_2 = 111'h1 << casez_tmp_99;
+  reg  [5:0]   casez_tmp_100;
+  always_comb begin
+    casez (_idx_T_46)
+      4'b0000:
+        casez_tmp_100 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_100 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_100 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_100 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_100 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_100 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_100 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_100 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_100 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_100 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_100 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_100 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_100 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_100 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_100 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_100 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_23 = (|(kept_n[4:3])) & casez_tmp_57 & casez_tmp_58 & (|casez_tmp_59);
+  wire [110:0] _f1_T_37 = 111'h1 << casez_tmp_60;
+  wire [110:0] _freeSteps_8_T_2 = 111'h1 << casez_tmp_100;
+  reg  [5:0]   casez_tmp_101;
+  always_comb begin
+    casez (_idx_T_48)
+      4'b0000:
+        casez_tmp_101 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_101 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_101 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_101 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_101 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_101 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_101 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_101 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_101 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_101 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_101 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_101 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_101 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_101 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_101 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_101 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_24 = _take_T_96 & casez_tmp_61 & casez_tmp_62 & (|casez_tmp_63);
+  wire [110:0] _f1_T_42 = 111'h1 << casez_tmp_64;
+  wire [110:0] _freeSteps_9_T_2 = 111'h1 << casez_tmp_101;
+  reg  [5:0]   casez_tmp_102;
+  always_comb begin
+    casez (_idx_T_50)
+      4'b0000:
+        casez_tmp_102 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_102 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_102 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_102 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_102 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_102 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_102 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_102 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_102 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_102 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_102 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_102 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_102 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_102 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_102 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_102 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_25 = _take_T_100 & casez_tmp_65 & casez_tmp_66 & (|casez_tmp_67);
+  wire [110:0] _f1_T_47 = 111'h1 << casez_tmp_68;
+  wire [110:0] _freeSteps_10_T_2 = 111'h1 << casez_tmp_102;
+  reg  [5:0]   casez_tmp_103;
+  always_comb begin
+    casez (_idx_T_52)
+      4'b0000:
+        casez_tmp_103 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_103 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_103 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_103 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_103 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_103 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_103 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_103 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_103 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_103 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_103 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_103 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_103 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_103 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_103 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_103 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_26 = _take_T_104 & casez_tmp_69 & casez_tmp_70 & (|casez_tmp_71);
+  wire [110:0] _f1_T_52 = 111'h1 << casez_tmp_72;
+  wire [110:0] _freeSteps_11_T_2 = 111'h1 << casez_tmp_103;
+  reg  [5:0]   casez_tmp_104;
+  always_comb begin
+    casez (_idx_T_54)
+      4'b0000:
+        casez_tmp_104 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_104 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_104 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_104 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_104 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_104 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_104 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_104 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_104 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_104 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_104 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_104 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_104 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_104 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_104 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_104 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_27 = _take_T_108 & casez_tmp_73 & casez_tmp_74 & (|casez_tmp_75);
+  wire [110:0] _f1_T_57 = 111'h1 << casez_tmp_76;
+  wire [110:0] _freeSteps_12_T_2 = 111'h1 << casez_tmp_104;
+  reg  [5:0]   casez_tmp_105;
+  always_comb begin
+    casez (_idx_T_56)
+      4'b0000:
+        casez_tmp_105 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_105 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_105 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_105 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_105 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_105 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_105 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_105 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_105 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_105 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_105 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_105 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_105 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_105 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_105 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_105 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_28 = _take_T_112 & casez_tmp_77 & casez_tmp_78 & (|casez_tmp_79);
+  wire [110:0] _f1_T_62 = 111'h1 << casez_tmp_80;
+  wire [110:0] _freeSteps_13_T_2 = 111'h1 << casez_tmp_105;
+  reg  [5:0]   casez_tmp_106;
+  always_comb begin
+    casez (_idx_T_58)
+      4'b0000:
+        casez_tmp_106 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_106 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_106 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_106 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_106 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_106 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_106 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_106 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_106 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_106 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_106 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_106 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_106 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_106 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_106 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_106 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_29 = _take_T_116 & casez_tmp_81 & casez_tmp_82 & (|casez_tmp_83);
+  wire [110:0] _f1_T_67 = 111'h1 << casez_tmp_84;
+  wire [110:0] _freeSteps_14_T_2 = 111'h1 << casez_tmp_106;
+  reg  [5:0]   casez_tmp_107;
+  always_comb begin
+    casez (_idx_T_60)
+      4'b0000:
+        casez_tmp_107 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_107 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_107 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_107 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_107 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_107 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_107 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_107 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_107 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_107 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_107 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_107 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_107 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_107 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_107 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_107 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_30 = _take_T_120 & casez_tmp_85 & casez_tmp_86 & (|casez_tmp_87);
+  wire [110:0] _f1_T_72 = 111'h1 << casez_tmp_88;
+  wire [110:0] _freeSteps_15_T_2 = 111'h1 << casez_tmp_107;
+  reg  [5:0]   casez_tmp_108;
+  always_comb begin
+    casez (_idx_T_62)
+      4'b0000:
+        casez_tmp_108 = _rob_io_entries_0_old_phys;
+      4'b0001:
+        casez_tmp_108 = _rob_io_entries_1_old_phys;
+      4'b0010:
+        casez_tmp_108 = _rob_io_entries_2_old_phys;
+      4'b0011:
+        casez_tmp_108 = _rob_io_entries_3_old_phys;
+      4'b0100:
+        casez_tmp_108 = _rob_io_entries_4_old_phys;
+      4'b0101:
+        casez_tmp_108 = _rob_io_entries_5_old_phys;
+      4'b0110:
+        casez_tmp_108 = _rob_io_entries_6_old_phys;
+      4'b0111:
+        casez_tmp_108 = _rob_io_entries_7_old_phys;
+      4'b1000:
+        casez_tmp_108 = _rob_io_entries_8_old_phys;
+      4'b1001:
+        casez_tmp_108 = _rob_io_entries_9_old_phys;
+      4'b1010:
+        casez_tmp_108 = _rob_io_entries_10_old_phys;
+      4'b1011:
+        casez_tmp_108 = _rob_io_entries_11_old_phys;
+      4'b1100:
+        casez_tmp_108 = _rob_io_entries_12_old_phys;
+      4'b1101:
+        casez_tmp_108 = _rob_io_entries_13_old_phys;
+      4'b1110:
+        casez_tmp_108 = _rob_io_entries_14_old_phys;
+      default:
+        casez_tmp_108 = _rob_io_entries_15_old_phys;
+    endcase
+  end // always_comb
+  wire         take_31 = kept_n[4] & casez_tmp_89 & casez_tmp_90 & (|casez_tmp_91);
+  wire [110:0] _f1_T_77 = 111'h1 << casez_tmp_92;
+  wire [110:0] _freeSteps_16_T_2 = 111'h1 << casez_tmp_108;
   wire [3:0]   after_idxAge = 4'h0 - _rob_io_head;
-  wire [4:0]   _GEN = {1'h0, after_idxAge};
+  wire [4:0]   _GEN_0 = {1'h0, after_idxAge};
   wire [110:0] _busyKeep_0_T = 111'h1 << _rob_io_entries_0_new_phys;
   wire [3:0]   _after_idxAge_T_34 = 4'h1 - _rob_io_head;
-  wire [4:0]   _GEN_0 = {1'h0, _after_idxAge_T_34};
+  wire [4:0]   _GEN_1 = {1'h0, _after_idxAge_T_34};
   wire [110:0] _busyKeep_1_T = 111'h1 << _rob_io_entries_1_new_phys;
   wire [3:0]   _after_idxAge_T_36 = 4'h2 - _rob_io_head;
-  wire [4:0]   _GEN_1 = {1'h0, _after_idxAge_T_36};
+  wire [4:0]   _GEN_2 = {1'h0, _after_idxAge_T_36};
   wire [110:0] _busyKeep_2_T = 111'h1 << _rob_io_entries_2_new_phys;
   wire [3:0]   _after_idxAge_T_38 = 4'h3 - _rob_io_head;
-  wire [4:0]   _GEN_2 = {1'h0, _after_idxAge_T_38};
+  wire [4:0]   _GEN_3 = {1'h0, _after_idxAge_T_38};
   wire [110:0] _busyKeep_3_T = 111'h1 << _rob_io_entries_3_new_phys;
   wire [3:0]   _after_idxAge_T_40 = 4'h4 - _rob_io_head;
-  wire [4:0]   _GEN_3 = {1'h0, _after_idxAge_T_40};
+  wire [4:0]   _GEN_4 = {1'h0, _after_idxAge_T_40};
   wire [110:0] _busyKeep_4_T = 111'h1 << _rob_io_entries_4_new_phys;
   wire [3:0]   _after_idxAge_T_42 = 4'h5 - _rob_io_head;
-  wire [4:0]   _GEN_4 = {1'h0, _after_idxAge_T_42};
+  wire [4:0]   _GEN_5 = {1'h0, _after_idxAge_T_42};
   wire [110:0] _busyKeep_5_T = 111'h1 << _rob_io_entries_5_new_phys;
   wire [3:0]   _after_idxAge_T_44 = 4'h6 - _rob_io_head;
-  wire [4:0]   _GEN_5 = {1'h0, _after_idxAge_T_44};
+  wire [4:0]   _GEN_6 = {1'h0, _after_idxAge_T_44};
   wire [110:0] _busyKeep_6_T = 111'h1 << _rob_io_entries_6_new_phys;
   wire [3:0]   _after_idxAge_T_46 = 4'h7 - _rob_io_head;
-  wire [4:0]   _GEN_6 = {1'h0, _after_idxAge_T_46};
+  wire [4:0]   _GEN_7 = {1'h0, _after_idxAge_T_46};
   wire [110:0] _busyKeep_7_T = 111'h1 << _rob_io_entries_7_new_phys;
   wire [3:0]   _after_idxAge_T_48 = 4'h8 - _rob_io_head;
-  wire [4:0]   _GEN_7 = {1'h0, _after_idxAge_T_48};
+  wire [4:0]   _GEN_8 = {1'h0, _after_idxAge_T_48};
   wire [110:0] _busyKeep_8_T = 111'h1 << _rob_io_entries_8_new_phys;
   wire [3:0]   _after_idxAge_T_50 = 4'h9 - _rob_io_head;
-  wire [4:0]   _GEN_8 = {1'h0, _after_idxAge_T_50};
+  wire [4:0]   _GEN_9 = {1'h0, _after_idxAge_T_50};
   wire [110:0] _busyKeep_9_T = 111'h1 << _rob_io_entries_9_new_phys;
   wire [3:0]   _after_idxAge_T_52 = 4'hA - _rob_io_head;
-  wire [4:0]   _GEN_9 = {1'h0, _after_idxAge_T_52};
+  wire [4:0]   _GEN_10 = {1'h0, _after_idxAge_T_52};
   wire [110:0] _busyKeep_10_T = 111'h1 << _rob_io_entries_10_new_phys;
   wire [3:0]   _after_idxAge_T_54 = 4'hB - _rob_io_head;
-  wire [4:0]   _GEN_10 = {1'h0, _after_idxAge_T_54};
+  wire [4:0]   _GEN_11 = {1'h0, _after_idxAge_T_54};
   wire [110:0] _busyKeep_11_T = 111'h1 << _rob_io_entries_11_new_phys;
   wire [3:0]   _after_idxAge_T_56 = 4'hC - _rob_io_head;
-  wire [4:0]   _GEN_11 = {1'h0, _after_idxAge_T_56};
+  wire [4:0]   _GEN_12 = {1'h0, _after_idxAge_T_56};
   wire [110:0] _busyKeep_12_T = 111'h1 << _rob_io_entries_12_new_phys;
   wire [3:0]   _after_idxAge_T_58 = 4'hD - _rob_io_head;
-  wire [4:0]   _GEN_12 = {1'h0, _after_idxAge_T_58};
+  wire [4:0]   _GEN_13 = {1'h0, _after_idxAge_T_58};
   wire [110:0] _busyKeep_13_T = 111'h1 << _rob_io_entries_13_new_phys;
   wire [3:0]   _after_idxAge_T_60 = 4'hE - _rob_io_head;
-  wire [4:0]   _GEN_13 = {1'h0, _after_idxAge_T_60};
+  wire [4:0]   _GEN_14 = {1'h0, _after_idxAge_T_60};
   wire [110:0] _busyKeep_14_T = 111'h1 << _rob_io_entries_14_new_phys;
   wire [3:0]   _after_idxAge_T_62 = 4'hF - _rob_io_head;
-  wire [4:0]   _GEN_14 = {1'h0, _after_idxAge_T_62};
+  wire [4:0]   _GEN_15 = {1'h0, _after_idxAge_T_62};
   wire [110:0] _busyKeep_15_T = 111'h1 << _rob_io_entries_15_new_phys;
-  wire [110:0] _busyRebuild_T_17 = 111'h1 << wb_sel_pdest;
+  wire [110:0] _wbClearMask_T_2 = 111'h1 << wb_sel_pdest;
+  wire [110:0] _wbClearMask_T_6 = 111'h1 << wb_sel1_pdest;
   wire         busy_io_rebuild = flush_now | _rob_io_count == 5'h0 & ~en_ren & ~en_ren1;
   wire         cm_is_jump = rob_io_commit_fire & _cm_is_jump_T & _cm_is_jump_T_2;
   wire         _ifu_io_bpu_update_is_ret_T = _rob_io_commit_bits_jump == 4'h9;
+  wire         _GEN_16 = mis_predict_dbg & d_alu_bits_bp_valid;
+  reg  [1:0]   cm_st_state;
   reg  [31:0]  cm_st_addr;
   reg  [31:0]  cm_st_wdata;
   reg  [3:0]   cm_st_wstrb;
   reg          cm_st_aw_done;
   reg          cm_st_w_done;
-  wire         io_dmem_bready_0 = cm_st_state == 2'h2;
-  assign store_commit_ready = io_dmem_bready_0 & io_dmem_bvalid;
+  wire         head_wb_store =
+    head_wb_valid & _rob_io_commit_bits_mem_valid & _rob_io_commit_bits_mem_write;
+  wire         head_addr_rdy = _rob_io_commit_bits_addr_ready | head_wb_store;
+  wire [31:0]  head_st_addr =
+    head_wb_store ? head_wb_bits_alu_result : _rob_io_commit_bits_mem_addr;
+  wire [31:0]  head_st_data =
+    head_wb_store
+      ? (head_wb0 ? wb_sel_store_data : wb_sel1_store_data)
+      : _rob_io_commit_bits_mem_wdata;
+  wire [31:0]  _head_st_is_pmem_T = head_st_addr - 32'h80000000;
+  wire         head_st_is_pmem = _head_st_is_pmem_T < 32'h8000000;
+  wire         _io_dmem_bready_T = cm_st_state == 2'h2;
+  wire         stbuf_io_enq_valid = sq_io_commit_valid & head_st_is_pmem;
+  assign store_commit_ready =
+    head_addr_rdy
+    & (head_st_is_pmem
+         ? _stbuf_io_enq_ready
+         : _io_dmem_bready_T & io_dmem_bvalid & io_dmem_bready_0);
+  wire         store_bus_busy = (|cm_st_state) | _stbuf_io_busy;
+  assign store_side_empty = _stbuf_io_empty & ~_stbuf_io_busy & ~(|cm_st_state);
+  assign cm_writing_gap = store_bus_busy | ~_stbuf_io_empty;
+  assign fencei_commit_ready = store_side_empty & _icache_io_fencei_ready;
+  wire         dcache_io_invalidate_valid = _stbuf_io_enq_ready & stbuf_io_enq_valid;
+  wire         stbuf_io_dmem_bvalid = io_dmem_bvalid & ~(|cm_st_state);
   wire         _io_dmem_wvalid_T = cm_st_state == 2'h1;
-  wire         io_dmem_awvalid_0 = _io_dmem_wvalid_T & ~cm_st_aw_done;
-  wire         io_dmem_wvalid_0 = _io_dmem_wvalid_T & ~cm_st_w_done;
+  wire         io_dmem_awvalid_0 =
+    (|cm_st_state) ? _io_dmem_wvalid_T & ~cm_st_aw_done : _stbuf_io_dmem_awvalid;
+  wire         io_dmem_wvalid_0 =
+    (|cm_st_state) ? _io_dmem_wvalid_T & ~cm_st_w_done : _stbuf_io_dmem_wvalid;
+  assign io_dmem_bready_0 = (|cm_st_state) ? _io_dmem_bready_T : _stbuf_io_dmem_bready;
+  wire [62:0]  _cm_st_wdata_T_1 =
+    {31'h0, head_st_data} << {58'h0, head_st_addr[1:0], 3'h0};
+  wire [6:0]   _cm_st_wstrb_T =
+    {3'h0, _rob_io_commit_bits_mem_wmask[3:0]} << head_st_addr[1:0];
+  wire         alu_leave = hold_alu & _exu_io_out_valid & exu_io_out_ready;
+  wire         div_leave = hold_div & _exu_div_io_out_valid & exu_div_io_out_ready;
   wire         lsu_addr_leave =
     hold_lsu & ~d_lsu_sent & _exu_lsu_io_out_valid & _lsu_io_in_ready;
+  wire         lsu_leave = hold_lsu & _lsu_io_out_valid & lsu_io_out_ready;
   wire         can_load_alu = ~stop_issue & (~d_alu_valid | flush_alu);
   wire         can_load_div = ~stop_issue & (~d_div_valid | flush_div);
   wire         can_load_lsu = ~stop_issue & (~d_lsu_valid | flush_lsu);
-  wire         _GEN_15 = can_load_alu & _rs_io_issue_alu_valid;
-  wire         _GEN_16 = ~d_alu_valid & can_load_alu & _rs_io_issue_alu_valid;
-  wire         _GEN_17 = can_load_div & _rs_io_issue_div_valid;
-  wire         _GEN_18 = ~d_div_valid & can_load_div & _rs_io_issue_div_valid;
-  wire         _GEN_19 = can_load_lsu & _rs_io_issue_lsu_valid;
-  wire         _GEN_20 = ~d_lsu_valid & can_load_lsu & _rs_io_issue_lsu_valid;
+  wire         _GEN_17 = can_load_alu & _rs_io_issue_alu_valid;
+  wire         _GEN_18 = ~d_alu_valid & can_load_alu & _rs_io_issue_alu_valid;
+  wire         _GEN_19 = can_load_div & _rs_io_issue_div_valid;
+  wire         _GEN_20 = ~d_div_valid & can_load_div & _rs_io_issue_div_valid;
+  wire         _GEN_21 = can_load_lsu & _rs_io_issue_lsu_valid;
+  wire         _GEN_22 = ~d_lsu_valid & can_load_lsu & _rs_io_issue_lsu_valid;
   wire [31:0]  _arch_rf_T =
-    cm_wb_same ? _wbu_io_refile_wdata : _rob_io_commit_bits_dest_val;
-  wire         head_wb_store =
-    can_wb & _head_wb_store_T & _rob_io_commit_bits_mem_valid
-    & _rob_io_commit_bits_mem_write;
-  wire         _GEN_21 = cm_st_state == 2'h0;
-  wire         _GEN_22 =
+    cm_wb_same
+      ? (head_wb0 ? _wbu_io_refile_wdata : _wbu1_io_refile_wdata)
+      : _rob_io_commit_bits_dest_val;
+  wire         _GEN_23 = cm_st_state == 2'h0;
+  wire         _GEN_24 =
     _rob_io_commit_valid & ~is_irq & ~ext_irq_fire & _rob_io_commit_bits_mem_valid
-    & _rob_io_commit_bits_mem_write & (_rob_io_commit_bits_addr_ready | head_wb_store)
-    & ~_rob_io_commit_bits_is_fencei & ~_lsu_io_bus_busy;
-  wire         _GEN_23 = cm_st_state == 2'h1;
+    & _rob_io_commit_bits_mem_write & head_addr_rdy & ~_rob_io_commit_bits_is_fencei
+    & (|(_head_st_is_pmem_T[31:27])) & _stbuf_io_empty & ~_stbuf_io_busy
+    & ~_lsu_io_bus_busy;
+  wire         _GEN_25 = cm_st_state == 2'h1;
   wire         aw_fire = io_dmem_awvalid_0 & io_dmem_awready;
   wire         w_fire = io_dmem_wvalid_0 & io_dmem_wready;
-  wire         _GEN_24 = cm_st_state == 2'h2 & io_dmem_bvalid & io_dmem_bready_0;
-  wire [31:0]  head_st_addr =
-    head_wb_store ? wb_sel_alu_result : _rob_io_commit_bits_mem_addr;
-  wire [62:0]  _cm_st_wdata_T_1 =
-    {31'h0, head_wb_store ? wb_sel_store_data : _rob_io_commit_bits_mem_wdata}
-    << {58'h0, head_st_addr[1:0], 3'h0};
-  wire [6:0]   _cm_st_wstrb_T =
-    {3'h0, _rob_io_commit_bits_mem_wmask[3:0]} << head_st_addr[1:0];
+  wire         _GEN_26 = cm_st_state == 2'h2 & io_dmem_bvalid & io_dmem_bready_0;
   always @(posedge clock) begin
     if (reset) begin
       ifu_io_in_bits_r_next_pc <= 32'h80000000;
@@ -5223,23 +5898,23 @@ module Core(
       d_lsu_bits_rob_idx <= 4'h0;
       d_lsu_bits_pdest <= 6'h0;
       d_lsu_sent <= 1'h0;
-      valid <= 1'h0;
-      lsu_io_in_bits_r_signals_lsu_mem_rd <= 3'h0;
-      lsu_io_in_bits_r_signals_lsu_mem_write <= 1'h0;
-      lsu_io_in_bits_r_signals_lsu_mem_valid <= 1'h0;
-      lsu_io_in_bits_r_signals_wbu_reg_write <= 1'h0;
-      lsu_io_in_bits_r_signals_wbu_reg_write_sel <= 3'h0;
-      lsu_io_in_bits_r_alu_result <= 32'h0;
-      lsu_io_in_bits_r_pc <= 32'h0;
-      lsu_io_in_bits_r_imm_ext <= 32'h0;
-      lsu_io_in_bits_r_rd2 <= 32'h0;
-      lsu_io_in_bits_r_waddr <= 5'h0;
-      lsu_io_in_bits_r_csr_rd1 <= 32'h0;
-      lsu_io_in_bits_r_state_state <= 1'h0;
-      lsu_io_in_bits_r_state_state_num <= 8'h0;
-      lsu_io_in_bits_r_rob_idx <= 4'h0;
-      lsu_io_in_bits_r_pdest <= 6'h0;
-      lsu_io_in_bits_r_br_taken <= 1'h0;
+      lsu_stage_valid <= 1'h0;
+      lsu_stage_bits_signals_lsu_mem_rd <= 3'h0;
+      lsu_stage_bits_signals_lsu_mem_write <= 1'h0;
+      lsu_stage_bits_signals_lsu_mem_valid <= 1'h0;
+      lsu_stage_bits_signals_wbu_reg_write <= 1'h0;
+      lsu_stage_bits_signals_wbu_reg_write_sel <= 3'h0;
+      lsu_stage_bits_alu_result <= 32'h0;
+      lsu_stage_bits_pc <= 32'h0;
+      lsu_stage_bits_imm_ext <= 32'h0;
+      lsu_stage_bits_rd2 <= 32'h0;
+      lsu_stage_bits_waddr <= 5'h0;
+      lsu_stage_bits_csr_rd1 <= 32'h0;
+      lsu_stage_bits_state_state <= 1'h0;
+      lsu_stage_bits_state_state_num <= 8'h0;
+      lsu_stage_bits_rob_idx <= 4'h0;
+      lsu_stage_bits_pdest <= 6'h0;
+      lsu_stage_bits_br_taken <= 1'h0;
       irq_commit_r <= 1'h0;
       irq_rob_r <= 4'h0;
       mis_predict_r <= 1'h0;
@@ -5325,9 +6000,9 @@ module Core(
         arch_rf_30 <= _arch_rf_T;
       if (cm_do_ren & (&_rob_io_commit_bits_arch_rd))
         arch_rf_31 <= _arch_rf_T;
-      d_alu_valid <= flush_alu ? _GEN_15 : ~alu_leave & (_GEN_16 | d_alu_valid);
+      d_alu_valid <= flush_alu ? _GEN_17 : ~alu_leave & (_GEN_18 | d_alu_valid);
       if (flush_alu) begin
-        if (_GEN_15) begin
+        if (_GEN_17) begin
           d_alu_bits_signals_exu_alu_srcA <= _rs_io_issue_alu_bits_exu_alu_srcA;
           d_alu_bits_signals_exu_alu_srcB <= _rs_io_issue_alu_bits_exu_alu_srcB;
           d_alu_bits_signals_exu_alu_control <= _rs_io_issue_alu_bits_exu_alu_control;
@@ -5353,7 +6028,7 @@ module Core(
           d_alu_bits_pdest <= _rs_io_issue_alu_bits_pdest;
         end
       end
-      else if (alu_leave | ~_GEN_16) begin
+      else if (alu_leave | ~_GEN_18) begin
       end
       else begin
         d_alu_bits_signals_exu_alu_srcA <= _rs_io_issue_alu_bits_exu_alu_srcA;
@@ -5380,9 +6055,9 @@ module Core(
         d_alu_bits_cp_idx <= _rs_io_issue_alu_bits_cp_idx;
         d_alu_bits_pdest <= _rs_io_issue_alu_bits_pdest;
       end
-      d_div_valid <= flush_div ? _GEN_17 : ~div_leave & (_GEN_18 | d_div_valid);
+      d_div_valid <= flush_div ? _GEN_19 : ~div_leave & (_GEN_20 | d_div_valid);
       if (flush_div) begin
-        if (_GEN_17) begin
+        if (_GEN_19) begin
           d_div_bits_signals_exu_alu_srcA <= _rs_io_issue_div_bits_exu_alu_srcA;
           d_div_bits_signals_exu_alu_srcB <= _rs_io_issue_div_bits_exu_alu_srcB;
           d_div_bits_signals_exu_alu_control <= _rs_io_issue_div_bits_exu_alu_control;
@@ -5404,7 +6079,7 @@ module Core(
           d_div_bits_pdest <= _rs_io_issue_div_bits_pdest;
         end
       end
-      else if (div_leave | ~_GEN_18) begin
+      else if (div_leave | ~_GEN_20) begin
       end
       else begin
         d_div_bits_signals_exu_alu_srcA <= _rs_io_issue_div_bits_exu_alu_srcA;
@@ -5428,9 +6103,9 @@ module Core(
         d_div_bits_pdest <= _rs_io_issue_div_bits_pdest;
       end
       d_lsu_valid <=
-        flush_lsu ? _GEN_19 : ~lsu_leave & (~lsu_addr_leave & _GEN_20 | d_lsu_valid);
+        flush_lsu ? _GEN_21 : ~lsu_leave & (~lsu_addr_leave & _GEN_22 | d_lsu_valid);
       if (flush_lsu) begin
-        if (_GEN_19) begin
+        if (_GEN_21) begin
           d_lsu_bits_signals_exu_alu_srcA <= _rs_io_issue_lsu_bits_exu_alu_srcA;
           d_lsu_bits_signals_exu_alu_srcB <= _rs_io_issue_lsu_bits_exu_alu_srcB;
           d_lsu_bits_signals_exu_alu_control <= _rs_io_issue_lsu_bits_exu_alu_control;
@@ -5452,7 +6127,7 @@ module Core(
           d_lsu_bits_pdest <= _rs_io_issue_lsu_bits_pdest;
         end
       end
-      else if (lsu_leave | lsu_addr_leave | ~_GEN_20) begin
+      else if (lsu_leave | lsu_addr_leave | ~_GEN_22) begin
       end
       else begin
         d_lsu_bits_signals_exu_alu_srcA <= _rs_io_issue_lsu_bits_exu_alu_srcA;
@@ -5475,29 +6150,32 @@ module Core(
         d_lsu_bits_rob_idx <= _rs_io_issue_lsu_bits_rob_idx;
         d_lsu_bits_pdest <= _rs_io_issue_lsu_bits_pdest;
       end
-      d_lsu_sent <= ~(flush_lsu | lsu_leave) & (lsu_addr_leave | ~_GEN_20 & d_lsu_sent);
-      valid <= ~flush_lsu & (_lsu_io_in_ready ? _exu_lsu_io_out_valid : valid);
-      if (_exu_lsu_io_out_valid & _lsu_io_in_ready & ~flush_lsu) begin
-        lsu_io_in_bits_r_signals_lsu_mem_rd <= _exu_lsu_io_out_bits_signals_lsu_mem_rd;
-        lsu_io_in_bits_r_signals_lsu_mem_write <=
+      d_lsu_sent <= ~(flush_lsu | lsu_leave) & (lsu_addr_leave | ~_GEN_22 & d_lsu_sent);
+      lsu_stage_valid <=
+        ~flush_lsu & (_lsu_io_in_ready ? _exu_lsu_io_out_valid : lsu_stage_valid);
+      if (flush_lsu | ~(_lsu_io_in_ready & _exu_lsu_io_out_valid)) begin
+      end
+      else begin
+        lsu_stage_bits_signals_lsu_mem_rd <= _exu_lsu_io_out_bits_signals_lsu_mem_rd;
+        lsu_stage_bits_signals_lsu_mem_write <=
           _exu_lsu_io_out_bits_signals_lsu_mem_write;
-        lsu_io_in_bits_r_signals_lsu_mem_valid <=
+        lsu_stage_bits_signals_lsu_mem_valid <=
           _exu_lsu_io_out_bits_signals_lsu_mem_valid;
-        lsu_io_in_bits_r_signals_wbu_reg_write <=
+        lsu_stage_bits_signals_wbu_reg_write <=
           _exu_lsu_io_out_bits_signals_wbu_reg_write;
-        lsu_io_in_bits_r_signals_wbu_reg_write_sel <=
+        lsu_stage_bits_signals_wbu_reg_write_sel <=
           _exu_lsu_io_out_bits_signals_wbu_reg_write_sel;
-        lsu_io_in_bits_r_alu_result <= _exu_lsu_io_out_bits_alu_result;
-        lsu_io_in_bits_r_pc <= _exu_lsu_io_out_bits_pc;
-        lsu_io_in_bits_r_imm_ext <= _exu_lsu_io_out_bits_imm_ext;
-        lsu_io_in_bits_r_rd2 <= _exu_lsu_io_out_bits_rd2;
-        lsu_io_in_bits_r_waddr <= _exu_lsu_io_out_bits_waddr;
-        lsu_io_in_bits_r_csr_rd1 <= _exu_lsu_io_out_bits_csr_rd1;
-        lsu_io_in_bits_r_state_state <= _exu_lsu_io_out_bits_state_state;
-        lsu_io_in_bits_r_state_state_num <= _exu_lsu_io_out_bits_state_state_num;
-        lsu_io_in_bits_r_rob_idx <= _exu_lsu_io_out_bits_rob_idx;
-        lsu_io_in_bits_r_pdest <= _exu_lsu_io_out_bits_pdest;
-        lsu_io_in_bits_r_br_taken <= _exu_lsu_io_out_bits_br_taken;
+        lsu_stage_bits_alu_result <= _exu_lsu_io_out_bits_alu_result;
+        lsu_stage_bits_pc <= _exu_lsu_io_out_bits_pc;
+        lsu_stage_bits_imm_ext <= _exu_lsu_io_out_bits_imm_ext;
+        lsu_stage_bits_rd2 <= _exu_lsu_io_out_bits_rd2;
+        lsu_stage_bits_waddr <= _exu_lsu_io_out_bits_waddr;
+        lsu_stage_bits_csr_rd1 <= _exu_lsu_io_out_bits_csr_rd1;
+        lsu_stage_bits_state_state <= _exu_lsu_io_out_bits_state_state;
+        lsu_stage_bits_state_state_num <= _exu_lsu_io_out_bits_state_state_num;
+        lsu_stage_bits_rob_idx <= _exu_lsu_io_out_bits_rob_idx;
+        lsu_stage_bits_pdest <= _exu_lsu_io_out_bits_pdest;
+        lsu_stage_bits_br_taken <= _exu_lsu_io_out_bits_br_taken;
       end
       irq_commit_r <= irq_commit;
       if (irq_commit)
@@ -5518,17 +6196,17 @@ module Core(
         irq_mtvec_r <= _csr_io_read_mtvec;
       if (is_irq)
         cm_st_state <= 2'h0;
-      else if (_GEN_21) begin
-        if (_GEN_22)
+      else if (_GEN_23) begin
+        if (_GEN_24)
           cm_st_state <= 2'h1;
       end
-      else if (_GEN_23) begin
+      else if (_GEN_25) begin
         if ((cm_st_aw_done | aw_fire) & (cm_st_w_done | w_fire))
           cm_st_state <= 2'h2;
       end
-      else if (_GEN_24)
+      else if (_GEN_26)
         cm_st_state <= 2'h0;
-      if (is_irq | ~(_GEN_21 & _GEN_22)) begin
+      if (is_irq | ~(_GEN_23 & _GEN_24)) begin
       end
       else begin
         cm_st_addr <= head_st_addr;
@@ -5537,14 +6215,14 @@ module Core(
       end
       cm_st_aw_done <=
         ~is_irq
-        & (_GEN_21
-             ? ~_GEN_22 & cm_st_aw_done
-             : _GEN_23 ? aw_fire | cm_st_aw_done : ~_GEN_24 & cm_st_aw_done);
+        & (_GEN_23
+             ? ~_GEN_24 & cm_st_aw_done
+             : _GEN_25 ? aw_fire | cm_st_aw_done : ~_GEN_26 & cm_st_aw_done);
       cm_st_w_done <=
         ~is_irq
-        & (_GEN_21
-             ? ~_GEN_22 & cm_st_w_done
-             : _GEN_23 ? w_fire | cm_st_w_done : ~_GEN_24 & cm_st_w_done);
+        & (_GEN_23
+             ? ~_GEN_24 & cm_st_w_done
+             : _GEN_25 ? w_fire | cm_st_w_done : ~_GEN_26 & cm_st_w_done);
     end
   end // always @(posedge)
   IFU ifu (
@@ -5838,22 +6516,22 @@ module Core(
     .reset                                 (reset),
     .io_in_ready                           (_lsu_io_in_ready),
     .io_in_valid                           (lsu_io_in_valid),
-    .io_in_bits_signals_lsu_mem_rd         (lsu_io_in_bits_r_signals_lsu_mem_rd),
-    .io_in_bits_signals_lsu_mem_write      (lsu_io_in_bits_r_signals_lsu_mem_write),
-    .io_in_bits_signals_lsu_mem_valid      (lsu_io_in_bits_r_signals_lsu_mem_valid),
-    .io_in_bits_signals_wbu_reg_write      (lsu_io_in_bits_r_signals_wbu_reg_write),
-    .io_in_bits_signals_wbu_reg_write_sel  (lsu_io_in_bits_r_signals_wbu_reg_write_sel),
-    .io_in_bits_alu_result                 (lsu_io_in_bits_r_alu_result),
-    .io_in_bits_pc                         (lsu_io_in_bits_r_pc),
-    .io_in_bits_imm_ext                    (lsu_io_in_bits_r_imm_ext),
-    .io_in_bits_rd2                        (lsu_io_in_bits_r_rd2),
-    .io_in_bits_waddr                      (lsu_io_in_bits_r_waddr),
-    .io_in_bits_csr_rd1                    (lsu_io_in_bits_r_csr_rd1),
-    .io_in_bits_state_state                (lsu_io_in_bits_r_state_state),
-    .io_in_bits_state_state_num            (lsu_io_in_bits_r_state_state_num),
-    .io_in_bits_rob_idx                    (lsu_io_in_bits_r_rob_idx),
-    .io_in_bits_pdest                      (lsu_io_in_bits_r_pdest),
-    .io_in_bits_br_taken                   (lsu_io_in_bits_r_br_taken),
+    .io_in_bits_signals_lsu_mem_rd         (lsu_stage_bits_signals_lsu_mem_rd),
+    .io_in_bits_signals_lsu_mem_write      (lsu_stage_bits_signals_lsu_mem_write),
+    .io_in_bits_signals_lsu_mem_valid      (lsu_stage_bits_signals_lsu_mem_valid),
+    .io_in_bits_signals_wbu_reg_write      (lsu_stage_bits_signals_wbu_reg_write),
+    .io_in_bits_signals_wbu_reg_write_sel  (lsu_stage_bits_signals_wbu_reg_write_sel),
+    .io_in_bits_alu_result                 (lsu_stage_bits_alu_result),
+    .io_in_bits_pc                         (lsu_stage_bits_pc),
+    .io_in_bits_imm_ext                    (lsu_stage_bits_imm_ext),
+    .io_in_bits_rd2                        (lsu_stage_bits_rd2),
+    .io_in_bits_waddr                      (lsu_stage_bits_waddr),
+    .io_in_bits_csr_rd1                    (lsu_stage_bits_csr_rd1),
+    .io_in_bits_state_state                (lsu_stage_bits_state_state),
+    .io_in_bits_state_state_num            (lsu_stage_bits_state_state_num),
+    .io_in_bits_rob_idx                    (lsu_stage_bits_rob_idx),
+    .io_in_bits_pdest                      (lsu_stage_bits_pdest),
+    .io_in_bits_br_taken                   (lsu_stage_bits_br_taken),
     .io_out_ready                          (lsu_io_out_ready),
     .io_out_valid                          (_lsu_io_out_valid),
     .io_out_bits_signals_wbu_reg_write     (_lsu_io_out_bits_signals_wbu_reg_write),
@@ -5870,21 +6548,24 @@ module Core(
     .io_out_bits_pdest                     (_lsu_io_out_bits_pdest),
     .io_out_bits_br_taken                  (_lsu_io_out_bits_br_taken),
     .io_out_bits_store_data                (_lsu_io_out_bits_store_data),
-    .io_dmem_araddr                        (io_dmem_araddr),
+    .io_dmem_araddr                        (_lsu_io_dmem_araddr),
     .io_dmem_arvalid                       (_lsu_io_dmem_arvalid),
-    .io_dmem_arready                       (io_dmem_arready & ~(|cm_st_state)),
-    .io_dmem_rdata                         (io_dmem_rdata),
-    .io_dmem_rresp                         (io_dmem_rresp),
-    .io_dmem_rvalid                        (io_dmem_rvalid & ~(|cm_st_state)),
+    .io_dmem_arready                       (_dcache_io_cpu_arready),
+    .io_dmem_rdata                         (_dcache_io_cpu_rdata),
+    .io_dmem_rresp                         (_dcache_io_cpu_rresp),
+    .io_dmem_rvalid                        (_dcache_io_cpu_rvalid),
     .io_dmem_rready                        (_lsu_io_dmem_rready),
     .io_is_flush                           (flush_lsu),
-    .io_st_fwd_valid                       (_sq_io_fwd_valid),
-    .io_st_fwd_data                        (_sq_io_fwd_data),
-    .io_st_fwd_wait                        (_sq_io_wait_load),
+    .io_st_fwd_valid
+      (_sq_io_fwd_valid | ~_sq_io_wait_load & _stbuf_io_ld_fwd_valid),
+    .io_st_fwd_data
+      (_sq_io_fwd_valid ? _sq_io_fwd_data : _stbuf_io_ld_fwd_data),
+    .io_st_fwd_wait
+      (_sq_io_wait_load | ~_sq_io_fwd_valid & _stbuf_io_ld_wait),
     .io_bus_busy                           (_lsu_io_bus_busy)
   );
   WBU wbu (
-    .io_in_valid                          (|_wb_has_cand_T),
+    .io_in_valid                          (|wb_cand_mask),
     .io_in_bits_signals_wbu_reg_write     (wb_sel_signals_wbu_reg_write),
     .io_in_bits_signals_wbu_reg_write_sel
       (_exu_div_io_out_ready_T
@@ -5893,10 +6574,7 @@ module Core(
              ? _lsu_io_out_bits_signals_wbu_reg_write_sel
              : _exu_io_out_bits_signals_wbu_reg_write_sel),
     .io_in_bits_alu_result                (wb_sel_alu_result),
-    .io_in_bits_pc
-      (_exu_div_io_out_ready_T
-         ? _exu_div_io_out_bits_pc
-         : _lsu_io_out_ready_T ? _lsu_io_out_bits_pc : _exu_io_out_bits_pc),
+    .io_in_bits_pc                        (wb_sel_pc),
     .io_in_bits_imm_ext
       (_exu_div_io_out_ready_T
          ? _exu_div_io_out_bits_imm_ext
@@ -5912,6 +6590,32 @@ module Core(
     .io_refile_wdata                      (_wbu_io_refile_wdata),
     .io_refile_wen                        (_wbu_io_refile_wen)
   );
+  WBU wbu1 (
+    .io_in_valid                          (|wb_cand_mask1),
+    .io_in_bits_signals_wbu_reg_write     (wb_sel1_signals_wbu_reg_write),
+    .io_in_bits_signals_wbu_reg_write_sel
+      (_exu_div_io_out_ready_T_2
+         ? _exu_div_io_out_bits_signals_wbu_reg_write_sel
+         : _lsu_io_out_ready_T_2
+             ? _lsu_io_out_bits_signals_wbu_reg_write_sel
+             : _exu_io_out_bits_signals_wbu_reg_write_sel),
+    .io_in_bits_alu_result                (wb_sel1_alu_result),
+    .io_in_bits_pc                        (wb_sel1_pc),
+    .io_in_bits_imm_ext
+      (_exu_div_io_out_ready_T_2
+         ? _exu_div_io_out_bits_imm_ext
+         : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_imm_ext : _exu_io_out_bits_imm_ext),
+    .io_in_bits_mem_read
+      (_exu_div_io_out_ready_T_2 | ~_lsu_io_out_ready_T_2
+         ? 32'h0
+         : _lsu_io_out_bits_mem_read),
+    .io_in_bits_csr_rd1
+      (_exu_div_io_out_ready_T_2
+         ? _exu_div_io_out_bits_csr_rd1
+         : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_csr_rd1 : _exu_io_out_bits_csr_rd1),
+    .io_refile_wdata                      (_wbu1_io_refile_wdata),
+    .io_refile_wen                        (_wbu1_io_refile_wen)
+  );
   CSR csr (
     .clock          (clock),
     .reset          (reset),
@@ -5919,21 +6623,21 @@ module Core(
     .io_irq_no
       (irq_commit
          ? {24'h0,
-            _head_state_T_1
-              ? wb_sel_state_state_num
+            head_wb_valid
+              ? (head_wb0 ? wb_sel_state_state_num : wb_sel1_state_state_num)
               : _rob_io_commit_bits_state_state_num}
          : 32'h8000000B),
     .io_irq_pc
       (irq_commit
          ? _rob_io_commit_bits_pc
-         : (|_rob_io_count) ? casez_tmp_8 : ifu_io_in_bits_r_next_pc),
+         : (|_rob_io_count) ? casez_tmp_24 : ifu_io_in_bits_r_next_pc),
     .io_read_raddr  (_idu_io_csr_raddr),
     .io_read_rdata  (_csr_io_read_rdata),
     .io_read_mtvec  (_csr_io_read_mtvec),
     .io_read_mepc   (_csr_io_read_mepc),
     .io_read1_raddr (_idu1_io_csr_raddr),
     .io_read1_rdata (_csr_io_read1_rdata),
-    .io_write_wdata (casez_tmp_14),
+    .io_write_wdata (casez_tmp_28),
     .io_write_waddr (_rob_io_commit_bits_csr_waddr),
     .io_write_wen   (rob_io_commit_fire & _rob_io_commit_bits_csr_write)
   );
@@ -5957,7 +6661,29 @@ module Core(
     .io_fencei_ready (_icache_io_fencei_ready),
     .io_fencei_valid
       (_rob_io_commit_valid & ~is_irq & ~ext_irq_fire & _rob_io_commit_bits_is_fencei
-       & ~(|cm_st_state))
+       & store_side_empty)
+  );
+  DCache dcache (
+    .clock                (clock),
+    .reset                (reset),
+    .io_cpu_araddr        (_lsu_io_dmem_araddr),
+    .io_cpu_arvalid       (_lsu_io_dmem_arvalid),
+    .io_cpu_arready       (_dcache_io_cpu_arready),
+    .io_cpu_rdata         (_dcache_io_cpu_rdata),
+    .io_cpu_rresp         (_dcache_io_cpu_rresp),
+    .io_cpu_rvalid        (_dcache_io_cpu_rvalid),
+    .io_cpu_rready        (_lsu_io_dmem_rready),
+    .io_mem_araddr        (io_dmem_araddr),
+    .io_mem_arvalid       (_dcache_io_mem_arvalid),
+    .io_mem_arready       (io_dmem_arready & ~store_bus_busy),
+    .io_mem_rdata         (io_dmem_rdata),
+    .io_mem_rresp         (io_dmem_rresp),
+    .io_mem_rvalid        (io_dmem_rvalid & ~store_bus_busy),
+    .io_mem_rready        (_dcache_io_mem_rready),
+    .io_invalidate_valid  (dcache_io_invalidate_valid),
+    .io_invalidate_addr   (head_st_addr),
+    .io_invalidate2_valid (_stbuf_io_deq_valid),
+    .io_invalidate2_addr  (_stbuf_io_deq_addr)
   );
   PRF prf (
     .clock     (clock),
@@ -5972,7 +6698,10 @@ module Core(
     .io_rdata4 (_prf_io_rdata4),
     .io_wen1   (wb_wen),
     .io_waddr1 (wb_sel_pdest),
-    .io_wdata1 (_wbu_io_refile_wdata)
+    .io_wdata1 (_wbu_io_refile_wdata),
+    .io_wen2   (wb1_wen),
+    .io_waddr2 (wb_sel1_pdest),
+    .io_wdata2 (_wbu1_io_refile_wdata)
   );
   BusyTable busy (
     .clock           (clock),
@@ -5991,85 +6720,87 @@ module Core(
     .io_set_addr2    (_rename_io_dest_phys1),
     .io_clr_en       (wb_wen),
     .io_clr_addr     (wb_sel_pdest),
+    .io_clr_en2      (wb1_wen),
+    .io_clr_addr2    (wb_sel1_pdest),
     .io_clr_mask
       (busy_io_rebuild
          ? 48'h0
-         : (flush_now & _GEN < _rob_io_count & after_idxAge > _after_flushAgeNow_T_62
+         : (flush_now & _GEN_0 < _rob_io_count & after_idxAge > _after_flushAgeNow_T_62
             & _rob_io_entries_0_valid & _rob_io_entries_0_reg_write
             & (|_rob_io_entries_0_new_phys)
               ? _busyKeep_0_T[47:0]
               : 48'h0)
-           | (flush_now & _GEN_0 < _rob_io_count
+           | (flush_now & _GEN_1 < _rob_io_count
               & _after_idxAge_T_34 > _after_flushAgeNow_T_62 & _rob_io_entries_1_valid
               & _rob_io_entries_1_reg_write & (|_rob_io_entries_1_new_phys)
                 ? _busyKeep_1_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_1 < _rob_io_count
+           | (flush_now & _GEN_2 < _rob_io_count
               & _after_idxAge_T_36 > _after_flushAgeNow_T_62 & _rob_io_entries_2_valid
               & _rob_io_entries_2_reg_write & (|_rob_io_entries_2_new_phys)
                 ? _busyKeep_2_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_2 < _rob_io_count
+           | (flush_now & _GEN_3 < _rob_io_count
               & _after_idxAge_T_38 > _after_flushAgeNow_T_62 & _rob_io_entries_3_valid
               & _rob_io_entries_3_reg_write & (|_rob_io_entries_3_new_phys)
                 ? _busyKeep_3_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_3 < _rob_io_count
+           | (flush_now & _GEN_4 < _rob_io_count
               & _after_idxAge_T_40 > _after_flushAgeNow_T_62 & _rob_io_entries_4_valid
               & _rob_io_entries_4_reg_write & (|_rob_io_entries_4_new_phys)
                 ? _busyKeep_4_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_4 < _rob_io_count
+           | (flush_now & _GEN_5 < _rob_io_count
               & _after_idxAge_T_42 > _after_flushAgeNow_T_62 & _rob_io_entries_5_valid
               & _rob_io_entries_5_reg_write & (|_rob_io_entries_5_new_phys)
                 ? _busyKeep_5_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_5 < _rob_io_count
+           | (flush_now & _GEN_6 < _rob_io_count
               & _after_idxAge_T_44 > _after_flushAgeNow_T_62 & _rob_io_entries_6_valid
               & _rob_io_entries_6_reg_write & (|_rob_io_entries_6_new_phys)
                 ? _busyKeep_6_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_6 < _rob_io_count
+           | (flush_now & _GEN_7 < _rob_io_count
               & _after_idxAge_T_46 > _after_flushAgeNow_T_62 & _rob_io_entries_7_valid
               & _rob_io_entries_7_reg_write & (|_rob_io_entries_7_new_phys)
                 ? _busyKeep_7_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_7 < _rob_io_count
+           | (flush_now & _GEN_8 < _rob_io_count
               & _after_idxAge_T_48 > _after_flushAgeNow_T_62 & _rob_io_entries_8_valid
               & _rob_io_entries_8_reg_write & (|_rob_io_entries_8_new_phys)
                 ? _busyKeep_8_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_8 < _rob_io_count
+           | (flush_now & _GEN_9 < _rob_io_count
               & _after_idxAge_T_50 > _after_flushAgeNow_T_62 & _rob_io_entries_9_valid
               & _rob_io_entries_9_reg_write & (|_rob_io_entries_9_new_phys)
                 ? _busyKeep_9_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_9 < _rob_io_count
+           | (flush_now & _GEN_10 < _rob_io_count
               & _after_idxAge_T_52 > _after_flushAgeNow_T_62 & _rob_io_entries_10_valid
               & _rob_io_entries_10_reg_write & (|_rob_io_entries_10_new_phys)
                 ? _busyKeep_10_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_10 < _rob_io_count
+           | (flush_now & _GEN_11 < _rob_io_count
               & _after_idxAge_T_54 > _after_flushAgeNow_T_62 & _rob_io_entries_11_valid
               & _rob_io_entries_11_reg_write & (|_rob_io_entries_11_new_phys)
                 ? _busyKeep_11_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_11 < _rob_io_count
+           | (flush_now & _GEN_12 < _rob_io_count
               & _after_idxAge_T_56 > _after_flushAgeNow_T_62 & _rob_io_entries_12_valid
               & _rob_io_entries_12_reg_write & (|_rob_io_entries_12_new_phys)
                 ? _busyKeep_12_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_12 < _rob_io_count
+           | (flush_now & _GEN_13 < _rob_io_count
               & _after_idxAge_T_58 > _after_flushAgeNow_T_62 & _rob_io_entries_13_valid
               & _rob_io_entries_13_reg_write & (|_rob_io_entries_13_new_phys)
                 ? _busyKeep_13_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_13 < _rob_io_count
+           | (flush_now & _GEN_14 < _rob_io_count
               & _after_idxAge_T_60 > _after_flushAgeNow_T_62 & _rob_io_entries_14_valid
               & _rob_io_entries_14_reg_write & (|_rob_io_entries_14_new_phys)
                 ? _busyKeep_14_T[47:0]
                 : 48'h0)
-           | (flush_now & _GEN_14 < _rob_io_count
+           | (flush_now & _GEN_15 < _rob_io_count
               & _after_idxAge_T_62 > _after_flushAgeNow_T_62 & _rob_io_entries_15_valid
               & _rob_io_entries_15_reg_write & (|_rob_io_entries_15_new_phys)
                 ? _busyKeep_15_T[47:0]
@@ -6078,113 +6809,114 @@ module Core(
     .io_rebuild_mask
       (_busy_io_rebuild_mask_T | mret_flush_REG | ~flush_now
          ? 48'h0
-         : ~({48{can_wb & (|wb_sel_pdest)}} & _busyRebuild_T_17[47:0])
+         : ~((can_wb & (|wb_sel_pdest) ? _wbClearMask_T_2[47:0] : 48'h0)
+             | (can_wb1 & (|wb_sel1_pdest) ? _wbClearMask_T_6[47:0] : 48'h0))
            & ((flush_now & _rob_io_entries_0_valid
-               & ~(_GEN < _rob_io_count & after_idxAge > _after_flushAgeNow_T_62)
+               & ~(_GEN_0 < _rob_io_count & after_idxAge > _after_flushAgeNow_T_62)
                & _rob_io_entries_0_reg_write & ~_rob_io_entries_0_done
                & (|_rob_io_entries_0_new_phys)
                  ? _busyKeep_0_T[47:0]
                  : 48'h0)
               | (flush_now & _rob_io_entries_1_valid
-                 & ~(_GEN_0 < _rob_io_count
+                 & ~(_GEN_1 < _rob_io_count
                      & _after_idxAge_T_34 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_1_reg_write & ~_rob_io_entries_1_done
                  & (|_rob_io_entries_1_new_phys)
                    ? _busyKeep_1_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_2_valid
-                 & ~(_GEN_1 < _rob_io_count
+                 & ~(_GEN_2 < _rob_io_count
                      & _after_idxAge_T_36 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_2_reg_write & ~_rob_io_entries_2_done
                  & (|_rob_io_entries_2_new_phys)
                    ? _busyKeep_2_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_3_valid
-                 & ~(_GEN_2 < _rob_io_count
+                 & ~(_GEN_3 < _rob_io_count
                      & _after_idxAge_T_38 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_3_reg_write & ~_rob_io_entries_3_done
                  & (|_rob_io_entries_3_new_phys)
                    ? _busyKeep_3_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_4_valid
-                 & ~(_GEN_3 < _rob_io_count
+                 & ~(_GEN_4 < _rob_io_count
                      & _after_idxAge_T_40 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_4_reg_write & ~_rob_io_entries_4_done
                  & (|_rob_io_entries_4_new_phys)
                    ? _busyKeep_4_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_5_valid
-                 & ~(_GEN_4 < _rob_io_count
+                 & ~(_GEN_5 < _rob_io_count
                      & _after_idxAge_T_42 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_5_reg_write & ~_rob_io_entries_5_done
                  & (|_rob_io_entries_5_new_phys)
                    ? _busyKeep_5_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_6_valid
-                 & ~(_GEN_5 < _rob_io_count
+                 & ~(_GEN_6 < _rob_io_count
                      & _after_idxAge_T_44 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_6_reg_write & ~_rob_io_entries_6_done
                  & (|_rob_io_entries_6_new_phys)
                    ? _busyKeep_6_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_7_valid
-                 & ~(_GEN_6 < _rob_io_count
+                 & ~(_GEN_7 < _rob_io_count
                      & _after_idxAge_T_46 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_7_reg_write & ~_rob_io_entries_7_done
                  & (|_rob_io_entries_7_new_phys)
                    ? _busyKeep_7_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_8_valid
-                 & ~(_GEN_7 < _rob_io_count
+                 & ~(_GEN_8 < _rob_io_count
                      & _after_idxAge_T_48 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_8_reg_write & ~_rob_io_entries_8_done
                  & (|_rob_io_entries_8_new_phys)
                    ? _busyKeep_8_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_9_valid
-                 & ~(_GEN_8 < _rob_io_count
+                 & ~(_GEN_9 < _rob_io_count
                      & _after_idxAge_T_50 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_9_reg_write & ~_rob_io_entries_9_done
                  & (|_rob_io_entries_9_new_phys)
                    ? _busyKeep_9_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_10_valid
-                 & ~(_GEN_9 < _rob_io_count
+                 & ~(_GEN_10 < _rob_io_count
                      & _after_idxAge_T_52 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_10_reg_write & ~_rob_io_entries_10_done
                  & (|_rob_io_entries_10_new_phys)
                    ? _busyKeep_10_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_11_valid
-                 & ~(_GEN_10 < _rob_io_count
+                 & ~(_GEN_11 < _rob_io_count
                      & _after_idxAge_T_54 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_11_reg_write & ~_rob_io_entries_11_done
                  & (|_rob_io_entries_11_new_phys)
                    ? _busyKeep_11_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_12_valid
-                 & ~(_GEN_11 < _rob_io_count
+                 & ~(_GEN_12 < _rob_io_count
                      & _after_idxAge_T_56 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_12_reg_write & ~_rob_io_entries_12_done
                  & (|_rob_io_entries_12_new_phys)
                    ? _busyKeep_12_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_13_valid
-                 & ~(_GEN_12 < _rob_io_count
+                 & ~(_GEN_13 < _rob_io_count
                      & _after_idxAge_T_58 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_13_reg_write & ~_rob_io_entries_13_done
                  & (|_rob_io_entries_13_new_phys)
                    ? _busyKeep_13_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_14_valid
-                 & ~(_GEN_13 < _rob_io_count
+                 & ~(_GEN_14 < _rob_io_count
                      & _after_idxAge_T_60 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_14_reg_write & ~_rob_io_entries_14_done
                  & (|_rob_io_entries_14_new_phys)
                    ? _busyKeep_14_T[47:0]
                    : 48'h0)
               | (flush_now & _rob_io_entries_15_valid
-                 & ~(_GEN_14 < _rob_io_count
+                 & ~(_GEN_15 < _rob_io_count
                      & _after_idxAge_T_62 > _after_flushAgeNow_T_62)
                  & _rob_io_entries_15_reg_write & ~_rob_io_entries_15_done
                  & (|_rob_io_entries_15_new_phys)
@@ -6291,1188 +7023,1188 @@ module Core(
     .io_cp_full         (_rename_io_cp_full),
     .io_rebuild         (_busy_io_rebuild_mask_T | mret_flush_REG),
     .io_rebuild_rat_0
-      (take_15 & casez_tmp_77 == 5'h0
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h0
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h0
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h0
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h0
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h0
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h0
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h0
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h0
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h0
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h0
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h0
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h0
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h0
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h0
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h0
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h0
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h0
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h0
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h0
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h0
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h0
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h0
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h0
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h0
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h0
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h0
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h0
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h0
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h0
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h0
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h0
+                                                                     ? casez_tmp_32
                                                                      : _rename_io_arch_rat_out_0),
     .io_rebuild_rat_1
-      (take_15 & casez_tmp_77 == 5'h1
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h1
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h1
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h1
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h1
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h1
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h1
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h1
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h1
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h1
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h1
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h1
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h1
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h1
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h1
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h1
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h1
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h1
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h1
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h1
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h1
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h1
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h1
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h1
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h1
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h1
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h1
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h1
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h1
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h1
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h1
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h1
+                                                                     ? casez_tmp_32
                                                                      : rb_base_1),
     .io_rebuild_rat_2
-      (take_15 & casez_tmp_77 == 5'h2
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h2
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h2
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h2
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h2
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h2
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h2
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h2
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h2
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h2
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h2
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h2
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h2
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h2
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h2
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h2
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h2
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h2
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h2
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h2
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h2
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h2
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h2
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h2
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h2
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h2
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h2
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h2
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h2
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h2
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h2
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h2
+                                                                     ? casez_tmp_32
                                                                      : rb_base_2),
     .io_rebuild_rat_3
-      (take_15 & casez_tmp_77 == 5'h3
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h3
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h3
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h3
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h3
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h3
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h3
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h3
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h3
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h3
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h3
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h3
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h3
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h3
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h3
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h3
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h3
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h3
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h3
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h3
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h3
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h3
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h3
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h3
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h3
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h3
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h3
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h3
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h3
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h3
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h3
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h3
+                                                                     ? casez_tmp_32
                                                                      : rb_base_3),
     .io_rebuild_rat_4
-      (take_15 & casez_tmp_77 == 5'h4
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h4
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h4
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h4
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h4
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h4
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h4
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h4
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h4
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h4
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h4
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h4
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h4
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h4
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h4
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h4
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h4
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h4
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h4
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h4
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h4
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h4
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h4
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h4
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h4
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h4
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h4
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h4
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h4
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h4
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h4
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h4
+                                                                     ? casez_tmp_32
                                                                      : rb_base_4),
     .io_rebuild_rat_5
-      (take_15 & casez_tmp_77 == 5'h5
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h5
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h5
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h5
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h5
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h5
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h5
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h5
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h5
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h5
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h5
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h5
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h5
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h5
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h5
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h5
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h5
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h5
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h5
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h5
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h5
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h5
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h5
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h5
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h5
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h5
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h5
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h5
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h5
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h5
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h5
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h5
+                                                                     ? casez_tmp_32
                                                                      : rb_base_5),
     .io_rebuild_rat_6
-      (take_15 & casez_tmp_77 == 5'h6
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h6
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h6
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h6
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h6
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h6
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h6
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h6
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h6
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h6
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h6
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h6
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h6
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h6
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h6
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h6
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h6
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h6
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h6
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h6
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h6
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h6
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h6
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h6
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h6
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h6
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h6
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h6
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h6
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h6
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h6
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h6
+                                                                     ? casez_tmp_32
                                                                      : rb_base_6),
     .io_rebuild_rat_7
-      (take_15 & casez_tmp_77 == 5'h7
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h7
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h7
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h7
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h7
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h7
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h7
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h7
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h7
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h7
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h7
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h7
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h7
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h7
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h7
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h7
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h7
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h7
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h7
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h7
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h7
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h7
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h7
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h7
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h7
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h7
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h7
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h7
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h7
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h7
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h7
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h7
+                                                                     ? casez_tmp_32
                                                                      : rb_base_7),
     .io_rebuild_rat_8
-      (take_15 & casez_tmp_77 == 5'h8
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h8
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h8
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h8
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h8
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h8
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h8
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h8
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h8
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h8
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h8
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h8
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h8
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h8
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h8
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h8
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h8
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h8
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h8
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h8
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h8
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h8
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h8
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h8
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h8
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h8
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h8
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h8
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h8
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h8
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h8
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h8
+                                                                     ? casez_tmp_32
                                                                      : rb_base_8),
     .io_rebuild_rat_9
-      (take_15 & casez_tmp_77 == 5'h9
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h9
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h9
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h9
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h9
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h9
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h9
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h9
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h9
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h9
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h9
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h9
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h9
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h9
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h9
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h9
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h9
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h9
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h9
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h9
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h9
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h9
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h9
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h9
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h9
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h9
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h9
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h9
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h9
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h9
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h9
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h9
+                                                                     ? casez_tmp_32
                                                                      : rb_base_9),
     .io_rebuild_rat_10
-      (take_15 & casez_tmp_77 == 5'hA
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'hA
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'hA
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'hA
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'hA
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'hA
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'hA
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'hA
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'hA
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'hA
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'hA
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'hA
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'hA
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'hA
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'hA
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'hA
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'hA
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'hA
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'hA
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'hA
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'hA
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'hA
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'hA
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'hA
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'hA
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'hA
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'hA
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'hA
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'hA
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'hA
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'hA
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'hA
+                                                                     ? casez_tmp_32
                                                                      : rb_base_10),
     .io_rebuild_rat_11
-      (take_15 & casez_tmp_77 == 5'hB
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'hB
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'hB
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'hB
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'hB
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'hB
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'hB
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'hB
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'hB
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'hB
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'hB
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'hB
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'hB
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'hB
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'hB
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'hB
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'hB
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'hB
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'hB
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'hB
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'hB
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'hB
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'hB
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'hB
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'hB
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'hB
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'hB
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'hB
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'hB
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'hB
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'hB
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'hB
+                                                                     ? casez_tmp_32
                                                                      : rb_base_11),
     .io_rebuild_rat_12
-      (take_15 & casez_tmp_77 == 5'hC
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'hC
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'hC
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'hC
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'hC
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'hC
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'hC
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'hC
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'hC
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'hC
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'hC
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'hC
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'hC
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'hC
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'hC
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'hC
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'hC
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'hC
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'hC
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'hC
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'hC
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'hC
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'hC
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'hC
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'hC
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'hC
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'hC
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'hC
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'hC
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'hC
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'hC
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'hC
+                                                                     ? casez_tmp_32
                                                                      : rb_base_12),
     .io_rebuild_rat_13
-      (take_15 & casez_tmp_77 == 5'hD
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'hD
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'hD
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'hD
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'hD
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'hD
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'hD
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'hD
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'hD
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'hD
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'hD
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'hD
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'hD
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'hD
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'hD
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'hD
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'hD
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'hD
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'hD
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'hD
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'hD
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'hD
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'hD
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'hD
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'hD
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'hD
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'hD
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'hD
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'hD
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'hD
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'hD
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'hD
+                                                                     ? casez_tmp_32
                                                                      : rb_base_13),
     .io_rebuild_rat_14
-      (take_15 & casez_tmp_77 == 5'hE
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'hE
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'hE
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'hE
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'hE
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'hE
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'hE
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'hE
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'hE
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'hE
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'hE
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'hE
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'hE
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'hE
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'hE
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'hE
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'hE
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'hE
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'hE
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'hE
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'hE
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'hE
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'hE
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'hE
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'hE
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'hE
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'hE
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'hE
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'hE
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'hE
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'hE
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'hE
+                                                                     ? casez_tmp_32
                                                                      : rb_base_14),
     .io_rebuild_rat_15
-      (take_15 & casez_tmp_77 == 5'hF
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'hF
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'hF
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'hF
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'hF
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'hF
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'hF
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'hF
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'hF
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'hF
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'hF
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'hF
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'hF
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'hF
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'hF
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'hF
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'hF
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'hF
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'hF
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'hF
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'hF
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'hF
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'hF
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'hF
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'hF
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'hF
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'hF
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'hF
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'hF
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'hF
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'hF
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'hF
+                                                                     ? casez_tmp_32
                                                                      : rb_base_15),
     .io_rebuild_rat_16
-      (take_15 & casez_tmp_77 == 5'h10
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h10
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h10
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h10
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h10
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h10
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h10
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h10
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h10
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h10
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h10
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h10
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h10
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h10
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h10
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h10
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h10
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h10
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h10
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h10
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h10
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h10
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h10
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h10
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h10
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h10
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h10
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h10
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h10
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h10
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h10
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h10
+                                                                     ? casez_tmp_32
                                                                      : rb_base_16),
     .io_rebuild_rat_17
-      (take_15 & casez_tmp_77 == 5'h11
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h11
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h11
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h11
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h11
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h11
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h11
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h11
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h11
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h11
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h11
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h11
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h11
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h11
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h11
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h11
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h11
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h11
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h11
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h11
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h11
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h11
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h11
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h11
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h11
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h11
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h11
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h11
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h11
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h11
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h11
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h11
+                                                                     ? casez_tmp_32
                                                                      : rb_base_17),
     .io_rebuild_rat_18
-      (take_15 & casez_tmp_77 == 5'h12
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h12
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h12
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h12
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h12
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h12
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h12
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h12
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h12
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h12
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h12
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h12
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h12
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h12
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h12
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h12
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h12
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h12
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h12
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h12
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h12
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h12
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h12
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h12
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h12
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h12
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h12
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h12
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h12
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h12
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h12
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h12
+                                                                     ? casez_tmp_32
                                                                      : rb_base_18),
     .io_rebuild_rat_19
-      (take_15 & casez_tmp_77 == 5'h13
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h13
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h13
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h13
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h13
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h13
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h13
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h13
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h13
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h13
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h13
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h13
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h13
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h13
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h13
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h13
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h13
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h13
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h13
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h13
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h13
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h13
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h13
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h13
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h13
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h13
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h13
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h13
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h13
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h13
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h13
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h13
+                                                                     ? casez_tmp_32
                                                                      : rb_base_19),
     .io_rebuild_rat_20
-      (take_15 & casez_tmp_77 == 5'h14
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h14
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h14
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h14
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h14
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h14
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h14
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h14
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h14
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h14
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h14
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h14
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h14
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h14
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h14
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h14
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h14
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h14
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h14
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h14
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h14
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h14
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h14
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h14
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h14
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h14
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h14
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h14
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h14
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h14
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h14
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h14
+                                                                     ? casez_tmp_32
                                                                      : rb_base_20),
     .io_rebuild_rat_21
-      (take_15 & casez_tmp_77 == 5'h15
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h15
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h15
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h15
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h15
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h15
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h15
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h15
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h15
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h15
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h15
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h15
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h15
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h15
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h15
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h15
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h15
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h15
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h15
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h15
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h15
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h15
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h15
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h15
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h15
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h15
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h15
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h15
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h15
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h15
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h15
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h15
+                                                                     ? casez_tmp_32
                                                                      : rb_base_21),
     .io_rebuild_rat_22
-      (take_15 & casez_tmp_77 == 5'h16
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h16
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h16
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h16
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h16
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h16
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h16
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h16
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h16
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h16
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h16
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h16
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h16
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h16
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h16
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h16
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h16
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h16
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h16
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h16
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h16
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h16
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h16
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h16
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h16
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h16
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h16
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h16
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h16
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h16
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h16
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h16
+                                                                     ? casez_tmp_32
                                                                      : rb_base_22),
     .io_rebuild_rat_23
-      (take_15 & casez_tmp_77 == 5'h17
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h17
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h17
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h17
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h17
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h17
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h17
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h17
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h17
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h17
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h17
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h17
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h17
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h17
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h17
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h17
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h17
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h17
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h17
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h17
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h17
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h17
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h17
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h17
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h17
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h17
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h17
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h17
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h17
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h17
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h17
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h17
+                                                                     ? casez_tmp_32
                                                                      : rb_base_23),
     .io_rebuild_rat_24
-      (take_15 & casez_tmp_77 == 5'h18
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h18
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h18
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h18
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h18
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h18
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h18
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h18
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h18
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h18
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h18
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h18
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h18
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h18
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h18
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h18
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h18
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h18
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h18
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h18
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h18
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h18
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h18
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h18
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h18
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h18
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h18
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h18
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h18
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h18
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h18
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h18
+                                                                     ? casez_tmp_32
                                                                      : rb_base_24),
     .io_rebuild_rat_25
-      (take_15 & casez_tmp_77 == 5'h19
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h19
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h19
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h19
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h19
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h19
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h19
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h19
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h19
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h19
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h19
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h19
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h19
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h19
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h19
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h19
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h19
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h19
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h19
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h19
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h19
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h19
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h19
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h19
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h19
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h19
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h19
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h19
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h19
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h19
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h19
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h19
+                                                                     ? casez_tmp_32
                                                                      : rb_base_25),
     .io_rebuild_rat_26
-      (take_15 & casez_tmp_77 == 5'h1A
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h1A
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h1A
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h1A
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h1A
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h1A
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h1A
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h1A
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h1A
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h1A
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h1A
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h1A
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h1A
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h1A
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h1A
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h1A
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h1A
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h1A
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h1A
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h1A
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h1A
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h1A
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h1A
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h1A
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h1A
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h1A
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h1A
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h1A
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h1A
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h1A
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h1A
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h1A
+                                                                     ? casez_tmp_32
                                                                      : rb_base_26),
     .io_rebuild_rat_27
-      (take_15 & casez_tmp_77 == 5'h1B
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h1B
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h1B
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h1B
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h1B
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h1B
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h1B
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h1B
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h1B
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h1B
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h1B
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h1B
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h1B
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h1B
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h1B
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h1B
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h1B
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h1B
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h1B
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h1B
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h1B
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h1B
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h1B
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h1B
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h1B
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h1B
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h1B
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h1B
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h1B
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h1B
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h1B
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h1B
+                                                                     ? casez_tmp_32
                                                                      : rb_base_27),
     .io_rebuild_rat_28
-      (take_15 & casez_tmp_77 == 5'h1C
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h1C
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h1C
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h1C
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h1C
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h1C
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h1C
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h1C
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h1C
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h1C
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h1C
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h1C
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h1C
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h1C
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h1C
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h1C
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h1C
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h1C
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h1C
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h1C
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h1C
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h1C
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h1C
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h1C
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h1C
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h1C
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h1C
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h1C
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h1C
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h1C
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h1C
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h1C
+                                                                     ? casez_tmp_32
                                                                      : rb_base_28),
     .io_rebuild_rat_29
-      (take_15 & casez_tmp_77 == 5'h1D
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h1D
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h1D
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h1D
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h1D
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h1D
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h1D
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h1D
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h1D
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h1D
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h1D
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h1D
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h1D
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h1D
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h1D
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h1D
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h1D
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h1D
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h1D
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h1D
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h1D
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h1D
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h1D
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h1D
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h1D
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h1D
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h1D
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h1D
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h1D
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h1D
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h1D
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h1D
+                                                                     ? casez_tmp_32
                                                                      : rb_base_29),
     .io_rebuild_rat_30
-      (take_15 & casez_tmp_77 == 5'h1E
-         ? casez_tmp_78
-         : take_14 & casez_tmp_73 == 5'h1E
-             ? casez_tmp_74
-             : take_13 & casez_tmp_69 == 5'h1E
-                 ? casez_tmp_70
-                 : take_12 & casez_tmp_65 == 5'h1E
-                     ? casez_tmp_66
-                     : take_11 & casez_tmp_61 == 5'h1E
-                         ? casez_tmp_62
-                         : take_10 & casez_tmp_57 == 5'h1E
-                             ? casez_tmp_58
-                             : take_9 & casez_tmp_53 == 5'h1E
-                                 ? casez_tmp_54
-                                 : take_8 & casez_tmp_49 == 5'h1E
-                                     ? casez_tmp_50
-                                     : take_7 & casez_tmp_45 == 5'h1E
-                                         ? casez_tmp_46
-                                         : take_6 & casez_tmp_41 == 5'h1E
-                                             ? casez_tmp_42
-                                             : take_5 & casez_tmp_37 == 5'h1E
-                                                 ? casez_tmp_38
-                                                 : take_4 & casez_tmp_33 == 5'h1E
-                                                     ? casez_tmp_34
-                                                     : take_3 & casez_tmp_29 == 5'h1E
-                                                         ? casez_tmp_30
-                                                         : take_2 & casez_tmp_25 == 5'h1E
-                                                             ? casez_tmp_26
+      (take_15 & casez_tmp_91 == 5'h1E
+         ? casez_tmp_92
+         : take_14 & casez_tmp_87 == 5'h1E
+             ? casez_tmp_88
+             : take_13 & casez_tmp_83 == 5'h1E
+                 ? casez_tmp_84
+                 : take_12 & casez_tmp_79 == 5'h1E
+                     ? casez_tmp_80
+                     : take_11 & casez_tmp_75 == 5'h1E
+                         ? casez_tmp_76
+                         : take_10 & casez_tmp_71 == 5'h1E
+                             ? casez_tmp_72
+                             : take_9 & casez_tmp_67 == 5'h1E
+                                 ? casez_tmp_68
+                                 : take_8 & casez_tmp_63 == 5'h1E
+                                     ? casez_tmp_64
+                                     : take_7 & casez_tmp_59 == 5'h1E
+                                         ? casez_tmp_60
+                                         : take_6 & casez_tmp_55 == 5'h1E
+                                             ? casez_tmp_56
+                                             : take_5 & casez_tmp_51 == 5'h1E
+                                                 ? casez_tmp_52
+                                                 : take_4 & casez_tmp_47 == 5'h1E
+                                                     ? casez_tmp_48
+                                                     : take_3 & casez_tmp_43 == 5'h1E
+                                                         ? casez_tmp_44
+                                                         : take_2 & casez_tmp_39 == 5'h1E
+                                                             ? casez_tmp_40
                                                              : take_1
-                                                               & casez_tmp_21 == 5'h1E
-                                                                 ? casez_tmp_22
+                                                               & casez_tmp_35 == 5'h1E
+                                                                 ? casez_tmp_36
                                                                  : take
-                                                                   & casez_tmp_17 == 5'h1E
-                                                                     ? casez_tmp_18
+                                                                   & casez_tmp_31 == 5'h1E
+                                                                     ? casez_tmp_32
                                                                      : rb_base_30),
     .io_rebuild_rat_31
-      (take_15 & (&casez_tmp_77)
-         ? casez_tmp_78
-         : take_14 & (&casez_tmp_73)
-             ? casez_tmp_74
-             : take_13 & (&casez_tmp_69)
-                 ? casez_tmp_70
-                 : take_12 & (&casez_tmp_65)
-                     ? casez_tmp_66
-                     : take_11 & (&casez_tmp_61)
-                         ? casez_tmp_62
-                         : take_10 & (&casez_tmp_57)
-                             ? casez_tmp_58
-                             : take_9 & (&casez_tmp_53)
-                                 ? casez_tmp_54
-                                 : take_8 & (&casez_tmp_49)
-                                     ? casez_tmp_50
-                                     : take_7 & (&casez_tmp_45)
-                                         ? casez_tmp_46
-                                         : take_6 & (&casez_tmp_41)
-                                             ? casez_tmp_42
-                                             : take_5 & (&casez_tmp_37)
-                                                 ? casez_tmp_38
-                                                 : take_4 & (&casez_tmp_33)
-                                                     ? casez_tmp_34
-                                                     : take_3 & (&casez_tmp_29)
-                                                         ? casez_tmp_30
-                                                         : take_2 & (&casez_tmp_25)
-                                                             ? casez_tmp_26
-                                                             : take_1 & (&casez_tmp_21)
-                                                                 ? casez_tmp_22
-                                                                 : take & (&casez_tmp_17)
-                                                                     ? casez_tmp_18
+      (take_15 & (&casez_tmp_91)
+         ? casez_tmp_92
+         : take_14 & (&casez_tmp_87)
+             ? casez_tmp_88
+             : take_13 & (&casez_tmp_83)
+                 ? casez_tmp_84
+                 : take_12 & (&casez_tmp_79)
+                     ? casez_tmp_80
+                     : take_11 & (&casez_tmp_75)
+                         ? casez_tmp_76
+                         : take_10 & (&casez_tmp_71)
+                             ? casez_tmp_72
+                             : take_9 & (&casez_tmp_67)
+                                 ? casez_tmp_68
+                                 : take_8 & (&casez_tmp_63)
+                                     ? casez_tmp_64
+                                     : take_7 & (&casez_tmp_59)
+                                         ? casez_tmp_60
+                                         : take_6 & (&casez_tmp_55)
+                                             ? casez_tmp_56
+                                             : take_5 & (&casez_tmp_51)
+                                                 ? casez_tmp_52
+                                                 : take_4 & (&casez_tmp_47)
+                                                     ? casez_tmp_48
+                                                     : take_3 & (&casez_tmp_43)
+                                                         ? casez_tmp_44
+                                                         : take_2 & (&casez_tmp_39)
+                                                             ? casez_tmp_40
+                                                             : take_1 & (&casez_tmp_35)
+                                                                 ? casez_tmp_36
+                                                                 : take & (&casez_tmp_31)
+                                                                     ? casez_tmp_32
                                                                      : rb_base_31),
     .io_rebuild_free
-      (({48{~(take_31 & (|casez_tmp_94))}} | ~(_freeSteps_16_T_2[47:0]))
-       & ({48{~(take_31 & (|casez_tmp_78))}} | ~(_f1_T_77[47:0]))
-       & ({48{~(take_30 & (|casez_tmp_93))}} | ~(_freeSteps_15_T_2[47:0]))
-       & ({48{~(take_30 & (|casez_tmp_74))}} | ~(_f1_T_72[47:0]))
-       & ({48{~(take_29 & (|casez_tmp_92))}} | ~(_freeSteps_14_T_2[47:0]))
-       & ({48{~(take_29 & (|casez_tmp_70))}} | ~(_f1_T_67[47:0]))
-       & ({48{~(take_28 & (|casez_tmp_91))}} | ~(_freeSteps_13_T_2[47:0]))
-       & ({48{~(take_28 & (|casez_tmp_66))}} | ~(_f1_T_62[47:0]))
-       & ({48{~(take_27 & (|casez_tmp_90))}} | ~(_freeSteps_12_T_2[47:0]))
-       & ({48{~(take_27 & (|casez_tmp_62))}} | ~(_f1_T_57[47:0]))
-       & ({48{~(take_26 & (|casez_tmp_89))}} | ~(_freeSteps_11_T_2[47:0]))
-       & ({48{~(take_26 & (|casez_tmp_58))}} | ~(_f1_T_52[47:0]))
-       & ({48{~(take_25 & (|casez_tmp_88))}} | ~(_freeSteps_10_T_2[47:0]))
-       & ({48{~(take_25 & (|casez_tmp_54))}} | ~(_f1_T_47[47:0]))
-       & ({48{~(take_24 & (|casez_tmp_87))}} | ~(_freeSteps_9_T_2[47:0]))
-       & ({48{~(take_24 & (|casez_tmp_50))}} | ~(_f1_T_42[47:0]))
-       & ({48{~(take_23 & (|casez_tmp_86))}} | ~(_freeSteps_8_T_2[47:0]))
-       & ({48{~(take_23 & (|casez_tmp_46))}} | ~(_f1_T_37[47:0]))
-       & ({48{~(take_22 & (|casez_tmp_85))}} | ~(_freeSteps_7_T_2[47:0]))
-       & ({48{~(take_22 & (|casez_tmp_42))}} | ~(_f1_T_32[47:0]))
-       & ({48{~(take_21 & (|casez_tmp_84))}} | ~(_freeSteps_6_T_2[47:0]))
-       & ({48{~(take_21 & (|casez_tmp_38))}} | ~(_f1_T_27[47:0]))
-       & ({48{~(take_20 & (|casez_tmp_83))}} | ~(_freeSteps_5_T_2[47:0]))
-       & ({48{~(take_20 & (|casez_tmp_34))}} | ~(_f1_T_22[47:0]))
-       & ({48{~(take_19 & (|casez_tmp_82))}} | ~(_freeSteps_4_T_2[47:0]))
-       & ({48{~(take_19 & (|casez_tmp_30))}} | ~(_f1_T_17[47:0]))
-       & ({48{~(take_18 & (|casez_tmp_81))}} | ~(_freeSteps_3_T_2[47:0]))
-       & ({48{~(take_18 & (|casez_tmp_26))}} | ~(_f1_T_12[47:0]))
-       & ({48{~(take_17 & (|casez_tmp_80))}} | ~(_freeSteps_2_T_2[47:0]))
-       & ({48{~(take_17 & (|casez_tmp_22))}} | ~(_f1_T_7[47:0]))
-       & ({48{~(take_16 & (|casez_tmp_79))}} | ~(_freeSteps_1_T_2[47:0]))
-       & ({48{~(take_16 & (|casez_tmp_18))}} | ~(_f1_T_2[47:0]))
+      (({48{~(take_31 & (|casez_tmp_108))}} | ~(_freeSteps_16_T_2[47:0]))
+       & ({48{~(take_31 & (|casez_tmp_92))}} | ~(_f1_T_77[47:0]))
+       & ({48{~(take_30 & (|casez_tmp_107))}} | ~(_freeSteps_15_T_2[47:0]))
+       & ({48{~(take_30 & (|casez_tmp_88))}} | ~(_f1_T_72[47:0]))
+       & ({48{~(take_29 & (|casez_tmp_106))}} | ~(_freeSteps_14_T_2[47:0]))
+       & ({48{~(take_29 & (|casez_tmp_84))}} | ~(_f1_T_67[47:0]))
+       & ({48{~(take_28 & (|casez_tmp_105))}} | ~(_freeSteps_13_T_2[47:0]))
+       & ({48{~(take_28 & (|casez_tmp_80))}} | ~(_f1_T_62[47:0]))
+       & ({48{~(take_27 & (|casez_tmp_104))}} | ~(_freeSteps_12_T_2[47:0]))
+       & ({48{~(take_27 & (|casez_tmp_76))}} | ~(_f1_T_57[47:0]))
+       & ({48{~(take_26 & (|casez_tmp_103))}} | ~(_freeSteps_11_T_2[47:0]))
+       & ({48{~(take_26 & (|casez_tmp_72))}} | ~(_f1_T_52[47:0]))
+       & ({48{~(take_25 & (|casez_tmp_102))}} | ~(_freeSteps_10_T_2[47:0]))
+       & ({48{~(take_25 & (|casez_tmp_68))}} | ~(_f1_T_47[47:0]))
+       & ({48{~(take_24 & (|casez_tmp_101))}} | ~(_freeSteps_9_T_2[47:0]))
+       & ({48{~(take_24 & (|casez_tmp_64))}} | ~(_f1_T_42[47:0]))
+       & ({48{~(take_23 & (|casez_tmp_100))}} | ~(_freeSteps_8_T_2[47:0]))
+       & ({48{~(take_23 & (|casez_tmp_60))}} | ~(_f1_T_37[47:0]))
+       & ({48{~(take_22 & (|casez_tmp_99))}} | ~(_freeSteps_7_T_2[47:0]))
+       & ({48{~(take_22 & (|casez_tmp_56))}} | ~(_f1_T_32[47:0]))
+       & ({48{~(take_21 & (|casez_tmp_98))}} | ~(_freeSteps_6_T_2[47:0]))
+       & ({48{~(take_21 & (|casez_tmp_52))}} | ~(_f1_T_27[47:0]))
+       & ({48{~(take_20 & (|casez_tmp_97))}} | ~(_freeSteps_5_T_2[47:0]))
+       & ({48{~(take_20 & (|casez_tmp_48))}} | ~(_f1_T_22[47:0]))
+       & ({48{~(take_19 & (|casez_tmp_96))}} | ~(_freeSteps_4_T_2[47:0]))
+       & ({48{~(take_19 & (|casez_tmp_44))}} | ~(_f1_T_17[47:0]))
+       & ({48{~(take_18 & (|casez_tmp_95))}} | ~(_freeSteps_3_T_2[47:0]))
+       & ({48{~(take_18 & (|casez_tmp_40))}} | ~(_f1_T_12[47:0]))
+       & ({48{~(take_17 & (|casez_tmp_94))}} | ~(_freeSteps_2_T_2[47:0]))
+       & ({48{~(take_17 & (|casez_tmp_36))}} | ~(_f1_T_7[47:0]))
+       & ({48{~(take_16 & (|casez_tmp_93))}} | ~(_freeSteps_1_T_2[47:0]))
+       & ({48{~(take_16 & (|casez_tmp_32))}} | ~(_f1_T_2[47:0]))
        & ~(_archUsed_T[47:0] | _archUsed_T_2[47:0] | _archUsed_T_4[47:0]
            | _archUsed_T_6[47:0] | _archUsed_T_8[47:0] | _archUsed_T_10[47:0]
            | _archUsed_T_12[47:0] | _archUsed_T_14[47:0] | _archUsed_T_16[47:0]
@@ -7548,6 +8280,17 @@ module Core(
       (_exu_div_io_out_ready_T
          ? _exu_div_io_out_bits_br_taken
          : _lsu_io_out_ready_T ? _lsu_io_out_bits_br_taken : _exu_io_out_bits_br_taken),
+    .io_wb1_fire                    (can_wb1),
+    .io_wb1_idx                     (wb_sel1_rob_idx),
+    .io_wb1_val                     (_wbu1_io_refile_wdata),
+    .io_wb1_state_state             (wb_sel1_state_state),
+    .io_wb1_state_state_num         (wb_sel1_state_state_num),
+    .io_wb1_mem_addr                (wb_sel1_alu_result),
+    .io_wb1_mem_wdata               (wb_sel1_store_data),
+    .io_wb1_actual_taken
+      (_exu_div_io_out_ready_T_2
+         ? _exu_div_io_out_bits_br_taken
+         : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_br_taken : _exu_io_out_bits_br_taken),
     .io_commit_valid                (_rob_io_commit_valid),
     .io_commit_idx                  (_rob_io_commit_idx),
     .io_commit_bits_pc              (_rob_io_commit_bits_pc),
@@ -7578,8 +8321,7 @@ module Core(
     .io_commit_bits_mem_wdata       (_rob_io_commit_bits_mem_wdata),
     .io_commit_bits_addr_ready      (_rob_io_commit_bits_addr_ready),
     .io_commit_fire                 (rob_io_commit_fire),
-    .io_flush
-      (flush_now & ~is_irq & ~fencei_flush_REG & ~mret_flush_REG),
+    .io_flush                       (sq_io_flush),
     .io_flush_idx                   (flush_idx),
     .io_flush_all                   (_busy_io_rebuild_mask_T | mret_flush_REG),
     .io_entries_0_valid             (_rob_io_entries_0_valid),
@@ -7596,9 +8338,6 @@ module Core(
     .io_entries_0_new_phys          (_rob_io_entries_0_new_phys),
     .io_entries_0_is_fencei         (_rob_io_entries_0_is_fencei),
     .io_entries_0_state_state       (_rob_io_entries_0_state_state),
-    .io_entries_0_mem_addr          (_rob_io_entries_0_mem_addr),
-    .io_entries_0_mem_wdata         (_rob_io_entries_0_mem_wdata),
-    .io_entries_0_addr_ready        (_rob_io_entries_0_addr_ready),
     .io_entries_1_valid             (_rob_io_entries_1_valid),
     .io_entries_1_done              (_rob_io_entries_1_done),
     .io_entries_1_pc                (_rob_io_entries_1_pc),
@@ -7613,9 +8352,6 @@ module Core(
     .io_entries_1_new_phys          (_rob_io_entries_1_new_phys),
     .io_entries_1_is_fencei         (_rob_io_entries_1_is_fencei),
     .io_entries_1_state_state       (_rob_io_entries_1_state_state),
-    .io_entries_1_mem_addr          (_rob_io_entries_1_mem_addr),
-    .io_entries_1_mem_wdata         (_rob_io_entries_1_mem_wdata),
-    .io_entries_1_addr_ready        (_rob_io_entries_1_addr_ready),
     .io_entries_2_valid             (_rob_io_entries_2_valid),
     .io_entries_2_done              (_rob_io_entries_2_done),
     .io_entries_2_pc                (_rob_io_entries_2_pc),
@@ -7630,9 +8366,6 @@ module Core(
     .io_entries_2_new_phys          (_rob_io_entries_2_new_phys),
     .io_entries_2_is_fencei         (_rob_io_entries_2_is_fencei),
     .io_entries_2_state_state       (_rob_io_entries_2_state_state),
-    .io_entries_2_mem_addr          (_rob_io_entries_2_mem_addr),
-    .io_entries_2_mem_wdata         (_rob_io_entries_2_mem_wdata),
-    .io_entries_2_addr_ready        (_rob_io_entries_2_addr_ready),
     .io_entries_3_valid             (_rob_io_entries_3_valid),
     .io_entries_3_done              (_rob_io_entries_3_done),
     .io_entries_3_pc                (_rob_io_entries_3_pc),
@@ -7647,9 +8380,6 @@ module Core(
     .io_entries_3_new_phys          (_rob_io_entries_3_new_phys),
     .io_entries_3_is_fencei         (_rob_io_entries_3_is_fencei),
     .io_entries_3_state_state       (_rob_io_entries_3_state_state),
-    .io_entries_3_mem_addr          (_rob_io_entries_3_mem_addr),
-    .io_entries_3_mem_wdata         (_rob_io_entries_3_mem_wdata),
-    .io_entries_3_addr_ready        (_rob_io_entries_3_addr_ready),
     .io_entries_4_valid             (_rob_io_entries_4_valid),
     .io_entries_4_done              (_rob_io_entries_4_done),
     .io_entries_4_pc                (_rob_io_entries_4_pc),
@@ -7664,9 +8394,6 @@ module Core(
     .io_entries_4_new_phys          (_rob_io_entries_4_new_phys),
     .io_entries_4_is_fencei         (_rob_io_entries_4_is_fencei),
     .io_entries_4_state_state       (_rob_io_entries_4_state_state),
-    .io_entries_4_mem_addr          (_rob_io_entries_4_mem_addr),
-    .io_entries_4_mem_wdata         (_rob_io_entries_4_mem_wdata),
-    .io_entries_4_addr_ready        (_rob_io_entries_4_addr_ready),
     .io_entries_5_valid             (_rob_io_entries_5_valid),
     .io_entries_5_done              (_rob_io_entries_5_done),
     .io_entries_5_pc                (_rob_io_entries_5_pc),
@@ -7681,9 +8408,6 @@ module Core(
     .io_entries_5_new_phys          (_rob_io_entries_5_new_phys),
     .io_entries_5_is_fencei         (_rob_io_entries_5_is_fencei),
     .io_entries_5_state_state       (_rob_io_entries_5_state_state),
-    .io_entries_5_mem_addr          (_rob_io_entries_5_mem_addr),
-    .io_entries_5_mem_wdata         (_rob_io_entries_5_mem_wdata),
-    .io_entries_5_addr_ready        (_rob_io_entries_5_addr_ready),
     .io_entries_6_valid             (_rob_io_entries_6_valid),
     .io_entries_6_done              (_rob_io_entries_6_done),
     .io_entries_6_pc                (_rob_io_entries_6_pc),
@@ -7698,9 +8422,6 @@ module Core(
     .io_entries_6_new_phys          (_rob_io_entries_6_new_phys),
     .io_entries_6_is_fencei         (_rob_io_entries_6_is_fencei),
     .io_entries_6_state_state       (_rob_io_entries_6_state_state),
-    .io_entries_6_mem_addr          (_rob_io_entries_6_mem_addr),
-    .io_entries_6_mem_wdata         (_rob_io_entries_6_mem_wdata),
-    .io_entries_6_addr_ready        (_rob_io_entries_6_addr_ready),
     .io_entries_7_valid             (_rob_io_entries_7_valid),
     .io_entries_7_done              (_rob_io_entries_7_done),
     .io_entries_7_pc                (_rob_io_entries_7_pc),
@@ -7715,9 +8436,6 @@ module Core(
     .io_entries_7_new_phys          (_rob_io_entries_7_new_phys),
     .io_entries_7_is_fencei         (_rob_io_entries_7_is_fencei),
     .io_entries_7_state_state       (_rob_io_entries_7_state_state),
-    .io_entries_7_mem_addr          (_rob_io_entries_7_mem_addr),
-    .io_entries_7_mem_wdata         (_rob_io_entries_7_mem_wdata),
-    .io_entries_7_addr_ready        (_rob_io_entries_7_addr_ready),
     .io_entries_8_valid             (_rob_io_entries_8_valid),
     .io_entries_8_done              (_rob_io_entries_8_done),
     .io_entries_8_pc                (_rob_io_entries_8_pc),
@@ -7732,9 +8450,6 @@ module Core(
     .io_entries_8_new_phys          (_rob_io_entries_8_new_phys),
     .io_entries_8_is_fencei         (_rob_io_entries_8_is_fencei),
     .io_entries_8_state_state       (_rob_io_entries_8_state_state),
-    .io_entries_8_mem_addr          (_rob_io_entries_8_mem_addr),
-    .io_entries_8_mem_wdata         (_rob_io_entries_8_mem_wdata),
-    .io_entries_8_addr_ready        (_rob_io_entries_8_addr_ready),
     .io_entries_9_valid             (_rob_io_entries_9_valid),
     .io_entries_9_done              (_rob_io_entries_9_done),
     .io_entries_9_pc                (_rob_io_entries_9_pc),
@@ -7749,9 +8464,6 @@ module Core(
     .io_entries_9_new_phys          (_rob_io_entries_9_new_phys),
     .io_entries_9_is_fencei         (_rob_io_entries_9_is_fencei),
     .io_entries_9_state_state       (_rob_io_entries_9_state_state),
-    .io_entries_9_mem_addr          (_rob_io_entries_9_mem_addr),
-    .io_entries_9_mem_wdata         (_rob_io_entries_9_mem_wdata),
-    .io_entries_9_addr_ready        (_rob_io_entries_9_addr_ready),
     .io_entries_10_valid            (_rob_io_entries_10_valid),
     .io_entries_10_done             (_rob_io_entries_10_done),
     .io_entries_10_pc               (_rob_io_entries_10_pc),
@@ -7766,9 +8478,6 @@ module Core(
     .io_entries_10_new_phys         (_rob_io_entries_10_new_phys),
     .io_entries_10_is_fencei        (_rob_io_entries_10_is_fencei),
     .io_entries_10_state_state      (_rob_io_entries_10_state_state),
-    .io_entries_10_mem_addr         (_rob_io_entries_10_mem_addr),
-    .io_entries_10_mem_wdata        (_rob_io_entries_10_mem_wdata),
-    .io_entries_10_addr_ready       (_rob_io_entries_10_addr_ready),
     .io_entries_11_valid            (_rob_io_entries_11_valid),
     .io_entries_11_done             (_rob_io_entries_11_done),
     .io_entries_11_pc               (_rob_io_entries_11_pc),
@@ -7783,9 +8492,6 @@ module Core(
     .io_entries_11_new_phys         (_rob_io_entries_11_new_phys),
     .io_entries_11_is_fencei        (_rob_io_entries_11_is_fencei),
     .io_entries_11_state_state      (_rob_io_entries_11_state_state),
-    .io_entries_11_mem_addr         (_rob_io_entries_11_mem_addr),
-    .io_entries_11_mem_wdata        (_rob_io_entries_11_mem_wdata),
-    .io_entries_11_addr_ready       (_rob_io_entries_11_addr_ready),
     .io_entries_12_valid            (_rob_io_entries_12_valid),
     .io_entries_12_done             (_rob_io_entries_12_done),
     .io_entries_12_pc               (_rob_io_entries_12_pc),
@@ -7800,9 +8506,6 @@ module Core(
     .io_entries_12_new_phys         (_rob_io_entries_12_new_phys),
     .io_entries_12_is_fencei        (_rob_io_entries_12_is_fencei),
     .io_entries_12_state_state      (_rob_io_entries_12_state_state),
-    .io_entries_12_mem_addr         (_rob_io_entries_12_mem_addr),
-    .io_entries_12_mem_wdata        (_rob_io_entries_12_mem_wdata),
-    .io_entries_12_addr_ready       (_rob_io_entries_12_addr_ready),
     .io_entries_13_valid            (_rob_io_entries_13_valid),
     .io_entries_13_done             (_rob_io_entries_13_done),
     .io_entries_13_pc               (_rob_io_entries_13_pc),
@@ -7817,9 +8520,6 @@ module Core(
     .io_entries_13_new_phys         (_rob_io_entries_13_new_phys),
     .io_entries_13_is_fencei        (_rob_io_entries_13_is_fencei),
     .io_entries_13_state_state      (_rob_io_entries_13_state_state),
-    .io_entries_13_mem_addr         (_rob_io_entries_13_mem_addr),
-    .io_entries_13_mem_wdata        (_rob_io_entries_13_mem_wdata),
-    .io_entries_13_addr_ready       (_rob_io_entries_13_addr_ready),
     .io_entries_14_valid            (_rob_io_entries_14_valid),
     .io_entries_14_done             (_rob_io_entries_14_done),
     .io_entries_14_pc               (_rob_io_entries_14_pc),
@@ -7834,9 +8534,6 @@ module Core(
     .io_entries_14_new_phys         (_rob_io_entries_14_new_phys),
     .io_entries_14_is_fencei        (_rob_io_entries_14_is_fencei),
     .io_entries_14_state_state      (_rob_io_entries_14_state_state),
-    .io_entries_14_mem_addr         (_rob_io_entries_14_mem_addr),
-    .io_entries_14_mem_wdata        (_rob_io_entries_14_mem_wdata),
-    .io_entries_14_addr_ready       (_rob_io_entries_14_addr_ready),
     .io_entries_15_valid            (_rob_io_entries_15_valid),
     .io_entries_15_done             (_rob_io_entries_15_done),
     .io_entries_15_pc               (_rob_io_entries_15_pc),
@@ -7851,9 +8548,6 @@ module Core(
     .io_entries_15_new_phys         (_rob_io_entries_15_new_phys),
     .io_entries_15_is_fencei        (_rob_io_entries_15_is_fencei),
     .io_entries_15_state_state      (_rob_io_entries_15_state_state),
-    .io_entries_15_mem_addr         (_rob_io_entries_15_mem_addr),
-    .io_entries_15_mem_wdata        (_rob_io_entries_15_mem_wdata),
-    .io_entries_15_addr_ready       (_rob_io_entries_15_addr_ready),
     .io_head                        (_rob_io_head),
     .io_count                       (_rob_io_count)
   );
@@ -7865,37 +8559,48 @@ module Core(
     .io_enq_bits_cp_idx                  (_rename_io_cp_idx0),
     .io_enq_bits_src1_ready
       (~_idu_io_rs1_ren | _busy_io_ready1 | _id1_s2_rdy_cdb_hit_T & _idu_io_rs1_ren
-       & (|id_psrc1) & _id_s1_rdy_cdb_hit_T_4 | _id1_s2_rdy_exu_hit_T & _idu_io_rs1_ren
+       & (|id_psrc1) & _id_s1_rdy_cdb_hit_T_4 | _id1_s2_rdy_cdb1_hit_T & _idu_io_rs1_ren
+       & (|id_psrc1) & _id_s1_rdy_cdb1_hit_T_4 | _id1_s2_rdy_exu_hit_T & _idu_io_rs1_ren
        & (|id_psrc1) & _id_s1_rdy_exu_hit_T_4 & _id1_s2_rdy_exu_hit_T_6
        | _id1_s2_rdy_div_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_div_hit_T_4
        & _id1_s2_rdy_div_hit_T_6 | _id1_s2_rdy_lsu_hit_T & _idu_io_rs1_ren & (|id_psrc1)
        & _id_s1_rdy_lsu_hit_T_4 & (_id1_s2_rdy_lsu_hit_T_6 | _lsu_io_out_valid)
-       | _id1_s2_rdy_wbu_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_wbu_hit_T_4),
+       | _id1_s2_rdy_wbu_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_wbu_hit_T_4
+       | _id1_s2_rdy_wbu1_hit_T & _idu_io_rs1_ren & (|id_psrc1)
+       & _id_s1_rdy_wbu1_hit_T_4),
     .io_enq_bits_src2_ready
       (~_idu_io_rs2_ren | _busy_io_ready2 | _id1_s2_rdy_cdb_hit_T & _idu_io_rs2_ren
-       & (|id_psrc2) & _id_s2_rdy_cdb_hit_T_4 | _id1_s2_rdy_exu_hit_T & _idu_io_rs2_ren
+       & (|id_psrc2) & _id_s2_rdy_cdb_hit_T_4 | _id1_s2_rdy_cdb1_hit_T & _idu_io_rs2_ren
+       & (|id_psrc2) & _id_s2_rdy_cdb1_hit_T_4 | _id1_s2_rdy_exu_hit_T & _idu_io_rs2_ren
        & (|id_psrc2) & _id_s2_rdy_exu_hit_T_4 & _id1_s2_rdy_exu_hit_T_6
        | _id1_s2_rdy_div_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_div_hit_T_4
        & _id1_s2_rdy_div_hit_T_6 | _id1_s2_rdy_lsu_hit_T & _idu_io_rs2_ren & (|id_psrc2)
        & _id_s2_rdy_lsu_hit_T_4 & (_id1_s2_rdy_lsu_hit_T_6 | _lsu_io_out_valid)
-       | _id1_s2_rdy_wbu_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_wbu_hit_T_4),
+       | _id1_s2_rdy_wbu_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_wbu_hit_T_4
+       | _id1_s2_rdy_wbu1_hit_T & _idu_io_rs2_ren & (|id_psrc2)
+       & _id_s2_rdy_wbu1_hit_T_4),
     .io_enq_bits_src1_phys               (id_psrc1),
     .io_enq_bits_src2_phys               (id_psrc2),
     .io_enq_bits_src1_val                (id_src1),
     .io_enq_bits_src2_val
       (id_src2_cdb_hit
          ? _wbu_io_refile_wdata
-         : id_src2_exu_hit
-             ? casez_tmp_3
-             : id_src2_div_hit
-                 ? casez_tmp_4
-                 : id_src2_lsu_hit
-                     ? casez_tmp_5
-                     : _id1_s2_rdy_wbu_hit_T & _idu_io_rs2_ren & (|id_psrc2)
-                       & _id_s2_rdy_wbu_hit_T_4 & ~id_src2_exu_hit & ~id_src2_div_hit
-                       & ~id_src2_lsu_hit & ~id_src2_cdb_hit
-                         ? _wbu_io_refile_wdata
-                         : _prf_io_rdata2),
+         : id_src2_cdb1_hit
+             ? _wbu1_io_refile_wdata
+             : id_src2_exu_hit
+                 ? casez_tmp_3
+                 : id_src2_div_hit
+                     ? casez_tmp_4
+                     : id_src2_lsu_hit
+                         ? casez_tmp_5
+                         : id_src2_wbu_hit
+                             ? _wbu_io_refile_wdata
+                             : _id1_s2_rdy_wbu1_hit_T & _idu_io_rs2_ren & (|id_psrc2)
+                               & _id_s2_rdy_wbu1_hit_T_4 & ~id_src2_exu_hit
+                               & ~id_src2_div_hit & ~id_src2_lsu_hit & ~id_src2_wbu_hit
+                               & ~id_src2_cdb_hit & ~id_src2_cdb1_hit
+                                 ? _wbu1_io_refile_wdata
+                                 : _prf_io_rdata2),
     .io_enq_bits_pdest                   (_rename_io_dest_phys),
     .io_enq_bits_pc                      (_idu_io_out_bits_pc),
     .io_enq_bits_imm_ext                 (_idu_io_out_bits_imm_ext),
@@ -7917,39 +8622,7 @@ module Core(
     .io_enq_bits_wbu_reg_write_sel       (_idu_io_out_bits_signals_wbu_reg_write_sel),
     .io_count                            (/* unused */),
     .io_rob_head                         (_rob_io_head),
-    .io_rob_st_pending
-      ({_rob_io_entries_15_valid & _rob_io_entries_15_mem_valid
-          & _rob_io_entries_15_mem_write & ~_rob_io_entries_15_addr_ready,
-        _rob_io_entries_14_valid & _rob_io_entries_14_mem_valid
-          & _rob_io_entries_14_mem_write & ~_rob_io_entries_14_addr_ready,
-        _rob_io_entries_13_valid & _rob_io_entries_13_mem_valid
-          & _rob_io_entries_13_mem_write & ~_rob_io_entries_13_addr_ready,
-        _rob_io_entries_12_valid & _rob_io_entries_12_mem_valid
-          & _rob_io_entries_12_mem_write & ~_rob_io_entries_12_addr_ready,
-        _rob_io_entries_11_valid & _rob_io_entries_11_mem_valid
-          & _rob_io_entries_11_mem_write & ~_rob_io_entries_11_addr_ready,
-        _rob_io_entries_10_valid & _rob_io_entries_10_mem_valid
-          & _rob_io_entries_10_mem_write & ~_rob_io_entries_10_addr_ready,
-        _rob_io_entries_9_valid & _rob_io_entries_9_mem_valid
-          & _rob_io_entries_9_mem_write & ~_rob_io_entries_9_addr_ready,
-        _rob_io_entries_8_valid & _rob_io_entries_8_mem_valid
-          & _rob_io_entries_8_mem_write & ~_rob_io_entries_8_addr_ready,
-        _rob_io_entries_7_valid & _rob_io_entries_7_mem_valid
-          & _rob_io_entries_7_mem_write & ~_rob_io_entries_7_addr_ready,
-        _rob_io_entries_6_valid & _rob_io_entries_6_mem_valid
-          & _rob_io_entries_6_mem_write & ~_rob_io_entries_6_addr_ready,
-        _rob_io_entries_5_valid & _rob_io_entries_5_mem_valid
-          & _rob_io_entries_5_mem_write & ~_rob_io_entries_5_addr_ready,
-        _rob_io_entries_4_valid & _rob_io_entries_4_mem_valid
-          & _rob_io_entries_4_mem_write & ~_rob_io_entries_4_addr_ready,
-        _rob_io_entries_3_valid & _rob_io_entries_3_mem_valid
-          & _rob_io_entries_3_mem_write & ~_rob_io_entries_3_addr_ready,
-        _rob_io_entries_2_valid & _rob_io_entries_2_mem_valid
-          & _rob_io_entries_2_mem_write & ~_rob_io_entries_2_addr_ready,
-        _rob_io_entries_1_valid & _rob_io_entries_1_mem_valid
-          & _rob_io_entries_1_mem_write & ~_rob_io_entries_1_addr_ready,
-        _rob_io_entries_0_valid & _rob_io_entries_0_mem_valid
-          & _rob_io_entries_0_mem_write & ~_rob_io_entries_0_addr_ready}),
+    .io_rob_st_pending                   (_sq_io_unresolved_mask),
     .io_issue_alu_valid                  (_rs_io_issue_alu_valid),
     .io_issue_alu_bits_rob_idx           (_rs_io_issue_alu_bits_rob_idx),
     .io_issue_alu_bits_cp_idx            (_rs_io_issue_alu_bits_cp_idx),
@@ -8021,13 +8694,16 @@ module Core(
     .io_enq1_bits_src2_ready
       (~_idu1_io_rs2_ren | ~id1_dep2
        & (_busy_io_ready4 | _id1_s2_rdy_cdb_hit_T & _idu1_io_rs2_ren & (|id1_psrc2)
-          & _id1_s2_rdy_cdb_hit_T_4 | _id1_s2_rdy_exu_hit_T & _idu1_io_rs2_ren
-          & (|id1_psrc2) & _id1_s2_rdy_exu_hit_T_4 & _id1_s2_rdy_exu_hit_T_6
-          | _id1_s2_rdy_div_hit_T & _idu1_io_rs2_ren & (|id1_psrc2)
-          & _id1_s2_rdy_div_hit_T_4 & _id1_s2_rdy_div_hit_T_6 | _id1_s2_rdy_lsu_hit_T
-          & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_lsu_hit_T_4
-          & (_id1_s2_rdy_lsu_hit_T_6 | _lsu_io_out_valid) | _id1_s2_rdy_wbu_hit_T
-          & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_wbu_hit_T_4)),
+          & _id1_s2_rdy_cdb_hit_T_4 | _id1_s2_rdy_cdb1_hit_T & _idu1_io_rs2_ren
+          & (|id1_psrc2) & _id1_s2_rdy_cdb1_hit_T_4 | _id1_s2_rdy_exu_hit_T
+          & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_exu_hit_T_4
+          & _id1_s2_rdy_exu_hit_T_6 | _id1_s2_rdy_div_hit_T & _idu1_io_rs2_ren
+          & (|id1_psrc2) & _id1_s2_rdy_div_hit_T_4 & _id1_s2_rdy_div_hit_T_6
+          | _id1_s2_rdy_lsu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2)
+          & _id1_s2_rdy_lsu_hit_T_4 & (_id1_s2_rdy_lsu_hit_T_6 | _lsu_io_out_valid)
+          | _id1_s2_rdy_wbu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2)
+          & _id1_s2_rdy_wbu_hit_T_4 | _id1_s2_rdy_wbu1_hit_T & _idu1_io_rs2_ren
+          & (|id1_psrc2) & _id1_s2_rdy_wbu1_hit_T_4)),
     .io_enq1_bits_src1_phys              (id1_psrc1),
     .io_enq1_bits_src2_phys              (id1_psrc2),
     .io_enq1_bits_src1_val               (id1_src1),
@@ -8036,17 +8712,23 @@ module Core(
          ? 32'h0
          : id1_src2_cdb_hit
              ? _wbu_io_refile_wdata
-             : id1_src2_exu_hit
-                 ? casez_tmp_3
-                 : id1_src2_div_hit
-                     ? casez_tmp_4
-                     : id1_src2_lsu_hit
-                         ? casez_tmp_5
-                         : _id1_s2_rdy_wbu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2)
-                           & _id1_s2_rdy_wbu_hit_T_4 & ~id1_src2_exu_hit
-                           & ~id1_src2_div_hit & ~id1_src2_lsu_hit & ~id1_src2_cdb_hit
-                             ? _wbu_io_refile_wdata
-                             : _prf_io_rdata4),
+             : id1_src2_cdb1_hit
+                 ? _wbu1_io_refile_wdata
+                 : id1_src2_exu_hit
+                     ? casez_tmp_3
+                     : id1_src2_div_hit
+                         ? casez_tmp_4
+                         : id1_src2_lsu_hit
+                             ? casez_tmp_5
+                             : id1_src2_wbu_hit
+                                 ? _wbu_io_refile_wdata
+                                 : _id1_s2_rdy_wbu1_hit_T & _idu1_io_rs2_ren
+                                   & (|id1_psrc2) & _id1_s2_rdy_wbu1_hit_T_4
+                                   & ~id1_src2_exu_hit & ~id1_src2_div_hit
+                                   & ~id1_src2_lsu_hit & ~id1_src2_wbu_hit
+                                   & ~id1_src2_cdb_hit & ~id1_src2_cdb1_hit
+                                     ? _wbu1_io_refile_wdata
+                                     : _prf_io_rdata4),
     .io_enq1_bits_pdest                  (_rename_io_dest_phys1),
     .io_enq1_bits_pc                     (_idu1_io_out_bits_pc),
     .io_enq1_bits_imm_ext                (_idu1_io_out_bits_imm_ext),
@@ -8066,14 +8748,16 @@ module Core(
     .io_enq1_bits_lsu_mem_valid          (_idu1_io_out_bits_signals_lsu_mem_valid),
     .io_enq1_bits_wbu_reg_write          (_idu1_io_out_bits_signals_wbu_reg_write),
     .io_enq1_bits_wbu_reg_write_sel      (_idu1_io_out_bits_signals_wbu_reg_write_sel),
-    .io_free_rob_fire                    (alu_leave | div_leave | lsu_leave),
-    .io_free_rob_idx
-      (alu_leave
-         ? d_alu_bits_rob_idx
-         : div_leave ? d_div_bits_rob_idx : d_lsu_bits_rob_idx),
+    .io_free_rob_fire                    (can_wb),
+    .io_free_rob_idx                     (wb_sel_rob_idx),
+    .io_free_rob1_fire                   (can_wb1),
+    .io_free_rob1_idx                    (wb_sel1_rob_idx),
     .io_cdb_valid                        (can_wb & (|wb_sel_pdest)),
     .io_cdb_pdest                        (wb_sel_pdest),
     .io_cdb_val                          (_wbu_io_refile_wdata),
+    .io_cdb1_valid                       (can_wb1 & (|wb_sel1_pdest)),
+    .io_cdb1_pdest                       (wb_sel1_pdest),
+    .io_cdb1_val                         (_wbu1_io_refile_wdata),
     .io_flush
       (flush_now & ~fencei_flush_REG & ~mret_flush_REG),
     .io_flush_idx                        (flush_idx),
@@ -8119,128 +8803,66 @@ module Core(
     .io_count                     (/* unused */)
   );
   StoreQueue sq (
-    .io_rob_head              (_rob_io_head),
-    .io_entries_0_valid       (_rob_io_entries_0_valid),
-    .io_entries_0_mem_valid   (_rob_io_entries_0_mem_valid),
-    .io_entries_0_mem_write   (_rob_io_entries_0_mem_write),
-    .io_entries_0_mem_wmask   (_rob_io_entries_0_mem_wmask),
-    .io_entries_0_mem_addr    (_rob_io_entries_0_mem_addr),
-    .io_entries_0_mem_wdata   (_rob_io_entries_0_mem_wdata),
-    .io_entries_0_addr_ready  (_rob_io_entries_0_addr_ready),
-    .io_entries_1_valid       (_rob_io_entries_1_valid),
-    .io_entries_1_mem_valid   (_rob_io_entries_1_mem_valid),
-    .io_entries_1_mem_write   (_rob_io_entries_1_mem_write),
-    .io_entries_1_mem_wmask   (_rob_io_entries_1_mem_wmask),
-    .io_entries_1_mem_addr    (_rob_io_entries_1_mem_addr),
-    .io_entries_1_mem_wdata   (_rob_io_entries_1_mem_wdata),
-    .io_entries_1_addr_ready  (_rob_io_entries_1_addr_ready),
-    .io_entries_2_valid       (_rob_io_entries_2_valid),
-    .io_entries_2_mem_valid   (_rob_io_entries_2_mem_valid),
-    .io_entries_2_mem_write   (_rob_io_entries_2_mem_write),
-    .io_entries_2_mem_wmask   (_rob_io_entries_2_mem_wmask),
-    .io_entries_2_mem_addr    (_rob_io_entries_2_mem_addr),
-    .io_entries_2_mem_wdata   (_rob_io_entries_2_mem_wdata),
-    .io_entries_2_addr_ready  (_rob_io_entries_2_addr_ready),
-    .io_entries_3_valid       (_rob_io_entries_3_valid),
-    .io_entries_3_mem_valid   (_rob_io_entries_3_mem_valid),
-    .io_entries_3_mem_write   (_rob_io_entries_3_mem_write),
-    .io_entries_3_mem_wmask   (_rob_io_entries_3_mem_wmask),
-    .io_entries_3_mem_addr    (_rob_io_entries_3_mem_addr),
-    .io_entries_3_mem_wdata   (_rob_io_entries_3_mem_wdata),
-    .io_entries_3_addr_ready  (_rob_io_entries_3_addr_ready),
-    .io_entries_4_valid       (_rob_io_entries_4_valid),
-    .io_entries_4_mem_valid   (_rob_io_entries_4_mem_valid),
-    .io_entries_4_mem_write   (_rob_io_entries_4_mem_write),
-    .io_entries_4_mem_wmask   (_rob_io_entries_4_mem_wmask),
-    .io_entries_4_mem_addr    (_rob_io_entries_4_mem_addr),
-    .io_entries_4_mem_wdata   (_rob_io_entries_4_mem_wdata),
-    .io_entries_4_addr_ready  (_rob_io_entries_4_addr_ready),
-    .io_entries_5_valid       (_rob_io_entries_5_valid),
-    .io_entries_5_mem_valid   (_rob_io_entries_5_mem_valid),
-    .io_entries_5_mem_write   (_rob_io_entries_5_mem_write),
-    .io_entries_5_mem_wmask   (_rob_io_entries_5_mem_wmask),
-    .io_entries_5_mem_addr    (_rob_io_entries_5_mem_addr),
-    .io_entries_5_mem_wdata   (_rob_io_entries_5_mem_wdata),
-    .io_entries_5_addr_ready  (_rob_io_entries_5_addr_ready),
-    .io_entries_6_valid       (_rob_io_entries_6_valid),
-    .io_entries_6_mem_valid   (_rob_io_entries_6_mem_valid),
-    .io_entries_6_mem_write   (_rob_io_entries_6_mem_write),
-    .io_entries_6_mem_wmask   (_rob_io_entries_6_mem_wmask),
-    .io_entries_6_mem_addr    (_rob_io_entries_6_mem_addr),
-    .io_entries_6_mem_wdata   (_rob_io_entries_6_mem_wdata),
-    .io_entries_6_addr_ready  (_rob_io_entries_6_addr_ready),
-    .io_entries_7_valid       (_rob_io_entries_7_valid),
-    .io_entries_7_mem_valid   (_rob_io_entries_7_mem_valid),
-    .io_entries_7_mem_write   (_rob_io_entries_7_mem_write),
-    .io_entries_7_mem_wmask   (_rob_io_entries_7_mem_wmask),
-    .io_entries_7_mem_addr    (_rob_io_entries_7_mem_addr),
-    .io_entries_7_mem_wdata   (_rob_io_entries_7_mem_wdata),
-    .io_entries_7_addr_ready  (_rob_io_entries_7_addr_ready),
-    .io_entries_8_valid       (_rob_io_entries_8_valid),
-    .io_entries_8_mem_valid   (_rob_io_entries_8_mem_valid),
-    .io_entries_8_mem_write   (_rob_io_entries_8_mem_write),
-    .io_entries_8_mem_wmask   (_rob_io_entries_8_mem_wmask),
-    .io_entries_8_mem_addr    (_rob_io_entries_8_mem_addr),
-    .io_entries_8_mem_wdata   (_rob_io_entries_8_mem_wdata),
-    .io_entries_8_addr_ready  (_rob_io_entries_8_addr_ready),
-    .io_entries_9_valid       (_rob_io_entries_9_valid),
-    .io_entries_9_mem_valid   (_rob_io_entries_9_mem_valid),
-    .io_entries_9_mem_write   (_rob_io_entries_9_mem_write),
-    .io_entries_9_mem_wmask   (_rob_io_entries_9_mem_wmask),
-    .io_entries_9_mem_addr    (_rob_io_entries_9_mem_addr),
-    .io_entries_9_mem_wdata   (_rob_io_entries_9_mem_wdata),
-    .io_entries_9_addr_ready  (_rob_io_entries_9_addr_ready),
-    .io_entries_10_valid      (_rob_io_entries_10_valid),
-    .io_entries_10_mem_valid  (_rob_io_entries_10_mem_valid),
-    .io_entries_10_mem_write  (_rob_io_entries_10_mem_write),
-    .io_entries_10_mem_wmask  (_rob_io_entries_10_mem_wmask),
-    .io_entries_10_mem_addr   (_rob_io_entries_10_mem_addr),
-    .io_entries_10_mem_wdata  (_rob_io_entries_10_mem_wdata),
-    .io_entries_10_addr_ready (_rob_io_entries_10_addr_ready),
-    .io_entries_11_valid      (_rob_io_entries_11_valid),
-    .io_entries_11_mem_valid  (_rob_io_entries_11_mem_valid),
-    .io_entries_11_mem_write  (_rob_io_entries_11_mem_write),
-    .io_entries_11_mem_wmask  (_rob_io_entries_11_mem_wmask),
-    .io_entries_11_mem_addr   (_rob_io_entries_11_mem_addr),
-    .io_entries_11_mem_wdata  (_rob_io_entries_11_mem_wdata),
-    .io_entries_11_addr_ready (_rob_io_entries_11_addr_ready),
-    .io_entries_12_valid      (_rob_io_entries_12_valid),
-    .io_entries_12_mem_valid  (_rob_io_entries_12_mem_valid),
-    .io_entries_12_mem_write  (_rob_io_entries_12_mem_write),
-    .io_entries_12_mem_wmask  (_rob_io_entries_12_mem_wmask),
-    .io_entries_12_mem_addr   (_rob_io_entries_12_mem_addr),
-    .io_entries_12_mem_wdata  (_rob_io_entries_12_mem_wdata),
-    .io_entries_12_addr_ready (_rob_io_entries_12_addr_ready),
-    .io_entries_13_valid      (_rob_io_entries_13_valid),
-    .io_entries_13_mem_valid  (_rob_io_entries_13_mem_valid),
-    .io_entries_13_mem_write  (_rob_io_entries_13_mem_write),
-    .io_entries_13_mem_wmask  (_rob_io_entries_13_mem_wmask),
-    .io_entries_13_mem_addr   (_rob_io_entries_13_mem_addr),
-    .io_entries_13_mem_wdata  (_rob_io_entries_13_mem_wdata),
-    .io_entries_13_addr_ready (_rob_io_entries_13_addr_ready),
-    .io_entries_14_valid      (_rob_io_entries_14_valid),
-    .io_entries_14_mem_valid  (_rob_io_entries_14_mem_valid),
-    .io_entries_14_mem_write  (_rob_io_entries_14_mem_write),
-    .io_entries_14_mem_wmask  (_rob_io_entries_14_mem_wmask),
-    .io_entries_14_mem_addr   (_rob_io_entries_14_mem_addr),
-    .io_entries_14_mem_wdata  (_rob_io_entries_14_mem_wdata),
-    .io_entries_14_addr_ready (_rob_io_entries_14_addr_ready),
-    .io_entries_15_valid      (_rob_io_entries_15_valid),
-    .io_entries_15_mem_valid  (_rob_io_entries_15_mem_valid),
-    .io_entries_15_mem_write  (_rob_io_entries_15_mem_write),
-    .io_entries_15_mem_wmask  (_rob_io_entries_15_mem_wmask),
-    .io_entries_15_mem_addr   (_rob_io_entries_15_mem_addr),
-    .io_entries_15_mem_wdata  (_rob_io_entries_15_mem_wdata),
-    .io_entries_15_addr_ready (_rob_io_entries_15_addr_ready),
-    .io_ld_valid
-      (lsu_io_in_valid & lsu_io_in_bits_r_signals_lsu_mem_valid
-       & ~lsu_io_in_bits_r_signals_lsu_mem_write),
-    .io_ld_rob                (lsu_io_in_bits_r_rob_idx),
-    .io_ld_addr               (lsu_io_in_bits_r_alu_result),
-    .io_ld_mem_rd             (lsu_io_in_bits_r_signals_lsu_mem_rd),
-    .io_fwd_valid             (_sq_io_fwd_valid),
-    .io_fwd_data              (_sq_io_fwd_data),
-    .io_wait_load             (_sq_io_wait_load)
+    .clock              (clock),
+    .reset              (reset),
+    .io_rob_head        (_rob_io_head),
+    .io_alloc0_valid
+      (en_ren & _idu_io_out_bits_signals_lsu_mem_valid
+       & _idu_io_out_bits_signals_lsu_mem_write),
+    .io_alloc0_rob      (_rob_io_enq_idx),
+    .io_alloc0_mask     (_idu_io_out_bits_signals_lsu_mem_wmask[3:0]),
+    .io_alloc1_valid
+      (en_ren1 & _idu1_io_out_bits_signals_lsu_mem_valid
+       & _idu1_io_out_bits_signals_lsu_mem_write),
+    .io_alloc1_rob      (_rob_io_enq1_idx),
+    .io_alloc1_mask     (_idu1_io_out_bits_signals_lsu_mem_wmask[3:0]),
+    .io_wb_valid        (wb_store | can_wb1 & casez_tmp_17 & casez_tmp_18),
+    .io_wb_rob          (wb_store ? wb_sel_rob_idx : wb_sel1_rob_idx),
+    .io_wb_addr         (wb_store ? wb_sel_alu_result : wb_sel1_alu_result),
+    .io_wb_data         (wb_store ? wb_sel_store_data : wb_sel1_store_data),
+    .io_wb_mask         (wb_store ? casez_tmp_11[3:0] : casez_tmp_19[3:0]),
+    .io_commit_valid    (sq_io_commit_valid),
+    .io_commit_rob      (_rob_io_head),
+    .io_flush           (sq_io_flush),
+    .io_flush_idx       (flush_idx),
+    .io_flush_all       (_busy_io_rebuild_mask_T | mret_flush_REG),
+    .io_ld_valid        (sq_io_ld_valid),
+    .io_ld_rob          (lsu_stage_bits_rob_idx),
+    .io_ld_addr         (lsu_stage_bits_alu_result),
+    .io_ld_mem_rd       (lsu_stage_bits_signals_lsu_mem_rd),
+    .io_unresolved_mask (_sq_io_unresolved_mask),
+    .io_fwd_valid       (_sq_io_fwd_valid),
+    .io_fwd_data        (_sq_io_fwd_data),
+    .io_wait_load       (_sq_io_wait_load)
+  );
+  StoreBuffer stbuf (
+    .clock            (clock),
+    .reset            (reset),
+    .io_enq_ready     (_stbuf_io_enq_ready),
+    .io_enq_valid     (stbuf_io_enq_valid),
+    .io_enq_bits_addr (head_st_addr),
+    .io_enq_bits_data (head_st_data),
+    .io_enq_bits_mask (_rob_io_commit_bits_mem_wmask[3:0]),
+    .io_ld_valid      (sq_io_ld_valid),
+    .io_ld_addr       (lsu_stage_bits_alu_result),
+    .io_ld_mem_rd     (lsu_stage_bits_signals_lsu_mem_rd),
+    .io_ld_wait       (_stbuf_io_ld_wait),
+    .io_ld_fwd_valid  (_stbuf_io_ld_fwd_valid),
+    .io_ld_fwd_data   (_stbuf_io_ld_fwd_data),
+    .io_bus_busy      (|{_lsu_io_bus_busy, cm_st_state}),
+    .io_dmem_awaddr   (_stbuf_io_dmem_awaddr),
+    .io_dmem_awvalid  (_stbuf_io_dmem_awvalid),
+    .io_dmem_awready  (io_dmem_awready & ~(|cm_st_state)),
+    .io_dmem_wdata    (_stbuf_io_dmem_wdata),
+    .io_dmem_wstrb    (_stbuf_io_dmem_wstrb),
+    .io_dmem_wvalid   (_stbuf_io_dmem_wvalid),
+    .io_dmem_wready   (io_dmem_wready & ~(|cm_st_state)),
+    .io_dmem_bvalid   (stbuf_io_dmem_bvalid),
+    .io_dmem_bready   (_stbuf_io_dmem_bready),
+    .io_deq_valid     (_stbuf_io_deq_valid),
+    .io_deq_addr      (_stbuf_io_deq_addr),
+    .io_empty         (_stbuf_io_empty),
+    .io_busy          (_stbuf_io_busy)
   );
   PerfMonitor pm (
     .clock    (clock),
@@ -8268,33 +8890,137 @@ module Core(
   );
   PerfMonitor pm_4 (
     .clock    (clock),
+    .event_id (32'h18),
+    .data     (64'h1),
+    .enable   (~_fq_io_deq_valid & ~flush_now & ~stop_issue)
+  );
+  PerfMonitor pm_5 (
+    .clock    (clock),
+    .event_id (32'h1A),
+    .data     (64'h1),
+    .enable   (&_wb_cand_count_T_5)
+  );
+  PerfMonitor pm_6 (
+    .clock    (clock),
+    .event_id (32'h1B),
+    .data     (64'h1),
+    .enable   (_wb_cand_count_T_5 != {1'h0, can_wb} + {1'h0, can_wb1})
+  );
+  PerfMonitor pm_7 (
+    .clock    (clock),
+    .event_id (32'h1C),
+    .data     (64'h1),
+    .enable   (casez_tmp_22 & ~_rob_io_commit_valid)
+  );
+  PerfMonitor pm_8 (
+    .clock    (clock),
+    .event_id (32'h1D),
+    .data     (64'h1),
+    .enable   (_GEN & ~store_commit_ready)
+  );
+  PerfMonitor pm_9 (
+    .clock    (clock),
+    .event_id (32'h1E),
+    .data     (64'h1),
+    .enable
+      (_rob_io_commit_valid & _rob_io_commit_bits_is_fencei & ~fencei_commit_ready)
+  );
+  PerfMonitor pm_10 (
+    .clock    (clock),
+    .event_id (32'h1F),
+    .data     (64'h1),
+    .enable   (_rob_io_commit_valid & bp_commit_block)
+  );
+  PerfMonitor pm_11 (
+    .clock    (clock),
+    .event_id (32'h20),
+    .data     (64'h1),
+    .enable   (_rob_io_commit_valid & (is_irq | fencei_flush_REG | mret_flush_REG))
+  );
+  PerfMonitor pm_12 (
+    .clock    (clock),
     .event_id (32'hF),
     .data     (64'h1),
     .enable   (br_done & d_alu_bits_bp_valid)
   );
-  PerfMonitor pm_5 (
+  PerfMonitor pm_13 (
     .clock    (clock),
     .event_id (32'h10),
     .data     (64'h1),
-    .enable   (mis_predict_dbg & d_alu_bits_bp_valid)
+    .enable   (_GEN_16)
+  );
+  PerfMonitor pm_14 (
+    .clock    (clock),
+    .event_id (32'h19),
+    .data     (64'h1),
+    .enable   (mis_predict_dbg)
+  );
+  PerfMonitor pm_15 (
+    .clock    (clock),
+    .event_id (32'h24),
+    .data     (64'h1),
+    .enable   (_GEN_16 & _mis_predict_T)
+  );
+  PerfMonitor pm_16 (
+    .clock    (clock),
+    .event_id (32'h25),
+    .data     (64'h1),
+    .enable   (_GEN_16 & target_mispredict)
+  );
+  PerfMonitor pm_17 (
+    .clock    (clock),
+    .event_id (32'h26),
+    .data     (64'h1),
+    .enable   (mis_predict_dbg & ~d_alu_bits_bp_valid)
+  );
+  PerfMonitor pm_18 (
+    .clock    (clock),
+    .event_id (32'h4),
+    .data     (64'h1),
+    .enable   (io_dmem_awvalid_0 & io_dmem_awready)
+  );
+  PerfMonitor pm_19 (
+    .clock    (clock),
+    .event_id (32'h27),
+    .data     (64'h1),
+    .enable   (dcache_io_invalidate_valid)
+  );
+  PerfMonitor pm_20 (
+    .clock    (clock),
+    .event_id (32'h28),
+    .data     (64'h1),
+    .enable   (stbuf_io_dmem_bvalid & _stbuf_io_dmem_bready)
+  );
+  PerfMonitor pm_21 (
+    .clock    (clock),
+    .event_id (32'h29),
+    .data     (64'h1),
+    .enable   (_GEN & head_st_is_pmem & ~_stbuf_io_enq_ready)
+  );
+  PerfMonitor pm_22 (
+    .clock    (clock),
+    .event_id (32'h2A),
+    .data     (64'h1),
+    .enable
+      (lsu_io_in_valid & ~_sq_io_wait_load & ~_sq_io_fwd_valid & _stbuf_io_ld_fwd_valid)
   );
   Ebreak ebreak_cm (
     .is_ebreak (rob_io_commit_fire & _rob_io_commit_bits_is_ebreak)
   );
-  assign io_dmem_arvalid = _lsu_io_dmem_arvalid & ~(|cm_st_state);
-  assign io_dmem_rready = _lsu_io_dmem_rready & ~(|cm_st_state);
-  assign io_dmem_awaddr = cm_st_addr;
+  assign io_dmem_arvalid = _dcache_io_mem_arvalid & ~store_bus_busy;
+  assign io_dmem_rready = _dcache_io_mem_rready & ~store_bus_busy;
+  assign io_dmem_awaddr = (|cm_st_state) ? cm_st_addr : _stbuf_io_dmem_awaddr;
   assign io_dmem_awvalid = io_dmem_awvalid_0;
-  assign io_dmem_wdata = cm_st_wdata;
-  assign io_dmem_wstrb = cm_st_wstrb;
+  assign io_dmem_wdata = (|cm_st_state) ? cm_st_wdata : _stbuf_io_dmem_wdata;
+  assign io_dmem_wstrb = (|cm_st_state) ? cm_st_wstrb : _stbuf_io_dmem_wstrb;
   assign io_dmem_wvalid = io_dmem_wvalid_0;
   assign io_dmem_bready = io_dmem_bready_0;
   assign io_commit_valid = rob_io_commit_fire;
   assign io_commit_pc = _rob_io_commit_bits_pc;
   assign io_commit_mem_addr =
-    cm_is_store
-      ? cm_st_addr
-      : cm_wb_same ? wb_sel_alu_result : _rob_io_commit_bits_mem_addr;
+    (cm_is_store ? head_wb_store : cm_wb_same)
+      ? head_wb_bits_alu_result
+      : _rob_io_commit_bits_mem_addr;
   assign io_commit_is_load = _rob_io_commit_bits_reg_write_sel == 3'h4;
   assign io_arch_rdata_0 = 32'h0;
   assign io_arch_rdata_1 = arch_rf_1;

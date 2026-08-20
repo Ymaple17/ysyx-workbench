@@ -1,165 +1,289 @@
-# 阶段 10c：宽提交与多 CDB（提交带宽）
+# 阶段 10c：宽提交与多 CDB
 
-## 学习导航
-- **理论目标**：本章先理解：提交从 1 宽变 **2 宽**；结果总线从单 CDB 升级为**多 CDB / 仲裁网络**，支撑每拍多条指令写回。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：**未做**（现状：提交 1 宽、单 CDB）。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
-- **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
+## 学习导览
 
----
-**前置**：阶段 9 已完成性能画像，并确认提交 / CDB 是主要瓶颈。  
-**目标**：提交从 1 宽变 **2 宽**；结果总线从单 CDB 升级为**多 CDB / 仲裁网络**，支撑每拍多条指令写回。  
-**仓库状态**：**未做**（现状：提交 1 宽、单 CDB）。
-
-> 8b 后发射 2 宽、执行多 FU，但**提交 1 宽**会在长串无依赖指令时成为瓶颈：后端每拍进 2，出来只能 1，ROB 慢慢被填满，最终还是停。
+- **理论目标**：理解提交带宽和写回带宽为什么会限制 IPC；知道 2-wide commit、双 CDB、双唤醒、双 PRF 写口之间的关系。
+- **最小实现**：在不破坏现有 difftest 单提交接口的前提下，先把结果总线从单 CDB 扩成 2 CDB，让一拍最多两个 FU 结果进入 PRF/ROB/RS。
+- **当前参考核**：已完成 `CDB_NUM=2` 的双写回参考实现；`COMMIT_WIDTH` 仍为 1，真正 2-wide commit 暂缓。
+- **后续扩展**：拓宽顶层 `commit_*` / C++ difftest 协议后，再做真正 2-wide retire；之后配套扩 ROB/RS/PRF、宽取指和更强 BPU。
+- **验收方式**：`mychisel.compile`、`OoOUnitTest`、cpu-tests + difftest、`microbench(test)` 全部通过；记录 before/after IPC 和 CDB 计数器。
 
 ---
 
-## 1. 提交带宽的瓶颈
+## 1. 为什么先做多 CDB
+
+8a/8b 之后，后端已经有多 FU 和 2-wide dispatch。如果 ALU、LSU、DIV 同拍完成，而写回端只有一个 CDB，就会出现：
 
 ```text
-8b：rename 每拍 2 → ROB 每拍 +2
-提交每拍 1 → ROB 净增 1/拍 → 跑长序列时 ROB 满 → 停发射
+多 FU 完成 -> 仲裁只放行 1 条 -> 其他结果等下一拍
 ```
 
-只要执行/写回足够快（多 FU + MLP），提交 1 宽就是天花板。  
-**超标量主流做法**：提交 2–4 宽，且**每拍可提交多条**（只要 head 起连续 done 即可）。
+这种瓶颈和“发射是否多宽”无关。只要结果不能及时写 PRF、清 Busy、唤醒 RS，后续指令就会继续等。
+
+本仓库当前还有一个现实约束：C++ difftest 只看单个提交事件：
+
+```text
+io_commit_valid
+io_commit_pc
+io_commit_mem_addr
+io_commit_is_load
+io_arch_rdata[0..31]
+```
+
+所以如果 RTL 内部直接一拍提交两条，而 C++ 仍只执行一次 NEMU step，对拍会错位。阶段 10c 的参考实现先落地 **2 CDB 写回**，保持 **1-wide commit**，这样能继续稳定跑 difftest。
 
 ---
 
-## 2. 宽提交设计
+## 2. 当前参考核改了什么
 
-### 2.1 提交条件
+### 2.1 参数
 
-```text
-每拍最多 COMMIT_WIDTH 条：
-  从 head 起，连续 done 的指令依次提交
-  遇到未 done → 停（保持程序序）
-  遇到 fence/异常 → 特殊处理（见下）
-```
-
-### 2.2 ROB 改动
+`common/ooo_params.scala`：
 
 ```scala
-commit_fire(0..W-1)  // 每宽一个
-commit_idx(i) = head + i
-// ROB 内部：head += 已提交条数（连续段）
+val COMMIT_WIDTH = 1
+val CDB_NUM = 2
 ```
 
-### 2.3 与特殊指令的交互（4a–4g 保持）
+这里 `COMMIT_WIDTH=1` 是当前参考核水位，不是否定 2-wide commit 的目标；它表示现阶段仍兼容单提交 difftest。
 
-| 指令 | 宽提交行为 |
-|------|-----------|
-| 普通 ALU | 直接提交（1 条占 1 个提交槽） |
-| store（5a） | **单独**：写完总线那拍才提交，不可与别条同拍（或占一整拍） |
-| fencei/mret/异常 | **独占提交拍**（head 停，处理完再走） |
-| ecall/ebreak | 同 4c/4d，独占 |
+### 2.2 PRF
 
-**简化策略**：store/特殊指令只占提交宽的第 0 槽，第 1 槽仅在「第 0 槽是普通指令」时可用。这样把复杂交互降到最低。
-
-### 2.4 rename 侧
+PRF 原本已有双写口：
 
 ```text
-提交 2 条 → rename 的 arch_rat 更新 2 个（或同拍 2 次）
-freelist 归还 2 个 old_phys
-→ rename.scala 的 commit 口参数化 COMMIT_WIDTH
+wen1/waddr1/wdata1
+wen2/waddr2/wdata2
 ```
 
----
-
-## 3. 多 CDB（结果总线）
-
-### 3.1 现状
-
-```text
-单 CDB：多 FU 完成 → 仲裁选 1 → can_wb 那 1 条写 PRF/唤醒
-```
-
-### 3.2 目标
-
-```text
-CDB × 2（或 PRF 双写口直连 + 2 个唤醒端口）
-每拍最多 2 条写回：2 个 winner，2 个 pdest 同时广播
-```
+10c 把第二个写口真正接到第二路 WBU：
 
 ```scala
-// 仲裁：每 FU 的 can_wb 向量 → 拍内 2 个 winner（不冲突）
-val wb_req  = VecInit(alu.can_wb, lsu.can_wb, div.can_wb, ...)
-val win0 = PriorityEncoder(wb_req)
-val win1 = PriorityEncoder(wb_req & ~UIntToOH(win0))
+prf.io.wen1   := wb_wen
+prf.io.waddr1 := wb_pdest
+prf.io.wdata1 := wb_val
+
+prf.io.wen2   := wb1_wen
+prf.io.waddr2 := wb1_pdest
+prf.io.wdata2 := wb1_val
 ```
 
-### 3.3 RS 唤醒端口
+### 2.3 BusyTable
+
+BusyTable 从单清除口扩成双清除口：
+
+```scala
+clr_en/clr_addr
+clr_en2/clr_addr2
+```
+
+两路 CDB 同拍写回时，两个 `pdest` 都必须清 busy。否则第二路虽然写进 PRF，rename/dispatch 仍会认为它未 ready。
+
+### 2.4 ROB
+
+ROB 保持单提交，但写回端扩成两路：
+
+```scala
+wb_fire/wb_idx/wb_val/...
+wb1_fire/wb1_idx/wb1_val/...
+```
+
+`commit_valid` 也允许 head 在第二路 CDB 同拍完成：
+
+```scala
+commit_valid := head.valid && (head.done || wb_is_head || wb1_is_head)
+```
+
+注意：这不是 2-wide commit，只是“head 如果从任一路 CDB 回来，可以同拍提交”。
+
+### 2.5 RS
+
+RS 增加第二个唤醒口：
+
+```scala
+cdb_valid/cdb_pdest/cdb_val
+cdb1_valid/cdb1_pdest/cdb1_val
+```
+
+每个 entry 的两个源操作数都要同时比较两个 CDB。新入队 entry 也要做同拍 CDB capture，否则会错过“刚写回、刚入队”的值。
+
+RS 还增加第二个完成回收口：
+
+```scala
+free_rob_fire/free_rob_idx
+free_rob1_fire/free_rob1_idx
+```
+
+这个点很关键。10c 调试时遇到过一个真实 bug：旧 LSU 结果因为 ROB idx 复用被身份保护挡住，但旧的 `free_rob` 仍按 rob_idx 删除了新 RS entry，导致 head 永远等不到完成。修法是：RS 回收必须跟 `can_wb/can_wb1` 走，也就是只回收“ROB 身份校验通过、确实接受写回”的结果。
+
+### 2.6 Core 仲裁
+
+原来是三选一：
 
 ```text
-RS 现有 cdb_valid/cdb_pdest/cdb_val 单口
-→ 加 cdb1_* 第二口；每个 entry 两个源分别匹配两个 CDB
+ALU / LSU / DIV -> PriorityEncoder -> WBU0
 ```
 
-### 3.4 PRF 写口
+现在是三选二：
 
 ```text
-PRF 现单写口（wen1/waddr1/wdata1）
-→ 加 wen2/waddr2/wdata2（PRF 文件本来就是双口或可扩）
+winner0 = PriorityEncoder(req)
+winner1 = PriorityEncoder(req & ~UIntToOH(winner0))
 ```
 
----
-
-## 4. 与 8a 仲裁的关系
-
-8a 的「单 CDB 赢家」升级为「双赢家」：
+两路 winner 分别进入 `wbu` 和 `wbu1`。每一路都做同样的身份保护：
 
 ```text
-拍内最多 2 个完成 → 都写回
->2 个完成 → 优先级取 2，其余下一拍
+ROB entry valid
+pc / arch_rd / new_phys 匹配
+entry 还没 done
+不在 flush / irq / fencei / mret kill 范围内
 ```
 
-**组合环注意**：`can_wb` 依赖 flush 门控；多 CDB 只增加并行度，不改变 flush 语义。
+写回被接受后才会：
+
+```text
+写 PRF
+清 Busy
+标 ROB done
+广播 RS CDB
+回收 RS entry
+更新 SQ store 地址/数据
+```
+
+这比“FU ready 拉高两个”严格得多。
 
 ---
 
-## 5. 接线步骤建议
+## 3. 宽提交目标设计
 
-1. `ooo_params` 加 `COMMIT_WIDTH=2`、`CDB_NUM=2`  
-2. ROB commit 口参数化；`head += n`  
-3. rename commit 双口（arch_rat 2 更新）  
-4. PRF 双写口；RS 双唤醒口  
-5. 特殊指令独占第 0 槽策略  
-6. 计数器：每拍提交条数、CDB 冲突次数  
-7. 回归：长链无依赖测例（如 `sum`）看提交是否 2/拍
+真正 2-wide commit 的目标是：
+
+```text
+从 ROB head 开始，连续 done 的最多两条按程序序退休
+```
+
+普通指令可以占两个槽；特殊指令要保守：
+
+| 指令 | 宽提交策略 |
+|---|---|
+| 普通 ALU / load | 可 2-wide |
+| store | 建议独占或只允许 slot0，避免 StoreBuffer/MMIO 同拍语义复杂 |
+| fence.i / mret / exception / ebreak | 独占提交拍 |
+| branch/jump | 可提交，但 BPU update 也要能接收多条或限制在 slot0 |
+
+要真正落地，还需要同步拓宽：
+
+```text
+ROB commit port x2
+Rename arch_rat commit update x2
+FreeList old_phys return x2
+arch_rf update x2
+BPU commit update x2 或 slot0-only
+C++ difftest commit event x2
+```
+
+当前参考核没有做这一步，是为了保持每个阶段都能 difftest 自测绿。
 
 ---
 
-## 6. 踩坑
+## 4. 验收结果
 
-| 坑 | 现象 | 处理 |
-|----|------|------|
-| 提交遇未 done 就乱跳 | 顺序破坏 | 连续 done 段才提交 |
-| store 提交与普通同拍 | 写总线时序冲突 | store 独占/占第 0 槽 |
-| fence/异常同拍多条 | 语义错 | 特殊指令独占提交拍 |
-| CDB 双写 PRF 冲突 | 双驱动 | 双口 or 仲裁 |
-| RS 唤醒少一口 | 源醒不来 | cdb0/cdb1 双匹配 |
-| freelist 归还延迟 | 假 FL 满 | 提交 2 归还 2 |
+最终回归：
+
+```bash
+cd /home/qiu/ysyx-workbench/npc
+scripts/stage9_regress.sh --mode full --tag stage10c_cdb2_store2_final \
+  --cpu-timeout 240 --micro-timeout 900
+```
+
+结果：
+
+| 项目 | 结果 |
+|---|---|
+| `mychisel.compile` | PASS |
+| `OoOUnitTest` | PASS |
+| cpu-tests smoke | dummy/add/add-longlong/bit/load-store/shift/string 全部 GOOD TRAP |
+| microbench(test) | PASS |
+
+关键数据：
+
+| 指标 | 10b blocking DCache | 10c 2-CDB |
+|---|---:|---:|
+| IPC | `0.4171` | `0.4186` |
+| Total cycles | `1252408` | `1248223` |
+| Commit inst | `522417` | `522534` |
+| CDB Conflicts | 未完全消除 | `0` |
+| CDB Blocked Results | 未完全消除 | `0` |
+| Head Not Ready | 未记录同口径 | `580912` |
+| DCache hit rate | `72.06%` | `71.72%` |
+
+结论：双 CDB 已经把写回冲突清掉，但 IPC 只小幅提升。当前更大的墙在前端和提交/访存等待：`FQ Full=269899`、`FQ Empty=75113`、`Head Not Ready=580912`，所以下一步比继续抠 CDB 更值得做的是 10d 宽取指/前端供给，或回访存侧做非阻塞 cache/MLP。
 
 ---
 
-## 7. 验收（自勾）
+## 5. 新增单测
 
-- [ ] 能画提交 2 宽与「连续 done 段」  
-- [ ] 能说 store/特殊指令的独占策略  
-- [ ] 每拍提交 ≥1.5 条均值（计数器）  
-- [ ] 双 CDB 同时写回波形  
-- [ ] cpu-tests 全绿；`sum`/`fib` IPC 提升
+`scala_test/unit/OoOUnitTest.scala` 增加了这些覆盖点：
 
-## 相关代码（改动点）
+- BusyTable：一拍清两个 writeback destination。
+- ROB：一拍接受两个 writeback，两个 entry 都置 done。
+- RS：两路 CDB 同拍唤醒两个源操作数。
+- RS：一拍回收两个完成的 ROB entry，避免多 CDB 后 RS 假满或误删。
 
-- `common/ooo_params.scala` — COMMIT_WIDTH / CDB_NUM  
-- `unit/rob.scala` — 宽提交  
-- `unit/rename.scala` — 双 commit  
-- `unit/prf.scala` / `unit/rs.scala` — 双写口/双唤醒  
-- `core/core.scala` — 双赢家仲裁
+这些单测的意义是把 10c 的接口契约锁住，而不是只靠 microbench 间接碰到。
 
-## 下一步
+---
 
-→ [11d](11d_阶段10d_MMU与虚拟内存.md)：虚拟内存（可选大项）。
+## 6. 踩坑记录
+
+### 6.1 RS 回收不能只看 rob_idx
+
+ROB idx 会复用。旧结果如果在 flush/reuse 后晚到，可能和新 entry 撞同一个 rob_idx。ROB 侧已经用 `pc/arch_rd/new_phys` 做身份保护，RS 侧也必须只在 `can_wb` 成立时回收。
+
+错误做法：
+
+```scala
+rs.free_rob_fire := alu_leave || div_leave || lsu_leave
+```
+
+当前做法：
+
+```scala
+rs.free_rob_fire  := can_wb
+rs.free_rob_idx   := wb_idx
+rs.free_rob1_fire := can_wb1
+rs.free_rob1_idx  := wb1_idx
+```
+
+### 6.2 不要让 StoreBuffer enqueue 组合旁路 load
+
+调试时尝试过让 StoreBuffer load query 直接看本拍 `enq.fire`，但会形成组合环：
+
+```text
+load forward -> LSU out valid -> CDB winner -> head store addr
+-> StoreBuffer enq.valid -> StoreBuffer load forward
+```
+
+正确方向是保持 StoreQueue/StoreBuffer 的时序边界清晰，并用 accepted writeback 语义保证 RS 不误删。
+
+### 6.3 Verilator 内部信号名不能当稳定接口
+
+C++ hang 打印里有一个内部信号：
+
+```cpp
+ysyx_25020039__DOT___core_io_dmem_rready
+```
+
+生成后被优化掉，导致 C++ 编译失败。这个只用于调试打印，不应作为功能接口依赖；当前已改成常量占位。
+
+---
+
+## 7. 后续任务
+
+- 拓宽 C++ difftest commit 协议，然后做真正 `COMMIT_WIDTH=2`。
+- 为 commit 增加每拍退休条数计数器。
+- 宽提交时处理 `arch_rf` / `arch_rat` 双更新，以及同一架构寄存器两次提交的优先级。
+- 进入 10d：让前端持续供给 2 条指令，否则后端再宽也很难稳定 IPC > 1。
+
+下一章：[11d_阶段10d_宽取指与前端带宽.md](11d_阶段10d_宽取指与前端带宽.md)。

@@ -11,6 +11,7 @@ LSU.sv
 WBU.sv
 CSR.sv
 ICache.sv
+DCache.sv
 PRF.sv
 BusyTable.sv
 Rename2.sv
@@ -18,6 +19,7 @@ ROB.sv
 RS.sv
 FetchQueue.sv
 StoreQueue.sv
+StoreBuffer.sv
 Core.sv
 Xbar.sv
 Clint.sv

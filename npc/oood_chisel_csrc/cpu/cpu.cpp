@@ -346,27 +346,18 @@ static void execute(uint64_t n) {
         unsigned lsu_rb = (unsigned)r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_rob_idx;
         printf("[HANG] alu(v=%u pc=0x%08x rob=%u) div(v=%u pc=0x%08x rob=%u) lsu(v=%u pc=0x%08x rob=%u)\n",
                alu_v, alu_pc, alu_rb, div_v, div_pc, div_rb, lsu_v, lsu_pc, lsu_rb);
-        printf("[HANG] exu_lsu_out_v=%u lsu_in(v=%u rdy=%u pc=0x%08x rob=%u mem=%u wr=%u addr=0x%08x) lsu_out(v=%u rdy=%u) can_wb=%u wb_idx=%u\n",
+        printf("[HANG] exu_lsu_out_v=%u lsu_in(v=%u rdy=%u) lsu_out(v=%u rdy=%u) can_wb=%u\n",
                (unsigned)r->ysyx_25020039__DOT__core__DOT___exu_lsu_io_out_valid,
                (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_in_valid,
                (unsigned)r->ysyx_25020039__DOT__core__DOT___lsu_io_in_ready,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_in_bits_r_pc,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_in_bits_r_rob_idx,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_in_bits_r_signals_lsu_mem_valid,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_in_bits_r_signals_lsu_mem_write,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_in_bits_r_alu_result,
                (unsigned)r->ysyx_25020039__DOT__core__DOT___lsu_io_out_valid,
                (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_out_ready,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__can_wb,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__wb_cand_idx);
-        printf("[HANG] lsu_ready=%u ar_done=%u ar(v=%u r=%u addr=0x%08x) r(v=%u r=%u)\n",
+               (unsigned)r->ysyx_25020039__DOT__core__DOT__can_wb);
+        printf("[HANG] lsu_ready=%u ar_done=%u arvalid=%u rready=%u\n",
                (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu__DOT__ready,
                (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu__DOT__ar_handshake_done,
                (unsigned)r->ysyx_25020039__DOT__core__DOT___lsu_io_dmem_arvalid,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT____Vcellinp__lsu__io_dmem_arready,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_in_bits_r_alu_result,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT____Vcellinp__lsu__io_dmem_rvalid,
-               (unsigned)r->ysyx_25020039__DOT___core_io_dmem_rready);
+               0u);
         unsigned ifu_st = (unsigned)r->ysyx_25020039__DOT__core__DOT__ifu__DOT__state;
         unsigned mtvec = (unsigned)r->ysyx_25020039__DOT__core__DOT__csr__DOT__rf_1;
         unsigned mepc  = (unsigned)r->ysyx_25020039__DOT__core__DOT__csr__DOT__rf_2;

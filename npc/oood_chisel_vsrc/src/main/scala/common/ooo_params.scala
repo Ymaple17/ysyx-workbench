@@ -9,9 +9,14 @@ object OoOParams {
   val PHYS_W    = log2Ceil(N_PHYS)
   val ROB_PTR_W = log2Ceil(ROB_SIZE)
   val RS_SIZE   = 8
-  val FQ_SIZE   = 4
+  val FQ_SIZE   = 8
   val ISSUE_WIDTH = 2
   val DISPATCH_WIDTH = ISSUE_WIDTH
+  val COMMIT_WIDTH = 1
+  val CDB_NUM = 2
   val CP_DEPTH = 4
   val SQ_SIZE  = ROB_SIZE
+  val STORE_BUFFER_SIZE = 4
+  val DCACHE_SET = 64
+  val DCACHE_BLOCK_SIZE = 8
 }

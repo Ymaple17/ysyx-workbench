@@ -133,15 +133,20 @@ class Core(val conf: CoreConfig) extends Module {
   val mis_predict_r = RegNext(mis_predict, false.B)
   val is_bp_flush = mis_predict_r
 
+  // fencei 完成下一拍：冲刷 IFU+IDU（丢弃失效前预取的后继），fencei 自身已进 EXU 继续提交
   val is_fencei = RegNext(icache.io.fencei.valid & icache.io.fencei.ready, false.B)
-  // 重定向门控用 mis_predict_r：预测错时回正确目标
-  ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(mis_predict_r, RegNext(correct_pc, 0.U), Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
-  
+  val fencei_pc = RegEnable(idu.io.in.bits.pc, 0.U(32.W), idu.io.is_fencei)
+  val fencei_redirect_pc = fencei_pc + 4.U
+
+  // 重定向：IRQ > mispred > fencei
+  ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec,
+    Mux(mis_predict_r, RegNext(correct_pc, 0.U),
+      Mux(is_fencei, fencei_redirect_pc, 0.U)))
+
   exu.io.pc.ready := true.B
 
-  
   ifu.io.is_flush := is_irq || is_fencei || is_bp_flush
-  idu.io.is_flush := is_irq || is_bp_flush
+  idu.io.is_flush := is_irq || is_fencei || is_bp_flush
   exu.io.is_flush := is_irq || is_bp_flush
   lsu.io.is_flush := is_irq
   wbu.io.is_flush := is_irq
@@ -150,8 +155,13 @@ class Core(val conf: CoreConfig) extends Module {
   val is_branch_update = is_jump && (jump === JUMP_BEQ || jump === JUMP_BNE || jump === JUMP_BLT || jump === JUMP_BGE || jump === JUMP_BLTU || jump === JUMP_BGEU)
 
   val exu_inst = exu.io.in.bits.inst
-  val is_call_update = is_jump && (jump === JUMP_JALR) && (exu_inst(11,7) === 1.U) && (exu_inst(19,15) =/= 1.U)
-  val is_ret_update = is_jump && (jump === JUMP_JALR) && (exu_inst(19,15) === 1.U)
+  val rd_is_ra  = exu_inst(11, 7) === 1.U
+  val rs1_is_ra = exu_inst(19, 15) === 1.U
+  // call：jal ra / jalr ra, rs1(≠ra)；ret：jalr x*, 0(ra) 优先于 call
+  val is_call_update = is_jump && rd_is_ra && (
+    (jump === JUMP_JAL) || ((jump === JUMP_JALR) && !rs1_is_ra)
+  )
+  val is_ret_update = is_jump && (jump === JUMP_JALR) && rs1_is_ra
 
   ifu.io.bpu_update_valid := is_jump
   ifu.io.bpu_update_taken := is_ch

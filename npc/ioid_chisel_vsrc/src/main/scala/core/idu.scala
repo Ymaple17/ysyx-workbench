@@ -91,9 +91,10 @@ class IDU(val conf: CoreConfig) extends Module{
     io.out.bits.state.state_num := Mux(control.io.irq, control.io.irq_num, io.in.bits.state.state_num)
 
     //pipeline control
-    val send = Wire(Bool())
-    send := !io.is_stall
-    
+    // FENCE.I：Irrevocable 握手完成前停在 IDU，避免 valid 中途掉导致 icache 冲刷无完成/无 flush
+    val fencei_hold = control.io.signals.ifu.bits.is_fencei && io.in.valid && !io.ifu_signals.ready
+    val send = !io.is_stall && !fencei_hold
+
     io.in.ready := !io.in.valid || (send && io.out.ready)
     io.out.valid := io.in.valid && send
 

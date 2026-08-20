@@ -183,6 +183,23 @@ config DIFFTEST
     Enable differential testing with a reference design.
     Note that this will significantly reduce the performance of NEMU.
 
+
+choice
+  prompt "DUT pipeline style (for NPC difftest pairing)"
+  default DIFFTEST_DUT_INORDER
+  depends on DIFFTEST
+  help
+    Select whether the DUT under test is an in-order pipeline or an
+    out-of-order (rename/ROB) core. NEMU reference behavior is the same;
+    this macro is for host-side tooling / future skip policies.
+
+config DIFFTEST_DUT_INORDER
+  bool "In-order DUT (e.g. ioid pipeline)"
+
+config DIFFTEST_DUT_OOO
+  bool "Out-of-order DUT (e.g. oood rename/ROB)"
+endchoice
+
 choice
   prompt "Reference design"
   default DIFFTEST_REF_SPIKE if ISA_riscv

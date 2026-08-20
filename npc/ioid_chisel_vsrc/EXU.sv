@@ -51,12 +51,14 @@ module EXU(
   output [31:0] io_pc_bits_pc4_imm,
                 io_pc_bits_pc4_rs2,
                 io_pc_bits_pc4,
-  output [2:0]  io_pc_bits_pc_src
+  output [2:0]  io_pc_bits_pc_src,
+  input         io_is_flush
 );
 
   wire        _div_io_req_ready;
   wire [31:0] _div_io_result;
   wire        _div_io_result_valid;
+  wire        _div_io_busy;
   wire [31:0] _alu_io_result;
   wire        _alu_io_zero_flag;
   wire        is_div =
@@ -66,8 +68,10 @@ module EXU(
        | io_in_bits_signals_exu_alu_control == 5'h10
        | io_in_bits_signals_exu_alu_control == 5'h11);
   wire        io_in_ready_0 =
-    (~io_in_valid | io_out_ready) & ~(is_div & ~_div_io_result_valid);
-  wire        io_out_valid_0 = io_in_valid & (~is_div | _div_io_result_valid);
+    (~io_in_valid | io_out_ready)
+    & ~(is_div & ~_div_io_result_valid | _div_io_busy & ~_div_io_result_valid);
+  wire        io_out_valid_0 =
+    io_in_valid & (~is_div | _div_io_result_valid) & ~io_is_flush;
   wire        _GEN = io_out_valid_0 & io_out_ready;
   ALU alu (
     .io_A
@@ -87,13 +91,15 @@ module EXU(
   DIV div (
     .clock           (clock),
     .reset           (reset),
-    .io_req_valid    (is_div & _div_io_req_ready),
+    .io_req_valid    (is_div & _div_io_req_ready & ~io_is_flush),
     .io_req_ready    (_div_io_req_ready),
+    .io_kill         (io_is_flush),
     .io_a            (io_in_bits_rd1),
     .io_b            (io_in_bits_rd2),
     .io_op           (io_in_bits_signals_exu_alu_control),
     .io_result       (_div_io_result),
-    .io_result_valid (_div_io_result_valid)
+    .io_result_valid (_div_io_result_valid),
+    .io_busy         (_div_io_busy)
   );
   PerfMonitor pm (
     .clock    (clock),

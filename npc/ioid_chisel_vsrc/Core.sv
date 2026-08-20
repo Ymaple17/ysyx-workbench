@@ -29,6 +29,7 @@ module Core(
 );
 
   wire        exu_io_is_flush;
+  wire        idu_io_is_flush;
   reg         is_irq;
   wire        _icache_io_in_arready;
   wire        _icache_io_in_rvalid;
@@ -128,6 +129,7 @@ module Core(
   wire [11:0] _idu_io_csr_raddr;
   wire        _idu_io_rs1_ren;
   wire        _idu_io_rs2_ren;
+  wire        _idu_io_is_fencei;
   wire        _ifu_io_in_ready;
   wire        _ifu_io_out_valid;
   wire [31:0] _ifu_io_out_bits_inst;
@@ -303,7 +305,10 @@ module Core(
        & exu_io_in_bits_r_bp_target != correct_pc);
   reg         mis_predict_r;
   reg         is_fencei;
+  reg  [31:0] fencei_pc;
   reg  [31:0] ifu_io_correct_pc_REG;
+  wire        _idu_io_is_flush_T = is_irq | is_fencei;
+  assign idu_io_is_flush = _idu_io_is_flush_T | mis_predict_r;
   assign exu_io_is_flush = is_irq | mis_predict_r;
   wire        _is_ret_update_T = exu_io_in_bits_r_signals_exu_jump == 4'h9;
   wire        wbu_wen = wbu_io_in_bits_r_signals_wbu_reg_write & wbu_io_in_valid;
@@ -403,6 +408,7 @@ module Core(
       csr_io_irq_pc_REG <= 32'h0;
       mis_predict_r <= 1'h0;
       is_fencei <= 1'h0;
+      fencei_pc <= 32'h0;
       ifu_io_correct_pc_REG <= 32'h0;
     end
     else begin
@@ -521,6 +527,8 @@ module Core(
       csr_io_irq_pc_REG <= wbu_io_in_bits_r_pc;
       mis_predict_r <= mis_predict;
       is_fencei <= _idu_io_ifu_signals_valid & _icache_io_fencei_ready;
+      if (_idu_io_is_fencei)
+        fencei_pc <= idu_io_in_bits_r_pc;
       ifu_io_correct_pc_REG <= correct_pc;
     end
   end // always @(posedge)
@@ -550,13 +558,11 @@ module Core(
     .io_imem_rready              (_ifu_io_imem_rready),
     .io_imem_rdata               (_icache_io_in_rdata),
     .io_imem_rresp               (_icache_io_in_rresp),
-    .io_is_flush                 (is_irq | is_fencei | mis_predict_r),
+    .io_is_flush                 (_idu_io_is_flush_T | mis_predict_r),
     .io_correct_pc
       (is_irq
          ? _csr_io_read_mtvec
-         : mis_predict_r
-             ? ifu_io_correct_pc_REG
-             : is_fencei ? ifu_io_in_bits_r_next_pc : 32'h0),
+         : mis_predict_r ? ifu_io_correct_pc_REG : is_fencei ? fencei_pc + 32'h4 : 32'h0),
     .io_bpu_update_valid         (is_jump),
     .io_bpu_update_taken         (is_ch),
     .io_bpu_update_pc            (exu_io_in_bits_r_pc),
@@ -570,15 +576,16 @@ module Core(
           | exu_io_in_bits_r_signals_exu_jump == 4'h7)),
     .io_bpu_update_index         (exu_io_in_bits_r_bp_index),
     .io_bpu_update_is_call
-      (is_jump & _is_ret_update_T & exu_io_in_bits_r_inst[11:7] == 5'h1
-       & exu_io_in_bits_r_inst[19:15] != 5'h1),
+      (is_jump & exu_io_in_bits_r_inst[11:7] == 5'h1
+       & (exu_io_in_bits_r_signals_exu_jump == 4'h8 | _is_ret_update_T
+          & exu_io_in_bits_r_inst[19:15] != 5'h1)),
     .io_bpu_update_is_ret
       (is_jump & _is_ret_update_T & exu_io_in_bits_r_inst[19:15] == 5'h1)
   );
   IDU idu (
     .clock                                 (clock),
     .io_in_ready                           (_idu_io_in_ready),
-    .io_in_valid                           (idu_io_in_valid_r & ~exu_io_is_flush),
+    .io_in_valid                           (idu_io_in_valid_r & ~idu_io_is_flush),
     .io_in_bits_inst                       (idu_io_in_bits_r_inst),
     .io_in_bits_pc                         (idu_io_in_bits_r_pc),
     .io_in_bits_state_state                (idu_io_in_bits_r_state_state),
@@ -616,6 +623,7 @@ module Core(
     .io_out_bits_bp_target                 (_idu_io_out_bits_bp_target),
     .io_out_bits_bp_index                  (_idu_io_out_bits_bp_index),
     .io_out_bits_inst                      (_idu_io_out_bits_inst),
+    .io_ifu_signals_ready                  (_icache_io_fencei_ready),
     .io_ifu_signals_valid                  (_idu_io_ifu_signals_valid),
     .io_ifu_signals_bits_is_fencei         (_idu_io_ifu_signals_bits_is_fencei),
     .io_refile_raddr1                      (_idu_io_refile_raddr1),
@@ -632,7 +640,8 @@ module Core(
        & ~io_dmem_rvalid | idu_io_is_stall_exu_hit & exu_is_load
        | _exu_io_in_bits_rd2_lsu_hit_T & (|_idu_io_refile_raddr2)
        & _exu_io_in_bits_rd2_lsu_hit_T_3 & ~idu_io_is_stall_exu_hit_1 & lsu_is_load
-       & ~io_dmem_rvalid | idu_io_is_stall_exu_hit_1 & exu_is_load)
+       & ~io_dmem_rvalid | idu_io_is_stall_exu_hit_1 & exu_is_load),
+    .io_is_fencei                          (_idu_io_is_fencei)
   );
   EXU exu (
     .clock                                 (clock),
@@ -686,7 +695,8 @@ module Core(
     .io_pc_bits_pc4_imm                    (_exu_io_pc_bits_pc4_imm),
     .io_pc_bits_pc4_rs2                    (_exu_io_pc_bits_pc4_rs2),
     .io_pc_bits_pc4                        (_exu_io_pc_bits_pc4),
-    .io_pc_bits_pc_src                     (_exu_io_pc_bits_pc_src)
+    .io_pc_bits_pc_src                     (_exu_io_pc_bits_pc_src),
+    .io_is_flush                           (exu_io_is_flush)
   );
   LSU lsu (
     .clock                                 (clock),

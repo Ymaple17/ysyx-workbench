@@ -4,11 +4,13 @@ module DIV(
                 reset,
                 io_req_valid,
   output        io_req_ready,
+  input         io_kill,
   input  [31:0] io_a,
                 io_b,
   input  [4:0]  io_op,
   output [31:0] io_result,
-  output        io_result_valid
+  output        io_result_valid,
+                io_busy
 );
 
   reg         state;
@@ -21,9 +23,10 @@ module DIV(
   reg         b_neg;
   reg         is_rem;
   reg         div_by_zero;
+  reg  [31:0] a_latched;
   wire        _is_rem_T = io_op == 5'h10;
   wire        is_signed = io_op == 5'hE | _is_rem_T;
-  wire        _GEN = ~state & io_req_valid;
+  wire        _GEN = io_kill | ~(~state & io_req_valid);
   wire        _is_rem_T_1 = io_op == 5'h11;
   wire [5:0]  _cnt_T = cnt - 6'h1;
   wire        _GEN_0 = state & (|cnt);
@@ -41,17 +44,18 @@ module DIV(
       div_by_zero <= 1'h0;
     end
     else begin
-      if (state) begin
-        state <= ~(state & ~(|cnt)) & state;
+      state <= ~io_kill & (state ? ~(state & ~(|cnt)) & state : io_req_valid | state);
+      if (io_kill)
+        cnt <= 6'h0;
+      else if (state) begin
         if (_GEN_0)
           cnt <= _cnt_T;
       end
-      else begin
-        state <= io_req_valid | state;
-        if (io_req_valid)
-          cnt <= 6'h20;
-      end
+      else if (io_req_valid)
+        cnt <= 6'h20;
       if (_GEN) begin
+      end
+      else begin
         a_neg <= is_signed & io_a[31];
         b_neg <= is_signed & io_b[31];
         is_rem <= _is_rem_T | _is_rem_T_1;
@@ -59,10 +63,14 @@ module DIV(
       end
     end
     if (_GEN) begin
+    end
+    else begin
       a_abs <= is_signed & io_a[31] ? ~io_a + 32'h1 : io_a;
       b_abs <= io_op == 5'hF | _is_rem_T_1 | ~(io_b[31]) ? io_b : ~io_b + 32'h1;
     end
-    if (state) begin
+    if (io_kill) begin
+    end
+    else if (state) begin
       if (_GEN_0)
         rem <= _GEN_1 ? {rem[30:0], _shifted_T_3[0]} - b_abs : shifted;
       quo <= {32{state & (|cnt) & _GEN_1}} & _quo_T_2[31:0] | quo;
@@ -71,12 +79,17 @@ module DIV(
       rem <= 32'h0;
       quo <= 32'h0;
     end
+    if (_GEN) begin
+    end
+    else
+      a_latched <= io_a;
   end // always @(posedge)
   assign io_req_ready = ~state;
   assign io_result =
     div_by_zero
-      ? (is_rem ? io_a : 32'hFFFFFFFF)
+      ? (is_rem ? a_latched : 32'hFFFFFFFF)
       : is_rem ? (a_neg ? ~rem + 32'h1 : rem) : a_neg ^ b_neg ? ~quo + 32'h1 : quo;
-  assign io_result_valid = state & ~(|cnt);
+  assign io_result_valid = state & ~(|cnt) & ~io_kill;
+  assign io_busy = state;
 endmodule
 

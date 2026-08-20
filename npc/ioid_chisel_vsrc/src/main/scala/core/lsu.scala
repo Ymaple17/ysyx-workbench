@@ -72,7 +72,7 @@ class LSU(val conf: CoreConfig) extends Module{
   val work = Wire(Bool())
   val ready = Wire(Bool())
 
-  val s_IDLE  :: s_WOEK :: s_FLUSH :: Nil = Enum(3)
+  val s_IDLE  :: s_WORK :: s_FLUSH :: Nil = Enum(3)
   val state = RegInit(s_IDLE)
   val next_state = WireDefault(state)
 
@@ -92,26 +92,26 @@ class LSU(val conf: CoreConfig) extends Module{
   val store_handshake = aw_done && w_done
 
   next_state := MuxLookup(state, s_IDLE)(Seq(
-      s_IDLE  -> Mux(idle && (load_handshake || store_handshake), Mux(work, s_IDLE, s_WOEK), s_IDLE),
-      s_WOEK  -> Mux(work, s_IDLE, Mux(io.is_flush, s_FLUSH, s_WOEK)),
+      s_IDLE  -> Mux(idle && (load_handshake || store_handshake), Mux(work, s_IDLE, s_WORK), s_IDLE),
+      s_WORK  -> Mux(work, s_IDLE, Mux(io.is_flush, s_FLUSH, s_WORK)),
       s_FLUSH -> Mux(io.dmem.rvalid || io.dmem.bvalid, s_IDLE, s_FLUSH)
   ))
   state := next_state
 
   when(state === s_IDLE && idle) {
-      when(is_load && io.dmem.arvalid && io.dmem.arready) { 
-        ar_handshake_done := true.B 
+      when(is_load && io.dmem.arvalid && io.dmem.arready) {
+        ar_handshake_done := true.B
       }
       when(is_store) {
-          when(io.dmem.awvalid && io.dmem.awready) { 
-            aw_handshake_done := true.B 
+          when(io.dmem.awvalid && io.dmem.awready) {
+            aw_handshake_done := true.B
           }
-          when(io.dmem.wvalid && io.dmem.wready) { 
-            w_handshake_done := true.B 
+          when(io.dmem.wvalid && io.dmem.wready) {
+            w_handshake_done := true.B
           }
       }
   }
-  
+
   // 响应到达（含握手与响应同拍的 work 路径）或冲刷时清除握手标志
   when(io.is_flush || io.dmem.rvalid || io.dmem.bvalid) {
     ar_handshake_done := false.B
@@ -122,9 +122,9 @@ class LSU(val conf: CoreConfig) extends Module{
   io.dmem.arvalid := is_load && (state === s_IDLE) && idle && !ar_handshake_done
   io.dmem.awvalid := is_store && (state === s_IDLE) && idle && !aw_handshake_done
   io.dmem.wvalid := is_store && (state === s_IDLE) && idle && !w_handshake_done
-  
-  io.dmem.rready := (is_load && (state === s_WOEK)) || state === s_FLUSH
-  io.dmem.bready := (is_store && (state === s_WOEK)) || state === s_FLUSH
+
+  io.dmem.rready := (is_load && (state === s_WORK)) || state === s_FLUSH
+  io.dmem.bready := (is_store && (state === s_WORK)) || state === s_FLUSH
   io.dmem.arsize := arsize
   io.dmem.awsize := awsize
 
@@ -185,7 +185,7 @@ class LSU(val conf: CoreConfig) extends Module{
   if(conf.statistics){
     PM(conf, clock, EVENT_LSU_READ, 1.U, io.dmem.arvalid && io.dmem.arready)
     PM(conf, clock, EVENT_LSU_WRITE, 1.U, io.dmem.awvalid && io.dmem.awready)
-    PM(conf, clock, EVENT_LSU_LATENCY, 1.U, state === s_WOEK && (!ready || io.out.ready))
+    PM(conf, clock, EVENT_LSU_LATENCY, 1.U, state === s_WORK && (!ready || io.out.ready))
   }
 }
 

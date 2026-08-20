@@ -115,21 +115,20 @@ class EXU(val conf: CoreConfig) extends Module{
     val is_mul = io.in.valid && (io.in.bits.signals.exu.alu_control === ALU_MUL || io.in.bits.signals.exu.alu_control === ALU_MULH || io.in.bits.signals.exu.alu_control === ALU_MULHSU || io.in.bits.signals.exu.alu_control === ALU_MULHU)
 
     val div = Module(new DIV)
-    div.io.req_valid := io.in.valid && is_div && div.io.req_ready
+    div.io.req_valid := io.in.valid && is_div && div.io.req_ready && !io.is_flush
     div.io.a := io.in.bits.rd1
     div.io.b := io.in.bits.rd2
     div.io.op := io.in.bits.signals.exu.alu_control
+    div.io.kill := io.is_flush
 
-    // ★ busy 必须覆盖"div 指令在 EXU 的整个期间"：
-    //   div 进入的那拍 DIV 还在 IDLE（req_ready=1），若用 !req_ready 当 busy，
-    //   那一拍 in.ready=1，下一条指令会把 div 挤出 EXU（div 结果永远不输出）
-    //   结果拍（div_done=1）释放 busy，让下一条指令同拍进入
-    val div_done = div.io.result_valid              // cnt=0 拍脉冲（结果已锁存完整）
-    val div_busy = is_div && !div_done              // div 在 EXU 期间阻塞输入
+    // busy 用 DIV 内部状态：冲刷后 is_div 变 0 时仍挡住新指令，直到 kill 生效
+    // 结果拍 result_valid=1 释放，允许下一条同拍进入
+    val div_done = div.io.result_valid
+    val div_busy = (is_div && !div_done) || (div.io.busy && !div_done)
 
     //pipeline control
     io.in.ready := (!io.in.valid || io.out.ready) && !div_busy
-    io.out.valid := io.in.valid && (!is_div || div_done)
+    io.out.valid := io.in.valid && (!is_div || div_done) && !io.is_flush
     io.pc.valid := io.out.valid && io.in.ready
     //ALU / DIV
     io.out.bits.alu_result := Mux(is_div, div.io.result, alu.io.result)

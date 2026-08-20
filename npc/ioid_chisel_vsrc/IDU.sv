@@ -40,6 +40,7 @@ module IDU(
   output [31:0] io_out_bits_bp_target,
   output [9:0]  io_out_bits_bp_index,
   output [31:0] io_out_bits_inst,
+  input         io_ifu_signals_ready,
   output        io_ifu_signals_valid,
                 io_ifu_signals_bits_is_fencei,
   output [4:0]  io_refile_raddr1,
@@ -50,7 +51,8 @@ module IDU(
   input  [31:0] io_csr_rdata,
   output        io_rs1_ren,
                 io_rs2_ren,
-  input         io_is_stall
+  input         io_is_stall,
+  output        io_is_fencei
 );
 
   wire       _control_io_signals_ifu_bits_is_fencei;
@@ -62,7 +64,9 @@ module IDU(
   wire       _control_io_irq;
   wire [7:0] _control_io_irq_num;
   wire       io_out_bits_is_ebreak_0 = io_in_bits_inst == 32'h100073;
-  wire       io_out_valid_0 = io_in_valid & ~io_is_stall;
+  wire       io_is_fencei_0 = _control_io_signals_ifu_bits_is_fencei & io_in_valid;
+  wire       send = ~io_is_stall & ~(io_is_fencei_0 & ~io_ifu_signals_ready);
+  wire       io_out_valid_0 = io_in_valid & send;
   wire       fire = io_out_valid_0 & io_out_ready;
   wire       is_load =
     _control_io_signals_lsu_mem_valid & ~_control_io_signals_lsu_mem_write;
@@ -75,8 +79,7 @@ module IDU(
   wire       is_jump =
     _control_io_signals_exu_jump == 4'h8 | _control_io_signals_exu_jump == 4'h9;
   wire       is_other =
-    _control_io_signals_exu_jump == 4'hA | _control_io_signals_ifu_bits_is_fencei
-    & io_in_valid | io_out_bits_is_ebreak_0;
+    _control_io_signals_exu_jump == 4'hA | io_is_fencei_0 | io_out_bits_is_ebreak_0;
   Control control (
     .io_inst                       (io_in_bits_inst),
     .io_signals_ifu_bits_is_fencei (_control_io_signals_ifu_bits_is_fencei),
@@ -147,7 +150,7 @@ module IDU(
       (fire & ~is_load & ~is_store & ~_control_io_signals_wbu_csr_write & ~is_branch
        & ~is_jump & ~is_other)
   );
-  assign io_in_ready = ~io_in_valid | ~io_is_stall & io_out_ready;
+  assign io_in_ready = ~io_in_valid | send & io_out_ready;
   assign io_out_valid = io_out_valid_0;
   assign io_out_bits_signals_exu_jump = _control_io_signals_exu_jump;
   assign io_out_bits_signals_lsu_mem_write = _control_io_signals_lsu_mem_write;
@@ -173,5 +176,6 @@ module IDU(
   assign io_refile_raddr1 = io_in_bits_inst[19:15];
   assign io_refile_raddr2 = io_in_bits_inst[24:20];
   assign io_csr_raddr = io_in_bits_inst[31:20];
+  assign io_is_fencei = io_is_fencei_0;
 endmodule
 

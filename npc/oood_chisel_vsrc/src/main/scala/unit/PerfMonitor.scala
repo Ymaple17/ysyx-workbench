@@ -70,6 +70,9 @@ object PerfEvents {
   val EVENT_COMMIT_SLOT1_BLOCK_CSR = 63.U(32.W)
   val EVENT_COMMIT_SLOT1_BLOCK_SPECIAL = 64.U(32.W)
   val EVENT_COMMIT_SLOT1_BLOCK_BP = 65.U(32.W)
+  val EVENT_DCACHE_MSHR_ALLOC = 66.U(32.W)
+  val EVENT_DCACHE_HIT_UNDER_MISS = 67.U(32.W)
+  val EVENT_DCACHE_MSHR_REFILL = 68.U(32.W)
 }
 
 class PerfMonitor extends BlackBox with HasBlackBoxInline {

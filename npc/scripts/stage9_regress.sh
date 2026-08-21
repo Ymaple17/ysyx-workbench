@@ -145,6 +145,7 @@ extract_microbench_csv() {
   local commit_slot1_block_bp
   local store_buffer_full store_buffer_enq store_buffer_drain store_buffer_fwd
   local dcache_access dcache_hit dcache_miss dcache_bypass dcache_hit_rate
+  local dcache_mshr_alloc dcache_hit_under_miss dcache_mshr_refill
   local fetch_slot0 fetch_slot1 fetch_slot1_killed fq_enq2 fq_space_one
   local fetch_redirect_bubble fetch_slot1_util bpu_tagged_hit bpu_indirect_hit
 
@@ -193,11 +194,14 @@ extract_microbench_csv() {
   dcache_hit="$(extract_metric "${log}" "DCache Hits")"
   dcache_miss="$(extract_metric "${log}" "DCache Misses")"
   dcache_bypass="$(extract_metric "${log}" "DCache Bypass")"
+  dcache_mshr_alloc="$(extract_metric "${log}" "DCache MSHR Alloc")"
+  dcache_hit_under_miss="$(extract_metric "${log}" "DCache Hit Under Miss")"
+  dcache_mshr_refill="$(extract_metric "${log}" "DCache MSHR Refill")"
   dcache_hit_rate="$(extract_metric "${log}" "DCache Hit Rate")"
 
   {
-    echo "tag,ipc,total_cycles,commit_inst,ifu_fetch,bpu_hit_pct,bpu_mispred,bp_flush,dir_miss,target_miss,unpred_jalr,fq_full,fq_empty,ifu_pipeline_stall,fetch_slot0,fetch_slot1,fetch_slot1_killed,fq_enq2,fq_space_one,fetch_redirect_bubble,fetch_slot1_util_pct,bpu_tagged_hit,bpu_indirect_hit,cdb_conflicts,commit_slot0,commit_slot1,commit2_cycles,commit_slot1_block,commit_slot1_not_ready,commit_slot1_block_slot0_excl,commit_slot1_block_mem,commit_slot1_block_ctrl,commit_slot1_block_csr,commit_slot1_block_special,commit_slot1_block_bp,commit_slot1_util_pct,head_wait,wait_store_commit,store_buffer_full,store_buffer_enq,store_buffer_drain,store_buffer_fwd,dcache_access,dcache_hit,dcache_miss,dcache_bypass,dcache_hit_rate_pct,result"
-    echo "${tag},${ipc},${total_cycles},${commit_inst},${ifu_fetch},${bpu_hit},${bpu_mispred},${bp_flush},${dir_miss},${target_miss},${unpred_jalr},${fq_full},${fq_empty},${ifu_pipe},${fetch_slot0},${fetch_slot1},${fetch_slot1_killed},${fq_enq2},${fq_space_one},${fetch_redirect_bubble},${fetch_slot1_util},${bpu_tagged_hit},${bpu_indirect_hit},${cdb_conflicts},${commit_slot0},${commit_slot1},${commit2_cycles},${commit_slot1_block},${commit_slot1_not_ready},${commit_slot1_block_slot0_excl},${commit_slot1_block_mem},${commit_slot1_block_ctrl},${commit_slot1_block_csr},${commit_slot1_block_special},${commit_slot1_block_bp},${commit_slot1_util},${head_wait},${wait_store_commit},${store_buffer_full},${store_buffer_enq},${store_buffer_drain},${store_buffer_fwd},${dcache_access},${dcache_hit},${dcache_miss},${dcache_bypass},${dcache_hit_rate},PASS"
+    echo "tag,ipc,total_cycles,commit_inst,ifu_fetch,bpu_hit_pct,bpu_mispred,bp_flush,dir_miss,target_miss,unpred_jalr,fq_full,fq_empty,ifu_pipeline_stall,fetch_slot0,fetch_slot1,fetch_slot1_killed,fq_enq2,fq_space_one,fetch_redirect_bubble,fetch_slot1_util_pct,bpu_tagged_hit,bpu_indirect_hit,cdb_conflicts,commit_slot0,commit_slot1,commit2_cycles,commit_slot1_block,commit_slot1_not_ready,commit_slot1_block_slot0_excl,commit_slot1_block_mem,commit_slot1_block_ctrl,commit_slot1_block_csr,commit_slot1_block_special,commit_slot1_block_bp,commit_slot1_util_pct,head_wait,wait_store_commit,store_buffer_full,store_buffer_enq,store_buffer_drain,store_buffer_fwd,dcache_access,dcache_hit,dcache_miss,dcache_bypass,dcache_mshr_alloc,dcache_hit_under_miss,dcache_mshr_refill,dcache_hit_rate_pct,result"
+    echo "${tag},${ipc},${total_cycles},${commit_inst},${ifu_fetch},${bpu_hit},${bpu_mispred},${bp_flush},${dir_miss},${target_miss},${unpred_jalr},${fq_full},${fq_empty},${ifu_pipe},${fetch_slot0},${fetch_slot1},${fetch_slot1_killed},${fq_enq2},${fq_space_one},${fetch_redirect_bubble},${fetch_slot1_util},${bpu_tagged_hit},${bpu_indirect_hit},${cdb_conflicts},${commit_slot0},${commit_slot1},${commit2_cycles},${commit_slot1_block},${commit_slot1_not_ready},${commit_slot1_block_slot0_excl},${commit_slot1_block_mem},${commit_slot1_block_ctrl},${commit_slot1_block_csr},${commit_slot1_block_special},${commit_slot1_block_bp},${commit_slot1_util},${head_wait},${wait_store_commit},${store_buffer_full},${store_buffer_enq},${store_buffer_drain},${store_buffer_fwd},${dcache_access},${dcache_hit},${dcache_miss},${dcache_bypass},${dcache_mshr_alloc},${dcache_hit_under_miss},${dcache_mshr_refill},${dcache_hit_rate},PASS"
   } > "${csv}"
   echo "[summary] ${csv}"
 }

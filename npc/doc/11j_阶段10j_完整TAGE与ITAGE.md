@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：理解现代前端为什么使用多历史长度的 tagged predictor，以及间接跳转目标为什么也需要历史相关预测。
 - **最小实现**：在 10e 的 tagged override 基础上，拆出多张几何历史表，实现 provider/alternate 选择和 commit-time 训练。
-- **当前参考核**：未做。10e 当前是最小高级 BPU：base BHT/RAS + tagged override + indirect target table。
+- **当前参考核**：未做完整 TAGE/ITAGE。当前 10i 参考核仍使用 10e 的最小高级 BPU：base BHT/RAS + tagged override + indirect target table；10i 的 MSHR 骨架已在，但 `LSU_MLP_ENABLE=false`。
 - **后续扩展**：speculative history、FTQ 回滚、TAGE-SC、loop predictor、return-address 栈投机修复。
 - **验收方式**：记录 direction miss、target miss、unpredicted jalr、tagged/indirect hit、IPC；必须对比 10e 最小 BPU。
 
@@ -17,7 +17,7 @@
 10f 双提交
 10g 扩窗口
 10h 宽取指
-10i 访存 MLP
+10i MSHR 骨架（默认关闭激进 LSU MLP）
 ```
 
 之后。

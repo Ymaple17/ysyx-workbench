@@ -40,10 +40,12 @@ module LSU(
   output [31:0] io_out_bits_store_data,
                 io_dmem_araddr,
   output        io_dmem_arvalid,
+  output [3:0]  io_dmem_arid,
   input         io_dmem_arready,
   input  [31:0] io_dmem_rdata,
   input  [1:0]  io_dmem_rresp,
   input         io_dmem_rvalid,
+  input  [3:0]  io_dmem_rid,
   output        io_dmem_rready,
   input         io_is_flush,
                 io_st_fwd_valid,
@@ -52,71 +54,152 @@ module LSU(
   output        io_bus_busy
 );
 
-  wire        idle;
-  wire        io_dmem_arvalid_0;
   wire        is_load =
     ~io_in_bits_signals_lsu_mem_write & io_in_bits_signals_lsu_mem_valid;
-  reg  [1:0]  state;
-  reg         ar_handshake_done;
-  wire        can_issue_load = is_load & ~io_st_fwd_wait & ~io_st_fwd_valid;
-  wire        _load_handshake_T = io_dmem_arvalid_0 & io_dmem_arready;
-  wire        fwd_done = is_load & io_st_fwd_valid & ~io_st_fwd_wait;
-  wire        _io_bus_busy_T = state == 2'h1;
-  wire        _io_bus_busy_T_1 = state == 2'h2;
-  wire        bus_data_valid = is_load & _io_bus_busy_T & io_dmem_rvalid;
-  assign io_dmem_arvalid_0 = can_issue_load & ~(|state) & idle & ~ar_handshake_done;
-  wire [31:0] rword = io_dmem_rdata >> {27'h0, io_in_bits_alu_result[1:0], 3'h0};
+  reg         loadValid_0;
+  reg         loadValid_1;
+  reg         loadMeta_0_signals_wbu_reg_write;
+  reg  [2:0]  loadMeta_0_signals_wbu_reg_write_sel;
+  reg  [31:0] loadMeta_0_alu_result;
+  reg  [31:0] loadMeta_0_pc;
+  reg  [31:0] loadMeta_0_next_pc;
+  reg  [31:0] loadMeta_0_imm_ext;
+  reg  [4:0]  loadMeta_0_waddr;
+  reg  [31:0] loadMeta_0_csr_rd1;
+  reg         loadMeta_0_state_state;
+  reg  [7:0]  loadMeta_0_state_state_num;
+  reg  [4:0]  loadMeta_0_rob_idx;
+  reg  [5:0]  loadMeta_0_pdest;
+  reg         loadMeta_0_br_taken;
+  reg  [31:0] loadMeta_0_store_data;
+  reg         loadMeta_1_signals_wbu_reg_write;
+  reg  [2:0]  loadMeta_1_signals_wbu_reg_write_sel;
+  reg  [31:0] loadMeta_1_alu_result;
+  reg  [31:0] loadMeta_1_pc;
+  reg  [31:0] loadMeta_1_next_pc;
+  reg  [31:0] loadMeta_1_imm_ext;
+  reg  [4:0]  loadMeta_1_waddr;
+  reg  [31:0] loadMeta_1_csr_rd1;
+  reg         loadMeta_1_state_state;
+  reg  [7:0]  loadMeta_1_state_state_num;
+  reg  [4:0]  loadMeta_1_rob_idx;
+  reg  [5:0]  loadMeta_1_pdest;
+  reg         loadMeta_1_br_taken;
+  reg  [31:0] loadMeta_1_store_data;
+  reg  [2:0]  loadMemRd_0;
+  reg  [2:0]  loadMemRd_1;
+  reg  [31:0] loadAddr_0;
+  reg  [31:0] loadAddr_1;
+  wire        _GEN = io_dmem_rid[0] ? loadValid_1 : loadValid_0;
+  wire        respSlotValid = io_dmem_rvalid & _GEN;
+  wire        _io_in_ready_T_2 = io_in_valid & is_load;
+  wire        fwdDone =
+    _io_in_ready_T_2 & io_st_fwd_valid & ~io_st_fwd_wait & ~io_is_flush;
+  wire        directDone = io_in_valid & ~io_is_flush & (~is_load | fwdDone);
+  wire        canIssueBusLoad =
+    _io_in_ready_T_2 & ~io_st_fwd_wait & ~io_st_fwd_valid & ~io_is_flush
+    & (|{~loadValid_1, ~loadValid_0}) & ~respSlotValid;
+  wire        arFire = canIssueBusLoad & io_dmem_arready;
+  wire        io_dmem_rready_0 = respSlotValid & io_out_ready | io_dmem_rvalid & ~_GEN;
   reg  [31:0] casez_tmp;
+  wire [31:0] respOffset =
+    io_dmem_rdata >> {27'h0, io_dmem_rid[0] ? loadAddr_1[1:0] : loadAddr_0[1:0], 3'h0};
+  always_comb begin
+    casez (io_dmem_rid[0] ? loadMemRd_1 : loadMemRd_0)
+      3'b000:
+        casez_tmp = respOffset;
+      3'b001:
+        casez_tmp = {{24{respOffset[7]}}, respOffset[7:0]};
+      3'b010:
+        casez_tmp = {{16{respOffset[15]}}, respOffset[15:0]};
+      3'b011:
+        casez_tmp = respOffset;
+      3'b100:
+        casez_tmp = {24'h0, respOffset[7:0]};
+      3'b101:
+        casez_tmp = {16'h0, respOffset[15:0]};
+      3'b110:
+        casez_tmp = respOffset;
+      default:
+        casez_tmp = respOffset;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_0;
   always_comb begin
     casez (io_in_bits_signals_lsu_mem_rd)
       3'b000:
-        casez_tmp = io_st_fwd_data;
+        casez_tmp_0 = io_st_fwd_data;
       3'b001:
-        casez_tmp = {{24{io_st_fwd_data[7]}}, io_st_fwd_data[7:0]};
+        casez_tmp_0 = {{24{io_st_fwd_data[7]}}, io_st_fwd_data[7:0]};
       3'b010:
-        casez_tmp = {{16{io_st_fwd_data[15]}}, io_st_fwd_data[15:0]};
+        casez_tmp_0 = {{16{io_st_fwd_data[15]}}, io_st_fwd_data[15:0]};
       3'b011:
-        casez_tmp = io_st_fwd_data;
+        casez_tmp_0 = io_st_fwd_data;
       3'b100:
-        casez_tmp = {24'h0, io_st_fwd_data[7:0]};
+        casez_tmp_0 = {24'h0, io_st_fwd_data[7:0]};
       3'b101:
-        casez_tmp = {16'h0, io_st_fwd_data[15:0]};
+        casez_tmp_0 = {16'h0, io_st_fwd_data[15:0]};
       3'b110:
-        casez_tmp = io_st_fwd_data;
+        casez_tmp_0 = io_st_fwd_data;
       default:
-        casez_tmp = io_st_fwd_data;
+        casez_tmp_0 = io_st_fwd_data;
     endcase
   end // always_comb
-  wire        has_laf = bus_data_valid & (|io_dmem_rresp);
-  assign idle = io_in_valid & ~io_is_flush;
-  wire        ready = ~is_load | fwd_done | bus_data_valid;
-  wire        work = ready & io_out_ready;
+  wire [1:0]  _io_bus_busy_T = {loadValid_1, loadValid_0};
+  wire        _GEN_0 = io_dmem_rvalid & io_dmem_rready_0 & _GEN;
+  wire        _GEN_1 = arFire & ~loadValid_0;
+  wire        _GEN_2 = arFire & loadValid_0;
   always @(posedge clock) begin
     if (reset) begin
-      state <= 2'h0;
-      ar_handshake_done <= 1'h0;
+      loadValid_0 <= 1'h0;
+      loadValid_1 <= 1'h0;
     end
     else begin
-      state <=
-        _io_bus_busy_T_1
-          ? {~io_dmem_rvalid, 1'h0}
-          : _io_bus_busy_T
-              ? (work ? 2'h0 : io_is_flush ? 2'h2 : 2'h1)
-              : ~(|state) & idle & can_issue_load
-                & (ar_handshake_done | _load_handshake_T)
-                  ? {1'h0, ~work}
-                  : 2'h0;
-      ar_handshake_done <=
-        ~(io_is_flush | io_dmem_rvalid)
-        & (io_dmem_arvalid_0 & io_dmem_arready | ~((|state) | io_is_flush)
-           & ar_handshake_done);
+      loadValid_0 <= ~(_GEN_0 & ~(io_dmem_rid[0])) & (_GEN_1 | loadValid_0);
+      loadValid_1 <= ~(_GEN_0 & io_dmem_rid[0]) & (_GEN_2 | loadValid_1);
+    end
+    if (_GEN_1) begin
+      loadMeta_0_signals_wbu_reg_write <= io_in_bits_signals_wbu_reg_write;
+      loadMeta_0_signals_wbu_reg_write_sel <= io_in_bits_signals_wbu_reg_write_sel;
+      loadMeta_0_alu_result <= io_in_bits_alu_result;
+      loadMeta_0_pc <= io_in_bits_pc;
+      loadMeta_0_next_pc <= io_in_bits_next_pc;
+      loadMeta_0_imm_ext <= io_in_bits_imm_ext;
+      loadMeta_0_waddr <= io_in_bits_waddr;
+      loadMeta_0_csr_rd1 <= io_in_bits_csr_rd1;
+      loadMeta_0_state_state <= io_in_bits_state_state;
+      loadMeta_0_state_state_num <= io_in_bits_state_state_num;
+      loadMeta_0_rob_idx <= io_in_bits_rob_idx;
+      loadMeta_0_pdest <= io_in_bits_pdest;
+      loadMeta_0_br_taken <= io_in_bits_br_taken;
+      loadMeta_0_store_data <= io_in_bits_rd2;
+      loadMemRd_0 <= io_in_bits_signals_lsu_mem_rd;
+      loadAddr_0 <= io_in_bits_alu_result;
+    end
+    if (_GEN_2) begin
+      loadMeta_1_signals_wbu_reg_write <= io_in_bits_signals_wbu_reg_write;
+      loadMeta_1_signals_wbu_reg_write_sel <= io_in_bits_signals_wbu_reg_write_sel;
+      loadMeta_1_alu_result <= io_in_bits_alu_result;
+      loadMeta_1_pc <= io_in_bits_pc;
+      loadMeta_1_next_pc <= io_in_bits_next_pc;
+      loadMeta_1_imm_ext <= io_in_bits_imm_ext;
+      loadMeta_1_waddr <= io_in_bits_waddr;
+      loadMeta_1_csr_rd1 <= io_in_bits_csr_rd1;
+      loadMeta_1_state_state <= io_in_bits_state_state;
+      loadMeta_1_state_state_num <= io_in_bits_state_state_num;
+      loadMeta_1_rob_idx <= io_in_bits_rob_idx;
+      loadMeta_1_pdest <= io_in_bits_pdest;
+      loadMeta_1_br_taken <= io_in_bits_br_taken;
+      loadMeta_1_store_data <= io_in_bits_rd2;
+      loadMemRd_1 <= io_in_bits_signals_lsu_mem_rd;
+      loadAddr_1 <= io_in_bits_alu_result;
     end
   end // always @(posedge)
   PerfMonitor pm (
     .clock    (clock),
     .event_id (32'h3),
     .data     (64'h1),
-    .enable   (_load_handshake_T)
+    .enable   (arFire)
   );
   PerfMonitor pm_1 (
     .clock    (clock),
@@ -128,61 +211,96 @@ module LSU(
     .clock    (clock),
     .event_id (32'h5),
     .data     (64'h1),
-    .enable   (_io_bus_busy_T & (~ready | io_out_ready))
+    .enable   ((|_io_bus_busy_T) & (~io_dmem_rvalid | io_out_ready))
   );
   PerfMonitor pm_3 (
     .clock    (clock),
     .event_id (32'h21),
     .data     (64'h1),
-    .enable   (io_in_valid & is_load & io_st_fwd_wait & ~io_is_flush)
+    .enable   (_io_in_ready_T_2 & io_st_fwd_wait & ~io_is_flush)
   );
   PerfMonitor pm_4 (
     .clock    (clock),
     .event_id (32'h22),
     .data     (64'h1),
-    .enable   (work & fwd_done)
+    .enable   (directDone & io_out_ready & fwdDone)
   );
   PerfMonitor pm_5 (
     .clock    (clock),
     .event_id (32'h23),
     .data     (64'h1),
-    .enable   (_io_bus_busy_T & ~io_dmem_rvalid)
+    .enable   ((|_io_bus_busy_T) & ~io_dmem_rvalid)
   );
-  assign io_in_ready = ~io_in_valid | work;
-  assign io_out_valid = io_in_valid & ready;
-  assign io_out_bits_signals_wbu_reg_write = io_in_bits_signals_wbu_reg_write;
-  assign io_out_bits_signals_wbu_reg_write_sel = io_in_bits_signals_wbu_reg_write_sel;
-  assign io_out_bits_alu_result = io_in_bits_alu_result;
-  assign io_out_bits_pc = io_in_bits_pc;
-  assign io_out_bits_next_pc = io_in_bits_next_pc;
-  assign io_out_bits_imm_ext = io_in_bits_imm_ext;
-  assign io_out_bits_mem_read =
-    fwd_done
-      ? casez_tmp
-      : io_in_bits_signals_lsu_mem_rd == 3'h5
-          ? {16'h0, rword[15:0]}
-          : io_in_bits_signals_lsu_mem_rd == 3'h4
-              ? {24'h0, rword[7:0]}
-              : io_in_bits_signals_lsu_mem_rd == 3'h3
-                  ? rword
-                  : io_in_bits_signals_lsu_mem_rd == 3'h2
-                      ? {{16{rword[15]}}, rword[15:0]}
-                      : {{24{rword[7]}}, rword[7:0]};
-  assign io_out_bits_waddr = io_in_bits_waddr;
-  assign io_out_bits_csr_rd1 = io_in_bits_csr_rd1;
-  assign io_out_bits_state_state = has_laf | io_in_bits_state_state;
-  assign io_out_bits_state_state_num = has_laf ? 8'h5 : io_in_bits_state_state_num;
-  assign io_out_bits_rob_idx = io_in_bits_rob_idx;
-  assign io_out_bits_pdest = io_in_bits_pdest;
-  assign io_out_bits_br_taken = io_in_bits_br_taken;
-  assign io_out_bits_store_data = io_in_bits_rd2;
+  assign io_in_ready =
+    io_is_flush | ~io_in_valid | ~(respSlotValid | _io_in_ready_T_2 & io_st_fwd_wait)
+    & (directDone ? io_out_ready : canIssueBusLoad & io_dmem_arready);
+  assign io_out_valid = respSlotValid | directDone;
+  assign io_out_bits_signals_wbu_reg_write =
+    respSlotValid
+      ? (io_dmem_rid[0]
+           ? loadMeta_1_signals_wbu_reg_write
+           : loadMeta_0_signals_wbu_reg_write)
+      : io_in_bits_signals_wbu_reg_write;
+  assign io_out_bits_signals_wbu_reg_write_sel =
+    respSlotValid
+      ? (io_dmem_rid[0]
+           ? loadMeta_1_signals_wbu_reg_write_sel
+           : loadMeta_0_signals_wbu_reg_write_sel)
+      : io_in_bits_signals_wbu_reg_write_sel;
+  assign io_out_bits_alu_result =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_alu_result : loadMeta_0_alu_result)
+      : io_in_bits_alu_result;
+  assign io_out_bits_pc =
+    respSlotValid ? (io_dmem_rid[0] ? loadMeta_1_pc : loadMeta_0_pc) : io_in_bits_pc;
+  assign io_out_bits_next_pc =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_next_pc : loadMeta_0_next_pc)
+      : io_in_bits_next_pc;
+  assign io_out_bits_imm_ext =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_imm_ext : loadMeta_0_imm_ext)
+      : io_in_bits_imm_ext;
+  assign io_out_bits_mem_read = respSlotValid ? casez_tmp : fwdDone ? casez_tmp_0 : 32'h0;
+  assign io_out_bits_waddr =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_waddr : loadMeta_0_waddr)
+      : io_in_bits_waddr;
+  assign io_out_bits_csr_rd1 =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_csr_rd1 : loadMeta_0_csr_rd1)
+      : io_in_bits_csr_rd1;
+  assign io_out_bits_state_state =
+    respSlotValid
+      ? (|io_dmem_rresp)
+        | (io_dmem_rid[0] ? loadMeta_1_state_state : loadMeta_0_state_state)
+      : io_in_bits_state_state;
+  assign io_out_bits_state_state_num =
+    respSlotValid
+      ? ((|io_dmem_rresp)
+           ? 8'h5
+           : io_dmem_rid[0] ? loadMeta_1_state_state_num : loadMeta_0_state_state_num)
+      : io_in_bits_state_state_num;
+  assign io_out_bits_rob_idx =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_rob_idx : loadMeta_0_rob_idx)
+      : io_in_bits_rob_idx;
+  assign io_out_bits_pdest =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_pdest : loadMeta_0_pdest)
+      : io_in_bits_pdest;
+  assign io_out_bits_br_taken =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_br_taken : loadMeta_0_br_taken)
+      : io_in_bits_br_taken;
+  assign io_out_bits_store_data =
+    respSlotValid
+      ? (io_dmem_rid[0] ? loadMeta_1_store_data : loadMeta_0_store_data)
+      : io_in_bits_rd2;
   assign io_dmem_araddr = io_in_bits_alu_result;
-  assign io_dmem_arvalid = io_dmem_arvalid_0;
-  assign io_dmem_rready =
-    bus_data_valid & io_out_ready | _io_bus_busy_T_1 | ~(|state) & io_dmem_rvalid
-    & ~ar_handshake_done;
-  assign io_bus_busy =
-    _io_bus_busy_T | _io_bus_busy_T_1 | is_load & idle
-    & (ar_handshake_done | io_dmem_arvalid_0);
+  assign io_dmem_arvalid = canIssueBusLoad;
+  assign io_dmem_arid = {3'h0, loadValid_0};
+  assign io_dmem_rready = io_dmem_rready_0;
+  assign io_bus_busy = (|_io_bus_busy_T) | canIssueBusLoad;
 endmodule
 

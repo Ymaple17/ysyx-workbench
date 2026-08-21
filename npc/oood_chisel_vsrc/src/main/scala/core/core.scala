@@ -582,17 +582,34 @@ class Core(val conf: CoreConfig) extends Module {
   exu_lsu.io.in.bits  := d_lsu_bits
   exu_lsu.io.is_flush := is_irq_w || flush_lsu
 
-  exu_lsu.io.out.ready := lsu.io.in.ready
+  lsu.io.in.valid := lsu_stage_valid && !flush_lsu
+  lsu.io.in.bits  := lsu_stage_bits
+  val lsu_req_accept = lsu.io.in.valid && lsu.io.in.ready
+  val lsu_out_fire = lsu.io.out.valid && lsu.io.out.ready
+  val lsuStageRob = rob.io.entries(lsu_stage_bits.rob_idx)
+  val lsu_stage_stale = lsu_stage_valid &&
+    (!lsuStageRob.valid || (lsuStageRob.pc =/= lsu_stage_bits.pc))
+  val lsu_stage_done = lsu_out_fire && lsu_stage_valid &&
+    (lsu.io.out.bits.rob_idx === lsu_stage_bits.rob_idx) &&
+    (lsu.io.out.bits.pc === lsu_stage_bits.pc)
+  val lsu_stage_pop = lsu_req_accept || lsu_stage_done || lsu_stage_stale
+  exu_lsu.io.out.ready := !lsu_stage_valid || lsu_stage_pop || flush_lsu
+  val lsu_stage_push = exu_lsu.io.out.valid && exu_lsu.io.out.ready
   when(flush_lsu) {
     lsu_stage_valid := false.B
+  }.elsewhen(lsu_stage_push) {
+    lsu_stage_valid := true.B
+    lsu_stage_bits := exu_lsu.io.out.bits
+  }.elsewhen(lsu_stage_pop) {
+    lsu_stage_valid := false.B
   }.elsewhen(exu_lsu.io.out.ready) {
-    lsu_stage_valid := exu_lsu.io.out.valid
-    when(exu_lsu.io.out.valid) {
+    lsu_stage_valid := false.B
+  }
+  when(lsu_stage_push) {
+    when(!flush_lsu) {
       lsu_stage_bits := exu_lsu.io.out.bits
     }
   }
-  lsu.io.in.valid := lsu_stage_valid && !flush_lsu
-  lsu.io.in.bits  := lsu_stage_bits
 
   alu_wb := exuToWbu(exu.io.out.bits)
   alu_wb_valid := exu.io.out.valid
@@ -603,8 +620,13 @@ class Core(val conf: CoreConfig) extends Module {
 
   val alu_leave = hold_alu && exu.io.out.valid && exu.io.out.ready
   val div_leave = hold_div && exu_div.io.out.valid && exu_div.io.out.ready
-  val lsu_addr_leave = hold_lsu && !d_lsu_sent && exu_lsu.io.out.valid && exu_lsu.io.out.ready
-  val lsu_leave = hold_lsu && lsu.io.out.valid && lsu.io.out.ready
+  val lsu_addr_leave = hold_lsu && !d_lsu_sent && lsu_stage_push
+  val lsu_leave = hold_lsu && lsu_out_fire &&
+    (lsu.io.out.bits.rob_idx === d_lsu_bits.rob_idx) &&
+    (lsu.io.out.bits.pc === d_lsu_bits.pc)
+  val dLsuRob = rob.io.entries(d_lsu_bits.rob_idx)
+  val d_lsu_stale = d_lsu_valid &&
+    (!dLsuRob.valid || (dLsuRob.pc =/= d_lsu_bits.pc))
 
   rs.io.issue_fire    := false.B
   rs.io.free_rob_fire := can_wb
@@ -614,7 +636,8 @@ class Core(val conf: CoreConfig) extends Module {
 
   val can_load_alu = !stop_issue && ((!d_alu_valid) || flush_alu)
   val can_load_div = !stop_issue && ((!d_div_valid) || flush_div)
-  val can_load_lsu = !stop_issue && ((!d_lsu_valid) || flush_lsu)
+  val lsuCanOverlap = if (OoOParams.LSU_MLP_ENABLE) true.B else (!lsu_stage_valid && !lsu.io.bus_busy)
+  val can_load_lsu = !stop_issue && ((!d_lsu_valid) || flush_lsu) && lsuCanOverlap
 
   when(flush_alu) {
     when(can_load_alu && rs.io.issue_alu_valid) {
@@ -653,11 +676,9 @@ class Core(val conf: CoreConfig) extends Module {
       d_lsu_valid := false.B
       d_lsu_sent  := false.B
     }
-  }.elsewhen(lsu_leave) {
+  }.elsewhen(d_lsu_stale || lsu_addr_leave || lsu_leave) {
     d_lsu_valid := false.B
     d_lsu_sent  := false.B
-  }.elsewhen(lsu_addr_leave) {
-    d_lsu_sent  := true.B
   }.elsewhen(!d_lsu_valid && can_load_lsu && rs.io.issue_lsu_valid) {
     d_lsu_valid := true.B
     d_lsu_bits  := packIssue(rs.io.issue_lsu_bits)

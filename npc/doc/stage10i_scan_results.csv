@@ -1,0 +1,3 @@
+tag,lsu_mlp_enable,result,ipc,total_cycles,commit_inst,fq_full,bpu_hit_pct,commit_slot1_util_pct,head_wait,bus_wait_cycles,store_buffer_full,dcache_access,dcache_hit,dcache_miss,dcache_bypass,dcache_mshr_alloc,dcache_hit_under_miss,dcache_mshr_refill,dcache_hit_rate_pct,decision
+stage10i_mshr_final,true,PASS,0.3837,1361285,522300,405417,53.38,2.93,620317,125159,18455,111402,91284,20118,105,20118,2,20118,81.94,rejected-functional-but-regressed
+stage10i_mlp_off_final,false,PASS,0.4342,1202931,522354,214972,60.35,6.03,549753,129165,47341,70846,51036,19810,66,19810,0,19810,72.04,retained-default

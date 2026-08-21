@@ -11,7 +11,7 @@ object OoOParams {
   val RS_SIZE   = 8
   val FQ_SIZE   = 8
   val FETCH_WIDTH = 2
-  val WIDE_FETCH_ENABLE = false
+  val WIDE_FETCH_ENABLE = true
   val WIDE_FETCH_MIN_SPACE = FQ_SIZE
   val ISSUE_WIDTH = 2
   val DISPATCH_WIDTH = ISSUE_WIDTH
@@ -22,4 +22,5 @@ object OoOParams {
   val STORE_BUFFER_SIZE = 8
   val DCACHE_SET = 64
   val DCACHE_BLOCK_SIZE = 8
+  val LSU_MLP_ENABLE = false
 }

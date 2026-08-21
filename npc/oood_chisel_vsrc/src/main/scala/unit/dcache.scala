@@ -37,18 +37,6 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   private val tagW = 32 - offsetW - indexW
 
   val lines = RegInit(VecInit(Seq.fill(set)(0.U.asTypeOf(new DCacheLine(tagW, words)))))
-  val fillLine = RegInit(VecInit(Seq.fill(words)(0.U(32.W))))
-  val fillIdx = RegInit(0.U(wordW.W))
-  val reqAddr = RegInit(0.U(32.W))
-  val reqSize = RegInit(2.U(3.W))
-  val reqId = RegInit(0.U(4.W))
-  val respData = RegInit(0.U(32.W))
-  val respResp = RegInit(0.U(2.W))
-  val missResp = RegInit(0.U(2.W))
-  val fillKilled = RegInit(false.B)
-
-  val sIdle :: sData :: sMemAr :: sMemR :: sBypassAr :: sBypassR :: Nil = Enum(6)
-  val state = RegInit(sIdle)
 
   def cacheable(addr: UInt): Bool =
     (addr - "h8000_0000".U(32.W)) < "h0800_0000".U(32.W)
@@ -64,31 +52,62 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   val cpuTag = tagOf(io.cpu.araddr)
   val cpuWord = wordOf(io.cpu.araddr)
   val cpuLine = lines(cpuIndex)
-  val cpuHit = cpuCacheable && cpuLine.valid && (cpuLine.tag === cpuTag)
-  val cpuHitData = cpuLine.data(cpuWord)
 
-  val reqIndex = indexOf(reqAddr)
-  val reqTag = tagOf(reqAddr)
-  val reqWord = wordOf(reqAddr)
   val invCacheable = cacheable(io.invalidate_addr)
   val invIndex = indexOf(io.invalidate_addr)
   val invTag = tagOf(io.invalidate_addr)
   val inv2Cacheable = cacheable(io.invalidate2_addr)
   val inv2Index = indexOf(io.invalidate2_addr)
   val inv2Tag = tagOf(io.invalidate2_addr)
-  val filling = (state === sMemAr) || (state === sMemR)
-  val killFillNow =
-    (io.invalidate_valid && invCacheable && filling &&
-      (invIndex === reqIndex) && (invTag === reqTag)) ||
-    (io.invalidate2_valid && inv2Cacheable && filling &&
-      (inv2Index === reqIndex) && (inv2Tag === reqTag))
+  val cpuInvalidatedNow =
+    (io.invalidate_valid && invCacheable && invIndex === cpuIndex && invTag === cpuTag) ||
+    (io.invalidate2_valid && inv2Cacheable && inv2Index === cpuIndex && inv2Tag === cpuTag)
 
-  io.cpu.arready := state === sIdle
-  io.cpu.rvalid := state === sData
-  io.cpu.rdata := respData
-  io.cpu.rresp := respResp
+  val cpuHit = cpuCacheable && cpuLine.valid && (cpuLine.tag === cpuTag) && !cpuInvalidatedNow
+  val cpuHitData = cpuLine.data(cpuWord)
+
+  val hitRespValid = RegInit(false.B)
+  val hitRespData = RegInit(0.U(32.W))
+  val hitRespResp = RegInit(0.U(2.W))
+  val hitRespId = RegInit(0.U(4.W))
+  val missRespValid = RegInit(false.B)
+  val missRespData = RegInit(0.U(32.W))
+  val missRespResp = RegInit(0.U(2.W))
+  val missRespId = RegInit(0.U(4.W))
+
+  val mshrValid = RegInit(false.B)
+  val mshrCacheable = RegInit(false.B)
+  val mshrAddr = RegInit(0.U(32.W))
+  val mshrSize = RegInit(2.U(3.W))
+  val mshrId = RegInit(0.U(4.W))
+  val mshrFillIdx = RegInit(0.U(wordW.W))
+  val mshrFillLine = RegInit(VecInit(Seq.fill(words)(0.U(32.W))))
+  val mshrResp = RegInit(0.U(2.W))
+  val mshrKilled = RegInit(false.B)
+  val sMshrAr :: sMshrR :: Nil = Enum(2)
+  val mshrState = RegInit(sMshrAr)
+
+  val mshrIndex = indexOf(mshrAddr)
+  val mshrTag = tagOf(mshrAddr)
+  val mshrWord = wordOf(mshrAddr)
+  val killMshrNow =
+    mshrValid && mshrCacheable && (
+      (io.invalidate_valid && invCacheable && invIndex === mshrIndex && invTag === mshrTag) ||
+      (io.invalidate2_valid && inv2Cacheable && inv2Index === mshrIndex && inv2Tag === mshrTag)
+    )
+
+  val respValid = hitRespValid || missRespValid
+  val respIsHit = hitRespValid
+  io.cpu.rvalid := respValid
+  io.cpu.rdata := Mux(respIsHit, hitRespData, missRespData)
+  io.cpu.rresp := Mux(respIsHit, hitRespResp, missRespResp)
   io.cpu.rlast := true.B
-  io.cpu.rid := reqId
+  io.cpu.rid := Mux(respIsHit, hitRespId, missRespId)
+
+  val canAcceptHit = cpuHit && !hitRespValid
+  val canAcceptMissOrBypass = !mshrValid && !missRespValid
+  io.cpu.arready := Mux(cpuHit, canAcceptHit, canAcceptMissOrBypass)
+  val cpuArFire = io.cpu.arvalid && io.cpu.arready
 
   io.cpu.awready := false.B
   io.cpu.wready := false.B
@@ -98,7 +117,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
 
   io.mem.araddr := 0.U
   io.mem.arvalid := false.B
-  io.mem.arid := reqId
+  io.mem.arid := mshrId
   io.mem.arlen := 0.U
   io.mem.arsize := 2.U
   io.mem.arburst := 1.U
@@ -115,88 +134,86 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   io.mem.wlast := false.B
   io.mem.bready := false.B
 
-  io.busy := state =/= sIdle
+  io.busy := mshrValid || hitRespValid || missRespValid
 
-  val cpuArFire = io.cpu.arvalid && io.cpu.arready
+  val cpuRespFire = io.cpu.rvalid && io.cpu.rready
+  when(cpuRespFire) {
+    when(hitRespValid) {
+      hitRespValid := false.B
+    }.otherwise {
+      missRespValid := false.B
+    }
+  }
 
-  when(state === sIdle) {
-    when(cpuArFire) {
-      reqAddr := io.cpu.araddr
-      reqSize := io.cpu.arsize
-      reqId := io.cpu.arid
-      respResp := 0.U
-      missResp := 0.U
-      when(cpuHit) {
-        respData := cpuHitData
-        state := sData
-      }.elsewhen(cpuCacheable) {
-        fillKilled := false.B
-        fillIdx := 0.U
-        for (i <- 0 until words) {
-          fillLine(i) := 0.U
+  when(cpuArFire) {
+    when(cpuHit) {
+      hitRespValid := true.B
+      hitRespData := cpuHitData
+      hitRespResp := 0.U
+      hitRespId := io.cpu.arid
+    }.otherwise {
+      mshrValid := true.B
+      mshrCacheable := cpuCacheable
+      mshrAddr := io.cpu.araddr
+      mshrSize := io.cpu.arsize
+      mshrId := io.cpu.arid
+      mshrFillIdx := 0.U
+      mshrResp := 0.U
+      mshrKilled := false.B
+      mshrState := sMshrAr
+      for (i <- 0 until words) {
+        mshrFillLine(i) := 0.U
+      }
+    }
+  }
+
+  when(mshrValid) {
+    when(mshrState === sMshrAr) {
+      io.mem.araddr := Mux(mshrCacheable, lineBase(mshrAddr) + (mshrFillIdx << 2), mshrAddr)
+      io.mem.arvalid := true.B
+      io.mem.arid := mshrId
+      io.mem.arlen := 0.U
+      io.mem.arsize := Mux(mshrCacheable, 2.U, mshrSize)
+      io.mem.arburst := 1.U
+      when(io.mem.arready) {
+        mshrState := sMshrR
+      }
+    }.otherwise {
+      io.mem.rready := !missRespValid
+      when(io.mem.rvalid && io.mem.rready) {
+        when(mshrCacheable) {
+          val nextLine = Wire(Vec(words, UInt(32.W)))
+          nextLine := mshrFillLine
+          nextLine(mshrFillIdx) := io.mem.rdata
+          mshrFillLine := nextLine
+          when(io.mem.rresp =/= 0.U) {
+            mshrResp := io.mem.rresp
+          }
+          when(mshrFillIdx === (words - 1).U) {
+            when(!mshrKilled && !killMshrNow) {
+              lines(mshrIndex).valid := true.B
+              lines(mshrIndex).tag := mshrTag
+              lines(mshrIndex).data := nextLine
+            }
+            missRespValid := true.B
+            missRespData := nextLine(mshrWord)
+            missRespResp := Mux(io.mem.rresp =/= 0.U, io.mem.rresp, mshrResp)
+            missRespId := mshrId
+            mshrValid := false.B
+            mshrState := sMshrAr
+          }.otherwise {
+            mshrFillIdx := mshrFillIdx + 1.U
+            mshrState := sMshrAr
+          }
+        }.otherwise {
+          missRespValid := true.B
+          missRespData := io.mem.rdata
+          missRespResp := io.mem.rresp
+          missRespId := mshrId
+          mshrValid := false.B
+          mshrState := sMshrAr
         }
-        state := sMemAr
-      }.otherwise {
-        state := sBypassAr
       }
-    }
-  }.elsewhen(state === sData) {
-    when(io.cpu.rready) {
-      state := sIdle
-    }
-  }.elsewhen(state === sMemAr) {
-    io.mem.araddr := lineBase(reqAddr) + (fillIdx << 2)
-    io.mem.arvalid := true.B
-    io.mem.arid := reqId
-    io.mem.arlen := 0.U
-    io.mem.arsize := 2.U
-    io.mem.arburst := 1.U
-    when(io.mem.arready) {
-      state := sMemR
-    }
-  }.elsewhen(state === sMemR) {
-    io.mem.rready := true.B
-    when(io.mem.rvalid) {
-      val nextLine = Wire(Vec(words, UInt(32.W)))
-      nextLine := fillLine
-      nextLine(fillIdx) := io.mem.rdata
-      fillLine := nextLine
-      when(io.mem.rresp =/= 0.U) {
-        missResp := io.mem.rresp
-      }
-      when(fillIdx === (words - 1).U) {
-        when(!fillKilled && !killFillNow) {
-          lines(reqIndex).valid := true.B
-          lines(reqIndex).tag := reqTag
-          lines(reqIndex).data := nextLine
-        }
-        respData := nextLine(reqWord)
-        respResp := Mux(io.mem.rresp =/= 0.U, io.mem.rresp, missResp)
-        state := sData
-      }.otherwise {
-        fillIdx := fillIdx + 1.U
-        state := sMemAr
-      }
-    }
-  }.elsewhen(state === sBypassAr) {
-    io.mem.araddr := reqAddr
-    io.mem.arvalid := true.B
-    io.mem.arid := reqId
-    io.mem.arlen := 0.U
-    io.mem.arsize := reqSize
-    io.mem.arburst := 1.U
-    when(io.mem.arready) {
-      state := sBypassR
-    }
-  }.elsewhen(state === sBypassR) {
-    io.mem.rready := io.cpu.rready
-    io.cpu.rvalid := io.mem.rvalid
-    io.cpu.rdata := io.mem.rdata
-    io.cpu.rresp := io.mem.rresp
-    io.cpu.rlast := io.mem.rlast
-    io.cpu.rid := io.mem.rid
-    when(io.mem.rvalid && io.cpu.rready) {
-      state := sIdle
     }
   }
 
@@ -208,8 +225,8 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
       lines(inv2Index).valid && (lines(inv2Index).tag === inv2Tag)) {
     lines(inv2Index).valid := false.B
   }
-  when(killFillNow) {
-    fillKilled := true.B
+  when(killMshrNow) {
+    mshrKilled := true.B
   }
 
   if (conf.statistics) {
@@ -217,5 +234,10 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
     PM(conf, clock, EVENT_DCACHE_HIT, 1.U, cpuArFire && cpuHit)
     PM(conf, clock, EVENT_DCACHE_MISS, 1.U, cpuArFire && cpuCacheable && !cpuHit)
     PM(conf, clock, EVENT_DCACHE_BYPASS, 1.U, cpuArFire && !cpuCacheable)
+    PM(conf, clock, EVENT_DCACHE_MSHR_ALLOC, 1.U, cpuArFire && cpuCacheable && !cpuHit)
+    PM(conf, clock, EVENT_DCACHE_HIT_UNDER_MISS, 1.U, cpuArFire && cpuHit && mshrValid)
+    PM(conf, clock, EVENT_DCACHE_MSHR_REFILL, 1.U,
+      mshrValid && mshrCacheable && mshrState === sMshrR &&
+      io.mem.rvalid && io.mem.rready && mshrFillIdx === (words - 1).U)
   }
 }

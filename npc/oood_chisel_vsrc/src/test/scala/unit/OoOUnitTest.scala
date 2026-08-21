@@ -1217,6 +1217,63 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "serve a cached hit while one miss is outstanding" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val hitBase = BigInt("80002000", 16)
+      val missBase = BigInt("80003000", 16)
+      val hitValues = (0 until 8).map(i => BigInt("40000000", 16) + i)
+      val missValues = (0 until 8).map(i => BigInt("50000000", 16) + i)
+
+      dut.io.cpu.arid.poke(0.U)
+      dut.io.cpu.araddr.poke((hitBase + 4).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arsize.poke(2.U)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      fillDCacheLine(dut, hitBase, hitValues)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(0.U)
+      dut.io.cpu.rdata.expect(hitValues(1).U)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+
+      dut.io.cpu.arid.poke(0.U)
+      dut.io.cpu.araddr.poke((missBase + 4).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arsize.poke(2.U)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arvalid.expect(true.B)
+      dut.io.mem.araddr.expect(missBase.U)
+
+      dut.io.cpu.arid.poke(1.U)
+      dut.io.cpu.araddr.poke((hitBase + 8).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(1.U)
+      dut.io.cpu.rdata.expect(hitValues(2).U)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+
+      fillDCacheLine(dut, missBase, missValues)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(0.U)
+      dut.io.cpu.rdata.expect(missValues(1).U)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+    }
+  }
+
   it should "invalidate a cached line on store notification" in {
     simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
       idleDCache(dut)

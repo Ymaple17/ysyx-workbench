@@ -4,10 +4,12 @@ module DCache(
                 reset,
   input  [31:0] io_cpu_araddr,
   input         io_cpu_arvalid,
+  input  [3:0]  io_cpu_arid,
   output        io_cpu_arready,
   output [31:0] io_cpu_rdata,
   output [1:0]  io_cpu_rresp,
   output        io_cpu_rvalid,
+  output [3:0]  io_cpu_rid,
   input         io_cpu_rready,
   output [31:0] io_mem_araddr,
   output        io_mem_arvalid,
@@ -278,17 +280,12 @@ module DCache(
   reg  [22:0] lines_63_tag;
   reg  [31:0] lines_63_data_0;
   reg  [31:0] lines_63_data_1;
-  reg  [31:0] fillLine_0;
-  reg  [31:0] fillLine_1;
-  reg         fillIdx;
-  reg  [31:0] reqAddr;
-  reg  [31:0] respData;
-  reg  [1:0]  respResp;
-  reg  [1:0]  missResp;
-  reg         fillKilled;
-  reg  [2:0]  state;
   wire [31:0] _cpuCacheable_T = io_cpu_araddr - 32'h80000000;
   wire        cpuCacheable = _cpuCacheable_T < 32'h8000000;
+  wire        _killMshrNow_T_1 =
+    io_invalidate_valid & io_invalidate_addr - 32'h80000000 < 32'h8000000;
+  wire        _killMshrNow_T_6 =
+    io_invalidate2_valid & io_invalidate2_addr - 32'h80000000 < 32'h8000000;
   reg         casez_tmp;
   always_comb begin
     casez (io_cpu_araddr[8:3])
@@ -821,851 +818,909 @@ module DCache(
         casez_tmp_2 = lines_63_data_1;
     endcase
   end // always_comb
-  wire        cpuHit = cpuCacheable & casez_tmp & casez_tmp_0 == io_cpu_araddr[31:9];
-  wire        _filling_T = state == 3'h2;
-  wire        _filling_T_1 = state == 3'h3;
-  wire        io_cpu_arready_0 = state == 3'h0;
-  wire        _io_cpu_rvalid_T = state == 3'h1;
+  wire        cpuHit =
+    cpuCacheable & casez_tmp & casez_tmp_0 == io_cpu_araddr[31:9]
+    & ~(_killMshrNow_T_1 & io_invalidate_addr[8:3] == io_cpu_araddr[8:3]
+        & io_invalidate_addr[31:9] == io_cpu_araddr[31:9] | _killMshrNow_T_6
+        & io_invalidate2_addr[8:3] == io_cpu_araddr[8:3]
+        & io_invalidate2_addr[31:9] == io_cpu_araddr[31:9]);
+  reg         hitRespValid;
+  reg  [31:0] hitRespData;
+  reg  [3:0]  hitRespId;
+  reg         missRespValid;
+  reg  [31:0] missRespData;
+  reg  [1:0]  missRespResp;
+  reg  [3:0]  missRespId;
+  reg         mshrValid;
+  reg         mshrCacheable;
+  reg  [31:0] mshrAddr;
+  reg  [3:0]  mshrId;
+  reg         mshrFillIdx;
+  reg  [31:0] mshrFillLine_0;
+  reg  [31:0] mshrFillLine_1;
+  reg  [1:0]  mshrResp;
+  reg         mshrKilled;
+  reg         mshrState;
+  wire        _killMshrNow_T = mshrValid & mshrCacheable;
+  wire        respValid = hitRespValid | missRespValid;
+  wire        io_cpu_arready_0 =
+    cpuHit ? cpuHit & ~hitRespValid : ~mshrValid & ~missRespValid;
   wire        cpuArFire = io_cpu_arvalid & io_cpu_arready_0;
   wire        _GEN = cpuArFire & cpuHit;
-  wire        _GEN_0 = _io_cpu_rvalid_T | _filling_T;
-  wire        _GEN_1 = io_cpu_arready_0 | _GEN_0;
-  wire        _GEN_2 = state == 3'h4;
-  wire        _GEN_3 = io_cpu_arready_0 | _io_cpu_rvalid_T;
-  wire        _GEN_4 = state == 3'h5;
-  wire        _GEN_5 =
-    io_cpu_arready_0 | _io_cpu_rvalid_T | _filling_T | _filling_T_1 | _GEN_2 | ~_GEN_4;
-  reg  [2:0]  casez_tmp_3;
-  wire [2:0]  _GEN_6 = _GEN_4 & io_mem_rvalid & io_cpu_rready ? 3'h0 : state;
-  always_comb begin
-    casez (state)
-      3'b000:
-        casez_tmp_3 = cpuArFire ? (cpuHit ? 3'h1 : cpuCacheable ? 3'h2 : 3'h4) : state;
-      3'b001:
-        casez_tmp_3 = io_cpu_rready ? 3'h0 : state;
-      3'b010:
-        casez_tmp_3 = io_mem_arready ? 3'h3 : state;
-      3'b011:
-        casez_tmp_3 = io_mem_rvalid ? (fillIdx ? 3'h1 : 3'h2) : state;
-      3'b100:
-        casez_tmp_3 = io_mem_arready ? 3'h5 : state;
-      3'b101:
-        casez_tmp_3 = _GEN_6;
-      3'b110:
-        casez_tmp_3 = _GEN_6;
-      default:
-        casez_tmp_3 = _GEN_6;
-    endcase
-  end // always_comb
-  reg         casez_tmp_4;
+  wire        io_mem_rready_0 = mshrValid & mshrState & ~missRespValid;
+  reg         casez_tmp_3;
   always_comb begin
     casez (io_invalidate_addr[8:3])
       6'b000000:
-        casez_tmp_4 = lines_0_valid;
+        casez_tmp_3 = lines_0_valid;
       6'b000001:
-        casez_tmp_4 = lines_1_valid;
+        casez_tmp_3 = lines_1_valid;
       6'b000010:
-        casez_tmp_4 = lines_2_valid;
+        casez_tmp_3 = lines_2_valid;
       6'b000011:
-        casez_tmp_4 = lines_3_valid;
+        casez_tmp_3 = lines_3_valid;
       6'b000100:
-        casez_tmp_4 = lines_4_valid;
+        casez_tmp_3 = lines_4_valid;
       6'b000101:
-        casez_tmp_4 = lines_5_valid;
+        casez_tmp_3 = lines_5_valid;
       6'b000110:
-        casez_tmp_4 = lines_6_valid;
+        casez_tmp_3 = lines_6_valid;
       6'b000111:
-        casez_tmp_4 = lines_7_valid;
+        casez_tmp_3 = lines_7_valid;
       6'b001000:
-        casez_tmp_4 = lines_8_valid;
+        casez_tmp_3 = lines_8_valid;
       6'b001001:
-        casez_tmp_4 = lines_9_valid;
+        casez_tmp_3 = lines_9_valid;
       6'b001010:
-        casez_tmp_4 = lines_10_valid;
+        casez_tmp_3 = lines_10_valid;
       6'b001011:
-        casez_tmp_4 = lines_11_valid;
+        casez_tmp_3 = lines_11_valid;
       6'b001100:
-        casez_tmp_4 = lines_12_valid;
+        casez_tmp_3 = lines_12_valid;
       6'b001101:
-        casez_tmp_4 = lines_13_valid;
+        casez_tmp_3 = lines_13_valid;
       6'b001110:
-        casez_tmp_4 = lines_14_valid;
+        casez_tmp_3 = lines_14_valid;
       6'b001111:
-        casez_tmp_4 = lines_15_valid;
+        casez_tmp_3 = lines_15_valid;
       6'b010000:
-        casez_tmp_4 = lines_16_valid;
+        casez_tmp_3 = lines_16_valid;
       6'b010001:
-        casez_tmp_4 = lines_17_valid;
+        casez_tmp_3 = lines_17_valid;
       6'b010010:
-        casez_tmp_4 = lines_18_valid;
+        casez_tmp_3 = lines_18_valid;
       6'b010011:
-        casez_tmp_4 = lines_19_valid;
+        casez_tmp_3 = lines_19_valid;
       6'b010100:
-        casez_tmp_4 = lines_20_valid;
+        casez_tmp_3 = lines_20_valid;
       6'b010101:
-        casez_tmp_4 = lines_21_valid;
+        casez_tmp_3 = lines_21_valid;
       6'b010110:
-        casez_tmp_4 = lines_22_valid;
+        casez_tmp_3 = lines_22_valid;
       6'b010111:
-        casez_tmp_4 = lines_23_valid;
+        casez_tmp_3 = lines_23_valid;
       6'b011000:
-        casez_tmp_4 = lines_24_valid;
+        casez_tmp_3 = lines_24_valid;
       6'b011001:
-        casez_tmp_4 = lines_25_valid;
+        casez_tmp_3 = lines_25_valid;
       6'b011010:
-        casez_tmp_4 = lines_26_valid;
+        casez_tmp_3 = lines_26_valid;
       6'b011011:
-        casez_tmp_4 = lines_27_valid;
+        casez_tmp_3 = lines_27_valid;
       6'b011100:
-        casez_tmp_4 = lines_28_valid;
+        casez_tmp_3 = lines_28_valid;
       6'b011101:
-        casez_tmp_4 = lines_29_valid;
+        casez_tmp_3 = lines_29_valid;
       6'b011110:
-        casez_tmp_4 = lines_30_valid;
+        casez_tmp_3 = lines_30_valid;
       6'b011111:
-        casez_tmp_4 = lines_31_valid;
+        casez_tmp_3 = lines_31_valid;
       6'b100000:
-        casez_tmp_4 = lines_32_valid;
+        casez_tmp_3 = lines_32_valid;
       6'b100001:
-        casez_tmp_4 = lines_33_valid;
+        casez_tmp_3 = lines_33_valid;
       6'b100010:
-        casez_tmp_4 = lines_34_valid;
+        casez_tmp_3 = lines_34_valid;
       6'b100011:
-        casez_tmp_4 = lines_35_valid;
+        casez_tmp_3 = lines_35_valid;
       6'b100100:
-        casez_tmp_4 = lines_36_valid;
+        casez_tmp_3 = lines_36_valid;
       6'b100101:
-        casez_tmp_4 = lines_37_valid;
+        casez_tmp_3 = lines_37_valid;
       6'b100110:
-        casez_tmp_4 = lines_38_valid;
+        casez_tmp_3 = lines_38_valid;
       6'b100111:
-        casez_tmp_4 = lines_39_valid;
+        casez_tmp_3 = lines_39_valid;
       6'b101000:
-        casez_tmp_4 = lines_40_valid;
+        casez_tmp_3 = lines_40_valid;
       6'b101001:
-        casez_tmp_4 = lines_41_valid;
+        casez_tmp_3 = lines_41_valid;
       6'b101010:
-        casez_tmp_4 = lines_42_valid;
+        casez_tmp_3 = lines_42_valid;
       6'b101011:
-        casez_tmp_4 = lines_43_valid;
+        casez_tmp_3 = lines_43_valid;
       6'b101100:
-        casez_tmp_4 = lines_44_valid;
+        casez_tmp_3 = lines_44_valid;
       6'b101101:
-        casez_tmp_4 = lines_45_valid;
+        casez_tmp_3 = lines_45_valid;
       6'b101110:
-        casez_tmp_4 = lines_46_valid;
+        casez_tmp_3 = lines_46_valid;
       6'b101111:
-        casez_tmp_4 = lines_47_valid;
+        casez_tmp_3 = lines_47_valid;
       6'b110000:
-        casez_tmp_4 = lines_48_valid;
+        casez_tmp_3 = lines_48_valid;
       6'b110001:
-        casez_tmp_4 = lines_49_valid;
+        casez_tmp_3 = lines_49_valid;
       6'b110010:
-        casez_tmp_4 = lines_50_valid;
+        casez_tmp_3 = lines_50_valid;
       6'b110011:
-        casez_tmp_4 = lines_51_valid;
+        casez_tmp_3 = lines_51_valid;
       6'b110100:
-        casez_tmp_4 = lines_52_valid;
+        casez_tmp_3 = lines_52_valid;
       6'b110101:
-        casez_tmp_4 = lines_53_valid;
+        casez_tmp_3 = lines_53_valid;
       6'b110110:
-        casez_tmp_4 = lines_54_valid;
+        casez_tmp_3 = lines_54_valid;
       6'b110111:
-        casez_tmp_4 = lines_55_valid;
+        casez_tmp_3 = lines_55_valid;
       6'b111000:
-        casez_tmp_4 = lines_56_valid;
+        casez_tmp_3 = lines_56_valid;
       6'b111001:
-        casez_tmp_4 = lines_57_valid;
+        casez_tmp_3 = lines_57_valid;
       6'b111010:
-        casez_tmp_4 = lines_58_valid;
+        casez_tmp_3 = lines_58_valid;
       6'b111011:
-        casez_tmp_4 = lines_59_valid;
+        casez_tmp_3 = lines_59_valid;
       6'b111100:
-        casez_tmp_4 = lines_60_valid;
+        casez_tmp_3 = lines_60_valid;
       6'b111101:
-        casez_tmp_4 = lines_61_valid;
+        casez_tmp_3 = lines_61_valid;
       6'b111110:
-        casez_tmp_4 = lines_62_valid;
+        casez_tmp_3 = lines_62_valid;
       default:
-        casez_tmp_4 = lines_63_valid;
+        casez_tmp_3 = lines_63_valid;
     endcase
   end // always_comb
-  reg  [22:0] casez_tmp_5;
+  reg  [22:0] casez_tmp_4;
   always_comb begin
     casez (io_invalidate_addr[8:3])
       6'b000000:
-        casez_tmp_5 = lines_0_tag;
+        casez_tmp_4 = lines_0_tag;
       6'b000001:
-        casez_tmp_5 = lines_1_tag;
+        casez_tmp_4 = lines_1_tag;
       6'b000010:
-        casez_tmp_5 = lines_2_tag;
+        casez_tmp_4 = lines_2_tag;
       6'b000011:
-        casez_tmp_5 = lines_3_tag;
+        casez_tmp_4 = lines_3_tag;
       6'b000100:
-        casez_tmp_5 = lines_4_tag;
+        casez_tmp_4 = lines_4_tag;
       6'b000101:
-        casez_tmp_5 = lines_5_tag;
+        casez_tmp_4 = lines_5_tag;
       6'b000110:
-        casez_tmp_5 = lines_6_tag;
+        casez_tmp_4 = lines_6_tag;
       6'b000111:
-        casez_tmp_5 = lines_7_tag;
+        casez_tmp_4 = lines_7_tag;
       6'b001000:
-        casez_tmp_5 = lines_8_tag;
+        casez_tmp_4 = lines_8_tag;
       6'b001001:
-        casez_tmp_5 = lines_9_tag;
+        casez_tmp_4 = lines_9_tag;
       6'b001010:
-        casez_tmp_5 = lines_10_tag;
+        casez_tmp_4 = lines_10_tag;
       6'b001011:
-        casez_tmp_5 = lines_11_tag;
+        casez_tmp_4 = lines_11_tag;
       6'b001100:
-        casez_tmp_5 = lines_12_tag;
+        casez_tmp_4 = lines_12_tag;
       6'b001101:
-        casez_tmp_5 = lines_13_tag;
+        casez_tmp_4 = lines_13_tag;
       6'b001110:
-        casez_tmp_5 = lines_14_tag;
+        casez_tmp_4 = lines_14_tag;
       6'b001111:
-        casez_tmp_5 = lines_15_tag;
+        casez_tmp_4 = lines_15_tag;
       6'b010000:
-        casez_tmp_5 = lines_16_tag;
+        casez_tmp_4 = lines_16_tag;
       6'b010001:
-        casez_tmp_5 = lines_17_tag;
+        casez_tmp_4 = lines_17_tag;
       6'b010010:
-        casez_tmp_5 = lines_18_tag;
+        casez_tmp_4 = lines_18_tag;
       6'b010011:
-        casez_tmp_5 = lines_19_tag;
+        casez_tmp_4 = lines_19_tag;
       6'b010100:
-        casez_tmp_5 = lines_20_tag;
+        casez_tmp_4 = lines_20_tag;
       6'b010101:
-        casez_tmp_5 = lines_21_tag;
+        casez_tmp_4 = lines_21_tag;
       6'b010110:
-        casez_tmp_5 = lines_22_tag;
+        casez_tmp_4 = lines_22_tag;
       6'b010111:
-        casez_tmp_5 = lines_23_tag;
+        casez_tmp_4 = lines_23_tag;
       6'b011000:
-        casez_tmp_5 = lines_24_tag;
+        casez_tmp_4 = lines_24_tag;
       6'b011001:
-        casez_tmp_5 = lines_25_tag;
+        casez_tmp_4 = lines_25_tag;
       6'b011010:
-        casez_tmp_5 = lines_26_tag;
+        casez_tmp_4 = lines_26_tag;
       6'b011011:
-        casez_tmp_5 = lines_27_tag;
+        casez_tmp_4 = lines_27_tag;
       6'b011100:
-        casez_tmp_5 = lines_28_tag;
+        casez_tmp_4 = lines_28_tag;
       6'b011101:
-        casez_tmp_5 = lines_29_tag;
+        casez_tmp_4 = lines_29_tag;
       6'b011110:
-        casez_tmp_5 = lines_30_tag;
+        casez_tmp_4 = lines_30_tag;
       6'b011111:
-        casez_tmp_5 = lines_31_tag;
+        casez_tmp_4 = lines_31_tag;
       6'b100000:
-        casez_tmp_5 = lines_32_tag;
+        casez_tmp_4 = lines_32_tag;
       6'b100001:
-        casez_tmp_5 = lines_33_tag;
+        casez_tmp_4 = lines_33_tag;
       6'b100010:
-        casez_tmp_5 = lines_34_tag;
+        casez_tmp_4 = lines_34_tag;
       6'b100011:
-        casez_tmp_5 = lines_35_tag;
+        casez_tmp_4 = lines_35_tag;
       6'b100100:
-        casez_tmp_5 = lines_36_tag;
+        casez_tmp_4 = lines_36_tag;
       6'b100101:
-        casez_tmp_5 = lines_37_tag;
+        casez_tmp_4 = lines_37_tag;
       6'b100110:
-        casez_tmp_5 = lines_38_tag;
+        casez_tmp_4 = lines_38_tag;
       6'b100111:
-        casez_tmp_5 = lines_39_tag;
+        casez_tmp_4 = lines_39_tag;
       6'b101000:
-        casez_tmp_5 = lines_40_tag;
+        casez_tmp_4 = lines_40_tag;
       6'b101001:
-        casez_tmp_5 = lines_41_tag;
+        casez_tmp_4 = lines_41_tag;
       6'b101010:
-        casez_tmp_5 = lines_42_tag;
+        casez_tmp_4 = lines_42_tag;
       6'b101011:
-        casez_tmp_5 = lines_43_tag;
+        casez_tmp_4 = lines_43_tag;
       6'b101100:
-        casez_tmp_5 = lines_44_tag;
+        casez_tmp_4 = lines_44_tag;
       6'b101101:
-        casez_tmp_5 = lines_45_tag;
+        casez_tmp_4 = lines_45_tag;
       6'b101110:
-        casez_tmp_5 = lines_46_tag;
+        casez_tmp_4 = lines_46_tag;
       6'b101111:
-        casez_tmp_5 = lines_47_tag;
+        casez_tmp_4 = lines_47_tag;
       6'b110000:
-        casez_tmp_5 = lines_48_tag;
+        casez_tmp_4 = lines_48_tag;
       6'b110001:
-        casez_tmp_5 = lines_49_tag;
+        casez_tmp_4 = lines_49_tag;
       6'b110010:
-        casez_tmp_5 = lines_50_tag;
+        casez_tmp_4 = lines_50_tag;
       6'b110011:
-        casez_tmp_5 = lines_51_tag;
+        casez_tmp_4 = lines_51_tag;
       6'b110100:
-        casez_tmp_5 = lines_52_tag;
+        casez_tmp_4 = lines_52_tag;
       6'b110101:
-        casez_tmp_5 = lines_53_tag;
+        casez_tmp_4 = lines_53_tag;
       6'b110110:
-        casez_tmp_5 = lines_54_tag;
+        casez_tmp_4 = lines_54_tag;
       6'b110111:
-        casez_tmp_5 = lines_55_tag;
+        casez_tmp_4 = lines_55_tag;
       6'b111000:
-        casez_tmp_5 = lines_56_tag;
+        casez_tmp_4 = lines_56_tag;
       6'b111001:
-        casez_tmp_5 = lines_57_tag;
+        casez_tmp_4 = lines_57_tag;
       6'b111010:
-        casez_tmp_5 = lines_58_tag;
+        casez_tmp_4 = lines_58_tag;
       6'b111011:
-        casez_tmp_5 = lines_59_tag;
+        casez_tmp_4 = lines_59_tag;
       6'b111100:
-        casez_tmp_5 = lines_60_tag;
+        casez_tmp_4 = lines_60_tag;
       6'b111101:
-        casez_tmp_5 = lines_61_tag;
+        casez_tmp_4 = lines_61_tag;
       6'b111110:
-        casez_tmp_5 = lines_62_tag;
+        casez_tmp_4 = lines_62_tag;
       default:
-        casez_tmp_5 = lines_63_tag;
+        casez_tmp_4 = lines_63_tag;
     endcase
   end // always_comb
-  reg         casez_tmp_6;
+  reg         casez_tmp_5;
   always_comb begin
     casez (io_invalidate2_addr[8:3])
       6'b000000:
-        casez_tmp_6 = lines_0_valid;
+        casez_tmp_5 = lines_0_valid;
       6'b000001:
-        casez_tmp_6 = lines_1_valid;
+        casez_tmp_5 = lines_1_valid;
       6'b000010:
-        casez_tmp_6 = lines_2_valid;
+        casez_tmp_5 = lines_2_valid;
       6'b000011:
-        casez_tmp_6 = lines_3_valid;
+        casez_tmp_5 = lines_3_valid;
       6'b000100:
-        casez_tmp_6 = lines_4_valid;
+        casez_tmp_5 = lines_4_valid;
       6'b000101:
-        casez_tmp_6 = lines_5_valid;
+        casez_tmp_5 = lines_5_valid;
       6'b000110:
-        casez_tmp_6 = lines_6_valid;
+        casez_tmp_5 = lines_6_valid;
       6'b000111:
-        casez_tmp_6 = lines_7_valid;
+        casez_tmp_5 = lines_7_valid;
       6'b001000:
-        casez_tmp_6 = lines_8_valid;
+        casez_tmp_5 = lines_8_valid;
       6'b001001:
-        casez_tmp_6 = lines_9_valid;
+        casez_tmp_5 = lines_9_valid;
       6'b001010:
-        casez_tmp_6 = lines_10_valid;
+        casez_tmp_5 = lines_10_valid;
       6'b001011:
-        casez_tmp_6 = lines_11_valid;
+        casez_tmp_5 = lines_11_valid;
       6'b001100:
-        casez_tmp_6 = lines_12_valid;
+        casez_tmp_5 = lines_12_valid;
       6'b001101:
-        casez_tmp_6 = lines_13_valid;
+        casez_tmp_5 = lines_13_valid;
       6'b001110:
-        casez_tmp_6 = lines_14_valid;
+        casez_tmp_5 = lines_14_valid;
       6'b001111:
-        casez_tmp_6 = lines_15_valid;
+        casez_tmp_5 = lines_15_valid;
       6'b010000:
-        casez_tmp_6 = lines_16_valid;
+        casez_tmp_5 = lines_16_valid;
       6'b010001:
-        casez_tmp_6 = lines_17_valid;
+        casez_tmp_5 = lines_17_valid;
       6'b010010:
-        casez_tmp_6 = lines_18_valid;
+        casez_tmp_5 = lines_18_valid;
       6'b010011:
-        casez_tmp_6 = lines_19_valid;
+        casez_tmp_5 = lines_19_valid;
       6'b010100:
-        casez_tmp_6 = lines_20_valid;
+        casez_tmp_5 = lines_20_valid;
       6'b010101:
-        casez_tmp_6 = lines_21_valid;
+        casez_tmp_5 = lines_21_valid;
       6'b010110:
-        casez_tmp_6 = lines_22_valid;
+        casez_tmp_5 = lines_22_valid;
       6'b010111:
-        casez_tmp_6 = lines_23_valid;
+        casez_tmp_5 = lines_23_valid;
       6'b011000:
-        casez_tmp_6 = lines_24_valid;
+        casez_tmp_5 = lines_24_valid;
       6'b011001:
-        casez_tmp_6 = lines_25_valid;
+        casez_tmp_5 = lines_25_valid;
       6'b011010:
-        casez_tmp_6 = lines_26_valid;
+        casez_tmp_5 = lines_26_valid;
       6'b011011:
-        casez_tmp_6 = lines_27_valid;
+        casez_tmp_5 = lines_27_valid;
       6'b011100:
-        casez_tmp_6 = lines_28_valid;
+        casez_tmp_5 = lines_28_valid;
       6'b011101:
-        casez_tmp_6 = lines_29_valid;
+        casez_tmp_5 = lines_29_valid;
       6'b011110:
-        casez_tmp_6 = lines_30_valid;
+        casez_tmp_5 = lines_30_valid;
       6'b011111:
-        casez_tmp_6 = lines_31_valid;
+        casez_tmp_5 = lines_31_valid;
       6'b100000:
-        casez_tmp_6 = lines_32_valid;
+        casez_tmp_5 = lines_32_valid;
       6'b100001:
-        casez_tmp_6 = lines_33_valid;
+        casez_tmp_5 = lines_33_valid;
       6'b100010:
-        casez_tmp_6 = lines_34_valid;
+        casez_tmp_5 = lines_34_valid;
       6'b100011:
-        casez_tmp_6 = lines_35_valid;
+        casez_tmp_5 = lines_35_valid;
       6'b100100:
-        casez_tmp_6 = lines_36_valid;
+        casez_tmp_5 = lines_36_valid;
       6'b100101:
-        casez_tmp_6 = lines_37_valid;
+        casez_tmp_5 = lines_37_valid;
       6'b100110:
-        casez_tmp_6 = lines_38_valid;
+        casez_tmp_5 = lines_38_valid;
       6'b100111:
-        casez_tmp_6 = lines_39_valid;
+        casez_tmp_5 = lines_39_valid;
       6'b101000:
-        casez_tmp_6 = lines_40_valid;
+        casez_tmp_5 = lines_40_valid;
       6'b101001:
-        casez_tmp_6 = lines_41_valid;
+        casez_tmp_5 = lines_41_valid;
       6'b101010:
-        casez_tmp_6 = lines_42_valid;
+        casez_tmp_5 = lines_42_valid;
       6'b101011:
-        casez_tmp_6 = lines_43_valid;
+        casez_tmp_5 = lines_43_valid;
       6'b101100:
-        casez_tmp_6 = lines_44_valid;
+        casez_tmp_5 = lines_44_valid;
       6'b101101:
-        casez_tmp_6 = lines_45_valid;
+        casez_tmp_5 = lines_45_valid;
       6'b101110:
-        casez_tmp_6 = lines_46_valid;
+        casez_tmp_5 = lines_46_valid;
       6'b101111:
-        casez_tmp_6 = lines_47_valid;
+        casez_tmp_5 = lines_47_valid;
       6'b110000:
-        casez_tmp_6 = lines_48_valid;
+        casez_tmp_5 = lines_48_valid;
       6'b110001:
-        casez_tmp_6 = lines_49_valid;
+        casez_tmp_5 = lines_49_valid;
       6'b110010:
-        casez_tmp_6 = lines_50_valid;
+        casez_tmp_5 = lines_50_valid;
       6'b110011:
-        casez_tmp_6 = lines_51_valid;
+        casez_tmp_5 = lines_51_valid;
       6'b110100:
-        casez_tmp_6 = lines_52_valid;
+        casez_tmp_5 = lines_52_valid;
       6'b110101:
-        casez_tmp_6 = lines_53_valid;
+        casez_tmp_5 = lines_53_valid;
       6'b110110:
-        casez_tmp_6 = lines_54_valid;
+        casez_tmp_5 = lines_54_valid;
       6'b110111:
-        casez_tmp_6 = lines_55_valid;
+        casez_tmp_5 = lines_55_valid;
       6'b111000:
-        casez_tmp_6 = lines_56_valid;
+        casez_tmp_5 = lines_56_valid;
       6'b111001:
-        casez_tmp_6 = lines_57_valid;
+        casez_tmp_5 = lines_57_valid;
       6'b111010:
-        casez_tmp_6 = lines_58_valid;
+        casez_tmp_5 = lines_58_valid;
       6'b111011:
-        casez_tmp_6 = lines_59_valid;
+        casez_tmp_5 = lines_59_valid;
       6'b111100:
-        casez_tmp_6 = lines_60_valid;
+        casez_tmp_5 = lines_60_valid;
       6'b111101:
-        casez_tmp_6 = lines_61_valid;
+        casez_tmp_5 = lines_61_valid;
       6'b111110:
-        casez_tmp_6 = lines_62_valid;
+        casez_tmp_5 = lines_62_valid;
       default:
-        casez_tmp_6 = lines_63_valid;
+        casez_tmp_5 = lines_63_valid;
     endcase
   end // always_comb
-  reg  [22:0] casez_tmp_7;
+  reg  [22:0] casez_tmp_6;
   always_comb begin
     casez (io_invalidate2_addr[8:3])
       6'b000000:
-        casez_tmp_7 = lines_0_tag;
+        casez_tmp_6 = lines_0_tag;
       6'b000001:
-        casez_tmp_7 = lines_1_tag;
+        casez_tmp_6 = lines_1_tag;
       6'b000010:
-        casez_tmp_7 = lines_2_tag;
+        casez_tmp_6 = lines_2_tag;
       6'b000011:
-        casez_tmp_7 = lines_3_tag;
+        casez_tmp_6 = lines_3_tag;
       6'b000100:
-        casez_tmp_7 = lines_4_tag;
+        casez_tmp_6 = lines_4_tag;
       6'b000101:
-        casez_tmp_7 = lines_5_tag;
+        casez_tmp_6 = lines_5_tag;
       6'b000110:
-        casez_tmp_7 = lines_6_tag;
+        casez_tmp_6 = lines_6_tag;
       6'b000111:
-        casez_tmp_7 = lines_7_tag;
+        casez_tmp_6 = lines_7_tag;
       6'b001000:
-        casez_tmp_7 = lines_8_tag;
+        casez_tmp_6 = lines_8_tag;
       6'b001001:
-        casez_tmp_7 = lines_9_tag;
+        casez_tmp_6 = lines_9_tag;
       6'b001010:
-        casez_tmp_7 = lines_10_tag;
+        casez_tmp_6 = lines_10_tag;
       6'b001011:
-        casez_tmp_7 = lines_11_tag;
+        casez_tmp_6 = lines_11_tag;
       6'b001100:
-        casez_tmp_7 = lines_12_tag;
+        casez_tmp_6 = lines_12_tag;
       6'b001101:
-        casez_tmp_7 = lines_13_tag;
+        casez_tmp_6 = lines_13_tag;
       6'b001110:
-        casez_tmp_7 = lines_14_tag;
+        casez_tmp_6 = lines_14_tag;
       6'b001111:
-        casez_tmp_7 = lines_15_tag;
+        casez_tmp_6 = lines_15_tag;
       6'b010000:
-        casez_tmp_7 = lines_16_tag;
+        casez_tmp_6 = lines_16_tag;
       6'b010001:
-        casez_tmp_7 = lines_17_tag;
+        casez_tmp_6 = lines_17_tag;
       6'b010010:
-        casez_tmp_7 = lines_18_tag;
+        casez_tmp_6 = lines_18_tag;
       6'b010011:
-        casez_tmp_7 = lines_19_tag;
+        casez_tmp_6 = lines_19_tag;
       6'b010100:
-        casez_tmp_7 = lines_20_tag;
+        casez_tmp_6 = lines_20_tag;
       6'b010101:
-        casez_tmp_7 = lines_21_tag;
+        casez_tmp_6 = lines_21_tag;
       6'b010110:
-        casez_tmp_7 = lines_22_tag;
+        casez_tmp_6 = lines_22_tag;
       6'b010111:
-        casez_tmp_7 = lines_23_tag;
+        casez_tmp_6 = lines_23_tag;
       6'b011000:
-        casez_tmp_7 = lines_24_tag;
+        casez_tmp_6 = lines_24_tag;
       6'b011001:
-        casez_tmp_7 = lines_25_tag;
+        casez_tmp_6 = lines_25_tag;
       6'b011010:
-        casez_tmp_7 = lines_26_tag;
+        casez_tmp_6 = lines_26_tag;
       6'b011011:
-        casez_tmp_7 = lines_27_tag;
+        casez_tmp_6 = lines_27_tag;
       6'b011100:
-        casez_tmp_7 = lines_28_tag;
+        casez_tmp_6 = lines_28_tag;
       6'b011101:
-        casez_tmp_7 = lines_29_tag;
+        casez_tmp_6 = lines_29_tag;
       6'b011110:
-        casez_tmp_7 = lines_30_tag;
+        casez_tmp_6 = lines_30_tag;
       6'b011111:
-        casez_tmp_7 = lines_31_tag;
+        casez_tmp_6 = lines_31_tag;
       6'b100000:
-        casez_tmp_7 = lines_32_tag;
+        casez_tmp_6 = lines_32_tag;
       6'b100001:
-        casez_tmp_7 = lines_33_tag;
+        casez_tmp_6 = lines_33_tag;
       6'b100010:
-        casez_tmp_7 = lines_34_tag;
+        casez_tmp_6 = lines_34_tag;
       6'b100011:
-        casez_tmp_7 = lines_35_tag;
+        casez_tmp_6 = lines_35_tag;
       6'b100100:
-        casez_tmp_7 = lines_36_tag;
+        casez_tmp_6 = lines_36_tag;
       6'b100101:
-        casez_tmp_7 = lines_37_tag;
+        casez_tmp_6 = lines_37_tag;
       6'b100110:
-        casez_tmp_7 = lines_38_tag;
+        casez_tmp_6 = lines_38_tag;
       6'b100111:
-        casez_tmp_7 = lines_39_tag;
+        casez_tmp_6 = lines_39_tag;
       6'b101000:
-        casez_tmp_7 = lines_40_tag;
+        casez_tmp_6 = lines_40_tag;
       6'b101001:
-        casez_tmp_7 = lines_41_tag;
+        casez_tmp_6 = lines_41_tag;
       6'b101010:
-        casez_tmp_7 = lines_42_tag;
+        casez_tmp_6 = lines_42_tag;
       6'b101011:
-        casez_tmp_7 = lines_43_tag;
+        casez_tmp_6 = lines_43_tag;
       6'b101100:
-        casez_tmp_7 = lines_44_tag;
+        casez_tmp_6 = lines_44_tag;
       6'b101101:
-        casez_tmp_7 = lines_45_tag;
+        casez_tmp_6 = lines_45_tag;
       6'b101110:
-        casez_tmp_7 = lines_46_tag;
+        casez_tmp_6 = lines_46_tag;
       6'b101111:
-        casez_tmp_7 = lines_47_tag;
+        casez_tmp_6 = lines_47_tag;
       6'b110000:
-        casez_tmp_7 = lines_48_tag;
+        casez_tmp_6 = lines_48_tag;
       6'b110001:
-        casez_tmp_7 = lines_49_tag;
+        casez_tmp_6 = lines_49_tag;
       6'b110010:
-        casez_tmp_7 = lines_50_tag;
+        casez_tmp_6 = lines_50_tag;
       6'b110011:
-        casez_tmp_7 = lines_51_tag;
+        casez_tmp_6 = lines_51_tag;
       6'b110100:
-        casez_tmp_7 = lines_52_tag;
+        casez_tmp_6 = lines_52_tag;
       6'b110101:
-        casez_tmp_7 = lines_53_tag;
+        casez_tmp_6 = lines_53_tag;
       6'b110110:
-        casez_tmp_7 = lines_54_tag;
+        casez_tmp_6 = lines_54_tag;
       6'b110111:
-        casez_tmp_7 = lines_55_tag;
+        casez_tmp_6 = lines_55_tag;
       6'b111000:
-        casez_tmp_7 = lines_56_tag;
+        casez_tmp_6 = lines_56_tag;
       6'b111001:
-        casez_tmp_7 = lines_57_tag;
+        casez_tmp_6 = lines_57_tag;
       6'b111010:
-        casez_tmp_7 = lines_58_tag;
+        casez_tmp_6 = lines_58_tag;
       6'b111011:
-        casez_tmp_7 = lines_59_tag;
+        casez_tmp_6 = lines_59_tag;
       6'b111100:
-        casez_tmp_7 = lines_60_tag;
+        casez_tmp_6 = lines_60_tag;
       6'b111101:
-        casez_tmp_7 = lines_61_tag;
+        casez_tmp_6 = lines_61_tag;
       6'b111110:
-        casez_tmp_7 = lines_62_tag;
+        casez_tmp_6 = lines_62_tag;
       default:
-        casez_tmp_7 = lines_63_tag;
+        casez_tmp_6 = lines_63_tag;
     endcase
   end // always_comb
-  wire        _GEN_7 = cpuArFire & cpuCacheable;
-  wire        _GEN_8 = _filling_T_1 & io_mem_rvalid;
-  wire        _GEN_9 = _GEN_0 | ~_GEN_8 | fillIdx;
-  wire        filling = _filling_T | _filling_T_1;
-  wire        _killFillNow_T =
-    io_invalidate_valid & io_invalidate_addr - 32'h80000000 < 32'h8000000;
-  wire        _killFillNow_T_6 =
-    io_invalidate2_valid & io_invalidate2_addr - 32'h80000000 < 32'h8000000;
-  wire        killFillNow =
-    _killFillNow_T & filling & io_invalidate_addr[8:3] == reqAddr[8:3]
-    & io_invalidate_addr[31:9] == reqAddr[31:9] | _killFillNow_T_6 & filling
-    & io_invalidate2_addr[8:3] == reqAddr[8:3]
-    & io_invalidate2_addr[31:9] == reqAddr[31:9];
-  wire        _GEN_10 = ~cpuArFire | cpuHit | ~cpuCacheable;
-  wire [31:0] nextLine_0 = fillIdx ? fillLine_0 : io_mem_rdata;
-  wire [31:0] nextLine_1 = fillIdx ? io_mem_rdata : fillLine_1;
-  wire        _GEN_11 = ~fillKilled & ~killFillNow;
-  wire        _GEN_12 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h0;
-  wire        _GEN_13 = ~_GEN_1 & _GEN_12 | lines_0_valid;
-  wire        _GEN_14 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h1;
-  wire        _GEN_15 = ~_GEN_1 & _GEN_14 | lines_1_valid;
-  wire        _GEN_16 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h2;
-  wire        _GEN_17 = ~_GEN_1 & _GEN_16 | lines_2_valid;
-  wire        _GEN_18 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h3;
-  wire        _GEN_19 = ~_GEN_1 & _GEN_18 | lines_3_valid;
-  wire        _GEN_20 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h4;
-  wire        _GEN_21 = ~_GEN_1 & _GEN_20 | lines_4_valid;
-  wire        _GEN_22 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h5;
-  wire        _GEN_23 = ~_GEN_1 & _GEN_22 | lines_5_valid;
-  wire        _GEN_24 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h6;
-  wire        _GEN_25 = ~_GEN_1 & _GEN_24 | lines_6_valid;
-  wire        _GEN_26 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h7;
-  wire        _GEN_27 = ~_GEN_1 & _GEN_26 | lines_7_valid;
-  wire        _GEN_28 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h8;
-  wire        _GEN_29 = ~_GEN_1 & _GEN_28 | lines_8_valid;
-  wire        _GEN_30 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h9;
-  wire        _GEN_31 = ~_GEN_1 & _GEN_30 | lines_9_valid;
-  wire        _GEN_32 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'hA;
-  wire        _GEN_33 = ~_GEN_1 & _GEN_32 | lines_10_valid;
-  wire        _GEN_34 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'hB;
-  wire        _GEN_35 = ~_GEN_1 & _GEN_34 | lines_11_valid;
-  wire        _GEN_36 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'hC;
-  wire        _GEN_37 = ~_GEN_1 & _GEN_36 | lines_12_valid;
-  wire        _GEN_38 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'hD;
-  wire        _GEN_39 = ~_GEN_1 & _GEN_38 | lines_13_valid;
-  wire        _GEN_40 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'hE;
-  wire        _GEN_41 = ~_GEN_1 & _GEN_40 | lines_14_valid;
-  wire        _GEN_42 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'hF;
-  wire        _GEN_43 = ~_GEN_1 & _GEN_42 | lines_15_valid;
-  wire        _GEN_44 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h10;
-  wire        _GEN_45 = ~_GEN_1 & _GEN_44 | lines_16_valid;
-  wire        _GEN_46 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h11;
-  wire        _GEN_47 = ~_GEN_1 & _GEN_46 | lines_17_valid;
-  wire        _GEN_48 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h12;
-  wire        _GEN_49 = ~_GEN_1 & _GEN_48 | lines_18_valid;
-  wire        _GEN_50 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h13;
-  wire        _GEN_51 = ~_GEN_1 & _GEN_50 | lines_19_valid;
-  wire        _GEN_52 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h14;
-  wire        _GEN_53 = ~_GEN_1 & _GEN_52 | lines_20_valid;
-  wire        _GEN_54 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h15;
-  wire        _GEN_55 = ~_GEN_1 & _GEN_54 | lines_21_valid;
-  wire        _GEN_56 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h16;
-  wire        _GEN_57 = ~_GEN_1 & _GEN_56 | lines_22_valid;
-  wire        _GEN_58 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h17;
-  wire        _GEN_59 = ~_GEN_1 & _GEN_58 | lines_23_valid;
-  wire        _GEN_60 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h18;
-  wire        _GEN_61 = ~_GEN_1 & _GEN_60 | lines_24_valid;
-  wire        _GEN_62 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h19;
-  wire        _GEN_63 = ~_GEN_1 & _GEN_62 | lines_25_valid;
-  wire        _GEN_64 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h1A;
-  wire        _GEN_65 = ~_GEN_1 & _GEN_64 | lines_26_valid;
-  wire        _GEN_66 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h1B;
-  wire        _GEN_67 = ~_GEN_1 & _GEN_66 | lines_27_valid;
-  wire        _GEN_68 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h1C;
-  wire        _GEN_69 = ~_GEN_1 & _GEN_68 | lines_28_valid;
-  wire        _GEN_70 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h1D;
-  wire        _GEN_71 = ~_GEN_1 & _GEN_70 | lines_29_valid;
-  wire        _GEN_72 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h1E;
-  wire        _GEN_73 = ~_GEN_1 & _GEN_72 | lines_30_valid;
-  wire        _GEN_74 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h1F;
-  wire        _GEN_75 = ~_GEN_1 & _GEN_74 | lines_31_valid;
-  wire        _GEN_76 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h20;
-  wire        _GEN_77 = ~_GEN_1 & _GEN_76 | lines_32_valid;
-  wire        _GEN_78 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h21;
-  wire        _GEN_79 = ~_GEN_1 & _GEN_78 | lines_33_valid;
-  wire        _GEN_80 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h22;
-  wire        _GEN_81 = ~_GEN_1 & _GEN_80 | lines_34_valid;
-  wire        _GEN_82 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h23;
-  wire        _GEN_83 = ~_GEN_1 & _GEN_82 | lines_35_valid;
-  wire        _GEN_84 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h24;
-  wire        _GEN_85 = ~_GEN_1 & _GEN_84 | lines_36_valid;
-  wire        _GEN_86 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h25;
-  wire        _GEN_87 = ~_GEN_1 & _GEN_86 | lines_37_valid;
-  wire        _GEN_88 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h26;
-  wire        _GEN_89 = ~_GEN_1 & _GEN_88 | lines_38_valid;
-  wire        _GEN_90 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h27;
-  wire        _GEN_91 = ~_GEN_1 & _GEN_90 | lines_39_valid;
-  wire        _GEN_92 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h28;
-  wire        _GEN_93 = ~_GEN_1 & _GEN_92 | lines_40_valid;
-  wire        _GEN_94 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h29;
-  wire        _GEN_95 = ~_GEN_1 & _GEN_94 | lines_41_valid;
-  wire        _GEN_96 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h2A;
-  wire        _GEN_97 = ~_GEN_1 & _GEN_96 | lines_42_valid;
-  wire        _GEN_98 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h2B;
-  wire        _GEN_99 = ~_GEN_1 & _GEN_98 | lines_43_valid;
-  wire        _GEN_100 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h2C;
-  wire        _GEN_101 = ~_GEN_1 & _GEN_100 | lines_44_valid;
-  wire        _GEN_102 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h2D;
-  wire        _GEN_103 = ~_GEN_1 & _GEN_102 | lines_45_valid;
-  wire        _GEN_104 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h2E;
-  wire        _GEN_105 = ~_GEN_1 & _GEN_104 | lines_46_valid;
-  wire        _GEN_106 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h2F;
-  wire        _GEN_107 = ~_GEN_1 & _GEN_106 | lines_47_valid;
-  wire        _GEN_108 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h30;
-  wire        _GEN_109 = ~_GEN_1 & _GEN_108 | lines_48_valid;
-  wire        _GEN_110 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h31;
-  wire        _GEN_111 = ~_GEN_1 & _GEN_110 | lines_49_valid;
-  wire        _GEN_112 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h32;
-  wire        _GEN_113 = ~_GEN_1 & _GEN_112 | lines_50_valid;
-  wire        _GEN_114 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h33;
-  wire        _GEN_115 = ~_GEN_1 & _GEN_114 | lines_51_valid;
-  wire        _GEN_116 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h34;
-  wire        _GEN_117 = ~_GEN_1 & _GEN_116 | lines_52_valid;
-  wire        _GEN_118 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h35;
-  wire        _GEN_119 = ~_GEN_1 & _GEN_118 | lines_53_valid;
-  wire        _GEN_120 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h36;
-  wire        _GEN_121 = ~_GEN_1 & _GEN_120 | lines_54_valid;
-  wire        _GEN_122 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h37;
-  wire        _GEN_123 = ~_GEN_1 & _GEN_122 | lines_55_valid;
-  wire        _GEN_124 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h38;
-  wire        _GEN_125 = ~_GEN_1 & _GEN_124 | lines_56_valid;
-  wire        _GEN_126 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h39;
-  wire        _GEN_127 = ~_GEN_1 & _GEN_126 | lines_57_valid;
-  wire        _GEN_128 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h3A;
-  wire        _GEN_129 = ~_GEN_1 & _GEN_128 | lines_58_valid;
-  wire        _GEN_130 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h3B;
-  wire        _GEN_131 = ~_GEN_1 & _GEN_130 | lines_59_valid;
-  wire        _GEN_132 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h3C;
-  wire        _GEN_133 = ~_GEN_1 & _GEN_132 | lines_60_valid;
-  wire        _GEN_134 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h3D;
-  wire        _GEN_135 = ~_GEN_1 & _GEN_134 | lines_61_valid;
+  wire        _GEN_0 = cpuArFire & cpuCacheable;
+  wire        _GEN_1 = _GEN_0 & ~cpuHit;
+  wire        killMshrNow =
+    _killMshrNow_T
+    & (_killMshrNow_T_1 & io_invalidate_addr[8:3] == mshrAddr[8:3]
+       & io_invalidate_addr[31:9] == mshrAddr[31:9] | _killMshrNow_T_6
+       & io_invalidate2_addr[8:3] == mshrAddr[8:3]
+       & io_invalidate2_addr[31:9] == mshrAddr[31:9]);
+  wire        cpuRespFire = respValid & io_cpu_rready;
+  wire        _GEN_2 = ~cpuArFire | cpuHit;
+  wire        _GEN_3 = _GEN_2 & mshrState;
+  wire        _GEN_4 = io_mem_rvalid & io_mem_rready_0;
+  wire [31:0] nextLine_0 = mshrFillIdx ? mshrFillLine_0 : io_mem_rdata;
+  wire [31:0] nextLine_1 = mshrFillIdx ? io_mem_rdata : mshrFillLine_1;
+  wire        _GEN_5 = _GEN_4 & mshrCacheable;
+  wire        _GEN_6 = ~mshrKilled & ~killMshrNow;
+  wire        _GEN_7 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h0;
+  wire        _GEN_8 = _GEN_7 | lines_0_valid;
+  wire        _GEN_9 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h1;
+  wire        _GEN_10 = _GEN_9 | lines_1_valid;
+  wire        _GEN_11 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h2;
+  wire        _GEN_12 = _GEN_11 | lines_2_valid;
+  wire        _GEN_13 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h3;
+  wire        _GEN_14 = _GEN_13 | lines_3_valid;
+  wire        _GEN_15 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h4;
+  wire        _GEN_16 = _GEN_15 | lines_4_valid;
+  wire        _GEN_17 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h5;
+  wire        _GEN_18 = _GEN_17 | lines_5_valid;
+  wire        _GEN_19 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h6;
+  wire        _GEN_20 = _GEN_19 | lines_6_valid;
+  wire        _GEN_21 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h7;
+  wire        _GEN_22 = _GEN_21 | lines_7_valid;
+  wire        _GEN_23 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h8;
+  wire        _GEN_24 = _GEN_23 | lines_8_valid;
+  wire        _GEN_25 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h9;
+  wire        _GEN_26 = _GEN_25 | lines_9_valid;
+  wire        _GEN_27 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'hA;
+  wire        _GEN_28 = _GEN_27 | lines_10_valid;
+  wire        _GEN_29 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'hB;
+  wire        _GEN_30 = _GEN_29 | lines_11_valid;
+  wire        _GEN_31 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'hC;
+  wire        _GEN_32 = _GEN_31 | lines_12_valid;
+  wire        _GEN_33 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'hD;
+  wire        _GEN_34 = _GEN_33 | lines_13_valid;
+  wire        _GEN_35 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'hE;
+  wire        _GEN_36 = _GEN_35 | lines_14_valid;
+  wire        _GEN_37 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'hF;
+  wire        _GEN_38 = _GEN_37 | lines_15_valid;
+  wire        _GEN_39 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h10;
+  wire        _GEN_40 = _GEN_39 | lines_16_valid;
+  wire        _GEN_41 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h11;
+  wire        _GEN_42 = _GEN_41 | lines_17_valid;
+  wire        _GEN_43 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h12;
+  wire        _GEN_44 = _GEN_43 | lines_18_valid;
+  wire        _GEN_45 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h13;
+  wire        _GEN_46 = _GEN_45 | lines_19_valid;
+  wire        _GEN_47 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h14;
+  wire        _GEN_48 = _GEN_47 | lines_20_valid;
+  wire        _GEN_49 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h15;
+  wire        _GEN_50 = _GEN_49 | lines_21_valid;
+  wire        _GEN_51 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h16;
+  wire        _GEN_52 = _GEN_51 | lines_22_valid;
+  wire        _GEN_53 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h17;
+  wire        _GEN_54 = _GEN_53 | lines_23_valid;
+  wire        _GEN_55 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h18;
+  wire        _GEN_56 = _GEN_55 | lines_24_valid;
+  wire        _GEN_57 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h19;
+  wire        _GEN_58 = _GEN_57 | lines_25_valid;
+  wire        _GEN_59 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h1A;
+  wire        _GEN_60 = _GEN_59 | lines_26_valid;
+  wire        _GEN_61 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h1B;
+  wire        _GEN_62 = _GEN_61 | lines_27_valid;
+  wire        _GEN_63 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h1C;
+  wire        _GEN_64 = _GEN_63 | lines_28_valid;
+  wire        _GEN_65 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h1D;
+  wire        _GEN_66 = _GEN_65 | lines_29_valid;
+  wire        _GEN_67 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h1E;
+  wire        _GEN_68 = _GEN_67 | lines_30_valid;
+  wire        _GEN_69 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h1F;
+  wire        _GEN_70 = _GEN_69 | lines_31_valid;
+  wire        _GEN_71 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h20;
+  wire        _GEN_72 = _GEN_71 | lines_32_valid;
+  wire        _GEN_73 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h21;
+  wire        _GEN_74 = _GEN_73 | lines_33_valid;
+  wire        _GEN_75 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h22;
+  wire        _GEN_76 = _GEN_75 | lines_34_valid;
+  wire        _GEN_77 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h23;
+  wire        _GEN_78 = _GEN_77 | lines_35_valid;
+  wire        _GEN_79 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h24;
+  wire        _GEN_80 = _GEN_79 | lines_36_valid;
+  wire        _GEN_81 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h25;
+  wire        _GEN_82 = _GEN_81 | lines_37_valid;
+  wire        _GEN_83 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h26;
+  wire        _GEN_84 = _GEN_83 | lines_38_valid;
+  wire        _GEN_85 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h27;
+  wire        _GEN_86 = _GEN_85 | lines_39_valid;
+  wire        _GEN_87 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h28;
+  wire        _GEN_88 = _GEN_87 | lines_40_valid;
+  wire        _GEN_89 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h29;
+  wire        _GEN_90 = _GEN_89 | lines_41_valid;
+  wire        _GEN_91 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h2A;
+  wire        _GEN_92 = _GEN_91 | lines_42_valid;
+  wire        _GEN_93 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h2B;
+  wire        _GEN_94 = _GEN_93 | lines_43_valid;
+  wire        _GEN_95 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h2C;
+  wire        _GEN_96 = _GEN_95 | lines_44_valid;
+  wire        _GEN_97 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h2D;
+  wire        _GEN_98 = _GEN_97 | lines_45_valid;
+  wire        _GEN_99 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h2E;
+  wire        _GEN_100 = _GEN_99 | lines_46_valid;
+  wire        _GEN_101 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h2F;
+  wire        _GEN_102 = _GEN_101 | lines_47_valid;
+  wire        _GEN_103 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h30;
+  wire        _GEN_104 = _GEN_103 | lines_48_valid;
+  wire        _GEN_105 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h31;
+  wire        _GEN_106 = _GEN_105 | lines_49_valid;
+  wire        _GEN_107 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h32;
+  wire        _GEN_108 = _GEN_107 | lines_50_valid;
+  wire        _GEN_109 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h33;
+  wire        _GEN_110 = _GEN_109 | lines_51_valid;
+  wire        _GEN_111 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h34;
+  wire        _GEN_112 = _GEN_111 | lines_52_valid;
+  wire        _GEN_113 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h35;
+  wire        _GEN_114 = _GEN_113 | lines_53_valid;
+  wire        _GEN_115 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h36;
+  wire        _GEN_116 = _GEN_115 | lines_54_valid;
+  wire        _GEN_117 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h37;
+  wire        _GEN_118 = _GEN_117 | lines_55_valid;
+  wire        _GEN_119 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h38;
+  wire        _GEN_120 = _GEN_119 | lines_56_valid;
+  wire        _GEN_121 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h39;
+  wire        _GEN_122 = _GEN_121 | lines_57_valid;
+  wire        _GEN_123 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h3A;
+  wire        _GEN_124 = _GEN_123 | lines_58_valid;
+  wire        _GEN_125 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h3B;
+  wire        _GEN_126 = _GEN_125 | lines_59_valid;
+  wire        _GEN_127 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h3C;
+  wire        _GEN_128 = _GEN_127 | lines_60_valid;
+  wire        _GEN_129 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h3D;
+  wire        _GEN_130 = _GEN_129 | lines_61_valid;
+  wire        _GEN_131 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & mshrAddr[8:3] == 6'h3E;
+  wire        _GEN_132 = _GEN_131 | lines_62_valid;
+  wire        _GEN_133 =
+    mshrValid & mshrState & _GEN_4 & mshrCacheable & mshrFillIdx & _GEN_6
+    & (&(mshrAddr[8:3]));
+  wire        _GEN_134 = _GEN_133 | lines_63_valid;
+  wire        _GEN_135 = mshrValid & mshrState & _GEN_4 & (~mshrCacheable | mshrFillIdx);
   wire        _GEN_136 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & reqAddr[8:3] == 6'h3E;
-  wire        _GEN_137 = ~_GEN_1 & _GEN_136 | lines_62_valid;
-  wire        _GEN_138 =
-    _filling_T_1 & io_mem_rvalid & fillIdx & _GEN_11 & (&(reqAddr[8:3]));
-  wire        _GEN_139 = ~_GEN_1 & _GEN_138 | lines_63_valid;
-  wire        _GEN_140 =
-    _killFillNow_T & casez_tmp_4 & casez_tmp_5 == io_invalidate_addr[31:9];
-  wire        _GEN_141 = _GEN_140 & io_invalidate_addr[8:3] == 6'h0;
-  wire        _GEN_142 = _GEN_140 & io_invalidate_addr[8:3] == 6'h1;
-  wire        _GEN_143 = _GEN_140 & io_invalidate_addr[8:3] == 6'h2;
-  wire        _GEN_144 = _GEN_140 & io_invalidate_addr[8:3] == 6'h3;
-  wire        _GEN_145 = _GEN_140 & io_invalidate_addr[8:3] == 6'h4;
-  wire        _GEN_146 = _GEN_140 & io_invalidate_addr[8:3] == 6'h5;
-  wire        _GEN_147 = _GEN_140 & io_invalidate_addr[8:3] == 6'h6;
-  wire        _GEN_148 = _GEN_140 & io_invalidate_addr[8:3] == 6'h7;
-  wire        _GEN_149 = _GEN_140 & io_invalidate_addr[8:3] == 6'h8;
-  wire        _GEN_150 = _GEN_140 & io_invalidate_addr[8:3] == 6'h9;
-  wire        _GEN_151 = _GEN_140 & io_invalidate_addr[8:3] == 6'hA;
-  wire        _GEN_152 = _GEN_140 & io_invalidate_addr[8:3] == 6'hB;
-  wire        _GEN_153 = _GEN_140 & io_invalidate_addr[8:3] == 6'hC;
-  wire        _GEN_154 = _GEN_140 & io_invalidate_addr[8:3] == 6'hD;
-  wire        _GEN_155 = _GEN_140 & io_invalidate_addr[8:3] == 6'hE;
-  wire        _GEN_156 = _GEN_140 & io_invalidate_addr[8:3] == 6'hF;
-  wire        _GEN_157 = _GEN_140 & io_invalidate_addr[8:3] == 6'h10;
-  wire        _GEN_158 = _GEN_140 & io_invalidate_addr[8:3] == 6'h11;
-  wire        _GEN_159 = _GEN_140 & io_invalidate_addr[8:3] == 6'h12;
-  wire        _GEN_160 = _GEN_140 & io_invalidate_addr[8:3] == 6'h13;
-  wire        _GEN_161 = _GEN_140 & io_invalidate_addr[8:3] == 6'h14;
-  wire        _GEN_162 = _GEN_140 & io_invalidate_addr[8:3] == 6'h15;
-  wire        _GEN_163 = _GEN_140 & io_invalidate_addr[8:3] == 6'h16;
-  wire        _GEN_164 = _GEN_140 & io_invalidate_addr[8:3] == 6'h17;
-  wire        _GEN_165 = _GEN_140 & io_invalidate_addr[8:3] == 6'h18;
-  wire        _GEN_166 = _GEN_140 & io_invalidate_addr[8:3] == 6'h19;
-  wire        _GEN_167 = _GEN_140 & io_invalidate_addr[8:3] == 6'h1A;
-  wire        _GEN_168 = _GEN_140 & io_invalidate_addr[8:3] == 6'h1B;
-  wire        _GEN_169 = _GEN_140 & io_invalidate_addr[8:3] == 6'h1C;
-  wire        _GEN_170 = _GEN_140 & io_invalidate_addr[8:3] == 6'h1D;
-  wire        _GEN_171 = _GEN_140 & io_invalidate_addr[8:3] == 6'h1E;
-  wire        _GEN_172 = _GEN_140 & io_invalidate_addr[8:3] == 6'h1F;
-  wire        _GEN_173 = _GEN_140 & io_invalidate_addr[8:3] == 6'h20;
-  wire        _GEN_174 = _GEN_140 & io_invalidate_addr[8:3] == 6'h21;
-  wire        _GEN_175 = _GEN_140 & io_invalidate_addr[8:3] == 6'h22;
-  wire        _GEN_176 = _GEN_140 & io_invalidate_addr[8:3] == 6'h23;
-  wire        _GEN_177 = _GEN_140 & io_invalidate_addr[8:3] == 6'h24;
-  wire        _GEN_178 = _GEN_140 & io_invalidate_addr[8:3] == 6'h25;
-  wire        _GEN_179 = _GEN_140 & io_invalidate_addr[8:3] == 6'h26;
-  wire        _GEN_180 = _GEN_140 & io_invalidate_addr[8:3] == 6'h27;
-  wire        _GEN_181 = _GEN_140 & io_invalidate_addr[8:3] == 6'h28;
-  wire        _GEN_182 = _GEN_140 & io_invalidate_addr[8:3] == 6'h29;
-  wire        _GEN_183 = _GEN_140 & io_invalidate_addr[8:3] == 6'h2A;
-  wire        _GEN_184 = _GEN_140 & io_invalidate_addr[8:3] == 6'h2B;
-  wire        _GEN_185 = _GEN_140 & io_invalidate_addr[8:3] == 6'h2C;
-  wire        _GEN_186 = _GEN_140 & io_invalidate_addr[8:3] == 6'h2D;
-  wire        _GEN_187 = _GEN_140 & io_invalidate_addr[8:3] == 6'h2E;
-  wire        _GEN_188 = _GEN_140 & io_invalidate_addr[8:3] == 6'h2F;
-  wire        _GEN_189 = _GEN_140 & io_invalidate_addr[8:3] == 6'h30;
-  wire        _GEN_190 = _GEN_140 & io_invalidate_addr[8:3] == 6'h31;
-  wire        _GEN_191 = _GEN_140 & io_invalidate_addr[8:3] == 6'h32;
-  wire        _GEN_192 = _GEN_140 & io_invalidate_addr[8:3] == 6'h33;
-  wire        _GEN_193 = _GEN_140 & io_invalidate_addr[8:3] == 6'h34;
-  wire        _GEN_194 = _GEN_140 & io_invalidate_addr[8:3] == 6'h35;
-  wire        _GEN_195 = _GEN_140 & io_invalidate_addr[8:3] == 6'h36;
-  wire        _GEN_196 = _GEN_140 & io_invalidate_addr[8:3] == 6'h37;
-  wire        _GEN_197 = _GEN_140 & io_invalidate_addr[8:3] == 6'h38;
-  wire        _GEN_198 = _GEN_140 & io_invalidate_addr[8:3] == 6'h39;
-  wire        _GEN_199 = _GEN_140 & io_invalidate_addr[8:3] == 6'h3A;
-  wire        _GEN_200 = _GEN_140 & io_invalidate_addr[8:3] == 6'h3B;
-  wire        _GEN_201 = _GEN_140 & io_invalidate_addr[8:3] == 6'h3C;
-  wire        _GEN_202 = _GEN_140 & io_invalidate_addr[8:3] == 6'h3D;
-  wire        _GEN_203 = _GEN_140 & io_invalidate_addr[8:3] == 6'h3E;
-  wire        _GEN_204 = _GEN_140 & (&(io_invalidate_addr[8:3]));
-  wire        _GEN_205 =
-    _killFillNow_T_6 & casez_tmp_6 & casez_tmp_7 == io_invalidate2_addr[31:9];
+    _killMshrNow_T_1 & casez_tmp_3 & casez_tmp_4 == io_invalidate_addr[31:9];
+  wire        _GEN_137 = _GEN_136 & io_invalidate_addr[8:3] == 6'h0;
+  wire        _GEN_138 = _GEN_136 & io_invalidate_addr[8:3] == 6'h1;
+  wire        _GEN_139 = _GEN_136 & io_invalidate_addr[8:3] == 6'h2;
+  wire        _GEN_140 = _GEN_136 & io_invalidate_addr[8:3] == 6'h3;
+  wire        _GEN_141 = _GEN_136 & io_invalidate_addr[8:3] == 6'h4;
+  wire        _GEN_142 = _GEN_136 & io_invalidate_addr[8:3] == 6'h5;
+  wire        _GEN_143 = _GEN_136 & io_invalidate_addr[8:3] == 6'h6;
+  wire        _GEN_144 = _GEN_136 & io_invalidate_addr[8:3] == 6'h7;
+  wire        _GEN_145 = _GEN_136 & io_invalidate_addr[8:3] == 6'h8;
+  wire        _GEN_146 = _GEN_136 & io_invalidate_addr[8:3] == 6'h9;
+  wire        _GEN_147 = _GEN_136 & io_invalidate_addr[8:3] == 6'hA;
+  wire        _GEN_148 = _GEN_136 & io_invalidate_addr[8:3] == 6'hB;
+  wire        _GEN_149 = _GEN_136 & io_invalidate_addr[8:3] == 6'hC;
+  wire        _GEN_150 = _GEN_136 & io_invalidate_addr[8:3] == 6'hD;
+  wire        _GEN_151 = _GEN_136 & io_invalidate_addr[8:3] == 6'hE;
+  wire        _GEN_152 = _GEN_136 & io_invalidate_addr[8:3] == 6'hF;
+  wire        _GEN_153 = _GEN_136 & io_invalidate_addr[8:3] == 6'h10;
+  wire        _GEN_154 = _GEN_136 & io_invalidate_addr[8:3] == 6'h11;
+  wire        _GEN_155 = _GEN_136 & io_invalidate_addr[8:3] == 6'h12;
+  wire        _GEN_156 = _GEN_136 & io_invalidate_addr[8:3] == 6'h13;
+  wire        _GEN_157 = _GEN_136 & io_invalidate_addr[8:3] == 6'h14;
+  wire        _GEN_158 = _GEN_136 & io_invalidate_addr[8:3] == 6'h15;
+  wire        _GEN_159 = _GEN_136 & io_invalidate_addr[8:3] == 6'h16;
+  wire        _GEN_160 = _GEN_136 & io_invalidate_addr[8:3] == 6'h17;
+  wire        _GEN_161 = _GEN_136 & io_invalidate_addr[8:3] == 6'h18;
+  wire        _GEN_162 = _GEN_136 & io_invalidate_addr[8:3] == 6'h19;
+  wire        _GEN_163 = _GEN_136 & io_invalidate_addr[8:3] == 6'h1A;
+  wire        _GEN_164 = _GEN_136 & io_invalidate_addr[8:3] == 6'h1B;
+  wire        _GEN_165 = _GEN_136 & io_invalidate_addr[8:3] == 6'h1C;
+  wire        _GEN_166 = _GEN_136 & io_invalidate_addr[8:3] == 6'h1D;
+  wire        _GEN_167 = _GEN_136 & io_invalidate_addr[8:3] == 6'h1E;
+  wire        _GEN_168 = _GEN_136 & io_invalidate_addr[8:3] == 6'h1F;
+  wire        _GEN_169 = _GEN_136 & io_invalidate_addr[8:3] == 6'h20;
+  wire        _GEN_170 = _GEN_136 & io_invalidate_addr[8:3] == 6'h21;
+  wire        _GEN_171 = _GEN_136 & io_invalidate_addr[8:3] == 6'h22;
+  wire        _GEN_172 = _GEN_136 & io_invalidate_addr[8:3] == 6'h23;
+  wire        _GEN_173 = _GEN_136 & io_invalidate_addr[8:3] == 6'h24;
+  wire        _GEN_174 = _GEN_136 & io_invalidate_addr[8:3] == 6'h25;
+  wire        _GEN_175 = _GEN_136 & io_invalidate_addr[8:3] == 6'h26;
+  wire        _GEN_176 = _GEN_136 & io_invalidate_addr[8:3] == 6'h27;
+  wire        _GEN_177 = _GEN_136 & io_invalidate_addr[8:3] == 6'h28;
+  wire        _GEN_178 = _GEN_136 & io_invalidate_addr[8:3] == 6'h29;
+  wire        _GEN_179 = _GEN_136 & io_invalidate_addr[8:3] == 6'h2A;
+  wire        _GEN_180 = _GEN_136 & io_invalidate_addr[8:3] == 6'h2B;
+  wire        _GEN_181 = _GEN_136 & io_invalidate_addr[8:3] == 6'h2C;
+  wire        _GEN_182 = _GEN_136 & io_invalidate_addr[8:3] == 6'h2D;
+  wire        _GEN_183 = _GEN_136 & io_invalidate_addr[8:3] == 6'h2E;
+  wire        _GEN_184 = _GEN_136 & io_invalidate_addr[8:3] == 6'h2F;
+  wire        _GEN_185 = _GEN_136 & io_invalidate_addr[8:3] == 6'h30;
+  wire        _GEN_186 = _GEN_136 & io_invalidate_addr[8:3] == 6'h31;
+  wire        _GEN_187 = _GEN_136 & io_invalidate_addr[8:3] == 6'h32;
+  wire        _GEN_188 = _GEN_136 & io_invalidate_addr[8:3] == 6'h33;
+  wire        _GEN_189 = _GEN_136 & io_invalidate_addr[8:3] == 6'h34;
+  wire        _GEN_190 = _GEN_136 & io_invalidate_addr[8:3] == 6'h35;
+  wire        _GEN_191 = _GEN_136 & io_invalidate_addr[8:3] == 6'h36;
+  wire        _GEN_192 = _GEN_136 & io_invalidate_addr[8:3] == 6'h37;
+  wire        _GEN_193 = _GEN_136 & io_invalidate_addr[8:3] == 6'h38;
+  wire        _GEN_194 = _GEN_136 & io_invalidate_addr[8:3] == 6'h39;
+  wire        _GEN_195 = _GEN_136 & io_invalidate_addr[8:3] == 6'h3A;
+  wire        _GEN_196 = _GEN_136 & io_invalidate_addr[8:3] == 6'h3B;
+  wire        _GEN_197 = _GEN_136 & io_invalidate_addr[8:3] == 6'h3C;
+  wire        _GEN_198 = _GEN_136 & io_invalidate_addr[8:3] == 6'h3D;
+  wire        _GEN_199 = _GEN_136 & io_invalidate_addr[8:3] == 6'h3E;
+  wire        _GEN_200 = _GEN_136 & (&(io_invalidate_addr[8:3]));
+  wire        _GEN_201 =
+    _killMshrNow_T_6 & casez_tmp_5 & casez_tmp_6 == io_invalidate2_addr[31:9];
   always @(posedge clock) begin
     if (reset) begin
       lines_0_valid <= 1'h0;
@@ -1924,771 +1979,669 @@ module DCache(
       lines_63_tag <= 23'h0;
       lines_63_data_0 <= 32'h0;
       lines_63_data_1 <= 32'h0;
-      fillLine_0 <= 32'h0;
-      fillLine_1 <= 32'h0;
-      fillIdx <= 1'h0;
-      reqAddr <= 32'h0;
-      respData <= 32'h0;
-      respResp <= 2'h0;
-      missResp <= 2'h0;
-      fillKilled <= 1'h0;
-      state <= 3'h0;
+      hitRespValid <= 1'h0;
+      hitRespData <= 32'h0;
+      hitRespId <= 4'h0;
+      missRespValid <= 1'h0;
+      missRespData <= 32'h0;
+      missRespResp <= 2'h0;
+      missRespId <= 4'h0;
+      mshrValid <= 1'h0;
+      mshrCacheable <= 1'h0;
+      mshrAddr <= 32'h0;
+      mshrId <= 4'h0;
+      mshrFillIdx <= 1'h0;
+      mshrFillLine_0 <= 32'h0;
+      mshrFillLine_1 <= 32'h0;
+      mshrResp <= 2'h0;
+      mshrKilled <= 1'h0;
+      mshrState <= 1'h0;
     end
     else begin
       lines_0_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h0 | _GEN_141) & _GEN_13
-          : ~_GEN_141 & _GEN_13;
-      if (_GEN_1 | ~_GEN_12) begin
-      end
-      else begin
-        lines_0_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h0 | _GEN_137) & _GEN_8
+          : ~_GEN_137 & _GEN_8;
+      if (_GEN_7) begin
+        lines_0_tag <= mshrAddr[31:9];
         lines_0_data_0 <= nextLine_0;
         lines_0_data_1 <= nextLine_1;
       end
       lines_1_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h1 | _GEN_142) & _GEN_15
-          : ~_GEN_142 & _GEN_15;
-      if (_GEN_1 | ~_GEN_14) begin
-      end
-      else begin
-        lines_1_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h1 | _GEN_138) & _GEN_10
+          : ~_GEN_138 & _GEN_10;
+      if (_GEN_9) begin
+        lines_1_tag <= mshrAddr[31:9];
         lines_1_data_0 <= nextLine_0;
         lines_1_data_1 <= nextLine_1;
       end
       lines_2_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h2 | _GEN_143) & _GEN_17
-          : ~_GEN_143 & _GEN_17;
-      if (_GEN_1 | ~_GEN_16) begin
-      end
-      else begin
-        lines_2_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h2 | _GEN_139) & _GEN_12
+          : ~_GEN_139 & _GEN_12;
+      if (_GEN_11) begin
+        lines_2_tag <= mshrAddr[31:9];
         lines_2_data_0 <= nextLine_0;
         lines_2_data_1 <= nextLine_1;
       end
       lines_3_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h3 | _GEN_144) & _GEN_19
-          : ~_GEN_144 & _GEN_19;
-      if (_GEN_1 | ~_GEN_18) begin
-      end
-      else begin
-        lines_3_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h3 | _GEN_140) & _GEN_14
+          : ~_GEN_140 & _GEN_14;
+      if (_GEN_13) begin
+        lines_3_tag <= mshrAddr[31:9];
         lines_3_data_0 <= nextLine_0;
         lines_3_data_1 <= nextLine_1;
       end
       lines_4_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h4 | _GEN_145) & _GEN_21
-          : ~_GEN_145 & _GEN_21;
-      if (_GEN_1 | ~_GEN_20) begin
-      end
-      else begin
-        lines_4_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h4 | _GEN_141) & _GEN_16
+          : ~_GEN_141 & _GEN_16;
+      if (_GEN_15) begin
+        lines_4_tag <= mshrAddr[31:9];
         lines_4_data_0 <= nextLine_0;
         lines_4_data_1 <= nextLine_1;
       end
       lines_5_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h5 | _GEN_146) & _GEN_23
-          : ~_GEN_146 & _GEN_23;
-      if (_GEN_1 | ~_GEN_22) begin
-      end
-      else begin
-        lines_5_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h5 | _GEN_142) & _GEN_18
+          : ~_GEN_142 & _GEN_18;
+      if (_GEN_17) begin
+        lines_5_tag <= mshrAddr[31:9];
         lines_5_data_0 <= nextLine_0;
         lines_5_data_1 <= nextLine_1;
       end
       lines_6_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h6 | _GEN_147) & _GEN_25
-          : ~_GEN_147 & _GEN_25;
-      if (_GEN_1 | ~_GEN_24) begin
-      end
-      else begin
-        lines_6_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h6 | _GEN_143) & _GEN_20
+          : ~_GEN_143 & _GEN_20;
+      if (_GEN_19) begin
+        lines_6_tag <= mshrAddr[31:9];
         lines_6_data_0 <= nextLine_0;
         lines_6_data_1 <= nextLine_1;
       end
       lines_7_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h7 | _GEN_148) & _GEN_27
-          : ~_GEN_148 & _GEN_27;
-      if (_GEN_1 | ~_GEN_26) begin
-      end
-      else begin
-        lines_7_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h7 | _GEN_144) & _GEN_22
+          : ~_GEN_144 & _GEN_22;
+      if (_GEN_21) begin
+        lines_7_tag <= mshrAddr[31:9];
         lines_7_data_0 <= nextLine_0;
         lines_7_data_1 <= nextLine_1;
       end
       lines_8_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h8 | _GEN_149) & _GEN_29
-          : ~_GEN_149 & _GEN_29;
-      if (_GEN_1 | ~_GEN_28) begin
-      end
-      else begin
-        lines_8_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h8 | _GEN_145) & _GEN_24
+          : ~_GEN_145 & _GEN_24;
+      if (_GEN_23) begin
+        lines_8_tag <= mshrAddr[31:9];
         lines_8_data_0 <= nextLine_0;
         lines_8_data_1 <= nextLine_1;
       end
       lines_9_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h9 | _GEN_150) & _GEN_31
-          : ~_GEN_150 & _GEN_31;
-      if (_GEN_1 | ~_GEN_30) begin
-      end
-      else begin
-        lines_9_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h9 | _GEN_146) & _GEN_26
+          : ~_GEN_146 & _GEN_26;
+      if (_GEN_25) begin
+        lines_9_tag <= mshrAddr[31:9];
         lines_9_data_0 <= nextLine_0;
         lines_9_data_1 <= nextLine_1;
       end
       lines_10_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'hA | _GEN_151) & _GEN_33
-          : ~_GEN_151 & _GEN_33;
-      if (_GEN_1 | ~_GEN_32) begin
-      end
-      else begin
-        lines_10_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'hA | _GEN_147) & _GEN_28
+          : ~_GEN_147 & _GEN_28;
+      if (_GEN_27) begin
+        lines_10_tag <= mshrAddr[31:9];
         lines_10_data_0 <= nextLine_0;
         lines_10_data_1 <= nextLine_1;
       end
       lines_11_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'hB | _GEN_152) & _GEN_35
-          : ~_GEN_152 & _GEN_35;
-      if (_GEN_1 | ~_GEN_34) begin
-      end
-      else begin
-        lines_11_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'hB | _GEN_148) & _GEN_30
+          : ~_GEN_148 & _GEN_30;
+      if (_GEN_29) begin
+        lines_11_tag <= mshrAddr[31:9];
         lines_11_data_0 <= nextLine_0;
         lines_11_data_1 <= nextLine_1;
       end
       lines_12_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'hC | _GEN_153) & _GEN_37
-          : ~_GEN_153 & _GEN_37;
-      if (_GEN_1 | ~_GEN_36) begin
-      end
-      else begin
-        lines_12_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'hC | _GEN_149) & _GEN_32
+          : ~_GEN_149 & _GEN_32;
+      if (_GEN_31) begin
+        lines_12_tag <= mshrAddr[31:9];
         lines_12_data_0 <= nextLine_0;
         lines_12_data_1 <= nextLine_1;
       end
       lines_13_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'hD | _GEN_154) & _GEN_39
-          : ~_GEN_154 & _GEN_39;
-      if (_GEN_1 | ~_GEN_38) begin
-      end
-      else begin
-        lines_13_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'hD | _GEN_150) & _GEN_34
+          : ~_GEN_150 & _GEN_34;
+      if (_GEN_33) begin
+        lines_13_tag <= mshrAddr[31:9];
         lines_13_data_0 <= nextLine_0;
         lines_13_data_1 <= nextLine_1;
       end
       lines_14_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'hE | _GEN_155) & _GEN_41
-          : ~_GEN_155 & _GEN_41;
-      if (_GEN_1 | ~_GEN_40) begin
-      end
-      else begin
-        lines_14_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'hE | _GEN_151) & _GEN_36
+          : ~_GEN_151 & _GEN_36;
+      if (_GEN_35) begin
+        lines_14_tag <= mshrAddr[31:9];
         lines_14_data_0 <= nextLine_0;
         lines_14_data_1 <= nextLine_1;
       end
       lines_15_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'hF | _GEN_156) & _GEN_43
-          : ~_GEN_156 & _GEN_43;
-      if (_GEN_1 | ~_GEN_42) begin
-      end
-      else begin
-        lines_15_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'hF | _GEN_152) & _GEN_38
+          : ~_GEN_152 & _GEN_38;
+      if (_GEN_37) begin
+        lines_15_tag <= mshrAddr[31:9];
         lines_15_data_0 <= nextLine_0;
         lines_15_data_1 <= nextLine_1;
       end
       lines_16_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h10 | _GEN_157) & _GEN_45
-          : ~_GEN_157 & _GEN_45;
-      if (_GEN_1 | ~_GEN_44) begin
-      end
-      else begin
-        lines_16_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h10 | _GEN_153) & _GEN_40
+          : ~_GEN_153 & _GEN_40;
+      if (_GEN_39) begin
+        lines_16_tag <= mshrAddr[31:9];
         lines_16_data_0 <= nextLine_0;
         lines_16_data_1 <= nextLine_1;
       end
       lines_17_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h11 | _GEN_158) & _GEN_47
-          : ~_GEN_158 & _GEN_47;
-      if (_GEN_1 | ~_GEN_46) begin
-      end
-      else begin
-        lines_17_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h11 | _GEN_154) & _GEN_42
+          : ~_GEN_154 & _GEN_42;
+      if (_GEN_41) begin
+        lines_17_tag <= mshrAddr[31:9];
         lines_17_data_0 <= nextLine_0;
         lines_17_data_1 <= nextLine_1;
       end
       lines_18_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h12 | _GEN_159) & _GEN_49
-          : ~_GEN_159 & _GEN_49;
-      if (_GEN_1 | ~_GEN_48) begin
-      end
-      else begin
-        lines_18_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h12 | _GEN_155) & _GEN_44
+          : ~_GEN_155 & _GEN_44;
+      if (_GEN_43) begin
+        lines_18_tag <= mshrAddr[31:9];
         lines_18_data_0 <= nextLine_0;
         lines_18_data_1 <= nextLine_1;
       end
       lines_19_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h13 | _GEN_160) & _GEN_51
-          : ~_GEN_160 & _GEN_51;
-      if (_GEN_1 | ~_GEN_50) begin
-      end
-      else begin
-        lines_19_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h13 | _GEN_156) & _GEN_46
+          : ~_GEN_156 & _GEN_46;
+      if (_GEN_45) begin
+        lines_19_tag <= mshrAddr[31:9];
         lines_19_data_0 <= nextLine_0;
         lines_19_data_1 <= nextLine_1;
       end
       lines_20_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h14 | _GEN_161) & _GEN_53
-          : ~_GEN_161 & _GEN_53;
-      if (_GEN_1 | ~_GEN_52) begin
-      end
-      else begin
-        lines_20_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h14 | _GEN_157) & _GEN_48
+          : ~_GEN_157 & _GEN_48;
+      if (_GEN_47) begin
+        lines_20_tag <= mshrAddr[31:9];
         lines_20_data_0 <= nextLine_0;
         lines_20_data_1 <= nextLine_1;
       end
       lines_21_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h15 | _GEN_162) & _GEN_55
-          : ~_GEN_162 & _GEN_55;
-      if (_GEN_1 | ~_GEN_54) begin
-      end
-      else begin
-        lines_21_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h15 | _GEN_158) & _GEN_50
+          : ~_GEN_158 & _GEN_50;
+      if (_GEN_49) begin
+        lines_21_tag <= mshrAddr[31:9];
         lines_21_data_0 <= nextLine_0;
         lines_21_data_1 <= nextLine_1;
       end
       lines_22_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h16 | _GEN_163) & _GEN_57
-          : ~_GEN_163 & _GEN_57;
-      if (_GEN_1 | ~_GEN_56) begin
-      end
-      else begin
-        lines_22_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h16 | _GEN_159) & _GEN_52
+          : ~_GEN_159 & _GEN_52;
+      if (_GEN_51) begin
+        lines_22_tag <= mshrAddr[31:9];
         lines_22_data_0 <= nextLine_0;
         lines_22_data_1 <= nextLine_1;
       end
       lines_23_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h17 | _GEN_164) & _GEN_59
-          : ~_GEN_164 & _GEN_59;
-      if (_GEN_1 | ~_GEN_58) begin
-      end
-      else begin
-        lines_23_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h17 | _GEN_160) & _GEN_54
+          : ~_GEN_160 & _GEN_54;
+      if (_GEN_53) begin
+        lines_23_tag <= mshrAddr[31:9];
         lines_23_data_0 <= nextLine_0;
         lines_23_data_1 <= nextLine_1;
       end
       lines_24_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h18 | _GEN_165) & _GEN_61
-          : ~_GEN_165 & _GEN_61;
-      if (_GEN_1 | ~_GEN_60) begin
-      end
-      else begin
-        lines_24_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h18 | _GEN_161) & _GEN_56
+          : ~_GEN_161 & _GEN_56;
+      if (_GEN_55) begin
+        lines_24_tag <= mshrAddr[31:9];
         lines_24_data_0 <= nextLine_0;
         lines_24_data_1 <= nextLine_1;
       end
       lines_25_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h19 | _GEN_166) & _GEN_63
-          : ~_GEN_166 & _GEN_63;
-      if (_GEN_1 | ~_GEN_62) begin
-      end
-      else begin
-        lines_25_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h19 | _GEN_162) & _GEN_58
+          : ~_GEN_162 & _GEN_58;
+      if (_GEN_57) begin
+        lines_25_tag <= mshrAddr[31:9];
         lines_25_data_0 <= nextLine_0;
         lines_25_data_1 <= nextLine_1;
       end
       lines_26_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h1A | _GEN_167) & _GEN_65
-          : ~_GEN_167 & _GEN_65;
-      if (_GEN_1 | ~_GEN_64) begin
-      end
-      else begin
-        lines_26_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h1A | _GEN_163) & _GEN_60
+          : ~_GEN_163 & _GEN_60;
+      if (_GEN_59) begin
+        lines_26_tag <= mshrAddr[31:9];
         lines_26_data_0 <= nextLine_0;
         lines_26_data_1 <= nextLine_1;
       end
       lines_27_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h1B | _GEN_168) & _GEN_67
-          : ~_GEN_168 & _GEN_67;
-      if (_GEN_1 | ~_GEN_66) begin
-      end
-      else begin
-        lines_27_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h1B | _GEN_164) & _GEN_62
+          : ~_GEN_164 & _GEN_62;
+      if (_GEN_61) begin
+        lines_27_tag <= mshrAddr[31:9];
         lines_27_data_0 <= nextLine_0;
         lines_27_data_1 <= nextLine_1;
       end
       lines_28_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h1C | _GEN_169) & _GEN_69
-          : ~_GEN_169 & _GEN_69;
-      if (_GEN_1 | ~_GEN_68) begin
-      end
-      else begin
-        lines_28_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h1C | _GEN_165) & _GEN_64
+          : ~_GEN_165 & _GEN_64;
+      if (_GEN_63) begin
+        lines_28_tag <= mshrAddr[31:9];
         lines_28_data_0 <= nextLine_0;
         lines_28_data_1 <= nextLine_1;
       end
       lines_29_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h1D | _GEN_170) & _GEN_71
-          : ~_GEN_170 & _GEN_71;
-      if (_GEN_1 | ~_GEN_70) begin
-      end
-      else begin
-        lines_29_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h1D | _GEN_166) & _GEN_66
+          : ~_GEN_166 & _GEN_66;
+      if (_GEN_65) begin
+        lines_29_tag <= mshrAddr[31:9];
         lines_29_data_0 <= nextLine_0;
         lines_29_data_1 <= nextLine_1;
       end
       lines_30_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h1E | _GEN_171) & _GEN_73
-          : ~_GEN_171 & _GEN_73;
-      if (_GEN_1 | ~_GEN_72) begin
-      end
-      else begin
-        lines_30_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h1E | _GEN_167) & _GEN_68
+          : ~_GEN_167 & _GEN_68;
+      if (_GEN_67) begin
+        lines_30_tag <= mshrAddr[31:9];
         lines_30_data_0 <= nextLine_0;
         lines_30_data_1 <= nextLine_1;
       end
       lines_31_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h1F | _GEN_172) & _GEN_75
-          : ~_GEN_172 & _GEN_75;
-      if (_GEN_1 | ~_GEN_74) begin
-      end
-      else begin
-        lines_31_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h1F | _GEN_168) & _GEN_70
+          : ~_GEN_168 & _GEN_70;
+      if (_GEN_69) begin
+        lines_31_tag <= mshrAddr[31:9];
         lines_31_data_0 <= nextLine_0;
         lines_31_data_1 <= nextLine_1;
       end
       lines_32_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h20 | _GEN_173) & _GEN_77
-          : ~_GEN_173 & _GEN_77;
-      if (_GEN_1 | ~_GEN_76) begin
-      end
-      else begin
-        lines_32_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h20 | _GEN_169) & _GEN_72
+          : ~_GEN_169 & _GEN_72;
+      if (_GEN_71) begin
+        lines_32_tag <= mshrAddr[31:9];
         lines_32_data_0 <= nextLine_0;
         lines_32_data_1 <= nextLine_1;
       end
       lines_33_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h21 | _GEN_174) & _GEN_79
-          : ~_GEN_174 & _GEN_79;
-      if (_GEN_1 | ~_GEN_78) begin
-      end
-      else begin
-        lines_33_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h21 | _GEN_170) & _GEN_74
+          : ~_GEN_170 & _GEN_74;
+      if (_GEN_73) begin
+        lines_33_tag <= mshrAddr[31:9];
         lines_33_data_0 <= nextLine_0;
         lines_33_data_1 <= nextLine_1;
       end
       lines_34_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h22 | _GEN_175) & _GEN_81
-          : ~_GEN_175 & _GEN_81;
-      if (_GEN_1 | ~_GEN_80) begin
-      end
-      else begin
-        lines_34_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h22 | _GEN_171) & _GEN_76
+          : ~_GEN_171 & _GEN_76;
+      if (_GEN_75) begin
+        lines_34_tag <= mshrAddr[31:9];
         lines_34_data_0 <= nextLine_0;
         lines_34_data_1 <= nextLine_1;
       end
       lines_35_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h23 | _GEN_176) & _GEN_83
-          : ~_GEN_176 & _GEN_83;
-      if (_GEN_1 | ~_GEN_82) begin
-      end
-      else begin
-        lines_35_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h23 | _GEN_172) & _GEN_78
+          : ~_GEN_172 & _GEN_78;
+      if (_GEN_77) begin
+        lines_35_tag <= mshrAddr[31:9];
         lines_35_data_0 <= nextLine_0;
         lines_35_data_1 <= nextLine_1;
       end
       lines_36_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h24 | _GEN_177) & _GEN_85
-          : ~_GEN_177 & _GEN_85;
-      if (_GEN_1 | ~_GEN_84) begin
-      end
-      else begin
-        lines_36_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h24 | _GEN_173) & _GEN_80
+          : ~_GEN_173 & _GEN_80;
+      if (_GEN_79) begin
+        lines_36_tag <= mshrAddr[31:9];
         lines_36_data_0 <= nextLine_0;
         lines_36_data_1 <= nextLine_1;
       end
       lines_37_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h25 | _GEN_178) & _GEN_87
-          : ~_GEN_178 & _GEN_87;
-      if (_GEN_1 | ~_GEN_86) begin
-      end
-      else begin
-        lines_37_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h25 | _GEN_174) & _GEN_82
+          : ~_GEN_174 & _GEN_82;
+      if (_GEN_81) begin
+        lines_37_tag <= mshrAddr[31:9];
         lines_37_data_0 <= nextLine_0;
         lines_37_data_1 <= nextLine_1;
       end
       lines_38_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h26 | _GEN_179) & _GEN_89
-          : ~_GEN_179 & _GEN_89;
-      if (_GEN_1 | ~_GEN_88) begin
-      end
-      else begin
-        lines_38_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h26 | _GEN_175) & _GEN_84
+          : ~_GEN_175 & _GEN_84;
+      if (_GEN_83) begin
+        lines_38_tag <= mshrAddr[31:9];
         lines_38_data_0 <= nextLine_0;
         lines_38_data_1 <= nextLine_1;
       end
       lines_39_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h27 | _GEN_180) & _GEN_91
-          : ~_GEN_180 & _GEN_91;
-      if (_GEN_1 | ~_GEN_90) begin
-      end
-      else begin
-        lines_39_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h27 | _GEN_176) & _GEN_86
+          : ~_GEN_176 & _GEN_86;
+      if (_GEN_85) begin
+        lines_39_tag <= mshrAddr[31:9];
         lines_39_data_0 <= nextLine_0;
         lines_39_data_1 <= nextLine_1;
       end
       lines_40_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h28 | _GEN_181) & _GEN_93
-          : ~_GEN_181 & _GEN_93;
-      if (_GEN_1 | ~_GEN_92) begin
-      end
-      else begin
-        lines_40_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h28 | _GEN_177) & _GEN_88
+          : ~_GEN_177 & _GEN_88;
+      if (_GEN_87) begin
+        lines_40_tag <= mshrAddr[31:9];
         lines_40_data_0 <= nextLine_0;
         lines_40_data_1 <= nextLine_1;
       end
       lines_41_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h29 | _GEN_182) & _GEN_95
-          : ~_GEN_182 & _GEN_95;
-      if (_GEN_1 | ~_GEN_94) begin
-      end
-      else begin
-        lines_41_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h29 | _GEN_178) & _GEN_90
+          : ~_GEN_178 & _GEN_90;
+      if (_GEN_89) begin
+        lines_41_tag <= mshrAddr[31:9];
         lines_41_data_0 <= nextLine_0;
         lines_41_data_1 <= nextLine_1;
       end
       lines_42_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h2A | _GEN_183) & _GEN_97
-          : ~_GEN_183 & _GEN_97;
-      if (_GEN_1 | ~_GEN_96) begin
-      end
-      else begin
-        lines_42_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h2A | _GEN_179) & _GEN_92
+          : ~_GEN_179 & _GEN_92;
+      if (_GEN_91) begin
+        lines_42_tag <= mshrAddr[31:9];
         lines_42_data_0 <= nextLine_0;
         lines_42_data_1 <= nextLine_1;
       end
       lines_43_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h2B | _GEN_184) & _GEN_99
-          : ~_GEN_184 & _GEN_99;
-      if (_GEN_1 | ~_GEN_98) begin
-      end
-      else begin
-        lines_43_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h2B | _GEN_180) & _GEN_94
+          : ~_GEN_180 & _GEN_94;
+      if (_GEN_93) begin
+        lines_43_tag <= mshrAddr[31:9];
         lines_43_data_0 <= nextLine_0;
         lines_43_data_1 <= nextLine_1;
       end
       lines_44_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h2C | _GEN_185) & _GEN_101
-          : ~_GEN_185 & _GEN_101;
-      if (_GEN_1 | ~_GEN_100) begin
-      end
-      else begin
-        lines_44_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h2C | _GEN_181) & _GEN_96
+          : ~_GEN_181 & _GEN_96;
+      if (_GEN_95) begin
+        lines_44_tag <= mshrAddr[31:9];
         lines_44_data_0 <= nextLine_0;
         lines_44_data_1 <= nextLine_1;
       end
       lines_45_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h2D | _GEN_186) & _GEN_103
-          : ~_GEN_186 & _GEN_103;
-      if (_GEN_1 | ~_GEN_102) begin
-      end
-      else begin
-        lines_45_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h2D | _GEN_182) & _GEN_98
+          : ~_GEN_182 & _GEN_98;
+      if (_GEN_97) begin
+        lines_45_tag <= mshrAddr[31:9];
         lines_45_data_0 <= nextLine_0;
         lines_45_data_1 <= nextLine_1;
       end
       lines_46_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h2E | _GEN_187) & _GEN_105
-          : ~_GEN_187 & _GEN_105;
-      if (_GEN_1 | ~_GEN_104) begin
-      end
-      else begin
-        lines_46_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h2E | _GEN_183) & _GEN_100
+          : ~_GEN_183 & _GEN_100;
+      if (_GEN_99) begin
+        lines_46_tag <= mshrAddr[31:9];
         lines_46_data_0 <= nextLine_0;
         lines_46_data_1 <= nextLine_1;
       end
       lines_47_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h2F | _GEN_188) & _GEN_107
-          : ~_GEN_188 & _GEN_107;
-      if (_GEN_1 | ~_GEN_106) begin
-      end
-      else begin
-        lines_47_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h2F | _GEN_184) & _GEN_102
+          : ~_GEN_184 & _GEN_102;
+      if (_GEN_101) begin
+        lines_47_tag <= mshrAddr[31:9];
         lines_47_data_0 <= nextLine_0;
         lines_47_data_1 <= nextLine_1;
       end
       lines_48_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h30 | _GEN_189) & _GEN_109
-          : ~_GEN_189 & _GEN_109;
-      if (_GEN_1 | ~_GEN_108) begin
-      end
-      else begin
-        lines_48_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h30 | _GEN_185) & _GEN_104
+          : ~_GEN_185 & _GEN_104;
+      if (_GEN_103) begin
+        lines_48_tag <= mshrAddr[31:9];
         lines_48_data_0 <= nextLine_0;
         lines_48_data_1 <= nextLine_1;
       end
       lines_49_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h31 | _GEN_190) & _GEN_111
-          : ~_GEN_190 & _GEN_111;
-      if (_GEN_1 | ~_GEN_110) begin
-      end
-      else begin
-        lines_49_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h31 | _GEN_186) & _GEN_106
+          : ~_GEN_186 & _GEN_106;
+      if (_GEN_105) begin
+        lines_49_tag <= mshrAddr[31:9];
         lines_49_data_0 <= nextLine_0;
         lines_49_data_1 <= nextLine_1;
       end
       lines_50_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h32 | _GEN_191) & _GEN_113
-          : ~_GEN_191 & _GEN_113;
-      if (_GEN_1 | ~_GEN_112) begin
-      end
-      else begin
-        lines_50_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h32 | _GEN_187) & _GEN_108
+          : ~_GEN_187 & _GEN_108;
+      if (_GEN_107) begin
+        lines_50_tag <= mshrAddr[31:9];
         lines_50_data_0 <= nextLine_0;
         lines_50_data_1 <= nextLine_1;
       end
       lines_51_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h33 | _GEN_192) & _GEN_115
-          : ~_GEN_192 & _GEN_115;
-      if (_GEN_1 | ~_GEN_114) begin
-      end
-      else begin
-        lines_51_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h33 | _GEN_188) & _GEN_110
+          : ~_GEN_188 & _GEN_110;
+      if (_GEN_109) begin
+        lines_51_tag <= mshrAddr[31:9];
         lines_51_data_0 <= nextLine_0;
         lines_51_data_1 <= nextLine_1;
       end
       lines_52_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h34 | _GEN_193) & _GEN_117
-          : ~_GEN_193 & _GEN_117;
-      if (_GEN_1 | ~_GEN_116) begin
-      end
-      else begin
-        lines_52_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h34 | _GEN_189) & _GEN_112
+          : ~_GEN_189 & _GEN_112;
+      if (_GEN_111) begin
+        lines_52_tag <= mshrAddr[31:9];
         lines_52_data_0 <= nextLine_0;
         lines_52_data_1 <= nextLine_1;
       end
       lines_53_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h35 | _GEN_194) & _GEN_119
-          : ~_GEN_194 & _GEN_119;
-      if (_GEN_1 | ~_GEN_118) begin
-      end
-      else begin
-        lines_53_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h35 | _GEN_190) & _GEN_114
+          : ~_GEN_190 & _GEN_114;
+      if (_GEN_113) begin
+        lines_53_tag <= mshrAddr[31:9];
         lines_53_data_0 <= nextLine_0;
         lines_53_data_1 <= nextLine_1;
       end
       lines_54_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h36 | _GEN_195) & _GEN_121
-          : ~_GEN_195 & _GEN_121;
-      if (_GEN_1 | ~_GEN_120) begin
-      end
-      else begin
-        lines_54_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h36 | _GEN_191) & _GEN_116
+          : ~_GEN_191 & _GEN_116;
+      if (_GEN_115) begin
+        lines_54_tag <= mshrAddr[31:9];
         lines_54_data_0 <= nextLine_0;
         lines_54_data_1 <= nextLine_1;
       end
       lines_55_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h37 | _GEN_196) & _GEN_123
-          : ~_GEN_196 & _GEN_123;
-      if (_GEN_1 | ~_GEN_122) begin
-      end
-      else begin
-        lines_55_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h37 | _GEN_192) & _GEN_118
+          : ~_GEN_192 & _GEN_118;
+      if (_GEN_117) begin
+        lines_55_tag <= mshrAddr[31:9];
         lines_55_data_0 <= nextLine_0;
         lines_55_data_1 <= nextLine_1;
       end
       lines_56_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h38 | _GEN_197) & _GEN_125
-          : ~_GEN_197 & _GEN_125;
-      if (_GEN_1 | ~_GEN_124) begin
-      end
-      else begin
-        lines_56_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h38 | _GEN_193) & _GEN_120
+          : ~_GEN_193 & _GEN_120;
+      if (_GEN_119) begin
+        lines_56_tag <= mshrAddr[31:9];
         lines_56_data_0 <= nextLine_0;
         lines_56_data_1 <= nextLine_1;
       end
       lines_57_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h39 | _GEN_198) & _GEN_127
-          : ~_GEN_198 & _GEN_127;
-      if (_GEN_1 | ~_GEN_126) begin
-      end
-      else begin
-        lines_57_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h39 | _GEN_194) & _GEN_122
+          : ~_GEN_194 & _GEN_122;
+      if (_GEN_121) begin
+        lines_57_tag <= mshrAddr[31:9];
         lines_57_data_0 <= nextLine_0;
         lines_57_data_1 <= nextLine_1;
       end
       lines_58_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h3A | _GEN_199) & _GEN_129
-          : ~_GEN_199 & _GEN_129;
-      if (_GEN_1 | ~_GEN_128) begin
-      end
-      else begin
-        lines_58_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h3A | _GEN_195) & _GEN_124
+          : ~_GEN_195 & _GEN_124;
+      if (_GEN_123) begin
+        lines_58_tag <= mshrAddr[31:9];
         lines_58_data_0 <= nextLine_0;
         lines_58_data_1 <= nextLine_1;
       end
       lines_59_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h3B | _GEN_200) & _GEN_131
-          : ~_GEN_200 & _GEN_131;
-      if (_GEN_1 | ~_GEN_130) begin
-      end
-      else begin
-        lines_59_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h3B | _GEN_196) & _GEN_126
+          : ~_GEN_196 & _GEN_126;
+      if (_GEN_125) begin
+        lines_59_tag <= mshrAddr[31:9];
         lines_59_data_0 <= nextLine_0;
         lines_59_data_1 <= nextLine_1;
       end
       lines_60_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h3C | _GEN_201) & _GEN_133
-          : ~_GEN_201 & _GEN_133;
-      if (_GEN_1 | ~_GEN_132) begin
-      end
-      else begin
-        lines_60_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h3C | _GEN_197) & _GEN_128
+          : ~_GEN_197 & _GEN_128;
+      if (_GEN_127) begin
+        lines_60_tag <= mshrAddr[31:9];
         lines_60_data_0 <= nextLine_0;
         lines_60_data_1 <= nextLine_1;
       end
       lines_61_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h3D | _GEN_202) & _GEN_135
-          : ~_GEN_202 & _GEN_135;
-      if (_GEN_1 | ~_GEN_134) begin
-      end
-      else begin
-        lines_61_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h3D | _GEN_198) & _GEN_130
+          : ~_GEN_198 & _GEN_130;
+      if (_GEN_129) begin
+        lines_61_tag <= mshrAddr[31:9];
         lines_61_data_0 <= nextLine_0;
         lines_61_data_1 <= nextLine_1;
       end
       lines_62_valid <=
-        _GEN_205
-          ? ~(io_invalidate2_addr[8:3] == 6'h3E | _GEN_203) & _GEN_137
-          : ~_GEN_203 & _GEN_137;
-      if (_GEN_1 | ~_GEN_136) begin
-      end
-      else begin
-        lines_62_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~(io_invalidate2_addr[8:3] == 6'h3E | _GEN_199) & _GEN_132
+          : ~_GEN_199 & _GEN_132;
+      if (_GEN_131) begin
+        lines_62_tag <= mshrAddr[31:9];
         lines_62_data_0 <= nextLine_0;
         lines_62_data_1 <= nextLine_1;
       end
       lines_63_valid <=
-        _GEN_205
-          ? ~((&(io_invalidate2_addr[8:3])) | _GEN_204) & _GEN_139
-          : ~_GEN_204 & _GEN_139;
-      if (_GEN_1 | ~_GEN_138) begin
-      end
-      else begin
-        lines_63_tag <= reqAddr[31:9];
+        _GEN_201
+          ? ~((&(io_invalidate2_addr[8:3])) | _GEN_200) & _GEN_134
+          : ~_GEN_200 & _GEN_134;
+      if (_GEN_133) begin
+        lines_63_tag <= mshrAddr[31:9];
         lines_63_data_0 <= nextLine_0;
         lines_63_data_1 <= nextLine_1;
       end
-      if (io_cpu_arready_0) begin
-        if (_GEN_10) begin
+      hitRespValid <= _GEN | ~(cpuRespFire & hitRespValid) & hitRespValid;
+      if (_GEN) begin
+        hitRespData <= io_cpu_araddr[2] ? casez_tmp_2 : casez_tmp_1;
+        hitRespId <= io_cpu_arid;
+      end
+      missRespValid <= _GEN_135 | (~cpuRespFire | hitRespValid) & missRespValid;
+      if (mshrValid & mshrState & _GEN_4) begin
+        if (mshrCacheable) begin
+          if (mshrFillIdx) begin
+            missRespData <= mshrAddr[2] ? nextLine_1 : nextLine_0;
+            missRespResp <= (|io_mem_rresp) ? io_mem_rresp : mshrResp;
+          end
         end
         else begin
-          fillLine_0 <= 32'h0;
-          fillLine_1 <= 32'h0;
+          missRespData <= io_mem_rdata;
+          missRespResp <= io_mem_rresp;
         end
-        fillIdx <= _GEN_10 & fillIdx;
-        if (_GEN)
-          respData <= io_cpu_araddr[2] ? casez_tmp_2 : casez_tmp_1;
-        if (cpuArFire) begin
-          respResp <= 2'h0;
-          missResp <= 2'h0;
-        end
+      end
+      if (_GEN_135)
+        missRespId <= mshrId;
+      mshrValid <=
+        (~mshrValid | ~mshrState | ~_GEN_4 | mshrCacheable & ~mshrFillIdx)
+        & (cpuArFire & ~cpuHit | mshrValid);
+      if (_GEN_2) begin
       end
       else begin
-        if (_GEN_9) begin
-        end
-        else
-          fillLine_0 <= io_mem_rdata;
-        if (_GEN_0 | ~(_GEN_8 & fillIdx)) begin
-        end
-        else
-          fillLine_1 <= io_mem_rdata;
-        if (_GEN_9) begin
-        end
-        else
-          fillIdx <= fillIdx - 1'h1;
-        if (_GEN_0 | ~(_filling_T_1 & io_mem_rvalid & fillIdx)) begin
-        end
-        else begin
-          respData <= reqAddr[2] ? nextLine_1 : nextLine_0;
-          respResp <= (|io_mem_rresp) ? io_mem_rresp : missResp;
-        end
-        if (_GEN_0 | ~(_filling_T_1 & io_mem_rvalid & (|io_mem_rresp))) begin
-        end
-        else
-          missResp <= io_mem_rresp;
+        mshrCacheable <= cpuCacheable;
+        mshrAddr <= io_cpu_araddr;
+        mshrId <= io_cpu_arid;
       end
-      if (cpuArFire)
-        reqAddr <= io_cpu_araddr;
-      fillKilled <= killFillNow | _GEN_10 & fillKilled;
-      state <= casez_tmp_3;
+      mshrFillIdx <=
+        ~mshrValid | ~mshrState | ~_GEN_5 | mshrFillIdx
+          ? _GEN_2 & mshrFillIdx
+          : mshrFillIdx - 1'h1;
+      if (mshrValid & mshrState & _GEN_5) begin
+        if (mshrFillIdx)
+          mshrFillLine_1 <= io_mem_rdata;
+        else
+          mshrFillLine_0 <= io_mem_rdata;
+      end
+      else if (_GEN_2) begin
+      end
+      else begin
+        mshrFillLine_0 <= 32'h0;
+        mshrFillLine_1 <= 32'h0;
+      end
+      if (mshrValid & mshrState & _GEN_4 & mshrCacheable & (|io_mem_rresp))
+        mshrResp <= io_mem_rresp;
+      else if (_GEN_2) begin
+      end
+      else
+        mshrResp <= 2'h0;
+      mshrKilled <= killMshrNow | _GEN_2 & mshrKilled;
+      if (mshrValid) begin
+        if (mshrState)
+          mshrState <= ~_GEN_4 & _GEN_3;
+        else
+          mshrState <= io_mem_arready | _GEN_3;
+      end
+      else
+        mshrState <= _GEN_3;
     end
   end // always @(posedge)
   PerfMonitor pm (
     .clock    (clock),
     .event_id (32'h2B),
     .data     (64'h1),
-    .enable   (_GEN_7)
+    .enable   (_GEN_0)
   );
   PerfMonitor pm_1 (
     .clock    (clock),
@@ -2700,7 +2653,7 @@ module DCache(
     .clock    (clock),
     .event_id (32'h2D),
     .data     (64'h1),
-    .enable   (_GEN_7 & ~cpuHit)
+    .enable   (_GEN_1)
   );
   PerfMonitor pm_3 (
     .clock    (clock),
@@ -2708,17 +2661,36 @@ module DCache(
     .data     (64'h1),
     .enable   (cpuArFire & (|(_cpuCacheable_T[31:27])))
   );
+  PerfMonitor pm_4 (
+    .clock    (clock),
+    .event_id (32'h42),
+    .data     (64'h1),
+    .enable   (_GEN_1)
+  );
+  PerfMonitor pm_5 (
+    .clock    (clock),
+    .event_id (32'h43),
+    .data     (64'h1),
+    .enable   (_GEN & mshrValid)
+  );
+  PerfMonitor pm_6 (
+    .clock    (clock),
+    .event_id (32'h44),
+    .data     (64'h1),
+    .enable   (_killMshrNow_T & mshrState & io_mem_rvalid & io_mem_rready_0 & mshrFillIdx)
+  );
   assign io_cpu_arready = io_cpu_arready_0;
-  assign io_cpu_rdata = _GEN_5 ? respData : io_mem_rdata;
-  assign io_cpu_rresp = _GEN_5 ? respResp : io_mem_rresp;
-  assign io_cpu_rvalid = _GEN_5 ? _io_cpu_rvalid_T : io_mem_rvalid;
+  assign io_cpu_rdata = hitRespValid ? hitRespData : missRespData;
+  assign io_cpu_rresp = hitRespValid ? 2'h0 : missRespResp;
+  assign io_cpu_rvalid = respValid;
+  assign io_cpu_rid = hitRespValid ? hitRespId : missRespId;
   assign io_mem_araddr =
-    _GEN_3
-      ? 32'h0
-      : _filling_T
-          ? (reqAddr & 32'hFFFFFFF8) + {29'h0, fillIdx, 2'h0}
-          : _filling_T_1 | ~_GEN_2 ? 32'h0 : reqAddr;
-  assign io_mem_arvalid = ~_GEN_3 & (_filling_T | ~_filling_T_1 & _GEN_2);
-  assign io_mem_rready = ~_GEN_1 & (_filling_T_1 | ~_GEN_2 & _GEN_4 & io_cpu_rready);
+    mshrValid & ~mshrState
+      ? (mshrCacheable
+           ? (mshrAddr & 32'hFFFFFFF8) + {29'h0, mshrFillIdx, 2'h0}
+           : mshrAddr)
+      : 32'h0;
+  assign io_mem_arvalid = mshrValid & ~mshrState;
+  assign io_mem_rready = io_mem_rready_0;
 endmodule
 

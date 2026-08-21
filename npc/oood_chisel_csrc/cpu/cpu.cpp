@@ -384,18 +384,6 @@ static void execute(uint64_t n) {
         unsigned lsu_rb = (unsigned)r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_rob_idx;
         printf("[HANG] alu(v=%u pc=0x%08x rob=%u) div(v=%u pc=0x%08x rob=%u) lsu(v=%u pc=0x%08x rob=%u)\n",
                alu_v, alu_pc, alu_rb, div_v, div_pc, div_rb, lsu_v, lsu_pc, lsu_rb);
-        printf("[HANG] exu_lsu_out_v=%u lsu_in(v=%u rdy=%u) lsu_out(v=%u rdy=%u) can_wb=%u\n",
-               (unsigned)r->ysyx_25020039__DOT__core__DOT___exu_lsu_io_out_valid,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_in_valid,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT___lsu_io_in_ready,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT___lsu_io_out_valid,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu_io_out_ready,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__can_wb);
-        printf("[HANG] lsu_ready=%u ar_done=%u arvalid=%u rready=%u\n",
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu__DOT__ready,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu__DOT__ar_handshake_done,
-               (unsigned)r->ysyx_25020039__DOT__core__DOT___lsu_io_dmem_arvalid,
-               0u);
         unsigned ifu_st = (unsigned)r->ysyx_25020039__DOT__core__DOT__ifu__DOT__state;
         unsigned mtvec = (unsigned)r->ysyx_25020039__DOT__core__DOT__csr__DOT__rf_1;
         unsigned mepc  = (unsigned)r->ysyx_25020039__DOT__core__DOT__csr__DOT__rf_2;
@@ -406,14 +394,13 @@ static void execute(uint64_t n) {
         printf("[HANG] ifu_state=%u mtvec=0x%08x mepc=0x%08x mcause=0x%x next_pc=0x%08x corr=0x%08x in_v=%u\n",
                ifu_st, mtvec, mepc, mcause, ifu_npc, corr, ifu_inv);
         unsigned cmst = (unsigned)r->ysyx_25020039__DOT__core__DOT__cm_st_state;
-        unsigned lsust = (unsigned)r->ysyx_25020039__DOT__core__DOT__lsu__DOT__state;
         unsigned xb = (unsigned)r->ysyx_25020039__DOT__xbar__DOT__state;
         unsigned awv = (unsigned)r->ysyx_25020039__DOT___core_io_dmem_awvalid;
         unsigned wv  = (unsigned)r->ysyx_25020039__DOT___core_io_dmem_wvalid;
         unsigned swst = (unsigned)r->ysyx_25020039__DOT__sram__DOT__w_state;
         unsigned dw = (unsigned)r->ysyx_25020039__DOT__xbar__DOT__dmem_is_write;
-        printf("[HANG] cm_st_state=%u lsu_state=%u xbar_state=%u dmem_wr=%u sram_w=%u\n",
-               cmst, lsust, xb, dw, swst);
+        printf("[HANG] cm_st_state=%u xbar_state=%u dmem_wr=%u sram_w=%u\n",
+               cmst, xb, dw, swst);
         printf("[HANG] core_awvalid=%u core_wvalid=%u\n", awv, wv);
         CData *rsv[] = {
           &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_0_valid,

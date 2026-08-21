@@ -141,6 +141,9 @@ void print_perf_stats(unsigned long long cycles) {
     printf("DCache Hits:     %lld\n", dcache_hit);
     printf("DCache Misses:   %lld\n", dcache_miss);
     printf("DCache Bypass:   %lld\n", counters[EVENT_DCACHE_BYPASS]);
+    printf("DCache MSHR Alloc: %lld\n", counters[EVENT_DCACHE_MSHR_ALLOC]);
+    printf("DCache Hit Under Miss: %lld\n", counters[EVENT_DCACHE_HIT_UNDER_MISS]);
+    printf("DCache MSHR Refill: %lld\n", counters[EVENT_DCACHE_MSHR_REFILL]);
     if (dcache_access > 0) {
         printf("DCache Hit Rate: %.2f%%\n", 100.0 * dcache_hit / dcache_access);
     }

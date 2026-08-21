@@ -8,6 +8,7 @@ module IFU(
   input         io_out_ready,
   output        io_out_valid,
                 io_out_bits_valid_0,
+                io_out_bits_valid_1,
   output [31:0] io_out_bits_bits_0_inst,
                 io_out_bits_bits_0_pc,
   output        io_out_bits_bits_0_state_state,
@@ -16,6 +17,14 @@ module IFU(
                 io_out_bits_bits_0_bp_taken,
   output [31:0] io_out_bits_bits_0_bp_target,
   output [9:0]  io_out_bits_bits_0_bp_index,
+  output [31:0] io_out_bits_bits_1_inst,
+                io_out_bits_bits_1_pc,
+  output        io_out_bits_bits_1_state_state,
+  output [7:0]  io_out_bits_bits_1_state_state_num,
+  output        io_out_bits_bits_1_bp_valid,
+                io_out_bits_bits_1_bp_taken,
+  output [31:0] io_out_bits_bits_1_bp_target,
+  output [9:0]  io_out_bits_bits_1_bp_index,
   input         io_pc_ready,
   output        io_pc_valid,
   output [31:0] io_pc_bits_next_pc,
@@ -26,10 +35,13 @@ module IFU(
                 io_imem_rvalid1,
   output        io_imem_rready,
   input  [31:0] io_imem_rdata,
+                io_imem_rdata1,
   input  [1:0]  io_imem_rresp,
+                io_imem_rresp1,
   input         io_is_flush,
   input  [31:0] io_correct_pc,
-  input         io_bpu_update_valid,
+  input         io_slot1_enable,
+                io_bpu_update_valid,
                 io_bpu_update_taken,
   input  [31:0] io_bpu_update_pc,
                 io_bpu_update_target,
@@ -48,13 +60,22 @@ module IFU(
   wire [31:0] _bpu_io_bp_target;
   wire        _bpu_io_bp_tagged_hit;
   wire        _bpu_io_bp_indirect_hit;
+  wire        _bpu_io_bp1_valid;
+  wire        _bpu_io_bp1_taken;
+  wire [31:0] _bpu_io_bp1_target;
+  wire        _bpu_io_bp1_tagged_hit;
+  wire        _bpu_io_bp1_indirect_hit;
   reg  [1:0]  state;
   wire        _io_imem_arvalid_T = state == 2'h0;
   wire        _io_imem_rready_T_2 = state == 2'h1;
   wire        _io_imem_rready_T = state == 2'h2;
+  wire [31:0] bpu_io_predict_pc1 = io_in_bits_next_pc + 32'h4;
   wire        io_imem_arvalid_0 = idle & _io_imem_arvalid_T;
   wire        slot0Taken = _bpu_io_bp_valid & _bpu_io_bp_taken;
+  wire        slot1CanUse =
+    io_slot1_enable & io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp);
   wire        io_out_valid_0 = ready & io_in_valid;
+  wire        io_out_bits_valid_1_0 = io_out_valid_0 & slot1CanUse;
   assign ready = io_imem_rvalid & state != 2'h2;
   assign idle = io_in_valid & io_imem_arready & ~io_is_flush;
   assign work = ready & io_out_ready;
@@ -82,12 +103,20 @@ module IFU(
     .reset               (reset),
     .io_predict_pc       (io_in_bits_next_pc),
     .io_predict_inst     (io_imem_rdata),
+    .io_predict_pc1      (bpu_io_predict_pc1),
+    .io_predict_inst1    (io_imem_rdata1),
     .io_bp_valid         (_bpu_io_bp_valid),
     .io_bp_taken         (_bpu_io_bp_taken),
     .io_bp_target        (_bpu_io_bp_target),
     .io_bp_index         (io_out_bits_bits_0_bp_index),
     .io_bp_tagged_hit    (_bpu_io_bp_tagged_hit),
     .io_bp_indirect_hit  (_bpu_io_bp_indirect_hit),
+    .io_bp1_valid        (_bpu_io_bp1_valid),
+    .io_bp1_taken        (_bpu_io_bp1_taken),
+    .io_bp1_target       (_bpu_io_bp1_target),
+    .io_bp1_index        (io_out_bits_bits_1_bp_index),
+    .io_bp1_tagged_hit   (_bpu_io_bp1_tagged_hit),
+    .io_bp1_indirect_hit (_bpu_io_bp1_indirect_hit),
     .io_update_pc        (io_bpu_update_pc),
     .io_update_target    (io_bpu_update_target),
     .io_update_valid     (io_bpu_update_valid),
@@ -126,7 +155,7 @@ module IFU(
     .clock    (clock),
     .event_id (32'h30),
     .data     (64'h1),
-    .enable   (1'h0)
+    .enable   (packetFire & io_out_bits_valid_1_0)
   );
   PerfMonitor pm_5 (
     .clock    (clock),
@@ -138,13 +167,19 @@ module IFU(
     .clock    (clock),
     .event_id (32'h35),
     .data     (64'h1),
-    .enable   (packetFire & _bpu_io_bp_tagged_hit)
+    .enable
+      (packetFire
+       & (io_out_valid_0 & _bpu_io_bp_tagged_hit | io_out_bits_valid_1_0
+          & _bpu_io_bp1_tagged_hit))
   );
   PerfMonitor pm_7 (
     .clock    (clock),
     .event_id (32'h36),
     .data     (64'h1),
-    .enable   (packetFire & _bpu_io_bp_indirect_hit)
+    .enable
+      (packetFire
+       & (io_out_valid_0 & _bpu_io_bp_indirect_hit | io_out_bits_valid_1_0
+          & _bpu_io_bp1_indirect_hit))
   );
   PerfMonitor pm_8 (
     .clock    (clock),
@@ -155,6 +190,7 @@ module IFU(
   assign io_in_ready = ~io_in_valid | work | io_is_flush;
   assign io_out_valid = io_out_valid_0;
   assign io_out_bits_valid_0 = io_out_valid_0;
+  assign io_out_bits_valid_1 = io_out_bits_valid_1_0;
   assign io_out_bits_bits_0_inst = io_imem_rdata;
   assign io_out_bits_bits_0_pc = io_in_bits_next_pc;
   assign io_out_bits_bits_0_state_state = |io_imem_rresp;
@@ -162,11 +198,22 @@ module IFU(
   assign io_out_bits_bits_0_bp_valid = _bpu_io_bp_valid;
   assign io_out_bits_bits_0_bp_taken = slot0Taken;
   assign io_out_bits_bits_0_bp_target = _bpu_io_bp_target;
+  assign io_out_bits_bits_1_inst = io_imem_rdata1;
+  assign io_out_bits_bits_1_pc = bpu_io_predict_pc1;
+  assign io_out_bits_bits_1_state_state = |io_imem_rresp1;
+  assign io_out_bits_bits_1_state_state_num = {7'h0, |io_imem_rresp1};
+  assign io_out_bits_bits_1_bp_valid = _bpu_io_bp1_valid;
+  assign io_out_bits_bits_1_bp_taken = _bpu_io_bp1_valid & _bpu_io_bp1_taken;
+  assign io_out_bits_bits_1_bp_target = _bpu_io_bp1_target;
   assign io_pc_valid = ~reset & io_pc_ready;
   assign io_pc_bits_next_pc =
     io_is_flush
       ? io_correct_pc
-      : slot0Taken ? _bpu_io_bp_target : io_in_bits_next_pc + 32'h4;
+      : slot0Taken
+          ? _bpu_io_bp_target
+          : slot1CanUse & _bpu_io_bp1_valid & _bpu_io_bp1_taken
+              ? _bpu_io_bp1_target
+              : slot1CanUse ? io_in_bits_next_pc + 32'h8 : bpu_io_predict_pc1;
   assign io_imem_araddr = io_in_bits_next_pc;
   assign io_imem_arvalid = io_imem_arvalid_0;
   assign io_imem_rready = work | _io_imem_rready_T | _io_imem_rready_T_2 & io_is_flush;

@@ -3,15 +3,14 @@ package core
 import chisel3._
 import chisel3.util._
 import common.MEM_READ._
-import common.MEM_WMASK._
 import common.IRQ_CTRL._
 import unit.WBU_signals
 import common.OoOParams
 import bus._
 import core.PerfEvents._
 
-class LSU_WBU_IO extends Bundle{
-  val signals = new Bundle{
+class LSU_WBU_IO extends Bundle {
+  val signals = new Bundle {
     val wbu = new WBU_signals
   }
 
@@ -29,17 +28,16 @@ class LSU_WBU_IO extends Bundle{
 
   val state = new State
   val rob_idx = UInt(OoOParams.ROB_PTR_W.W)
-  val pdest   = UInt(OoOParams.PHYS_W.W)
+  val pdest = UInt(OoOParams.PHYS_W.W)
   val old_phys = UInt(OoOParams.PHYS_W.W)
   val do_rename = Bool()
-  val br_taken  = Bool()
-  // 5：load 前递结果（覆盖 mem_read）；store 透传 rd2 供 ROB.mem_wdata
+  val br_taken = Bool()
   val store_data = UInt(32.W)
-  val fwd_valid  = Bool()
-  val fwd_data   = UInt(32.W)
+  val fwd_valid = Bool()
+  val fwd_data = UInt(32.W)
 }
 
-class LSU_IO (xlen: Int) extends Bundle{
+class LSU_IO(xlen: Int) extends Bundle {
   val in = Flipped(Decoupled(new EXU_LSU_IO))
   val out = Decoupled(new LSU_WBU_IO)
 
@@ -47,158 +45,155 @@ class LSU_IO (xlen: Int) extends Bundle{
 
   val is_flush = Input(Bool())
 
-  // 5：来自 core 的 store-to-load 前递（组合）
+  // Store-to-load forwarding result from the core-side SQ/StoreBuffer path.
   val st_fwd_valid = Input(Bool())
-  val st_fwd_data  = Input(UInt(32.W))
-  val st_fwd_wait  = Input(Bool()) // 更老 store 地址未齐或部分重叠 → 不发 ar
-  val bus_busy = Output(Bool())    // 有未完成 load 事务 → commit 写需等待
+  val st_fwd_data = Input(UInt(32.W))
+  val st_fwd_wait = Input(Bool())
+  val bus_busy = Output(Bool())
 }
 
-class LSU(val conf: CoreConfig) extends Module{
-
+class LSU(val conf: CoreConfig) extends Module {
   val io = IO(new LSU_IO(conf.xlen))
+
+  private val loadSlots = 2
+  private val loadSlotW = log2Ceil(loadSlots)
 
   io.dmem.arid := 0.U
   io.dmem.arlen := 0.U
-  io.dmem.arburst := 1.U //INCR
+  io.dmem.arburst := 1.U
   io.dmem.awid := 0.U
   io.dmem.awlen := 0.U
-  io.dmem.awburst := 1.U //INCR
+  io.dmem.awburst := 1.U
   io.dmem.wlast := true.B
-  // 5a：store 不在 LSU 写内存 → 写通道恒静默（commit SM 占用）
+  // Stores are drained through the commit-side StoreBuffer/direct path.
   io.dmem.awvalid := false.B
-  io.dmem.awaddr  := 0.U
-  io.dmem.awsize  := 0.U
-  io.dmem.wvalid  := false.B
-  io.dmem.wdata   := 0.U
-  io.dmem.wstrb   := 0.U
-  io.dmem.bready  := false.B
+  io.dmem.awaddr := 0.U
+  io.dmem.awsize := 0.U
+  io.dmem.wvalid := false.B
+  io.dmem.wdata := 0.U
+  io.dmem.wstrb := 0.U
+  io.dmem.bready := false.B
 
   val is_load = !io.in.bits.signals.lsu.mem_write && io.in.bits.signals.lsu.mem_valid
-  val is_store = io.in.bits.signals.lsu.mem_write && io.in.bits.signals.lsu.mem_valid
-  // store：只算地址/数据，不发 AXI；与 ALU 一样单拍完成
   val not_bus = !is_load
 
   val arsize = MuxLookup(io.in.bits.signals.lsu.mem_rd, RWORD)(Seq(
-    RBYTE  -> 0.U,
-    RHALF  -> 1.U,
-    RWORD  -> 2.U,
+    RBYTE -> 0.U,
+    RHALF -> 1.U,
+    RWORD -> 2.U,
     RBYTEU -> 0.U,
     RHALFU -> 1.U
   ))
 
-  val idle = Wire(Bool())
-  val work = Wire(Bool())
-  val ready = Wire(Bool())
+  val loadValid = RegInit(VecInit(Seq.fill(loadSlots)(false.B)))
+  val loadMeta = Reg(Vec(loadSlots, new LSU_WBU_IO))
+  val loadMemRd = Reg(Vec(loadSlots, UInt(3.W)))
+  val loadAddr = Reg(Vec(loadSlots, UInt(32.W)))
+  val freeMask = VecInit(loadValid.map(v => !v)).asUInt
+  val hasFreeSlot = freeMask.orR
+  val allocSlot = PriorityEncoder(freeMask)
+  val respSlot = io.dmem.rid(loadSlotW - 1, 0)
+  val respSlotValid = io.dmem.rvalid && loadValid(respSlot)
+  val staleResp = io.dmem.rvalid && !loadValid(respSlot)
 
-  val s_IDLE  :: s_WORK :: s_FLUSH :: Nil = Enum(3)
-  val state = RegInit(s_IDLE)
-  val next_state = WireDefault(state)
-
-  val ar_handshake_done = RegInit(false.B)
-
-  when(state =/= s_IDLE || io.is_flush) {
-    ar_handshake_done := false.B
+  def makeBase(in: EXU_LSU_IO): LSU_WBU_IO = {
+    val b = Wire(new LSU_WBU_IO)
+    b.signals.wbu := in.signals.wbu
+    b.rd1 := in.rd1
+    b.alu_result := in.alu_result
+    b.pc := in.pc
+    b.next_pc := in.next_pc
+    b.imm_ext := in.imm_ext
+    b.mem_read := 0.U
+    b.waddr := in.waddr
+    b.is_ebreak := in.is_ebreak
+    b.csr_rd1 := in.csr_rd1
+    b.csr_waddr := in.csr_waddr
+    b.state := in.state
+    b.rob_idx := in.rob_idx
+    b.pdest := in.pdest
+    b.old_phys := in.old_phys
+    b.do_rename := in.do_rename
+    b.br_taken := in.br_taken
+    b.store_data := in.rd2
+    b.fwd_valid := false.B
+    b.fwd_data := 0.U
+    b
   }
 
-  val can_issue_load = is_load && !io.st_fwd_wait && !io.st_fwd_valid
-  val load_handshake = can_issue_load && (ar_handshake_done || (io.dmem.arvalid && io.dmem.arready))
-  val fwd_done = is_load && io.st_fwd_valid && !io.st_fwd_wait
-
-  next_state := MuxLookup(state, s_IDLE)(Seq(
-      s_IDLE  -> Mux(idle && load_handshake, Mux(work, s_IDLE, s_WORK), s_IDLE),
-      s_WORK  -> Mux(work, s_IDLE, Mux(io.is_flush, s_FLUSH, s_WORK)),
-      s_FLUSH -> Mux(io.dmem.rvalid, s_IDLE, s_FLUSH)
-  ))
-  state := next_state
-
-  when(state === s_IDLE && idle) {
-      when(can_issue_load && io.dmem.arvalid && io.dmem.arready) {
-        ar_handshake_done := true.B
-      }
+  def extendLoad(raw: UInt, memRd: UInt): UInt = {
+    MuxLookup(memRd, raw)(Seq(
+      RBYTE -> raw(7, 0).asSInt.pad(32).asUInt,
+      RHALF -> raw(15, 0).asSInt.pad(32).asUInt,
+      RWORD -> raw(31, 0),
+      RBYTEU -> raw(7, 0).asUInt.pad(32),
+      RHALFU -> raw(15, 0).asUInt.pad(32)
+    ))
   }
 
-  when(io.is_flush || io.dmem.rvalid) {
-    ar_handshake_done := false.B
-  }
+  val inBase = makeBase(io.in.bits)
+  val fwdDone = io.in.valid && is_load && io.st_fwd_valid && !io.st_fwd_wait && !io.is_flush
+  val directDone = io.in.valid && !io.is_flush && (not_bus || fwdDone)
+  val canIssueBusLoad =
+    io.in.valid && is_load && !io.st_fwd_wait && !io.st_fwd_valid &&
+    !io.is_flush && hasFreeSlot && !respSlotValid
 
-  val bus_data_valid = is_load && (state === s_WORK) && io.dmem.rvalid
-  val stale_resp = (state === s_IDLE) && io.dmem.rvalid && !ar_handshake_done
-
-  io.dmem.arvalid := can_issue_load && (state === s_IDLE) && idle && !ar_handshake_done
-  io.dmem.rready := (bus_data_valid && io.out.ready) || state === s_FLUSH || stale_resp
+  io.dmem.arvalid := canIssueBusLoad
   io.dmem.arsize := arsize
   io.dmem.araddr := io.in.bits.alu_result
+  io.dmem.arid := allocSlot
 
-  val byte_offset = io.in.bits.alu_result(1, 0)
-  val rd_offset = io.dmem.rdata >> (byte_offset << 3)
+  val arFire = io.dmem.arvalid && io.dmem.arready
+  io.dmem.rready := (respSlotValid && io.out.ready) || staleResp
 
-  //WBU
-  io.out.bits.signals := io.in.bits.signals
-  io.out.bits.rd1 := io.in.bits.rd1
-  io.out.bits.alu_result := io.in.bits.alu_result
-  io.out.bits.pc := io.in.bits.pc
-  io.out.bits.next_pc := io.in.bits.next_pc
-  io.out.bits.imm_ext := io.in.bits.imm_ext
-  io.out.bits.waddr := io.in.bits.waddr
-  io.out.bits.is_ebreak := io.in.bits.is_ebreak
+  val respByteOffset = loadAddr(respSlot)(1, 0)
+  val respOffset = io.dmem.rdata >> (respByteOffset << 3)
+  val respOut = Wire(new LSU_WBU_IO)
+  respOut := loadMeta(respSlot)
+  respOut.mem_read := extendLoad(respOffset, loadMemRd(respSlot))
+  respOut.fwd_valid := false.B
+  respOut.fwd_data := 0.U
+  val hasLaf = io.dmem.rresp =/= 0.U
+  respOut.state.state := hasLaf || loadMeta(respSlot).state.state
+  respOut.state.state_num := Mux(hasLaf, IRQ_LAF, loadMeta(respSlot).state.state_num)
 
-  io.out.bits.csr_rd1 := io.in.bits.csr_rd1
-  io.out.bits.csr_waddr := io.in.bits.csr_waddr
-  io.out.bits.rob_idx := io.in.bits.rob_idx
-  io.out.bits.pdest   := io.in.bits.pdest
-  io.out.bits.old_phys := io.in.bits.old_phys
-  io.out.bits.do_rename := io.in.bits.do_rename
-  io.out.bits.br_taken  := io.in.bits.br_taken
-  io.out.bits.store_data := io.in.bits.rd2
-  io.out.bits.fwd_valid  := fwd_done
-  io.out.bits.fwd_data   := io.st_fwd_data
+  val fwdExt = extendLoad(io.st_fwd_data, io.in.bits.signals.lsu.mem_rd)
+  val directOut = Wire(new LSU_WBU_IO)
+  directOut := inBase
+  directOut.fwd_valid := fwdDone
+  directOut.fwd_data := io.st_fwd_data
+  directOut.mem_read := Mux(fwdDone, fwdExt, 0.U)
 
-  val rbyte   = rd_offset(7, 0).asSInt.pad(32).asUInt
-  val rhalf   = rd_offset(15, 0).asSInt.pad(32).asUInt
-  val rword   = rd_offset(31, 0)
-  val rbyteu  = rd_offset(7, 0)
-  val rhalfu  = rd_offset(15, 0)
+  io.out.valid := respSlotValid || directDone
+  io.out.bits := Mux(respSlotValid, respOut, directOut)
 
-  val mem_from_bus = MuxLookup(io.in.bits.signals.lsu.mem_rd, rbyte)(Seq(
-      RBYTE  -> rbyte,
-      RHALF  -> rhalf,
-      RWORD  -> rword,
-      RBYTEU -> rbyteu,
-      RHALFU -> rhalfu
+  io.in.ready := MuxCase(false.B, Seq(
+    (io.is_flush || !io.in.valid) -> true.B,
+    respSlotValid -> false.B,
+    (io.in.valid && is_load && io.st_fwd_wait) -> false.B,
+    directDone -> io.out.ready,
+    canIssueBusLoad -> io.dmem.arready
   ))
-  // 前递也必须按 load 类型做符号/零扩展（否则 lbu 会拿到 0xffffff80）
-  val fwd_off = io.st_fwd_data
-  val fwd_ext = MuxLookup(io.in.bits.signals.lsu.mem_rd, fwd_off)(Seq(
-      RBYTE  -> fwd_off(7, 0).asSInt.pad(32).asUInt,
-      RHALF  -> fwd_off(15, 0).asSInt.pad(32).asUInt,
-      RWORD  -> fwd_off(31, 0),
-      RBYTEU -> fwd_off(7, 0).asUInt.pad(32),
-      RHALFU -> fwd_off(15, 0).asUInt.pad(32)
-  ))
-  io.out.bits.mem_read := Mux(fwd_done, fwd_ext, mem_from_bus)
 
-  val has_laf = bus_data_valid && io.dmem.rresp =/= 0.U
-  io.out.bits.state := io.in.bits.state
-  io.out.bits.state.state := has_laf || io.in.bits.state.state
-  io.out.bits.state.state_num := Mux(has_laf, IRQ_LAF, io.in.bits.state.state_num)
+  when(arFire) {
+    loadValid(allocSlot) := true.B
+    loadMeta(allocSlot) := inBase
+    loadMemRd(allocSlot) := io.in.bits.signals.lsu.mem_rd
+    loadAddr(allocSlot) := io.in.bits.alu_result
+  }
 
-  idle := io.in.valid && !io.is_flush
-  // store / 非访存：单拍；load 前递：单拍；load 等 store：不 ready；load 总线：等 rvalid
-  ready := not_bus || fwd_done || bus_data_valid
-  work := ready && io.out.ready
-  io.in.ready := !io.in.valid || (ready && io.out.ready)
-  io.out.valid := io.in.valid && ready
-  // AR 已发或在 WORK 等 R → 总线忙（commit 写必须等）
-  io.bus_busy := (state === s_WORK) || (state === s_FLUSH) ||
-    (is_load && idle && (ar_handshake_done || io.dmem.arvalid))
+  when(io.dmem.rvalid && io.dmem.rready && loadValid(respSlot)) {
+    loadValid(respSlot) := false.B
+  }
 
-  if(conf.statistics){
-    PM(conf, clock, EVENT_LSU_READ, 1.U, io.dmem.arvalid && io.dmem.arready)
+  io.bus_busy := loadValid.asUInt.orR || io.dmem.arvalid
+
+  if (conf.statistics) {
+    PM(conf, clock, EVENT_LSU_READ, 1.U, arFire)
     PM(conf, clock, EVENT_LSU_WRITE, 1.U, false.B)
-    PM(conf, clock, EVENT_LSU_LATENCY, 1.U, state === s_WORK && (!ready || io.out.ready))
+    PM(conf, clock, EVENT_LSU_LATENCY, 1.U, loadValid.asUInt.orR && (!io.dmem.rvalid || io.out.ready))
     PM(conf, clock, EVENT_LSU_SQ_WAIT, 1.U, io.in.valid && is_load && io.st_fwd_wait && !io.is_flush)
-    PM(conf, clock, EVENT_LSU_SQ_FORWARD, 1.U, work && fwd_done)
-    PM(conf, clock, EVENT_LSU_BUS_WAIT, 1.U, state === s_WORK && !io.dmem.rvalid)
+    PM(conf, clock, EVENT_LSU_SQ_FORWARD, 1.U, directDone && io.out.ready && fwdDone)
+    PM(conf, clock, EVENT_LSU_BUS_WAIT, 1.U, loadValid.asUInt.orR && !io.dmem.rvalid)
   }
 }

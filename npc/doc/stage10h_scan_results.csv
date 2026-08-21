@@ -1,0 +1,4 @@
+tag,wide_fetch_enable,wide_fetch_min_space,ipc,total_cycles,commit_inst,ifu_fetch,bpu_hit_pct,bp_flush,dir_miss,fq_full,fq_empty,ifu_pipeline_stall,fetch_slot0,fetch_slot1,fetch_slot1_killed,fq_enq2,fq_space_one,fetch_slot1_util_pct,commit_slot1,commit2_cycles,commit_slot1_util_pct,head_wait,result,decision
+stage10g_rob32_sb8,false,n/a,0.4330,1206337,522326,930277,58.50,54051,45676,203931,78765,102461,925729,0,71990,0,164872,0.00,29538,29538,5.99,552503,PASS,baseline
+stage10h_wide_space8,true,FQ_SIZE,0.4343,1203486,522688,917801,60.35,52096,43753,214835,77229,102940,913187,49665,73201,49665,176476,5.44,29731,29731,6.03,549883,PASS,retained
+stage10h_wide_space6,true,6,0.3902,1338371,522224,853094,58.69,53644,45522,423067,70570,258667,843933,201433,73682,201433,243956,23.87,17647,17647,3.50,617868,PASS,rejected

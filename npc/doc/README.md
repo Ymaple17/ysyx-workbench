@@ -26,7 +26,7 @@
 | 11 | [11a](11a_阶段10a_独立SQ与StoreBuffer.md) → [11b](11b_阶段10b_访存层次与非阻塞缓存.md) → [11c](11c_阶段10c_宽提交与多CDB.md) → [11d](11d_阶段10d_宽取指与前端带宽.md) → [11e](11e_阶段10e_高级分支预测.md) → [11f](11f_阶段10f_真正双提交与退休.md) → [11g](11g_阶段10g_扩大乱序窗口与参数扫描.md) → [11h](11h_阶段10h_重新启用宽取指.md) → [11i](11i_阶段10i_非阻塞DCache与MSHR.md) → [11j](11j_阶段10j_完整TAGE与ITAGE.md) | **阶段 10 IPC 上限扩展**（内存序 / cache / 写回 / 前端 / 预测 / 真双提交 / 窗口 / MLP） |
 | 12 | [12a](12a_阶段11a_MMU与虚拟内存.md) → [12b](12b_阶段11b_多核与一致性.md) | **阶段 11 系统扩展**（MMU/SV32、多核一致性，先后置） |
 
-**参考实现水位（≠ 你的学习勾选）**：已到 **阶段 10g 教学参考核**（Stage8 超标量、Stage9 性能画像、Stage10a 独立 SQ + StoreBuffer、Stage10b blocking DCache、Stage10c 双 CDB 写回、Stage10d 宽取指基础设施、Stage10e tagged/indirect 最小高级 BPU、Stage10f 最小 2-wide commit/retire、Stage10g 小窗口参数扫描）。其中 10d 的 2-slot 取指通路已经接好，但默认 `WIDE_FETCH_ENABLE=false`；10f 已解除 1-wide retire 上限，但 slot1 retire 仍保守限制在普通非访存、非控制流、非 CSR 指令。10g 当前保留 `ROB_SIZE=32`、`N_PHYS=64`、`RS_SIZE=8`、`STORE_BUFFER_SIZE=8`，microbench(test) IPC `0.4330`。下一条 IPC 主线是 **10h 重新启用宽取指并 A/B 验收**，之后再做非阻塞 cache/MLP 和完整 TAGE/ITAGE。MMU 与多核一致性已经后移到阶段 11。
+**参考实现水位（≠ 你的学习勾选）**：已到 **阶段 10i 教学参考核**（Stage8 超标量、Stage9 性能画像、Stage10a 独立 SQ + StoreBuffer、Stage10b blocking DCache、Stage10c 双 CDB 写回、Stage10d 宽取指基础设施、Stage10e tagged/indirect 最小高级 BPU、Stage10f 最小 2-wide commit/retire、Stage10g 小窗口参数扫描、Stage10h 保守宽取指、Stage10i 1-entry MSHR/hit-under-miss 骨架）。当前保留 `ROB_SIZE=32`、`N_PHYS=64`、`RS_SIZE=8`、`STORE_BUFFER_SIZE=8`、`WIDE_FETCH_ENABLE=true`、`WIDE_FETCH_MIN_SPACE=FQ_SIZE`、`LSU_MLP_ENABLE=false`，microbench(test) IPC `0.4342`。10i 的 `LSU_MLP_ENABLE=true` 实验功能通过但 IPC 退化到 `0.3837`，因此只保留硬件骨架和单测，不作为默认参考点；下一条 IPC 主线是 **10j 完整 TAGE/ITAGE**。MMU 与多核一致性已经后移到阶段 11。
 
 ## 原则
 

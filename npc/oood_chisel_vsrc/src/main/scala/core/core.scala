@@ -24,6 +24,10 @@ class Core_IO(conf: CoreConfig) extends Bundle {
   val commit_pc       = Output(UInt(32.W))
   val commit_mem_addr = Output(UInt(32.W))
   val commit_is_load  = Output(Bool())
+  val commit_valid1    = Output(Bool())
+  val commit_pc1       = Output(UInt(32.W))
+  val commit_mem_addr1 = Output(UInt(32.W))
+  val commit_is_load1  = Output(Bool())
   val arch_rdata      = Output(Vec(32, UInt(32.W)))
 }
 
@@ -124,6 +128,8 @@ class Core(val conf: CoreConfig) extends Module {
     else "h0000_0000".U(32.W)
 
   ifu.io.pc.ready := ifu.io.in.ready
+  ifu.io.slot1_enable :=
+    (if (OoOParams.WIDE_FETCH_ENABLE) fq.io.space >= OoOParams.WIDE_FETCH_MIN_SPACE.U else false.B)
   // flush 时必须装入 correct_pc（即使上一拍 in.valid=0），否则 irq/mispred 后取指饿死
   val ifu_in_en = ifu.io.is_flush || (ifu.io.in.valid && ifu.io.pc.ready)
   ifu.io.in.bits  := RegEnable(ifu.io.pc.bits, reset_pc.asTypeOf(new IFU_PC_IO), ifu_in_en)
@@ -146,6 +152,7 @@ class Core(val conf: CoreConfig) extends Module {
   val flush_idx     = Wire(UInt(OoOParams.ROB_PTR_W.W))
   val stop_issue    = Wire(Bool())
   val bp_commit_block = Wire(Bool())
+  val bp_commit1_block = Wire(Bool())
   val fencei_flush         = Wire(Bool())
   val fencei_commit        = Wire(Bool())
   val fencei_commit_ready  = Wire(Bool())
@@ -364,6 +371,7 @@ class Core(val conf: CoreConfig) extends Module {
   rob.io.enq_bits.bp_index      := idu.io.out.bits.bp_index
   rob.io.enq_bits.cp_idx        := rename.io.cp_idx0
   rob.io.enq_bits.actual_taken  := false.B
+  rob.io.enq_bits.actual_target := idu.io.out.bits.pc + 4.U
   rob.io.enq1_fire := en_ren1
   rob.io.enq1_bits := 0.U.asTypeOf(new ROBEntry)
   rob.io.enq1_bits.pc            := idu1.io.out.bits.pc
@@ -397,6 +405,7 @@ class Core(val conf: CoreConfig) extends Module {
   rob.io.enq1_bits.bp_index      := idu1.io.out.bits.bp_index
   rob.io.enq1_bits.cp_idx        := rename.io.cp_idx1
   rob.io.enq1_bits.actual_taken  := false.B
+  rob.io.enq1_bits.actual_target := idu1.io.out.bits.pc + 4.U
   // 用 RS 的 issue 标 issued：ROB 内部 issue_idx 是最老未发，与 OoO 不一致 → 发射时按 rob_idx 写
   // 简化：issue_fire 仍走 ROB 端口但仅当 issue_idx 匹配时；否则 enq 后靠 RS，issued 仅调试
   rob.io.issue_fire := false.B
@@ -681,13 +690,16 @@ class Core(val conf: CoreConfig) extends Module {
   // ---------- 6：FQ 替换 IF→ID StageConnect ----------
   fq.io.flush := idu.io.is_flush
   fq.io.enq.valid := ifu.io.out.valid
-  fq.io.enq.bits.inst      := ifu.io.out.bits.inst
-  fq.io.enq.bits.pc        := ifu.io.out.bits.pc
-  fq.io.enq.bits.state     := ifu.io.out.bits.state
-  fq.io.enq.bits.bp_valid  := ifu.io.out.bits.bp_valid
-  fq.io.enq.bits.bp_taken  := ifu.io.out.bits.bp_taken
-  fq.io.enq.bits.bp_target := ifu.io.out.bits.bp_target
-  fq.io.enq.bits.bp_index  := ifu.io.out.bits.bp_index
+  for (i <- 0 until OoOParams.FETCH_WIDTH) {
+    fq.io.enq.bits.valid(i) := ifu.io.out.bits.valid(i)
+    fq.io.enq.bits.bits(i).inst      := ifu.io.out.bits.bits(i).inst
+    fq.io.enq.bits.bits(i).pc        := ifu.io.out.bits.bits(i).pc
+    fq.io.enq.bits.bits(i).state     := ifu.io.out.bits.bits(i).state
+    fq.io.enq.bits.bits(i).bp_valid  := ifu.io.out.bits.bits(i).bp_valid
+    fq.io.enq.bits.bits(i).bp_taken  := ifu.io.out.bits.bits(i).bp_taken
+    fq.io.enq.bits.bits(i).bp_target := ifu.io.out.bits.bits(i).bp_target
+    fq.io.enq.bits.bits(i).bp_index  := ifu.io.out.bits.bits(i).bp_index
+  }
   ifu.io.out.ready := fq.io.enq.ready
 
   idu.io.in.valid := fq.io.deq.valid
@@ -825,6 +837,7 @@ class Core(val conf: CoreConfig) extends Module {
   rob.io.wb_mem_addr     := wbu.io.in.bits.alu_result
   rob.io.wb_mem_wdata    := wbu.io.in.bits.store_data
   rob.io.wb_actual_taken := wbu.io.in.bits.br_taken
+  rob.io.wb_actual_target := wbu.io.in.bits.next_pc
   rob.io.wb1_fire         := can_wb1
   rob.io.wb1_idx          := wb1_idx
   rob.io.wb1_val          := wb1_val
@@ -832,8 +845,10 @@ class Core(val conf: CoreConfig) extends Module {
   rob.io.wb1_mem_addr     := wbu1.io.in.bits.alu_result
   rob.io.wb1_mem_wdata    := wbu1.io.in.bits.store_data
   rob.io.wb1_actual_taken := wbu1.io.in.bits.br_taken
+  rob.io.wb1_actual_target := wbu1.io.in.bits.next_pc
 
   val cm_bits = rob.io.commit_bits
+  val cm1_bits = rob.io.commit1_bits
   // 4c：异常冲刷拍禁止提交后继；5a：store 写完才 commit_fire；4f：fencei icache ready 才 commit_fire
   // 4e：mret_flush 拍禁止提交后继（同 fencei）
   // 4g：ext_irq_flush 拍禁止提交（冲在飞）
@@ -844,6 +859,16 @@ class Core(val conf: CoreConfig) extends Module {
   val cm_is_fencei = cm_bits.is_fencei
   val cm_is_mret = cm_bits.jump === JUMP_MERT
   val cm_needs_store_drain = cm_bits.is_ebreak || cm_is_mret || cm_bits.state.state
+  val cm_is_ctrl = cm_bits.jump =/= JUMP_NONE
+  val cm1_is_store = cm1_bits.mem_valid && cm1_bits.mem_write
+  val cm1_is_fencei = cm1_bits.is_fencei
+  val cm1_is_mret = cm1_bits.jump === JUMP_MERT
+  val cm1_is_ctrl = cm1_bits.jump =/= JUMP_NONE
+  val cm1_is_ctrl_not_mret = cm1_is_ctrl && !cm1_is_mret
+  val cm_exclusive = cm_bits.mem_valid || cm_bits.csr_write || cm_is_fencei || cm_is_mret ||
+    cm_bits.is_ebreak || cm_bits.state.state || cm_is_ctrl
+  val cm1_exclusive = cm1_bits.mem_valid || cm1_bits.csr_write || cm1_is_fencei || cm1_is_mret ||
+    cm1_bits.is_ebreak || cm1_bits.state.state || cm1_is_ctrl
   // fencei/mret/ext_irq flush 拍禁止提交后继（否则会在冲刷前多提交 jal 等，difftest PC 错位）
   rob.io.commit_fire := rob.io.commit_valid && !is_irq_early && !fencei_flush && !mret_flush &&
     !ext_irq_flush && !bp_commit_block &&
@@ -851,7 +876,24 @@ class Core(val conf: CoreConfig) extends Module {
     (!cm_is_fencei || fencei_commit_ready) &&
     (!cm_needs_store_drain || store_side_empty)
   val cm_fire   = rob.io.commit_fire
+  rob.io.commit1_fire := cm_fire && rob.io.commit1_valid && !cm_exclusive && !cm1_exclusive &&
+    !bp_commit1_block
+  val cm1_fire = rob.io.commit1_fire
   val cm_do_ren = cm_fire && cm_bits.reg_write && (cm_bits.arch_rd =/= 0.U) && (cm_bits.new_phys =/= 0.U)
+  val cm1_do_ren = cm1_fire && cm1_bits.reg_write && (cm1_bits.arch_rd =/= 0.U) && (cm1_bits.new_phys =/= 0.U)
+  val cm1_slot_available = cm_fire && rob.io.commit1_valid
+  val cm1_slot_not_ready = cm_fire && !rob.io.commit1_valid
+  val cm1_slot_blocked = cm1_slot_available && !cm1_fire
+  val cm1_block_slot0_excl = cm1_slot_blocked && cm_exclusive
+  val cm1_block_mem = cm1_slot_blocked && !cm_exclusive && cm1_bits.mem_valid
+  val cm1_block_ctrl = cm1_slot_blocked && !cm_exclusive && !cm1_bits.mem_valid &&
+    cm1_is_ctrl_not_mret
+  val cm1_block_csr = cm1_slot_blocked && !cm_exclusive && !cm1_bits.mem_valid &&
+    !cm1_is_ctrl_not_mret && cm1_bits.csr_write
+  val cm1_block_special = cm1_slot_blocked && !cm_exclusive && !cm1_bits.mem_valid &&
+    !cm1_is_ctrl_not_mret && !cm1_bits.csr_write &&
+    (cm1_is_fencei || cm1_is_mret || cm1_bits.is_ebreak || cm1_bits.state.state)
+  val cm1_block_bp = cm1_slot_blocked && !cm_exclusive && !cm1_exclusive && bp_commit1_block
 
   val wb_store = can_wb && rob.io.entries(wb_idx).valid &&
     rob.io.entries(wb_idx).mem_valid && rob.io.entries(wb_idx).mem_write
@@ -878,6 +920,22 @@ class Core(val conf: CoreConfig) extends Module {
     PM(conf, clock, EVENT_COMMIT_WAIT_FENCE, 1.U, rob.io.commit_valid && cm_is_fencei && !fencei_commit_ready)
     PM(conf, clock, EVENT_COMMIT_WAIT_BP, 1.U, rob.io.commit_valid && bp_commit_block)
     PM(conf, clock, EVENT_COMMIT_WAIT_FLUSH, 1.U, rob.io.commit_valid && (is_irq_early || fencei_flush || mret_flush || ext_irq_flush))
+    PM(conf, clock, EVENT_COMMIT_SLOT0, 1.U, cm_fire)
+    PM(conf, clock, EVENT_COMMIT_SLOT1, 1.U, cm1_fire)
+    PM(conf, clock, EVENT_COMMIT2, 1.U, cm_fire && cm1_fire)
+    PM(conf, clock, EVENT_COMMIT_SLOT1_BLOCK, 1.U,
+      cm1_slot_blocked)
+    PM(conf, clock, EVENT_COMMIT_SLOT1_NOT_READY, 1.U, cm1_slot_not_ready)
+    PM(conf, clock, EVENT_COMMIT_SLOT1_BLOCK_SLOT0_EXCL, 1.U, cm1_block_slot0_excl)
+    PM(conf, clock, EVENT_COMMIT_SLOT1_BLOCK_MEM, 1.U, cm1_block_mem)
+    PM(conf, clock, EVENT_COMMIT_SLOT1_BLOCK_CTRL, 1.U, cm1_block_ctrl)
+    PM(conf, clock, EVENT_COMMIT_SLOT1_BLOCK_CSR, 1.U, cm1_block_csr)
+    PM(conf, clock, EVENT_COMMIT_SLOT1_BLOCK_SPECIAL, 1.U, cm1_block_special)
+    PM(conf, clock, EVENT_COMMIT_SLOT1_BLOCK_BP, 1.U, cm1_block_bp)
+    PM(conf, clock, EVENT_FQ_ENQ2, 1.U,
+      fq.io.enq.fire && fq.io.enq.bits.valid(0) && fq.io.enq.bits.valid(1))
+    PM(conf, clock, EVENT_FQ_SPACE_ONE, 1.U,
+      ifu.io.out.valid && ifu.io.out.bits.valid(0) && fq.io.space === 1.U)
   }
 
   rename.io.commit_fire := cm_fire
@@ -887,10 +945,27 @@ class Core(val conf: CoreConfig) extends Module {
   rename.io.cm_arch_rd  := cm_bits.arch_rd
   rename.io.cm_cp_valid := cm_fire && (cm_bits.jump =/= JUMP_NONE) && (cm_bits.jump =/= JUMP_MERT)
   rename.io.cm_cp_idx   := cm_bits.cp_idx
+  rename.io.commit1_fire := cm1_fire
+  rename.io.cm1_do_ren   := cm1_do_ren
+  rename.io.cm1_old_phys := cm1_bits.old_phys
+  rename.io.cm1_new_phys := cm1_bits.new_phys
+  rename.io.cm1_arch_rd  := cm1_bits.arch_rd
+  rename.io.cm1_cp_valid := false.B
+  rename.io.cm1_cp_idx   := cm1_bits.cp_idx
 
   val cm_wb_same = cm_fire && head_wb_valid
+  val cm1_wb0 = can_wb && (wb_idx === rob.io.commit1_idx)
+  val cm1_wb1 = can_wb1 && (wb1_idx === rob.io.commit1_idx)
+  val cm1_wb_valid = cm1_wb0 || cm1_wb1
+  val cm1_wb_bits = Wire(new LSU_WBU_IO)
+  cm1_wb_bits := Mux(cm1_wb0, wbu.io.in.bits, wbu1.io.in.bits)
+  val cm1_wb_val = Mux(cm1_wb0, wb_val, wb1_val)
+  val cm1_wb_same = cm1_fire && cm1_wb_valid
   when(cm_do_ren) {
     arch_rf(cm_bits.arch_rd) := Mux(cm_wb_same, head_wb_val, cm_bits.dest_val)
+  }
+  when(cm1_do_ren) {
+    arch_rf(cm1_bits.arch_rd) := Mux(cm1_wb_same, cm1_wb_val, cm1_bits.dest_val)
   }
 
   // 4b：CSR 架构写仅 commit（wdata 用入队时 rs1 / csr_rd1）
@@ -950,6 +1025,7 @@ class Core(val conf: CoreConfig) extends Module {
 
   is_bp_flush := mis_predict_dbg
   bp_commit_block := mis_predict_r && (rob.io.commit_idx === mis_next_rob_r)
+  bp_commit1_block := mis_predict_r && (rob.io.commit1_idx === mis_next_rob_r)
   dontTouch(bp_commit_block)
   // 4f：fencei 提交拍组合停 issue；结构冲刷下一拍 flush_all（已提交，只剩 younger）
   fencei_commit := cm_fire && cm_is_fencei
@@ -1017,8 +1093,12 @@ class Core(val conf: CoreConfig) extends Module {
 
   // flush 重建 RAT/free
   val cm_this = cm_fire && rob.io.entries(rob.io.head).valid
-  val rb_head = Mux(cm_this, Mux(rob.io.head === (OoOParams.ROB_SIZE - 1).U, 0.U, rob.io.head + 1.U), rob.io.head)
-  val rb_empty = is_irq || fencei_flush || mret_flush || (cm_this && (rob.io.head === flush_idx))
+  val cm1_this = cm1_fire && rob.io.entries(rob.io.commit1_idx).valid
+  val cm_count = cm_this.asUInt +& cm1_this.asUInt
+  val rb_head = (rob.io.head + cm_count)(OoOParams.ROB_PTR_W - 1, 0)
+  val rb_empty = is_irq || fencei_flush || mret_flush ||
+    (cm_this && (rob.io.head === flush_idx)) ||
+    (cm1_this && (rob.io.commit1_idx === flush_idx))
   val kept_n = Mux(rb_empty, 0.U, Mux(flush_idx >= rb_head,
     (flush_idx - rb_head) + 1.U,
     (OoOParams.ROB_SIZE.U - rb_head) + flush_idx + 1.U))
@@ -1026,7 +1106,9 @@ class Core(val conf: CoreConfig) extends Module {
   val rb_base = Wire(Vec(32, UInt(OoOParams.PHYS_W.W)))
   for (i <- 0 until 32) {
     val cmHit = cm_do_ren && (i.U === cm_bits.arch_rd) && (i.U =/= 0.U)
-    rb_base(i) := Mux(cmHit, cm_bits.new_phys, rename.io.arch_rat_out(i))
+    val cm1Hit = cm1_do_ren && (i.U === cm1_bits.arch_rd) && (i.U =/= 0.U)
+    rb_base(i) := Mux(cm1Hit, cm1_bits.new_phys,
+      Mux(cmHit, cm_bits.new_phys, rename.io.arch_rat_out(i)))
   }
 
   val rb_steps = Wire(Vec(OoOParams.ROB_SIZE + 1, Vec(32, UInt(OoOParams.PHYS_W.W))))
@@ -1115,7 +1197,9 @@ class Core(val conf: CoreConfig) extends Module {
   ifu.io.bpu_update_valid := cm_is_jump
   ifu.io.bpu_update_taken := cm_bits.actual_taken
   ifu.io.bpu_update_pc := cm_bits.pc
+  ifu.io.bpu_update_target := cm_bits.actual_target
   ifu.io.bpu_update_is_branch := cm_is_branch
+  ifu.io.bpu_update_is_jalr := cm_is_jump && (cm_jump === JUMP_JALR)
   ifu.io.bpu_update_index := cm_bits.bp_index
   ifu.io.bpu_update_is_call := cm_is_jump && cm_rd_ra &&
     ((cm_jump === JUMP_JAL) || (cm_jump === JUMP_JALR && !cm_rs1_ra))
@@ -1296,12 +1380,18 @@ class Core(val conf: CoreConfig) extends Module {
   io.commit_mem_addr := Mux(cm_is_store, head_st_addr,
     Mux(cm_wb_same, head_wb_bits.alu_result, cm_bits.mem_addr))
   io.commit_is_load  := cm_bits.reg_write_sel === MEM_SEL
+  io.commit_valid1    := cm1_fire
+  io.commit_pc1       := cm1_bits.pc
+  io.commit_mem_addr1 := Mux(cm1_wb_same, cm1_wb_bits.alu_result, cm1_bits.mem_addr)
+  io.commit_is_load1  := cm1_bits.reg_write_sel === MEM_SEL
   for (i <- 0 until 32) {
     io.arch_rdata(i) := Mux(i.U === 0.U, 0.U, arch_rf(i.U))
   }
   prf.io.arch_raddr := rename.io.arch_rat_out
   dontTouch(io.commit_valid)
   dontTouch(io.commit_pc)
+  dontTouch(io.commit_valid1)
+  dontTouch(io.commit_pc1)
   dontTouch(io.arch_rdata)
   dontTouch(rob.io.count)
   dontTouch(rs.io.count)

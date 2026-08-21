@@ -51,7 +51,7 @@ static uint32_t read_arch(int idx) {
 
 uint32_t read_gpr_from_top(int idx) { return read_arch(idx); }
 uint32_t read_pc_from_top() {
-  return top->rootp->ysyx_25020039__DOT__core__DOT__ifu__DOT__pc_reg;
+  return top->rootp->io_commit_pc;
 }
 uint32_t read_commit_pc_from_top() {
   return top->rootp->io_commit_pc;

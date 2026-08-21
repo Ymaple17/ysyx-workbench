@@ -139,8 +139,14 @@ extract_microbench_csv() {
   local total_cycles ipc commit_inst ifu_fetch bpu_hit bpu_mispred bp_flush
   local dir_miss target_miss unpred_jalr fq_full fq_empty ifu_pipe
   local cdb_conflicts head_wait wait_store_commit
+  local commit_slot0 commit_slot1 commit2_cycles commit_slot1_block commit_slot1_util
+  local commit_slot1_not_ready commit_slot1_block_slot0_excl commit_slot1_block_mem
+  local commit_slot1_block_ctrl commit_slot1_block_csr commit_slot1_block_special
+  local commit_slot1_block_bp
   local store_buffer_full store_buffer_enq store_buffer_drain store_buffer_fwd
   local dcache_access dcache_hit dcache_miss dcache_bypass dcache_hit_rate
+  local fetch_slot0 fetch_slot1 fetch_slot1_killed fq_enq2 fq_space_one
+  local fetch_redirect_bubble fetch_slot1_util bpu_tagged_hit bpu_indirect_hit
 
   total_cycles="$(extract_metric "${log}" "Total Cycles")"
   ipc="$(extract_metric "${log}" "IPC")"
@@ -155,7 +161,28 @@ extract_microbench_csv() {
   fq_full="$(extract_metric "${log}" "FQ Full")"
   fq_empty="$(extract_metric "${log}" "FQ Empty")"
   ifu_pipe="$(extract_metric "${log}" "Pipeline Stall")"
+  fetch_slot0="$(extract_metric "${log}" "Fetch Slot0 Valid")"
+  fetch_slot1="$(extract_metric "${log}" "Fetch Slot1 Valid")"
+  fetch_slot1_killed="$(extract_metric "${log}" "Fetch Slot1 Killed")"
+  fq_enq2="$(extract_metric "${log}" "FQ Enq2")"
+  fq_space_one="$(extract_metric "${log}" "FQ Space One")"
+  fetch_redirect_bubble="$(extract_metric "${log}" "Fetch Redirect Bubble")"
+  fetch_slot1_util="$(extract_metric "${log}" "Fetch Slot1 Util")"
+  bpu_tagged_hit="$(extract_metric "${log}" "Tagged Hits")"
+  bpu_indirect_hit="$(extract_metric "${log}" "Indirect Hits")"
   cdb_conflicts="$(extract_metric "${log}" "CDB Conflicts")"
+  commit_slot0="$(extract_metric "${log}" "Commit Slot0")"
+  commit_slot1="$(extract_metric "${log}" "Commit Slot1")"
+  commit2_cycles="$(extract_metric "${log}" "Commit2 Cycles")"
+  commit_slot1_block="$(extract_metric "${log}" "Commit Slot1 Block")"
+  commit_slot1_not_ready="$(extract_metric "${log}" "Commit Slot1 NotReady")"
+  commit_slot1_block_slot0_excl="$(extract_metric "${log}" "Commit Slot1 Block Slot0Excl")"
+  commit_slot1_block_mem="$(extract_metric "${log}" "Commit Slot1 Block Mem")"
+  commit_slot1_block_ctrl="$(extract_metric "${log}" "Commit Slot1 Block Ctrl")"
+  commit_slot1_block_csr="$(extract_metric "${log}" "Commit Slot1 Block CSR")"
+  commit_slot1_block_special="$(extract_metric "${log}" "Commit Slot1 Block Special")"
+  commit_slot1_block_bp="$(extract_metric "${log}" "Commit Slot1 Block BP")"
+  commit_slot1_util="$(extract_metric "${log}" "Commit Slot1 Util")"
   head_wait="$(extract_metric "${log}" "Head Not Ready")"
   wait_store_commit="$(extract_metric "${log}" "Wait Store Commit")"
   store_buffer_full="$(extract_metric "${log}" "StoreBuffer Full")"
@@ -169,8 +196,8 @@ extract_microbench_csv() {
   dcache_hit_rate="$(extract_metric "${log}" "DCache Hit Rate")"
 
   {
-    echo "tag,ipc,total_cycles,commit_inst,ifu_fetch,bpu_hit_pct,bpu_mispred,bp_flush,dir_miss,target_miss,unpred_jalr,fq_full,fq_empty,ifu_pipeline_stall,cdb_conflicts,head_wait,wait_store_commit,store_buffer_full,store_buffer_enq,store_buffer_drain,store_buffer_fwd,dcache_access,dcache_hit,dcache_miss,dcache_bypass,dcache_hit_rate_pct,result"
-    echo "${tag},${ipc},${total_cycles},${commit_inst},${ifu_fetch},${bpu_hit},${bpu_mispred},${bp_flush},${dir_miss},${target_miss},${unpred_jalr},${fq_full},${fq_empty},${ifu_pipe},${cdb_conflicts},${head_wait},${wait_store_commit},${store_buffer_full},${store_buffer_enq},${store_buffer_drain},${store_buffer_fwd},${dcache_access},${dcache_hit},${dcache_miss},${dcache_bypass},${dcache_hit_rate},PASS"
+    echo "tag,ipc,total_cycles,commit_inst,ifu_fetch,bpu_hit_pct,bpu_mispred,bp_flush,dir_miss,target_miss,unpred_jalr,fq_full,fq_empty,ifu_pipeline_stall,fetch_slot0,fetch_slot1,fetch_slot1_killed,fq_enq2,fq_space_one,fetch_redirect_bubble,fetch_slot1_util_pct,bpu_tagged_hit,bpu_indirect_hit,cdb_conflicts,commit_slot0,commit_slot1,commit2_cycles,commit_slot1_block,commit_slot1_not_ready,commit_slot1_block_slot0_excl,commit_slot1_block_mem,commit_slot1_block_ctrl,commit_slot1_block_csr,commit_slot1_block_special,commit_slot1_block_bp,commit_slot1_util_pct,head_wait,wait_store_commit,store_buffer_full,store_buffer_enq,store_buffer_drain,store_buffer_fwd,dcache_access,dcache_hit,dcache_miss,dcache_bypass,dcache_hit_rate_pct,result"
+    echo "${tag},${ipc},${total_cycles},${commit_inst},${ifu_fetch},${bpu_hit},${bpu_mispred},${bp_flush},${dir_miss},${target_miss},${unpred_jalr},${fq_full},${fq_empty},${ifu_pipe},${fetch_slot0},${fetch_slot1},${fetch_slot1_killed},${fq_enq2},${fq_space_one},${fetch_redirect_bubble},${fetch_slot1_util},${bpu_tagged_hit},${bpu_indirect_hit},${cdb_conflicts},${commit_slot0},${commit_slot1},${commit2_cycles},${commit_slot1_block},${commit_slot1_not_ready},${commit_slot1_block_slot0_excl},${commit_slot1_block_mem},${commit_slot1_block_ctrl},${commit_slot1_block_csr},${commit_slot1_block_special},${commit_slot1_block_bp},${commit_slot1_util},${head_wait},${wait_store_commit},${store_buffer_full},${store_buffer_enq},${store_buffer_drain},${store_buffer_fwd},${dcache_access},${dcache_hit},${dcache_miss},${dcache_bypass},${dcache_hit_rate},PASS"
   } > "${csv}"
   echo "[summary] ${csv}"
 }

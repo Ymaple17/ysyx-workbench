@@ -1,0 +1,5 @@
+tag,rob_size,n_phys,rs_size,store_buffer_size,ipc,total_cycles,commit_inst,head_not_ready,fq_full,storebuffer_full,wait_store_commit,commit_slot1,commit2_cycles,commit_slot1_util_pct,commit_slot1_not_ready,commit_slot1_block,slot1_block_slot0_excl,slot1_block_mem,slot1_block_ctrl,slot1_block_csr,slot1_block_special,slot1_block_bp,result,decision
+stage10g_slot1_diag,16,48,8,4,0.4302,1214990,522666,557891,219953,45457,47203,28744,28744,5.82,335030,130148,101667,4408,24072,0,1,0,PASS,baseline
+stage10g_rob32,32,64,8,4,0.4327,1208113,522726,551731,203952,46085,47931,29759,29759,6.04,330979,132229,102849,4735,24645,0,0,0,PASS,accepted-intermediate
+stage10g_rob32_sb8,32,64,8,8,0.4330,1206337,522326,552503,203931,44106,46043,29538,29538,5.99,331642,131608,102389,4655,24564,0,0,0,PASS,retained
+stage10g_rob32_rs12_sb8,32,64,12,8,0.4196,1245484,522662,591879,247231,28561,30225,18591,18591,3.69,366418,119062,92709,4319,22034,0,0,0,PASS,rejected

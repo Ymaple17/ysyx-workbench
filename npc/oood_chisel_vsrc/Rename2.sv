@@ -9,12 +9,12 @@ module Rename2(
   input  [4:0]  io_rd0,
   input         io_reg_write0,
                 io_is_branch0,
-  input  [3:0]  io_cp_rob_idx0,
+  input  [4:0]  io_cp_rob_idx0,
   input         io_fire1,
   input  [4:0]  io_rd1,
   input         io_reg_write1,
                 io_is_branch1,
-  input  [3:0]  io_cp_rob_idx1,
+  input  [4:0]  io_cp_rob_idx1,
   output [1:0]  io_cp_idx0,
   output [5:0]  io_dest_phys,
                 io_old_phys,
@@ -28,7 +28,12 @@ module Rename2(
   input  [4:0]  io_cm_arch_rd,
   input         io_cm_cp_valid,
   input  [1:0]  io_cm_cp_idx,
-  input  [3:0]  io_rob_head,
+  input         io_commit1_fire,
+                io_cm1_do_ren,
+  input  [5:0]  io_cm1_old_phys,
+                io_cm1_new_phys,
+  input  [4:0]  io_cm1_arch_rd,
+                io_rob_head,
   input         io_restore_cp,
   input  [1:0]  io_restore_cp_idx,
   output [5:0]  io_rat_out_0,
@@ -95,7 +100,7 @@ module Rename2(
                 io_arch_rat_out_29,
                 io_arch_rat_out_30,
                 io_arch_rat_out_31,
-                io_free_cnt,
+  output [6:0]  io_free_cnt,
   output        io_cp_full,
   input         io_rebuild,
   input  [5:0]  io_rebuild_rat_0,
@@ -130,7 +135,7 @@ module Rename2(
                 io_rebuild_rat_29,
                 io_rebuild_rat_30,
                 io_rebuild_rat_31,
-  input  [47:0] io_rebuild_free
+  input  [63:0] io_rebuild_free
 );
 
   reg  [5:0]   rat_0;
@@ -197,9 +202,9 @@ module Rename2(
   reg  [5:0]   arch_rat_29;
   reg  [5:0]   arch_rat_30;
   reg  [5:0]   arch_rat_31;
-  reg  [47:0]  freeBits;
+  reg  [63:0]  freeBits;
   reg          cps_0_valid;
-  reg  [3:0]   cps_0_rob_idx;
+  reg  [4:0]   cps_0_rob_idx;
   reg  [5:0]   cps_0_rat_snap_0;
   reg  [5:0]   cps_0_rat_snap_1;
   reg  [5:0]   cps_0_rat_snap_2;
@@ -232,9 +237,9 @@ module Rename2(
   reg  [5:0]   cps_0_rat_snap_29;
   reg  [5:0]   cps_0_rat_snap_30;
   reg  [5:0]   cps_0_rat_snap_31;
-  reg  [47:0]  cps_0_free_snap;
+  reg  [63:0]  cps_0_free_snap;
   reg          cps_1_valid;
-  reg  [3:0]   cps_1_rob_idx;
+  reg  [4:0]   cps_1_rob_idx;
   reg  [5:0]   cps_1_rat_snap_0;
   reg  [5:0]   cps_1_rat_snap_1;
   reg  [5:0]   cps_1_rat_snap_2;
@@ -267,9 +272,9 @@ module Rename2(
   reg  [5:0]   cps_1_rat_snap_29;
   reg  [5:0]   cps_1_rat_snap_30;
   reg  [5:0]   cps_1_rat_snap_31;
-  reg  [47:0]  cps_1_free_snap;
+  reg  [63:0]  cps_1_free_snap;
   reg          cps_2_valid;
-  reg  [3:0]   cps_2_rob_idx;
+  reg  [4:0]   cps_2_rob_idx;
   reg  [5:0]   cps_2_rat_snap_0;
   reg  [5:0]   cps_2_rat_snap_1;
   reg  [5:0]   cps_2_rat_snap_2;
@@ -302,9 +307,9 @@ module Rename2(
   reg  [5:0]   cps_2_rat_snap_29;
   reg  [5:0]   cps_2_rat_snap_30;
   reg  [5:0]   cps_2_rat_snap_31;
-  reg  [47:0]  cps_2_free_snap;
+  reg  [63:0]  cps_2_free_snap;
   reg          cps_3_valid;
-  reg  [3:0]   cps_3_rob_idx;
+  reg  [4:0]   cps_3_rob_idx;
   reg  [5:0]   cps_3_rat_snap_0;
   reg  [5:0]   cps_3_rat_snap_1;
   reg  [5:0]   cps_3_rat_snap_2;
@@ -337,7 +342,7 @@ module Rename2(
   reg  [5:0]   cps_3_rat_snap_29;
   reg  [5:0]   cps_3_rat_snap_30;
   reg  [5:0]   cps_3_rat_snap_31;
-  reg  [47:0]  cps_3_free_snap;
+  reg  [63:0]  cps_3_free_snap;
   wire [3:0]   _io_cp_full_T = {cps_3_valid, cps_2_valid, cps_1_valid, cps_0_valid};
   wire [4:0]   rd0Eff = io_fire0 ? io_rd0 : io_rd;
   wire         branch0Eff = io_fire0 & io_is_branch0;
@@ -503,16 +508,48 @@ module Rename2(
                                                                                                                                                                                   ? 6'h2C
                                                                                                                                                                                   : freeBits[45]
                                                                                                                                                                                       ? 6'h2D
-                                                                                                                                                                                      : {5'h17,
-                                                                                                                                                                                         ~(freeBits[46])};
+                                                                                                                                                                                      : freeBits[46]
+                                                                                                                                                                                          ? 6'h2E
+                                                                                                                                                                                          : freeBits[47]
+                                                                                                                                                                                              ? 6'h2F
+                                                                                                                                                                                              : freeBits[48]
+                                                                                                                                                                                                  ? 6'h30
+                                                                                                                                                                                                  : freeBits[49]
+                                                                                                                                                                                                      ? 6'h31
+                                                                                                                                                                                                      : freeBits[50]
+                                                                                                                                                                                                          ? 6'h32
+                                                                                                                                                                                                          : freeBits[51]
+                                                                                                                                                                                                              ? 6'h33
+                                                                                                                                                                                                              : freeBits[52]
+                                                                                                                                                                                                                  ? 6'h34
+                                                                                                                                                                                                                  : freeBits[53]
+                                                                                                                                                                                                                      ? 6'h35
+                                                                                                                                                                                                                      : freeBits[54]
+                                                                                                                                                                                                                          ? 6'h36
+                                                                                                                                                                                                                          : freeBits[55]
+                                                                                                                                                                                                                              ? 6'h37
+                                                                                                                                                                                                                              : freeBits[56]
+                                                                                                                                                                                                                                  ? 6'h38
+                                                                                                                                                                                                                                  : freeBits[57]
+                                                                                                                                                                                                                                      ? 6'h39
+                                                                                                                                                                                                                                      : freeBits[58]
+                                                                                                                                                                                                                                          ? 6'h3A
+                                                                                                                                                                                                                                          : freeBits[59]
+                                                                                                                                                                                                                                              ? 6'h3B
+                                                                                                                                                                                                                                              : freeBits[60]
+                                                                                                                                                                                                                                                  ? 6'h3C
+                                                                                                                                                                                                                                                  : freeBits[61]
+                                                                                                                                                                                                                                                      ? 6'h3D
+                                                                                                                                                                                                                                                      : {5'h1F,
+                                                                                                                                                                                                                                                         ~(freeBits[62])};
   wire         doRen0 =
     (io_fire0 | io_fire) & (io_fire0 ? io_reg_write0 : io_reg_write) & (|rd0Eff)
-    & (|(freeBits[47:1]));
-  wire [110:0] _freeAfter0_T_1 = 111'h1 << new0;
-  wire [47:0]  freeAfter0 =
-    ({48{~doRen0}} | {48{new0 == 6'h0}} | ~(_freeAfter0_T_1[47:0])) & freeBits
-    & 48'hFFFFFFFFFFFE;
-  wire [5:0]   _new1_T_93 =
+    & (|(freeBits[63:1]));
+  wire [126:0] _freeAfter0_T_1 = 127'h1 << new0;
+  wire [63:0]  freeAfter0 =
+    ({64{~doRen0}} | {64{new0 == 6'h0}} | ~(_freeAfter0_T_1[63:0])) & freeBits
+    & 64'hFFFFFFFFFFFFFFFE;
+  wire [5:0]   _new1_T_125 =
     freeAfter0[1]
       ? 6'h1
       : freeAfter0[2]
@@ -603,9 +640,41 @@ module Rename2(
                                                                                                                                                                                   ? 6'h2C
                                                                                                                                                                                   : freeAfter0[45]
                                                                                                                                                                                       ? 6'h2D
-                                                                                                                                                                                      : {5'h17,
-                                                                                                                                                                                         ~(freeAfter0[46])};
-  wire         doRen1 = io_fire1 & io_reg_write1 & (|io_rd1) & (|(freeAfter0[47:1]));
+                                                                                                                                                                                      : freeAfter0[46]
+                                                                                                                                                                                          ? 6'h2E
+                                                                                                                                                                                          : freeAfter0[47]
+                                                                                                                                                                                              ? 6'h2F
+                                                                                                                                                                                              : freeAfter0[48]
+                                                                                                                                                                                                  ? 6'h30
+                                                                                                                                                                                                  : freeAfter0[49]
+                                                                                                                                                                                                      ? 6'h31
+                                                                                                                                                                                                      : freeAfter0[50]
+                                                                                                                                                                                                          ? 6'h32
+                                                                                                                                                                                                          : freeAfter0[51]
+                                                                                                                                                                                                              ? 6'h33
+                                                                                                                                                                                                              : freeAfter0[52]
+                                                                                                                                                                                                                  ? 6'h34
+                                                                                                                                                                                                                  : freeAfter0[53]
+                                                                                                                                                                                                                      ? 6'h35
+                                                                                                                                                                                                                      : freeAfter0[54]
+                                                                                                                                                                                                                          ? 6'h36
+                                                                                                                                                                                                                          : freeAfter0[55]
+                                                                                                                                                                                                                              ? 6'h37
+                                                                                                                                                                                                                              : freeAfter0[56]
+                                                                                                                                                                                                                                  ? 6'h38
+                                                                                                                                                                                                                                  : freeAfter0[57]
+                                                                                                                                                                                                                                      ? 6'h39
+                                                                                                                                                                                                                                      : freeAfter0[58]
+                                                                                                                                                                                                                                          ? 6'h3A
+                                                                                                                                                                                                                                          : freeAfter0[59]
+                                                                                                                                                                                                                                              ? 6'h3B
+                                                                                                                                                                                                                                              : freeAfter0[60]
+                                                                                                                                                                                                                                                  ? 6'h3C
+                                                                                                                                                                                                                                                  : freeAfter0[61]
+                                                                                                                                                                                                                                                      ? 6'h3D
+                                                                                                                                                                                                                                                      : {5'h1F,
+                                                                                                                                                                                                                                                         ~(freeAfter0[62])};
+  wire         doRen1 = io_fire1 & io_reg_write1 & (|io_rd1) & (|(freeAfter0[63:1]));
   wire         _ratAfter0_0_T_1 = doRen0 & _ratAfter0_0_T;
   wire [5:0]   ratAfter0_0 = _ratAfter0_0_T_1 ? new0 : rat_0;
   wire         _ratAfter0_1_T_1 = doRen0 & rd0Eff == 5'h1;
@@ -748,7 +817,7 @@ module Rename2(
         casez_tmp_0 = ratAfter0_31;
     endcase
   end // always_comb
-  reg  [3:0]   casez_tmp_1;
+  reg  [4:0]   casez_tmp_1;
   always_comb begin
     casez (io_restore_cp_idx)
       2'b00:
@@ -1177,7 +1246,7 @@ module Rename2(
         casez_tmp_33 = cps_3_rat_snap_31;
     endcase
   end // always_comb
-  reg  [47:0]  casez_tmp_34;
+  reg  [63:0]  casez_tmp_34;
   always_comb begin
     casez (io_restore_cp_idx)
       2'b00:
@@ -1190,12 +1259,14 @@ module Rename2(
         casez_tmp_34 = cps_3_free_snap;
     endcase
   end // always_comb
-  wire         _afterCommit_T = io_commit_fire & io_cm_do_ren;
-  wire         commitReleasesPhys = _afterCommit_T & (|io_cm_old_phys);
-  wire [5:0]   new1 = freeAfter0[0] ? 6'h0 : _new1_T_93;
-  wire [110:0] _freeAfter1_T_1 = 111'h1 << new1;
-  wire [47:0]  freeAfter1 =
-    ({48{~doRen1}} | {48{new1 == 6'h0}} | ~(_freeAfter1_T_1[47:0])) & freeAfter0;
+  wire         doCm0 = io_commit_fire & io_cm_do_ren & (|io_cm_arch_rd);
+  wire         doCm1 = io_commit1_fire & io_cm1_do_ren & (|io_cm1_arch_rd);
+  wire         commitReleasesPhys0 = doCm0 & (|io_cm_old_phys);
+  wire         commitReleasesPhys1 = doCm1 & (|io_cm1_old_phys);
+  wire [5:0]   new1 = freeAfter0[0] ? 6'h0 : _new1_T_125;
+  wire [126:0] _freeAfter1_T_1 = 127'h1 << new1;
+  wire [63:0]  freeAfter1 =
+    ({64{~doRen1}} | {64{new1 == 6'h0}} | ~(_freeAfter1_T_1[63:0])) & freeAfter0;
   wire         _ratAfter1_0_T_1 = doRen1 & _io_old_phys1_T;
   wire         _ratAfter1_1_T_1 = doRen1 & io_rd1 == 5'h1;
   wire         _ratAfter1_2_T_1 = doRen1 & io_rd1 == 5'h2;
@@ -1230,28 +1301,32 @@ module Rename2(
   wire         _ratAfter1_31_T_1 = doRen1 & (&io_rd1);
   wire [1:0]   cpIdx0 = cps_0_valid ? _cpIdx0_T_5 : 2'h0;
   wire [1:0]   cpIdx1 = cpMaskFor1[0] ? 2'h0 : _cpIdx1_T_5;
-  wire         _GEN = _afterCommit_T & (|io_cm_arch_rd);
-  wire [110:0] _GEN_0 = {105'h0, io_cm_old_phys};
-  wire [47:0]  _GEN_1 = {48{commitReleasesPhys}};
-  wire [47:0]  _GEN_2 = {48{|io_cm_old_phys}};
-  wire [3:0]   _targetAge_T = casez_tmp_1 - io_rob_head;
+  wire [126:0] _GEN = {121'h0, io_cm_old_phys};
+  wire [63:0]  _GEN_0 = {64{commitReleasesPhys0}};
+  wire [63:0]  _GEN_1 = {64{|io_cm_old_phys}};
+  wire [126:0] _freeBits_T_12 = 127'h1 << _GEN;
+  wire [63:0]  _GEN_2 = _GEN_0 & _GEN_1 & _freeBits_T_12[63:0];
+  wire [126:0] _GEN_3 = {121'h0, io_cm1_old_phys};
+  wire [63:0]  _GEN_4 = {64{|io_cm1_old_phys}};
+  wire [4:0]   _targetAge_T = casez_tmp_1 - io_rob_head;
   wire         younger = cps_0_valid & cps_0_rob_idx - io_rob_head > _targetAge_T;
   wire         younger_1 = cps_1_valid & cps_1_rob_idx - io_rob_head > _targetAge_T;
   wire         younger_2 = cps_2_valid & cps_2_rob_idx - io_rob_head > _targetAge_T;
   wire         younger_3 = cps_3_valid & cps_3_rob_idx - io_rob_head > _targetAge_T;
-  wire         _GEN_3 = io_commit_fire & io_cm_cp_valid;
-  wire         _GEN_4 = io_cm_cp_idx == 2'h0;
-  wire         _GEN_5 = io_cm_cp_idx == 2'h1;
-  wire         _GEN_6 = io_cm_cp_idx == 2'h2;
-  wire         _GEN_7 = push0 & cpIdx0 == 2'h0;
-  wire         _GEN_8 = push0 & cpIdx0 == 2'h1;
-  wire         _GEN_9 = push0 & cpIdx0 == 2'h2;
-  wire         _GEN_10 = push0 & (&cpIdx0);
-  wire         _GEN_11 = cpIdx1 == 2'h0;
-  wire         _GEN_12 = cpIdx1 == 2'h1;
-  wire         _GEN_13 = cpIdx1 == 2'h2;
-  wire [110:0] _afterCommit_T_4 = 111'h1 << _GEN_0;
-  wire [110:0] _freeBits_T_3 = 111'h1 << _GEN_0;
+  wire         _GEN_5 = io_commit_fire & io_cm_cp_valid;
+  wire         _GEN_6 = io_cm_cp_idx == 2'h0;
+  wire         _GEN_7 = io_cm_cp_idx == 2'h1;
+  wire         _GEN_8 = io_cm_cp_idx == 2'h2;
+  wire         _GEN_9 = push0 & cpIdx0 == 2'h0;
+  wire         _GEN_10 = push0 & cpIdx0 == 2'h1;
+  wire         _GEN_11 = push0 & cpIdx0 == 2'h2;
+  wire         _GEN_12 = push0 & (&cpIdx0);
+  wire         _GEN_13 = cpIdx1 == 2'h0;
+  wire         _GEN_14 = cpIdx1 == 2'h1;
+  wire         _GEN_15 = cpIdx1 == 2'h2;
+  wire [126:0] _afterCommit_T_1 = 127'h1 << _GEN_3;
+  wire [126:0] _afterCommit0_T_1 = 127'h1 << _GEN;
+  wire [126:0] _freeBits_T_8 = 127'h1 << _GEN_3;
   wire [5:0]   ratAfter1_0 = _ratAfter1_0_T_1 ? new1 : ratAfter0_0;
   wire [5:0]   ratAfter1_1 = _ratAfter1_1_T_1 ? new1 : ratAfter0_1;
   wire [5:0]   ratAfter1_2 = _ratAfter1_2_T_1 ? new1 : ratAfter0_2;
@@ -1284,16 +1359,33 @@ module Rename2(
   wire [5:0]   ratAfter1_29 = _ratAfter1_29_T_1 ? new1 : ratAfter0_29;
   wire [5:0]   ratAfter1_30 = _ratAfter1_30_T_1 ? new1 : ratAfter0_30;
   wire [5:0]   ratAfter1_31 = _ratAfter1_31_T_1 ? new1 : ratAfter0_31;
-  wire [110:0] _cps_free_snap_T_1 = 111'h1 << _GEN_0;
-  wire [47:0]  _GEN_14 =
-    (_GEN_1 & _GEN_2 & _cps_free_snap_T_1[47:0] | freeAfter0) & 48'hFFFFFFFFFFFE;
-  wire [110:0] _cps_free_snap_T_8 = 111'h1 << _GEN_0;
-  wire [47:0]  _GEN_15 =
-    (_GEN_1 & _GEN_2 & _cps_free_snap_T_8[47:0] | freeAfter1) & 48'hFFFFFFFFFFFE;
-  wire [110:0] _cps_0_free_snap_T_1 = 111'h1 << _GEN_0;
-  wire [110:0] _cps_1_free_snap_T_1 = 111'h1 << _GEN_0;
-  wire [110:0] _cps_2_free_snap_T_1 = 111'h1 << _GEN_0;
-  wire [110:0] _cps_3_free_snap_T_1 = 111'h1 << _GEN_0;
+  wire         _GEN_16 = commitReleasesPhys0 | commitReleasesPhys1;
+  wire [126:0] _cps_free_snap_T_10 = 127'h1 << _GEN;
+  wire [63:0]  _GEN_17 = _GEN_0 & _GEN_1 & _cps_free_snap_T_10[63:0];
+  wire [126:0] _cps_free_snap_T_6 = 127'h1 << _GEN_3;
+  wire [63:0]  _GEN_18 =
+    (commitReleasesPhys1
+       ? _GEN_4 & _cps_free_snap_T_6[63:0] | _GEN_17 | freeAfter0
+       : _GEN_17 | freeAfter0) & 64'hFFFFFFFFFFFFFFFE;
+  wire [126:0] _cps_free_snap_T_27 = 127'h1 << _GEN;
+  wire [63:0]  _GEN_19 = _GEN_0 & _GEN_1 & _cps_free_snap_T_27[63:0];
+  wire [126:0] _cps_free_snap_T_23 = 127'h1 << _GEN_3;
+  wire [63:0]  _GEN_20 =
+    (commitReleasesPhys1
+       ? _GEN_4 & _cps_free_snap_T_23[63:0] | _GEN_19 | freeAfter1
+       : _GEN_19 | freeAfter1) & 64'hFFFFFFFFFFFFFFFE;
+  wire [126:0] _cps_0_free_snap_T_10 = 127'h1 << _GEN;
+  wire [63:0]  _GEN_21 = _GEN_0 & _GEN_1 & _cps_0_free_snap_T_10[63:0];
+  wire [126:0] _cps_0_free_snap_T_6 = 127'h1 << _GEN_3;
+  wire [126:0] _cps_1_free_snap_T_10 = 127'h1 << _GEN;
+  wire [63:0]  _GEN_22 = _GEN_0 & _GEN_1 & _cps_1_free_snap_T_10[63:0];
+  wire [126:0] _cps_1_free_snap_T_6 = 127'h1 << _GEN_3;
+  wire [126:0] _cps_2_free_snap_T_10 = 127'h1 << _GEN;
+  wire [63:0]  _GEN_23 = _GEN_0 & _GEN_1 & _cps_2_free_snap_T_10[63:0];
+  wire [126:0] _cps_2_free_snap_T_6 = 127'h1 << _GEN_3;
+  wire [126:0] _cps_3_free_snap_T_10 = 127'h1 << _GEN;
+  wire [63:0]  _GEN_24 = _GEN_0 & _GEN_1 & _cps_3_free_snap_T_10[63:0];
+  wire [126:0] _cps_3_free_snap_T_6 = 127'h1 << _GEN_3;
   always @(posedge clock) begin
     if (reset) begin
       rat_0 <= 6'h0;
@@ -1360,9 +1452,9 @@ module Rename2(
       arch_rat_29 <= 6'h1D;
       arch_rat_30 <= 6'h1E;
       arch_rat_31 <= 6'h1F;
-      freeBits <= 48'hFFFF00000000;
+      freeBits <= 64'hFFFFFFFF00000000;
       cps_0_valid <= 1'h0;
-      cps_0_rob_idx <= 4'h0;
+      cps_0_rob_idx <= 5'h0;
       cps_0_rat_snap_0 <= 6'h0;
       cps_0_rat_snap_1 <= 6'h0;
       cps_0_rat_snap_2 <= 6'h0;
@@ -1395,9 +1487,9 @@ module Rename2(
       cps_0_rat_snap_29 <= 6'h0;
       cps_0_rat_snap_30 <= 6'h0;
       cps_0_rat_snap_31 <= 6'h0;
-      cps_0_free_snap <= 48'h0;
+      cps_0_free_snap <= 64'h0;
       cps_1_valid <= 1'h0;
-      cps_1_rob_idx <= 4'h0;
+      cps_1_rob_idx <= 5'h0;
       cps_1_rat_snap_0 <= 6'h0;
       cps_1_rat_snap_1 <= 6'h0;
       cps_1_rat_snap_2 <= 6'h0;
@@ -1430,9 +1522,9 @@ module Rename2(
       cps_1_rat_snap_29 <= 6'h0;
       cps_1_rat_snap_30 <= 6'h0;
       cps_1_rat_snap_31 <= 6'h0;
-      cps_1_free_snap <= 48'h0;
+      cps_1_free_snap <= 64'h0;
       cps_2_valid <= 1'h0;
-      cps_2_rob_idx <= 4'h0;
+      cps_2_rob_idx <= 5'h0;
       cps_2_rat_snap_0 <= 6'h0;
       cps_2_rat_snap_1 <= 6'h0;
       cps_2_rat_snap_2 <= 6'h0;
@@ -1465,9 +1557,9 @@ module Rename2(
       cps_2_rat_snap_29 <= 6'h0;
       cps_2_rat_snap_30 <= 6'h0;
       cps_2_rat_snap_31 <= 6'h0;
-      cps_2_free_snap <= 48'h0;
+      cps_2_free_snap <= 64'h0;
       cps_3_valid <= 1'h0;
-      cps_3_rob_idx <= 4'h0;
+      cps_3_rob_idx <= 5'h0;
       cps_3_rat_snap_0 <= 6'h0;
       cps_3_rat_snap_1 <= 6'h0;
       cps_3_rat_snap_2 <= 6'h0;
@@ -1500,7 +1592,7 @@ module Rename2(
       cps_3_rat_snap_29 <= 6'h0;
       cps_3_rat_snap_30 <= 6'h0;
       cps_3_rat_snap_31 <= 6'h0;
-      cps_3_free_snap <= 48'h0;
+      cps_3_free_snap <= 64'h0;
     end
     else begin
       if (io_rebuild) begin
@@ -1701,85 +1793,151 @@ module Rename2(
         else if (_ratAfter0_31_T_1)
           rat_31 <= new0;
       end
-      if (_GEN & ~(|io_cm_arch_rd))
+      if (doCm1 & io_cm1_arch_rd == 5'h0)
+        arch_rat_0 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h0)
         arch_rat_0 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h1)
+      if (doCm1 & io_cm1_arch_rd == 5'h1)
+        arch_rat_1 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h1)
         arch_rat_1 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h2)
+      if (doCm1 & io_cm1_arch_rd == 5'h2)
+        arch_rat_2 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h2)
         arch_rat_2 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h3)
+      if (doCm1 & io_cm1_arch_rd == 5'h3)
+        arch_rat_3 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h3)
         arch_rat_3 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h4)
+      if (doCm1 & io_cm1_arch_rd == 5'h4)
+        arch_rat_4 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h4)
         arch_rat_4 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h5)
+      if (doCm1 & io_cm1_arch_rd == 5'h5)
+        arch_rat_5 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h5)
         arch_rat_5 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h6)
+      if (doCm1 & io_cm1_arch_rd == 5'h6)
+        arch_rat_6 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h6)
         arch_rat_6 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h7)
+      if (doCm1 & io_cm1_arch_rd == 5'h7)
+        arch_rat_7 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h7)
         arch_rat_7 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h8)
+      if (doCm1 & io_cm1_arch_rd == 5'h8)
+        arch_rat_8 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h8)
         arch_rat_8 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h9)
+      if (doCm1 & io_cm1_arch_rd == 5'h9)
+        arch_rat_9 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h9)
         arch_rat_9 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'hA)
+      if (doCm1 & io_cm1_arch_rd == 5'hA)
+        arch_rat_10 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'hA)
         arch_rat_10 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'hB)
+      if (doCm1 & io_cm1_arch_rd == 5'hB)
+        arch_rat_11 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'hB)
         arch_rat_11 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'hC)
+      if (doCm1 & io_cm1_arch_rd == 5'hC)
+        arch_rat_12 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'hC)
         arch_rat_12 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'hD)
+      if (doCm1 & io_cm1_arch_rd == 5'hD)
+        arch_rat_13 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'hD)
         arch_rat_13 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'hE)
+      if (doCm1 & io_cm1_arch_rd == 5'hE)
+        arch_rat_14 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'hE)
         arch_rat_14 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'hF)
+      if (doCm1 & io_cm1_arch_rd == 5'hF)
+        arch_rat_15 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'hF)
         arch_rat_15 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h10)
+      if (doCm1 & io_cm1_arch_rd == 5'h10)
+        arch_rat_16 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h10)
         arch_rat_16 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h11)
+      if (doCm1 & io_cm1_arch_rd == 5'h11)
+        arch_rat_17 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h11)
         arch_rat_17 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h12)
+      if (doCm1 & io_cm1_arch_rd == 5'h12)
+        arch_rat_18 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h12)
         arch_rat_18 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h13)
+      if (doCm1 & io_cm1_arch_rd == 5'h13)
+        arch_rat_19 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h13)
         arch_rat_19 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h14)
+      if (doCm1 & io_cm1_arch_rd == 5'h14)
+        arch_rat_20 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h14)
         arch_rat_20 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h15)
+      if (doCm1 & io_cm1_arch_rd == 5'h15)
+        arch_rat_21 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h15)
         arch_rat_21 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h16)
+      if (doCm1 & io_cm1_arch_rd == 5'h16)
+        arch_rat_22 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h16)
         arch_rat_22 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h17)
+      if (doCm1 & io_cm1_arch_rd == 5'h17)
+        arch_rat_23 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h17)
         arch_rat_23 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h18)
+      if (doCm1 & io_cm1_arch_rd == 5'h18)
+        arch_rat_24 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h18)
         arch_rat_24 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h19)
+      if (doCm1 & io_cm1_arch_rd == 5'h19)
+        arch_rat_25 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h19)
         arch_rat_25 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h1A)
+      if (doCm1 & io_cm1_arch_rd == 5'h1A)
+        arch_rat_26 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h1A)
         arch_rat_26 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h1B)
+      if (doCm1 & io_cm1_arch_rd == 5'h1B)
+        arch_rat_27 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h1B)
         arch_rat_27 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h1C)
+      if (doCm1 & io_cm1_arch_rd == 5'h1C)
+        arch_rat_28 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h1C)
         arch_rat_28 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h1D)
+      if (doCm1 & io_cm1_arch_rd == 5'h1D)
+        arch_rat_29 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h1D)
         arch_rat_29 <= io_cm_new_phys;
-      if (_GEN & io_cm_arch_rd == 5'h1E)
+      if (doCm1 & io_cm1_arch_rd == 5'h1E)
+        arch_rat_30 <= io_cm1_new_phys;
+      else if (doCm0 & io_cm_arch_rd == 5'h1E)
         arch_rat_30 <= io_cm_new_phys;
-      if (_GEN & (&io_cm_arch_rd))
+      if (doCm1 & (&io_cm1_arch_rd))
+        arch_rat_31 <= io_cm1_new_phys;
+      else if (doCm0 & (&io_cm_arch_rd))
         arch_rat_31 <= io_cm_new_phys;
       freeBits <=
         io_rebuild
-          ? io_rebuild_free & 48'hFFFFFFFFFFFE
+          ? io_rebuild_free & 64'hFFFFFFFFFFFFFFFE
           : io_restore_cp
-              ? (_GEN_1 & _GEN_2 & _freeBits_T_3[47:0] | casez_tmp_34) & 48'hFFFFFFFFFFFE
-              : ({48{_afterCommit_T & (|io_cm_old_phys)}} & _GEN_2
-                 & _afterCommit_T_4[47:0] | freeAfter1) & 48'hFFFFFFFFFFFE;
+              ? (commitReleasesPhys1
+                   ? _GEN_4 & _freeBits_T_8[63:0] | _GEN_2 | casez_tmp_34
+                   : _GEN_2 | casez_tmp_34) & 64'hFFFFFFFFFFFFFFFE
+              : ({64{commitReleasesPhys1}} & _GEN_4 & _afterCommit_T_1[63:0] | _GEN_0
+                 & _GEN_1 & _afterCommit0_T_1[63:0] | freeAfter1) & 64'hFFFFFFFFFFFFFFFE;
       cps_0_valid <=
         ~io_rebuild
         & (io_restore_cp
-             ? (_GEN_3 ? ~(_GEN_4 | younger) & cps_0_valid : ~younger & cps_0_valid)
-             : ~(_GEN_3 & _GEN_4)
-               & (push1 ? _GEN_11 | _GEN_7 | cps_0_valid : _GEN_7 | cps_0_valid));
+             ? (_GEN_5 ? ~(_GEN_6 | younger) & cps_0_valid : ~younger & cps_0_valid)
+             : ~(_GEN_5 & _GEN_6)
+               & (push1 ? _GEN_13 | _GEN_9 | cps_0_valid : _GEN_9 | cps_0_valid));
       if (~(io_rebuild | io_restore_cp)) begin
-        if (push1 & _GEN_11) begin
+        if (push1 & _GEN_13) begin
           cps_0_rob_idx <= io_cp_rob_idx1;
           cps_0_rat_snap_0 <= ratAfter1_0;
           cps_0_rat_snap_1 <= ratAfter1_1;
@@ -1813,9 +1971,9 @@ module Rename2(
           cps_0_rat_snap_29 <= ratAfter1_29;
           cps_0_rat_snap_30 <= ratAfter1_30;
           cps_0_rat_snap_31 <= ratAfter1_31;
-          cps_0_free_snap <= _GEN_15;
+          cps_0_free_snap <= _GEN_20;
         end
-        else if (_GEN_7) begin
+        else if (_GEN_9) begin
           cps_0_rob_idx <= io_cp_rob_idx0;
           cps_0_rat_snap_0 <= ratAfter0_0;
           cps_0_rat_snap_1 <= ratAfter0_1;
@@ -1849,13 +2007,14 @@ module Rename2(
           cps_0_rat_snap_29 <= ratAfter0_29;
           cps_0_rat_snap_30 <= ratAfter0_30;
           cps_0_rat_snap_31 <= ratAfter0_31;
-          cps_0_free_snap <= _GEN_14;
+          cps_0_free_snap <= _GEN_18;
         end
-        else if (commitReleasesPhys & cps_0_valid)
+        else if (_GEN_16 & cps_0_valid)
           cps_0_free_snap <=
-            (_GEN_1 & _GEN_2 & _cps_0_free_snap_T_1[47:0] | cps_0_free_snap)
-            & 48'hFFFFFFFFFFFE;
-        if (push1 & _GEN_12) begin
+            (commitReleasesPhys1
+               ? _GEN_4 & _cps_0_free_snap_T_6[63:0] | _GEN_21 | cps_0_free_snap
+               : _GEN_21 | cps_0_free_snap) & 64'hFFFFFFFFFFFFFFFE;
+        if (push1 & _GEN_14) begin
           cps_1_rob_idx <= io_cp_rob_idx1;
           cps_1_rat_snap_0 <= ratAfter1_0;
           cps_1_rat_snap_1 <= ratAfter1_1;
@@ -1889,9 +2048,9 @@ module Rename2(
           cps_1_rat_snap_29 <= ratAfter1_29;
           cps_1_rat_snap_30 <= ratAfter1_30;
           cps_1_rat_snap_31 <= ratAfter1_31;
-          cps_1_free_snap <= _GEN_15;
+          cps_1_free_snap <= _GEN_20;
         end
-        else if (_GEN_8) begin
+        else if (_GEN_10) begin
           cps_1_rob_idx <= io_cp_rob_idx0;
           cps_1_rat_snap_0 <= ratAfter0_0;
           cps_1_rat_snap_1 <= ratAfter0_1;
@@ -1925,13 +2084,14 @@ module Rename2(
           cps_1_rat_snap_29 <= ratAfter0_29;
           cps_1_rat_snap_30 <= ratAfter0_30;
           cps_1_rat_snap_31 <= ratAfter0_31;
-          cps_1_free_snap <= _GEN_14;
+          cps_1_free_snap <= _GEN_18;
         end
-        else if (commitReleasesPhys & cps_1_valid)
+        else if (_GEN_16 & cps_1_valid)
           cps_1_free_snap <=
-            (_GEN_1 & _GEN_2 & _cps_1_free_snap_T_1[47:0] | cps_1_free_snap)
-            & 48'hFFFFFFFFFFFE;
-        if (push1 & _GEN_13) begin
+            (commitReleasesPhys1
+               ? _GEN_4 & _cps_1_free_snap_T_6[63:0] | _GEN_22 | cps_1_free_snap
+               : _GEN_22 | cps_1_free_snap) & 64'hFFFFFFFFFFFFFFFE;
+        if (push1 & _GEN_15) begin
           cps_2_rob_idx <= io_cp_rob_idx1;
           cps_2_rat_snap_0 <= ratAfter1_0;
           cps_2_rat_snap_1 <= ratAfter1_1;
@@ -1965,9 +2125,9 @@ module Rename2(
           cps_2_rat_snap_29 <= ratAfter1_29;
           cps_2_rat_snap_30 <= ratAfter1_30;
           cps_2_rat_snap_31 <= ratAfter1_31;
-          cps_2_free_snap <= _GEN_15;
+          cps_2_free_snap <= _GEN_20;
         end
-        else if (_GEN_9) begin
+        else if (_GEN_11) begin
           cps_2_rob_idx <= io_cp_rob_idx0;
           cps_2_rat_snap_0 <= ratAfter0_0;
           cps_2_rat_snap_1 <= ratAfter0_1;
@@ -2001,12 +2161,13 @@ module Rename2(
           cps_2_rat_snap_29 <= ratAfter0_29;
           cps_2_rat_snap_30 <= ratAfter0_30;
           cps_2_rat_snap_31 <= ratAfter0_31;
-          cps_2_free_snap <= _GEN_14;
+          cps_2_free_snap <= _GEN_18;
         end
-        else if (commitReleasesPhys & cps_2_valid)
+        else if (_GEN_16 & cps_2_valid)
           cps_2_free_snap <=
-            (_GEN_1 & _GEN_2 & _cps_2_free_snap_T_1[47:0] | cps_2_free_snap)
-            & 48'hFFFFFFFFFFFE;
+            (commitReleasesPhys1
+               ? _GEN_4 & _cps_2_free_snap_T_6[63:0] | _GEN_23 | cps_2_free_snap
+               : _GEN_23 | cps_2_free_snap) & 64'hFFFFFFFFFFFFFFFE;
         if (push1 & (&cpIdx1)) begin
           cps_3_rob_idx <= io_cp_rob_idx1;
           cps_3_rat_snap_0 <= ratAfter1_0;
@@ -2041,9 +2202,9 @@ module Rename2(
           cps_3_rat_snap_29 <= ratAfter1_29;
           cps_3_rat_snap_30 <= ratAfter1_30;
           cps_3_rat_snap_31 <= ratAfter1_31;
-          cps_3_free_snap <= _GEN_15;
+          cps_3_free_snap <= _GEN_20;
         end
-        else if (_GEN_10) begin
+        else if (_GEN_12) begin
           cps_3_rob_idx <= io_cp_rob_idx0;
           cps_3_rat_snap_0 <= ratAfter0_0;
           cps_3_rat_snap_1 <= ratAfter0_1;
@@ -2077,39 +2238,40 @@ module Rename2(
           cps_3_rat_snap_29 <= ratAfter0_29;
           cps_3_rat_snap_30 <= ratAfter0_30;
           cps_3_rat_snap_31 <= ratAfter0_31;
-          cps_3_free_snap <= _GEN_14;
+          cps_3_free_snap <= _GEN_18;
         end
-        else if (commitReleasesPhys & cps_3_valid)
+        else if (_GEN_16 & cps_3_valid)
           cps_3_free_snap <=
-            (_GEN_1 & _GEN_2 & _cps_3_free_snap_T_1[47:0] | cps_3_free_snap)
-            & 48'hFFFFFFFFFFFE;
+            (commitReleasesPhys1
+               ? _GEN_4 & _cps_3_free_snap_T_6[63:0] | _GEN_24 | cps_3_free_snap
+               : _GEN_24 | cps_3_free_snap) & 64'hFFFFFFFFFFFFFFFE;
       end
       cps_1_valid <=
         ~io_rebuild
         & (io_restore_cp
-             ? (_GEN_3 ? ~(_GEN_5 | younger_1) & cps_1_valid : ~younger_1 & cps_1_valid)
-             : ~(_GEN_3 & _GEN_5)
-               & (push1 ? _GEN_12 | _GEN_8 | cps_1_valid : _GEN_8 | cps_1_valid));
+             ? (_GEN_5 ? ~(_GEN_7 | younger_1) & cps_1_valid : ~younger_1 & cps_1_valid)
+             : ~(_GEN_5 & _GEN_7)
+               & (push1 ? _GEN_14 | _GEN_10 | cps_1_valid : _GEN_10 | cps_1_valid));
       cps_2_valid <=
         ~io_rebuild
         & (io_restore_cp
-             ? (_GEN_3 ? ~(_GEN_6 | younger_2) & cps_2_valid : ~younger_2 & cps_2_valid)
-             : ~(_GEN_3 & _GEN_6)
-               & (push1 ? _GEN_13 | _GEN_9 | cps_2_valid : _GEN_9 | cps_2_valid));
+             ? (_GEN_5 ? ~(_GEN_8 | younger_2) & cps_2_valid : ~younger_2 & cps_2_valid)
+             : ~(_GEN_5 & _GEN_8)
+               & (push1 ? _GEN_15 | _GEN_11 | cps_2_valid : _GEN_11 | cps_2_valid));
       cps_3_valid <=
         ~io_rebuild
         & (io_restore_cp
-             ? (_GEN_3
+             ? (_GEN_5
                   ? ~((&io_cm_cp_idx) | younger_3) & cps_3_valid
                   : ~younger_3 & cps_3_valid)
-             : ~(_GEN_3 & (&io_cm_cp_idx))
-               & (push1 ? (&cpIdx1) | _GEN_10 | cps_3_valid : _GEN_10 | cps_3_valid));
+             : ~(_GEN_5 & (&io_cm_cp_idx))
+               & (push1 ? (&cpIdx1) | _GEN_12 | cps_3_valid : _GEN_12 | cps_3_valid));
     end
   end // always @(posedge)
   assign io_cp_idx0 = push0 & cps_0_valid ? _cpIdx0_T_5 : 2'h0;
   assign io_dest_phys = doRen0 ? new0 : 6'h0;
   assign io_old_phys = ~doRen0 | _ratAfter0_0_T ? 6'h0 : casez_tmp;
-  assign io_dest_phys1 = ~doRen1 | freeAfter0[0] ? 6'h0 : _new1_T_93;
+  assign io_dest_phys1 = ~doRen1 | freeAfter0[0] ? 6'h0 : _new1_T_125;
   assign io_old_phys1 = ~doRen1 | _io_old_phys1_T ? 6'h0 : casez_tmp_0;
   assign io_cp_idx1 = ~push1 | cpMaskFor1[0] ? 2'h0 : _cpIdx1_T_5;
   assign io_rat_out_0 = rat_0;
@@ -2180,39 +2342,63 @@ module Rename2(
     {1'h0,
      {1'h0,
       {1'h0,
-       {1'h0, {1'h0, freeBits[1]} + {1'h0, freeBits[2]}}
-         + {1'h0, {1'h0, freeBits[3]} + {1'h0, freeBits[4]} + {1'h0, freeBits[5]}}}
+       {1'h0, {2'h0, freeBits[1]} + {1'h0, {1'h0, freeBits[2]} + {1'h0, freeBits[3]}}}
+         + {1'h0,
+            {1'h0, {1'h0, freeBits[4]} + {1'h0, freeBits[5]}}
+              + {1'h0, {1'h0, freeBits[6]} + {1'h0, freeBits[7]}}}}
         + {1'h0,
-           {1'h0, {1'h0, freeBits[6]} + {1'h0, freeBits[7]} + {1'h0, freeBits[8]}}
-             + {1'h0, {1'h0, freeBits[9]} + {1'h0, freeBits[10]} + {1'h0, freeBits[11]}}}}
+           {1'h0,
+            {1'h0, {1'h0, freeBits[8]} + {1'h0, freeBits[9]}}
+              + {1'h0, {1'h0, freeBits[10]} + {1'h0, freeBits[11]}}}
+             + {1'h0,
+                {1'h0, {1'h0, freeBits[12]} + {1'h0, freeBits[13]}}
+                  + {1'h0, {1'h0, freeBits[14]} + {1'h0, freeBits[15]}}}}}
        + {1'h0,
           {1'h0,
-           {1'h0, {1'h0, freeBits[12]} + {1'h0, freeBits[13]} + {1'h0, freeBits[14]}}
-             + {1'h0, {1'h0, freeBits[15]} + {1'h0, freeBits[16]} + {1'h0, freeBits[17]}}}
+           {1'h0,
+            {1'h0, {1'h0, freeBits[16]} + {1'h0, freeBits[17]}}
+              + {1'h0, {1'h0, freeBits[18]} + {1'h0, freeBits[19]}}}
+             + {1'h0,
+                {1'h0, {1'h0, freeBits[20]} + {1'h0, freeBits[21]}}
+                  + {1'h0, {1'h0, freeBits[22]} + {1'h0, freeBits[23]}}}}
             + {1'h0,
-               {1'h0, {1'h0, freeBits[18]} + {1'h0, freeBits[19]} + {1'h0, freeBits[20]}}
+               {1'h0,
+                {1'h0, {1'h0, freeBits[24]} + {1'h0, freeBits[25]}}
+                  + {1'h0, {1'h0, freeBits[26]} + {1'h0, freeBits[27]}}}
                  + {1'h0,
-                    {1'h0, freeBits[21]} + {1'h0, freeBits[22]} + {1'h0, freeBits[23]}}}}}
+                    {1'h0, {1'h0, freeBits[28]} + {1'h0, freeBits[29]}}
+                      + {1'h0, {1'h0, freeBits[30]} + {1'h0, freeBits[31]}}}}}}
     + {1'h0,
        {1'h0,
         {1'h0,
-         {1'h0, {1'h0, freeBits[24]} + {1'h0, freeBits[25]} + {1'h0, freeBits[26]}}
-           + {1'h0, {1'h0, freeBits[27]} + {1'h0, freeBits[28]} + {1'h0, freeBits[29]}}}
+         {1'h0,
+          {1'h0, {1'h0, freeBits[32]} + {1'h0, freeBits[33]}}
+            + {1'h0, {1'h0, freeBits[34]} + {1'h0, freeBits[35]}}}
+           + {1'h0,
+              {1'h0, {1'h0, freeBits[36]} + {1'h0, freeBits[37]}}
+                + {1'h0, {1'h0, freeBits[38]} + {1'h0, freeBits[39]}}}}
           + {1'h0,
-             {1'h0, {1'h0, freeBits[30]} + {1'h0, freeBits[31]} + {1'h0, freeBits[32]}}
+             {1'h0,
+              {1'h0, {1'h0, freeBits[40]} + {1'h0, freeBits[41]}}
+                + {1'h0, {1'h0, freeBits[42]} + {1'h0, freeBits[43]}}}
                + {1'h0,
-                  {1'h0, freeBits[33]} + {1'h0, freeBits[34]} + {1'h0, freeBits[35]}}}}
+                  {1'h0, {1'h0, freeBits[44]} + {1'h0, freeBits[45]}}
+                    + {1'h0, {1'h0, freeBits[46]} + {1'h0, freeBits[47]}}}}}
          + {1'h0,
             {1'h0,
-             {1'h0, {1'h0, freeBits[36]} + {1'h0, freeBits[37]} + {1'h0, freeBits[38]}}
+             {1'h0,
+              {1'h0, {1'h0, freeBits[48]} + {1'h0, freeBits[49]}}
+                + {1'h0, {1'h0, freeBits[50]} + {1'h0, freeBits[51]}}}
                + {1'h0,
-                  {1'h0, freeBits[39]} + {1'h0, freeBits[40]} + {1'h0, freeBits[41]}}}
+                  {1'h0, {1'h0, freeBits[52]} + {1'h0, freeBits[53]}}
+                    + {1'h0, {1'h0, freeBits[54]} + {1'h0, freeBits[55]}}}}
               + {1'h0,
                  {1'h0,
-                  {1'h0, freeBits[42]} + {1'h0, freeBits[43]} + {1'h0, freeBits[44]}}
+                  {1'h0, {1'h0, freeBits[56]} + {1'h0, freeBits[57]}}
+                    + {1'h0, {1'h0, freeBits[58]} + {1'h0, freeBits[59]}}}
                    + {1'h0,
-                      {1'h0, freeBits[45]} + {1'h0, freeBits[46]}
-                        + {1'h0, freeBits[47]}}}}};
+                      {1'h0, {1'h0, freeBits[60]} + {1'h0, freeBits[61]}}
+                        + {1'h0, {1'h0, freeBits[62]} + {1'h0, freeBits[63]}}}}}};
   assign io_cp_full = &_io_cp_full_T;
 endmodule
 

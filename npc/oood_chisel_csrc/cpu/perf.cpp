@@ -44,6 +44,18 @@ void print_perf_stats(unsigned long long cycles) {
     printf("ICache Stall: %lld\n", counters[EVENT_IFU_STALL_ICACHE]);
     printf("Pipeline Stall: %lld\n", counters[EVENT_IFU_STALL_IDU]);
 
+    printf("\n[Frontend Width]\n");
+    printf("Fetch Slot0 Valid: %lld\n", counters[EVENT_FETCH_SLOT0_VALID]);
+    printf("Fetch Slot1 Valid: %lld\n", counters[EVENT_FETCH_SLOT1_VALID]);
+    printf("Fetch Slot1 Killed: %lld\n", counters[EVENT_FETCH_SLOT1_KILLED]);
+    printf("FQ Enq2: %lld\n", counters[EVENT_FQ_ENQ2]);
+    printf("FQ Space One: %lld\n", counters[EVENT_FQ_SPACE_ONE]);
+    printf("Fetch Redirect Bubble: %lld\n", counters[EVENT_FETCH_REDIRECT_BUBBLE]);
+    if (counters[EVENT_FETCH_SLOT0_VALID] > 0) {
+        printf("Fetch Slot1 Util: %.2f%%\n",
+               100.0 * counters[EVENT_FETCH_SLOT1_VALID] / counters[EVENT_FETCH_SLOT0_VALID]);
+    }
+
     printf("\n[ICache Performance]\n");
     long long icache_access = counters[EVENT_IFU_FETCH];
     long long icache_miss = counters[EVENT_ICACHE_MISS];
@@ -67,6 +79,8 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Direction Miss:    %lld\n", counters[EVENT_BPU_DIR_MISPRED]);
     printf("Target Miss:       %lld\n", counters[EVENT_BPU_TARGET_MISPRED]);
     printf("Unpredicted JALR:  %lld\n", counters[EVENT_BPU_UNPREDICTED]);
+    printf("Tagged Hits:       %lld\n", counters[EVENT_BPU_TAGGED_HIT]);
+    printf("Indirect Hits:     %lld\n", counters[EVENT_BPU_INDIRECT_HIT]);
     if (bpu_predict > 0) {
         printf("Hit Rate:     %.2f%%\n", 100.0 * (bpu_predict - bpu_mispred) / bpu_predict);
         printf("Mispredict Rate: %.2f%%\n", 100.0 * bpu_mispred / bpu_predict);
@@ -82,6 +96,21 @@ void print_perf_stats(unsigned long long cycles) {
     printf("\n[Writeback / Commit Bottlenecks]\n");
     printf("CDB Conflicts:       %lld\n", counters[EVENT_CDB_CONFLICT]);
     printf("CDB Blocked Results: %lld\n", counters[EVENT_CDB_BLOCKED]);
+    printf("Commit Slot0:        %lld\n", counters[EVENT_COMMIT_SLOT0]);
+    printf("Commit Slot1:        %lld\n", counters[EVENT_COMMIT_SLOT1]);
+    printf("Commit2 Cycles:      %lld\n", counters[EVENT_COMMIT2]);
+    printf("Commit Slot1 Block:  %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK]);
+    printf("Commit Slot1 NotReady: %lld\n", counters[EVENT_COMMIT_SLOT1_NOT_READY]);
+    printf("Commit Slot1 Block Slot0Excl: %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_SLOT0_EXCL]);
+    printf("Commit Slot1 Block Mem:       %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_MEM]);
+    printf("Commit Slot1 Block Ctrl:      %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_CTRL]);
+    printf("Commit Slot1 Block CSR:       %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_CSR]);
+    printf("Commit Slot1 Block Special:   %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_SPECIAL]);
+    printf("Commit Slot1 Block BP:        %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_BP]);
+    if (counters[EVENT_COMMIT_SLOT0] > 0) {
+        printf("Commit Slot1 Util:   %.2f%%\n",
+               100.0 * counters[EVENT_COMMIT_SLOT1] / counters[EVENT_COMMIT_SLOT0]);
+    }
     printf("Head Not Ready:      %lld\n", counters[EVENT_COMMIT_HEAD_WAIT]);
     printf("Wait Store Commit:   %lld\n", counters[EVENT_COMMIT_WAIT_STORE]);
     printf("Wait Fence/Icache:   %lld\n", counters[EVENT_COMMIT_WAIT_FENCE]);

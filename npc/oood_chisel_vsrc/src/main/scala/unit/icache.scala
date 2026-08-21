@@ -47,7 +47,9 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
 
     val way_hit = Wire(UInt(w.W))
     val hit_data = Wire(UInt((bus_width*8).W))
+    val hit_data1 = Wire(UInt((bus_width*8).W))
     val miss_data = Wire(UInt((bus_width*8).W))
+    val miss_data1 = Wire(UInt((bus_width*8).W))
     val hit = Wire(Bool())
 
     val fencei_cnt = RegInit(0.U(n.W))
@@ -95,8 +97,12 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
     index := Mux(io.in.arvalid, io.in.araddr(m + n - 1, m), in_addr(m + n - 1, m))
     offset := Mux(io.in.arvalid, io.in.araddr(m - 1, 0), in_addr(m - 1, 0))
     base_addr := Mux(io.in.arvalid, io.in.araddr, in_addr) - offset
+    val wordIdx = offset(m - 1, 2)
+    val hasNextWord = wordIdx =/= (c - 1).U
+    val nextWordIdx = Mux(hasNextWord, wordIdx + 1.U, wordIdx)
 
     hit_data := 0.U
+    hit_data1 := 0.U
     way_hit := 0.U
     hit := false.B
     Cache_Set := icache(index)
@@ -112,14 +118,18 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
         when(temp_valid && temp_tag === tagA){
             hit := Mux(io.in.arvalid, true.B, false.B)
             way_hit := i.U
-            hit_data := temp_cachedata.data(offset >> 2)
+            hit_data := temp_cachedata.data(wordIdx)
+            hit_data1 := temp_cachedata.data(nextWordIdx)
         }
     }
 
     io.in.arready := false.B
     io.in.rdata := 0.U
+    io.in.rdata1 := 0.U
     io.in.rvalid := false.B
+    io.in.rvalid1 := false.B
     io.in.rresp := io.out.rresp
+    io.in.rresp1 := io.out.rresp
 
     io.out.araddr  := 0.U
     io.out.arvalid := false.B
@@ -142,11 +152,13 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
 
     val addr = Mux(is_sdram, base_addr, ((c.U - 1.U - count) << 2) + base_addr)
     io.in.rdata := Mux(hit & state =/= s_AXI_R, hit_data, Mux(count === 0.U, miss_data, 0.U))
+    io.in.rdata1 := Mux(hit & state =/= s_AXI_R, hit_data1, Mux(count === 0.U, miss_data1, 0.U))
 
     switch(state){
         is(s_IFU_AR){
             io.in.arready := !(io.fencei.valid && io.fencei.bits.is_fencei)
             io.in.rvalid := Mux(hit, true.B, false.B)
+            io.in.rvalid1 := hit && hasNextWord
 
             io.out.araddr := 0.U
             io.out.arvalid := false.B
@@ -167,6 +179,7 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
         is(s_AXI_R){
             io.in.arready := false.B
             io.in.rvalid := Mux(count === 0.U & io.out.rvalid, true.B, false.B)
+            io.in.rvalid1 := Mux(count === 0.U & io.out.rvalid & hasNextWord, true.B, false.B)
 
             io.out.araddr := 0.U
             io.out.arvalid := false.B
@@ -175,6 +188,7 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
         is(s_IFU_DATA){
             io.in.arready := false.B
             io.in.rvalid := true.B
+            io.in.rvalid1 := false.B
             io.in.rdata := rdata
 
             io.out.araddr := 0.U
@@ -195,6 +209,7 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
 
     //miss refill
     miss_data := 0.U
+    miss_data1 := 0.U
     val miss_way = Wire(UInt(w.W))
     miss_way := fifo_ptr
 
@@ -205,7 +220,8 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
         new_block.tag := tagA
         new_block.data := Cache_Set.set(miss_way).data
         new_block.data((c.U - (count + 1.U))(log2Ceil(c).max(1) - 1, 0)) := io.out.rdata
-        miss_data := new_block.data(offset >> 2).asUInt
+        miss_data := new_block.data(wordIdx).asUInt
+        miss_data1 := new_block.data(nextWordIdx).asUInt
 
         val new_Cache_Set = Wire(Cache_Set.set.cloneType)
         new_Cache_Set := Cache_Set.set

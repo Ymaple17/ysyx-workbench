@@ -65,6 +65,13 @@ class Rename2(nPhys: Int = OoOParams.N_PHYS, cpDepth: Int = OoOParams.CP_DEPTH) 
     val cm_arch_rd  = Input(UInt(5.W))
     val cm_cp_valid = Input(Bool())
     val cm_cp_idx   = Input(UInt(cpW.W))
+    val commit1_fire = Input(Bool())
+    val cm1_do_ren   = Input(Bool())
+    val cm1_old_phys = Input(UInt(physW.W))
+    val cm1_new_phys = Input(UInt(physW.W))
+    val cm1_arch_rd  = Input(UInt(5.W))
+    val cm1_cp_valid = Input(Bool())
+    val cm1_cp_idx   = Input(UInt(cpW.W))
 
     val rob_head = Input(UInt(OoOParams.ROB_PTR_W.W))
 
@@ -146,9 +153,14 @@ class Rename2(nPhys: Int = OoOParams.N_PHYS, cpDepth: Int = OoOParams.CP_DEPTH) 
     Mux(i === 0.U, v, v & ~(1.U(nPhys.W) << i))
   def robAge(idx: UInt, head: UInt): UInt =
     (idx - head)(OoOParams.ROB_PTR_W - 1, 0)
-  val commitReleasesPhys = io.commit_fire && io.cm_do_ren && (io.cm_old_phys =/= 0.U)
+  val doCm0 = io.commit_fire && io.cm_do_ren && (io.cm_arch_rd =/= 0.U)
+  val doCm1 = io.commit1_fire && io.cm1_do_ren && (io.cm1_arch_rd =/= 0.U)
+  val commitReleasesPhys0 = doCm0 && (io.cm_old_phys =/= 0.U)
+  val commitReleasesPhys1 = doCm1 && (io.cm1_old_phys =/= 0.U)
   def withCommitFree(v: UInt): UInt =
-    noP0(Mux(commitReleasesPhys, setBit(v, io.cm_old_phys), v))
+    noP0(Mux(commitReleasesPhys1,
+      setBit(Mux(commitReleasesPhys0, setBit(v, io.cm_old_phys), v), io.cm1_old_phys),
+      Mux(commitReleasesPhys0, setBit(v, io.cm_old_phys), v)))
 
   val fire0Eff = io.fire0 || io.fire
   val rs1_0Eff = Mux(io.fire0, io.rs1_0, io.rs1)
@@ -225,8 +237,11 @@ class Rename2(nPhys: Int = OoOParams.N_PHYS, cpDepth: Int = OoOParams.CP_DEPTH) 
     for (i <- 0 until cpDepth) {
       cps(i).valid := false.B
     }
-    when(io.commit_fire && io.cm_do_ren && (io.cm_arch_rd =/= 0.U)) {
+    when(doCm0) {
       arch_rat(io.cm_arch_rd) := io.cm_new_phys
+    }
+    when(doCm1) {
+      arch_rat(io.cm1_arch_rd) := io.cm1_new_phys
     }
   }.elsewhen(io.restore_arch) {
     for (i <- 0 until 32) {
@@ -242,8 +257,11 @@ class Rename2(nPhys: Int = OoOParams.N_PHYS, cpDepth: Int = OoOParams.CP_DEPTH) 
       rat(i) := snap.rat_snap(i)
     }
     freeBits := withCommitFree(snap.free_snap)
-    when(io.commit_fire && io.cm_do_ren && (io.cm_arch_rd =/= 0.U)) {
+    when(doCm0) {
       arch_rat(io.cm_arch_rd) := io.cm_new_phys
+    }
+    when(doCm1) {
+      arch_rat(io.cm1_arch_rd) := io.cm1_new_phys
     }
     val targetAge = robAge(snap.rob_idx, io.rob_head)
     for (i <- 0 until cpDepth) {
@@ -255,11 +273,14 @@ class Rename2(nPhys: Int = OoOParams.N_PHYS, cpDepth: Int = OoOParams.CP_DEPTH) 
     when(io.commit_fire && io.cm_cp_valid) {
       cps(io.cm_cp_idx).valid := false.B
     }
+    when(io.commit1_fire && io.cm1_cp_valid) {
+      cps(io.cm1_cp_idx).valid := false.B
+    }
   }.elsewhen(io.rb_fire && io.rb_do_ren) {
     rat(io.rb_arch_rd) := io.rb_old_phys
     freeBits := noP0(setBit(clrBit(freeBits, io.rb_old_phys), io.rb_new_phys))
   }.otherwise {
-    when(commitReleasesPhys) {
+    when(commitReleasesPhys0 || commitReleasesPhys1) {
       for (i <- 0 until cpDepth) {
         when(cps(i).valid) {
           cps(i).free_snap := withCommitFree(cps(i).free_snap)
@@ -284,15 +305,21 @@ class Rename2(nPhys: Int = OoOParams.N_PHYS, cpDepth: Int = OoOParams.CP_DEPTH) 
       cps(cpIdx1).free_snap := withCommitFree(freeAfter1)
     }
 
-    when(io.commit_fire && io.cm_do_ren && (io.cm_arch_rd =/= 0.U)) {
+    when(doCm0) {
       arch_rat(io.cm_arch_rd) := io.cm_new_phys
+    }
+    when(doCm1) {
+      arch_rat(io.cm1_arch_rd) := io.cm1_new_phys
     }
     when(io.commit_fire && io.cm_cp_valid) {
       cps(io.cm_cp_idx).valid := false.B
     }
+    when(io.commit1_fire && io.cm1_cp_valid) {
+      cps(io.cm1_cp_idx).valid := false.B
+    }
 
-    val afterCommit = Mux(io.commit_fire && io.cm_do_ren && (io.cm_old_phys =/= 0.U),
-      setBit(freeAfter1, io.cm_old_phys), freeAfter1)
+    val afterCommit0 = Mux(commitReleasesPhys0, setBit(freeAfter1, io.cm_old_phys), freeAfter1)
+    val afterCommit = Mux(commitReleasesPhys1, setBit(afterCommit0, io.cm1_old_phys), afterCommit0)
     val afterMask = (0 until 3).foldLeft(afterCommit) { (acc, i) =>
       Mux(io.free_mask(i) && io.free_vec(i) =/= 0.U, setBit(acc, io.free_vec(i)), acc)
     }

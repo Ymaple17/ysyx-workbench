@@ -6,6 +6,7 @@ module ICache(
   output        io_in_arready,
   input         io_in_arvalid,
   output        io_in_rvalid,
+                io_in_rvalid1,
   input         io_in_rready,
   output [31:0] io_in_rdata,
   output [1:0]  io_in_rresp,
@@ -2627,6 +2628,7 @@ module ICache(
   wire [5:0]  index = io_in_arvalid ? io_in_araddr[10:5] : in_addr[10:5];
   wire [4:0]  offset = io_in_arvalid ? io_in_araddr[4:0] : in_addr[4:0];
   wire [31:0] _base_addr_T_1 = (io_in_arvalid ? io_in_araddr : in_addr) - {27'h0, offset};
+  wire        hasNextWord = offset[4:2] != 3'h7;
   reg         casez_tmp_1;
   always_comb begin
     casez (index)
@@ -25890,6 +25892,10 @@ module ICache(
   );
   assign io_in_arready = io_in_arready_0;
   assign io_in_rvalid = io_in_rvalid_0;
+  assign io_in_rvalid1 =
+    _next_state_T_13
+      ? hit & hasNextWord
+      : ~_next_state_T_15 & _next_state_T_17 & ~(|count) & io_out_rvalid & hasNextWord;
   assign io_in_rdata = _GEN_3 ? _io_in_rdata_T_4 : rdata;
   assign io_in_rresp = io_out_rresp;
   assign io_out_araddr =

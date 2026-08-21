@@ -253,6 +253,44 @@ static void execute(uint64_t n) {
         if (!dt_state.is_mmio) {
           difftest_one_exec();
         }
+
+        bool wbu_valid1 = top->rootp->io_commit_valid1;
+        if (wbu_valid1) {
+          word_t commit_pc1 = top->rootp->io_commit_pc1;
+
+#ifdef CONFIG_ITRACE
+          {
+            uint32_t inst1 = pmem_read(commit_pc1, 4);
+            itrace_inst(commit_pc1, inst1);
+            display_inst();
+          }
+#endif
+
+          CPU_State ref_state1;
+          ref_difftest_regcpy(&ref_state1, DIFFTEST_TO_DUT);
+          if (commit_pc1 != ref_state1.pc) {
+            printf("\n[difftest] ========== PC MISMATCH lane1 ==========\n");
+            printf("[difftest] PC: REF = 0x%08x, DUT(commit1) = 0x%08x\n", ref_state1.pc, commit_pc1);
+            printf("[difftest] =======================================\n\n");
+            npc_state.state = NPC_ABORT;
+            break;
+          }
+
+          word_t wbu_alu1 = top->rootp->io_commit_mem_addr1;
+          uint32_t inst1 = pmem_read(commit_pc1, 4);
+          bool is_store1 = ((inst1 & 0x7f) == 0x23);
+          bool is_load_wb1 = top->rootp->io_commit_is_load1;
+          bool is_mmio1 = (is_store1 || is_load_wb1) && is_mmio_addr(wbu_alu1);
+          if (is_mmio1) {
+            printf("[difftest] unexpected MMIO commit on lane1 pc=0x%08x addr=0x%08x\n",
+                   commit_pc1, wbu_alu1);
+            npc_state.state = NPC_ABORT;
+            break;
+          }
+          last_wbu_pc = commit_pc1;
+          dt_state.is_mmio = false;
+          difftest_one_exec();
+        }
         dt_state.check_pending = true;
 #endif
       }
@@ -364,7 +402,7 @@ static void execute(uint64_t n) {
         unsigned mcause= (unsigned)r->ysyx_25020039__DOT__core__DOT__csr__DOT__rf_3;
         unsigned ifu_npc = (unsigned)r->ysyx_25020039__DOT__core__DOT___ifu_io_pc_bits_next_pc;
         unsigned ifu_inv = (unsigned)r->ysyx_25020039__DOT__core__DOT__ifu_io_in_valid;
-        unsigned corr = (unsigned)r->ysyx_25020039__DOT__core__DOT____Vcellinp__ifu__io_correct_pc;
+        unsigned corr = 0u;
         printf("[HANG] ifu_state=%u mtvec=0x%08x mepc=0x%08x mcause=0x%x next_pc=0x%08x corr=0x%08x in_v=%u\n",
                ifu_st, mtvec, mepc, mcause, ifu_npc, corr, ifu_inv);
         unsigned cmst = (unsigned)r->ysyx_25020039__DOT__core__DOT__cm_st_state;

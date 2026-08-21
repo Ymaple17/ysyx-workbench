@@ -66,6 +66,22 @@ module PRF(
   reg  [31:0] rf_45;
   reg  [31:0] rf_46;
   reg  [31:0] rf_47;
+  reg  [31:0] rf_48;
+  reg  [31:0] rf_49;
+  reg  [31:0] rf_50;
+  reg  [31:0] rf_51;
+  reg  [31:0] rf_52;
+  reg  [31:0] rf_53;
+  reg  [31:0] rf_54;
+  reg  [31:0] rf_55;
+  reg  [31:0] rf_56;
+  reg  [31:0] rf_57;
+  reg  [31:0] rf_58;
+  reg  [31:0] rf_59;
+  reg  [31:0] rf_60;
+  reg  [31:0] rf_61;
+  reg  [31:0] rf_62;
+  reg  [31:0] rf_63;
   reg  [31:0] casez_tmp;
   always_comb begin
     casez (io_raddr1)
@@ -166,37 +182,37 @@ module PRF(
       6'b101111:
         casez_tmp = rf_47;
       6'b110000:
-        casez_tmp = rf_0;
+        casez_tmp = rf_48;
       6'b110001:
-        casez_tmp = rf_0;
+        casez_tmp = rf_49;
       6'b110010:
-        casez_tmp = rf_0;
+        casez_tmp = rf_50;
       6'b110011:
-        casez_tmp = rf_0;
+        casez_tmp = rf_51;
       6'b110100:
-        casez_tmp = rf_0;
+        casez_tmp = rf_52;
       6'b110101:
-        casez_tmp = rf_0;
+        casez_tmp = rf_53;
       6'b110110:
-        casez_tmp = rf_0;
+        casez_tmp = rf_54;
       6'b110111:
-        casez_tmp = rf_0;
+        casez_tmp = rf_55;
       6'b111000:
-        casez_tmp = rf_0;
+        casez_tmp = rf_56;
       6'b111001:
-        casez_tmp = rf_0;
+        casez_tmp = rf_57;
       6'b111010:
-        casez_tmp = rf_0;
+        casez_tmp = rf_58;
       6'b111011:
-        casez_tmp = rf_0;
+        casez_tmp = rf_59;
       6'b111100:
-        casez_tmp = rf_0;
+        casez_tmp = rf_60;
       6'b111101:
-        casez_tmp = rf_0;
+        casez_tmp = rf_61;
       6'b111110:
-        casez_tmp = rf_0;
+        casez_tmp = rf_62;
       default:
-        casez_tmp = rf_0;
+        casez_tmp = rf_63;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_0;
@@ -299,37 +315,37 @@ module PRF(
       6'b101111:
         casez_tmp_0 = rf_47;
       6'b110000:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_48;
       6'b110001:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_49;
       6'b110010:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_50;
       6'b110011:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_51;
       6'b110100:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_52;
       6'b110101:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_53;
       6'b110110:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_54;
       6'b110111:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_55;
       6'b111000:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_56;
       6'b111001:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_57;
       6'b111010:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_58;
       6'b111011:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_59;
       6'b111100:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_60;
       6'b111101:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_61;
       6'b111110:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_62;
       default:
-        casez_tmp_0 = rf_0;
+        casez_tmp_0 = rf_63;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_1;
@@ -432,37 +448,37 @@ module PRF(
       6'b101111:
         casez_tmp_1 = rf_47;
       6'b110000:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_48;
       6'b110001:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_49;
       6'b110010:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_50;
       6'b110011:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_51;
       6'b110100:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_52;
       6'b110101:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_53;
       6'b110110:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_54;
       6'b110111:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_55;
       6'b111000:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_56;
       6'b111001:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_57;
       6'b111010:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_58;
       6'b111011:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_59;
       6'b111100:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_60;
       6'b111101:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_61;
       6'b111110:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_62;
       default:
-        casez_tmp_1 = rf_0;
+        casez_tmp_1 = rf_63;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_2;
@@ -565,37 +581,37 @@ module PRF(
       6'b101111:
         casez_tmp_2 = rf_47;
       6'b110000:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_48;
       6'b110001:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_49;
       6'b110010:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_50;
       6'b110011:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_51;
       6'b110100:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_52;
       6'b110101:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_53;
       6'b110110:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_54;
       6'b110111:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_55;
       6'b111000:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_56;
       6'b111001:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_57;
       6'b111010:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_58;
       6'b111011:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_59;
       6'b111100:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_60;
       6'b111101:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_61;
       6'b111110:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_62;
       default:
-        casez_tmp_2 = rf_0;
+        casez_tmp_2 = rf_63;
     endcase
   end // always_comb
   wire        _GEN = io_wen1 & (|io_waddr1);
@@ -650,6 +666,22 @@ module PRF(
       rf_45 <= 32'h0;
       rf_46 <= 32'h0;
       rf_47 <= 32'h0;
+      rf_48 <= 32'h0;
+      rf_49 <= 32'h0;
+      rf_50 <= 32'h0;
+      rf_51 <= 32'h0;
+      rf_52 <= 32'h0;
+      rf_53 <= 32'h0;
+      rf_54 <= 32'h0;
+      rf_55 <= 32'h0;
+      rf_56 <= 32'h0;
+      rf_57 <= 32'h0;
+      rf_58 <= 32'h0;
+      rf_59 <= 32'h0;
+      rf_60 <= 32'h0;
+      rf_61 <= 32'h0;
+      rf_62 <= 32'h0;
+      rf_63 <= 32'h0;
     end
     else begin
       if (_GEN_0 & ~(|io_waddr2))
@@ -844,6 +876,70 @@ module PRF(
         rf_47 <= io_wdata2;
       else if (_GEN & io_waddr1 == 6'h2F)
         rf_47 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h30)
+        rf_48 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h30)
+        rf_48 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h31)
+        rf_49 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h31)
+        rf_49 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h32)
+        rf_50 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h32)
+        rf_50 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h33)
+        rf_51 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h33)
+        rf_51 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h34)
+        rf_52 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h34)
+        rf_52 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h35)
+        rf_53 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h35)
+        rf_53 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h36)
+        rf_54 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h36)
+        rf_54 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h37)
+        rf_55 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h37)
+        rf_55 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h38)
+        rf_56 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h38)
+        rf_56 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h39)
+        rf_57 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h39)
+        rf_57 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h3A)
+        rf_58 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h3A)
+        rf_58 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h3B)
+        rf_59 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h3B)
+        rf_59 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h3C)
+        rf_60 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h3C)
+        rf_60 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h3D)
+        rf_61 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h3D)
+        rf_61 <= io_wdata1;
+      if (_GEN_0 & io_waddr2 == 6'h3E)
+        rf_62 <= io_wdata2;
+      else if (_GEN & io_waddr1 == 6'h3E)
+        rf_62 <= io_wdata1;
+      if (_GEN_0 & (&io_waddr2))
+        rf_63 <= io_wdata2;
+      else if (_GEN & (&io_waddr1))
+        rf_63 <= io_wdata1;
     end
   end // always @(posedge)
   assign io_rdata1 = io_raddr1 == 6'h0 ? 32'h0 : casez_tmp;

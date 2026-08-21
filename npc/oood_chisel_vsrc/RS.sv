@@ -3,7 +3,7 @@ module RS(
   input         clock,
                 reset,
                 io_enq_fire,
-  input  [3:0]  io_enq_bits_rob_idx,
+  input  [4:0]  io_enq_bits_rob_idx,
   input  [1:0]  io_enq_bits_cp_idx,
   input         io_enq_bits_src1_ready,
                 io_enq_bits_src2_ready,
@@ -31,10 +31,10 @@ module RS(
                 io_enq_bits_wbu_reg_write,
   input  [2:0]  io_enq_bits_wbu_reg_write_sel,
   output [3:0]  io_count,
-  input  [3:0]  io_rob_head,
-  input  [15:0] io_rob_st_pending,
+  input  [4:0]  io_rob_head,
+  input  [31:0] io_rob_st_pending,
   output        io_issue_alu_valid,
-  output [3:0]  io_issue_alu_bits_rob_idx,
+  output [4:0]  io_issue_alu_bits_rob_idx,
   output [1:0]  io_issue_alu_bits_cp_idx,
   output [31:0] io_issue_alu_bits_src1_val,
                 io_issue_alu_bits_src2_val,
@@ -58,7 +58,7 @@ module RS(
                 io_issue_alu_bits_wbu_reg_write,
   output [2:0]  io_issue_alu_bits_wbu_reg_write_sel,
   output        io_issue_div_valid,
-  output [3:0]  io_issue_div_bits_rob_idx,
+  output [4:0]  io_issue_div_bits_rob_idx,
   output [31:0] io_issue_div_bits_src1_val,
                 io_issue_div_bits_src2_val,
   output [5:0]  io_issue_div_bits_pdest,
@@ -78,7 +78,7 @@ module RS(
                 io_issue_div_bits_wbu_reg_write,
   output [2:0]  io_issue_div_bits_wbu_reg_write_sel,
   output        io_issue_lsu_valid,
-  output [3:0]  io_issue_lsu_bits_rob_idx,
+  output [4:0]  io_issue_lsu_bits_rob_idx,
   output [31:0] io_issue_lsu_bits_src1_val,
                 io_issue_lsu_bits_src2_val,
   output [5:0]  io_issue_lsu_bits_pdest,
@@ -98,7 +98,7 @@ module RS(
                 io_issue_lsu_bits_wbu_reg_write,
   output [2:0]  io_issue_lsu_bits_wbu_reg_write_sel,
   input         io_enq1_fire,
-  input  [3:0]  io_enq1_bits_rob_idx,
+  input  [4:0]  io_enq1_bits_rob_idx,
   input  [1:0]  io_enq1_bits_cp_idx,
   input         io_enq1_bits_src1_ready,
                 io_enq1_bits_src2_ready,
@@ -126,9 +126,9 @@ module RS(
                 io_enq1_bits_wbu_reg_write,
   input  [2:0]  io_enq1_bits_wbu_reg_write_sel,
   input         io_free_rob_fire,
-  input  [3:0]  io_free_rob_idx,
+  input  [4:0]  io_free_rob_idx,
   input         io_free_rob1_fire,
-  input  [3:0]  io_free_rob1_idx,
+  input  [4:0]  io_free_rob1_idx,
   input         io_cdb_valid,
   input  [5:0]  io_cdb_pdest,
   input  [31:0] io_cdb_val,
@@ -136,14 +136,14 @@ module RS(
   input  [5:0]  io_cdb1_pdest,
   input  [31:0] io_cdb1_val,
   input         io_flush,
-  input  [3:0]  io_flush_idx,
+  input  [4:0]  io_flush_idx,
   input         io_flush_all,
   output [3:0]  io_space
 );
 
   reg         entries_0_valid;
   reg         entries_0_issued;
-  reg  [3:0]  entries_0_rob_idx;
+  reg  [4:0]  entries_0_rob_idx;
   reg  [1:0]  entries_0_cp_idx;
   reg         entries_0_src1_ready;
   reg         entries_0_src2_ready;
@@ -172,7 +172,7 @@ module RS(
   reg  [2:0]  entries_0_wbu_reg_write_sel;
   reg         entries_1_valid;
   reg         entries_1_issued;
-  reg  [3:0]  entries_1_rob_idx;
+  reg  [4:0]  entries_1_rob_idx;
   reg  [1:0]  entries_1_cp_idx;
   reg         entries_1_src1_ready;
   reg         entries_1_src2_ready;
@@ -201,7 +201,7 @@ module RS(
   reg  [2:0]  entries_1_wbu_reg_write_sel;
   reg         entries_2_valid;
   reg         entries_2_issued;
-  reg  [3:0]  entries_2_rob_idx;
+  reg  [4:0]  entries_2_rob_idx;
   reg  [1:0]  entries_2_cp_idx;
   reg         entries_2_src1_ready;
   reg         entries_2_src2_ready;
@@ -230,7 +230,7 @@ module RS(
   reg  [2:0]  entries_2_wbu_reg_write_sel;
   reg         entries_3_valid;
   reg         entries_3_issued;
-  reg  [3:0]  entries_3_rob_idx;
+  reg  [4:0]  entries_3_rob_idx;
   reg  [1:0]  entries_3_cp_idx;
   reg         entries_3_src1_ready;
   reg         entries_3_src2_ready;
@@ -259,7 +259,7 @@ module RS(
   reg  [2:0]  entries_3_wbu_reg_write_sel;
   reg         entries_4_valid;
   reg         entries_4_issued;
-  reg  [3:0]  entries_4_rob_idx;
+  reg  [4:0]  entries_4_rob_idx;
   reg  [1:0]  entries_4_cp_idx;
   reg         entries_4_src1_ready;
   reg         entries_4_src2_ready;
@@ -288,7 +288,7 @@ module RS(
   reg  [2:0]  entries_4_wbu_reg_write_sel;
   reg         entries_5_valid;
   reg         entries_5_issued;
-  reg  [3:0]  entries_5_rob_idx;
+  reg  [4:0]  entries_5_rob_idx;
   reg  [1:0]  entries_5_cp_idx;
   reg         entries_5_src1_ready;
   reg         entries_5_src2_ready;
@@ -317,7 +317,7 @@ module RS(
   reg  [2:0]  entries_5_wbu_reg_write_sel;
   reg         entries_6_valid;
   reg         entries_6_issued;
-  reg  [3:0]  entries_6_rob_idx;
+  reg  [4:0]  entries_6_rob_idx;
   reg  [1:0]  entries_6_cp_idx;
   reg         entries_6_src1_ready;
   reg         entries_6_src2_ready;
@@ -346,7 +346,7 @@ module RS(
   reg  [2:0]  entries_6_wbu_reg_write_sel;
   reg         entries_7_valid;
   reg         entries_7_issued;
-  reg  [3:0]  entries_7_rob_idx;
+  reg  [4:0]  entries_7_rob_idx;
   reg  [1:0]  entries_7_cp_idx;
   reg         entries_7_src1_ready;
   reg         entries_7_src2_ready;
@@ -418,232 +418,376 @@ module RS(
        | entries_0_exu_alu_control == 5'hC | entries_0_exu_alu_control == 5'hD
        | entries_0_exu_alu_control == 5'hE | entries_0_exu_alu_control == 5'hF
        | entries_0_exu_alu_control == 5'h10 | entries_0_exu_alu_control == 5'h11);
-  wire [3:0]  _legacyOH_hasOlder_T_386 = entries_0_rob_idx - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_6 = 4'h0 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_815 = 4'h1 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_821 = 4'h2 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_827 = 4'h3 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_833 = 4'h4 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_839 = 4'h5 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_845 = 4'h6 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_851 = 4'h7 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_857 = 4'h8 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_863 = 4'h9 - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_869 = 4'hA - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_875 = 4'hB - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_881 = 4'hC - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_887 = 4'hD - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_893 = 4'hE - io_rob_head;
-  wire [3:0]  _waitOlderStore_T_899 = 4'hF - io_rob_head;
+  wire [4:0]  _legacyOH_hasOlder_T_386 = entries_0_rob_idx - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_6 = 5'h0 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1599 = 5'h1 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1605 = 5'h2 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1611 = 5'h3 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1617 = 5'h4 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1623 = 5'h5 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1629 = 5'h6 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1635 = 5'h7 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1641 = 5'h8 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1647 = 5'h9 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1653 = 5'hA - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1659 = 5'hB - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1665 = 5'hC - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1671 = 5'hD - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1677 = 5'hE - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1683 = 5'hF - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1689 = 5'h10 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1695 = 5'h11 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1701 = 5'h12 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1707 = 5'h13 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1713 = 5'h14 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1719 = 5'h15 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1725 = 5'h16 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1731 = 5'h17 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1737 = 5'h18 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1743 = 5'h19 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1749 = 5'h1A - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1755 = 5'h1B - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1761 = 5'h1C - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1767 = 5'h1D - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1773 = 5'h1E - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_1779 = 5'h1F - io_rob_head;
   wire        canIssue_0 =
     entries_0_valid & ~entries_0_issued & entries_0_src1_ready & entries_0_src2_ready
     & ~freeByRob_0
     & ~(entries_0_valid & entries_0_lsu_mem_valid & ~entries_0_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[1] & _waitOlderStore_T_815 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[2] & _waitOlderStore_T_821 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[3] & _waitOlderStore_T_827 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[4] & _waitOlderStore_T_833 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[5] & _waitOlderStore_T_839 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[6] & _waitOlderStore_T_845 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[7] & _waitOlderStore_T_851 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[8] & _waitOlderStore_T_857 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[9] & _waitOlderStore_T_863 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[10] & _waitOlderStore_T_869 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[11] & _waitOlderStore_T_875 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[12] & _waitOlderStore_T_881 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[13] & _waitOlderStore_T_887 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[14] & _waitOlderStore_T_893 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[15] & _waitOlderStore_T_899 < _legacyOH_hasOlder_T_386));
+           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_386));
   wire        isMulDiv_1 =
     entries_1_valid
     & (entries_1_exu_alu_control == 5'hA | entries_1_exu_alu_control == 5'hB
        | entries_1_exu_alu_control == 5'hC | entries_1_exu_alu_control == 5'hD
        | entries_1_exu_alu_control == 5'hE | entries_1_exu_alu_control == 5'hF
        | entries_1_exu_alu_control == 5'h10 | entries_1_exu_alu_control == 5'h11);
-  wire [3:0]  _legacyOH_hasOlder_T_392 = entries_1_rob_idx - io_rob_head;
+  wire [4:0]  _legacyOH_hasOlder_T_392 = entries_1_rob_idx - io_rob_head;
   wire        canIssue_1 =
     entries_1_valid & ~entries_1_issued & entries_1_src1_ready & entries_1_src2_ready
     & ~freeByRob_1
     & ~(entries_1_valid & entries_1_lsu_mem_valid & ~entries_1_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[1] & _waitOlderStore_T_815 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[2] & _waitOlderStore_T_821 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[3] & _waitOlderStore_T_827 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[4] & _waitOlderStore_T_833 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[5] & _waitOlderStore_T_839 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[6] & _waitOlderStore_T_845 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[7] & _waitOlderStore_T_851 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[8] & _waitOlderStore_T_857 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[9] & _waitOlderStore_T_863 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[10] & _waitOlderStore_T_869 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[11] & _waitOlderStore_T_875 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[12] & _waitOlderStore_T_881 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[13] & _waitOlderStore_T_887 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[14] & _waitOlderStore_T_893 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[15] & _waitOlderStore_T_899 < _legacyOH_hasOlder_T_392));
+           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_392));
   wire        isMulDiv_2 =
     entries_2_valid
     & (entries_2_exu_alu_control == 5'hA | entries_2_exu_alu_control == 5'hB
        | entries_2_exu_alu_control == 5'hC | entries_2_exu_alu_control == 5'hD
        | entries_2_exu_alu_control == 5'hE | entries_2_exu_alu_control == 5'hF
        | entries_2_exu_alu_control == 5'h10 | entries_2_exu_alu_control == 5'h11);
-  wire [3:0]  _legacyOH_hasOlder_T_398 = entries_2_rob_idx - io_rob_head;
+  wire [4:0]  _legacyOH_hasOlder_T_398 = entries_2_rob_idx - io_rob_head;
   wire        canIssue_2 =
     entries_2_valid & ~entries_2_issued & entries_2_src1_ready & entries_2_src2_ready
     & ~freeByRob_2
     & ~(entries_2_valid & entries_2_lsu_mem_valid & ~entries_2_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[1] & _waitOlderStore_T_815 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[2] & _waitOlderStore_T_821 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[3] & _waitOlderStore_T_827 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[4] & _waitOlderStore_T_833 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[5] & _waitOlderStore_T_839 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[6] & _waitOlderStore_T_845 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[7] & _waitOlderStore_T_851 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[8] & _waitOlderStore_T_857 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[9] & _waitOlderStore_T_863 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[10] & _waitOlderStore_T_869 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[11] & _waitOlderStore_T_875 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[12] & _waitOlderStore_T_881 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[13] & _waitOlderStore_T_887 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[14] & _waitOlderStore_T_893 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[15] & _waitOlderStore_T_899 < _legacyOH_hasOlder_T_398));
+           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_398));
   wire        isMulDiv_3 =
     entries_3_valid
     & (entries_3_exu_alu_control == 5'hA | entries_3_exu_alu_control == 5'hB
        | entries_3_exu_alu_control == 5'hC | entries_3_exu_alu_control == 5'hD
        | entries_3_exu_alu_control == 5'hE | entries_3_exu_alu_control == 5'hF
        | entries_3_exu_alu_control == 5'h10 | entries_3_exu_alu_control == 5'h11);
-  wire [3:0]  _legacyOH_hasOlder_T_404 = entries_3_rob_idx - io_rob_head;
+  wire [4:0]  _legacyOH_hasOlder_T_404 = entries_3_rob_idx - io_rob_head;
   wire        canIssue_3 =
     entries_3_valid & ~entries_3_issued & entries_3_src1_ready & entries_3_src2_ready
     & ~freeByRob_3
     & ~(entries_3_valid & entries_3_lsu_mem_valid & ~entries_3_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[1] & _waitOlderStore_T_815 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[2] & _waitOlderStore_T_821 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[3] & _waitOlderStore_T_827 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[4] & _waitOlderStore_T_833 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[5] & _waitOlderStore_T_839 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[6] & _waitOlderStore_T_845 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[7] & _waitOlderStore_T_851 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[8] & _waitOlderStore_T_857 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[9] & _waitOlderStore_T_863 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[10] & _waitOlderStore_T_869 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[11] & _waitOlderStore_T_875 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[12] & _waitOlderStore_T_881 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[13] & _waitOlderStore_T_887 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[14] & _waitOlderStore_T_893 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[15] & _waitOlderStore_T_899 < _legacyOH_hasOlder_T_404));
+           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_404));
   wire        isMulDiv_4 =
     entries_4_valid
     & (entries_4_exu_alu_control == 5'hA | entries_4_exu_alu_control == 5'hB
        | entries_4_exu_alu_control == 5'hC | entries_4_exu_alu_control == 5'hD
        | entries_4_exu_alu_control == 5'hE | entries_4_exu_alu_control == 5'hF
        | entries_4_exu_alu_control == 5'h10 | entries_4_exu_alu_control == 5'h11);
-  wire [3:0]  _legacyOH_hasOlder_T_410 = entries_4_rob_idx - io_rob_head;
+  wire [4:0]  _legacyOH_hasOlder_T_410 = entries_4_rob_idx - io_rob_head;
   wire        canIssue_4 =
     entries_4_valid & ~entries_4_issued & entries_4_src1_ready & entries_4_src2_ready
     & ~freeByRob_4
     & ~(entries_4_valid & entries_4_lsu_mem_valid & ~entries_4_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[1] & _waitOlderStore_T_815 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[2] & _waitOlderStore_T_821 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[3] & _waitOlderStore_T_827 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[4] & _waitOlderStore_T_833 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[5] & _waitOlderStore_T_839 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[6] & _waitOlderStore_T_845 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[7] & _waitOlderStore_T_851 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[8] & _waitOlderStore_T_857 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[9] & _waitOlderStore_T_863 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[10] & _waitOlderStore_T_869 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[11] & _waitOlderStore_T_875 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[12] & _waitOlderStore_T_881 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[13] & _waitOlderStore_T_887 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[14] & _waitOlderStore_T_893 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[15] & _waitOlderStore_T_899 < _legacyOH_hasOlder_T_410));
+           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_410));
   wire        isMulDiv_5 =
     entries_5_valid
     & (entries_5_exu_alu_control == 5'hA | entries_5_exu_alu_control == 5'hB
        | entries_5_exu_alu_control == 5'hC | entries_5_exu_alu_control == 5'hD
        | entries_5_exu_alu_control == 5'hE | entries_5_exu_alu_control == 5'hF
        | entries_5_exu_alu_control == 5'h10 | entries_5_exu_alu_control == 5'h11);
-  wire [3:0]  _legacyOH_hasOlder_T_416 = entries_5_rob_idx - io_rob_head;
+  wire [4:0]  _legacyOH_hasOlder_T_416 = entries_5_rob_idx - io_rob_head;
   wire        canIssue_5 =
     entries_5_valid & ~entries_5_issued & entries_5_src1_ready & entries_5_src2_ready
     & ~freeByRob_5
     & ~(entries_5_valid & entries_5_lsu_mem_valid & ~entries_5_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[1] & _waitOlderStore_T_815 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[2] & _waitOlderStore_T_821 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[3] & _waitOlderStore_T_827 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[4] & _waitOlderStore_T_833 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[5] & _waitOlderStore_T_839 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[6] & _waitOlderStore_T_845 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[7] & _waitOlderStore_T_851 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[8] & _waitOlderStore_T_857 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[9] & _waitOlderStore_T_863 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[10] & _waitOlderStore_T_869 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[11] & _waitOlderStore_T_875 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[12] & _waitOlderStore_T_881 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[13] & _waitOlderStore_T_887 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[14] & _waitOlderStore_T_893 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[15] & _waitOlderStore_T_899 < _legacyOH_hasOlder_T_416));
+           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_416));
   wire        isMulDiv_6 =
     entries_6_valid
     & (entries_6_exu_alu_control == 5'hA | entries_6_exu_alu_control == 5'hB
        | entries_6_exu_alu_control == 5'hC | entries_6_exu_alu_control == 5'hD
        | entries_6_exu_alu_control == 5'hE | entries_6_exu_alu_control == 5'hF
        | entries_6_exu_alu_control == 5'h10 | entries_6_exu_alu_control == 5'h11);
-  wire [3:0]  _legacyOH_hasOlder_T_422 = entries_6_rob_idx - io_rob_head;
+  wire [4:0]  _legacyOH_hasOlder_T_422 = entries_6_rob_idx - io_rob_head;
   wire        canIssue_6 =
     entries_6_valid & ~entries_6_issued & entries_6_src1_ready & entries_6_src2_ready
     & ~freeByRob_6
     & ~(entries_6_valid & entries_6_lsu_mem_valid & ~entries_6_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[1] & _waitOlderStore_T_815 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[2] & _waitOlderStore_T_821 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[3] & _waitOlderStore_T_827 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[4] & _waitOlderStore_T_833 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[5] & _waitOlderStore_T_839 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[6] & _waitOlderStore_T_845 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[7] & _waitOlderStore_T_851 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[8] & _waitOlderStore_T_857 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[9] & _waitOlderStore_T_863 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[10] & _waitOlderStore_T_869 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[11] & _waitOlderStore_T_875 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[12] & _waitOlderStore_T_881 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[13] & _waitOlderStore_T_887 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[14] & _waitOlderStore_T_893 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[15] & _waitOlderStore_T_899 < _legacyOH_hasOlder_T_422));
+           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_422));
   wire        isMulDiv_7 =
     entries_7_valid
     & (entries_7_exu_alu_control == 5'hA | entries_7_exu_alu_control == 5'hB
        | entries_7_exu_alu_control == 5'hC | entries_7_exu_alu_control == 5'hD
        | entries_7_exu_alu_control == 5'hE | entries_7_exu_alu_control == 5'hF
        | entries_7_exu_alu_control == 5'h10 | entries_7_exu_alu_control == 5'h11);
-  wire [3:0]  _legacyOH_hasOlder_T_428 = entries_7_rob_idx - io_rob_head;
+  wire [4:0]  _legacyOH_hasOlder_T_428 = entries_7_rob_idx - io_rob_head;
   wire        canIssue_7 =
     entries_7_valid & ~entries_7_issued & entries_7_src1_ready & entries_7_src2_ready
     & ~freeByRob_7
     & ~(entries_7_valid & entries_7_lsu_mem_valid & ~entries_7_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[1] & _waitOlderStore_T_815 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[2] & _waitOlderStore_T_821 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[3] & _waitOlderStore_T_827 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[4] & _waitOlderStore_T_833 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[5] & _waitOlderStore_T_839 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[6] & _waitOlderStore_T_845 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[7] & _waitOlderStore_T_851 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[8] & _waitOlderStore_T_857 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[9] & _waitOlderStore_T_863 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[10] & _waitOlderStore_T_869 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[11] & _waitOlderStore_T_875 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[12] & _waitOlderStore_T_881 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[13] & _waitOlderStore_T_887 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[14] & _waitOlderStore_T_893 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[15] & _waitOlderStore_T_899 < _legacyOH_hasOlder_T_428));
+           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_428));
   wire        _aluOH_hasOlder_T_385 = canIssue_0 & ~entries_0_lsu_mem_valid & ~isMulDiv_0;
   wire        _aluOH_hasOlder_T_391 = canIssue_1 & ~entries_1_lsu_mem_valid & ~isMulDiv_1;
   wire        _aluOH_hasOlder_T_397 = canIssue_2 & ~entries_2_lsu_mem_valid & ~isMulDiv_2;
@@ -881,7 +1025,7 @@ module RS(
           : lsuOH_2
               ? 3'h2
               : lsuOH_3 ? 3'h3 : lsuOH_4 ? 3'h4 : lsuOH_5 ? 3'h5 : {2'h3, ~lsuOH_6};
-  reg  [3:0]  casez_tmp;
+  reg  [4:0]  casez_tmp;
   always_comb begin
     casez (aluIdx)
       3'b000:
@@ -1364,7 +1508,7 @@ module RS(
         casez_tmp_21 = entries_7_wbu_reg_write_sel;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_22;
+  reg  [4:0]  casez_tmp_22;
   always_comb begin
     casez (divIdx)
       3'b000:
@@ -1763,7 +1907,7 @@ module RS(
         casez_tmp_40 = entries_7_wbu_reg_write_sel;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_41;
+  reg  [4:0]  casez_tmp_41;
   always_comb begin
     casez (lsuIdx)
       3'b000:
@@ -2334,7 +2478,7 @@ module RS(
   wire        _GEN_71 =
     _GEN_67 ? _GEN_70 | _GEN_15 | entries_7_src2_ready : _GEN_15 | entries_7_src2_ready;
   wire        _GEN_72 = _GEN_16 & entries_7_valid & _GEN_70;
-  wire [3:0]  _GEN_73 = io_flush_idx - io_rob_head;
+  wire [4:0]  _GEN_73 = io_flush_idx - io_rob_head;
   wire        _GEN_74 = ~freeByRob_0 & entries_0_valid;
   wire        _GEN_75 = ~freeByRob_1 & entries_1_valid;
   wire        _GEN_76 = ~freeByRob_2 & entries_2_valid;
@@ -2416,7 +2560,7 @@ module RS(
     if (reset) begin
       entries_0_valid <= 1'h0;
       entries_0_issued <= 1'h0;
-      entries_0_rob_idx <= 4'h0;
+      entries_0_rob_idx <= 5'h0;
       entries_0_cp_idx <= 2'h0;
       entries_0_src1_ready <= 1'h0;
       entries_0_src2_ready <= 1'h0;
@@ -2445,7 +2589,7 @@ module RS(
       entries_0_wbu_reg_write_sel <= 3'h0;
       entries_1_valid <= 1'h0;
       entries_1_issued <= 1'h0;
-      entries_1_rob_idx <= 4'h0;
+      entries_1_rob_idx <= 5'h0;
       entries_1_cp_idx <= 2'h0;
       entries_1_src1_ready <= 1'h0;
       entries_1_src2_ready <= 1'h0;
@@ -2474,7 +2618,7 @@ module RS(
       entries_1_wbu_reg_write_sel <= 3'h0;
       entries_2_valid <= 1'h0;
       entries_2_issued <= 1'h0;
-      entries_2_rob_idx <= 4'h0;
+      entries_2_rob_idx <= 5'h0;
       entries_2_cp_idx <= 2'h0;
       entries_2_src1_ready <= 1'h0;
       entries_2_src2_ready <= 1'h0;
@@ -2503,7 +2647,7 @@ module RS(
       entries_2_wbu_reg_write_sel <= 3'h0;
       entries_3_valid <= 1'h0;
       entries_3_issued <= 1'h0;
-      entries_3_rob_idx <= 4'h0;
+      entries_3_rob_idx <= 5'h0;
       entries_3_cp_idx <= 2'h0;
       entries_3_src1_ready <= 1'h0;
       entries_3_src2_ready <= 1'h0;
@@ -2532,7 +2676,7 @@ module RS(
       entries_3_wbu_reg_write_sel <= 3'h0;
       entries_4_valid <= 1'h0;
       entries_4_issued <= 1'h0;
-      entries_4_rob_idx <= 4'h0;
+      entries_4_rob_idx <= 5'h0;
       entries_4_cp_idx <= 2'h0;
       entries_4_src1_ready <= 1'h0;
       entries_4_src2_ready <= 1'h0;
@@ -2561,7 +2705,7 @@ module RS(
       entries_4_wbu_reg_write_sel <= 3'h0;
       entries_5_valid <= 1'h0;
       entries_5_issued <= 1'h0;
-      entries_5_rob_idx <= 4'h0;
+      entries_5_rob_idx <= 5'h0;
       entries_5_cp_idx <= 2'h0;
       entries_5_src1_ready <= 1'h0;
       entries_5_src2_ready <= 1'h0;
@@ -2590,7 +2734,7 @@ module RS(
       entries_5_wbu_reg_write_sel <= 3'h0;
       entries_6_valid <= 1'h0;
       entries_6_issued <= 1'h0;
-      entries_6_rob_idx <= 4'h0;
+      entries_6_rob_idx <= 5'h0;
       entries_6_cp_idx <= 2'h0;
       entries_6_src1_ready <= 1'h0;
       entries_6_src2_ready <= 1'h0;
@@ -2619,7 +2763,7 @@ module RS(
       entries_6_wbu_reg_write_sel <= 3'h0;
       entries_7_valid <= 1'h0;
       entries_7_issued <= 1'h0;
-      entries_7_rob_idx <= 4'h0;
+      entries_7_rob_idx <= 5'h0;
       entries_7_cp_idx <= 2'h0;
       entries_7_src1_ready <= 1'h0;
       entries_7_src2_ready <= 1'h0;

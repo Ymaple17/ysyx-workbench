@@ -155,4 +155,6 @@ object BPU_Config{
     val RAS_SIZE = 16 //返回地址栈深度
     val BHT_INIT = 1 // weak not-taken; a taken branch becomes predicted-taken after one update
     val BHT_COLD_STATIC = true // cold entries use backward-taken / forward-not-taken
+    val TAGGED_BHT_TAG_BITS = 8
+    val INDIRECT_TARGET_SIZE = 256
 }

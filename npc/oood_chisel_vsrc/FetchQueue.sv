@@ -4,14 +4,15 @@ module FetchQueue(
                 reset,
   output        io_enq_ready,
   input         io_enq_valid,
-  input  [31:0] io_enq_bits_inst,
-                io_enq_bits_pc,
-  input         io_enq_bits_state_state,
-  input  [7:0]  io_enq_bits_state_state_num,
-  input         io_enq_bits_bp_valid,
-                io_enq_bits_bp_taken,
-  input  [31:0] io_enq_bits_bp_target,
-  input  [9:0]  io_enq_bits_bp_index,
+                io_enq_bits_valid_0,
+  input  [31:0] io_enq_bits_bits_0_inst,
+                io_enq_bits_bits_0_pc,
+  input         io_enq_bits_bits_0_state_state,
+  input  [7:0]  io_enq_bits_bits_0_state_state_num,
+  input         io_enq_bits_bits_0_bp_valid,
+                io_enq_bits_bits_0_bp_taken,
+  input  [31:0] io_enq_bits_bits_0_bp_target,
+  input  [9:0]  io_enq_bits_bits_0_bp_index,
   input         io_deq_ready,
   output        io_deq_valid,
   output [31:0] io_deq_bits_inst,
@@ -33,7 +34,8 @@ module FetchQueue(
   output [31:0] io_deq1_bits_bp_target,
   output [9:0]  io_deq1_bits_bp_index,
   input         io_flush,
-  output [3:0]  io_count
+  output [3:0]  io_count,
+                io_space
 );
 
   reg  [31:0] entries_0_inst;
@@ -103,7 +105,9 @@ module FetchQueue(
   reg  [2:0]  head;
   reg  [2:0]  tail;
   reg  [3:0]  count;
-  wire        io_enq_ready_0 = count != 4'h8 & ~io_flush;
+  wire [3:0]  _space_T = 4'h8 - count;
+  wire        io_enq_ready_0 =
+    ~io_flush & (~io_enq_bits_valid_0 | _space_T >= {3'h0, io_enq_bits_valid_0});
   wire        io_deq_valid_0 = (|count) & ~io_flush;
   reg  [31:0] casez_tmp;
   always_comb begin
@@ -443,10 +447,10 @@ module FetchQueue(
         casez_tmp_14 = entries_7_bp_index;
     endcase
   end // always_comb
-  wire        do_enq = io_enq_ready_0 & io_enq_valid;
-  wire        do_deq0 = io_deq_ready & io_deq_valid_0;
+  wire        doEnq0 = io_enq_ready_0 & io_enq_valid & io_enq_bits_valid_0;
+  wire        doDeq0 = io_deq_ready & io_deq_valid_0;
   wire [1:0]  deqCount =
-    {1'h0, do_deq0} + {1'h0, io_deq1_ready & io_deq1_valid_0 & do_deq0};
+    {1'h0, doDeq0} + {1'h0, io_deq1_ready & io_deq1_valid_0 & doDeq0};
   always @(posedge clock) begin
     if (reset) begin
       entries_0_inst <= 32'h0;
@@ -518,101 +522,101 @@ module FetchQueue(
       count <= 4'h0;
     end
     else begin
-      if (io_flush | ~(do_enq & tail == 3'h0)) begin
+      if (io_flush | ~(doEnq0 & tail == 3'h0)) begin
       end
       else begin
-        entries_0_inst <= io_enq_bits_inst;
-        entries_0_pc <= io_enq_bits_pc;
-        entries_0_state_state <= io_enq_bits_state_state;
-        entries_0_state_state_num <= io_enq_bits_state_state_num;
-        entries_0_bp_valid <= io_enq_bits_bp_valid;
-        entries_0_bp_taken <= io_enq_bits_bp_taken;
-        entries_0_bp_target <= io_enq_bits_bp_target;
-        entries_0_bp_index <= io_enq_bits_bp_index;
+        entries_0_inst <= io_enq_bits_bits_0_inst;
+        entries_0_pc <= io_enq_bits_bits_0_pc;
+        entries_0_state_state <= io_enq_bits_bits_0_state_state;
+        entries_0_state_state_num <= io_enq_bits_bits_0_state_state_num;
+        entries_0_bp_valid <= io_enq_bits_bits_0_bp_valid;
+        entries_0_bp_taken <= io_enq_bits_bits_0_bp_taken;
+        entries_0_bp_target <= io_enq_bits_bits_0_bp_target;
+        entries_0_bp_index <= io_enq_bits_bits_0_bp_index;
       end
-      if (io_flush | ~(do_enq & tail == 3'h1)) begin
-      end
-      else begin
-        entries_1_inst <= io_enq_bits_inst;
-        entries_1_pc <= io_enq_bits_pc;
-        entries_1_state_state <= io_enq_bits_state_state;
-        entries_1_state_state_num <= io_enq_bits_state_state_num;
-        entries_1_bp_valid <= io_enq_bits_bp_valid;
-        entries_1_bp_taken <= io_enq_bits_bp_taken;
-        entries_1_bp_target <= io_enq_bits_bp_target;
-        entries_1_bp_index <= io_enq_bits_bp_index;
-      end
-      if (io_flush | ~(do_enq & tail == 3'h2)) begin
+      if (io_flush | ~(doEnq0 & tail == 3'h1)) begin
       end
       else begin
-        entries_2_inst <= io_enq_bits_inst;
-        entries_2_pc <= io_enq_bits_pc;
-        entries_2_state_state <= io_enq_bits_state_state;
-        entries_2_state_state_num <= io_enq_bits_state_state_num;
-        entries_2_bp_valid <= io_enq_bits_bp_valid;
-        entries_2_bp_taken <= io_enq_bits_bp_taken;
-        entries_2_bp_target <= io_enq_bits_bp_target;
-        entries_2_bp_index <= io_enq_bits_bp_index;
+        entries_1_inst <= io_enq_bits_bits_0_inst;
+        entries_1_pc <= io_enq_bits_bits_0_pc;
+        entries_1_state_state <= io_enq_bits_bits_0_state_state;
+        entries_1_state_state_num <= io_enq_bits_bits_0_state_state_num;
+        entries_1_bp_valid <= io_enq_bits_bits_0_bp_valid;
+        entries_1_bp_taken <= io_enq_bits_bits_0_bp_taken;
+        entries_1_bp_target <= io_enq_bits_bits_0_bp_target;
+        entries_1_bp_index <= io_enq_bits_bits_0_bp_index;
       end
-      if (io_flush | ~(do_enq & tail == 3'h3)) begin
-      end
-      else begin
-        entries_3_inst <= io_enq_bits_inst;
-        entries_3_pc <= io_enq_bits_pc;
-        entries_3_state_state <= io_enq_bits_state_state;
-        entries_3_state_state_num <= io_enq_bits_state_state_num;
-        entries_3_bp_valid <= io_enq_bits_bp_valid;
-        entries_3_bp_taken <= io_enq_bits_bp_taken;
-        entries_3_bp_target <= io_enq_bits_bp_target;
-        entries_3_bp_index <= io_enq_bits_bp_index;
-      end
-      if (io_flush | ~(do_enq & tail == 3'h4)) begin
+      if (io_flush | ~(doEnq0 & tail == 3'h2)) begin
       end
       else begin
-        entries_4_inst <= io_enq_bits_inst;
-        entries_4_pc <= io_enq_bits_pc;
-        entries_4_state_state <= io_enq_bits_state_state;
-        entries_4_state_state_num <= io_enq_bits_state_state_num;
-        entries_4_bp_valid <= io_enq_bits_bp_valid;
-        entries_4_bp_taken <= io_enq_bits_bp_taken;
-        entries_4_bp_target <= io_enq_bits_bp_target;
-        entries_4_bp_index <= io_enq_bits_bp_index;
+        entries_2_inst <= io_enq_bits_bits_0_inst;
+        entries_2_pc <= io_enq_bits_bits_0_pc;
+        entries_2_state_state <= io_enq_bits_bits_0_state_state;
+        entries_2_state_state_num <= io_enq_bits_bits_0_state_state_num;
+        entries_2_bp_valid <= io_enq_bits_bits_0_bp_valid;
+        entries_2_bp_taken <= io_enq_bits_bits_0_bp_taken;
+        entries_2_bp_target <= io_enq_bits_bits_0_bp_target;
+        entries_2_bp_index <= io_enq_bits_bits_0_bp_index;
       end
-      if (io_flush | ~(do_enq & tail == 3'h5)) begin
-      end
-      else begin
-        entries_5_inst <= io_enq_bits_inst;
-        entries_5_pc <= io_enq_bits_pc;
-        entries_5_state_state <= io_enq_bits_state_state;
-        entries_5_state_state_num <= io_enq_bits_state_state_num;
-        entries_5_bp_valid <= io_enq_bits_bp_valid;
-        entries_5_bp_taken <= io_enq_bits_bp_taken;
-        entries_5_bp_target <= io_enq_bits_bp_target;
-        entries_5_bp_index <= io_enq_bits_bp_index;
-      end
-      if (io_flush | ~(do_enq & tail == 3'h6)) begin
+      if (io_flush | ~(doEnq0 & tail == 3'h3)) begin
       end
       else begin
-        entries_6_inst <= io_enq_bits_inst;
-        entries_6_pc <= io_enq_bits_pc;
-        entries_6_state_state <= io_enq_bits_state_state;
-        entries_6_state_state_num <= io_enq_bits_state_state_num;
-        entries_6_bp_valid <= io_enq_bits_bp_valid;
-        entries_6_bp_taken <= io_enq_bits_bp_taken;
-        entries_6_bp_target <= io_enq_bits_bp_target;
-        entries_6_bp_index <= io_enq_bits_bp_index;
+        entries_3_inst <= io_enq_bits_bits_0_inst;
+        entries_3_pc <= io_enq_bits_bits_0_pc;
+        entries_3_state_state <= io_enq_bits_bits_0_state_state;
+        entries_3_state_state_num <= io_enq_bits_bits_0_state_state_num;
+        entries_3_bp_valid <= io_enq_bits_bits_0_bp_valid;
+        entries_3_bp_taken <= io_enq_bits_bits_0_bp_taken;
+        entries_3_bp_target <= io_enq_bits_bits_0_bp_target;
+        entries_3_bp_index <= io_enq_bits_bits_0_bp_index;
       end
-      if (io_flush | ~(do_enq & (&tail))) begin
+      if (io_flush | ~(doEnq0 & tail == 3'h4)) begin
       end
       else begin
-        entries_7_inst <= io_enq_bits_inst;
-        entries_7_pc <= io_enq_bits_pc;
-        entries_7_state_state <= io_enq_bits_state_state;
-        entries_7_state_state_num <= io_enq_bits_state_state_num;
-        entries_7_bp_valid <= io_enq_bits_bp_valid;
-        entries_7_bp_taken <= io_enq_bits_bp_taken;
-        entries_7_bp_target <= io_enq_bits_bp_target;
-        entries_7_bp_index <= io_enq_bits_bp_index;
+        entries_4_inst <= io_enq_bits_bits_0_inst;
+        entries_4_pc <= io_enq_bits_bits_0_pc;
+        entries_4_state_state <= io_enq_bits_bits_0_state_state;
+        entries_4_state_state_num <= io_enq_bits_bits_0_state_state_num;
+        entries_4_bp_valid <= io_enq_bits_bits_0_bp_valid;
+        entries_4_bp_taken <= io_enq_bits_bits_0_bp_taken;
+        entries_4_bp_target <= io_enq_bits_bits_0_bp_target;
+        entries_4_bp_index <= io_enq_bits_bits_0_bp_index;
+      end
+      if (io_flush | ~(doEnq0 & tail == 3'h5)) begin
+      end
+      else begin
+        entries_5_inst <= io_enq_bits_bits_0_inst;
+        entries_5_pc <= io_enq_bits_bits_0_pc;
+        entries_5_state_state <= io_enq_bits_bits_0_state_state;
+        entries_5_state_state_num <= io_enq_bits_bits_0_state_state_num;
+        entries_5_bp_valid <= io_enq_bits_bits_0_bp_valid;
+        entries_5_bp_taken <= io_enq_bits_bits_0_bp_taken;
+        entries_5_bp_target <= io_enq_bits_bits_0_bp_target;
+        entries_5_bp_index <= io_enq_bits_bits_0_bp_index;
+      end
+      if (io_flush | ~(doEnq0 & tail == 3'h6)) begin
+      end
+      else begin
+        entries_6_inst <= io_enq_bits_bits_0_inst;
+        entries_6_pc <= io_enq_bits_bits_0_pc;
+        entries_6_state_state <= io_enq_bits_bits_0_state_state;
+        entries_6_state_state_num <= io_enq_bits_bits_0_state_state_num;
+        entries_6_bp_valid <= io_enq_bits_bits_0_bp_valid;
+        entries_6_bp_taken <= io_enq_bits_bits_0_bp_taken;
+        entries_6_bp_target <= io_enq_bits_bits_0_bp_target;
+        entries_6_bp_index <= io_enq_bits_bits_0_bp_index;
+      end
+      if (io_flush | ~(doEnq0 & (&tail))) begin
+      end
+      else begin
+        entries_7_inst <= io_enq_bits_bits_0_inst;
+        entries_7_pc <= io_enq_bits_bits_0_pc;
+        entries_7_state_state <= io_enq_bits_bits_0_state_state;
+        entries_7_state_state_num <= io_enq_bits_bits_0_state_state_num;
+        entries_7_bp_valid <= io_enq_bits_bits_0_bp_valid;
+        entries_7_bp_taken <= io_enq_bits_bits_0_bp_taken;
+        entries_7_bp_target <= io_enq_bits_bits_0_bp_target;
+        entries_7_bp_index <= io_enq_bits_bits_0_bp_index;
       end
       if (io_flush) begin
         head <= 3'h0;
@@ -621,10 +625,10 @@ module FetchQueue(
       else begin
         if (|deqCount)
           head <= head + {1'h0, deqCount};
-        if (do_enq)
+        if (doEnq0)
           tail <= tail + 3'h1;
       end
-      count <= io_flush ? 4'h0 : count + {3'h0, do_enq} - {2'h0, deqCount};
+      count <= io_flush ? 4'h0 : {3'h0, doEnq0} + count - {2'h0, deqCount};
     end
   end // always @(posedge)
   assign io_enq_ready = io_enq_ready_0;
@@ -647,5 +651,6 @@ module FetchQueue(
   assign io_deq1_bits_bp_target = casez_tmp_13;
   assign io_deq1_bits_bp_index = casez_tmp_14;
   assign io_count = count;
+  assign io_space = _space_T;
 endmodule
 

@@ -4,7 +4,7 @@
 
 - **理论目标**：理解提交带宽和写回带宽为什么会限制 IPC；知道 2-wide commit、双 CDB、双唤醒、双 PRF 写口之间的关系。
 - **最小实现**：在不破坏现有 difftest 单提交接口的前提下，先把结果总线从单 CDB 扩成 2 CDB，让一拍最多两个 FU 结果进入 PRF/ROB/RS。
-- **当前参考核**：已完成 `CDB_NUM=2` 的双写回参考实现；`COMMIT_WIDTH` 仍为 1，真正 2-wide commit 暂缓。
+- **当前参考核**：最新参考核已在 10f 把 `COMMIT_WIDTH` 提到 2；本章讲解的是 10c 当章先完成 `CDB_NUM=2`、仍保留 1-wide commit 的原因。
 - **后续扩展**：拓宽顶层 `commit_*` / C++ difftest 协议后，再做真正 2-wide retire；之后配套扩 ROB/RS/PRF、宽取指和更强 BPU。
 - **验收方式**：`mychisel.compile`、`OoOUnitTest`、cpu-tests + difftest、`microbench(test)` 全部通过；记录 before/after IPC 和 CDB 计数器。
 
@@ -41,11 +41,15 @@ io_arch_rdata[0..31]
 `common/ooo_params.scala`：
 
 ```scala
+// 10c 当章保留点
 val COMMIT_WIDTH = 1
 val CDB_NUM = 2
+
+// 10f 后的最新参考核
+val COMMIT_WIDTH = 2
 ```
 
-这里 `COMMIT_WIDTH=1` 是当前参考核水位，不是否定 2-wide commit 的目标；它表示现阶段仍兼容单提交 difftest。
+这里 `COMMIT_WIDTH=1` 是 10c 的阶段性保留点，不是否定 2-wide commit 的目标；它表示当时先让双 CDB 写回在单提交 difftest 下稳定落地。
 
 ### 2.2 PRF
 
@@ -218,7 +222,7 @@ scripts/stage9_regress.sh --mode full --tag stage10c_cdb2_store2_final \
 | Head Not Ready | 未记录同口径 | `580912` |
 | DCache hit rate | `72.06%` | `71.72%` |
 
-结论：双 CDB 已经把写回冲突清掉，但 IPC 只小幅提升。当前更大的墙在前端和提交/访存等待：`FQ Full=269899`、`FQ Empty=75113`、`Head Not Ready=580912`，所以下一步比继续抠 CDB 更值得做的是 10d 宽取指/前端供给，或回访存侧做非阻塞 cache/MLP。
+结论：双 CDB 已经把写回冲突清掉，但 IPC 只小幅提升。更大的墙在前端和提交/访存等待：`FQ Full=269899`、`FQ Empty=75113`、`Head Not Ready=580912`。后续 10d/10e 已经验证：宽取指基础设施可以接上，但在当时 1-wide commit/ROB16 下默认开启 slot1 会退化；预测器小幅升级能改善保留点，真正 2-wide retire 已在 10f 补上，更大后端容量仍是下一道硬墙。
 
 ---
 
@@ -281,9 +285,9 @@ ysyx_25020039__DOT___core_io_dmem_rready
 
 ## 7. 后续任务
 
-- 拓宽 C++ difftest commit 协议，然后做真正 `COMMIT_WIDTH=2`。
-- 为 commit 增加每拍退休条数计数器。
-- 宽提交时处理 `arch_rf` / `arch_rat` 双更新，以及同一架构寄存器两次提交的优先级。
-- 进入 10d：让前端持续供给 2 条指令，否则后端再宽也很难稳定 IPC > 1。
+- 10f 已完成：拓宽 C++ difftest commit 协议，并接入真正 `COMMIT_WIDTH=2` 的最小 2-wide retire。
+- 10f 已完成：为 commit 增加 slot0/slot1/commit2/slot1 block 计数器。
+- 10f 已完成：宽提交时处理 `arch_rf` / `arch_rat` 双更新，以及同一架构寄存器两次提交的优先级。
+- 后续 10g/10h：扩 ROB/RS/PRF/FQ 后重新评估持续 2-wide fetch；否则前端 slot1 容易被小窗口和 flush 压力吞掉收益。
 
 下一章：[11d_阶段10d_宽取指与前端带宽.md](11d_阶段10d_宽取指与前端带宽.md)。

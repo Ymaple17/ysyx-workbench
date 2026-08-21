@@ -42,53 +42,89 @@ module StoreBuffer(
   reg  [31:0] entries_3_addr;
   reg  [31:0] entries_3_data;
   reg  [3:0]  entries_3_mask;
-  reg  [1:0]  idx;
-  reg  [1:0]  tail;
-  reg  [2:0]  count;
+  reg  [31:0] entries_4_addr;
+  reg  [31:0] entries_4_data;
+  reg  [3:0]  entries_4_mask;
+  reg  [31:0] entries_5_addr;
+  reg  [31:0] entries_5_data;
+  reg  [3:0]  entries_5_mask;
+  reg  [31:0] entries_6_addr;
+  reg  [31:0] entries_6_data;
+  reg  [3:0]  entries_6_mask;
+  reg  [31:0] entries_7_addr;
+  reg  [31:0] entries_7_data;
+  reg  [3:0]  entries_7_mask;
+  reg  [2:0]  idx;
+  reg  [2:0]  tail;
+  reg  [3:0]  count;
   reg  [1:0]  state;
   reg         awDone;
   reg         wDone;
-  wire        io_empty_0 = count == 3'h0;
+  wire        io_empty_0 = count == 4'h0;
   wire        bFire = io_dmem_bvalid & io_dmem_bready_0;
   assign io_dmem_bready_0 = state == 2'h2;
-  wire        io_enq_ready_0 = count != 3'h4 | bFire;
+  wire        io_enq_ready_0 = count != 4'h8 | bFire;
   reg  [31:0] casez_tmp;
   always_comb begin
     casez (idx)
-      2'b00:
+      3'b000:
         casez_tmp = entries_0_addr;
-      2'b01:
+      3'b001:
         casez_tmp = entries_1_addr;
-      2'b10:
+      3'b010:
         casez_tmp = entries_2_addr;
-      default:
+      3'b011:
         casez_tmp = entries_3_addr;
+      3'b100:
+        casez_tmp = entries_4_addr;
+      3'b101:
+        casez_tmp = entries_5_addr;
+      3'b110:
+        casez_tmp = entries_6_addr;
+      default:
+        casez_tmp = entries_7_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_0;
   always_comb begin
     casez (idx)
-      2'b00:
+      3'b000:
         casez_tmp_0 = entries_0_data;
-      2'b01:
+      3'b001:
         casez_tmp_0 = entries_1_data;
-      2'b10:
+      3'b010:
         casez_tmp_0 = entries_2_data;
-      default:
+      3'b011:
         casez_tmp_0 = entries_3_data;
+      3'b100:
+        casez_tmp_0 = entries_4_data;
+      3'b101:
+        casez_tmp_0 = entries_5_data;
+      3'b110:
+        casez_tmp_0 = entries_6_data;
+      default:
+        casez_tmp_0 = entries_7_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_1;
   always_comb begin
     casez (idx)
-      2'b00:
+      3'b000:
         casez_tmp_1 = entries_0_mask;
-      2'b01:
+      3'b001:
         casez_tmp_1 = entries_1_mask;
-      2'b10:
+      3'b010:
         casez_tmp_1 = entries_2_mask;
-      default:
+      3'b011:
         casez_tmp_1 = entries_3_mask;
+      3'b100:
+        casez_tmp_1 = entries_4_mask;
+      3'b101:
+        casez_tmp_1 = entries_5_mask;
+      3'b110:
+        casez_tmp_1 = entries_6_mask;
+      default:
+        casez_tmp_1 = entries_7_mask;
     endcase
   end // always_comb
   wire [6:0]  _GEN = {3'h0, casez_tmp_1};
@@ -100,187 +136,575 @@ module StoreBuffer(
   wire        io_dmem_wvalid_0 = _io_dmem_wvalid_T & ~wDone;
   wire        sameWord = casez_tmp[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_1 = _GEN << casez_tmp[1:0];
-  wire        _loadMask_base_T_29 = io_ld_mem_rd == 3'h2;
-  wire        _loadMask_base_T_31 = io_ld_mem_rd == 3'h3;
-  wire        _loadMask_base_T_33 = io_ld_mem_rd == 3'h4;
-  wire        _loadMask_base_T_35 = io_ld_mem_rd == 3'h5;
+  wire        _loadMask_base_T_65 = io_ld_mem_rd == 3'h2;
+  wire        _loadMask_base_T_67 = io_ld_mem_rd == 3'h3;
+  wire        _loadMask_base_T_69 = io_ld_mem_rd == 3'h4;
+  wire        _loadMask_base_T_71 = io_ld_mem_rd == 3'h5;
   wire [6:0]  _GEN_1 = {5'h0, io_ld_addr[1:0]};
   wire [6:0]  _loadMask_T =
     {3'h0,
-     _loadMask_base_T_35
+     _loadMask_base_T_71
        ? 4'h3
-       : _loadMask_base_T_33
+       : _loadMask_base_T_69
            ? 4'h1
-           : _loadMask_base_T_31 ? 4'hF : {2'h0, _loadMask_base_T_29, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
   wire [3:0]  _overlap_T = _loadMask_T[3:0] & _storeMask_T_1[3:0];
   wire        _fwdHits_0_T = io_ld_valid & (|count);
   wire        fwdHits_0 = _fwdHits_0_T & sameWord & _overlap_T == _loadMask_T[3:0];
   wire [62:0] _GEN_2 = {58'h0, io_ld_addr[1:0], 3'h0};
   wire [62:0] _fwdData_0_T_4 = _GEN_0 << {58'h0, casez_tmp[1:0], 3'h0} >> _GEN_2;
-  wire [1:0]  _idx_T_2 = idx + 2'h1;
+  wire [2:0]  _idx_T_2 = idx + 3'h1;
   reg  [31:0] casez_tmp_2;
   always_comb begin
     casez (_idx_T_2)
-      2'b00:
+      3'b000:
         casez_tmp_2 = entries_0_addr;
-      2'b01:
+      3'b001:
         casez_tmp_2 = entries_1_addr;
-      2'b10:
+      3'b010:
         casez_tmp_2 = entries_2_addr;
-      default:
+      3'b011:
         casez_tmp_2 = entries_3_addr;
+      3'b100:
+        casez_tmp_2 = entries_4_addr;
+      3'b101:
+        casez_tmp_2 = entries_5_addr;
+      3'b110:
+        casez_tmp_2 = entries_6_addr;
+      default:
+        casez_tmp_2 = entries_7_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_3;
   always_comb begin
     casez (_idx_T_2)
-      2'b00:
+      3'b000:
         casez_tmp_3 = entries_0_data;
-      2'b01:
+      3'b001:
         casez_tmp_3 = entries_1_data;
-      2'b10:
+      3'b010:
         casez_tmp_3 = entries_2_data;
-      default:
+      3'b011:
         casez_tmp_3 = entries_3_data;
+      3'b100:
+        casez_tmp_3 = entries_4_data;
+      3'b101:
+        casez_tmp_3 = entries_5_data;
+      3'b110:
+        casez_tmp_3 = entries_6_data;
+      default:
+        casez_tmp_3 = entries_7_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_4;
   always_comb begin
     casez (_idx_T_2)
-      2'b00:
+      3'b000:
         casez_tmp_4 = entries_0_mask;
-      2'b01:
+      3'b001:
         casez_tmp_4 = entries_1_mask;
-      2'b10:
+      3'b010:
         casez_tmp_4 = entries_2_mask;
-      default:
+      3'b011:
         casez_tmp_4 = entries_3_mask;
+      3'b100:
+        casez_tmp_4 = entries_4_mask;
+      3'b101:
+        casez_tmp_4 = entries_5_mask;
+      3'b110:
+        casez_tmp_4 = entries_6_mask;
+      default:
+        casez_tmp_4 = entries_7_mask;
     endcase
   end // always_comb
   wire        sameWord_1 = casez_tmp_2[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_3 = {3'h0, casez_tmp_4} << casez_tmp_2[1:0];
   wire [6:0]  _loadMask_T_1 =
     {3'h0,
-     _loadMask_base_T_35
+     _loadMask_base_T_71
        ? 4'h3
-       : _loadMask_base_T_33
+       : _loadMask_base_T_69
            ? 4'h1
-           : _loadMask_base_T_31 ? 4'hF : {2'h0, _loadMask_base_T_29, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
   wire [3:0]  _overlap_T_1 = _loadMask_T_1[3:0] & _storeMask_T_3[3:0];
-  wire        _fwdHits_1_T = io_ld_valid & (|(count[2:1]));
+  wire        _fwdHits_1_T = io_ld_valid & (|(count[3:1]));
   wire        fwdHits_1 = _fwdHits_1_T & sameWord_1 & _overlap_T_1 == _loadMask_T_1[3:0];
   wire [62:0] _fwdData_1_T_4 =
     {31'h0, casez_tmp_3} << {58'h0, casez_tmp_2[1:0], 3'h0} >> _GEN_2;
-  wire [1:0]  _idx_T_4 = idx - 2'h2;
+  wire [2:0]  _idx_T_4 = idx + 3'h2;
   reg  [31:0] casez_tmp_5;
   always_comb begin
     casez (_idx_T_4)
-      2'b00:
+      3'b000:
         casez_tmp_5 = entries_0_addr;
-      2'b01:
+      3'b001:
         casez_tmp_5 = entries_1_addr;
-      2'b10:
+      3'b010:
         casez_tmp_5 = entries_2_addr;
-      default:
+      3'b011:
         casez_tmp_5 = entries_3_addr;
+      3'b100:
+        casez_tmp_5 = entries_4_addr;
+      3'b101:
+        casez_tmp_5 = entries_5_addr;
+      3'b110:
+        casez_tmp_5 = entries_6_addr;
+      default:
+        casez_tmp_5 = entries_7_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_6;
   always_comb begin
     casez (_idx_T_4)
-      2'b00:
+      3'b000:
         casez_tmp_6 = entries_0_data;
-      2'b01:
+      3'b001:
         casez_tmp_6 = entries_1_data;
-      2'b10:
+      3'b010:
         casez_tmp_6 = entries_2_data;
-      default:
+      3'b011:
         casez_tmp_6 = entries_3_data;
+      3'b100:
+        casez_tmp_6 = entries_4_data;
+      3'b101:
+        casez_tmp_6 = entries_5_data;
+      3'b110:
+        casez_tmp_6 = entries_6_data;
+      default:
+        casez_tmp_6 = entries_7_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_7;
   always_comb begin
     casez (_idx_T_4)
-      2'b00:
+      3'b000:
         casez_tmp_7 = entries_0_mask;
-      2'b01:
+      3'b001:
         casez_tmp_7 = entries_1_mask;
-      2'b10:
+      3'b010:
         casez_tmp_7 = entries_2_mask;
-      default:
+      3'b011:
         casez_tmp_7 = entries_3_mask;
+      3'b100:
+        casez_tmp_7 = entries_4_mask;
+      3'b101:
+        casez_tmp_7 = entries_5_mask;
+      3'b110:
+        casez_tmp_7 = entries_6_mask;
+      default:
+        casez_tmp_7 = entries_7_mask;
     endcase
   end // always_comb
   wire        sameWord_2 = casez_tmp_5[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_5 = {3'h0, casez_tmp_7} << casez_tmp_5[1:0];
   wire [6:0]  _loadMask_T_2 =
     {3'h0,
-     _loadMask_base_T_35
+     _loadMask_base_T_71
        ? 4'h3
-       : _loadMask_base_T_33
+       : _loadMask_base_T_69
            ? 4'h1
-           : _loadMask_base_T_31 ? 4'hF : {2'h0, _loadMask_base_T_29, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
   wire [3:0]  _overlap_T_2 = _loadMask_T_2[3:0] & _storeMask_T_5[3:0];
-  wire        _fwdHits_2_T = io_ld_valid & count > 3'h2;
+  wire        _fwdHits_2_T = io_ld_valid & count > 4'h2;
   wire        fwdHits_2 = _fwdHits_2_T & sameWord_2 & _overlap_T_2 == _loadMask_T_2[3:0];
   wire [62:0] _fwdData_2_T_4 =
     {31'h0, casez_tmp_6} << {58'h0, casez_tmp_5[1:0], 3'h0} >> _GEN_2;
-  wire [1:0]  _idx_T_6 = idx - 2'h1;
+  wire [2:0]  _idx_T_6 = idx + 3'h3;
   reg  [31:0] casez_tmp_8;
   always_comb begin
     casez (_idx_T_6)
-      2'b00:
+      3'b000:
         casez_tmp_8 = entries_0_addr;
-      2'b01:
+      3'b001:
         casez_tmp_8 = entries_1_addr;
-      2'b10:
+      3'b010:
         casez_tmp_8 = entries_2_addr;
-      default:
+      3'b011:
         casez_tmp_8 = entries_3_addr;
+      3'b100:
+        casez_tmp_8 = entries_4_addr;
+      3'b101:
+        casez_tmp_8 = entries_5_addr;
+      3'b110:
+        casez_tmp_8 = entries_6_addr;
+      default:
+        casez_tmp_8 = entries_7_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_9;
   always_comb begin
     casez (_idx_T_6)
-      2'b00:
+      3'b000:
         casez_tmp_9 = entries_0_data;
-      2'b01:
+      3'b001:
         casez_tmp_9 = entries_1_data;
-      2'b10:
+      3'b010:
         casez_tmp_9 = entries_2_data;
-      default:
+      3'b011:
         casez_tmp_9 = entries_3_data;
+      3'b100:
+        casez_tmp_9 = entries_4_data;
+      3'b101:
+        casez_tmp_9 = entries_5_data;
+      3'b110:
+        casez_tmp_9 = entries_6_data;
+      default:
+        casez_tmp_9 = entries_7_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_10;
   always_comb begin
     casez (_idx_T_6)
-      2'b00:
+      3'b000:
         casez_tmp_10 = entries_0_mask;
-      2'b01:
+      3'b001:
         casez_tmp_10 = entries_1_mask;
-      2'b10:
+      3'b010:
         casez_tmp_10 = entries_2_mask;
-      default:
+      3'b011:
         casez_tmp_10 = entries_3_mask;
+      3'b100:
+        casez_tmp_10 = entries_4_mask;
+      3'b101:
+        casez_tmp_10 = entries_5_mask;
+      3'b110:
+        casez_tmp_10 = entries_6_mask;
+      default:
+        casez_tmp_10 = entries_7_mask;
     endcase
   end // always_comb
   wire        sameWord_3 = casez_tmp_8[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_7 = {3'h0, casez_tmp_10} << casez_tmp_8[1:0];
   wire [6:0]  _loadMask_T_3 =
     {3'h0,
-     _loadMask_base_T_35
+     _loadMask_base_T_71
        ? 4'h3
-       : _loadMask_base_T_33
+       : _loadMask_base_T_69
            ? 4'h1
-           : _loadMask_base_T_31 ? 4'hF : {2'h0, _loadMask_base_T_29, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
   wire [3:0]  _overlap_T_3 = _loadMask_T_3[3:0] & _storeMask_T_7[3:0];
-  wire        _fwdHits_3_T = io_ld_valid & count[2];
+  wire        _fwdHits_3_T = io_ld_valid & (|(count[3:2]));
   wire        fwdHits_3 = _fwdHits_3_T & sameWord_3 & _overlap_T_3 == _loadMask_T_3[3:0];
   wire [62:0] _fwdData_3_T_4 =
     {31'h0, casez_tmp_9} << {58'h0, casez_tmp_8[1:0], 3'h0} >> _GEN_2;
-  wire [3:0]  _io_ld_wait_T =
-    {_fwdHits_3_T & sameWord_3 & (|_overlap_T_3) & _overlap_T_3 != _loadMask_T_3[3:0],
+  wire [2:0]  _idx_T_8 = idx - 3'h4;
+  reg  [31:0] casez_tmp_11;
+  always_comb begin
+    casez (_idx_T_8)
+      3'b000:
+        casez_tmp_11 = entries_0_addr;
+      3'b001:
+        casez_tmp_11 = entries_1_addr;
+      3'b010:
+        casez_tmp_11 = entries_2_addr;
+      3'b011:
+        casez_tmp_11 = entries_3_addr;
+      3'b100:
+        casez_tmp_11 = entries_4_addr;
+      3'b101:
+        casez_tmp_11 = entries_5_addr;
+      3'b110:
+        casez_tmp_11 = entries_6_addr;
+      default:
+        casez_tmp_11 = entries_7_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_12;
+  always_comb begin
+    casez (_idx_T_8)
+      3'b000:
+        casez_tmp_12 = entries_0_data;
+      3'b001:
+        casez_tmp_12 = entries_1_data;
+      3'b010:
+        casez_tmp_12 = entries_2_data;
+      3'b011:
+        casez_tmp_12 = entries_3_data;
+      3'b100:
+        casez_tmp_12 = entries_4_data;
+      3'b101:
+        casez_tmp_12 = entries_5_data;
+      3'b110:
+        casez_tmp_12 = entries_6_data;
+      default:
+        casez_tmp_12 = entries_7_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_13;
+  always_comb begin
+    casez (_idx_T_8)
+      3'b000:
+        casez_tmp_13 = entries_0_mask;
+      3'b001:
+        casez_tmp_13 = entries_1_mask;
+      3'b010:
+        casez_tmp_13 = entries_2_mask;
+      3'b011:
+        casez_tmp_13 = entries_3_mask;
+      3'b100:
+        casez_tmp_13 = entries_4_mask;
+      3'b101:
+        casez_tmp_13 = entries_5_mask;
+      3'b110:
+        casez_tmp_13 = entries_6_mask;
+      default:
+        casez_tmp_13 = entries_7_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_4 = casez_tmp_11[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_9 = {3'h0, casez_tmp_13} << casez_tmp_11[1:0];
+  wire [6:0]  _loadMask_T_4 =
+    {3'h0,
+     _loadMask_base_T_71
+       ? 4'h3
+       : _loadMask_base_T_69
+           ? 4'h1
+           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+  wire [3:0]  _overlap_T_4 = _loadMask_T_4[3:0] & _storeMask_T_9[3:0];
+  wire        _fwdHits_4_T = io_ld_valid & count > 4'h4;
+  wire        fwdHits_4 = _fwdHits_4_T & sameWord_4 & _overlap_T_4 == _loadMask_T_4[3:0];
+  wire [62:0] _fwdData_4_T_4 =
+    {31'h0, casez_tmp_12} << {58'h0, casez_tmp_11[1:0], 3'h0} >> _GEN_2;
+  wire [2:0]  _idx_T_10 = idx - 3'h3;
+  reg  [31:0] casez_tmp_14;
+  always_comb begin
+    casez (_idx_T_10)
+      3'b000:
+        casez_tmp_14 = entries_0_addr;
+      3'b001:
+        casez_tmp_14 = entries_1_addr;
+      3'b010:
+        casez_tmp_14 = entries_2_addr;
+      3'b011:
+        casez_tmp_14 = entries_3_addr;
+      3'b100:
+        casez_tmp_14 = entries_4_addr;
+      3'b101:
+        casez_tmp_14 = entries_5_addr;
+      3'b110:
+        casez_tmp_14 = entries_6_addr;
+      default:
+        casez_tmp_14 = entries_7_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_15;
+  always_comb begin
+    casez (_idx_T_10)
+      3'b000:
+        casez_tmp_15 = entries_0_data;
+      3'b001:
+        casez_tmp_15 = entries_1_data;
+      3'b010:
+        casez_tmp_15 = entries_2_data;
+      3'b011:
+        casez_tmp_15 = entries_3_data;
+      3'b100:
+        casez_tmp_15 = entries_4_data;
+      3'b101:
+        casez_tmp_15 = entries_5_data;
+      3'b110:
+        casez_tmp_15 = entries_6_data;
+      default:
+        casez_tmp_15 = entries_7_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_16;
+  always_comb begin
+    casez (_idx_T_10)
+      3'b000:
+        casez_tmp_16 = entries_0_mask;
+      3'b001:
+        casez_tmp_16 = entries_1_mask;
+      3'b010:
+        casez_tmp_16 = entries_2_mask;
+      3'b011:
+        casez_tmp_16 = entries_3_mask;
+      3'b100:
+        casez_tmp_16 = entries_4_mask;
+      3'b101:
+        casez_tmp_16 = entries_5_mask;
+      3'b110:
+        casez_tmp_16 = entries_6_mask;
+      default:
+        casez_tmp_16 = entries_7_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_5 = casez_tmp_14[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_11 = {3'h0, casez_tmp_16} << casez_tmp_14[1:0];
+  wire [6:0]  _loadMask_T_5 =
+    {3'h0,
+     _loadMask_base_T_71
+       ? 4'h3
+       : _loadMask_base_T_69
+           ? 4'h1
+           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+  wire [3:0]  _overlap_T_5 = _loadMask_T_5[3:0] & _storeMask_T_11[3:0];
+  wire        _fwdHits_5_T = io_ld_valid & count > 4'h5;
+  wire        fwdHits_5 = _fwdHits_5_T & sameWord_5 & _overlap_T_5 == _loadMask_T_5[3:0];
+  wire [62:0] _fwdData_5_T_4 =
+    {31'h0, casez_tmp_15} << {58'h0, casez_tmp_14[1:0], 3'h0} >> _GEN_2;
+  wire [2:0]  _idx_T_12 = idx - 3'h2;
+  reg  [31:0] casez_tmp_17;
+  always_comb begin
+    casez (_idx_T_12)
+      3'b000:
+        casez_tmp_17 = entries_0_addr;
+      3'b001:
+        casez_tmp_17 = entries_1_addr;
+      3'b010:
+        casez_tmp_17 = entries_2_addr;
+      3'b011:
+        casez_tmp_17 = entries_3_addr;
+      3'b100:
+        casez_tmp_17 = entries_4_addr;
+      3'b101:
+        casez_tmp_17 = entries_5_addr;
+      3'b110:
+        casez_tmp_17 = entries_6_addr;
+      default:
+        casez_tmp_17 = entries_7_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_18;
+  always_comb begin
+    casez (_idx_T_12)
+      3'b000:
+        casez_tmp_18 = entries_0_data;
+      3'b001:
+        casez_tmp_18 = entries_1_data;
+      3'b010:
+        casez_tmp_18 = entries_2_data;
+      3'b011:
+        casez_tmp_18 = entries_3_data;
+      3'b100:
+        casez_tmp_18 = entries_4_data;
+      3'b101:
+        casez_tmp_18 = entries_5_data;
+      3'b110:
+        casez_tmp_18 = entries_6_data;
+      default:
+        casez_tmp_18 = entries_7_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_19;
+  always_comb begin
+    casez (_idx_T_12)
+      3'b000:
+        casez_tmp_19 = entries_0_mask;
+      3'b001:
+        casez_tmp_19 = entries_1_mask;
+      3'b010:
+        casez_tmp_19 = entries_2_mask;
+      3'b011:
+        casez_tmp_19 = entries_3_mask;
+      3'b100:
+        casez_tmp_19 = entries_4_mask;
+      3'b101:
+        casez_tmp_19 = entries_5_mask;
+      3'b110:
+        casez_tmp_19 = entries_6_mask;
+      default:
+        casez_tmp_19 = entries_7_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_6 = casez_tmp_17[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_13 = {3'h0, casez_tmp_19} << casez_tmp_17[1:0];
+  wire [6:0]  _loadMask_T_6 =
+    {3'h0,
+     _loadMask_base_T_71
+       ? 4'h3
+       : _loadMask_base_T_69
+           ? 4'h1
+           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+  wire [3:0]  _overlap_T_6 = _loadMask_T_6[3:0] & _storeMask_T_13[3:0];
+  wire        _fwdHits_6_T = io_ld_valid & count > 4'h6;
+  wire        fwdHits_6 = _fwdHits_6_T & sameWord_6 & _overlap_T_6 == _loadMask_T_6[3:0];
+  wire [62:0] _fwdData_6_T_4 =
+    {31'h0, casez_tmp_18} << {58'h0, casez_tmp_17[1:0], 3'h0} >> _GEN_2;
+  wire [2:0]  _idx_T_14 = idx - 3'h1;
+  reg  [31:0] casez_tmp_20;
+  always_comb begin
+    casez (_idx_T_14)
+      3'b000:
+        casez_tmp_20 = entries_0_addr;
+      3'b001:
+        casez_tmp_20 = entries_1_addr;
+      3'b010:
+        casez_tmp_20 = entries_2_addr;
+      3'b011:
+        casez_tmp_20 = entries_3_addr;
+      3'b100:
+        casez_tmp_20 = entries_4_addr;
+      3'b101:
+        casez_tmp_20 = entries_5_addr;
+      3'b110:
+        casez_tmp_20 = entries_6_addr;
+      default:
+        casez_tmp_20 = entries_7_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_21;
+  always_comb begin
+    casez (_idx_T_14)
+      3'b000:
+        casez_tmp_21 = entries_0_data;
+      3'b001:
+        casez_tmp_21 = entries_1_data;
+      3'b010:
+        casez_tmp_21 = entries_2_data;
+      3'b011:
+        casez_tmp_21 = entries_3_data;
+      3'b100:
+        casez_tmp_21 = entries_4_data;
+      3'b101:
+        casez_tmp_21 = entries_5_data;
+      3'b110:
+        casez_tmp_21 = entries_6_data;
+      default:
+        casez_tmp_21 = entries_7_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_22;
+  always_comb begin
+    casez (_idx_T_14)
+      3'b000:
+        casez_tmp_22 = entries_0_mask;
+      3'b001:
+        casez_tmp_22 = entries_1_mask;
+      3'b010:
+        casez_tmp_22 = entries_2_mask;
+      3'b011:
+        casez_tmp_22 = entries_3_mask;
+      3'b100:
+        casez_tmp_22 = entries_4_mask;
+      3'b101:
+        casez_tmp_22 = entries_5_mask;
+      3'b110:
+        casez_tmp_22 = entries_6_mask;
+      default:
+        casez_tmp_22 = entries_7_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_7 = casez_tmp_20[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_15 = {3'h0, casez_tmp_22} << casez_tmp_20[1:0];
+  wire [6:0]  _loadMask_T_7 =
+    {3'h0,
+     _loadMask_base_T_71
+       ? 4'h3
+       : _loadMask_base_T_69
+           ? 4'h1
+           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+  wire [3:0]  _overlap_T_7 = _loadMask_T_7[3:0] & _storeMask_T_15[3:0];
+  wire        _fwdHits_7_T = io_ld_valid & count[3];
+  wire        fwdHits_7 = _fwdHits_7_T & sameWord_7 & _overlap_T_7 == _loadMask_T_7[3:0];
+  wire [62:0] _fwdData_7_T_4 =
+    {31'h0, casez_tmp_21} << {58'h0, casez_tmp_20[1:0], 3'h0} >> _GEN_2;
+  wire [7:0]  _io_ld_wait_T =
+    {_fwdHits_7_T & sameWord_7 & (|_overlap_T_7) & _overlap_T_7 != _loadMask_T_7[3:0],
+     _fwdHits_6_T & sameWord_6 & (|_overlap_T_6) & _overlap_T_6 != _loadMask_T_6[3:0],
+     _fwdHits_5_T & sameWord_5 & (|_overlap_T_5) & _overlap_T_5 != _loadMask_T_5[3:0],
+     _fwdHits_4_T & sameWord_4 & (|_overlap_T_4) & _overlap_T_4 != _loadMask_T_4[3:0],
+     _fwdHits_3_T & sameWord_3 & (|_overlap_T_3) & _overlap_T_3 != _loadMask_T_3[3:0],
      _fwdHits_2_T & sameWord_2 & (|_overlap_T_2) & _overlap_T_2 != _loadMask_T_2[3:0],
      _fwdHits_1_T & sameWord_1 & (|_overlap_T_1) & _overlap_T_1 != _loadMask_T_1[3:0],
      _fwdHits_0_T & sameWord & (|_overlap_T) & _overlap_T != _loadMask_T[3:0]};
@@ -303,39 +727,71 @@ module StoreBuffer(
       entries_3_addr <= 32'h0;
       entries_3_data <= 32'h0;
       entries_3_mask <= 4'h0;
-      idx <= 2'h0;
-      tail <= 2'h0;
-      count <= 3'h0;
+      entries_4_addr <= 32'h0;
+      entries_4_data <= 32'h0;
+      entries_4_mask <= 4'h0;
+      entries_5_addr <= 32'h0;
+      entries_5_data <= 32'h0;
+      entries_5_mask <= 4'h0;
+      entries_6_addr <= 32'h0;
+      entries_6_data <= 32'h0;
+      entries_6_mask <= 4'h0;
+      entries_7_addr <= 32'h0;
+      entries_7_data <= 32'h0;
+      entries_7_mask <= 4'h0;
+      idx <= 3'h0;
+      tail <= 3'h0;
+      count <= 4'h0;
       state <= 2'h0;
       awDone <= 1'h0;
       wDone <= 1'h0;
     end
     else begin
-      if (_count_T & tail == 2'h0) begin
+      if (_count_T & tail == 3'h0) begin
         entries_0_addr <= io_enq_bits_addr;
         entries_0_data <= io_enq_bits_data;
         entries_0_mask <= io_enq_bits_mask;
       end
-      if (_count_T & tail == 2'h1) begin
+      if (_count_T & tail == 3'h1) begin
         entries_1_addr <= io_enq_bits_addr;
         entries_1_data <= io_enq_bits_data;
         entries_1_mask <= io_enq_bits_mask;
       end
-      if (_count_T & tail == 2'h2) begin
+      if (_count_T & tail == 3'h2) begin
         entries_2_addr <= io_enq_bits_addr;
         entries_2_data <= io_enq_bits_data;
         entries_2_mask <= io_enq_bits_mask;
       end
-      if (_count_T & (&tail)) begin
+      if (_count_T & tail == 3'h3) begin
         entries_3_addr <= io_enq_bits_addr;
         entries_3_data <= io_enq_bits_data;
         entries_3_mask <= io_enq_bits_mask;
       end
+      if (_count_T & tail == 3'h4) begin
+        entries_4_addr <= io_enq_bits_addr;
+        entries_4_data <= io_enq_bits_data;
+        entries_4_mask <= io_enq_bits_mask;
+      end
+      if (_count_T & tail == 3'h5) begin
+        entries_5_addr <= io_enq_bits_addr;
+        entries_5_data <= io_enq_bits_data;
+        entries_5_mask <= io_enq_bits_mask;
+      end
+      if (_count_T & tail == 3'h6) begin
+        entries_6_addr <= io_enq_bits_addr;
+        entries_6_data <= io_enq_bits_data;
+        entries_6_mask <= io_enq_bits_mask;
+      end
+      if (_count_T & (&tail)) begin
+        entries_7_addr <= io_enq_bits_addr;
+        entries_7_data <= io_enq_bits_data;
+        entries_7_mask <= io_enq_bits_mask;
+      end
       if (bFire)
-        idx <= idx + 2'h1;
+        idx <= idx + 3'h1;
       if (_count_T)
-        tail <= tail + 2'h1;
-      count <= count + {2'h0, _count_T} - {2'h0, bFire};
+        tail <= tail + 3'h1;
+      count <= count + {3'h0, _count_T} - {3'h0, bFire};
       if (_GEN_3) begin
         if (io_empty_0 | io_bus_busy) begin
         end
@@ -355,12 +811,34 @@ module StoreBuffer(
   assign io_enq_ready = io_enq_ready_0;
   assign io_ld_wait = |_io_ld_wait_T;
   assign io_ld_fwd_valid =
-    (|{fwdHits_3, fwdHits_2, fwdHits_1, fwdHits_0}) & ~(|_io_ld_wait_T);
+    (|{fwdHits_7,
+       fwdHits_6,
+       fwdHits_5,
+       fwdHits_4,
+       fwdHits_3,
+       fwdHits_2,
+       fwdHits_1,
+       fwdHits_0}) & ~(|_io_ld_wait_T);
   assign io_ld_fwd_data =
-    (fwdHits_0 & ~(fwdHits_1 | fwdHits_2 | fwdHits_3) ? _fwdData_0_T_4[31:0] : 32'h0)
-    | (fwdHits_1 & ~(fwdHits_2 | fwdHits_3) ? _fwdData_1_T_4[31:0] : 32'h0)
-    | (fwdHits_2 & ~fwdHits_3 ? _fwdData_2_T_4[31:0] : 32'h0)
-    | (fwdHits_3 ? _fwdData_3_T_4[31:0] : 32'h0);
+    (fwdHits_0
+     & ~(fwdHits_1 | fwdHits_2 | fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6
+         | fwdHits_7)
+       ? _fwdData_0_T_4[31:0]
+       : 32'h0)
+    | (fwdHits_1
+       & ~(fwdHits_2 | fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7)
+         ? _fwdData_1_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_2 & ~(fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7)
+         ? _fwdData_2_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_3 & ~(fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7)
+         ? _fwdData_3_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_4 & ~(fwdHits_5 | fwdHits_6 | fwdHits_7) ? _fwdData_4_T_4[31:0] : 32'h0)
+    | (fwdHits_5 & ~(fwdHits_6 | fwdHits_7) ? _fwdData_5_T_4[31:0] : 32'h0)
+    | (fwdHits_6 & ~fwdHits_7 ? _fwdData_6_T_4[31:0] : 32'h0)
+    | (fwdHits_7 ? _fwdData_7_T_4[31:0] : 32'h0);
   assign io_dmem_awaddr = casez_tmp;
   assign io_dmem_awvalid = io_dmem_awvalid_0;
   assign io_dmem_wdata = headData[31:0];

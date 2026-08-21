@@ -14,6 +14,10 @@ class NPC_IO(conf: CoreConfig) extends Bundle {
   val commit_pc       = if (conf.npc) Some(Output(UInt(32.W))) else None
   val commit_mem_addr = if (conf.npc) Some(Output(UInt(32.W))) else None
   val commit_is_load  = if (conf.npc) Some(Output(Bool())) else None
+  val commit_valid1    = if (conf.npc) Some(Output(Bool())) else None
+  val commit_pc1       = if (conf.npc) Some(Output(UInt(32.W))) else None
+  val commit_mem_addr1 = if (conf.npc) Some(Output(UInt(32.W))) else None
+  val commit_is_load1  = if (conf.npc) Some(Output(Bool())) else None
   val arch_rdata      = if (conf.npc) Some(Output(Vec(32, UInt(32.W)))) else None
 }
 
@@ -37,6 +41,10 @@ class ysyx_25020039(val coreConfig: CoreConfig) extends Module {
     io.commit_pc.get       := core.io.commit_pc
     io.commit_mem_addr.get := core.io.commit_mem_addr
     io.commit_is_load.get  := core.io.commit_is_load
+    io.commit_valid1.get    := core.io.commit_valid1
+    io.commit_pc1.get       := core.io.commit_pc1
+    io.commit_mem_addr1.get := core.io.commit_mem_addr1
+    io.commit_is_load1.get  := core.io.commit_is_load1
     io.arch_rdata.get      := core.io.arch_rdata
   }
 

@@ -20,7 +20,7 @@ module EXU(
   input  [31:0] io_in_bits_csr_rd1,
   input         io_in_bits_state_state,
   input  [7:0]  io_in_bits_state_state_num,
-  input  [3:0]  io_in_bits_rob_idx,
+  input  [4:0]  io_in_bits_rob_idx,
   input  [5:0]  io_in_bits_pdest,
   input         io_out_ready,
   output        io_out_valid,
@@ -31,13 +31,14 @@ module EXU(
   output [2:0]  io_out_bits_signals_wbu_reg_write_sel,
   output [31:0] io_out_bits_alu_result,
                 io_out_bits_pc,
+                io_out_bits_next_pc,
                 io_out_bits_imm_ext,
                 io_out_bits_rd2,
   output [4:0]  io_out_bits_waddr,
   output [31:0] io_out_bits_csr_rd1,
   output        io_out_bits_state_state,
   output [7:0]  io_out_bits_state_state_num,
-  output [3:0]  io_out_bits_rob_idx,
+  output [4:0]  io_out_bits_rob_idx,
   output [5:0]  io_out_bits_pdest,
   output        io_out_bits_br_taken,
   output [31:0] io_pc_bits_pc4_imm,
@@ -53,6 +54,8 @@ module EXU(
   wire [2:0]  _exu_pc_io_pc_src;
   wire [31:0] _alu_io_result;
   wire        _alu_io_zero_flag;
+  wire [31:0] jump_pc_next_pc = io_in_bits_pc + io_in_bits_imm_ext & 32'hFFFFFFFE;
+  wire [31:0] _io_out_bits_next_pc_T_2 = io_in_bits_pc + 32'h4;
   wire        is_div =
     io_in_valid
     & (io_in_bits_signals_exu_alu_control == 5'hE
@@ -120,6 +123,10 @@ module EXU(
   assign io_out_bits_signals_wbu_reg_write_sel = io_in_bits_signals_wbu_reg_write_sel;
   assign io_out_bits_alu_result = is_div ? _div_io_result : _alu_io_result;
   assign io_out_bits_pc = io_in_bits_pc;
+  assign io_out_bits_next_pc =
+    _exu_pc_io_pc_src == 3'h2
+      ? _alu_io_result & 32'hFFFFFFFE
+      : _exu_pc_io_pc_src == 3'h1 ? jump_pc_next_pc : _io_out_bits_next_pc_T_2;
   assign io_out_bits_imm_ext = io_in_bits_imm_ext;
   assign io_out_bits_rd2 = io_in_bits_rd2;
   assign io_out_bits_waddr = io_in_bits_waddr;
@@ -129,9 +136,9 @@ module EXU(
   assign io_out_bits_rob_idx = io_in_bits_rob_idx;
   assign io_out_bits_pdest = io_in_bits_pdest;
   assign io_out_bits_br_taken = |_exu_pc_io_pc_src;
-  assign io_pc_bits_pc4_imm = io_in_bits_pc + io_in_bits_imm_ext & 32'hFFFFFFFE;
+  assign io_pc_bits_pc4_imm = jump_pc_next_pc;
   assign io_pc_bits_pc4_rs2 = _alu_io_result & 32'hFFFFFFFE;
-  assign io_pc_bits_pc4 = io_in_bits_pc + 32'h4;
+  assign io_pc_bits_pc4 = _io_out_bits_next_pc_T_2;
   assign io_pc_bits_pc_src = _exu_pc_io_pc_src;
 endmodule
 

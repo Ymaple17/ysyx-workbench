@@ -42,6 +42,7 @@ class ROBEntry extends Bundle {
   val bp_index      = UInt(log2Ceil(BHT_SIZE).W)
   val cp_idx        = UInt(log2Ceil(OoOParams.CP_DEPTH).W)
   val actual_taken  = Bool()
+  val actual_target = UInt(32.W)
   val rs1_val       = UInt(32.W)
   val rs2_val       = UInt(32.W)
   val csr_waddr     = UInt(12.W)
@@ -77,6 +78,7 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     val wb_mem_addr     = Input(UInt(32.W))
     val wb_mem_wdata    = Input(UInt(32.W))
     val wb_actual_taken = Input(Bool())
+    val wb_actual_target = Input(UInt(32.W))
     val wb1_fire         = Input(Bool())
     val wb1_idx          = Input(UInt(ptrW.W))
     val wb1_val          = Input(UInt(32.W))
@@ -84,11 +86,16 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     val wb1_mem_addr     = Input(UInt(32.W))
     val wb1_mem_wdata    = Input(UInt(32.W))
     val wb1_actual_taken = Input(Bool())
+    val wb1_actual_target = Input(UInt(32.W))
 
     val commit_valid = Output(Bool())
     val commit_idx   = Output(UInt(ptrW.W))
     val commit_bits  = Output(new ROBEntry)
     val commit_fire  = Input(Bool())
+    val commit1_valid = Output(Bool())
+    val commit1_idx   = Output(UInt(ptrW.W))
+    val commit1_bits  = Output(new ROBEntry)
+    val commit1_fire  = Input(Bool())
 
     val flush     = Input(Bool())
     val flush_idx = Input(UInt(ptrW.W))
@@ -130,22 +137,31 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
   io.issue_bits  := entries(issue_id)
 
   // commit_valid閿涙艾褰查幓鎰唉閿涘潐one閿涘鍨ㄩ張顒佸濮濓絽婀?wb 閸氬奔绔?head閿涘牓銆庢惔蹇撴倱閹峰秴鐣幋?闁偓娴兼埊绱?
+  val head1 = Mux(head === (n - 1).U, 0.U, head + 1.U)
   val wb_is_head = io.wb_fire && (io.wb_idx === head) && entries(head).valid
   val wb1_is_head = io.wb1_fire && (io.wb1_idx === head) && entries(head).valid
+  val wb_is_head1 = io.wb_fire && (io.wb_idx === head1) && entries(head1).valid
+  val wb1_is_head1 = io.wb1_fire && (io.wb1_idx === head1) && entries(head1).valid
   io.commit_valid := entries(head).valid && (entries(head).done || wb_is_head || wb1_is_head)
   io.commit_idx := head
   io.commit_bits := entries(head)
+  io.commit1_valid := (count > 1.U) && entries(head1).valid &&
+    (entries(head1).done || wb_is_head1 || wb1_is_head1)
+  io.commit1_idx := head1
+  io.commit1_bits := entries(head1)
 
   // flush 閸氬本濯挎禒宥呭帒鐠?head commit閿涘湹BU 閸欘垵鍏樺锝呮躬闁偓娴兼垶鐦崚鍡樻暜閺囩鈧胶娈戦幐鍥︽姢閿?  val do_cm = io.commit_fire && entries(head).valid
   val do_cm = io.commit_fire && entries(head).valid
-  val cm_head = Mux(do_cm, Mux(head === (n - 1).U, 0.U, head + 1.U), head)
+  val do_cm1 = io.commit1_fire && do_cm && entries(head1).valid
+  val cm_count = do_cm.asUInt +& do_cm1.asUInt
+  val cm_head = (head + cm_count)(ptrW - 1, 0)
 
   if (statistics) {
     val pm = Module(new PerfMonitor)
     pm.io.clock := clock
     pm.io.event_id := EVENT_COMMIT
-    pm.io.data := 1.U
-    pm.io.enable := do_cm
+    pm.io.data := cm_count
+    pm.io.enable := cm_count =/= 0.U
   }
 
   when(io.wb_fire && entries(io.wb_idx).valid) {
@@ -156,6 +172,7 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     entries(io.wb_idx).mem_wdata     := io.wb_mem_wdata
     entries(io.wb_idx).addr_ready    := true.B
     entries(io.wb_idx).actual_taken  := io.wb_actual_taken
+    entries(io.wb_idx).actual_target := io.wb_actual_target
   }
   when(io.wb1_fire && entries(io.wb1_idx).valid) {
     entries(io.wb1_idx).done          := true.B
@@ -165,6 +182,7 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     entries(io.wb1_idx).mem_wdata     := io.wb1_mem_wdata
     entries(io.wb1_idx).addr_ready    := true.B
     entries(io.wb1_idx).actual_taken  := io.wb1_actual_taken
+    entries(io.wb1_idx).actual_target := io.wb1_actual_target
   }
 
   when(io.flush_all) {
@@ -179,18 +197,22 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
       val idx = i.U(ptrW.W)
       val idxAge = age(idx)
       val after = (idxAge < count) && (idxAge > flushAge)
-      killVec(i) := after && entries(idx).valid
-      when(after) {
+      val committed = (do_cm && idx === head) || (do_cm1 && idx === head1)
+      killVec(i) := after && entries(idx).valid && !committed
+      when(after && !committed) {
         entries(idx).valid := false.B
       }
     }
     val killCnt = PopCount(killVec.asUInt)
     when(do_cm) {
       entries(head).valid := false.B
-      head := cm_head
     }
+    when(do_cm1) {
+      entries(head1).valid := false.B
+    }
+    head := cm_head
     tail := Mux(io.flush_idx === (n - 1).U, 0.U, io.flush_idx + 1.U)
-    count := count - killCnt - do_cm.asUInt
+    count := count - killCnt - cm_count
   }.otherwise {
     val tail1 = Mux(tail === (n - 1).U, 0.U, tail + 1.U)
     val tail2 = Mux(tail1 === (n - 1).U, 0.U, tail1 + 1.U)
@@ -220,9 +242,12 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     }
     when(do_cm) {
       entries(head).valid := false.B
-      head := cm_head
     }
-    count := count + do_enq0.asUInt + do_enq1.asUInt - do_cm.asUInt
+    when(do_cm1) {
+      entries(head1).valid := false.B
+    }
+    head := cm_head
+    count := count + do_enq0.asUInt + do_enq1.asUInt - cm_count
   }
 }
 

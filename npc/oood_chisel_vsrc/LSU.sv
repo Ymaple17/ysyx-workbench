@@ -11,13 +11,14 @@ module LSU(
   input  [2:0]  io_in_bits_signals_wbu_reg_write_sel,
   input  [31:0] io_in_bits_alu_result,
                 io_in_bits_pc,
+                io_in_bits_next_pc,
                 io_in_bits_imm_ext,
                 io_in_bits_rd2,
   input  [4:0]  io_in_bits_waddr,
   input  [31:0] io_in_bits_csr_rd1,
   input         io_in_bits_state_state,
   input  [7:0]  io_in_bits_state_state_num,
-  input  [3:0]  io_in_bits_rob_idx,
+  input  [4:0]  io_in_bits_rob_idx,
   input  [5:0]  io_in_bits_pdest,
   input         io_in_bits_br_taken,
                 io_out_ready,
@@ -26,13 +27,14 @@ module LSU(
   output [2:0]  io_out_bits_signals_wbu_reg_write_sel,
   output [31:0] io_out_bits_alu_result,
                 io_out_bits_pc,
+                io_out_bits_next_pc,
                 io_out_bits_imm_ext,
                 io_out_bits_mem_read,
   output [4:0]  io_out_bits_waddr,
   output [31:0] io_out_bits_csr_rd1,
   output        io_out_bits_state_state,
   output [7:0]  io_out_bits_state_state_num,
-  output [3:0]  io_out_bits_rob_idx,
+  output [4:0]  io_out_bits_rob_idx,
   output [5:0]  io_out_bits_pdest,
   output        io_out_bits_br_taken,
   output [31:0] io_out_bits_store_data,
@@ -152,6 +154,7 @@ module LSU(
   assign io_out_bits_signals_wbu_reg_write_sel = io_in_bits_signals_wbu_reg_write_sel;
   assign io_out_bits_alu_result = io_in_bits_alu_result;
   assign io_out_bits_pc = io_in_bits_pc;
+  assign io_out_bits_next_pc = io_in_bits_next_pc;
   assign io_out_bits_imm_ext = io_in_bits_imm_ext;
   assign io_out_bits_mem_read =
     fwd_done

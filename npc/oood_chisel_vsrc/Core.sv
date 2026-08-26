@@ -83,21 +83,14 @@ module Core(
   reg          mret_flush_REG;
   reg          fencei_flush_REG;
   wire         bp_commit1_block;
+  wire         memoryRecoveryWins;
+  wire         branchRecoveryWins;
+  wire         mis_predict_dbg;
   wire         can_wb1;
   wire         can_wb;
-  wire         lsu_io_out_ready;
-  wire [5:0]   wb_sel1_pdest;
-  wire         wb_sel1_signals_wbu_reg_write;
-  wire [5:0]   wb_sel_pdest;
-  wire         wb_sel_signals_wbu_reg_write;
-  wire [2:0]   wb_cand_mask1;
-  wire [2:0]   wb_cand_mask;
-  wire         lsu_io_in_valid;
   wire         hold_div;
   wire         hold_alu;
-  reg  [5:0]   lsu_stage_bits_pdest;
   reg  [2:0]   lsu_stage_bits_signals_wbu_reg_write_sel;
-  reg          lsu_stage_bits_signals_wbu_reg_write;
   reg  [5:0]   d_div_bits_pdest;
   reg  [2:0]   d_div_bits_signals_wbu_reg_write_sel;
   reg          d_div_bits_signals_wbu_reg_write;
@@ -106,7 +99,45 @@ module Core(
   reg          d_alu_bits_signals_wbu_reg_write;
   wire         lane1_block;
   wire         lane0_block;
+  wire         _wbArb_io_in_0_ready;
+  wire         _wbArb_io_in_1_ready;
+  wire         _wbArb_io_in_2_ready;
+  wire         _wbArb_io_in_3_ready;
+  wire         _wbArb_io_out_0_valid;
+  wire         _wbArb_io_out_0_bits_signals_wbu_reg_write;
+  wire [2:0]   _wbArb_io_out_0_bits_signals_wbu_reg_write_sel;
+  wire [31:0]  _wbArb_io_out_0_bits_alu_result;
+  wire [31:0]  _wbArb_io_out_0_bits_pc;
+  wire [31:0]  _wbArb_io_out_0_bits_next_pc;
+  wire [31:0]  _wbArb_io_out_0_bits_imm_ext;
+  wire [31:0]  _wbArb_io_out_0_bits_mem_read;
+  wire [4:0]   _wbArb_io_out_0_bits_waddr;
+  wire [31:0]  _wbArb_io_out_0_bits_csr_rd1;
+  wire         _wbArb_io_out_0_bits_state_state;
+  wire [7:0]   _wbArb_io_out_0_bits_state_state_num;
+  wire [4:0]   _wbArb_io_out_0_bits_rob_idx;
+  wire [5:0]   _wbArb_io_out_0_bits_pdest;
+  wire         _wbArb_io_out_0_bits_br_taken;
+  wire [31:0]  _wbArb_io_out_0_bits_store_data;
+  wire         _wbArb_io_out_1_valid;
+  wire         _wbArb_io_out_1_bits_signals_wbu_reg_write;
+  wire [2:0]   _wbArb_io_out_1_bits_signals_wbu_reg_write_sel;
+  wire [31:0]  _wbArb_io_out_1_bits_alu_result;
+  wire [31:0]  _wbArb_io_out_1_bits_pc;
+  wire [31:0]  _wbArb_io_out_1_bits_next_pc;
+  wire [31:0]  _wbArb_io_out_1_bits_imm_ext;
+  wire [31:0]  _wbArb_io_out_1_bits_mem_read;
+  wire [4:0]   _wbArb_io_out_1_bits_waddr;
+  wire [31:0]  _wbArb_io_out_1_bits_csr_rd1;
+  wire         _wbArb_io_out_1_bits_state_state;
+  wire [7:0]   _wbArb_io_out_1_bits_state_state_num;
+  wire [4:0]   _wbArb_io_out_1_bits_rob_idx;
+  wire [5:0]   _wbArb_io_out_1_bits_pdest;
+  wire         _wbArb_io_out_1_bits_br_taken;
+  wire [31:0]  _wbArb_io_out_1_bits_store_data;
+  wire [1:0]   _wbArb_io_grantIdx_0;
   wire         _stbuf_io_enq_ready;
+  wire         _stbuf_io_enq1_ready;
   wire         _stbuf_io_ld_wait;
   wire         _stbuf_io_ld_fwd_valid;
   wire [31:0]  _stbuf_io_ld_fwd_data;
@@ -120,6 +151,7 @@ module Core(
   wire [31:0]  _stbuf_io_deq_addr;
   wire         _stbuf_io_empty;
   wire         _stbuf_io_busy;
+  wire [4:0]   _stbuf_io_free;
   wire [31:0]  _sq_io_unresolved_mask;
   wire         _sq_io_fwd_valid;
   wire [31:0]  _sq_io_fwd_data;
@@ -134,6 +166,8 @@ module Core(
   wire         _fq_io_deq_bits_bp_taken;
   wire [31:0]  _fq_io_deq_bits_bp_target;
   wire [9:0]   _fq_io_deq_bits_bp_index;
+  wire [3:0]   _fq_io_deq_bits_ftq_idx;
+  wire [7:0]   _fq_io_deq_bits_ftq_generation;
   wire         _fq_io_deq1_valid;
   wire [31:0]  _fq_io_deq1_bits_inst;
   wire [31:0]  _fq_io_deq1_bits_pc;
@@ -143,6 +177,8 @@ module Core(
   wire         _fq_io_deq1_bits_bp_taken;
   wire [31:0]  _fq_io_deq1_bits_bp_target;
   wire [9:0]   _fq_io_deq1_bits_bp_index;
+  wire [3:0]   _fq_io_deq1_bits_ftq_idx;
+  wire [7:0]   _fq_io_deq1_bits_ftq_generation;
   wire [3:0]   _fq_io_space;
   wire         _rs_io_issue_alu_valid;
   wire [4:0]   _rs_io_issue_alu_bits_rob_idx;
@@ -151,6 +187,7 @@ module Core(
   wire [31:0]  _rs_io_issue_alu_bits_src2_val;
   wire [5:0]   _rs_io_issue_alu_bits_pdest;
   wire [31:0]  _rs_io_issue_alu_bits_pc;
+  wire [31:0]  _rs_io_issue_alu_bits_inst;
   wire [31:0]  _rs_io_issue_alu_bits_imm_ext;
   wire [4:0]   _rs_io_issue_alu_bits_waddr;
   wire [31:0]  _rs_io_issue_alu_bits_csr_rd1;
@@ -159,6 +196,9 @@ module Core(
   wire         _rs_io_issue_alu_bits_bp_valid;
   wire         _rs_io_issue_alu_bits_bp_taken;
   wire [31:0]  _rs_io_issue_alu_bits_bp_target;
+  wire [9:0]   _rs_io_issue_alu_bits_bp_index;
+  wire [3:0]   _rs_io_issue_alu_bits_ftq_idx;
+  wire [7:0]   _rs_io_issue_alu_bits_ftq_generation;
   wire [1:0]   _rs_io_issue_alu_bits_exu_alu_srcA;
   wire [1:0]   _rs_io_issue_alu_bits_exu_alu_srcB;
   wire [4:0]   _rs_io_issue_alu_bits_exu_alu_control;
@@ -168,6 +208,26 @@ module Core(
   wire         _rs_io_issue_alu_bits_lsu_mem_valid;
   wire         _rs_io_issue_alu_bits_wbu_reg_write;
   wire [2:0]   _rs_io_issue_alu_bits_wbu_reg_write_sel;
+  wire         _rs_io_issue_alu1_valid;
+  wire [4:0]   _rs_io_issue_alu1_bits_rob_idx;
+  wire [31:0]  _rs_io_issue_alu1_bits_src1_val;
+  wire [31:0]  _rs_io_issue_alu1_bits_src2_val;
+  wire [5:0]   _rs_io_issue_alu1_bits_pdest;
+  wire [31:0]  _rs_io_issue_alu1_bits_pc;
+  wire [31:0]  _rs_io_issue_alu1_bits_imm_ext;
+  wire [4:0]   _rs_io_issue_alu1_bits_waddr;
+  wire [31:0]  _rs_io_issue_alu1_bits_csr_rd1;
+  wire         _rs_io_issue_alu1_bits_state_state;
+  wire [7:0]   _rs_io_issue_alu1_bits_state_state_num;
+  wire [1:0]   _rs_io_issue_alu1_bits_exu_alu_srcA;
+  wire [1:0]   _rs_io_issue_alu1_bits_exu_alu_srcB;
+  wire [4:0]   _rs_io_issue_alu1_bits_exu_alu_control;
+  wire [3:0]   _rs_io_issue_alu1_bits_exu_jump;
+  wire [2:0]   _rs_io_issue_alu1_bits_lsu_mem_rd;
+  wire         _rs_io_issue_alu1_bits_lsu_mem_write;
+  wire         _rs_io_issue_alu1_bits_lsu_mem_valid;
+  wire         _rs_io_issue_alu1_bits_wbu_reg_write;
+  wire [2:0]   _rs_io_issue_alu1_bits_wbu_reg_write_sel;
   wire         _rs_io_issue_div_valid;
   wire [4:0]   _rs_io_issue_div_bits_rob_idx;
   wire [31:0]  _rs_io_issue_div_bits_src1_val;
@@ -233,6 +293,8 @@ module Core(
   wire         _rob_io_commit_bits_state_state;
   wire [7:0]   _rob_io_commit_bits_state_state_num;
   wire [9:0]   _rob_io_commit_bits_bp_index;
+  wire [3:0]   _rob_io_commit_bits_ftq_idx;
+  wire [7:0]   _rob_io_commit_bits_ftq_generation;
   wire [1:0]   _rob_io_commit_bits_cp_idx;
   wire         _rob_io_commit_bits_actual_taken;
   wire [31:0]  _rob_io_commit_bits_actual_target;
@@ -244,10 +306,14 @@ module Core(
   wire         _rob_io_commit_bits_addr_ready;
   wire         _rob_io_commit1_valid;
   wire [4:0]   _rob_io_commit1_idx;
+  wire [31:0]  _rob_io_commit1_bits_pc;
+  wire [31:0]  _rob_io_commit1_bits_inst;
   wire         _rob_io_commit1_bits_reg_write;
   wire [2:0]   _rob_io_commit1_bits_reg_write_sel;
   wire         _rob_io_commit1_bits_csr_write;
   wire         _rob_io_commit1_bits_mem_valid;
+  wire         _rob_io_commit1_bits_mem_write;
+  wire [7:0]   _rob_io_commit1_bits_mem_wmask;
   wire [3:0]   _rob_io_commit1_bits_jump;
   wire [4:0]   _rob_io_commit1_bits_arch_rd;
   wire [5:0]   _rob_io_commit1_bits_old_phys;
@@ -256,7 +322,15 @@ module Core(
   wire         _rob_io_commit1_bits_is_ebreak;
   wire         _rob_io_commit1_bits_is_fencei;
   wire         _rob_io_commit1_bits_state_state;
+  wire [9:0]   _rob_io_commit1_bits_bp_index;
+  wire [3:0]   _rob_io_commit1_bits_ftq_idx;
+  wire [7:0]   _rob_io_commit1_bits_ftq_generation;
+  wire [1:0]   _rob_io_commit1_bits_cp_idx;
+  wire         _rob_io_commit1_bits_actual_taken;
+  wire [31:0]  _rob_io_commit1_bits_actual_target;
   wire [31:0]  _rob_io_commit1_bits_mem_addr;
+  wire [31:0]  _rob_io_commit1_bits_mem_wdata;
+  wire         _rob_io_commit1_bits_addr_ready;
   wire         _rob_io_entries_0_valid;
   wire         _rob_io_entries_0_done;
   wire [31:0]  _rob_io_entries_0_pc;
@@ -793,7 +867,7 @@ module Core(
   wire         _dcache_io_cpu_rvalid;
   wire [3:0]   _dcache_io_cpu_rid;
   wire         _dcache_io_mem_arvalid;
-  wire         _dcache_io_mem_rready;
+  wire         _dcache_io_busy;
   wire         _icache_io_in_arready;
   wire         _icache_io_in_rvalid;
   wire         _icache_io_in_rvalid1;
@@ -830,8 +904,13 @@ module Core(
   wire [31:0]  _lsu_io_dmem_araddr;
   wire         _lsu_io_dmem_arvalid;
   wire [3:0]   _lsu_io_dmem_arid;
-  wire         _lsu_io_dmem_rready;
-  wire         _lsu_io_bus_busy;
+  wire         _lsu_io_ld_query_valid;
+  wire [4:0]   _lsu_io_ld_query_rob;
+  wire [31:0]  _lsu_io_ld_query_addr;
+  wire [2:0]   _lsu_io_ld_query_mem_rd;
+  wire         _lsu_io_mem_violation_valid;
+  wire [4:0]   _lsu_io_mem_violation_rob;
+  wire [31:0]  _lsu_io_mem_violation_pc;
   wire         _exu_lsu_io_out_valid;
   wire [2:0]   _exu_lsu_io_out_bits_signals_lsu_mem_rd;
   wire         _exu_lsu_io_out_bits_signals_lsu_mem_write;
@@ -865,6 +944,21 @@ module Core(
   wire [4:0]   _exu_div_io_out_bits_rob_idx;
   wire [5:0]   _exu_div_io_out_bits_pdest;
   wire         _exu_div_io_out_bits_br_taken;
+  wire         _exu_alu1_io_out_valid;
+  wire         _exu_alu1_io_out_bits_signals_wbu_reg_write;
+  wire [2:0]   _exu_alu1_io_out_bits_signals_wbu_reg_write_sel;
+  wire [31:0]  _exu_alu1_io_out_bits_alu_result;
+  wire [31:0]  _exu_alu1_io_out_bits_pc;
+  wire [31:0]  _exu_alu1_io_out_bits_next_pc;
+  wire [31:0]  _exu_alu1_io_out_bits_imm_ext;
+  wire [31:0]  _exu_alu1_io_out_bits_rd2;
+  wire [4:0]   _exu_alu1_io_out_bits_waddr;
+  wire [31:0]  _exu_alu1_io_out_bits_csr_rd1;
+  wire         _exu_alu1_io_out_bits_state_state;
+  wire [7:0]   _exu_alu1_io_out_bits_state_state_num;
+  wire [4:0]   _exu_alu1_io_out_bits_rob_idx;
+  wire [5:0]   _exu_alu1_io_out_bits_pdest;
+  wire         _exu_alu1_io_out_bits_br_taken;
   wire         _exu_io_out_valid;
   wire         _exu_io_out_bits_signals_wbu_reg_write;
   wire [2:0]   _exu_io_out_bits_signals_wbu_reg_write_sel;
@@ -910,6 +1004,8 @@ module Core(
   wire         _idu1_io_out_bits_bp_taken;
   wire [31:0]  _idu1_io_out_bits_bp_target;
   wire [9:0]   _idu1_io_out_bits_bp_index;
+  wire [3:0]   _idu1_io_out_bits_ftq_idx;
+  wire [7:0]   _idu1_io_out_bits_ftq_generation;
   wire [31:0]  _idu1_io_out_bits_inst;
   wire [11:0]  _idu1_io_csr_raddr;
   wire         _idu1_io_rs1_ren;
@@ -941,6 +1037,8 @@ module Core(
   wire         _idu_io_out_bits_bp_taken;
   wire [31:0]  _idu_io_out_bits_bp_target;
   wire [9:0]   _idu_io_out_bits_bp_index;
+  wire [3:0]   _idu_io_out_bits_ftq_idx;
+  wire [7:0]   _idu_io_out_bits_ftq_generation;
   wire [31:0]  _idu_io_out_bits_inst;
   wire [11:0]  _idu_io_csr_raddr;
   wire         _idu_io_rs1_ren;
@@ -958,6 +1056,8 @@ module Core(
   wire         _ifu_io_out_bits_bits_0_bp_taken;
   wire [31:0]  _ifu_io_out_bits_bits_0_bp_target;
   wire [9:0]   _ifu_io_out_bits_bits_0_bp_index;
+  wire [3:0]   _ifu_io_out_bits_bits_0_ftq_idx;
+  wire [7:0]   _ifu_io_out_bits_bits_0_ftq_generation;
   wire [31:0]  _ifu_io_out_bits_bits_1_inst;
   wire [31:0]  _ifu_io_out_bits_bits_1_pc;
   wire         _ifu_io_out_bits_bits_1_state_state;
@@ -966,11 +1066,14 @@ module Core(
   wire         _ifu_io_out_bits_bits_1_bp_taken;
   wire [31:0]  _ifu_io_out_bits_bits_1_bp_target;
   wire [9:0]   _ifu_io_out_bits_bits_1_bp_index;
+  wire [3:0]   _ifu_io_out_bits_bits_1_ftq_idx;
+  wire [7:0]   _ifu_io_out_bits_bits_1_ftq_generation;
   wire         _ifu_io_pc_valid;
   wire [31:0]  _ifu_io_pc_bits_next_pc;
   wire [31:0]  _ifu_io_imem_araddr;
   wire         _ifu_io_imem_arvalid;
   wire         _ifu_io_imem_rready;
+  wire [3:0]   _ifu_io_bpu_update_free;
   reg  [31:0]  ifu_io_in_bits_r_next_pc;
   reg          ifu_io_in_valid_r;
   wire         ifu_io_in_valid = ifu_io_is_flush | ifu_io_in_valid_r;
@@ -1368,11 +1471,11 @@ module Core(
     endcase
   end // always_comb
   wire         _id1_s2_rdy_cdb_hit_T = fwd_ok & can_wb;
-  wire         _id_s1_rdy_cdb_hit_T_4 = id_psrc1 == wb_sel_pdest;
+  wire         _id_s1_rdy_cdb_hit_T_4 = id_psrc1 == _wbArb_io_out_0_bits_pdest;
   wire         id_src1_cdb_hit =
     _id1_s2_rdy_cdb_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_cdb_hit_T_4;
   wire         _id1_s2_rdy_cdb1_hit_T = fwd_ok & can_wb1;
-  wire         _id_s1_rdy_cdb1_hit_T_4 = id_psrc1 == wb_sel1_pdest;
+  wire         _id_s1_rdy_cdb1_hit_T_4 = id_psrc1 == _wbArb_io_out_1_bits_pdest;
   wire         id_src1_cdb1_hit =
     _id1_s2_rdy_cdb1_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_cdb1_hit_T_4
     & ~id_src1_cdb_hit;
@@ -1393,22 +1496,24 @@ module Core(
     _id1_s2_rdy_div_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_div_hit_T_4
     & _id1_s2_rdy_div_hit_T_6 & ~id_src1_cdb_hit & ~id_src1_cdb1_hit & ~id_src1_exu_hit;
   wire         _id1_s2_rdy_lsu_hit_T =
-    fwd_ok & lsu_stage_bits_signals_wbu_reg_write & lsu_io_in_valid & _lsu_io_out_valid
-    & (|lsu_stage_bits_pdest);
-  wire         _id_s1_rdy_lsu_hit_T_4 = id_psrc1 == lsu_stage_bits_pdest;
+    fwd_ok & _lsu_io_out_bits_signals_wbu_reg_write & _lsu_io_out_valid
+    & (|_lsu_io_out_bits_pdest);
+  wire         _id_s1_rdy_lsu_hit_T_4 = id_psrc1 == _lsu_io_out_bits_pdest;
   wire         id_src1_lsu_hit =
     _id1_s2_rdy_lsu_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_lsu_hit_T_4
     & ~id_src1_exu_hit & ~id_src1_div_hit & ~id_src1_cdb_hit & ~id_src1_cdb1_hit;
   wire         _id1_s2_rdy_wbu_hit_T =
-    fwd_ok & can_wb & wb_sel_signals_wbu_reg_write & (|wb_sel_pdest);
-  wire         _id_s1_rdy_wbu_hit_T_4 = id_psrc1 == wb_sel_pdest;
+    fwd_ok & can_wb & _wbArb_io_out_0_bits_signals_wbu_reg_write
+    & (|_wbArb_io_out_0_bits_pdest);
+  wire         _id_s1_rdy_wbu_hit_T_4 = id_psrc1 == _wbArb_io_out_0_bits_pdest;
   wire         id_src1_wbu_hit =
     _id1_s2_rdy_wbu_hit_T & _idu_io_rs1_ren & (|id_psrc1) & _id_s1_rdy_wbu_hit_T_4
     & ~id_src1_exu_hit & ~id_src1_div_hit & ~id_src1_lsu_hit & ~id_src1_cdb_hit
     & ~id_src1_cdb1_hit;
   wire         _id1_s2_rdy_wbu1_hit_T =
-    fwd_ok & can_wb1 & wb_sel1_signals_wbu_reg_write & (|wb_sel1_pdest);
-  wire         _id_s1_rdy_wbu1_hit_T_4 = id_psrc1 == wb_sel1_pdest;
+    fwd_ok & can_wb1 & _wbArb_io_out_1_bits_signals_wbu_reg_write
+    & (|_wbArb_io_out_1_bits_pdest);
+  wire         _id_s1_rdy_wbu1_hit_T_4 = id_psrc1 == _wbArb_io_out_1_bits_pdest;
   wire [31:0]  id_src1 =
     id_src1_cdb_hit
       ? _wbu_io_refile_wdata
@@ -1428,10 +1533,10 @@ module Core(
                             & ~id_src1_cdb_hit & ~id_src1_cdb1_hit
                               ? _wbu1_io_refile_wdata
                               : _prf_io_rdata1;
-  wire         _id_s2_rdy_cdb_hit_T_4 = id_psrc2 == wb_sel_pdest;
+  wire         _id_s2_rdy_cdb_hit_T_4 = id_psrc2 == _wbArb_io_out_0_bits_pdest;
   wire         id_src2_cdb_hit =
     _id1_s2_rdy_cdb_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_cdb_hit_T_4;
-  wire         _id_s2_rdy_cdb1_hit_T_4 = id_psrc2 == wb_sel1_pdest;
+  wire         _id_s2_rdy_cdb1_hit_T_4 = id_psrc2 == _wbArb_io_out_1_bits_pdest;
   wire         id_src2_cdb1_hit =
     _id1_s2_rdy_cdb1_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_cdb1_hit_T_4
     & ~id_src2_cdb_hit;
@@ -1443,23 +1548,24 @@ module Core(
   wire         id_src2_div_hit =
     _id1_s2_rdy_div_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_div_hit_T_4
     & _id1_s2_rdy_div_hit_T_6 & ~id_src2_cdb_hit & ~id_src2_cdb1_hit & ~id_src2_exu_hit;
-  wire         _id_s2_rdy_lsu_hit_T_4 = id_psrc2 == lsu_stage_bits_pdest;
+  wire         _id_s2_rdy_lsu_hit_T_4 = id_psrc2 == _lsu_io_out_bits_pdest;
   wire         id_src2_lsu_hit =
     _id1_s2_rdy_lsu_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_lsu_hit_T_4
     & ~id_src2_exu_hit & ~id_src2_div_hit & ~id_src2_cdb_hit & ~id_src2_cdb1_hit;
-  wire         _id_s2_rdy_wbu_hit_T_4 = id_psrc2 == wb_sel_pdest;
+  wire         _id_s2_rdy_wbu_hit_T_4 = id_psrc2 == _wbArb_io_out_0_bits_pdest;
   wire         id_src2_wbu_hit =
     _id1_s2_rdy_wbu_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_wbu_hit_T_4
     & ~id_src2_exu_hit & ~id_src2_div_hit & ~id_src2_lsu_hit & ~id_src2_cdb_hit
     & ~id_src2_cdb1_hit;
-  wire         _id_s2_rdy_wbu1_hit_T_4 = id_psrc2 == wb_sel1_pdest;
-  wire         _id1_s2_rdy_lsu_hit_T_6 = lsu_stage_bits_signals_wbu_reg_write_sel != 3'h4;
+  wire         _id_s2_rdy_wbu1_hit_T_4 = id_psrc2 == _wbArb_io_out_1_bits_pdest;
+  wire         _id1_s2_rdy_lsu_hit_T_6 =
+    _lsu_io_out_bits_signals_wbu_reg_write_sel != 3'h4;
   wire         id1_dep1 = id_doren & _idu1_io_rs1_ren & id1_psrc1 == _rename_io_dest_phys;
   wire         id1_dep2 = id_doren & _idu1_io_rs2_ren & id1_psrc2 == _rename_io_dest_phys;
-  wire         _id1_s1_rdy_cdb_hit_T_4 = id1_psrc1 == wb_sel_pdest;
+  wire         _id1_s1_rdy_cdb_hit_T_4 = id1_psrc1 == _wbArb_io_out_0_bits_pdest;
   wire         id1_src1_cdb_hit =
     _id1_s2_rdy_cdb_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_cdb_hit_T_4;
-  wire         _id1_s1_rdy_cdb1_hit_T_4 = id1_psrc1 == wb_sel1_pdest;
+  wire         _id1_s1_rdy_cdb1_hit_T_4 = id1_psrc1 == _wbArb_io_out_1_bits_pdest;
   wire         id1_src1_cdb1_hit =
     _id1_s2_rdy_cdb1_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_cdb1_hit_T_4
     & ~id1_src1_cdb_hit;
@@ -1472,16 +1578,16 @@ module Core(
     _id1_s2_rdy_div_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_div_hit_T_4
     & _id1_s2_rdy_div_hit_T_6 & ~id1_src1_cdb_hit & ~id1_src1_cdb1_hit
     & ~id1_src1_exu_hit;
-  wire         _id1_s1_rdy_lsu_hit_T_4 = id1_psrc1 == lsu_stage_bits_pdest;
+  wire         _id1_s1_rdy_lsu_hit_T_4 = id1_psrc1 == _lsu_io_out_bits_pdest;
   wire         id1_src1_lsu_hit =
     _id1_s2_rdy_lsu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_lsu_hit_T_4
     & ~id1_src1_exu_hit & ~id1_src1_div_hit & ~id1_src1_cdb_hit & ~id1_src1_cdb1_hit;
-  wire         _id1_s1_rdy_wbu_hit_T_4 = id1_psrc1 == wb_sel_pdest;
+  wire         _id1_s1_rdy_wbu_hit_T_4 = id1_psrc1 == _wbArb_io_out_0_bits_pdest;
   wire         id1_src1_wbu_hit =
     _id1_s2_rdy_wbu_hit_T & _idu1_io_rs1_ren & (|id1_psrc1) & _id1_s1_rdy_wbu_hit_T_4
     & ~id1_src1_exu_hit & ~id1_src1_div_hit & ~id1_src1_lsu_hit & ~id1_src1_cdb_hit
     & ~id1_src1_cdb1_hit;
-  wire         _id1_s1_rdy_wbu1_hit_T_4 = id1_psrc1 == wb_sel1_pdest;
+  wire         _id1_s1_rdy_wbu1_hit_T_4 = id1_psrc1 == _wbArb_io_out_1_bits_pdest;
   wire [31:0]  id1_src1 =
     id1_dep1
       ? 32'h0
@@ -1504,10 +1610,10 @@ module Core(
                                 & ~id1_src1_cdb1_hit
                                   ? _wbu1_io_refile_wdata
                                   : _prf_io_rdata3;
-  wire         _id1_s2_rdy_cdb_hit_T_4 = id1_psrc2 == wb_sel_pdest;
+  wire         _id1_s2_rdy_cdb_hit_T_4 = id1_psrc2 == _wbArb_io_out_0_bits_pdest;
   wire         id1_src2_cdb_hit =
     _id1_s2_rdy_cdb_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_cdb_hit_T_4;
-  wire         _id1_s2_rdy_cdb1_hit_T_4 = id1_psrc2 == wb_sel1_pdest;
+  wire         _id1_s2_rdy_cdb1_hit_T_4 = id1_psrc2 == _wbArb_io_out_1_bits_pdest;
   wire         id1_src2_cdb1_hit =
     _id1_s2_rdy_cdb1_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_cdb1_hit_T_4
     & ~id1_src2_cdb_hit;
@@ -1520,16 +1626,16 @@ module Core(
     _id1_s2_rdy_div_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_div_hit_T_4
     & _id1_s2_rdy_div_hit_T_6 & ~id1_src2_cdb_hit & ~id1_src2_cdb1_hit
     & ~id1_src2_exu_hit;
-  wire         _id1_s2_rdy_lsu_hit_T_4 = id1_psrc2 == lsu_stage_bits_pdest;
+  wire         _id1_s2_rdy_lsu_hit_T_4 = id1_psrc2 == _lsu_io_out_bits_pdest;
   wire         id1_src2_lsu_hit =
     _id1_s2_rdy_lsu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_lsu_hit_T_4
     & ~id1_src2_exu_hit & ~id1_src2_div_hit & ~id1_src2_cdb_hit & ~id1_src2_cdb1_hit;
-  wire         _id1_s2_rdy_wbu_hit_T_4 = id1_psrc2 == wb_sel_pdest;
+  wire         _id1_s2_rdy_wbu_hit_T_4 = id1_psrc2 == _wbArb_io_out_0_bits_pdest;
   wire         id1_src2_wbu_hit =
     _id1_s2_rdy_wbu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2) & _id1_s2_rdy_wbu_hit_T_4
     & ~id1_src2_exu_hit & ~id1_src2_div_hit & ~id1_src2_lsu_hit & ~id1_src2_cdb_hit
     & ~id1_src2_cdb1_hit;
-  wire         _id1_s2_rdy_wbu1_hit_T_4 = id1_psrc2 == wb_sel1_pdest;
+  wire         _id1_s2_rdy_wbu1_hit_T_4 = id1_psrc2 == _wbArb_io_out_1_bits_pdest;
   wire         id1_s1_rdy =
     ~_idu1_io_rs1_ren | ~id1_dep1
     & (_busy_io_ready3 | _id1_s2_rdy_cdb_hit_T & _idu1_io_rs1_ren & (|id1_psrc1)
@@ -1615,8 +1721,33 @@ module Core(
   reg          d_alu_bits_bp_valid;
   reg          d_alu_bits_bp_taken;
   reg  [31:0]  d_alu_bits_bp_target;
+  reg  [9:0]   d_alu_bits_bp_index;
+  reg  [3:0]   d_alu_bits_ftq_idx;
+  reg  [7:0]   d_alu_bits_ftq_generation;
+  reg  [31:0]  d_alu_bits_inst;
   reg  [4:0]   d_alu_bits_rob_idx;
   reg  [1:0]   d_alu_bits_cp_idx;
+  reg          d_alu_ctrl_resolved;
+  reg          d_alu1_valid;
+  reg  [1:0]   d_alu1_bits_signals_exu_alu_srcA;
+  reg  [1:0]   d_alu1_bits_signals_exu_alu_srcB;
+  reg  [4:0]   d_alu1_bits_signals_exu_alu_control;
+  reg  [3:0]   d_alu1_bits_signals_exu_jump;
+  reg  [2:0]   d_alu1_bits_signals_lsu_mem_rd;
+  reg          d_alu1_bits_signals_lsu_mem_write;
+  reg          d_alu1_bits_signals_lsu_mem_valid;
+  reg          d_alu1_bits_signals_wbu_reg_write;
+  reg  [2:0]   d_alu1_bits_signals_wbu_reg_write_sel;
+  reg  [31:0]  d_alu1_bits_rd1;
+  reg  [31:0]  d_alu1_bits_rd2;
+  reg  [31:0]  d_alu1_bits_pc;
+  reg  [31:0]  d_alu1_bits_imm_ext;
+  reg  [4:0]   d_alu1_bits_waddr;
+  reg  [31:0]  d_alu1_bits_csr_rd1;
+  reg          d_alu1_bits_state_state;
+  reg  [7:0]   d_alu1_bits_state_state_num;
+  reg  [4:0]   d_alu1_bits_rob_idx;
+  reg  [5:0]   d_alu1_bits_pdest;
   reg          d_div_valid;
   reg  [1:0]   d_div_bits_signals_exu_alu_srcA;
   reg  [1:0]   d_div_bits_signals_exu_alu_srcB;
@@ -1654,7 +1785,7 @@ module Core(
   reg  [7:0]   d_lsu_bits_state_state_num;
   reg  [4:0]   d_lsu_bits_rob_idx;
   reg  [5:0]   d_lsu_bits_pdest;
-  wire         d_valid = d_alu_valid | d_div_valid | d_lsu_valid;
+  wire         d_valid = d_alu_valid | d_alu1_valid | d_div_valid | d_lsu_valid;
   wire [31:0]  d_bits_pc =
     d_div_valid ? d_div_bits_pc : d_lsu_valid ? d_lsu_bits_pc : d_alu_bits_pc;
   wire [4:0]   d_bits_rob_idx =
@@ -1665,6 +1796,7 @@ module Core(
   reg  [2:0]   lsu_stage_bits_signals_lsu_mem_rd;
   reg          lsu_stage_bits_signals_lsu_mem_write;
   reg          lsu_stage_bits_signals_lsu_mem_valid;
+  reg          lsu_stage_bits_signals_wbu_reg_write;
   reg  [31:0]  lsu_stage_bits_alu_result;
   reg  [31:0]  lsu_stage_bits_pc;
   reg  [31:0]  lsu_stage_bits_next_pc;
@@ -1675,25 +1807,30 @@ module Core(
   reg          lsu_stage_bits_state_state;
   reg  [7:0]   lsu_stage_bits_state_state_num;
   reg  [4:0]   lsu_stage_bits_rob_idx;
+  reg  [5:0]   lsu_stage_bits_pdest;
   reg          lsu_stage_bits_br_taken;
-  wire         mis_predict_dbg;
-  wire         _flush_lsu_T = mis_predict_dbg | fencei_flush_REG;
+  wire         _flush_now_T = branchRecoveryWins | memoryRecoveryWins;
   wire [4:0]   _after_flushAgeNow_T_126 = flush_idx - _rob_io_head;
+  wire [4:0]   _memoryRecoveryWins_T_4 = d_alu_bits_rob_idx - _rob_io_head;
   wire         flush_alu =
-    is_irq | (_flush_lsu_T | mret_flush_REG) & d_alu_valid & d_alu_bits_rob_idx
-    - _rob_io_head > _after_flushAgeNow_T_126;
+    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_alu_valid
+    & _memoryRecoveryWins_T_4 > _after_flushAgeNow_T_126;
+  wire         flush_alu1 =
+    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_alu1_valid
+    & d_alu1_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126;
   wire         flush_div =
-    is_irq | (_flush_lsu_T | mret_flush_REG) & d_div_valid & d_div_bits_rob_idx
-    - _rob_io_head > _after_flushAgeNow_T_126;
+    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_div_valid
+    & d_div_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126;
   wire         flush_lsu =
-    is_irq | (_flush_lsu_T | mret_flush_REG) & lsu_stage_valid & lsu_stage_bits_rob_idx
-    - _rob_io_head > _after_flushAgeNow_T_126 | (_flush_lsu_T | mret_flush_REG)
-    & d_lsu_valid & d_lsu_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126;
+    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & lsu_stage_valid
+    & lsu_stage_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126
+    | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_lsu_valid
+    & d_lsu_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126;
   assign hold_alu = d_alu_valid & ~flush_alu;
+  wire         hold_alu1 = d_alu1_valid & ~flush_alu1;
   assign hold_div = d_div_valid & ~flush_div;
   wire         hold_lsu = d_lsu_valid & ~flush_lsu;
-  assign lsu_io_in_valid = lsu_stage_valid & ~flush_lsu;
-  wire         lsu_out_fire = _lsu_io_out_valid & lsu_io_out_ready;
+  wire         lsu_io_in_valid = lsu_stage_valid & ~flush_lsu;
   reg          casez_tmp_6;
   always_comb begin
     casez (lsu_stage_bits_rob_idx)
@@ -1832,11 +1969,10 @@ module Core(
         casez_tmp_7 = _rob_io_entries_31_pc;
     endcase
   end // always_comb
-  wire         exu_lsu_io_out_ready =
-    ~lsu_stage_valid | lsu_io_in_valid & _lsu_io_in_ready | lsu_out_fire & lsu_stage_valid
-    & _lsu_io_out_bits_rob_idx == lsu_stage_bits_rob_idx
-    & _lsu_io_out_bits_pc == lsu_stage_bits_pc | lsu_stage_valid
-    & (~casez_tmp_6 | casez_tmp_7 != lsu_stage_bits_pc) | flush_lsu;
+  wire         exu_lsu_io_out_ready = ~lsu_stage_valid | flush_lsu;
+  wire         alu_leave = hold_alu & _exu_io_out_valid & _wbArb_io_in_0_ready;
+  wire         alu1_leave = hold_alu1 & _exu_alu1_io_out_valid & _wbArb_io_in_2_ready;
+  wire         div_leave = hold_div & _exu_div_io_out_valid & _wbArb_io_in_3_ready;
   reg          casez_tmp_8;
   always_comb begin
     casez (d_lsu_bits_rob_idx)
@@ -1975,116 +2111,20 @@ module Core(
         casez_tmp_9 = _rob_io_entries_31_pc;
     endcase
   end // always_comb
-  wire         sq_io_ld_valid =
-    lsu_io_in_valid & lsu_stage_bits_signals_lsu_mem_valid
-    & ~lsu_stage_bits_signals_lsu_mem_write;
-  assign wb_cand_mask = {_exu_div_io_out_valid, _lsu_io_out_valid, _exu_io_out_valid};
-  wire [1:0]   _wb_cand_count_T_5 =
-    {1'h0, _exu_io_out_valid} + {1'h0, _lsu_io_out_valid} + {1'h0, _exu_div_io_out_valid};
-  wire [1:0]   wb_cand_idx = _exu_io_out_valid ? 2'h0 : _lsu_io_out_valid ? 2'h1 : 2'h2;
-  wire [3:0]   _wb_cand_mask1_T = 4'h1 << wb_cand_idx;
-  wire [2:0]   _wb_cand_mask1_T_2 = ~(_wb_cand_mask1_T[2:0]);
-  assign wb_cand_mask1 = wb_cand_mask & _wb_cand_mask1_T_2;
-  wire [1:0]   wb_cand_idx1 =
-    _exu_io_out_valid & _wb_cand_mask1_T_2[0]
-      ? 2'h0
-      : _lsu_io_out_valid & _wb_cand_mask1_T_2[1] ? 2'h1 : 2'h2;
-  wire         _lsu_io_out_ready_T = wb_cand_idx == 2'h1;
-  wire         _exu_div_io_out_ready_T = wb_cand_idx == 2'h2;
-  assign wb_sel_signals_wbu_reg_write =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_signals_wbu_reg_write
-      : _lsu_io_out_ready_T
-          ? _lsu_io_out_bits_signals_wbu_reg_write
-          : _exu_io_out_bits_signals_wbu_reg_write;
-  wire [31:0]  wb_sel_alu_result =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_alu_result
-      : _lsu_io_out_ready_T ? _lsu_io_out_bits_alu_result : _exu_io_out_bits_alu_result;
-  wire [31:0]  wb_sel_pc =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_pc
-      : _lsu_io_out_ready_T ? _lsu_io_out_bits_pc : _exu_io_out_bits_pc;
-  wire [4:0]   wb_sel_waddr =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_waddr
-      : _lsu_io_out_ready_T ? _lsu_io_out_bits_waddr : _exu_io_out_bits_waddr;
-  wire         wb_sel_state_state =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_state_state
-      : _lsu_io_out_ready_T ? _lsu_io_out_bits_state_state : _exu_io_out_bits_state_state;
-  wire [7:0]   wb_sel_state_state_num =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_state_state_num
-      : _lsu_io_out_ready_T
-          ? _lsu_io_out_bits_state_state_num
-          : _exu_io_out_bits_state_state_num;
-  wire [4:0]   wb_sel_rob_idx =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_rob_idx
-      : _lsu_io_out_ready_T ? _lsu_io_out_bits_rob_idx : _exu_io_out_bits_rob_idx;
-  assign wb_sel_pdest =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_pdest
-      : _lsu_io_out_ready_T ? _lsu_io_out_bits_pdest : _exu_io_out_bits_pdest;
-  wire [31:0]  wb_sel_store_data =
-    _exu_div_io_out_ready_T
-      ? _exu_div_io_out_bits_rd2
-      : _lsu_io_out_ready_T ? _lsu_io_out_bits_store_data : _exu_io_out_bits_rd2;
-  wire         _lsu_io_out_ready_T_2 = wb_cand_idx1 == 2'h1;
-  wire         _exu_div_io_out_ready_T_2 = wb_cand_idx1 == 2'h2;
-  assign wb_sel1_signals_wbu_reg_write =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_signals_wbu_reg_write
-      : _lsu_io_out_ready_T_2
-          ? _lsu_io_out_bits_signals_wbu_reg_write
-          : _exu_io_out_bits_signals_wbu_reg_write;
-  wire [31:0]  wb_sel1_alu_result =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_alu_result
-      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_alu_result : _exu_io_out_bits_alu_result;
-  wire [31:0]  wb_sel1_pc =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_pc
-      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_pc : _exu_io_out_bits_pc;
-  wire [4:0]   wb_sel1_waddr =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_waddr
-      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_waddr : _exu_io_out_bits_waddr;
-  wire         wb_sel1_state_state =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_state_state
-      : _lsu_io_out_ready_T_2
-          ? _lsu_io_out_bits_state_state
-          : _exu_io_out_bits_state_state;
-  wire [7:0]   wb_sel1_state_state_num =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_state_state_num
-      : _lsu_io_out_ready_T_2
-          ? _lsu_io_out_bits_state_state_num
-          : _exu_io_out_bits_state_state_num;
-  wire [4:0]   wb_sel1_rob_idx =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_rob_idx
-      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_rob_idx : _exu_io_out_bits_rob_idx;
-  assign wb_sel1_pdest =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_pdest
-      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_pdest : _exu_io_out_bits_pdest;
-  wire [31:0]  wb_sel1_store_data =
-    _exu_div_io_out_ready_T_2
-      ? _exu_div_io_out_bits_rd2
-      : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_store_data : _exu_io_out_bits_rd2;
-  wire         exu_io_out_ready =
-    (|wb_cand_mask) & wb_cand_idx == 2'h0 | (|wb_cand_mask1) & wb_cand_idx1 == 2'h0;
-  assign lsu_io_out_ready =
-    (|wb_cand_mask) & _lsu_io_out_ready_T | (|wb_cand_mask1) & _lsu_io_out_ready_T_2;
-  wire         exu_div_io_out_ready =
-    (|wb_cand_mask) & _exu_div_io_out_ready_T | (|wb_cand_mask1)
-    & _exu_div_io_out_ready_T_2;
+  wire         can_load_lsu = ~stop_issue & (~d_lsu_valid | flush_lsu);
+  wire         take_alu_issue =
+    ~stop_issue & (~d_alu_valid | alu_leave | flush_alu) & _rs_io_issue_alu_valid;
+  wire         take_alu1_issue =
+    ~stop_issue & (~d_alu1_valid | alu1_leave | flush_alu1) & _rs_io_issue_alu1_valid;
+  wire         take_div_issue =
+    ~stop_issue & (~d_div_valid | div_leave | flush_div) & _rs_io_issue_div_valid;
+  wire         take_lsu_issue = can_load_lsu & _rs_io_issue_lsu_valid;
+  wire [2:0]   wb_cand_count =
+    {1'h0, {1'h0, _exu_io_out_valid} + {1'h0, _lsu_io_out_valid}}
+    + {1'h0, {1'h0, _exu_alu1_io_out_valid} + {1'h0, _exu_div_io_out_valid}};
   reg          casez_tmp_10;
   always_comb begin
-    casez (wb_sel_rob_idx)
+    casez (_wbArb_io_out_0_bits_rob_idx)
       5'b00000:
         casez_tmp_10 = _rob_io_entries_0_valid;
       5'b00001:
@@ -2153,7 +2193,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_11;
   always_comb begin
-    casez (wb_sel_rob_idx)
+    casez (_wbArb_io_out_0_bits_rob_idx)
       5'b00000:
         casez_tmp_11 = _rob_io_entries_0_done;
       5'b00001:
@@ -2222,7 +2262,7 @@ module Core(
   end // always_comb
   reg  [31:0]  casez_tmp_12;
   always_comb begin
-    casez (wb_sel_rob_idx)
+    casez (_wbArb_io_out_0_bits_rob_idx)
       5'b00000:
         casez_tmp_12 = _rob_io_entries_0_pc;
       5'b00001:
@@ -2291,7 +2331,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_13;
   always_comb begin
-    casez (wb_sel_rob_idx)
+    casez (_wbArb_io_out_0_bits_rob_idx)
       5'b00000:
         casez_tmp_13 = _rob_io_entries_0_mem_valid;
       5'b00001:
@@ -2360,7 +2400,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_14;
   always_comb begin
-    casez (wb_sel_rob_idx)
+    casez (_wbArb_io_out_0_bits_rob_idx)
       5'b00000:
         casez_tmp_14 = _rob_io_entries_0_mem_write;
       5'b00001:
@@ -2429,7 +2469,7 @@ module Core(
   end // always_comb
   reg  [7:0]   casez_tmp_15;
   always_comb begin
-    casez (wb_sel_rob_idx)
+    casez (_wbArb_io_out_0_bits_rob_idx)
       5'b00000:
         casez_tmp_15 = _rob_io_entries_0_mem_wmask;
       5'b00001:
@@ -2498,7 +2538,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_16;
   always_comb begin
-    casez (wb_sel_rob_idx)
+    casez (_wbArb_io_out_0_bits_rob_idx)
       5'b00000:
         casez_tmp_16 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -2567,7 +2607,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_17;
   always_comb begin
-    casez (wb_sel_rob_idx)
+    casez (_wbArb_io_out_0_bits_rob_idx)
       5'b00000:
         casez_tmp_17 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -2636,7 +2676,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_18;
   always_comb begin
-    casez (wb_sel1_rob_idx)
+    casez (_wbArb_io_out_1_bits_rob_idx)
       5'b00000:
         casez_tmp_18 = _rob_io_entries_0_valid;
       5'b00001:
@@ -2705,7 +2745,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_19;
   always_comb begin
-    casez (wb_sel1_rob_idx)
+    casez (_wbArb_io_out_1_bits_rob_idx)
       5'b00000:
         casez_tmp_19 = _rob_io_entries_0_done;
       5'b00001:
@@ -2774,7 +2814,7 @@ module Core(
   end // always_comb
   reg  [31:0]  casez_tmp_20;
   always_comb begin
-    casez (wb_sel1_rob_idx)
+    casez (_wbArb_io_out_1_bits_rob_idx)
       5'b00000:
         casez_tmp_20 = _rob_io_entries_0_pc;
       5'b00001:
@@ -2843,7 +2883,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_21;
   always_comb begin
-    casez (wb_sel1_rob_idx)
+    casez (_wbArb_io_out_1_bits_rob_idx)
       5'b00000:
         casez_tmp_21 = _rob_io_entries_0_mem_valid;
       5'b00001:
@@ -2912,7 +2952,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_22;
   always_comb begin
-    casez (wb_sel1_rob_idx)
+    casez (_wbArb_io_out_1_bits_rob_idx)
       5'b00000:
         casez_tmp_22 = _rob_io_entries_0_mem_write;
       5'b00001:
@@ -2981,7 +3021,7 @@ module Core(
   end // always_comb
   reg  [7:0]   casez_tmp_23;
   always_comb begin
-    casez (wb_sel1_rob_idx)
+    casez (_wbArb_io_out_1_bits_rob_idx)
       5'b00000:
         casez_tmp_23 = _rob_io_entries_0_mem_wmask;
       5'b00001:
@@ -3050,7 +3090,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_24;
   always_comb begin
-    casez (wb_sel1_rob_idx)
+    casez (_wbArb_io_out_1_bits_rob_idx)
       5'b00000:
         casez_tmp_24 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -3119,7 +3159,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_25;
   always_comb begin
-    casez (wb_sel1_rob_idx)
+    casez (_wbArb_io_out_1_bits_rob_idx)
       5'b00000:
         casez_tmp_25 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -3187,17 +3227,21 @@ module Core(
     endcase
   end // always_comb
   wire         _can_wb_T =
-    (|wb_cand_mask) & casez_tmp_10 & casez_tmp_12 == wb_sel_pc
-    & casez_tmp_16 == wb_sel_waddr & casez_tmp_17 == wb_sel_pdest;
-  wire         _head_wb0_T = wb_sel_rob_idx == _rob_io_head;
+    _wbArb_io_out_0_valid & casez_tmp_10 & casez_tmp_12 == _wbArb_io_out_0_bits_pc
+    & casez_tmp_16 == _wbArb_io_out_0_bits_waddr
+    & casez_tmp_17 == _wbArb_io_out_0_bits_pdest;
+  wire         _head_wb0_T = _wbArb_io_out_0_bits_rob_idx == _rob_io_head;
   wire         head_wb0_raw = _can_wb_T & _head_wb0_T;
   wire         _can_wb1_T =
-    (|wb_cand_mask1) & casez_tmp_18 & casez_tmp_20 == wb_sel1_pc
-    & casez_tmp_24 == wb_sel1_waddr & casez_tmp_25 == wb_sel1_pdest;
-  wire         _head_wb1_T = wb_sel1_rob_idx == _rob_io_head;
+    _wbArb_io_out_1_valid & casez_tmp_18 & casez_tmp_20 == _wbArb_io_out_1_bits_pc
+    & casez_tmp_24 == _wbArb_io_out_1_bits_waddr
+    & casez_tmp_25 == _wbArb_io_out_1_bits_pdest;
+  wire         _head_wb1_T = _wbArb_io_out_1_bits_rob_idx == _rob_io_head;
   wire         _head_is_exc_gap_T =
     (head_wb0_raw | _can_wb1_T & _head_wb1_T)
-    & (head_wb0_raw ? wb_sel_state_state : wb_sel1_state_state);
+    & (head_wb0_raw
+         ? _wbArb_io_out_0_bits_state_state
+         : _wbArb_io_out_1_bits_state_state);
   reg          casez_tmp_26;
   always_comb begin
     casez (_rob_io_head)
@@ -3614,7 +3658,7 @@ module Core(
   end // always_comb
   wire         head_is_exc =
     casez_tmp_26 & (casez_tmp_27 ? casez_tmp_31 : _head_is_exc_gap_T);
-  wire [4:0]   _can_wb_youngerMret_T_5 = wb_sel_rob_idx - _rob_io_head;
+  wire [4:0]   _can_wb_youngerMret_T_5 = _wbArb_io_out_0_bits_rob_idx - _rob_io_head;
   wire [4:0]   _can_wb1_youngerMis_T_3 = d_alu_bits_rob_idx - _rob_io_head;
   wire         _can_wb1_youngerFencei_T = casez_tmp_26 & casez_tmp_30;
   wire         _can_wb1_youngerMret_T = casez_tmp_29 == 4'hA;
@@ -3626,48 +3670,98 @@ module Core(
         & fencei_commit_ready & ~fencei_flush_REG & (|_can_wb_youngerMret_T_5)
         | casez_tmp_26 & _can_wb1_youngerMret_T & casez_tmp_27 & ~mret_flush_REG
         & (|_can_wb_youngerMret_T_5) | ext_irq_flush_REG);
-  wire [4:0]   _can_wb1_youngerMret_T_5 = wb_sel1_rob_idx - _rob_io_head;
+  wire [4:0]   _can_wb1_youngerMret_T_5 = _wbArb_io_out_1_bits_rob_idx - _rob_io_head;
   assign can_wb1 =
-    _can_wb1_T & ~casez_tmp_19 & ~(can_wb & wb_sel1_rob_idx == wb_sel_rob_idx)
+    _can_wb1_T & ~casez_tmp_19
+    & ~(can_wb & _wbArb_io_out_1_bits_rob_idx == _wbArb_io_out_0_bits_rob_idx)
     & ~(mis_predict_dbg & _can_wb1_youngerMret_T_5 > _can_wb1_youngerMis_T_3 | flush_now
         & _can_wb1_youngerMret_T_5 > _after_flushAgeNow_T_126 | head_is_exc
         & (|_can_wb1_youngerMret_T_5) | _can_wb1_youngerFencei_T & casez_tmp_27
         & fencei_commit_ready & ~fencei_flush_REG & (|_can_wb1_youngerMret_T_5)
         | casez_tmp_26 & _can_wb1_youngerMret_T & casez_tmp_27 & ~mret_flush_REG
         & (|_can_wb1_youngerMret_T_5) | ext_irq_flush_REG);
-  wire         wb_wen = can_wb & _wbu_io_refile_wen & (|wb_sel_pdest) & (|wb_sel_waddr);
+  wire         wb_wen =
+    can_wb & _wbu_io_refile_wen & (|_wbArb_io_out_0_bits_pdest)
+    & (|_wbArb_io_out_0_bits_waddr);
   wire         wb1_wen =
-    can_wb1 & _wbu1_io_refile_wen & (|wb_sel1_pdest) & (|wb_sel1_waddr);
+    can_wb1 & _wbu1_io_refile_wen & (|_wbArb_io_out_1_bits_pdest)
+    & (|_wbArb_io_out_1_bits_waddr);
   wire         head_wb0 = can_wb & _head_wb0_T;
   wire         head_wb_valid = head_wb0 | can_wb1 & _head_wb1_T;
   wire [31:0]  head_wb_bits_alu_result =
-    head_wb0 ? wb_sel_alu_result : wb_sel1_alu_result;
+    head_wb0 ? _wbArb_io_out_0_bits_alu_result : _wbArb_io_out_1_bits_alu_result;
+  wire         cm1_wb0 = can_wb & _wbArb_io_out_0_bits_rob_idx == _rob_io_commit1_idx;
+  wire         cm1_wb_valid =
+    cm1_wb0 | can_wb1 & _wbArb_io_out_1_bits_rob_idx == _rob_io_commit1_idx;
+  wire [31:0]  cm1_wb_bits_alu_result =
+    cm1_wb0 ? _wbArb_io_out_0_bits_alu_result : _wbArb_io_out_1_bits_alu_result;
   wire         cm_is_store =
     _rob_io_commit_bits_mem_valid & _rob_io_commit_bits_mem_write;
   wire         cm_is_mret = _rob_io_commit_bits_jump == 4'hA;
+  wire         cm_state_state =
+    head_wb_valid
+      ? (head_wb0 ? _wbArb_io_out_0_bits_state_state : _wbArb_io_out_1_bits_state_state)
+      : _rob_io_commit_bits_state_state;
   wire         cm_needs_store_drain =
-    _rob_io_commit_bits_is_ebreak | cm_is_mret | _rob_io_commit_bits_state_state;
+    _rob_io_commit_bits_is_ebreak | cm_is_mret | cm_state_state;
   wire         cm_is_ctrl = _rob_io_commit_bits_jump != 4'hF;
+  wire         cm1_is_store =
+    _rob_io_commit1_bits_mem_valid & _rob_io_commit1_bits_mem_write;
   wire         cm1_is_mret = _rob_io_commit1_bits_jump == 4'hA;
   wire         cm1_is_ctrl = _rob_io_commit1_bits_jump != 4'hF;
-  wire         cm1_is_ctrl_not_mret = cm1_is_ctrl & _rob_io_commit1_bits_jump != 4'hA;
+  wire         _cm1_bpu_update_T = _rob_io_commit1_bits_jump != 4'hA;
+  wire         cm1_is_ctrl_not_mret = cm1_is_ctrl & _cm1_bpu_update_T;
+  wire         cm_actual_taken =
+    head_wb_valid
+      ? (head_wb0 ? _wbArb_io_out_0_bits_br_taken : _wbArb_io_out_1_bits_br_taken)
+      : _rob_io_commit_bits_actual_taken;
+  wire [31:0]  cm_actual_target =
+    head_wb_valid
+      ? (head_wb0 ? _wbArb_io_out_0_bits_next_pc : _wbArb_io_out_1_bits_next_pc)
+      : _rob_io_commit_bits_actual_target;
+  wire [31:0]  _cm_mmio_mem_T =
+    (head_wb_valid ? head_wb_bits_alu_result : _rob_io_commit_bits_mem_addr)
+    - 32'h80000000;
+  wire         cm_mmio_mem = _rob_io_commit_bits_mem_valid & (|(_cm_mmio_mem_T[31:27]));
+  wire [31:0]  _cm1_mmio_mem_T =
+    (cm1_wb_valid ? cm1_wb_bits_alu_result : _rob_io_commit1_bits_mem_addr)
+    - 32'h80000000;
+  wire         cm1_mmio_mem =
+    _rob_io_commit1_bits_mem_valid & (|(_cm1_mmio_mem_T[31:27]));
   wire         cm_exclusive =
-    _rob_io_commit_bits_mem_valid | _rob_io_commit_bits_csr_write
-    | _rob_io_commit_bits_is_fencei | cm_is_mret | _rob_io_commit_bits_is_ebreak
-    | _rob_io_commit_bits_state_state | cm_is_ctrl;
+    _rob_io_commit_bits_csr_write | _rob_io_commit_bits_is_fencei | cm_is_mret
+    | _rob_io_commit_bits_is_ebreak | cm_state_state | cm_mmio_mem;
   wire         cm1_exclusive =
-    _rob_io_commit1_bits_mem_valid | _rob_io_commit1_bits_csr_write
-    | _rob_io_commit1_bits_is_fencei | cm1_is_mret | _rob_io_commit1_bits_is_ebreak
-    | _rob_io_commit1_bits_state_state | cm1_is_ctrl;
+    _rob_io_commit1_bits_csr_write | _rob_io_commit1_bits_is_fencei | cm1_is_mret
+    | _rob_io_commit1_bits_is_ebreak
+    | (cm1_wb_valid
+         ? (cm1_wb0 ? _wbArb_io_out_0_bits_state_state : _wbArb_io_out_1_bits_state_state)
+         : _rob_io_commit1_bits_state_state) | cm1_mmio_mem;
+  wire         cm_bpu_update = cm_is_ctrl & _rob_io_commit_bits_jump != 4'hA;
+  wire         cm1_bpu_update = cm1_is_ctrl & _cm1_bpu_update_T;
+  wire         cm_bpu_ready = ~cm_bpu_update | (|_ifu_io_bpu_update_free);
+  wire [3:0]   _GEN = {2'h0, {1'h0, cm_bpu_update} + {1'h0, cm1_bpu_update}};
+  wire         pair_store_ready =
+    _stbuf_io_free >= {3'h0,
+                       {1'h0, cm_is_store & ~cm_mmio_mem}
+                         + {1'h0, cm1_is_store & ~cm1_mmio_mem}}
+    & (~cm1_is_store | _rob_io_commit1_bits_addr_ready | cm1_wb_valid & cm1_is_store);
+  wire         pair_control_path_ok =
+    ~cm_bpu_update
+    | _rob_io_commit1_bits_pc == (cm_actual_taken
+                                    ? cm_actual_target
+                                    : _rob_io_commit_bits_pc + 32'h4);
   wire         bp_commit_block;
   wire         rob_io_commit_fire =
     _rob_io_commit_valid & ~is_irq & ~fencei_flush_REG & ~mret_flush_REG
-    & ~ext_irq_flush_REG & ~bp_commit_block & (~cm_is_store | store_commit_ready)
+    & ~ext_irq_flush_REG & ~branchRecoveryWins & ~memoryRecoveryWins & ~bp_commit_block
+    & cm_bpu_ready & (~cm_is_store | store_commit_ready)
     & (~_rob_io_commit_bits_is_fencei | fencei_commit_ready)
     & (~cm_needs_store_drain | store_side_empty);
   wire         cm1_slot_available = rob_io_commit_fire & _rob_io_commit1_valid;
   wire         rob_io_commit1_fire =
-    cm1_slot_available & ~cm_exclusive & ~cm1_exclusive & ~bp_commit1_block;
+    cm1_slot_available & ~cm_exclusive & ~cm1_exclusive & ~bp_commit1_block
+    & _ifu_io_bpu_update_free >= _GEN & pair_store_ready & pair_control_path_ok;
   wire         cm_do_ren =
     rob_io_commit_fire & _rob_io_commit_bits_reg_write & (|_rob_io_commit_bits_arch_rd)
     & (|_rob_io_commit_bits_new_phys);
@@ -3675,14 +3769,31 @@ module Core(
     rob_io_commit1_fire & _rob_io_commit1_bits_reg_write & (|_rob_io_commit1_bits_arch_rd)
     & (|_rob_io_commit1_bits_new_phys);
   wire         cm1_slot_blocked = cm1_slot_available & ~rob_io_commit1_fire;
+  wire         _cm1_block_bp_T_4 = _ifu_io_bpu_update_free < _GEN;
   wire         wb_store = can_wb & casez_tmp_13 & casez_tmp_14;
+  wire         wb1_store = can_wb1 & casez_tmp_21 & casez_tmp_22;
   wire         sq_io_commit_valid = rob_io_commit_fire & cm_is_store;
-  wire         _GEN = _rob_io_commit_valid & cm_is_store;
+  wire         sq_io_commit1_valid = rob_io_commit1_fire & cm1_is_store;
+  wire         lsu_io_commit1_valid =
+    rob_io_commit1_fire & _rob_io_commit1_bits_mem_valid
+    & ~_rob_io_commit1_bits_mem_write;
+  reg          lq_store_resolve0_valid;
+  reg  [4:0]   lq_store_resolve0_rob;
+  reg  [31:0]  lq_store_resolve0_addr;
+  reg  [3:0]   lq_store_resolve0_mask;
+  reg          lq_store_resolve1_valid;
+  reg  [4:0]   lq_store_resolve1_rob;
+  reg  [31:0]  lq_store_resolve1_addr;
+  reg  [3:0]   lq_store_resolve1_mask;
+  wire [1:0]   _fuRefillCount_T_5 =
+    {1'h0, alu_leave & take_alu_issue} + {1'h0, alu1_leave & take_alu1_issue}
+    + {1'h0, div_leave & take_div_issue};
+  wire         _GEN_0 = _rob_io_commit_valid & cm_is_store;
+  wire         rename_io_cm1_cp_valid = rob_io_commit1_fire & cm1_is_ctrl_not_mret;
+  wire         _frontend_mepc_T = _ifu_io_out_valid & _ifu_io_out_bits_valid_0;
   wire         _cm_is_jump_T_2 = _rob_io_commit_bits_jump != 4'hA;
   wire         cm_wb_same = rob_io_commit_fire & head_wb_valid;
-  wire         cm1_wb0 = can_wb & wb_sel_rob_idx == _rob_io_commit1_idx;
-  wire         cm1_wb_same =
-    rob_io_commit1_fire & (cm1_wb0 | can_wb1 & wb_sel1_rob_idx == _rob_io_commit1_idx);
+  wire         cm1_wb_same = rob_io_commit1_fire & cm1_wb_valid;
   reg  [31:0]  casez_tmp_32;
   always_comb begin
     casez (_rob_io_commit_bits_csr_sel)
@@ -3696,11 +3807,7 @@ module Core(
         casez_tmp_32 = _rob_io_commit_bits_pc;
     endcase
   end // always_comb
-  wire         irq_commit =
-    rob_io_commit_fire
-    & (head_wb_valid
-         ? (head_wb0 ? wb_sel_state_state : wb_sel1_state_state)
-         : _rob_io_commit_bits_state_state);
+  wire         irq_commit = rob_io_commit_fire & cm_state_state;
   reg          irq_commit_r;
   reg  [4:0]   irq_rob_r;
   wire [31:0]  correct_pc =
@@ -3714,15 +3821,24 @@ module Core(
   wire         br_done =
     d_alu_valid & d_alu_bits_signals_exu_jump != 4'hF
     & d_alu_bits_signals_exu_jump != 4'hA;
+  wire         br_resolve = br_done & ~d_alu_ctrl_resolved;
   wire         is_ch = br_done & (|_exu_io_pc_bits_pc_src);
   wire         target_mispredict =
     is_ch & d_alu_bits_bp_taken & d_alu_bits_bp_target != correct_pc;
   wire         _mis_predict_T = is_ch != d_alu_bits_bp_taken;
-  assign mis_predict_dbg = br_done & (_mis_predict_T | target_mispredict);
+  assign mis_predict_dbg = br_resolve & (_mis_predict_T | target_mispredict);
   reg          mis_predict_r;
   reg  [4:0]   mis_rob_r;
   reg  [1:0]   mis_cp_r;
   wire [4:0]   mis_next_rob_r = (&mis_rob_r) ? 5'h0 : mis_rob_r + 5'h1;
+  wire [4:0]   _memoryRecoveryWins_T_1 = _lsu_io_mem_violation_rob - _rob_io_head;
+  assign branchRecoveryWins =
+    mis_predict_dbg
+    & (~_lsu_io_mem_violation_valid | _memoryRecoveryWins_T_4 < _memoryRecoveryWins_T_1);
+  assign memoryRecoveryWins =
+    _lsu_io_mem_violation_valid
+    & (~mis_predict_dbg | _memoryRecoveryWins_T_1 <= _memoryRecoveryWins_T_4);
+  wire         _ifu_io_bp_recover_is_ret_T = d_alu_bits_signals_exu_jump == 4'h9;
   assign bp_commit_block = mis_predict_r & _rob_io_commit_idx == mis_next_rob_r;
   assign bp_commit1_block = mis_predict_r & _rob_io_commit1_idx == mis_next_rob_r;
   wire         fencei_commit = rob_io_commit_fire & _rob_io_commit_bits_is_fencei;
@@ -3735,22 +3851,28 @@ module Core(
         & (~_rob_io_commit_bits_is_fencei | fencei_commit_ready)
         & (~cm_needs_store_drain | store_side_empty))
     & ~(casez_tmp_26 & (casez_tmp_27 ? casez_tmp_31 : _head_is_exc_gap_T))
-    & ~mis_predict_dbg & ~mis_predict_r & ~fencei_flush_REG & ~mret_flush_REG
-    & ~cm_writing_gap & ~irq_commit_r & ~ext_irq_flush_REG;
+    & ~mis_predict_dbg & ~mis_predict_r & ~_lsu_io_mem_violation_valid & ~fencei_flush_REG
+    & ~mret_flush_REG & ~cm_writing_gap & ~irq_commit_r & ~ext_irq_flush_REG;
   assign is_irq = irq_commit_r | ext_irq_flush_REG;
   wire         csr_io_irq = irq_commit | ext_irq_fire;
   reg  [31:0]  irq_mtvec_r;
-  assign flush_now = mis_predict_dbg | is_irq | fencei_flush_REG | mret_flush_REG;
+  assign flush_now = _flush_now_T | is_irq | fencei_flush_REG | mret_flush_REG;
   assign stop_issue =
-    flush_now | mis_predict_dbg | irq_commit | fencei_commit | mret_commit | ext_irq_fire;
+    flush_now | mis_predict_dbg | _lsu_io_mem_violation_valid | irq_commit | fencei_commit
+    | mret_commit | ext_irq_fire;
   assign fwd_ok =
-    ~mis_predict_dbg & ~mis_predict_r & ~is_irq & ~irq_commit & ~fencei_commit
-    & ~fencei_flush_REG & ~mret_commit & ~mret_flush_REG & ~ext_irq_fire
-    & ~ext_irq_flush_REG;
+    ~mis_predict_dbg & ~mis_predict_r & ~_lsu_io_mem_violation_valid & ~is_irq
+    & ~irq_commit & ~fencei_commit & ~fencei_flush_REG & ~mret_commit & ~mret_flush_REG
+    & ~ext_irq_fire & ~ext_irq_flush_REG;
   assign flush_idx =
-    is_irq ? irq_rob_r : mis_predict_dbg ? d_alu_bits_rob_idx : mis_rob_r;
+    is_irq
+      ? irq_rob_r
+      : memoryRecoveryWins
+          ? _lsu_io_mem_violation_rob - 5'h1
+          : branchRecoveryWins ? d_alu_bits_rob_idx : mis_rob_r;
   wire         _busy_io_rebuild_mask_T = is_irq | fencei_flush_REG;
-  assign ifu_io_is_flush = _busy_io_rebuild_mask_T | mret_flush_REG | mis_predict_dbg;
+  assign ifu_io_is_flush =
+    _busy_io_rebuild_mask_T | mret_flush_REG | branchRecoveryWins | memoryRecoveryWins;
   wire         sq_io_flush = flush_now & ~is_irq & ~fencei_flush_REG & ~mret_flush_REG;
   wire         cm_this = rob_io_commit_fire & casez_tmp_26;
   reg          casez_tmp_33;
@@ -15274,461 +15396,464 @@ module Core(
   wire [126:0] _f1_T_157 = 127'h1 << casez_tmp_161;
   wire [126:0] _freeSteps_32_T_2 = 127'h1 << casez_tmp_193;
   wire [4:0]   after_idxAge = 5'h0 - _rob_io_head;
-  wire [5:0]   _GEN_0 = {1'h0, after_idxAge};
+  wire [5:0]   _GEN_1 = {1'h0, after_idxAge};
   wire [126:0] _busyKeep_0_T = 127'h1 << _rob_io_entries_0_new_phys;
   wire [4:0]   _after_idxAge_T_66 = 5'h1 - _rob_io_head;
-  wire [5:0]   _GEN_1 = {1'h0, _after_idxAge_T_66};
+  wire [5:0]   _GEN_2 = {1'h0, _after_idxAge_T_66};
   wire [126:0] _busyKeep_1_T = 127'h1 << _rob_io_entries_1_new_phys;
   wire [4:0]   _after_idxAge_T_68 = 5'h2 - _rob_io_head;
-  wire [5:0]   _GEN_2 = {1'h0, _after_idxAge_T_68};
+  wire [5:0]   _GEN_3 = {1'h0, _after_idxAge_T_68};
   wire [126:0] _busyKeep_2_T = 127'h1 << _rob_io_entries_2_new_phys;
   wire [4:0]   _after_idxAge_T_70 = 5'h3 - _rob_io_head;
-  wire [5:0]   _GEN_3 = {1'h0, _after_idxAge_T_70};
+  wire [5:0]   _GEN_4 = {1'h0, _after_idxAge_T_70};
   wire [126:0] _busyKeep_3_T = 127'h1 << _rob_io_entries_3_new_phys;
   wire [4:0]   _after_idxAge_T_72 = 5'h4 - _rob_io_head;
-  wire [5:0]   _GEN_4 = {1'h0, _after_idxAge_T_72};
+  wire [5:0]   _GEN_5 = {1'h0, _after_idxAge_T_72};
   wire [126:0] _busyKeep_4_T = 127'h1 << _rob_io_entries_4_new_phys;
   wire [4:0]   _after_idxAge_T_74 = 5'h5 - _rob_io_head;
-  wire [5:0]   _GEN_5 = {1'h0, _after_idxAge_T_74};
+  wire [5:0]   _GEN_6 = {1'h0, _after_idxAge_T_74};
   wire [126:0] _busyKeep_5_T = 127'h1 << _rob_io_entries_5_new_phys;
   wire [4:0]   _after_idxAge_T_76 = 5'h6 - _rob_io_head;
-  wire [5:0]   _GEN_6 = {1'h0, _after_idxAge_T_76};
+  wire [5:0]   _GEN_7 = {1'h0, _after_idxAge_T_76};
   wire [126:0] _busyKeep_6_T = 127'h1 << _rob_io_entries_6_new_phys;
   wire [4:0]   _after_idxAge_T_78 = 5'h7 - _rob_io_head;
-  wire [5:0]   _GEN_7 = {1'h0, _after_idxAge_T_78};
+  wire [5:0]   _GEN_8 = {1'h0, _after_idxAge_T_78};
   wire [126:0] _busyKeep_7_T = 127'h1 << _rob_io_entries_7_new_phys;
   wire [4:0]   _after_idxAge_T_80 = 5'h8 - _rob_io_head;
-  wire [5:0]   _GEN_8 = {1'h0, _after_idxAge_T_80};
+  wire [5:0]   _GEN_9 = {1'h0, _after_idxAge_T_80};
   wire [126:0] _busyKeep_8_T = 127'h1 << _rob_io_entries_8_new_phys;
   wire [4:0]   _after_idxAge_T_82 = 5'h9 - _rob_io_head;
-  wire [5:0]   _GEN_9 = {1'h0, _after_idxAge_T_82};
+  wire [5:0]   _GEN_10 = {1'h0, _after_idxAge_T_82};
   wire [126:0] _busyKeep_9_T = 127'h1 << _rob_io_entries_9_new_phys;
   wire [4:0]   _after_idxAge_T_84 = 5'hA - _rob_io_head;
-  wire [5:0]   _GEN_10 = {1'h0, _after_idxAge_T_84};
+  wire [5:0]   _GEN_11 = {1'h0, _after_idxAge_T_84};
   wire [126:0] _busyKeep_10_T = 127'h1 << _rob_io_entries_10_new_phys;
   wire [4:0]   _after_idxAge_T_86 = 5'hB - _rob_io_head;
-  wire [5:0]   _GEN_11 = {1'h0, _after_idxAge_T_86};
+  wire [5:0]   _GEN_12 = {1'h0, _after_idxAge_T_86};
   wire [126:0] _busyKeep_11_T = 127'h1 << _rob_io_entries_11_new_phys;
   wire [4:0]   _after_idxAge_T_88 = 5'hC - _rob_io_head;
-  wire [5:0]   _GEN_12 = {1'h0, _after_idxAge_T_88};
+  wire [5:0]   _GEN_13 = {1'h0, _after_idxAge_T_88};
   wire [126:0] _busyKeep_12_T = 127'h1 << _rob_io_entries_12_new_phys;
   wire [4:0]   _after_idxAge_T_90 = 5'hD - _rob_io_head;
-  wire [5:0]   _GEN_13 = {1'h0, _after_idxAge_T_90};
+  wire [5:0]   _GEN_14 = {1'h0, _after_idxAge_T_90};
   wire [126:0] _busyKeep_13_T = 127'h1 << _rob_io_entries_13_new_phys;
   wire [4:0]   _after_idxAge_T_92 = 5'hE - _rob_io_head;
-  wire [5:0]   _GEN_14 = {1'h0, _after_idxAge_T_92};
+  wire [5:0]   _GEN_15 = {1'h0, _after_idxAge_T_92};
   wire [126:0] _busyKeep_14_T = 127'h1 << _rob_io_entries_14_new_phys;
   wire [4:0]   _after_idxAge_T_94 = 5'hF - _rob_io_head;
-  wire [5:0]   _GEN_15 = {1'h0, _after_idxAge_T_94};
+  wire [5:0]   _GEN_16 = {1'h0, _after_idxAge_T_94};
   wire [126:0] _busyKeep_15_T = 127'h1 << _rob_io_entries_15_new_phys;
   wire [4:0]   _after_idxAge_T_96 = 5'h10 - _rob_io_head;
-  wire [5:0]   _GEN_16 = {1'h0, _after_idxAge_T_96};
+  wire [5:0]   _GEN_17 = {1'h0, _after_idxAge_T_96};
   wire [126:0] _busyKeep_16_T = 127'h1 << _rob_io_entries_16_new_phys;
   wire [4:0]   _after_idxAge_T_98 = 5'h11 - _rob_io_head;
-  wire [5:0]   _GEN_17 = {1'h0, _after_idxAge_T_98};
+  wire [5:0]   _GEN_18 = {1'h0, _after_idxAge_T_98};
   wire [126:0] _busyKeep_17_T = 127'h1 << _rob_io_entries_17_new_phys;
   wire [4:0]   _after_idxAge_T_100 = 5'h12 - _rob_io_head;
-  wire [5:0]   _GEN_18 = {1'h0, _after_idxAge_T_100};
+  wire [5:0]   _GEN_19 = {1'h0, _after_idxAge_T_100};
   wire [126:0] _busyKeep_18_T = 127'h1 << _rob_io_entries_18_new_phys;
   wire [4:0]   _after_idxAge_T_102 = 5'h13 - _rob_io_head;
-  wire [5:0]   _GEN_19 = {1'h0, _after_idxAge_T_102};
+  wire [5:0]   _GEN_20 = {1'h0, _after_idxAge_T_102};
   wire [126:0] _busyKeep_19_T = 127'h1 << _rob_io_entries_19_new_phys;
   wire [4:0]   _after_idxAge_T_104 = 5'h14 - _rob_io_head;
-  wire [5:0]   _GEN_20 = {1'h0, _after_idxAge_T_104};
+  wire [5:0]   _GEN_21 = {1'h0, _after_idxAge_T_104};
   wire [126:0] _busyKeep_20_T = 127'h1 << _rob_io_entries_20_new_phys;
   wire [4:0]   _after_idxAge_T_106 = 5'h15 - _rob_io_head;
-  wire [5:0]   _GEN_21 = {1'h0, _after_idxAge_T_106};
+  wire [5:0]   _GEN_22 = {1'h0, _after_idxAge_T_106};
   wire [126:0] _busyKeep_21_T = 127'h1 << _rob_io_entries_21_new_phys;
   wire [4:0]   _after_idxAge_T_108 = 5'h16 - _rob_io_head;
-  wire [5:0]   _GEN_22 = {1'h0, _after_idxAge_T_108};
+  wire [5:0]   _GEN_23 = {1'h0, _after_idxAge_T_108};
   wire [126:0] _busyKeep_22_T = 127'h1 << _rob_io_entries_22_new_phys;
   wire [4:0]   _after_idxAge_T_110 = 5'h17 - _rob_io_head;
-  wire [5:0]   _GEN_23 = {1'h0, _after_idxAge_T_110};
+  wire [5:0]   _GEN_24 = {1'h0, _after_idxAge_T_110};
   wire [126:0] _busyKeep_23_T = 127'h1 << _rob_io_entries_23_new_phys;
   wire [4:0]   _after_idxAge_T_112 = 5'h18 - _rob_io_head;
-  wire [5:0]   _GEN_24 = {1'h0, _after_idxAge_T_112};
+  wire [5:0]   _GEN_25 = {1'h0, _after_idxAge_T_112};
   wire [126:0] _busyKeep_24_T = 127'h1 << _rob_io_entries_24_new_phys;
   wire [4:0]   _after_idxAge_T_114 = 5'h19 - _rob_io_head;
-  wire [5:0]   _GEN_25 = {1'h0, _after_idxAge_T_114};
+  wire [5:0]   _GEN_26 = {1'h0, _after_idxAge_T_114};
   wire [126:0] _busyKeep_25_T = 127'h1 << _rob_io_entries_25_new_phys;
   wire [4:0]   _after_idxAge_T_116 = 5'h1A - _rob_io_head;
-  wire [5:0]   _GEN_26 = {1'h0, _after_idxAge_T_116};
+  wire [5:0]   _GEN_27 = {1'h0, _after_idxAge_T_116};
   wire [126:0] _busyKeep_26_T = 127'h1 << _rob_io_entries_26_new_phys;
   wire [4:0]   _after_idxAge_T_118 = 5'h1B - _rob_io_head;
-  wire [5:0]   _GEN_27 = {1'h0, _after_idxAge_T_118};
+  wire [5:0]   _GEN_28 = {1'h0, _after_idxAge_T_118};
   wire [126:0] _busyKeep_27_T = 127'h1 << _rob_io_entries_27_new_phys;
   wire [4:0]   _after_idxAge_T_120 = 5'h1C - _rob_io_head;
-  wire [5:0]   _GEN_28 = {1'h0, _after_idxAge_T_120};
+  wire [5:0]   _GEN_29 = {1'h0, _after_idxAge_T_120};
   wire [126:0] _busyKeep_28_T = 127'h1 << _rob_io_entries_28_new_phys;
   wire [4:0]   _after_idxAge_T_122 = 5'h1D - _rob_io_head;
-  wire [5:0]   _GEN_29 = {1'h0, _after_idxAge_T_122};
+  wire [5:0]   _GEN_30 = {1'h0, _after_idxAge_T_122};
   wire [126:0] _busyKeep_29_T = 127'h1 << _rob_io_entries_29_new_phys;
   wire [4:0]   _after_idxAge_T_124 = 5'h1E - _rob_io_head;
-  wire [5:0]   _GEN_30 = {1'h0, _after_idxAge_T_124};
+  wire [5:0]   _GEN_31 = {1'h0, _after_idxAge_T_124};
   wire [126:0] _busyKeep_30_T = 127'h1 << _rob_io_entries_30_new_phys;
   wire [4:0]   _after_idxAge_T_126 = 5'h1F - _rob_io_head;
-  wire [5:0]   _GEN_31 = {1'h0, _after_idxAge_T_126};
+  wire [5:0]   _GEN_32 = {1'h0, _after_idxAge_T_126};
   wire [126:0] _busyKeep_31_T = 127'h1 << _rob_io_entries_31_new_phys;
   wire [63:0]  killBusy =
-    (flush_now & _GEN_0 < _rob_io_count & after_idxAge > _after_flushAgeNow_T_126
+    (flush_now & _GEN_1 < _rob_io_count & after_idxAge > _after_flushAgeNow_T_126
      & _rob_io_entries_0_valid & _rob_io_entries_0_reg_write
      & (|_rob_io_entries_0_new_phys)
        ? _busyKeep_0_T[63:0]
        : 64'h0)
-    | (flush_now & _GEN_1 < _rob_io_count & _after_idxAge_T_66 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_2 < _rob_io_count & _after_idxAge_T_66 > _after_flushAgeNow_T_126
        & _rob_io_entries_1_valid & _rob_io_entries_1_reg_write
        & (|_rob_io_entries_1_new_phys)
          ? _busyKeep_1_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_2 < _rob_io_count & _after_idxAge_T_68 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_3 < _rob_io_count & _after_idxAge_T_68 > _after_flushAgeNow_T_126
        & _rob_io_entries_2_valid & _rob_io_entries_2_reg_write
        & (|_rob_io_entries_2_new_phys)
          ? _busyKeep_2_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_3 < _rob_io_count & _after_idxAge_T_70 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_4 < _rob_io_count & _after_idxAge_T_70 > _after_flushAgeNow_T_126
        & _rob_io_entries_3_valid & _rob_io_entries_3_reg_write
        & (|_rob_io_entries_3_new_phys)
          ? _busyKeep_3_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_4 < _rob_io_count & _after_idxAge_T_72 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_5 < _rob_io_count & _after_idxAge_T_72 > _after_flushAgeNow_T_126
        & _rob_io_entries_4_valid & _rob_io_entries_4_reg_write
        & (|_rob_io_entries_4_new_phys)
          ? _busyKeep_4_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_5 < _rob_io_count & _after_idxAge_T_74 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_6 < _rob_io_count & _after_idxAge_T_74 > _after_flushAgeNow_T_126
        & _rob_io_entries_5_valid & _rob_io_entries_5_reg_write
        & (|_rob_io_entries_5_new_phys)
          ? _busyKeep_5_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_6 < _rob_io_count & _after_idxAge_T_76 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_7 < _rob_io_count & _after_idxAge_T_76 > _after_flushAgeNow_T_126
        & _rob_io_entries_6_valid & _rob_io_entries_6_reg_write
        & (|_rob_io_entries_6_new_phys)
          ? _busyKeep_6_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_7 < _rob_io_count & _after_idxAge_T_78 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_8 < _rob_io_count & _after_idxAge_T_78 > _after_flushAgeNow_T_126
        & _rob_io_entries_7_valid & _rob_io_entries_7_reg_write
        & (|_rob_io_entries_7_new_phys)
          ? _busyKeep_7_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_8 < _rob_io_count & _after_idxAge_T_80 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_9 < _rob_io_count & _after_idxAge_T_80 > _after_flushAgeNow_T_126
        & _rob_io_entries_8_valid & _rob_io_entries_8_reg_write
        & (|_rob_io_entries_8_new_phys)
          ? _busyKeep_8_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_9 < _rob_io_count & _after_idxAge_T_82 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_10 < _rob_io_count & _after_idxAge_T_82 > _after_flushAgeNow_T_126
        & _rob_io_entries_9_valid & _rob_io_entries_9_reg_write
        & (|_rob_io_entries_9_new_phys)
          ? _busyKeep_9_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_10 < _rob_io_count & _after_idxAge_T_84 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_11 < _rob_io_count & _after_idxAge_T_84 > _after_flushAgeNow_T_126
        & _rob_io_entries_10_valid & _rob_io_entries_10_reg_write
        & (|_rob_io_entries_10_new_phys)
          ? _busyKeep_10_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_11 < _rob_io_count & _after_idxAge_T_86 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_12 < _rob_io_count & _after_idxAge_T_86 > _after_flushAgeNow_T_126
        & _rob_io_entries_11_valid & _rob_io_entries_11_reg_write
        & (|_rob_io_entries_11_new_phys)
          ? _busyKeep_11_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_12 < _rob_io_count & _after_idxAge_T_88 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_13 < _rob_io_count & _after_idxAge_T_88 > _after_flushAgeNow_T_126
        & _rob_io_entries_12_valid & _rob_io_entries_12_reg_write
        & (|_rob_io_entries_12_new_phys)
          ? _busyKeep_12_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_13 < _rob_io_count & _after_idxAge_T_90 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_14 < _rob_io_count & _after_idxAge_T_90 > _after_flushAgeNow_T_126
        & _rob_io_entries_13_valid & _rob_io_entries_13_reg_write
        & (|_rob_io_entries_13_new_phys)
          ? _busyKeep_13_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_14 < _rob_io_count & _after_idxAge_T_92 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_15 < _rob_io_count & _after_idxAge_T_92 > _after_flushAgeNow_T_126
        & _rob_io_entries_14_valid & _rob_io_entries_14_reg_write
        & (|_rob_io_entries_14_new_phys)
          ? _busyKeep_14_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_15 < _rob_io_count & _after_idxAge_T_94 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_16 < _rob_io_count & _after_idxAge_T_94 > _after_flushAgeNow_T_126
        & _rob_io_entries_15_valid & _rob_io_entries_15_reg_write
        & (|_rob_io_entries_15_new_phys)
          ? _busyKeep_15_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_16 < _rob_io_count & _after_idxAge_T_96 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_17 < _rob_io_count & _after_idxAge_T_96 > _after_flushAgeNow_T_126
        & _rob_io_entries_16_valid & _rob_io_entries_16_reg_write
        & (|_rob_io_entries_16_new_phys)
          ? _busyKeep_16_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_17 < _rob_io_count & _after_idxAge_T_98 > _after_flushAgeNow_T_126
+    | (flush_now & _GEN_18 < _rob_io_count & _after_idxAge_T_98 > _after_flushAgeNow_T_126
        & _rob_io_entries_17_valid & _rob_io_entries_17_reg_write
        & (|_rob_io_entries_17_new_phys)
          ? _busyKeep_17_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_18 < _rob_io_count
+    | (flush_now & _GEN_19 < _rob_io_count
        & _after_idxAge_T_100 > _after_flushAgeNow_T_126 & _rob_io_entries_18_valid
        & _rob_io_entries_18_reg_write & (|_rob_io_entries_18_new_phys)
          ? _busyKeep_18_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_19 < _rob_io_count
+    | (flush_now & _GEN_20 < _rob_io_count
        & _after_idxAge_T_102 > _after_flushAgeNow_T_126 & _rob_io_entries_19_valid
        & _rob_io_entries_19_reg_write & (|_rob_io_entries_19_new_phys)
          ? _busyKeep_19_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_20 < _rob_io_count
+    | (flush_now & _GEN_21 < _rob_io_count
        & _after_idxAge_T_104 > _after_flushAgeNow_T_126 & _rob_io_entries_20_valid
        & _rob_io_entries_20_reg_write & (|_rob_io_entries_20_new_phys)
          ? _busyKeep_20_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_21 < _rob_io_count
+    | (flush_now & _GEN_22 < _rob_io_count
        & _after_idxAge_T_106 > _after_flushAgeNow_T_126 & _rob_io_entries_21_valid
        & _rob_io_entries_21_reg_write & (|_rob_io_entries_21_new_phys)
          ? _busyKeep_21_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_22 < _rob_io_count
+    | (flush_now & _GEN_23 < _rob_io_count
        & _after_idxAge_T_108 > _after_flushAgeNow_T_126 & _rob_io_entries_22_valid
        & _rob_io_entries_22_reg_write & (|_rob_io_entries_22_new_phys)
          ? _busyKeep_22_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_23 < _rob_io_count
+    | (flush_now & _GEN_24 < _rob_io_count
        & _after_idxAge_T_110 > _after_flushAgeNow_T_126 & _rob_io_entries_23_valid
        & _rob_io_entries_23_reg_write & (|_rob_io_entries_23_new_phys)
          ? _busyKeep_23_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_24 < _rob_io_count
+    | (flush_now & _GEN_25 < _rob_io_count
        & _after_idxAge_T_112 > _after_flushAgeNow_T_126 & _rob_io_entries_24_valid
        & _rob_io_entries_24_reg_write & (|_rob_io_entries_24_new_phys)
          ? _busyKeep_24_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_25 < _rob_io_count
+    | (flush_now & _GEN_26 < _rob_io_count
        & _after_idxAge_T_114 > _after_flushAgeNow_T_126 & _rob_io_entries_25_valid
        & _rob_io_entries_25_reg_write & (|_rob_io_entries_25_new_phys)
          ? _busyKeep_25_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_26 < _rob_io_count
+    | (flush_now & _GEN_27 < _rob_io_count
        & _after_idxAge_T_116 > _after_flushAgeNow_T_126 & _rob_io_entries_26_valid
        & _rob_io_entries_26_reg_write & (|_rob_io_entries_26_new_phys)
          ? _busyKeep_26_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_27 < _rob_io_count
+    | (flush_now & _GEN_28 < _rob_io_count
        & _after_idxAge_T_118 > _after_flushAgeNow_T_126 & _rob_io_entries_27_valid
        & _rob_io_entries_27_reg_write & (|_rob_io_entries_27_new_phys)
          ? _busyKeep_27_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_28 < _rob_io_count
+    | (flush_now & _GEN_29 < _rob_io_count
        & _after_idxAge_T_120 > _after_flushAgeNow_T_126 & _rob_io_entries_28_valid
        & _rob_io_entries_28_reg_write & (|_rob_io_entries_28_new_phys)
          ? _busyKeep_28_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_29 < _rob_io_count
+    | (flush_now & _GEN_30 < _rob_io_count
        & _after_idxAge_T_122 > _after_flushAgeNow_T_126 & _rob_io_entries_29_valid
        & _rob_io_entries_29_reg_write & (|_rob_io_entries_29_new_phys)
          ? _busyKeep_29_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_30 < _rob_io_count
+    | (flush_now & _GEN_31 < _rob_io_count
        & _after_idxAge_T_124 > _after_flushAgeNow_T_126 & _rob_io_entries_30_valid
        & _rob_io_entries_30_reg_write & (|_rob_io_entries_30_new_phys)
          ? _busyKeep_30_T[63:0]
          : 64'h0)
-    | (flush_now & _GEN_31 < _rob_io_count
+    | (flush_now & _GEN_32 < _rob_io_count
        & _after_idxAge_T_126 > _after_flushAgeNow_T_126 & _rob_io_entries_31_valid
        & _rob_io_entries_31_reg_write & (|_rob_io_entries_31_new_phys)
          ? _busyKeep_31_T[63:0]
          : 64'h0);
-  wire [126:0] _wbClearMask_T_2 = 127'h1 << wb_sel_pdest;
-  wire [126:0] _wbClearMask_T_6 = 127'h1 << wb_sel1_pdest;
+  wire [126:0] _wbClearMask_T_2 = 127'h1 << _wbArb_io_out_0_bits_pdest;
+  wire [126:0] _wbClearMask_T_6 = 127'h1 << _wbArb_io_out_1_bits_pdest;
   wire [63:0]  _busyRebuild_T_30 =
     (flush_now & _rob_io_entries_0_valid
-     & ~(_GEN_0 < _rob_io_count & after_idxAge > _after_flushAgeNow_T_126)
+     & ~(_GEN_1 < _rob_io_count & after_idxAge > _after_flushAgeNow_T_126)
      & _rob_io_entries_0_reg_write & ~_rob_io_entries_0_done
      & (|_rob_io_entries_0_new_phys)
        ? _busyKeep_0_T[63:0]
        : 64'h0)
     | (flush_now & _rob_io_entries_1_valid
-       & ~(_GEN_1 < _rob_io_count & _after_idxAge_T_66 > _after_flushAgeNow_T_126)
+       & ~(_GEN_2 < _rob_io_count & _after_idxAge_T_66 > _after_flushAgeNow_T_126)
        & _rob_io_entries_1_reg_write & ~_rob_io_entries_1_done
        & (|_rob_io_entries_1_new_phys)
          ? _busyKeep_1_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_2_valid
-       & ~(_GEN_2 < _rob_io_count & _after_idxAge_T_68 > _after_flushAgeNow_T_126)
+       & ~(_GEN_3 < _rob_io_count & _after_idxAge_T_68 > _after_flushAgeNow_T_126)
        & _rob_io_entries_2_reg_write & ~_rob_io_entries_2_done
        & (|_rob_io_entries_2_new_phys)
          ? _busyKeep_2_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_3_valid
-       & ~(_GEN_3 < _rob_io_count & _after_idxAge_T_70 > _after_flushAgeNow_T_126)
+       & ~(_GEN_4 < _rob_io_count & _after_idxAge_T_70 > _after_flushAgeNow_T_126)
        & _rob_io_entries_3_reg_write & ~_rob_io_entries_3_done
        & (|_rob_io_entries_3_new_phys)
          ? _busyKeep_3_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_4_valid
-       & ~(_GEN_4 < _rob_io_count & _after_idxAge_T_72 > _after_flushAgeNow_T_126)
+       & ~(_GEN_5 < _rob_io_count & _after_idxAge_T_72 > _after_flushAgeNow_T_126)
        & _rob_io_entries_4_reg_write & ~_rob_io_entries_4_done
        & (|_rob_io_entries_4_new_phys)
          ? _busyKeep_4_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_5_valid
-       & ~(_GEN_5 < _rob_io_count & _after_idxAge_T_74 > _after_flushAgeNow_T_126)
+       & ~(_GEN_6 < _rob_io_count & _after_idxAge_T_74 > _after_flushAgeNow_T_126)
        & _rob_io_entries_5_reg_write & ~_rob_io_entries_5_done
        & (|_rob_io_entries_5_new_phys)
          ? _busyKeep_5_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_6_valid
-       & ~(_GEN_6 < _rob_io_count & _after_idxAge_T_76 > _after_flushAgeNow_T_126)
+       & ~(_GEN_7 < _rob_io_count & _after_idxAge_T_76 > _after_flushAgeNow_T_126)
        & _rob_io_entries_6_reg_write & ~_rob_io_entries_6_done
        & (|_rob_io_entries_6_new_phys)
          ? _busyKeep_6_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_7_valid
-       & ~(_GEN_7 < _rob_io_count & _after_idxAge_T_78 > _after_flushAgeNow_T_126)
+       & ~(_GEN_8 < _rob_io_count & _after_idxAge_T_78 > _after_flushAgeNow_T_126)
        & _rob_io_entries_7_reg_write & ~_rob_io_entries_7_done
        & (|_rob_io_entries_7_new_phys)
          ? _busyKeep_7_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_8_valid
-       & ~(_GEN_8 < _rob_io_count & _after_idxAge_T_80 > _after_flushAgeNow_T_126)
+       & ~(_GEN_9 < _rob_io_count & _after_idxAge_T_80 > _after_flushAgeNow_T_126)
        & _rob_io_entries_8_reg_write & ~_rob_io_entries_8_done
        & (|_rob_io_entries_8_new_phys)
          ? _busyKeep_8_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_9_valid
-       & ~(_GEN_9 < _rob_io_count & _after_idxAge_T_82 > _after_flushAgeNow_T_126)
+       & ~(_GEN_10 < _rob_io_count & _after_idxAge_T_82 > _after_flushAgeNow_T_126)
        & _rob_io_entries_9_reg_write & ~_rob_io_entries_9_done
        & (|_rob_io_entries_9_new_phys)
          ? _busyKeep_9_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_10_valid
-       & ~(_GEN_10 < _rob_io_count & _after_idxAge_T_84 > _after_flushAgeNow_T_126)
+       & ~(_GEN_11 < _rob_io_count & _after_idxAge_T_84 > _after_flushAgeNow_T_126)
        & _rob_io_entries_10_reg_write & ~_rob_io_entries_10_done
        & (|_rob_io_entries_10_new_phys)
          ? _busyKeep_10_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_11_valid
-       & ~(_GEN_11 < _rob_io_count & _after_idxAge_T_86 > _after_flushAgeNow_T_126)
+       & ~(_GEN_12 < _rob_io_count & _after_idxAge_T_86 > _after_flushAgeNow_T_126)
        & _rob_io_entries_11_reg_write & ~_rob_io_entries_11_done
        & (|_rob_io_entries_11_new_phys)
          ? _busyKeep_11_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_12_valid
-       & ~(_GEN_12 < _rob_io_count & _after_idxAge_T_88 > _after_flushAgeNow_T_126)
+       & ~(_GEN_13 < _rob_io_count & _after_idxAge_T_88 > _after_flushAgeNow_T_126)
        & _rob_io_entries_12_reg_write & ~_rob_io_entries_12_done
        & (|_rob_io_entries_12_new_phys)
          ? _busyKeep_12_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_13_valid
-       & ~(_GEN_13 < _rob_io_count & _after_idxAge_T_90 > _after_flushAgeNow_T_126)
+       & ~(_GEN_14 < _rob_io_count & _after_idxAge_T_90 > _after_flushAgeNow_T_126)
        & _rob_io_entries_13_reg_write & ~_rob_io_entries_13_done
        & (|_rob_io_entries_13_new_phys)
          ? _busyKeep_13_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_14_valid
-       & ~(_GEN_14 < _rob_io_count & _after_idxAge_T_92 > _after_flushAgeNow_T_126)
+       & ~(_GEN_15 < _rob_io_count & _after_idxAge_T_92 > _after_flushAgeNow_T_126)
        & _rob_io_entries_14_reg_write & ~_rob_io_entries_14_done
        & (|_rob_io_entries_14_new_phys)
          ? _busyKeep_14_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_15_valid
-       & ~(_GEN_15 < _rob_io_count & _after_idxAge_T_94 > _after_flushAgeNow_T_126)
+       & ~(_GEN_16 < _rob_io_count & _after_idxAge_T_94 > _after_flushAgeNow_T_126)
        & _rob_io_entries_15_reg_write & ~_rob_io_entries_15_done
        & (|_rob_io_entries_15_new_phys)
          ? _busyKeep_15_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_16_valid
-       & ~(_GEN_16 < _rob_io_count & _after_idxAge_T_96 > _after_flushAgeNow_T_126)
+       & ~(_GEN_17 < _rob_io_count & _after_idxAge_T_96 > _after_flushAgeNow_T_126)
        & _rob_io_entries_16_reg_write & ~_rob_io_entries_16_done
        & (|_rob_io_entries_16_new_phys)
          ? _busyKeep_16_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_17_valid
-       & ~(_GEN_17 < _rob_io_count & _after_idxAge_T_98 > _after_flushAgeNow_T_126)
+       & ~(_GEN_18 < _rob_io_count & _after_idxAge_T_98 > _after_flushAgeNow_T_126)
        & _rob_io_entries_17_reg_write & ~_rob_io_entries_17_done
        & (|_rob_io_entries_17_new_phys)
          ? _busyKeep_17_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_18_valid
-       & ~(_GEN_18 < _rob_io_count & _after_idxAge_T_100 > _after_flushAgeNow_T_126)
+       & ~(_GEN_19 < _rob_io_count & _after_idxAge_T_100 > _after_flushAgeNow_T_126)
        & _rob_io_entries_18_reg_write & ~_rob_io_entries_18_done
        & (|_rob_io_entries_18_new_phys)
          ? _busyKeep_18_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_19_valid
-       & ~(_GEN_19 < _rob_io_count & _after_idxAge_T_102 > _after_flushAgeNow_T_126)
+       & ~(_GEN_20 < _rob_io_count & _after_idxAge_T_102 > _after_flushAgeNow_T_126)
        & _rob_io_entries_19_reg_write & ~_rob_io_entries_19_done
        & (|_rob_io_entries_19_new_phys)
          ? _busyKeep_19_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_20_valid
-       & ~(_GEN_20 < _rob_io_count & _after_idxAge_T_104 > _after_flushAgeNow_T_126)
+       & ~(_GEN_21 < _rob_io_count & _after_idxAge_T_104 > _after_flushAgeNow_T_126)
        & _rob_io_entries_20_reg_write & ~_rob_io_entries_20_done
        & (|_rob_io_entries_20_new_phys)
          ? _busyKeep_20_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_21_valid
-       & ~(_GEN_21 < _rob_io_count & _after_idxAge_T_106 > _after_flushAgeNow_T_126)
+       & ~(_GEN_22 < _rob_io_count & _after_idxAge_T_106 > _after_flushAgeNow_T_126)
        & _rob_io_entries_21_reg_write & ~_rob_io_entries_21_done
        & (|_rob_io_entries_21_new_phys)
          ? _busyKeep_21_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_22_valid
-       & ~(_GEN_22 < _rob_io_count & _after_idxAge_T_108 > _after_flushAgeNow_T_126)
+       & ~(_GEN_23 < _rob_io_count & _after_idxAge_T_108 > _after_flushAgeNow_T_126)
        & _rob_io_entries_22_reg_write & ~_rob_io_entries_22_done
        & (|_rob_io_entries_22_new_phys)
          ? _busyKeep_22_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_23_valid
-       & ~(_GEN_23 < _rob_io_count & _after_idxAge_T_110 > _after_flushAgeNow_T_126)
+       & ~(_GEN_24 < _rob_io_count & _after_idxAge_T_110 > _after_flushAgeNow_T_126)
        & _rob_io_entries_23_reg_write & ~_rob_io_entries_23_done
        & (|_rob_io_entries_23_new_phys)
          ? _busyKeep_23_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_24_valid
-       & ~(_GEN_24 < _rob_io_count & _after_idxAge_T_112 > _after_flushAgeNow_T_126)
+       & ~(_GEN_25 < _rob_io_count & _after_idxAge_T_112 > _after_flushAgeNow_T_126)
        & _rob_io_entries_24_reg_write & ~_rob_io_entries_24_done
        & (|_rob_io_entries_24_new_phys)
          ? _busyKeep_24_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_25_valid
-       & ~(_GEN_25 < _rob_io_count & _after_idxAge_T_114 > _after_flushAgeNow_T_126)
+       & ~(_GEN_26 < _rob_io_count & _after_idxAge_T_114 > _after_flushAgeNow_T_126)
        & _rob_io_entries_25_reg_write & ~_rob_io_entries_25_done
        & (|_rob_io_entries_25_new_phys)
          ? _busyKeep_25_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_26_valid
-       & ~(_GEN_26 < _rob_io_count & _after_idxAge_T_116 > _after_flushAgeNow_T_126)
+       & ~(_GEN_27 < _rob_io_count & _after_idxAge_T_116 > _after_flushAgeNow_T_126)
        & _rob_io_entries_26_reg_write & ~_rob_io_entries_26_done
        & (|_rob_io_entries_26_new_phys)
          ? _busyKeep_26_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_27_valid
-       & ~(_GEN_27 < _rob_io_count & _after_idxAge_T_118 > _after_flushAgeNow_T_126)
+       & ~(_GEN_28 < _rob_io_count & _after_idxAge_T_118 > _after_flushAgeNow_T_126)
        & _rob_io_entries_27_reg_write & ~_rob_io_entries_27_done
        & (|_rob_io_entries_27_new_phys)
          ? _busyKeep_27_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_28_valid
-       & ~(_GEN_28 < _rob_io_count & _after_idxAge_T_120 > _after_flushAgeNow_T_126)
+       & ~(_GEN_29 < _rob_io_count & _after_idxAge_T_120 > _after_flushAgeNow_T_126)
        & _rob_io_entries_28_reg_write & ~_rob_io_entries_28_done
        & (|_rob_io_entries_28_new_phys)
          ? _busyKeep_28_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_29_valid
-       & ~(_GEN_29 < _rob_io_count & _after_idxAge_T_122 > _after_flushAgeNow_T_126)
+       & ~(_GEN_30 < _rob_io_count & _after_idxAge_T_122 > _after_flushAgeNow_T_126)
        & _rob_io_entries_29_reg_write & ~_rob_io_entries_29_done
        & (|_rob_io_entries_29_new_phys)
          ? _busyKeep_29_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_30_valid
-       & ~(_GEN_30 < _rob_io_count & _after_idxAge_T_124 > _after_flushAgeNow_T_126)
+       & ~(_GEN_31 < _rob_io_count & _after_idxAge_T_124 > _after_flushAgeNow_T_126)
        & _rob_io_entries_30_reg_write & ~_rob_io_entries_30_done
        & (|_rob_io_entries_30_new_phys)
          ? _busyKeep_30_T[63:0]
          : 64'h0)
     | (flush_now & _rob_io_entries_31_valid
-       & ~(_GEN_31 < _rob_io_count & _after_idxAge_T_126 > _after_flushAgeNow_T_126)
+       & ~(_GEN_32 < _rob_io_count & _after_idxAge_T_126 > _after_flushAgeNow_T_126)
        & _rob_io_entries_31_reg_write & ~_rob_io_entries_31_done
        & (|_rob_io_entries_31_new_phys)
          ? _busyKeep_31_T[63:0]
          : 64'h0);
   wire         busy_io_rebuild = flush_now | _rob_io_count == 6'h0 & ~en_ren & ~en_ren1;
   wire         cm_is_jump = rob_io_commit_fire & cm_is_ctrl & _cm_is_jump_T_2;
+  wire         cm1_is_jump =
+    rob_io_commit1_fire & cm1_is_ctrl & _rob_io_commit1_bits_jump != 4'hA;
   wire         _ifu_io_bpu_update_is_ret_T = _rob_io_commit_bits_jump == 4'h9;
-  wire         _GEN_32 = mis_predict_dbg & d_alu_bits_bp_valid;
+  wire         _ifu_io_bpu_update1_is_ret_T = _rob_io_commit1_bits_jump == 4'h9;
+  wire         _GEN_33 = mis_predict_dbg & d_alu_bits_bp_valid;
   reg  [1:0]   cm_st_state;
   reg  [31:0]  cm_st_addr;
   reg  [31:0]  cm_st_wdata;
@@ -15742,22 +15867,29 @@ module Core(
     head_wb_store ? head_wb_bits_alu_result : _rob_io_commit_bits_mem_addr;
   wire [31:0]  head_st_data =
     head_wb_store
-      ? (head_wb0 ? wb_sel_store_data : wb_sel1_store_data)
+      ? (head_wb0 ? _wbArb_io_out_0_bits_store_data : _wbArb_io_out_1_bits_store_data)
       : _rob_io_commit_bits_mem_wdata;
+  wire         cm1_wb_store =
+    cm1_wb_valid & _rob_io_commit1_bits_mem_valid & _rob_io_commit1_bits_mem_write;
+  wire [31:0]  cm1_st_addr =
+    cm1_wb_store ? cm1_wb_bits_alu_result : _rob_io_commit1_bits_mem_addr;
   wire [31:0]  _head_st_is_pmem_T = head_st_addr - 32'h80000000;
   wire         head_st_is_pmem = _head_st_is_pmem_T < 32'h8000000;
   wire         _io_dmem_bready_T = cm_st_state == 2'h2;
   wire         stbuf_io_enq_valid = sq_io_commit_valid & head_st_is_pmem;
+  wire         stbuf_io_enq1_valid =
+    sq_io_commit1_valid & cm1_st_addr - 32'h80000000 < 32'h8000000;
   assign store_commit_ready =
     head_addr_rdy
     & (head_st_is_pmem
-         ? _stbuf_io_enq_ready
+         ? (|_stbuf_io_free)
          : _io_dmem_bready_T & io_dmem_bvalid & io_dmem_bready_0);
   wire         store_bus_busy = (|cm_st_state) | _stbuf_io_busy;
   assign store_side_empty = _stbuf_io_empty & ~_stbuf_io_busy & ~(|cm_st_state);
   assign cm_writing_gap = store_bus_busy | ~_stbuf_io_empty;
   assign fencei_commit_ready = store_side_empty & _icache_io_fencei_ready;
   wire         dcache_io_invalidate_valid = _stbuf_io_enq_ready & stbuf_io_enq_valid;
+  wire         dcache_io_invalidate2_valid = _stbuf_io_enq1_ready & stbuf_io_enq1_valid;
   wire         stbuf_io_dmem_bvalid = io_dmem_bvalid & ~(|cm_st_state);
   wire         _io_dmem_wvalid_T = cm_st_state == 2'h1;
   wire         io_dmem_awvalid_0 =
@@ -15765,28 +15897,24 @@ module Core(
   wire         io_dmem_wvalid_0 =
     (|cm_st_state) ? _io_dmem_wvalid_T & ~cm_st_w_done : _stbuf_io_dmem_wvalid;
   assign io_dmem_bready_0 = (|cm_st_state) ? _io_dmem_bready_T : _stbuf_io_dmem_bready;
+  wire [1:0]   sbEnqCount =
+    {1'h0, dcache_io_invalidate_valid} + {1'h0, dcache_io_invalidate2_valid};
   wire [62:0]  _cm_st_wdata_T_1 =
     {31'h0, head_st_data} << {58'h0, head_st_addr[1:0], 3'h0};
   wire [6:0]   _cm_st_wstrb_T =
     {3'h0, _rob_io_commit_bits_mem_wmask[3:0]} << head_st_addr[1:0];
+  wire         lsu_out_fire = _lsu_io_out_valid & _wbArb_io_in_1_ready;
   wire         lsu_stage_push = _exu_lsu_io_out_valid & exu_lsu_io_out_ready;
-  wire         alu_leave = hold_alu & _exu_io_out_valid & exu_io_out_ready;
-  wire         div_leave = hold_div & _exu_div_io_out_valid & exu_div_io_out_ready;
-  wire         can_load_alu = ~stop_issue & (~d_alu_valid | flush_alu);
-  wire         can_load_div = ~stop_issue & (~d_div_valid | flush_div);
-  wire         can_load_lsu =
-    ~stop_issue & (~d_lsu_valid | flush_lsu) & ~lsu_stage_valid & ~_lsu_io_bus_busy;
-  wire         _GEN_33 = can_load_alu & _rs_io_issue_alu_valid;
-  wire         _GEN_34 = ~d_alu_valid & can_load_alu & _rs_io_issue_alu_valid;
-  wire         _GEN_35 = can_load_div & _rs_io_issue_div_valid;
-  wire         _GEN_36 = ~d_div_valid & can_load_div & _rs_io_issue_div_valid;
-  wire         _GEN_37 = can_load_lsu & _rs_io_issue_lsu_valid;
-  wire         _GEN_38 =
+  wire         _GEN_34 = alu_leave | ~d_alu_valid;
+  wire         _GEN_35 = flush_alu | _GEN_34;
+  wire         _GEN_36 = div_leave | ~d_div_valid;
+  wire         _GEN_37 =
     d_lsu_valid & (~casez_tmp_8 | casez_tmp_9 != d_lsu_bits_pc) | hold_lsu
     & lsu_stage_push | hold_lsu & lsu_out_fire
     & _lsu_io_out_bits_rob_idx == d_lsu_bits_rob_idx
     & _lsu_io_out_bits_pc == d_lsu_bits_pc;
-  wire         _GEN_39 = ~d_lsu_valid & can_load_lsu & _rs_io_issue_lsu_valid;
+  wire         _GEN_38 = ~d_lsu_valid & can_load_lsu & _rs_io_issue_lsu_valid;
+  wire         _GEN_39 = alu1_leave | ~d_alu1_valid;
   wire [31:0]  _arch_rf_T =
     cm_wb_same
       ? (head_wb0 ? _wbu_io_refile_wdata : _wbu1_io_refile_wdata)
@@ -15800,7 +15928,7 @@ module Core(
     _rob_io_commit_valid & ~is_irq & ~ext_irq_fire & _rob_io_commit_bits_mem_valid
     & _rob_io_commit_bits_mem_write & head_addr_rdy & ~_rob_io_commit_bits_is_fencei
     & (|(_head_st_is_pmem_T[31:27])) & _stbuf_io_empty & ~_stbuf_io_busy
-    & ~_lsu_io_bus_busy;
+    & ~_dcache_io_busy;
   wire         _GEN_42 = cm_st_state == 2'h1;
   wire         aw_fire = io_dmem_awvalid_0 & io_dmem_awready;
   wire         w_fire = io_dmem_wvalid_0 & io_dmem_wready;
@@ -15861,9 +15989,34 @@ module Core(
       d_alu_bits_bp_valid <= 1'h0;
       d_alu_bits_bp_taken <= 1'h0;
       d_alu_bits_bp_target <= 32'h0;
+      d_alu_bits_bp_index <= 10'h0;
+      d_alu_bits_ftq_idx <= 4'h0;
+      d_alu_bits_ftq_generation <= 8'h0;
+      d_alu_bits_inst <= 32'h0;
       d_alu_bits_rob_idx <= 5'h0;
       d_alu_bits_cp_idx <= 2'h0;
       d_alu_bits_pdest <= 6'h0;
+      d_alu_ctrl_resolved <= 1'h0;
+      d_alu1_valid <= 1'h0;
+      d_alu1_bits_signals_exu_alu_srcA <= 2'h0;
+      d_alu1_bits_signals_exu_alu_srcB <= 2'h0;
+      d_alu1_bits_signals_exu_alu_control <= 5'h0;
+      d_alu1_bits_signals_exu_jump <= 4'h0;
+      d_alu1_bits_signals_lsu_mem_rd <= 3'h0;
+      d_alu1_bits_signals_lsu_mem_write <= 1'h0;
+      d_alu1_bits_signals_lsu_mem_valid <= 1'h0;
+      d_alu1_bits_signals_wbu_reg_write <= 1'h0;
+      d_alu1_bits_signals_wbu_reg_write_sel <= 3'h0;
+      d_alu1_bits_rd1 <= 32'h0;
+      d_alu1_bits_rd2 <= 32'h0;
+      d_alu1_bits_pc <= 32'h0;
+      d_alu1_bits_imm_ext <= 32'h0;
+      d_alu1_bits_waddr <= 5'h0;
+      d_alu1_bits_csr_rd1 <= 32'h0;
+      d_alu1_bits_state_state <= 1'h0;
+      d_alu1_bits_state_state_num <= 8'h0;
+      d_alu1_bits_rob_idx <= 5'h0;
+      d_alu1_bits_pdest <= 6'h0;
       d_div_valid <= 1'h0;
       d_div_bits_signals_exu_alu_srcA <= 2'h0;
       d_div_bits_signals_exu_alu_srcB <= 2'h0;
@@ -15922,6 +16075,14 @@ module Core(
       lsu_stage_bits_rob_idx <= 5'h0;
       lsu_stage_bits_pdest <= 6'h0;
       lsu_stage_bits_br_taken <= 1'h0;
+      lq_store_resolve0_valid <= 1'h0;
+      lq_store_resolve0_rob <= 5'h0;
+      lq_store_resolve0_addr <= 32'h0;
+      lq_store_resolve0_mask <= 4'h0;
+      lq_store_resolve1_valid <= 1'h0;
+      lq_store_resolve1_rob <= 5'h0;
+      lq_store_resolve1_addr <= 32'h0;
+      lq_store_resolve1_mask <= 4'h0;
       irq_commit_r <= 1'h0;
       irq_rob_r <= 5'h0;
       mis_predict_r <= 1'h0;
@@ -16069,37 +16230,9 @@ module Core(
         arch_rf_31 <= _arch_rf_T_1;
       else if (cm_do_ren & (&_rob_io_commit_bits_arch_rd))
         arch_rf_31 <= _arch_rf_T;
-      d_alu_valid <= flush_alu ? _GEN_33 : ~alu_leave & (_GEN_34 | d_alu_valid);
-      if (flush_alu) begin
-        if (_GEN_33) begin
-          d_alu_bits_signals_exu_alu_srcA <= _rs_io_issue_alu_bits_exu_alu_srcA;
-          d_alu_bits_signals_exu_alu_srcB <= _rs_io_issue_alu_bits_exu_alu_srcB;
-          d_alu_bits_signals_exu_alu_control <= _rs_io_issue_alu_bits_exu_alu_control;
-          d_alu_bits_signals_exu_jump <= _rs_io_issue_alu_bits_exu_jump;
-          d_alu_bits_signals_lsu_mem_rd <= _rs_io_issue_alu_bits_lsu_mem_rd;
-          d_alu_bits_signals_lsu_mem_write <= _rs_io_issue_alu_bits_lsu_mem_write;
-          d_alu_bits_signals_lsu_mem_valid <= _rs_io_issue_alu_bits_lsu_mem_valid;
-          d_alu_bits_signals_wbu_reg_write <= _rs_io_issue_alu_bits_wbu_reg_write;
-          d_alu_bits_signals_wbu_reg_write_sel <= _rs_io_issue_alu_bits_wbu_reg_write_sel;
-          d_alu_bits_rd1 <= _rs_io_issue_alu_bits_src1_val;
-          d_alu_bits_rd2 <= _rs_io_issue_alu_bits_src2_val;
-          d_alu_bits_pc <= _rs_io_issue_alu_bits_pc;
-          d_alu_bits_imm_ext <= _rs_io_issue_alu_bits_imm_ext;
-          d_alu_bits_waddr <= _rs_io_issue_alu_bits_waddr;
-          d_alu_bits_csr_rd1 <= _rs_io_issue_alu_bits_csr_rd1;
-          d_alu_bits_state_state <= _rs_io_issue_alu_bits_state_state;
-          d_alu_bits_state_state_num <= _rs_io_issue_alu_bits_state_state_num;
-          d_alu_bits_bp_valid <= _rs_io_issue_alu_bits_bp_valid;
-          d_alu_bits_bp_taken <= _rs_io_issue_alu_bits_bp_taken;
-          d_alu_bits_bp_target <= _rs_io_issue_alu_bits_bp_target;
-          d_alu_bits_rob_idx <= _rs_io_issue_alu_bits_rob_idx;
-          d_alu_bits_cp_idx <= _rs_io_issue_alu_bits_cp_idx;
-          d_alu_bits_pdest <= _rs_io_issue_alu_bits_pdest;
-        end
-      end
-      else if (alu_leave | ~_GEN_34) begin
-      end
-      else begin
+      if (_GEN_35)
+        d_alu_valid <= take_alu_issue;
+      if ((flush_alu | _GEN_34) & take_alu_issue) begin
         d_alu_bits_signals_exu_alu_srcA <= _rs_io_issue_alu_bits_exu_alu_srcA;
         d_alu_bits_signals_exu_alu_srcB <= _rs_io_issue_alu_bits_exu_alu_srcB;
         d_alu_bits_signals_exu_alu_control <= _rs_io_issue_alu_bits_exu_alu_control;
@@ -16120,37 +16253,43 @@ module Core(
         d_alu_bits_bp_valid <= _rs_io_issue_alu_bits_bp_valid;
         d_alu_bits_bp_taken <= _rs_io_issue_alu_bits_bp_taken;
         d_alu_bits_bp_target <= _rs_io_issue_alu_bits_bp_target;
+        d_alu_bits_bp_index <= _rs_io_issue_alu_bits_bp_index;
+        d_alu_bits_ftq_idx <= _rs_io_issue_alu_bits_ftq_idx;
+        d_alu_bits_ftq_generation <= _rs_io_issue_alu_bits_ftq_generation;
+        d_alu_bits_inst <= _rs_io_issue_alu_bits_inst;
         d_alu_bits_rob_idx <= _rs_io_issue_alu_bits_rob_idx;
         d_alu_bits_cp_idx <= _rs_io_issue_alu_bits_cp_idx;
         d_alu_bits_pdest <= _rs_io_issue_alu_bits_pdest;
       end
-      d_div_valid <= flush_div ? _GEN_35 : ~div_leave & (_GEN_36 | d_div_valid);
-      if (flush_div) begin
-        if (_GEN_35) begin
-          d_div_bits_signals_exu_alu_srcA <= _rs_io_issue_div_bits_exu_alu_srcA;
-          d_div_bits_signals_exu_alu_srcB <= _rs_io_issue_div_bits_exu_alu_srcB;
-          d_div_bits_signals_exu_alu_control <= _rs_io_issue_div_bits_exu_alu_control;
-          d_div_bits_signals_exu_jump <= _rs_io_issue_div_bits_exu_jump;
-          d_div_bits_signals_lsu_mem_rd <= _rs_io_issue_div_bits_lsu_mem_rd;
-          d_div_bits_signals_lsu_mem_write <= _rs_io_issue_div_bits_lsu_mem_write;
-          d_div_bits_signals_lsu_mem_valid <= _rs_io_issue_div_bits_lsu_mem_valid;
-          d_div_bits_signals_wbu_reg_write <= _rs_io_issue_div_bits_wbu_reg_write;
-          d_div_bits_signals_wbu_reg_write_sel <= _rs_io_issue_div_bits_wbu_reg_write_sel;
-          d_div_bits_rd1 <= _rs_io_issue_div_bits_src1_val;
-          d_div_bits_rd2 <= _rs_io_issue_div_bits_src2_val;
-          d_div_bits_pc <= _rs_io_issue_div_bits_pc;
-          d_div_bits_imm_ext <= _rs_io_issue_div_bits_imm_ext;
-          d_div_bits_waddr <= _rs_io_issue_div_bits_waddr;
-          d_div_bits_csr_rd1 <= _rs_io_issue_div_bits_csr_rd1;
-          d_div_bits_state_state <= _rs_io_issue_div_bits_state_state;
-          d_div_bits_state_state_num <= _rs_io_issue_div_bits_state_state_num;
-          d_div_bits_rob_idx <= _rs_io_issue_div_bits_rob_idx;
-          d_div_bits_pdest <= _rs_io_issue_div_bits_pdest;
-        end
-      end
-      else if (div_leave | ~_GEN_36) begin
+      d_alu_ctrl_resolved <=
+        br_resolve & ~alu_leave & ~flush_alu | ~_GEN_35 & d_alu_ctrl_resolved;
+      d_alu1_valid <= ~flush_alu1 & (_GEN_39 ? take_alu1_issue : d_alu1_valid);
+      if (flush_alu1 | ~(_GEN_39 & take_alu1_issue)) begin
       end
       else begin
+        d_alu1_bits_signals_exu_alu_srcA <= _rs_io_issue_alu1_bits_exu_alu_srcA;
+        d_alu1_bits_signals_exu_alu_srcB <= _rs_io_issue_alu1_bits_exu_alu_srcB;
+        d_alu1_bits_signals_exu_alu_control <= _rs_io_issue_alu1_bits_exu_alu_control;
+        d_alu1_bits_signals_exu_jump <= _rs_io_issue_alu1_bits_exu_jump;
+        d_alu1_bits_signals_lsu_mem_rd <= _rs_io_issue_alu1_bits_lsu_mem_rd;
+        d_alu1_bits_signals_lsu_mem_write <= _rs_io_issue_alu1_bits_lsu_mem_write;
+        d_alu1_bits_signals_lsu_mem_valid <= _rs_io_issue_alu1_bits_lsu_mem_valid;
+        d_alu1_bits_signals_wbu_reg_write <= _rs_io_issue_alu1_bits_wbu_reg_write;
+        d_alu1_bits_signals_wbu_reg_write_sel <= _rs_io_issue_alu1_bits_wbu_reg_write_sel;
+        d_alu1_bits_rd1 <= _rs_io_issue_alu1_bits_src1_val;
+        d_alu1_bits_rd2 <= _rs_io_issue_alu1_bits_src2_val;
+        d_alu1_bits_pc <= _rs_io_issue_alu1_bits_pc;
+        d_alu1_bits_imm_ext <= _rs_io_issue_alu1_bits_imm_ext;
+        d_alu1_bits_waddr <= _rs_io_issue_alu1_bits_waddr;
+        d_alu1_bits_csr_rd1 <= _rs_io_issue_alu1_bits_csr_rd1;
+        d_alu1_bits_state_state <= _rs_io_issue_alu1_bits_state_state;
+        d_alu1_bits_state_state_num <= _rs_io_issue_alu1_bits_state_state_num;
+        d_alu1_bits_rob_idx <= _rs_io_issue_alu1_bits_rob_idx;
+        d_alu1_bits_pdest <= _rs_io_issue_alu1_bits_pdest;
+      end
+      if (flush_div | _GEN_36)
+        d_div_valid <= take_div_issue;
+      if ((flush_div | _GEN_36) & take_div_issue) begin
         d_div_bits_signals_exu_alu_srcA <= _rs_io_issue_div_bits_exu_alu_srcA;
         d_div_bits_signals_exu_alu_srcB <= _rs_io_issue_div_bits_exu_alu_srcB;
         d_div_bits_signals_exu_alu_control <= _rs_io_issue_div_bits_exu_alu_control;
@@ -16171,9 +16310,9 @@ module Core(
         d_div_bits_rob_idx <= _rs_io_issue_div_bits_rob_idx;
         d_div_bits_pdest <= _rs_io_issue_div_bits_pdest;
       end
-      d_lsu_valid <= flush_lsu ? _GEN_37 : ~_GEN_38 & (_GEN_39 | d_lsu_valid);
+      d_lsu_valid <= flush_lsu ? take_lsu_issue : ~_GEN_37 & (_GEN_38 | d_lsu_valid);
       if (flush_lsu) begin
-        if (_GEN_37) begin
+        if (take_lsu_issue) begin
           d_lsu_bits_signals_exu_alu_srcA <= _rs_io_issue_lsu_bits_exu_alu_srcA;
           d_lsu_bits_signals_exu_alu_srcB <= _rs_io_issue_lsu_bits_exu_alu_srcB;
           d_lsu_bits_signals_exu_alu_control <= _rs_io_issue_lsu_bits_exu_alu_control;
@@ -16195,7 +16334,7 @@ module Core(
           d_lsu_bits_pdest <= _rs_io_issue_lsu_bits_pdest;
         end
       end
-      else if (_GEN_38 | ~_GEN_39) begin
+      else if (_GEN_37 | ~_GEN_38) begin
       end
       else begin
         d_lsu_bits_signals_exu_alu_srcA <= _rs_io_issue_lsu_bits_exu_alu_srcA;
@@ -16219,7 +16358,13 @@ module Core(
         d_lsu_bits_pdest <= _rs_io_issue_lsu_bits_pdest;
       end
       lsu_stage_valid <=
-        ~flush_lsu & (lsu_stage_push | ~exu_lsu_io_out_ready & lsu_stage_valid);
+        ~flush_lsu
+        & (lsu_stage_push
+           | ~(lsu_io_in_valid & _lsu_io_in_ready | lsu_out_fire & lsu_stage_valid
+               & _lsu_io_out_bits_rob_idx == lsu_stage_bits_rob_idx
+               & _lsu_io_out_bits_pc == lsu_stage_bits_pc | lsu_stage_valid
+               & (~casez_tmp_6 | casez_tmp_7 != lsu_stage_bits_pc) | exu_lsu_io_out_ready)
+           & lsu_stage_valid);
       if (lsu_stage_push & ~flush_lsu | ~(flush_lsu | ~lsu_stage_push)) begin
         lsu_stage_bits_signals_lsu_mem_rd <= _exu_lsu_io_out_bits_signals_lsu_mem_rd;
         lsu_stage_bits_signals_lsu_mem_write <=
@@ -16242,6 +16387,18 @@ module Core(
         lsu_stage_bits_rob_idx <= _exu_lsu_io_out_bits_rob_idx;
         lsu_stage_bits_pdest <= _exu_lsu_io_out_bits_pdest;
         lsu_stage_bits_br_taken <= _exu_lsu_io_out_bits_br_taken;
+      end
+      lq_store_resolve0_valid <= wb_store;
+      if (wb_store) begin
+        lq_store_resolve0_rob <= _wbArb_io_out_0_bits_rob_idx;
+        lq_store_resolve0_addr <= _wbArb_io_out_0_bits_alu_result;
+        lq_store_resolve0_mask <= casez_tmp_15[3:0];
+      end
+      lq_store_resolve1_valid <= wb1_store;
+      if (wb1_store) begin
+        lq_store_resolve1_rob <= _wbArb_io_out_1_bits_rob_idx;
+        lq_store_resolve1_addr <= _wbArb_io_out_1_bits_alu_result;
+        lq_store_resolve1_mask <= casez_tmp_23[3:0];
       end
       irq_commit_r <= irq_commit;
       if (irq_commit)
@@ -16309,6 +16466,8 @@ module Core(
     .io_out_bits_bits_0_bp_taken        (_ifu_io_out_bits_bits_0_bp_taken),
     .io_out_bits_bits_0_bp_target       (_ifu_io_out_bits_bits_0_bp_target),
     .io_out_bits_bits_0_bp_index        (_ifu_io_out_bits_bits_0_bp_index),
+    .io_out_bits_bits_0_ftq_idx         (_ifu_io_out_bits_bits_0_ftq_idx),
+    .io_out_bits_bits_0_ftq_generation  (_ifu_io_out_bits_bits_0_ftq_generation),
     .io_out_bits_bits_1_inst            (_ifu_io_out_bits_bits_1_inst),
     .io_out_bits_bits_1_pc              (_ifu_io_out_bits_bits_1_pc),
     .io_out_bits_bits_1_state_state     (_ifu_io_out_bits_bits_1_state_state),
@@ -16317,6 +16476,8 @@ module Core(
     .io_out_bits_bits_1_bp_taken        (_ifu_io_out_bits_bits_1_bp_taken),
     .io_out_bits_bits_1_bp_target       (_ifu_io_out_bits_bits_1_bp_target),
     .io_out_bits_bits_1_bp_index        (_ifu_io_out_bits_bits_1_bp_index),
+    .io_out_bits_bits_1_ftq_idx         (_ifu_io_out_bits_bits_1_ftq_idx),
+    .io_out_bits_bits_1_ftq_generation  (_ifu_io_out_bits_bits_1_ftq_generation),
     .io_pc_ready                        (_ifu_io_in_ready),
     .io_pc_valid                        (_ifu_io_pc_valid),
     .io_pc_bits_next_pc                 (_ifu_io_pc_bits_next_pc),
@@ -16334,16 +16495,18 @@ module Core(
     .io_correct_pc
       (is_irq
          ? irq_mtvec_r
-         : mis_predict_dbg
-             ? correct_pc
-             : fencei_flush_REG
-                 ? fencei_pc_r + 32'h4
-                 : mret_flush_REG ? mret_mepc_r : 32'h0),
-    .io_slot1_enable                    (_fq_io_space[3]),
+         : memoryRecoveryWins
+             ? _lsu_io_mem_violation_pc
+             : branchRecoveryWins
+                 ? correct_pc
+                 : fencei_flush_REG
+                     ? fencei_pc_r + 32'h4
+                     : mret_flush_REG ? mret_mepc_r : 32'h0),
+    .io_slot1_enable                    (_fq_io_space > 4'h5),
     .io_bpu_update_valid                (cm_is_jump),
-    .io_bpu_update_taken                (_rob_io_commit_bits_actual_taken),
+    .io_bpu_update_taken                (cm_actual_taken),
     .io_bpu_update_pc                   (_rob_io_commit_bits_pc),
-    .io_bpu_update_target               (_rob_io_commit_bits_actual_target),
+    .io_bpu_update_target               (cm_actual_target),
     .io_bpu_update_is_branch
       (cm_is_jump
        & (_rob_io_commit_bits_jump == 4'h0 | _rob_io_commit_bits_jump == 4'h1
@@ -16356,7 +16519,55 @@ module Core(
        & (_rob_io_commit_bits_jump == 4'h8 | _ifu_io_bpu_update_is_ret_T
           & _rob_io_commit_bits_inst[19:15] != 5'h1)),
     .io_bpu_update_is_ret
-      (cm_is_jump & _ifu_io_bpu_update_is_ret_T & _rob_io_commit_bits_inst[19:15] == 5'h1)
+      (cm_is_jump & _ifu_io_bpu_update_is_ret_T
+       & _rob_io_commit_bits_inst[19:15] == 5'h1),
+    .io_bpu_update1_valid               (cm1_is_jump),
+    .io_bpu_update1_taken
+      (cm1_wb_valid
+         ? (cm1_wb0 ? _wbArb_io_out_0_bits_br_taken : _wbArb_io_out_1_bits_br_taken)
+         : _rob_io_commit1_bits_actual_taken),
+    .io_bpu_update1_pc                  (_rob_io_commit1_bits_pc),
+    .io_bpu_update1_target
+      (cm1_wb_valid
+         ? (cm1_wb0 ? _wbArb_io_out_0_bits_next_pc : _wbArb_io_out_1_bits_next_pc)
+         : _rob_io_commit1_bits_actual_target),
+    .io_bpu_update1_is_branch
+      (cm1_is_jump
+       & (_rob_io_commit1_bits_jump == 4'h0 | _rob_io_commit1_bits_jump == 4'h1
+          | _rob_io_commit1_bits_jump == 4'h4 | _rob_io_commit1_bits_jump == 4'h5
+          | _rob_io_commit1_bits_jump == 4'h6 | _rob_io_commit1_bits_jump == 4'h7)),
+    .io_bpu_update1_is_jalr             (cm1_is_jump & _ifu_io_bpu_update1_is_ret_T),
+    .io_bpu_update1_index               (_rob_io_commit1_bits_bp_index),
+    .io_bpu_update1_is_call
+      (cm1_is_jump & _rob_io_commit1_bits_inst[11:7] == 5'h1
+       & (_rob_io_commit1_bits_jump == 4'h8 | _ifu_io_bpu_update1_is_ret_T
+          & _rob_io_commit1_bits_inst[19:15] != 5'h1)),
+    .io_bpu_update1_is_ret
+      (cm1_is_jump & _ifu_io_bpu_update1_is_ret_T
+       & _rob_io_commit1_bits_inst[19:15] == 5'h1),
+    .io_bpu_update_free                 (_ifu_io_bpu_update_free),
+    .io_ftq_commit0_valid               (rob_io_commit_fire),
+    .io_ftq_commit0_idx                 (_rob_io_commit_bits_ftq_idx),
+    .io_ftq_commit0_generation          (_rob_io_commit_bits_ftq_generation),
+    .io_ftq_commit1_valid               (rob_io_commit1_fire),
+    .io_ftq_commit1_idx                 (_rob_io_commit1_bits_ftq_idx),
+    .io_ftq_commit1_generation          (_rob_io_commit1_bits_ftq_generation),
+    .io_bp_recover_valid                (branchRecoveryWins),
+    .io_bp_recover_ftq_idx              (d_alu_bits_ftq_idx),
+    .io_bp_recover_ftq_generation       (d_alu_bits_ftq_generation),
+    .io_bp_recover_pc                   (d_alu_bits_pc),
+    .io_bp_recover_index                (d_alu_bits_bp_index),
+    .io_bp_recover_taken                (is_ch),
+    .io_bp_recover_is_branch
+      (d_alu_bits_signals_exu_jump == 4'h0 | d_alu_bits_signals_exu_jump == 4'h1
+       | d_alu_bits_signals_exu_jump == 4'h4 | d_alu_bits_signals_exu_jump == 4'h5
+       | d_alu_bits_signals_exu_jump == 4'h6 | d_alu_bits_signals_exu_jump == 4'h7),
+    .io_bp_recover_is_call
+      (d_alu_bits_inst[11:7] == 5'h1
+       & (d_alu_bits_signals_exu_jump == 4'h8 | _ifu_io_bp_recover_is_ret_T
+          & d_alu_bits_inst[19:15] != 5'h1)),
+    .io_bp_recover_is_ret
+      (_ifu_io_bp_recover_is_ret_T & d_alu_bits_inst[19:15] == 5'h1)
   );
   IDU idu (
     .clock                                 (clock),
@@ -16370,6 +16581,8 @@ module Core(
     .io_in_bits_bp_taken                   (_fq_io_deq_bits_bp_taken),
     .io_in_bits_bp_target                  (_fq_io_deq_bits_bp_target),
     .io_in_bits_bp_index                   (_fq_io_deq_bits_bp_index),
+    .io_in_bits_ftq_idx                    (_fq_io_deq_bits_ftq_idx),
+    .io_in_bits_ftq_generation             (_fq_io_deq_bits_ftq_generation),
     .io_out_ready                          (~lane0_block),
     .io_out_valid                          (_idu_io_out_valid),
     .io_out_bits_signals_exu_alu_srcA      (_idu_io_out_bits_signals_exu_alu_srcA),
@@ -16396,6 +16609,8 @@ module Core(
     .io_out_bits_bp_taken                  (_idu_io_out_bits_bp_taken),
     .io_out_bits_bp_target                 (_idu_io_out_bits_bp_target),
     .io_out_bits_bp_index                  (_idu_io_out_bits_bp_index),
+    .io_out_bits_ftq_idx                   (_idu_io_out_bits_ftq_idx),
+    .io_out_bits_ftq_generation            (_idu_io_out_bits_ftq_generation),
     .io_out_bits_inst                      (_idu_io_out_bits_inst),
     .io_csr_raddr                          (_idu_io_csr_raddr),
     .io_csr_rdata                          (_csr_io_read_rdata),
@@ -16416,6 +16631,8 @@ module Core(
     .io_in_bits_bp_taken                   (_fq_io_deq1_bits_bp_taken),
     .io_in_bits_bp_target                  (_fq_io_deq1_bits_bp_target),
     .io_in_bits_bp_index                   (_fq_io_deq1_bits_bp_index),
+    .io_in_bits_ftq_idx                    (_fq_io_deq1_bits_ftq_idx),
+    .io_in_bits_ftq_generation             (_fq_io_deq1_bits_ftq_generation),
     .io_out_ready                          (~lane1_block),
     .io_out_valid                          (_idu1_io_out_valid),
     .io_out_bits_signals_exu_alu_srcA      (_idu1_io_out_bits_signals_exu_alu_srcA),
@@ -16442,6 +16659,8 @@ module Core(
     .io_out_bits_bp_taken                  (_idu1_io_out_bits_bp_taken),
     .io_out_bits_bp_target                 (_idu1_io_out_bits_bp_target),
     .io_out_bits_bp_index                  (_idu1_io_out_bits_bp_index),
+    .io_out_bits_ftq_idx                   (_idu1_io_out_bits_ftq_idx),
+    .io_out_bits_ftq_generation            (_idu1_io_out_bits_ftq_generation),
     .io_out_bits_inst                      (_idu1_io_out_bits_inst),
     .io_csr_raddr                          (_idu1_io_csr_raddr),
     .io_csr_rdata                          (_csr_io_read1_rdata),
@@ -16473,7 +16692,7 @@ module Core(
     .io_in_bits_state_state_num            (d_alu_bits_state_state_num),
     .io_in_bits_rob_idx                    (d_alu_bits_rob_idx),
     .io_in_bits_pdest                      (d_alu_bits_pdest),
-    .io_out_ready                          (exu_io_out_ready),
+    .io_out_ready                          (_wbArb_io_in_0_ready),
     .io_out_valid                          (_exu_io_out_valid),
     .io_out_bits_signals_lsu_mem_rd        (/* unused */),
     .io_out_bits_signals_lsu_mem_write     (/* unused */),
@@ -16498,6 +16717,55 @@ module Core(
     .io_pc_bits_pc_src                     (_exu_io_pc_bits_pc_src),
     .io_is_flush                           (flush_alu)
   );
+  EXU exu_alu1 (
+    .clock                                 (clock),
+    .reset                                 (reset),
+    .io_in_valid                           (hold_alu1),
+    .io_in_bits_signals_exu_alu_srcA       (d_alu1_bits_signals_exu_alu_srcA),
+    .io_in_bits_signals_exu_alu_srcB       (d_alu1_bits_signals_exu_alu_srcB),
+    .io_in_bits_signals_exu_alu_control    (d_alu1_bits_signals_exu_alu_control),
+    .io_in_bits_signals_exu_jump           (d_alu1_bits_signals_exu_jump),
+    .io_in_bits_signals_lsu_mem_rd         (d_alu1_bits_signals_lsu_mem_rd),
+    .io_in_bits_signals_lsu_mem_write      (d_alu1_bits_signals_lsu_mem_write),
+    .io_in_bits_signals_lsu_mem_valid      (d_alu1_bits_signals_lsu_mem_valid),
+    .io_in_bits_signals_wbu_reg_write      (d_alu1_bits_signals_wbu_reg_write),
+    .io_in_bits_signals_wbu_reg_write_sel  (d_alu1_bits_signals_wbu_reg_write_sel),
+    .io_in_bits_rd1                        (d_alu1_bits_rd1),
+    .io_in_bits_rd2                        (d_alu1_bits_rd2),
+    .io_in_bits_pc                         (d_alu1_bits_pc),
+    .io_in_bits_imm_ext                    (d_alu1_bits_imm_ext),
+    .io_in_bits_waddr                      (d_alu1_bits_waddr),
+    .io_in_bits_csr_rd1                    (d_alu1_bits_csr_rd1),
+    .io_in_bits_state_state                (d_alu1_bits_state_state),
+    .io_in_bits_state_state_num            (d_alu1_bits_state_state_num),
+    .io_in_bits_rob_idx                    (d_alu1_bits_rob_idx),
+    .io_in_bits_pdest                      (d_alu1_bits_pdest),
+    .io_out_ready                          (_wbArb_io_in_2_ready),
+    .io_out_valid                          (_exu_alu1_io_out_valid),
+    .io_out_bits_signals_lsu_mem_rd        (/* unused */),
+    .io_out_bits_signals_lsu_mem_write     (/* unused */),
+    .io_out_bits_signals_lsu_mem_valid     (/* unused */),
+    .io_out_bits_signals_wbu_reg_write     (_exu_alu1_io_out_bits_signals_wbu_reg_write),
+    .io_out_bits_signals_wbu_reg_write_sel
+      (_exu_alu1_io_out_bits_signals_wbu_reg_write_sel),
+    .io_out_bits_alu_result                (_exu_alu1_io_out_bits_alu_result),
+    .io_out_bits_pc                        (_exu_alu1_io_out_bits_pc),
+    .io_out_bits_next_pc                   (_exu_alu1_io_out_bits_next_pc),
+    .io_out_bits_imm_ext                   (_exu_alu1_io_out_bits_imm_ext),
+    .io_out_bits_rd2                       (_exu_alu1_io_out_bits_rd2),
+    .io_out_bits_waddr                     (_exu_alu1_io_out_bits_waddr),
+    .io_out_bits_csr_rd1                   (_exu_alu1_io_out_bits_csr_rd1),
+    .io_out_bits_state_state               (_exu_alu1_io_out_bits_state_state),
+    .io_out_bits_state_state_num           (_exu_alu1_io_out_bits_state_state_num),
+    .io_out_bits_rob_idx                   (_exu_alu1_io_out_bits_rob_idx),
+    .io_out_bits_pdest                     (_exu_alu1_io_out_bits_pdest),
+    .io_out_bits_br_taken                  (_exu_alu1_io_out_bits_br_taken),
+    .io_pc_bits_pc4_imm                    (/* unused */),
+    .io_pc_bits_pc4_rs2                    (/* unused */),
+    .io_pc_bits_pc4                        (/* unused */),
+    .io_pc_bits_pc_src                     (/* unused */),
+    .io_is_flush                           (flush_alu1)
+  );
   EXU exu_div (
     .clock                                 (clock),
     .reset                                 (reset),
@@ -16521,7 +16789,7 @@ module Core(
     .io_in_bits_state_state_num            (d_div_bits_state_state_num),
     .io_in_bits_rob_idx                    (d_div_bits_rob_idx),
     .io_in_bits_pdest                      (d_div_bits_pdest),
-    .io_out_ready                          (exu_div_io_out_ready),
+    .io_out_ready                          (_wbArb_io_in_3_ready),
     .io_out_valid                          (_exu_div_io_out_valid),
     .io_out_bits_signals_lsu_mem_rd        (/* unused */),
     .io_out_bits_signals_lsu_mem_write     (/* unused */),
@@ -16618,7 +16886,7 @@ module Core(
     .io_in_bits_rob_idx                    (lsu_stage_bits_rob_idx),
     .io_in_bits_pdest                      (lsu_stage_bits_pdest),
     .io_in_bits_br_taken                   (lsu_stage_bits_br_taken),
-    .io_out_ready                          (lsu_io_out_ready),
+    .io_out_ready                          (_wbArb_io_in_1_ready),
     .io_out_valid                          (_lsu_io_out_valid),
     .io_out_bits_signals_wbu_reg_write     (_lsu_io_out_bits_signals_wbu_reg_write),
     .io_out_bits_signals_wbu_reg_write_sel (_lsu_io_out_bits_signals_wbu_reg_write_sel),
@@ -16643,7 +16911,6 @@ module Core(
     .io_dmem_rresp                         (_dcache_io_cpu_rresp),
     .io_dmem_rvalid                        (_dcache_io_cpu_rvalid),
     .io_dmem_rid                           (_dcache_io_cpu_rid),
-    .io_dmem_rready                        (_lsu_io_dmem_rready),
     .io_is_flush                           (flush_lsu),
     .io_st_fwd_valid
       (_sq_io_fwd_valid | ~_sq_io_wait_load & _stbuf_io_ld_fwd_valid),
@@ -16651,57 +16918,56 @@ module Core(
       (_sq_io_fwd_valid ? _sq_io_fwd_data : _stbuf_io_ld_fwd_data),
     .io_st_fwd_wait
       (_sq_io_wait_load | ~_sq_io_fwd_valid & _stbuf_io_ld_wait),
-    .io_bus_busy                           (_lsu_io_bus_busy)
+    .io_ld_query_valid                     (_lsu_io_ld_query_valid),
+    .io_ld_query_rob                       (_lsu_io_ld_query_rob),
+    .io_ld_query_addr                      (_lsu_io_ld_query_addr),
+    .io_ld_query_mem_rd                    (_lsu_io_ld_query_mem_rd),
+    .io_rob_head                           (_rob_io_head),
+    .io_commit0_valid
+      (rob_io_commit_fire & _rob_io_commit_bits_mem_valid
+       & ~_rob_io_commit_bits_mem_write),
+    .io_commit0_rob                        (_rob_io_head),
+    .io_commit1_valid                      (lsu_io_commit1_valid),
+    .io_commit1_rob                        (_rob_io_commit1_idx),
+    .io_flush                              (sq_io_flush),
+    .io_flush_idx                          (flush_idx),
+    .io_flush_all                          (_busy_io_rebuild_mask_T | mret_flush_REG),
+    .io_mmio_ready                         (store_side_empty),
+    .io_store_resolve0_valid               (lq_store_resolve0_valid),
+    .io_store_resolve0_rob                 (lq_store_resolve0_rob),
+    .io_store_resolve0_addr                (lq_store_resolve0_addr),
+    .io_store_resolve0_mask                (lq_store_resolve0_mask),
+    .io_store_resolve1_valid               (lq_store_resolve1_valid),
+    .io_store_resolve1_rob                 (lq_store_resolve1_rob),
+    .io_store_resolve1_addr                (lq_store_resolve1_addr),
+    .io_store_resolve1_mask                (lq_store_resolve1_mask),
+    .io_mem_violation_valid                (_lsu_io_mem_violation_valid),
+    .io_mem_violation_rob                  (_lsu_io_mem_violation_rob),
+    .io_mem_violation_pc                   (_lsu_io_mem_violation_pc)
   );
   WBU wbu (
-    .io_in_valid                          (|wb_cand_mask),
-    .io_in_bits_signals_wbu_reg_write     (wb_sel_signals_wbu_reg_write),
+    .io_in_valid                          (_wbArb_io_out_0_valid),
+    .io_in_bits_signals_wbu_reg_write     (_wbArb_io_out_0_bits_signals_wbu_reg_write),
     .io_in_bits_signals_wbu_reg_write_sel
-      (_exu_div_io_out_ready_T
-         ? _exu_div_io_out_bits_signals_wbu_reg_write_sel
-         : _lsu_io_out_ready_T
-             ? _lsu_io_out_bits_signals_wbu_reg_write_sel
-             : _exu_io_out_bits_signals_wbu_reg_write_sel),
-    .io_in_bits_alu_result                (wb_sel_alu_result),
-    .io_in_bits_pc                        (wb_sel_pc),
-    .io_in_bits_imm_ext
-      (_exu_div_io_out_ready_T
-         ? _exu_div_io_out_bits_imm_ext
-         : _lsu_io_out_ready_T ? _lsu_io_out_bits_imm_ext : _exu_io_out_bits_imm_ext),
-    .io_in_bits_mem_read
-      (_exu_div_io_out_ready_T | ~_lsu_io_out_ready_T
-         ? 32'h0
-         : _lsu_io_out_bits_mem_read),
-    .io_in_bits_csr_rd1
-      (_exu_div_io_out_ready_T
-         ? _exu_div_io_out_bits_csr_rd1
-         : _lsu_io_out_ready_T ? _lsu_io_out_bits_csr_rd1 : _exu_io_out_bits_csr_rd1),
+      (_wbArb_io_out_0_bits_signals_wbu_reg_write_sel),
+    .io_in_bits_alu_result                (_wbArb_io_out_0_bits_alu_result),
+    .io_in_bits_pc                        (_wbArb_io_out_0_bits_pc),
+    .io_in_bits_imm_ext                   (_wbArb_io_out_0_bits_imm_ext),
+    .io_in_bits_mem_read                  (_wbArb_io_out_0_bits_mem_read),
+    .io_in_bits_csr_rd1                   (_wbArb_io_out_0_bits_csr_rd1),
     .io_refile_wdata                      (_wbu_io_refile_wdata),
     .io_refile_wen                        (_wbu_io_refile_wen)
   );
   WBU wbu1 (
-    .io_in_valid                          (|wb_cand_mask1),
-    .io_in_bits_signals_wbu_reg_write     (wb_sel1_signals_wbu_reg_write),
+    .io_in_valid                          (_wbArb_io_out_1_valid),
+    .io_in_bits_signals_wbu_reg_write     (_wbArb_io_out_1_bits_signals_wbu_reg_write),
     .io_in_bits_signals_wbu_reg_write_sel
-      (_exu_div_io_out_ready_T_2
-         ? _exu_div_io_out_bits_signals_wbu_reg_write_sel
-         : _lsu_io_out_ready_T_2
-             ? _lsu_io_out_bits_signals_wbu_reg_write_sel
-             : _exu_io_out_bits_signals_wbu_reg_write_sel),
-    .io_in_bits_alu_result                (wb_sel1_alu_result),
-    .io_in_bits_pc                        (wb_sel1_pc),
-    .io_in_bits_imm_ext
-      (_exu_div_io_out_ready_T_2
-         ? _exu_div_io_out_bits_imm_ext
-         : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_imm_ext : _exu_io_out_bits_imm_ext),
-    .io_in_bits_mem_read
-      (_exu_div_io_out_ready_T_2 | ~_lsu_io_out_ready_T_2
-         ? 32'h0
-         : _lsu_io_out_bits_mem_read),
-    .io_in_bits_csr_rd1
-      (_exu_div_io_out_ready_T_2
-         ? _exu_div_io_out_bits_csr_rd1
-         : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_csr_rd1 : _exu_io_out_bits_csr_rd1),
+      (_wbArb_io_out_1_bits_signals_wbu_reg_write_sel),
+    .io_in_bits_alu_result                (_wbArb_io_out_1_bits_alu_result),
+    .io_in_bits_pc                        (_wbArb_io_out_1_bits_pc),
+    .io_in_bits_imm_ext                   (_wbArb_io_out_1_bits_imm_ext),
+    .io_in_bits_mem_read                  (_wbArb_io_out_1_bits_mem_read),
+    .io_in_bits_csr_rd1                   (_wbArb_io_out_1_bits_csr_rd1),
     .io_refile_wdata                      (_wbu1_io_refile_wdata),
     .io_refile_wen                        (_wbu1_io_refile_wen)
   );
@@ -16713,13 +16979,21 @@ module Core(
       (irq_commit
          ? {24'h0,
             head_wb_valid
-              ? (head_wb0 ? wb_sel_state_state_num : wb_sel1_state_state_num)
+              ? (head_wb0
+                   ? _wbArb_io_out_0_bits_state_state_num
+                   : _wbArb_io_out_1_bits_state_state_num)
               : _rob_io_commit_bits_state_state_num}
          : 32'h8000000B),
     .io_irq_pc
       (irq_commit
          ? _rob_io_commit_bits_pc
-         : (|_rob_io_count) ? casez_tmp_28 : ifu_io_in_bits_r_next_pc),
+         : (|_rob_io_count)
+             ? casez_tmp_28
+             : _fq_io_deq_valid
+                 ? _fq_io_deq_bits_pc
+                 : _frontend_mepc_T
+                     ? _ifu_io_out_bits_bits_0_pc
+                     : ifu_io_in_bits_r_next_pc),
     .io_read_raddr  (_idu_io_csr_raddr),
     .io_read_rdata  (_csr_io_read_rdata),
     .io_read_mtvec  (_csr_io_read_mtvec),
@@ -16766,18 +17040,20 @@ module Core(
     .io_cpu_rresp         (_dcache_io_cpu_rresp),
     .io_cpu_rvalid        (_dcache_io_cpu_rvalid),
     .io_cpu_rid           (_dcache_io_cpu_rid),
-    .io_cpu_rready        (_lsu_io_dmem_rready),
     .io_mem_araddr        (io_dmem_araddr),
     .io_mem_arvalid       (_dcache_io_mem_arvalid),
     .io_mem_arready       (io_dmem_arready & ~store_bus_busy),
     .io_mem_rdata         (io_dmem_rdata),
     .io_mem_rresp         (io_dmem_rresp),
-    .io_mem_rvalid        (io_dmem_rvalid & ~store_bus_busy),
-    .io_mem_rready        (_dcache_io_mem_rready),
+    .io_mem_rvalid        (io_dmem_rvalid),
+    .io_mem_rready        (io_dmem_rready),
     .io_invalidate_valid  (dcache_io_invalidate_valid),
     .io_invalidate_addr   (head_st_addr),
-    .io_invalidate2_valid (_stbuf_io_deq_valid),
-    .io_invalidate2_addr  (_stbuf_io_deq_addr)
+    .io_invalidate2_valid (dcache_io_invalidate2_valid),
+    .io_invalidate2_addr  (cm1_st_addr),
+    .io_invalidate3_valid (_stbuf_io_deq_valid),
+    .io_invalidate3_addr  (_stbuf_io_deq_addr),
+    .io_busy              (_dcache_io_busy)
   );
   PRF prf (
     .clock     (clock),
@@ -16791,10 +17067,10 @@ module Core(
     .io_raddr4 (id1_psrc2),
     .io_rdata4 (_prf_io_rdata4),
     .io_wen1   (wb_wen),
-    .io_waddr1 (wb_sel_pdest),
+    .io_waddr1 (_wbArb_io_out_0_bits_pdest),
     .io_wdata1 (_wbu_io_refile_wdata),
     .io_wen2   (wb1_wen),
-    .io_waddr2 (wb_sel1_pdest),
+    .io_waddr2 (_wbArb_io_out_1_bits_pdest),
     .io_wdata2 (_wbu1_io_refile_wdata)
   );
   BusyTable busy (
@@ -16813,16 +17089,16 @@ module Core(
     .io_set_en2      (en_ren1 & id1_doren),
     .io_set_addr2    (_rename_io_dest_phys1),
     .io_clr_en       (wb_wen),
-    .io_clr_addr     (wb_sel_pdest),
+    .io_clr_addr     (_wbArb_io_out_0_bits_pdest),
     .io_clr_en2      (wb1_wen),
-    .io_clr_addr2    (wb_sel1_pdest),
+    .io_clr_addr2    (_wbArb_io_out_1_bits_pdest),
     .io_clr_mask     (busy_io_rebuild ? 64'h0 : killBusy),
     .io_rebuild      (busy_io_rebuild),
     .io_rebuild_mask
       (_busy_io_rebuild_mask_T | mret_flush_REG | ~flush_now
          ? 64'h0
-         : ~((can_wb & (|wb_sel_pdest) ? _wbClearMask_T_2[63:0] : 64'h0)
-             | (can_wb1 & (|wb_sel1_pdest) ? _wbClearMask_T_6[63:0] : 64'h0))
+         : ~((can_wb & (|_wbArb_io_out_0_bits_pdest) ? _wbClearMask_T_2[63:0] : 64'h0)
+             | (can_wb1 & (|_wbArb_io_out_1_bits_pdest) ? _wbClearMask_T_6[63:0] : 64'h0))
            & _busyRebuild_T_30)
   );
   Rename2 rename (
@@ -16859,9 +17135,11 @@ module Core(
     .io_cm1_old_phys    (_rob_io_commit1_bits_old_phys),
     .io_cm1_new_phys    (_rob_io_commit1_bits_new_phys),
     .io_cm1_arch_rd     (_rob_io_commit1_bits_arch_rd),
+    .io_cm1_cp_valid    (rename_io_cm1_cp_valid),
+    .io_cm1_cp_idx      (_rob_io_commit1_bits_cp_idx),
     .io_rob_head        (_rob_io_head),
-    .io_restore_cp      (mis_predict_dbg),
-    .io_restore_cp_idx  (mis_predict_dbg ? d_alu_bits_cp_idx : mis_cp_r),
+    .io_restore_cp      (branchRecoveryWins),
+    .io_restore_cp_idx  (branchRecoveryWins ? d_alu_bits_cp_idx : mis_cp_r),
     .io_rat_out_0       (_rename_io_rat_out_0),
     .io_rat_out_1       (_rename_io_rat_out_1),
     .io_rat_out_2       (_rename_io_rat_out_2),
@@ -16928,7 +17206,7 @@ module Core(
     .io_arch_rat_out_31 (_rename_io_arch_rat_out_31),
     .io_free_cnt        (_rename_io_free_cnt),
     .io_cp_full         (_rename_io_cp_full),
-    .io_rebuild         (_busy_io_rebuild_mask_T | mret_flush_REG),
+    .io_rebuild         (_busy_io_rebuild_mask_T | mret_flush_REG | memoryRecoveryWins),
     .io_rebuild_rat_0
       (take_31 & casez_tmp_160 == 5'h0
          ? casez_tmp_161
@@ -19730,6 +20008,8 @@ module Core(
     .io_enq_bits_state_state        (_idu_io_out_bits_state_state),
     .io_enq_bits_state_state_num    (_idu_io_out_bits_state_state_num),
     .io_enq_bits_bp_index           (_idu_io_out_bits_bp_index),
+    .io_enq_bits_ftq_idx            (_idu_io_out_bits_ftq_idx),
+    .io_enq_bits_ftq_generation     (_idu_io_out_bits_ftq_generation),
     .io_enq_bits_cp_idx             (_rename_io_cp_idx0),
     .io_enq_bits_actual_target      (_idu_io_out_bits_pc + 32'h4),
     .io_enq_bits_rs1_val            (id_src1),
@@ -19756,6 +20036,8 @@ module Core(
     .io_enq1_bits_state_state       (_idu1_io_out_bits_state_state),
     .io_enq1_bits_state_state_num   (_idu1_io_out_bits_state_state_num),
     .io_enq1_bits_bp_index          (_idu1_io_out_bits_bp_index),
+    .io_enq1_bits_ftq_idx           (_idu1_io_out_bits_ftq_idx),
+    .io_enq1_bits_ftq_generation    (_idu1_io_out_bits_ftq_generation),
     .io_enq1_bits_cp_idx            (_rename_io_cp_idx1),
     .io_enq1_bits_actual_target     (_idu1_io_out_bits_pc + 32'h4),
     .io_enq1_bits_rs1_val           (id1_src1),
@@ -19763,35 +20045,23 @@ module Core(
     .io_enq1_bits_csr_rd1           (_idu1_io_out_bits_csr_rd1),
     .io_enq1_idx                    (_rob_io_enq1_idx),
     .io_wb_fire                     (can_wb),
-    .io_wb_idx                      (wb_sel_rob_idx),
+    .io_wb_idx                      (_wbArb_io_out_0_bits_rob_idx),
     .io_wb_val                      (_wbu_io_refile_wdata),
-    .io_wb_state_state              (wb_sel_state_state),
-    .io_wb_state_state_num          (wb_sel_state_state_num),
-    .io_wb_mem_addr                 (wb_sel_alu_result),
-    .io_wb_mem_wdata                (wb_sel_store_data),
-    .io_wb_actual_taken
-      (_exu_div_io_out_ready_T
-         ? _exu_div_io_out_bits_br_taken
-         : _lsu_io_out_ready_T ? _lsu_io_out_bits_br_taken : _exu_io_out_bits_br_taken),
-    .io_wb_actual_target
-      (_exu_div_io_out_ready_T
-         ? _exu_div_io_out_bits_next_pc
-         : _lsu_io_out_ready_T ? _lsu_io_out_bits_next_pc : _exu_io_out_bits_next_pc),
+    .io_wb_state_state              (_wbArb_io_out_0_bits_state_state),
+    .io_wb_state_state_num          (_wbArb_io_out_0_bits_state_state_num),
+    .io_wb_mem_addr                 (_wbArb_io_out_0_bits_alu_result),
+    .io_wb_mem_wdata                (_wbArb_io_out_0_bits_store_data),
+    .io_wb_actual_taken             (_wbArb_io_out_0_bits_br_taken),
+    .io_wb_actual_target            (_wbArb_io_out_0_bits_next_pc),
     .io_wb1_fire                    (can_wb1),
-    .io_wb1_idx                     (wb_sel1_rob_idx),
+    .io_wb1_idx                     (_wbArb_io_out_1_bits_rob_idx),
     .io_wb1_val                     (_wbu1_io_refile_wdata),
-    .io_wb1_state_state             (wb_sel1_state_state),
-    .io_wb1_state_state_num         (wb_sel1_state_state_num),
-    .io_wb1_mem_addr                (wb_sel1_alu_result),
-    .io_wb1_mem_wdata               (wb_sel1_store_data),
-    .io_wb1_actual_taken
-      (_exu_div_io_out_ready_T_2
-         ? _exu_div_io_out_bits_br_taken
-         : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_br_taken : _exu_io_out_bits_br_taken),
-    .io_wb1_actual_target
-      (_exu_div_io_out_ready_T_2
-         ? _exu_div_io_out_bits_next_pc
-         : _lsu_io_out_ready_T_2 ? _lsu_io_out_bits_next_pc : _exu_io_out_bits_next_pc),
+    .io_wb1_state_state             (_wbArb_io_out_1_bits_state_state),
+    .io_wb1_state_state_num         (_wbArb_io_out_1_bits_state_state_num),
+    .io_wb1_mem_addr                (_wbArb_io_out_1_bits_alu_result),
+    .io_wb1_mem_wdata               (_wbArb_io_out_1_bits_store_data),
+    .io_wb1_actual_taken            (_wbArb_io_out_1_bits_br_taken),
+    .io_wb1_actual_target           (_wbArb_io_out_1_bits_next_pc),
     .io_commit_valid                (_rob_io_commit_valid),
     .io_commit_idx                  (_rob_io_commit_idx),
     .io_commit_bits_pc              (_rob_io_commit_bits_pc),
@@ -19813,6 +20083,8 @@ module Core(
     .io_commit_bits_state_state     (_rob_io_commit_bits_state_state),
     .io_commit_bits_state_state_num (_rob_io_commit_bits_state_state_num),
     .io_commit_bits_bp_index        (_rob_io_commit_bits_bp_index),
+    .io_commit_bits_ftq_idx         (_rob_io_commit_bits_ftq_idx),
+    .io_commit_bits_ftq_generation  (_rob_io_commit_bits_ftq_generation),
     .io_commit_bits_cp_idx          (_rob_io_commit_bits_cp_idx),
     .io_commit_bits_actual_taken    (_rob_io_commit_bits_actual_taken),
     .io_commit_bits_actual_target   (_rob_io_commit_bits_actual_target),
@@ -19825,11 +20097,14 @@ module Core(
     .io_commit_fire                 (rob_io_commit_fire),
     .io_commit1_valid               (_rob_io_commit1_valid),
     .io_commit1_idx                 (_rob_io_commit1_idx),
-    .io_commit1_bits_pc             (io_commit_pc1),
+    .io_commit1_bits_pc             (_rob_io_commit1_bits_pc),
+    .io_commit1_bits_inst           (_rob_io_commit1_bits_inst),
     .io_commit1_bits_reg_write      (_rob_io_commit1_bits_reg_write),
     .io_commit1_bits_reg_write_sel  (_rob_io_commit1_bits_reg_write_sel),
     .io_commit1_bits_csr_write      (_rob_io_commit1_bits_csr_write),
     .io_commit1_bits_mem_valid      (_rob_io_commit1_bits_mem_valid),
+    .io_commit1_bits_mem_write      (_rob_io_commit1_bits_mem_write),
+    .io_commit1_bits_mem_wmask      (_rob_io_commit1_bits_mem_wmask),
     .io_commit1_bits_jump           (_rob_io_commit1_bits_jump),
     .io_commit1_bits_arch_rd        (_rob_io_commit1_bits_arch_rd),
     .io_commit1_bits_old_phys       (_rob_io_commit1_bits_old_phys),
@@ -19838,7 +20113,15 @@ module Core(
     .io_commit1_bits_is_ebreak      (_rob_io_commit1_bits_is_ebreak),
     .io_commit1_bits_is_fencei      (_rob_io_commit1_bits_is_fencei),
     .io_commit1_bits_state_state    (_rob_io_commit1_bits_state_state),
+    .io_commit1_bits_bp_index       (_rob_io_commit1_bits_bp_index),
+    .io_commit1_bits_ftq_idx        (_rob_io_commit1_bits_ftq_idx),
+    .io_commit1_bits_ftq_generation (_rob_io_commit1_bits_ftq_generation),
+    .io_commit1_bits_cp_idx         (_rob_io_commit1_bits_cp_idx),
+    .io_commit1_bits_actual_taken   (_rob_io_commit1_bits_actual_taken),
+    .io_commit1_bits_actual_target  (_rob_io_commit1_bits_actual_target),
     .io_commit1_bits_mem_addr       (_rob_io_commit1_bits_mem_addr),
+    .io_commit1_bits_mem_wdata      (_rob_io_commit1_bits_mem_wdata),
+    .io_commit1_bits_addr_ready     (_rob_io_commit1_bits_addr_ready),
     .io_commit1_fire                (rob_io_commit1_fire),
     .io_flush                       (sq_io_flush),
     .io_flush_idx                   (flush_idx),
@@ -20295,11 +20578,11 @@ module Core(
     .io_count                       (_rob_io_count)
   );
   RS rs (
-    .clock                               (clock),
-    .reset                               (reset),
-    .io_enq_fire                         (en_ren),
-    .io_enq_bits_rob_idx                 (_rob_io_enq_idx),
-    .io_enq_bits_cp_idx                  (_rename_io_cp_idx0),
+    .clock                                (clock),
+    .reset                                (reset),
+    .io_enq_fire                          (en_ren),
+    .io_enq_bits_rob_idx                  (_rob_io_enq_idx),
+    .io_enq_bits_cp_idx                   (_rename_io_cp_idx0),
     .io_enq_bits_src1_ready
       (~_idu_io_rs1_ren | _busy_io_ready1 | _id1_s2_rdy_cdb_hit_T & _idu_io_rs1_ren
        & (|id_psrc1) & _id_s1_rdy_cdb_hit_T_4 | _id1_s2_rdy_cdb1_hit_T & _idu_io_rs1_ren
@@ -20322,9 +20605,9 @@ module Core(
        | _id1_s2_rdy_wbu_hit_T & _idu_io_rs2_ren & (|id_psrc2) & _id_s2_rdy_wbu_hit_T_4
        | _id1_s2_rdy_wbu1_hit_T & _idu_io_rs2_ren & (|id_psrc2)
        & _id_s2_rdy_wbu1_hit_T_4),
-    .io_enq_bits_src1_phys               (id_psrc1),
-    .io_enq_bits_src2_phys               (id_psrc2),
-    .io_enq_bits_src1_val                (id_src1),
+    .io_enq_bits_src1_phys                (id_psrc1),
+    .io_enq_bits_src2_phys                (id_psrc2),
+    .io_enq_bits_src1_val                 (id_src1),
     .io_enq_bits_src2_val
       (id_src2_cdb_hit
          ? _wbu_io_refile_wdata
@@ -20344,96 +20627,131 @@ module Core(
                                & ~id_src2_cdb_hit & ~id_src2_cdb1_hit
                                  ? _wbu1_io_refile_wdata
                                  : _prf_io_rdata2),
-    .io_enq_bits_pdest                   (_rename_io_dest_phys),
-    .io_enq_bits_pc                      (_idu_io_out_bits_pc),
-    .io_enq_bits_imm_ext                 (_idu_io_out_bits_imm_ext),
-    .io_enq_bits_waddr                   (_idu_io_out_bits_waddr),
-    .io_enq_bits_csr_rd1                 (_idu_io_out_bits_csr_rd1),
-    .io_enq_bits_state_state             (_idu_io_out_bits_state_state),
-    .io_enq_bits_state_state_num         (_idu_io_out_bits_state_state_num),
-    .io_enq_bits_bp_valid                (_idu_io_out_bits_bp_valid),
-    .io_enq_bits_bp_taken                (_idu_io_out_bits_bp_taken),
-    .io_enq_bits_bp_target               (_idu_io_out_bits_bp_target),
-    .io_enq_bits_exu_alu_srcA            (_idu_io_out_bits_signals_exu_alu_srcA),
-    .io_enq_bits_exu_alu_srcB            (_idu_io_out_bits_signals_exu_alu_srcB),
-    .io_enq_bits_exu_alu_control         (_idu_io_out_bits_signals_exu_alu_control),
-    .io_enq_bits_exu_jump                (_idu_io_out_bits_signals_exu_jump),
-    .io_enq_bits_lsu_mem_rd              (_idu_io_out_bits_signals_lsu_mem_rd),
-    .io_enq_bits_lsu_mem_write           (_idu_io_out_bits_signals_lsu_mem_write),
-    .io_enq_bits_lsu_mem_valid           (_idu_io_out_bits_signals_lsu_mem_valid),
-    .io_enq_bits_wbu_reg_write           (_idu_io_out_bits_signals_wbu_reg_write),
-    .io_enq_bits_wbu_reg_write_sel       (_idu_io_out_bits_signals_wbu_reg_write_sel),
-    .io_count                            (/* unused */),
-    .io_rob_head                         (_rob_io_head),
-    .io_rob_st_pending                   (_sq_io_unresolved_mask),
-    .io_issue_alu_valid                  (_rs_io_issue_alu_valid),
-    .io_issue_alu_bits_rob_idx           (_rs_io_issue_alu_bits_rob_idx),
-    .io_issue_alu_bits_cp_idx            (_rs_io_issue_alu_bits_cp_idx),
-    .io_issue_alu_bits_src1_val          (_rs_io_issue_alu_bits_src1_val),
-    .io_issue_alu_bits_src2_val          (_rs_io_issue_alu_bits_src2_val),
-    .io_issue_alu_bits_pdest             (_rs_io_issue_alu_bits_pdest),
-    .io_issue_alu_bits_pc                (_rs_io_issue_alu_bits_pc),
-    .io_issue_alu_bits_imm_ext           (_rs_io_issue_alu_bits_imm_ext),
-    .io_issue_alu_bits_waddr             (_rs_io_issue_alu_bits_waddr),
-    .io_issue_alu_bits_csr_rd1           (_rs_io_issue_alu_bits_csr_rd1),
-    .io_issue_alu_bits_state_state       (_rs_io_issue_alu_bits_state_state),
-    .io_issue_alu_bits_state_state_num   (_rs_io_issue_alu_bits_state_state_num),
-    .io_issue_alu_bits_bp_valid          (_rs_io_issue_alu_bits_bp_valid),
-    .io_issue_alu_bits_bp_taken          (_rs_io_issue_alu_bits_bp_taken),
-    .io_issue_alu_bits_bp_target         (_rs_io_issue_alu_bits_bp_target),
-    .io_issue_alu_bits_exu_alu_srcA      (_rs_io_issue_alu_bits_exu_alu_srcA),
-    .io_issue_alu_bits_exu_alu_srcB      (_rs_io_issue_alu_bits_exu_alu_srcB),
-    .io_issue_alu_bits_exu_alu_control   (_rs_io_issue_alu_bits_exu_alu_control),
-    .io_issue_alu_bits_exu_jump          (_rs_io_issue_alu_bits_exu_jump),
-    .io_issue_alu_bits_lsu_mem_rd        (_rs_io_issue_alu_bits_lsu_mem_rd),
-    .io_issue_alu_bits_lsu_mem_write     (_rs_io_issue_alu_bits_lsu_mem_write),
-    .io_issue_alu_bits_lsu_mem_valid     (_rs_io_issue_alu_bits_lsu_mem_valid),
-    .io_issue_alu_bits_wbu_reg_write     (_rs_io_issue_alu_bits_wbu_reg_write),
-    .io_issue_alu_bits_wbu_reg_write_sel (_rs_io_issue_alu_bits_wbu_reg_write_sel),
-    .io_issue_div_valid                  (_rs_io_issue_div_valid),
-    .io_issue_div_bits_rob_idx           (_rs_io_issue_div_bits_rob_idx),
-    .io_issue_div_bits_src1_val          (_rs_io_issue_div_bits_src1_val),
-    .io_issue_div_bits_src2_val          (_rs_io_issue_div_bits_src2_val),
-    .io_issue_div_bits_pdest             (_rs_io_issue_div_bits_pdest),
-    .io_issue_div_bits_pc                (_rs_io_issue_div_bits_pc),
-    .io_issue_div_bits_imm_ext           (_rs_io_issue_div_bits_imm_ext),
-    .io_issue_div_bits_waddr             (_rs_io_issue_div_bits_waddr),
-    .io_issue_div_bits_csr_rd1           (_rs_io_issue_div_bits_csr_rd1),
-    .io_issue_div_bits_state_state       (_rs_io_issue_div_bits_state_state),
-    .io_issue_div_bits_state_state_num   (_rs_io_issue_div_bits_state_state_num),
-    .io_issue_div_bits_exu_alu_srcA      (_rs_io_issue_div_bits_exu_alu_srcA),
-    .io_issue_div_bits_exu_alu_srcB      (_rs_io_issue_div_bits_exu_alu_srcB),
-    .io_issue_div_bits_exu_alu_control   (_rs_io_issue_div_bits_exu_alu_control),
-    .io_issue_div_bits_exu_jump          (_rs_io_issue_div_bits_exu_jump),
-    .io_issue_div_bits_lsu_mem_rd        (_rs_io_issue_div_bits_lsu_mem_rd),
-    .io_issue_div_bits_lsu_mem_write     (_rs_io_issue_div_bits_lsu_mem_write),
-    .io_issue_div_bits_lsu_mem_valid     (_rs_io_issue_div_bits_lsu_mem_valid),
-    .io_issue_div_bits_wbu_reg_write     (_rs_io_issue_div_bits_wbu_reg_write),
-    .io_issue_div_bits_wbu_reg_write_sel (_rs_io_issue_div_bits_wbu_reg_write_sel),
-    .io_issue_lsu_valid                  (_rs_io_issue_lsu_valid),
-    .io_issue_lsu_bits_rob_idx           (_rs_io_issue_lsu_bits_rob_idx),
-    .io_issue_lsu_bits_src1_val          (_rs_io_issue_lsu_bits_src1_val),
-    .io_issue_lsu_bits_src2_val          (_rs_io_issue_lsu_bits_src2_val),
-    .io_issue_lsu_bits_pdest             (_rs_io_issue_lsu_bits_pdest),
-    .io_issue_lsu_bits_pc                (_rs_io_issue_lsu_bits_pc),
-    .io_issue_lsu_bits_imm_ext           (_rs_io_issue_lsu_bits_imm_ext),
-    .io_issue_lsu_bits_waddr             (_rs_io_issue_lsu_bits_waddr),
-    .io_issue_lsu_bits_csr_rd1           (_rs_io_issue_lsu_bits_csr_rd1),
-    .io_issue_lsu_bits_state_state       (_rs_io_issue_lsu_bits_state_state),
-    .io_issue_lsu_bits_state_state_num   (_rs_io_issue_lsu_bits_state_state_num),
-    .io_issue_lsu_bits_exu_alu_srcA      (_rs_io_issue_lsu_bits_exu_alu_srcA),
-    .io_issue_lsu_bits_exu_alu_srcB      (_rs_io_issue_lsu_bits_exu_alu_srcB),
-    .io_issue_lsu_bits_exu_alu_control   (_rs_io_issue_lsu_bits_exu_alu_control),
-    .io_issue_lsu_bits_exu_jump          (_rs_io_issue_lsu_bits_exu_jump),
-    .io_issue_lsu_bits_lsu_mem_rd        (_rs_io_issue_lsu_bits_lsu_mem_rd),
-    .io_issue_lsu_bits_lsu_mem_write     (_rs_io_issue_lsu_bits_lsu_mem_write),
-    .io_issue_lsu_bits_lsu_mem_valid     (_rs_io_issue_lsu_bits_lsu_mem_valid),
-    .io_issue_lsu_bits_wbu_reg_write     (_rs_io_issue_lsu_bits_wbu_reg_write),
-    .io_issue_lsu_bits_wbu_reg_write_sel (_rs_io_issue_lsu_bits_wbu_reg_write_sel),
-    .io_enq1_fire                        (en_ren1),
-    .io_enq1_bits_rob_idx                (_rob_io_enq1_idx),
-    .io_enq1_bits_cp_idx                 (_rename_io_cp_idx1),
-    .io_enq1_bits_src1_ready             (id1_s1_rdy),
+    .io_enq_bits_pdest                    (_rename_io_dest_phys),
+    .io_enq_bits_pc                       (_idu_io_out_bits_pc),
+    .io_enq_bits_inst                     (_idu_io_out_bits_inst),
+    .io_enq_bits_imm_ext                  (_idu_io_out_bits_imm_ext),
+    .io_enq_bits_waddr                    (_idu_io_out_bits_waddr),
+    .io_enq_bits_is_ebreak                (_idu_io_out_bits_is_ebreak),
+    .io_enq_bits_is_fencei                (_idu_io_is_fencei),
+    .io_enq_bits_csr_rd1                  (_idu_io_out_bits_csr_rd1),
+    .io_enq_bits_state_state              (_idu_io_out_bits_state_state),
+    .io_enq_bits_state_state_num          (_idu_io_out_bits_state_state_num),
+    .io_enq_bits_bp_valid                 (_idu_io_out_bits_bp_valid),
+    .io_enq_bits_bp_taken                 (_idu_io_out_bits_bp_taken),
+    .io_enq_bits_bp_target                (_idu_io_out_bits_bp_target),
+    .io_enq_bits_bp_index                 (_idu_io_out_bits_bp_index),
+    .io_enq_bits_ftq_idx                  (_idu_io_out_bits_ftq_idx),
+    .io_enq_bits_ftq_generation           (_idu_io_out_bits_ftq_generation),
+    .io_enq_bits_exu_alu_srcA             (_idu_io_out_bits_signals_exu_alu_srcA),
+    .io_enq_bits_exu_alu_srcB             (_idu_io_out_bits_signals_exu_alu_srcB),
+    .io_enq_bits_exu_alu_control          (_idu_io_out_bits_signals_exu_alu_control),
+    .io_enq_bits_exu_jump                 (_idu_io_out_bits_signals_exu_jump),
+    .io_enq_bits_lsu_mem_rd               (_idu_io_out_bits_signals_lsu_mem_rd),
+    .io_enq_bits_lsu_mem_write            (_idu_io_out_bits_signals_lsu_mem_write),
+    .io_enq_bits_lsu_mem_valid            (_idu_io_out_bits_signals_lsu_mem_valid),
+    .io_enq_bits_wbu_reg_write            (_idu_io_out_bits_signals_wbu_reg_write),
+    .io_enq_bits_wbu_reg_write_sel        (_idu_io_out_bits_signals_wbu_reg_write_sel),
+    .io_enq_bits_wbu_csr_write            (_idu_io_out_bits_signals_wbu_csr_write),
+    .io_count                             (/* unused */),
+    .io_rob_head                          (_rob_io_head),
+    .io_rob_st_pending                    (_sq_io_unresolved_mask),
+    .io_issue_alu_valid                   (_rs_io_issue_alu_valid),
+    .io_issue_alu_bits_rob_idx            (_rs_io_issue_alu_bits_rob_idx),
+    .io_issue_alu_bits_cp_idx             (_rs_io_issue_alu_bits_cp_idx),
+    .io_issue_alu_bits_src1_val           (_rs_io_issue_alu_bits_src1_val),
+    .io_issue_alu_bits_src2_val           (_rs_io_issue_alu_bits_src2_val),
+    .io_issue_alu_bits_pdest              (_rs_io_issue_alu_bits_pdest),
+    .io_issue_alu_bits_pc                 (_rs_io_issue_alu_bits_pc),
+    .io_issue_alu_bits_inst               (_rs_io_issue_alu_bits_inst),
+    .io_issue_alu_bits_imm_ext            (_rs_io_issue_alu_bits_imm_ext),
+    .io_issue_alu_bits_waddr              (_rs_io_issue_alu_bits_waddr),
+    .io_issue_alu_bits_csr_rd1            (_rs_io_issue_alu_bits_csr_rd1),
+    .io_issue_alu_bits_state_state        (_rs_io_issue_alu_bits_state_state),
+    .io_issue_alu_bits_state_state_num    (_rs_io_issue_alu_bits_state_state_num),
+    .io_issue_alu_bits_bp_valid           (_rs_io_issue_alu_bits_bp_valid),
+    .io_issue_alu_bits_bp_taken           (_rs_io_issue_alu_bits_bp_taken),
+    .io_issue_alu_bits_bp_target          (_rs_io_issue_alu_bits_bp_target),
+    .io_issue_alu_bits_bp_index           (_rs_io_issue_alu_bits_bp_index),
+    .io_issue_alu_bits_ftq_idx            (_rs_io_issue_alu_bits_ftq_idx),
+    .io_issue_alu_bits_ftq_generation     (_rs_io_issue_alu_bits_ftq_generation),
+    .io_issue_alu_bits_exu_alu_srcA       (_rs_io_issue_alu_bits_exu_alu_srcA),
+    .io_issue_alu_bits_exu_alu_srcB       (_rs_io_issue_alu_bits_exu_alu_srcB),
+    .io_issue_alu_bits_exu_alu_control    (_rs_io_issue_alu_bits_exu_alu_control),
+    .io_issue_alu_bits_exu_jump           (_rs_io_issue_alu_bits_exu_jump),
+    .io_issue_alu_bits_lsu_mem_rd         (_rs_io_issue_alu_bits_lsu_mem_rd),
+    .io_issue_alu_bits_lsu_mem_write      (_rs_io_issue_alu_bits_lsu_mem_write),
+    .io_issue_alu_bits_lsu_mem_valid      (_rs_io_issue_alu_bits_lsu_mem_valid),
+    .io_issue_alu_bits_wbu_reg_write      (_rs_io_issue_alu_bits_wbu_reg_write),
+    .io_issue_alu_bits_wbu_reg_write_sel  (_rs_io_issue_alu_bits_wbu_reg_write_sel),
+    .io_issue_alu_fire                    (take_alu_issue),
+    .io_issue_alu1_valid                  (_rs_io_issue_alu1_valid),
+    .io_issue_alu1_bits_rob_idx           (_rs_io_issue_alu1_bits_rob_idx),
+    .io_issue_alu1_bits_src1_val          (_rs_io_issue_alu1_bits_src1_val),
+    .io_issue_alu1_bits_src2_val          (_rs_io_issue_alu1_bits_src2_val),
+    .io_issue_alu1_bits_pdest             (_rs_io_issue_alu1_bits_pdest),
+    .io_issue_alu1_bits_pc                (_rs_io_issue_alu1_bits_pc),
+    .io_issue_alu1_bits_imm_ext           (_rs_io_issue_alu1_bits_imm_ext),
+    .io_issue_alu1_bits_waddr             (_rs_io_issue_alu1_bits_waddr),
+    .io_issue_alu1_bits_csr_rd1           (_rs_io_issue_alu1_bits_csr_rd1),
+    .io_issue_alu1_bits_state_state       (_rs_io_issue_alu1_bits_state_state),
+    .io_issue_alu1_bits_state_state_num   (_rs_io_issue_alu1_bits_state_state_num),
+    .io_issue_alu1_bits_exu_alu_srcA      (_rs_io_issue_alu1_bits_exu_alu_srcA),
+    .io_issue_alu1_bits_exu_alu_srcB      (_rs_io_issue_alu1_bits_exu_alu_srcB),
+    .io_issue_alu1_bits_exu_alu_control   (_rs_io_issue_alu1_bits_exu_alu_control),
+    .io_issue_alu1_bits_exu_jump          (_rs_io_issue_alu1_bits_exu_jump),
+    .io_issue_alu1_bits_lsu_mem_rd        (_rs_io_issue_alu1_bits_lsu_mem_rd),
+    .io_issue_alu1_bits_lsu_mem_write     (_rs_io_issue_alu1_bits_lsu_mem_write),
+    .io_issue_alu1_bits_lsu_mem_valid     (_rs_io_issue_alu1_bits_lsu_mem_valid),
+    .io_issue_alu1_bits_wbu_reg_write     (_rs_io_issue_alu1_bits_wbu_reg_write),
+    .io_issue_alu1_bits_wbu_reg_write_sel (_rs_io_issue_alu1_bits_wbu_reg_write_sel),
+    .io_issue_alu1_fire                   (take_alu1_issue),
+    .io_issue_div_valid                   (_rs_io_issue_div_valid),
+    .io_issue_div_bits_rob_idx            (_rs_io_issue_div_bits_rob_idx),
+    .io_issue_div_bits_src1_val           (_rs_io_issue_div_bits_src1_val),
+    .io_issue_div_bits_src2_val           (_rs_io_issue_div_bits_src2_val),
+    .io_issue_div_bits_pdest              (_rs_io_issue_div_bits_pdest),
+    .io_issue_div_bits_pc                 (_rs_io_issue_div_bits_pc),
+    .io_issue_div_bits_imm_ext            (_rs_io_issue_div_bits_imm_ext),
+    .io_issue_div_bits_waddr              (_rs_io_issue_div_bits_waddr),
+    .io_issue_div_bits_csr_rd1            (_rs_io_issue_div_bits_csr_rd1),
+    .io_issue_div_bits_state_state        (_rs_io_issue_div_bits_state_state),
+    .io_issue_div_bits_state_state_num    (_rs_io_issue_div_bits_state_state_num),
+    .io_issue_div_bits_exu_alu_srcA       (_rs_io_issue_div_bits_exu_alu_srcA),
+    .io_issue_div_bits_exu_alu_srcB       (_rs_io_issue_div_bits_exu_alu_srcB),
+    .io_issue_div_bits_exu_alu_control    (_rs_io_issue_div_bits_exu_alu_control),
+    .io_issue_div_bits_exu_jump           (_rs_io_issue_div_bits_exu_jump),
+    .io_issue_div_bits_lsu_mem_rd         (_rs_io_issue_div_bits_lsu_mem_rd),
+    .io_issue_div_bits_lsu_mem_write      (_rs_io_issue_div_bits_lsu_mem_write),
+    .io_issue_div_bits_lsu_mem_valid      (_rs_io_issue_div_bits_lsu_mem_valid),
+    .io_issue_div_bits_wbu_reg_write      (_rs_io_issue_div_bits_wbu_reg_write),
+    .io_issue_div_bits_wbu_reg_write_sel  (_rs_io_issue_div_bits_wbu_reg_write_sel),
+    .io_issue_div_fire                    (take_div_issue),
+    .io_issue_lsu_valid                   (_rs_io_issue_lsu_valid),
+    .io_issue_lsu_bits_rob_idx            (_rs_io_issue_lsu_bits_rob_idx),
+    .io_issue_lsu_bits_src1_val           (_rs_io_issue_lsu_bits_src1_val),
+    .io_issue_lsu_bits_src2_val           (_rs_io_issue_lsu_bits_src2_val),
+    .io_issue_lsu_bits_pdest              (_rs_io_issue_lsu_bits_pdest),
+    .io_issue_lsu_bits_pc                 (_rs_io_issue_lsu_bits_pc),
+    .io_issue_lsu_bits_imm_ext            (_rs_io_issue_lsu_bits_imm_ext),
+    .io_issue_lsu_bits_waddr              (_rs_io_issue_lsu_bits_waddr),
+    .io_issue_lsu_bits_csr_rd1            (_rs_io_issue_lsu_bits_csr_rd1),
+    .io_issue_lsu_bits_state_state        (_rs_io_issue_lsu_bits_state_state),
+    .io_issue_lsu_bits_state_state_num    (_rs_io_issue_lsu_bits_state_state_num),
+    .io_issue_lsu_bits_exu_alu_srcA       (_rs_io_issue_lsu_bits_exu_alu_srcA),
+    .io_issue_lsu_bits_exu_alu_srcB       (_rs_io_issue_lsu_bits_exu_alu_srcB),
+    .io_issue_lsu_bits_exu_alu_control    (_rs_io_issue_lsu_bits_exu_alu_control),
+    .io_issue_lsu_bits_exu_jump           (_rs_io_issue_lsu_bits_exu_jump),
+    .io_issue_lsu_bits_lsu_mem_rd         (_rs_io_issue_lsu_bits_lsu_mem_rd),
+    .io_issue_lsu_bits_lsu_mem_write      (_rs_io_issue_lsu_bits_lsu_mem_write),
+    .io_issue_lsu_bits_lsu_mem_valid      (_rs_io_issue_lsu_bits_lsu_mem_valid),
+    .io_issue_lsu_bits_wbu_reg_write      (_rs_io_issue_lsu_bits_wbu_reg_write),
+    .io_issue_lsu_bits_wbu_reg_write_sel  (_rs_io_issue_lsu_bits_wbu_reg_write_sel),
+    .io_issue_lsu_fire                    (take_lsu_issue),
+    .io_enq1_fire                         (en_ren1),
+    .io_enq1_bits_rob_idx                 (_rob_io_enq1_idx),
+    .io_enq1_bits_cp_idx                  (_rename_io_cp_idx1),
+    .io_enq1_bits_src1_ready              (id1_s1_rdy),
     .io_enq1_bits_src2_ready
       (~_idu1_io_rs2_ren | ~id1_dep2
        & (_busy_io_ready4 | _id1_s2_rdy_cdb_hit_T & _idu1_io_rs2_ren & (|id1_psrc2)
@@ -20447,9 +20765,9 @@ module Core(
           | _id1_s2_rdy_wbu_hit_T & _idu1_io_rs2_ren & (|id1_psrc2)
           & _id1_s2_rdy_wbu_hit_T_4 | _id1_s2_rdy_wbu1_hit_T & _idu1_io_rs2_ren
           & (|id1_psrc2) & _id1_s2_rdy_wbu1_hit_T_4)),
-    .io_enq1_bits_src1_phys              (id1_psrc1),
-    .io_enq1_bits_src2_phys              (id1_psrc2),
-    .io_enq1_bits_src1_val               (id1_src1),
+    .io_enq1_bits_src1_phys               (id1_psrc1),
+    .io_enq1_bits_src2_phys               (id1_psrc2),
+    .io_enq1_bits_src1_val                (id1_src1),
     .io_enq1_bits_src2_val
       (id1_dep2
          ? 32'h0
@@ -20472,40 +20790,47 @@ module Core(
                                    & ~id1_src2_cdb_hit & ~id1_src2_cdb1_hit
                                      ? _wbu1_io_refile_wdata
                                      : _prf_io_rdata4),
-    .io_enq1_bits_pdest                  (_rename_io_dest_phys1),
-    .io_enq1_bits_pc                     (_idu1_io_out_bits_pc),
-    .io_enq1_bits_imm_ext                (_idu1_io_out_bits_imm_ext),
-    .io_enq1_bits_waddr                  (_idu1_io_out_bits_waddr),
-    .io_enq1_bits_csr_rd1                (_idu1_io_out_bits_csr_rd1),
-    .io_enq1_bits_state_state            (_idu1_io_out_bits_state_state),
-    .io_enq1_bits_state_state_num        (_idu1_io_out_bits_state_state_num),
-    .io_enq1_bits_bp_valid               (_idu1_io_out_bits_bp_valid),
-    .io_enq1_bits_bp_taken               (_idu1_io_out_bits_bp_taken),
-    .io_enq1_bits_bp_target              (_idu1_io_out_bits_bp_target),
-    .io_enq1_bits_exu_alu_srcA           (_idu1_io_out_bits_signals_exu_alu_srcA),
-    .io_enq1_bits_exu_alu_srcB           (_idu1_io_out_bits_signals_exu_alu_srcB),
-    .io_enq1_bits_exu_alu_control        (_idu1_io_out_bits_signals_exu_alu_control),
-    .io_enq1_bits_exu_jump               (_idu1_io_out_bits_signals_exu_jump),
-    .io_enq1_bits_lsu_mem_rd             (_idu1_io_out_bits_signals_lsu_mem_rd),
-    .io_enq1_bits_lsu_mem_write          (_idu1_io_out_bits_signals_lsu_mem_write),
-    .io_enq1_bits_lsu_mem_valid          (_idu1_io_out_bits_signals_lsu_mem_valid),
-    .io_enq1_bits_wbu_reg_write          (_idu1_io_out_bits_signals_wbu_reg_write),
-    .io_enq1_bits_wbu_reg_write_sel      (_idu1_io_out_bits_signals_wbu_reg_write_sel),
-    .io_free_rob_fire                    (can_wb),
-    .io_free_rob_idx                     (wb_sel_rob_idx),
-    .io_free_rob1_fire                   (can_wb1),
-    .io_free_rob1_idx                    (wb_sel1_rob_idx),
-    .io_cdb_valid                        (can_wb & (|wb_sel_pdest)),
-    .io_cdb_pdest                        (wb_sel_pdest),
-    .io_cdb_val                          (_wbu_io_refile_wdata),
-    .io_cdb1_valid                       (can_wb1 & (|wb_sel1_pdest)),
-    .io_cdb1_pdest                       (wb_sel1_pdest),
-    .io_cdb1_val                         (_wbu1_io_refile_wdata),
+    .io_enq1_bits_pdest                   (_rename_io_dest_phys1),
+    .io_enq1_bits_pc                      (_idu1_io_out_bits_pc),
+    .io_enq1_bits_inst                    (_idu1_io_out_bits_inst),
+    .io_enq1_bits_imm_ext                 (_idu1_io_out_bits_imm_ext),
+    .io_enq1_bits_waddr                   (_idu1_io_out_bits_waddr),
+    .io_enq1_bits_is_ebreak               (_idu1_io_out_bits_is_ebreak),
+    .io_enq1_bits_is_fencei               (_idu1_io_is_fencei),
+    .io_enq1_bits_csr_rd1                 (_idu1_io_out_bits_csr_rd1),
+    .io_enq1_bits_state_state             (_idu1_io_out_bits_state_state),
+    .io_enq1_bits_state_state_num         (_idu1_io_out_bits_state_state_num),
+    .io_enq1_bits_bp_valid                (_idu1_io_out_bits_bp_valid),
+    .io_enq1_bits_bp_taken                (_idu1_io_out_bits_bp_taken),
+    .io_enq1_bits_bp_target               (_idu1_io_out_bits_bp_target),
+    .io_enq1_bits_bp_index                (_idu1_io_out_bits_bp_index),
+    .io_enq1_bits_ftq_idx                 (_idu1_io_out_bits_ftq_idx),
+    .io_enq1_bits_ftq_generation          (_idu1_io_out_bits_ftq_generation),
+    .io_enq1_bits_exu_alu_srcA            (_idu1_io_out_bits_signals_exu_alu_srcA),
+    .io_enq1_bits_exu_alu_srcB            (_idu1_io_out_bits_signals_exu_alu_srcB),
+    .io_enq1_bits_exu_alu_control         (_idu1_io_out_bits_signals_exu_alu_control),
+    .io_enq1_bits_exu_jump                (_idu1_io_out_bits_signals_exu_jump),
+    .io_enq1_bits_lsu_mem_rd              (_idu1_io_out_bits_signals_lsu_mem_rd),
+    .io_enq1_bits_lsu_mem_write           (_idu1_io_out_bits_signals_lsu_mem_write),
+    .io_enq1_bits_lsu_mem_valid           (_idu1_io_out_bits_signals_lsu_mem_valid),
+    .io_enq1_bits_wbu_reg_write           (_idu1_io_out_bits_signals_wbu_reg_write),
+    .io_enq1_bits_wbu_reg_write_sel       (_idu1_io_out_bits_signals_wbu_reg_write_sel),
+    .io_enq1_bits_wbu_csr_write           (_idu1_io_out_bits_signals_wbu_csr_write),
+    .io_free_rob_fire                     (can_wb),
+    .io_free_rob_idx                      (_wbArb_io_out_0_bits_rob_idx),
+    .io_free_rob1_fire                    (can_wb1),
+    .io_free_rob1_idx                     (_wbArb_io_out_1_bits_rob_idx),
+    .io_cdb_valid                         (can_wb & (|_wbArb_io_out_0_bits_pdest)),
+    .io_cdb_pdest                         (_wbArb_io_out_0_bits_pdest),
+    .io_cdb_val                           (_wbu_io_refile_wdata),
+    .io_cdb1_valid                        (can_wb1 & (|_wbArb_io_out_1_bits_pdest)),
+    .io_cdb1_pdest                        (_wbArb_io_out_1_bits_pdest),
+    .io_cdb1_val                          (_wbu1_io_refile_wdata),
     .io_flush
       (flush_now & ~fencei_flush_REG & ~mret_flush_REG),
-    .io_flush_idx                        (flush_idx),
-    .io_flush_all                        (_busy_io_rebuild_mask_T | mret_flush_REG),
-    .io_space                            (_rs_io_space)
+    .io_flush_idx                         (flush_idx),
+    .io_flush_all                         (_busy_io_rebuild_mask_T | mret_flush_REG),
+    .io_space                             (_rs_io_space)
   );
   FetchQueue fq (
     .clock                              (clock),
@@ -20522,6 +20847,8 @@ module Core(
     .io_enq_bits_bits_0_bp_taken        (_ifu_io_out_bits_bits_0_bp_taken),
     .io_enq_bits_bits_0_bp_target       (_ifu_io_out_bits_bits_0_bp_target),
     .io_enq_bits_bits_0_bp_index        (_ifu_io_out_bits_bits_0_bp_index),
+    .io_enq_bits_bits_0_ftq_idx         (_ifu_io_out_bits_bits_0_ftq_idx),
+    .io_enq_bits_bits_0_ftq_generation  (_ifu_io_out_bits_bits_0_ftq_generation),
     .io_enq_bits_bits_1_inst            (_ifu_io_out_bits_bits_1_inst),
     .io_enq_bits_bits_1_pc              (_ifu_io_out_bits_bits_1_pc),
     .io_enq_bits_bits_1_state_state     (_ifu_io_out_bits_bits_1_state_state),
@@ -20530,6 +20857,8 @@ module Core(
     .io_enq_bits_bits_1_bp_taken        (_ifu_io_out_bits_bits_1_bp_taken),
     .io_enq_bits_bits_1_bp_target       (_ifu_io_out_bits_bits_1_bp_target),
     .io_enq_bits_bits_1_bp_index        (_ifu_io_out_bits_bits_1_bp_index),
+    .io_enq_bits_bits_1_ftq_idx         (_ifu_io_out_bits_bits_1_ftq_idx),
+    .io_enq_bits_bits_1_ftq_generation  (_ifu_io_out_bits_bits_1_ftq_generation),
     .io_deq_ready                       (_idu_io_in_ready),
     .io_deq_valid                       (_fq_io_deq_valid),
     .io_deq_bits_inst                   (_fq_io_deq_bits_inst),
@@ -20540,6 +20869,8 @@ module Core(
     .io_deq_bits_bp_taken               (_fq_io_deq_bits_bp_taken),
     .io_deq_bits_bp_target              (_fq_io_deq_bits_bp_target),
     .io_deq_bits_bp_index               (_fq_io_deq_bits_bp_index),
+    .io_deq_bits_ftq_idx                (_fq_io_deq_bits_ftq_idx),
+    .io_deq_bits_ftq_generation         (_fq_io_deq_bits_ftq_generation),
     .io_deq1_ready                      (_idu1_io_in_ready),
     .io_deq1_valid                      (_fq_io_deq1_valid),
     .io_deq1_bits_inst                  (_fq_io_deq1_bits_inst),
@@ -20550,9 +20881,11 @@ module Core(
     .io_deq1_bits_bp_taken              (_fq_io_deq1_bits_bp_taken),
     .io_deq1_bits_bp_target             (_fq_io_deq1_bits_bp_target),
     .io_deq1_bits_bp_index              (_fq_io_deq1_bits_bp_index),
+    .io_deq1_bits_ftq_idx               (_fq_io_deq1_bits_ftq_idx),
+    .io_deq1_bits_ftq_generation        (_fq_io_deq1_bits_ftq_generation),
     .io_flush
-      (_busy_io_rebuild_mask_T | mret_flush_REG | mis_predict_dbg | mis_predict_dbg
-       | irq_commit | fencei_commit | mret_commit | ext_irq_fire),
+      (_busy_io_rebuild_mask_T | mret_flush_REG | branchRecoveryWins | memoryRecoveryWins
+       | mis_predict_dbg | irq_commit | fencei_commit | mret_commit | ext_irq_fire),
     .io_count                           (/* unused */),
     .io_space                           (_fq_io_space)
   );
@@ -20570,53 +20903,177 @@ module Core(
        & _idu1_io_out_bits_signals_lsu_mem_write),
     .io_alloc1_rob      (_rob_io_enq1_idx),
     .io_alloc1_mask     (_idu1_io_out_bits_signals_lsu_mem_wmask[3:0]),
-    .io_wb_valid        (wb_store | can_wb1 & casez_tmp_21 & casez_tmp_22),
-    .io_wb_rob          (wb_store ? wb_sel_rob_idx : wb_sel1_rob_idx),
-    .io_wb_addr         (wb_store ? wb_sel_alu_result : wb_sel1_alu_result),
-    .io_wb_data         (wb_store ? wb_sel_store_data : wb_sel1_store_data),
-    .io_wb_mask         (wb_store ? casez_tmp_15[3:0] : casez_tmp_23[3:0]),
+    .io_wb_valid        (wb_store),
+    .io_wb_rob          (_wbArb_io_out_0_bits_rob_idx),
+    .io_wb_addr         (_wbArb_io_out_0_bits_alu_result),
+    .io_wb_data         (_wbArb_io_out_0_bits_store_data),
+    .io_wb_mask         (casez_tmp_15[3:0]),
+    .io_wb1_valid       (wb1_store),
+    .io_wb1_rob         (_wbArb_io_out_1_bits_rob_idx),
+    .io_wb1_addr        (_wbArb_io_out_1_bits_alu_result),
+    .io_wb1_data        (_wbArb_io_out_1_bits_store_data),
+    .io_wb1_mask        (casez_tmp_23[3:0]),
     .io_commit_valid    (sq_io_commit_valid),
     .io_commit_rob      (_rob_io_head),
+    .io_commit1_valid   (sq_io_commit1_valid),
+    .io_commit1_rob     (_rob_io_commit1_idx),
     .io_flush           (sq_io_flush),
     .io_flush_idx       (flush_idx),
     .io_flush_all       (_busy_io_rebuild_mask_T | mret_flush_REG),
-    .io_ld_valid        (sq_io_ld_valid),
-    .io_ld_rob          (lsu_stage_bits_rob_idx),
-    .io_ld_addr         (lsu_stage_bits_alu_result),
-    .io_ld_mem_rd       (lsu_stage_bits_signals_lsu_mem_rd),
+    .io_ld_valid        (_lsu_io_ld_query_valid),
+    .io_ld_rob          (_lsu_io_ld_query_rob),
+    .io_ld_addr         (_lsu_io_ld_query_addr),
+    .io_ld_mem_rd       (_lsu_io_ld_query_mem_rd),
     .io_unresolved_mask (_sq_io_unresolved_mask),
     .io_fwd_valid       (_sq_io_fwd_valid),
     .io_fwd_data        (_sq_io_fwd_data),
     .io_wait_load       (_sq_io_wait_load)
   );
   StoreBuffer stbuf (
-    .clock            (clock),
-    .reset            (reset),
-    .io_enq_ready     (_stbuf_io_enq_ready),
-    .io_enq_valid     (stbuf_io_enq_valid),
-    .io_enq_bits_addr (head_st_addr),
-    .io_enq_bits_data (head_st_data),
-    .io_enq_bits_mask (_rob_io_commit_bits_mem_wmask[3:0]),
-    .io_ld_valid      (sq_io_ld_valid),
-    .io_ld_addr       (lsu_stage_bits_alu_result),
-    .io_ld_mem_rd     (lsu_stage_bits_signals_lsu_mem_rd),
-    .io_ld_wait       (_stbuf_io_ld_wait),
-    .io_ld_fwd_valid  (_stbuf_io_ld_fwd_valid),
-    .io_ld_fwd_data   (_stbuf_io_ld_fwd_data),
-    .io_bus_busy      (|{_lsu_io_bus_busy, cm_st_state}),
-    .io_dmem_awaddr   (_stbuf_io_dmem_awaddr),
-    .io_dmem_awvalid  (_stbuf_io_dmem_awvalid),
-    .io_dmem_awready  (io_dmem_awready & ~(|cm_st_state)),
-    .io_dmem_wdata    (_stbuf_io_dmem_wdata),
-    .io_dmem_wstrb    (_stbuf_io_dmem_wstrb),
-    .io_dmem_wvalid   (_stbuf_io_dmem_wvalid),
-    .io_dmem_wready   (io_dmem_wready & ~(|cm_st_state)),
-    .io_dmem_bvalid   (stbuf_io_dmem_bvalid),
-    .io_dmem_bready   (_stbuf_io_dmem_bready),
-    .io_deq_valid     (_stbuf_io_deq_valid),
-    .io_deq_addr      (_stbuf_io_deq_addr),
-    .io_empty         (_stbuf_io_empty),
-    .io_busy          (_stbuf_io_busy)
+    .clock             (clock),
+    .reset             (reset),
+    .io_enq_ready      (_stbuf_io_enq_ready),
+    .io_enq_valid      (stbuf_io_enq_valid),
+    .io_enq_bits_addr  (head_st_addr),
+    .io_enq_bits_data  (head_st_data),
+    .io_enq_bits_mask  (_rob_io_commit_bits_mem_wmask[3:0]),
+    .io_enq1_ready     (_stbuf_io_enq1_ready),
+    .io_enq1_valid     (stbuf_io_enq1_valid),
+    .io_enq1_bits_addr (cm1_st_addr),
+    .io_enq1_bits_data
+      (cm1_wb_store
+         ? (cm1_wb0 ? _wbArb_io_out_0_bits_store_data : _wbArb_io_out_1_bits_store_data)
+         : _rob_io_commit1_bits_mem_wdata),
+    .io_enq1_bits_mask (_rob_io_commit1_bits_mem_wmask[3:0]),
+    .io_ld_valid       (_lsu_io_ld_query_valid),
+    .io_ld_addr        (_lsu_io_ld_query_addr),
+    .io_ld_mem_rd      (_lsu_io_ld_query_mem_rd),
+    .io_ld_wait        (_stbuf_io_ld_wait),
+    .io_ld_fwd_valid   (_stbuf_io_ld_fwd_valid),
+    .io_ld_fwd_data    (_stbuf_io_ld_fwd_data),
+    .io_bus_busy       ((|cm_st_state) | _dcache_io_busy),
+    .io_dmem_awaddr    (_stbuf_io_dmem_awaddr),
+    .io_dmem_awvalid   (_stbuf_io_dmem_awvalid),
+    .io_dmem_awready   (io_dmem_awready & ~(|cm_st_state)),
+    .io_dmem_wdata     (_stbuf_io_dmem_wdata),
+    .io_dmem_wstrb     (_stbuf_io_dmem_wstrb),
+    .io_dmem_wvalid    (_stbuf_io_dmem_wvalid),
+    .io_dmem_wready    (io_dmem_wready & ~(|cm_st_state)),
+    .io_dmem_bvalid    (stbuf_io_dmem_bvalid),
+    .io_dmem_bready    (_stbuf_io_dmem_bready),
+    .io_deq_valid      (_stbuf_io_deq_valid),
+    .io_deq_addr       (_stbuf_io_deq_addr),
+    .io_empty          (_stbuf_io_empty),
+    .io_busy           (_stbuf_io_busy),
+    .io_free           (_stbuf_io_free)
+  );
+  WritebackArbiter wbArb (
+    .clock                                   (clock),
+    .reset                                   (reset),
+    .io_in_0_ready                           (_wbArb_io_in_0_ready),
+    .io_in_0_valid                           (_exu_io_out_valid),
+    .io_in_0_bits_signals_wbu_reg_write      (_exu_io_out_bits_signals_wbu_reg_write),
+    .io_in_0_bits_signals_wbu_reg_write_sel  (_exu_io_out_bits_signals_wbu_reg_write_sel),
+    .io_in_0_bits_alu_result                 (_exu_io_out_bits_alu_result),
+    .io_in_0_bits_pc                         (_exu_io_out_bits_pc),
+    .io_in_0_bits_next_pc                    (_exu_io_out_bits_next_pc),
+    .io_in_0_bits_imm_ext                    (_exu_io_out_bits_imm_ext),
+    .io_in_0_bits_waddr                      (_exu_io_out_bits_waddr),
+    .io_in_0_bits_csr_rd1                    (_exu_io_out_bits_csr_rd1),
+    .io_in_0_bits_state_state                (_exu_io_out_bits_state_state),
+    .io_in_0_bits_state_state_num            (_exu_io_out_bits_state_state_num),
+    .io_in_0_bits_rob_idx                    (_exu_io_out_bits_rob_idx),
+    .io_in_0_bits_pdest                      (_exu_io_out_bits_pdest),
+    .io_in_0_bits_br_taken                   (_exu_io_out_bits_br_taken),
+    .io_in_0_bits_store_data                 (_exu_io_out_bits_rd2),
+    .io_in_1_ready                           (_wbArb_io_in_1_ready),
+    .io_in_1_valid                           (_lsu_io_out_valid),
+    .io_in_1_bits_signals_wbu_reg_write      (_lsu_io_out_bits_signals_wbu_reg_write),
+    .io_in_1_bits_signals_wbu_reg_write_sel  (_lsu_io_out_bits_signals_wbu_reg_write_sel),
+    .io_in_1_bits_alu_result                 (_lsu_io_out_bits_alu_result),
+    .io_in_1_bits_pc                         (_lsu_io_out_bits_pc),
+    .io_in_1_bits_next_pc                    (_lsu_io_out_bits_next_pc),
+    .io_in_1_bits_imm_ext                    (_lsu_io_out_bits_imm_ext),
+    .io_in_1_bits_mem_read                   (_lsu_io_out_bits_mem_read),
+    .io_in_1_bits_waddr                      (_lsu_io_out_bits_waddr),
+    .io_in_1_bits_csr_rd1                    (_lsu_io_out_bits_csr_rd1),
+    .io_in_1_bits_state_state                (_lsu_io_out_bits_state_state),
+    .io_in_1_bits_state_state_num            (_lsu_io_out_bits_state_state_num),
+    .io_in_1_bits_rob_idx                    (_lsu_io_out_bits_rob_idx),
+    .io_in_1_bits_pdest                      (_lsu_io_out_bits_pdest),
+    .io_in_1_bits_br_taken                   (_lsu_io_out_bits_br_taken),
+    .io_in_1_bits_store_data                 (_lsu_io_out_bits_store_data),
+    .io_in_2_ready                           (_wbArb_io_in_2_ready),
+    .io_in_2_valid                           (_exu_alu1_io_out_valid),
+    .io_in_2_bits_signals_wbu_reg_write
+      (_exu_alu1_io_out_bits_signals_wbu_reg_write),
+    .io_in_2_bits_signals_wbu_reg_write_sel
+      (_exu_alu1_io_out_bits_signals_wbu_reg_write_sel),
+    .io_in_2_bits_alu_result                 (_exu_alu1_io_out_bits_alu_result),
+    .io_in_2_bits_pc                         (_exu_alu1_io_out_bits_pc),
+    .io_in_2_bits_next_pc                    (_exu_alu1_io_out_bits_next_pc),
+    .io_in_2_bits_imm_ext                    (_exu_alu1_io_out_bits_imm_ext),
+    .io_in_2_bits_waddr                      (_exu_alu1_io_out_bits_waddr),
+    .io_in_2_bits_csr_rd1                    (_exu_alu1_io_out_bits_csr_rd1),
+    .io_in_2_bits_state_state                (_exu_alu1_io_out_bits_state_state),
+    .io_in_2_bits_state_state_num            (_exu_alu1_io_out_bits_state_state_num),
+    .io_in_2_bits_rob_idx                    (_exu_alu1_io_out_bits_rob_idx),
+    .io_in_2_bits_pdest                      (_exu_alu1_io_out_bits_pdest),
+    .io_in_2_bits_br_taken                   (_exu_alu1_io_out_bits_br_taken),
+    .io_in_2_bits_store_data                 (_exu_alu1_io_out_bits_rd2),
+    .io_in_3_ready                           (_wbArb_io_in_3_ready),
+    .io_in_3_valid                           (_exu_div_io_out_valid),
+    .io_in_3_bits_signals_wbu_reg_write      (_exu_div_io_out_bits_signals_wbu_reg_write),
+    .io_in_3_bits_signals_wbu_reg_write_sel
+      (_exu_div_io_out_bits_signals_wbu_reg_write_sel),
+    .io_in_3_bits_alu_result                 (_exu_div_io_out_bits_alu_result),
+    .io_in_3_bits_pc                         (_exu_div_io_out_bits_pc),
+    .io_in_3_bits_next_pc                    (_exu_div_io_out_bits_next_pc),
+    .io_in_3_bits_imm_ext                    (_exu_div_io_out_bits_imm_ext),
+    .io_in_3_bits_waddr                      (_exu_div_io_out_bits_waddr),
+    .io_in_3_bits_csr_rd1                    (_exu_div_io_out_bits_csr_rd1),
+    .io_in_3_bits_state_state                (_exu_div_io_out_bits_state_state),
+    .io_in_3_bits_state_state_num            (_exu_div_io_out_bits_state_state_num),
+    .io_in_3_bits_rob_idx                    (_exu_div_io_out_bits_rob_idx),
+    .io_in_3_bits_pdest                      (_exu_div_io_out_bits_pdest),
+    .io_in_3_bits_br_taken                   (_exu_div_io_out_bits_br_taken),
+    .io_in_3_bits_store_data                 (_exu_div_io_out_bits_rd2),
+    .io_out_0_valid                          (_wbArb_io_out_0_valid),
+    .io_out_0_bits_signals_wbu_reg_write     (_wbArb_io_out_0_bits_signals_wbu_reg_write),
+    .io_out_0_bits_signals_wbu_reg_write_sel
+      (_wbArb_io_out_0_bits_signals_wbu_reg_write_sel),
+    .io_out_0_bits_alu_result                (_wbArb_io_out_0_bits_alu_result),
+    .io_out_0_bits_pc                        (_wbArb_io_out_0_bits_pc),
+    .io_out_0_bits_next_pc                   (_wbArb_io_out_0_bits_next_pc),
+    .io_out_0_bits_imm_ext                   (_wbArb_io_out_0_bits_imm_ext),
+    .io_out_0_bits_mem_read                  (_wbArb_io_out_0_bits_mem_read),
+    .io_out_0_bits_waddr                     (_wbArb_io_out_0_bits_waddr),
+    .io_out_0_bits_csr_rd1                   (_wbArb_io_out_0_bits_csr_rd1),
+    .io_out_0_bits_state_state               (_wbArb_io_out_0_bits_state_state),
+    .io_out_0_bits_state_state_num           (_wbArb_io_out_0_bits_state_state_num),
+    .io_out_0_bits_rob_idx                   (_wbArb_io_out_0_bits_rob_idx),
+    .io_out_0_bits_pdest                     (_wbArb_io_out_0_bits_pdest),
+    .io_out_0_bits_br_taken                  (_wbArb_io_out_0_bits_br_taken),
+    .io_out_0_bits_store_data                (_wbArb_io_out_0_bits_store_data),
+    .io_out_1_valid                          (_wbArb_io_out_1_valid),
+    .io_out_1_bits_signals_wbu_reg_write     (_wbArb_io_out_1_bits_signals_wbu_reg_write),
+    .io_out_1_bits_signals_wbu_reg_write_sel
+      (_wbArb_io_out_1_bits_signals_wbu_reg_write_sel),
+    .io_out_1_bits_alu_result                (_wbArb_io_out_1_bits_alu_result),
+    .io_out_1_bits_pc                        (_wbArb_io_out_1_bits_pc),
+    .io_out_1_bits_next_pc                   (_wbArb_io_out_1_bits_next_pc),
+    .io_out_1_bits_imm_ext                   (_wbArb_io_out_1_bits_imm_ext),
+    .io_out_1_bits_mem_read                  (_wbArb_io_out_1_bits_mem_read),
+    .io_out_1_bits_waddr                     (_wbArb_io_out_1_bits_waddr),
+    .io_out_1_bits_csr_rd1                   (_wbArb_io_out_1_bits_csr_rd1),
+    .io_out_1_bits_state_state               (_wbArb_io_out_1_bits_state_state),
+    .io_out_1_bits_state_state_num           (_wbArb_io_out_1_bits_state_state_num),
+    .io_out_1_bits_rob_idx                   (_wbArb_io_out_1_bits_rob_idx),
+    .io_out_1_bits_pdest                     (_wbArb_io_out_1_bits_pdest),
+    .io_out_1_bits_br_taken                  (_wbArb_io_out_1_bits_br_taken),
+    .io_out_1_bits_store_data                (_wbArb_io_out_1_bits_store_data),
+    .io_robHead                              (_rob_io_head),
+    .io_grantIdx_0                           (_wbArb_io_grantIdx_0)
   );
   PerfMonitor pm (
     .clock    (clock),
@@ -20652,96 +21109,129 @@ module Core(
     .clock    (clock),
     .event_id (32'h1A),
     .data     (64'h1),
-    .enable   (&_wb_cand_count_T_5)
+    .enable   (wb_cand_count > 3'h2)
   );
   PerfMonitor pm_6 (
     .clock    (clock),
     .event_id (32'h1B),
     .data     (64'h1),
-    .enable   (_wb_cand_count_T_5 != {1'h0, can_wb} + {1'h0, can_wb1})
+    .enable   (wb_cand_count != {1'h0, {1'h0, can_wb} + {1'h0, can_wb1}})
   );
   PerfMonitor pm_7 (
+    .clock    (clock),
+    .event_id (32'h61),
+    .data     (64'h1),
+    .enable   (take_alu1_issue)
+  );
+  PerfMonitor pm_8 (
+    .clock    (clock),
+    .event_id (32'h62),
+    .data     (64'h1),
+    .enable   (take_alu_issue & take_alu1_issue)
+  );
+  PerfMonitor pm_9 (
+    .clock    (clock),
+    .event_id (32'h63),
+    .data     ({62'h0, _fuRefillCount_T_5}),
+    .enable   (|_fuRefillCount_T_5)
+  );
+  PerfMonitor pm_10 (
+    .clock    (clock),
+    .event_id (32'h64),
+    .data     (64'h1),
+    .enable
+      (_wbArb_io_out_0_valid
+       & _wbArb_io_grantIdx_0 != (_exu_io_out_valid
+                                    ? 2'h0
+                                    : _lsu_io_out_valid
+                                        ? 2'h1
+                                        : {1'h1, ~_exu_alu1_io_out_valid}))
+  );
+  PerfMonitor pm_11 (
     .clock    (clock),
     .event_id (32'h1C),
     .data     (64'h1),
     .enable   (casez_tmp_26 & ~_rob_io_commit_valid)
   );
-  PerfMonitor pm_8 (
+  PerfMonitor pm_12 (
     .clock    (clock),
     .event_id (32'h1D),
     .data     (64'h1),
-    .enable   (_GEN & ~store_commit_ready)
+    .enable   (_GEN_0 & ~store_commit_ready)
   );
-  PerfMonitor pm_9 (
+  PerfMonitor pm_13 (
     .clock    (clock),
     .event_id (32'h1E),
     .data     (64'h1),
     .enable
       (_rob_io_commit_valid & _rob_io_commit_bits_is_fencei & ~fencei_commit_ready)
   );
-  PerfMonitor pm_10 (
+  PerfMonitor pm_14 (
     .clock    (clock),
     .event_id (32'h1F),
     .data     (64'h1),
     .enable   (_rob_io_commit_valid & bp_commit_block)
   );
-  PerfMonitor pm_11 (
+  PerfMonitor pm_15 (
     .clock    (clock),
     .event_id (32'h20),
     .data     (64'h1),
     .enable   (_rob_io_commit_valid & (is_irq | fencei_flush_REG | mret_flush_REG))
   );
-  PerfMonitor pm_12 (
+  PerfMonitor pm_16 (
     .clock    (clock),
     .event_id (32'h37),
     .data     (64'h1),
     .enable   (rob_io_commit_fire)
   );
-  PerfMonitor pm_13 (
+  PerfMonitor pm_17 (
     .clock    (clock),
     .event_id (32'h38),
     .data     (64'h1),
     .enable   (rob_io_commit1_fire)
   );
-  PerfMonitor pm_14 (
+  PerfMonitor pm_18 (
     .clock    (clock),
     .event_id (32'h39),
     .data     (64'h1),
     .enable   (rob_io_commit1_fire)
   );
-  PerfMonitor pm_15 (
+  PerfMonitor pm_19 (
     .clock    (clock),
     .event_id (32'h3A),
     .data     (64'h1),
     .enable   (cm1_slot_blocked)
   );
-  PerfMonitor pm_16 (
+  PerfMonitor pm_20 (
     .clock    (clock),
     .event_id (32'h3B),
     .data     (64'h1),
     .enable   (rob_io_commit_fire & ~_rob_io_commit1_valid)
   );
-  PerfMonitor pm_17 (
+  PerfMonitor pm_21 (
     .clock    (clock),
     .event_id (32'h3C),
     .data     (64'h1),
     .enable   (cm1_slot_blocked & cm_exclusive)
   );
-  PerfMonitor pm_18 (
+  PerfMonitor pm_22 (
     .clock    (clock),
     .event_id (32'h3D),
     .data     (64'h1),
-    .enable   (cm1_slot_blocked & ~cm_exclusive & _rob_io_commit1_bits_mem_valid)
+    .enable
+      (cm1_slot_blocked & ~cm_exclusive
+       & (cm1_mmio_mem | _rob_io_commit1_bits_mem_valid & ~pair_store_ready))
   );
-  PerfMonitor pm_19 (
+  PerfMonitor pm_23 (
     .clock    (clock),
     .event_id (32'h3E),
     .data     (64'h1),
     .enable
-      (cm1_slot_blocked & ~cm_exclusive & ~_rob_io_commit1_bits_mem_valid
-       & cm1_is_ctrl_not_mret)
+      (cm1_slot_blocked & ~cm_exclusive
+       & (~pair_control_path_ok | ~_rob_io_commit1_bits_mem_valid & cm1_is_ctrl_not_mret
+          & _cm1_block_bp_T_4))
   );
-  PerfMonitor pm_20 (
+  PerfMonitor pm_24 (
     .clock    (clock),
     .event_id (32'h3F),
     .data     (64'h1),
@@ -20749,7 +21239,7 @@ module Core(
       (cm1_slot_blocked & ~cm_exclusive & ~_rob_io_commit1_bits_mem_valid
        & ~cm1_is_ctrl_not_mret & _rob_io_commit1_bits_csr_write)
   );
-  PerfMonitor pm_21 (
+  PerfMonitor pm_25 (
     .clock    (clock),
     .event_id (32'h40),
     .data     (64'h1),
@@ -20759,13 +21249,41 @@ module Core(
        & (_rob_io_commit1_bits_is_fencei | cm1_is_mret | _rob_io_commit1_bits_is_ebreak
           | _rob_io_commit1_bits_state_state))
   );
-  PerfMonitor pm_22 (
+  PerfMonitor pm_26 (
     .clock    (clock),
     .event_id (32'h41),
     .data     (64'h1),
-    .enable   (cm1_slot_blocked & ~cm_exclusive & ~cm1_exclusive & bp_commit1_block)
+    .enable
+      (cm1_slot_blocked & ~cm_exclusive & ~cm1_exclusive
+       & (bp_commit1_block | _cm1_block_bp_T_4))
   );
-  PerfMonitor pm_23 (
+  PerfMonitor pm_27 (
+    .clock    (clock),
+    .event_id (32'h49),
+    .data     (64'h1),
+    .enable   (lsu_io_commit1_valid)
+  );
+  PerfMonitor pm_28 (
+    .clock    (clock),
+    .event_id (32'h4A),
+    .data     (64'h1),
+    .enable   (rename_io_cm1_cp_valid)
+  );
+  PerfMonitor pm_29 (
+    .clock    (clock),
+    .event_id (32'h4B),
+    .data     (64'h1),
+    .enable   (sq_io_commit1_valid)
+  );
+  PerfMonitor pm_30 (
+    .clock    (clock),
+    .event_id (32'h4C),
+    .data     (64'h1),
+    .enable
+      (_rob_io_commit_valid & cm_bpu_update & ~cm_bpu_ready | cm1_slot_available
+       & cm1_bpu_update & _cm1_block_bp_T_4)
+  );
+  PerfMonitor pm_31 (
     .clock    (clock),
     .event_id (32'h32),
     .data     (64'h1),
@@ -20773,73 +21291,79 @@ module Core(
       (_fq_io_enq_ready & _ifu_io_out_valid & _ifu_io_out_bits_valid_0
        & _ifu_io_out_bits_valid_1)
   );
-  PerfMonitor pm_24 (
+  PerfMonitor pm_32 (
     .clock    (clock),
     .event_id (32'h33),
     .data     (64'h1),
-    .enable   (_ifu_io_out_valid & _ifu_io_out_bits_valid_0 & _fq_io_space == 4'h1)
+    .enable   (_frontend_mepc_T & _fq_io_space == 4'h1)
   );
-  PerfMonitor pm_25 (
+  PerfMonitor pm_33 (
     .clock    (clock),
     .event_id (32'hF),
     .data     (64'h1),
-    .enable   (br_done & d_alu_bits_bp_valid)
+    .enable   (br_resolve & d_alu_bits_bp_valid)
   );
-  PerfMonitor pm_26 (
+  PerfMonitor pm_34 (
     .clock    (clock),
     .event_id (32'h10),
     .data     (64'h1),
-    .enable   (_GEN_32)
+    .enable   (_GEN_33)
   );
-  PerfMonitor pm_27 (
+  PerfMonitor pm_35 (
     .clock    (clock),
     .event_id (32'h19),
     .data     (64'h1),
     .enable   (mis_predict_dbg)
   );
-  PerfMonitor pm_28 (
+  PerfMonitor pm_36 (
     .clock    (clock),
     .event_id (32'h24),
     .data     (64'h1),
-    .enable   (_GEN_32 & _mis_predict_T)
+    .enable   (_GEN_33 & _mis_predict_T)
   );
-  PerfMonitor pm_29 (
+  PerfMonitor pm_37 (
     .clock    (clock),
     .event_id (32'h25),
     .data     (64'h1),
-    .enable   (_GEN_32 & target_mispredict)
+    .enable   (_GEN_33 & target_mispredict)
   );
-  PerfMonitor pm_30 (
+  PerfMonitor pm_38 (
     .clock    (clock),
     .event_id (32'h26),
     .data     (64'h1),
     .enable   (mis_predict_dbg & ~d_alu_bits_bp_valid)
   );
-  PerfMonitor pm_31 (
+  PerfMonitor pm_39 (
     .clock    (clock),
     .event_id (32'h4),
     .data     (64'h1),
     .enable   (io_dmem_awvalid_0 & io_dmem_awready)
   );
-  PerfMonitor pm_32 (
+  PerfMonitor pm_40 (
     .clock    (clock),
     .event_id (32'h27),
-    .data     (64'h1),
-    .enable   (dcache_io_invalidate_valid)
+    .data     ({62'h0, sbEnqCount}),
+    .enable   (|sbEnqCount)
   );
-  PerfMonitor pm_33 (
+  PerfMonitor pm_41 (
+    .clock    (clock),
+    .event_id (32'h4D),
+    .data     (64'h1),
+    .enable   (dcache_io_invalidate_valid & dcache_io_invalidate2_valid)
+  );
+  PerfMonitor pm_42 (
     .clock    (clock),
     .event_id (32'h28),
     .data     (64'h1),
     .enable   (stbuf_io_dmem_bvalid & _stbuf_io_dmem_bready)
   );
-  PerfMonitor pm_34 (
+  PerfMonitor pm_43 (
     .clock    (clock),
     .event_id (32'h29),
     .data     (64'h1),
-    .enable   (_GEN & head_st_is_pmem & ~_stbuf_io_enq_ready)
+    .enable   (_GEN_0 & head_st_is_pmem & _stbuf_io_free == 5'h0)
   );
-  PerfMonitor pm_35 (
+  PerfMonitor pm_44 (
     .clock    (clock),
     .event_id (32'h2A),
     .data     (64'h1),
@@ -20850,7 +21374,6 @@ module Core(
     .is_ebreak (rob_io_commit_fire & _rob_io_commit_bits_is_ebreak)
   );
   assign io_dmem_arvalid = _dcache_io_mem_arvalid & ~store_bus_busy;
-  assign io_dmem_rready = _dcache_io_mem_rready & ~store_bus_busy;
   assign io_dmem_awaddr = (|cm_st_state) ? cm_st_addr : _stbuf_io_dmem_awaddr;
   assign io_dmem_awvalid = io_dmem_awvalid_0;
   assign io_dmem_wdata = (|cm_st_state) ? cm_st_wdata : _stbuf_io_dmem_wdata;
@@ -20865,10 +21388,9 @@ module Core(
       : _rob_io_commit_bits_mem_addr;
   assign io_commit_is_load = _rob_io_commit_bits_reg_write_sel == 3'h4;
   assign io_commit_valid1 = rob_io_commit1_fire;
+  assign io_commit_pc1 = _rob_io_commit1_bits_pc;
   assign io_commit_mem_addr1 =
-    cm1_wb_same
-      ? (cm1_wb0 ? wb_sel_alu_result : wb_sel1_alu_result)
-      : _rob_io_commit1_bits_mem_addr;
+    cm1_wb_same ? cm1_wb_bits_alu_result : _rob_io_commit1_bits_mem_addr;
   assign io_commit_is_load1 = _rob_io_commit1_bits_reg_write_sel == 3'h4;
   assign io_arch_rdata_0 = 32'h0;
   assign io_arch_rdata_1 = arch_rf_1;

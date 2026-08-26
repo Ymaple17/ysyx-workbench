@@ -2,9 +2,9 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：打开 **真分配** `pdest=dest_phys`；commit 回收 `old_phys`；flush **重建** free/RAT。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：以 README 的参考实现水位和本章后续说明为准；参考核进度不等于你的学习进度。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：仅对 `reg_write && rd!=0` 分配新 phys，ROB 保存 `old_phys`，提交回收旧映射，flush 从已提交映射重建 RAT/FreeList。
+- **当前参考核**：阶段 10m 使用 2-wide `Rename2`、PRF64 和 checkpoint；本章单宽规则仍是所有宽化版本必须保持的不变量。
+- **后续扩展**：2d 把源寄存器、Busy stall 和前递键也统一到 phys 域，完成顺序后端迁移。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
@@ -80,7 +80,7 @@ arch_rf(rd) := wdata   // difftest 快照仍按 arch
 ### 3.1 禁止
 
 ```text
-freeBits := ((1<<N)-1) ^ ((1<<32)-1)   // 一键 32..47 空闲
+freeBits := ((1<<N_PHYS)-1) ^ ((1<<32)-1)   // 一键 32..N_PHYS-1 空闲
 ```
 
 错误路径与正确路径共享过 freelist 时，硬重置会 **重复分配** 或 **泄漏**。
@@ -134,7 +134,7 @@ rename.rebuild_free = free
 |------|------|------|
 | 开 fire 后 a0/sp 错 | 源仍 arch 且 flush 回收错；或 restore 误用 | 源保持 arch；用 rebuild 而非瞎 restore |
 | freelist 很快 empty | commit 未 free old；或 rebuild 漏 | 查 cm_old、kept.old |
-| 动态 used(arch_rat(a)):= | 综合/仿真语义错 | bit-or（阶段1已写） |
+| 多路 `used(arch_rat(a)) := true.B` | 重复地址和连接优先级不等价于集合并集 | 对各映射生成 one-hot 后 OR（阶段 1 已写） |
 | 同拍 commit+flush | 基线漏叠 | rb_base 含 commit |
 
 ### 6.1 历史结论
@@ -151,7 +151,7 @@ rename.rebuild_free = free
 ## 7. 验收（自勾）
 
 - [ ] 波形见 pdest≥32  
-- [ ] flush 后 freeBits 不是「简单的 32..47 全 1」硬重置形态  
+- [ ] flush 后 freeBits 不是「简单的 32..N_PHYS-1 全 1」硬重置形态
 - [ ] dummy/add 绿  
 - [ ] 能讲清 rebuild 输入如何从 ROB 扫出  
 
@@ -209,5 +209,5 @@ rename.rebuild_free = free
 
 - `rename.freeBits`（可 dontTouch 或 printf）  
 - `dest_phys` 第一次应为 32  
-- 连续 16 次写后应接近 empty 或靠 commit 回收  
+- 连续消耗完复位时的 `N_PHYS-32` 个空闲槽后应接近 empty，或已经依靠 commit 回收
 - flush 后 free 数量应 **增加**（回收错误路径 new），而不是跳回固定掩码  

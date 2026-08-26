@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include "Vysyx_25020039.h"
 #include "verilated_dpi.h"
 #include "verilated_fst_c.h"
@@ -161,9 +162,66 @@ static void execute(uint64_t n) {
   static word_t stuck_pc = 0;
   static int stuck_cnt = 0;
   static bool stuck_initialized = false;
+  static bool pipe_trace_initialized = false;
+  static bool pipe_trace_enabled = false;
+  static uint32_t pipe_trace_lo = 0;
+  static uint32_t pipe_trace_hi = UINT32_MAX;
+  static uint32_t trace_rob_pc[32] = {};
+  static uint32_t last_alu_pc = UINT32_MAX;
+  static uint32_t last_lsu_pc = UINT32_MAX;
+  static unsigned last_alu_rob = UINT32_MAX;
+  static unsigned last_lsu_rob = UINT32_MAX;
+  if (!pipe_trace_initialized) {
+    pipe_trace_initialized = true;
+    const char *range = getenv("NPC_PIPE_TRACE");
+    if (range != nullptr) {
+      pipe_trace_enabled = true;
+      unsigned lo = 0;
+      unsigned hi = UINT32_MAX;
+      if (sscanf(range, "%x:%x", &lo, &hi) == 2) {
+        pipe_trace_lo = lo;
+        pipe_trace_hi = hi;
+      }
+    }
+  }
   for (; n > 0; n--) {
     if (!Verilated::gotFinish()) {
       exec_once();
+
+      if (pipe_trace_enabled && rst_done && !top->reset) {
+        auto *r = top->rootp;
+        const bool alu_valid = r->ysyx_25020039__DOT__core__DOT__d_alu_valid;
+        const uint32_t alu_pc = r->ysyx_25020039__DOT__core__DOT__d_alu_bits_pc;
+        const unsigned alu_rob = r->ysyx_25020039__DOT__core__DOT__d_alu_bits_rob_idx;
+        const bool lsu_valid = r->ysyx_25020039__DOT__core__DOT__d_lsu_valid;
+        const uint32_t lsu_pc = r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_pc;
+        const unsigned lsu_rob = r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_rob_idx;
+        if (alu_valid) trace_rob_pc[alu_rob & 31u] = alu_pc;
+        if (lsu_valid) trace_rob_pc[lsu_rob & 31u] = lsu_pc;
+        if (alu_valid && alu_pc >= pipe_trace_lo && alu_pc <= pipe_trace_hi &&
+            (alu_pc != last_alu_pc || alu_rob != last_alu_rob)) {
+          printf("[PIPE] ALU issue pc=0x%08x rob=%u pdest=%u src=0x%08x/0x%08x ctl=%u\n",
+                 alu_pc, alu_rob,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_alu_bits_pdest,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_alu_bits_rd1,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_alu_bits_rd2,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_alu_bits_signals_exu_alu_control);
+          last_alu_pc = alu_pc;
+          last_alu_rob = alu_rob;
+        }
+        if (lsu_valid && lsu_pc >= pipe_trace_lo && lsu_pc <= pipe_trace_hi &&
+            (lsu_pc != last_lsu_pc || lsu_rob != last_lsu_rob)) {
+          printf("[PIPE] LSU issue pc=0x%08x rob=%u pdest=%u base=0x%08x data=0x%08x imm=0x%08x wr=%u\n",
+                 lsu_pc, lsu_rob,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_pdest,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_rd1,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_rd2,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_imm_ext,
+                 (unsigned)r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_signals_lsu_mem_write);
+          last_lsu_pc = lsu_pc;
+          last_lsu_rob = lsu_rob;
+        }
+      }
     #ifdef CONFIG_DEVICE
       device_update();
     #endif
@@ -384,6 +442,49 @@ static void execute(uint64_t n) {
         unsigned lsu_rb = (unsigned)r->ysyx_25020039__DOT__core__DOT__d_lsu_bits_rob_idx;
         printf("[HANG] alu(v=%u pc=0x%08x rob=%u) div(v=%u pc=0x%08x rob=%u) lsu(v=%u pc=0x%08x rob=%u)\n",
                alu_v, alu_pc, alu_rb, div_v, div_pc, div_rb, lsu_v, lsu_pc, lsu_rb);
+        CData *lq_valid[] = {
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_valid,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_valid,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_valid,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_valid,
+        };
+        CData *lq_state[] = {
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_state,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_state,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_state,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_state,
+        };
+        CData *lq_generation[] = {
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_generation,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_generation,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_generation,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_generation,
+        };
+        CData *lq_rob[] = {
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_meta_rob_idx,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_meta_rob_idx,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_meta_rob_idx,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_meta_rob_idx,
+        };
+        IData *lq_pc[] = {
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_meta_pc,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_meta_pc,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_meta_pc,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_meta_pc,
+        };
+        IData *lq_addr[] = {
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_addr,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_addr,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_addr,
+          &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_addr,
+        };
+        for (int i = 0; i < 4; i++) {
+          if (*lq_valid[i]) {
+            printf("[HANG] lq[%d] state=%u gen=%u rob=%u pc=0x%08x addr=0x%08x\n",
+                   i, (unsigned)*lq_state[i], (unsigned)*lq_generation[i],
+                   (unsigned)*lq_rob[i], (unsigned)*lq_pc[i], (unsigned)*lq_addr[i]);
+          }
+        }
         unsigned ifu_st = (unsigned)r->ysyx_25020039__DOT__core__DOT__ifu__DOT__state;
         unsigned mtvec = (unsigned)r->ysyx_25020039__DOT__core__DOT__csr__DOT__rf_1;
         unsigned mepc  = (unsigned)r->ysyx_25020039__DOT__core__DOT__csr__DOT__rf_2;
@@ -398,9 +499,16 @@ static void execute(uint64_t n) {
         unsigned awv = (unsigned)r->ysyx_25020039__DOT___core_io_dmem_awvalid;
         unsigned wv  = (unsigned)r->ysyx_25020039__DOT___core_io_dmem_wvalid;
         unsigned swst = (unsigned)r->ysyx_25020039__DOT__sram__DOT__w_state;
+        unsigned srst = (unsigned)r->ysyx_25020039__DOT__sram__DOT__r_state;
         unsigned dw = (unsigned)r->ysyx_25020039__DOT__xbar__DOT__dmem_is_write;
+        unsigned icst = (unsigned)r->ysyx_25020039__DOT__core__DOT__icache__DOT__state;
+        unsigned ftqh = (unsigned)r->ysyx_25020039__DOT__core__DOT__ifu__DOT__ftq__DOT__head;
+        unsigned ftqt = (unsigned)r->ysyx_25020039__DOT__core__DOT__ifu__DOT__ftq__DOT__tail;
+        unsigned ftqc = (unsigned)r->ysyx_25020039__DOT__core__DOT__ifu__DOT__ftq__DOT__count;
         printf("[HANG] cm_st_state=%u xbar_state=%u dmem_wr=%u sram_w=%u\n",
                cmst, xb, dw, swst);
+        printf("[HANG] icache_state=%u sram_r=%u ftq(head=%u tail=%u count=%u)\n",
+               icst, srst, ftqh, ftqt, ftqc);
         printf("[HANG] core_awvalid=%u core_wvalid=%u\n", awv, wv);
         CData *rsv[] = {
           &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_0_valid,

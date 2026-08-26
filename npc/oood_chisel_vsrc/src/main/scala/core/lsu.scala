@@ -4,7 +4,7 @@ import chisel3._
 import chisel3.util._
 import common.MEM_READ._
 import common.IRQ_CTRL._
-import unit.WBU_signals
+import unit.{LoadQueue, WBU_signals}
 import common.OoOParams
 import bus._
 import core.PerfEvents._
@@ -49,52 +49,44 @@ class LSU_IO(xlen: Int) extends Bundle {
   val st_fwd_valid = Input(Bool())
   val st_fwd_data = Input(UInt(32.W))
   val st_fwd_wait = Input(Bool())
+  val st_fwd_unknown_only = Input(Bool())
+  val st_fwd_unknown_mask = Input(UInt(OoOParams.ROB_SIZE.W))
+
+  val ld_query_valid = Output(Bool())
+  val ld_query_rob = Output(UInt(OoOParams.ROB_PTR_W.W))
+  val ld_query_addr = Output(UInt(32.W))
+  val ld_query_mem_rd = Output(UInt(3.W))
+
+  val rob_head = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val commit0_valid = Input(Bool())
+  val commit0_rob = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val commit1_valid = Input(Bool())
+  val commit1_rob = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val flush = Input(Bool())
+  val flush_idx = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val flush_all = Input(Bool())
+  val mmio_ready = Input(Bool())
+
+  val store_resolve0_valid = Input(Bool())
+  val store_resolve0_rob = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val store_resolve0_addr = Input(UInt(32.W))
+  val store_resolve0_mask = Input(UInt(4.W))
+  val store_resolve1_valid = Input(Bool())
+  val store_resolve1_rob = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val store_resolve1_addr = Input(UInt(32.W))
+  val store_resolve1_mask = Input(UInt(4.W))
+
+  val mem_violation_valid = Output(Bool())
+  val mem_violation_rob = Output(UInt(OoOParams.ROB_PTR_W.W))
+  val mem_violation_pc = Output(UInt(32.W))
+  val lq_outstanding = Output(UInt(log2Ceil(OoOParams.LQ_SIZE + 1).W))
   val bus_busy = Output(Bool())
 }
 
 class LSU(val conf: CoreConfig) extends Module {
   val io = IO(new LSU_IO(conf.xlen))
 
-  private val loadSlots = 2
-  private val loadSlotW = log2Ceil(loadSlots)
-
-  io.dmem.arid := 0.U
-  io.dmem.arlen := 0.U
-  io.dmem.arburst := 1.U
-  io.dmem.awid := 0.U
-  io.dmem.awlen := 0.U
-  io.dmem.awburst := 1.U
-  io.dmem.wlast := true.B
-  // Stores are drained through the commit-side StoreBuffer/direct path.
-  io.dmem.awvalid := false.B
-  io.dmem.awaddr := 0.U
-  io.dmem.awsize := 0.U
-  io.dmem.wvalid := false.B
-  io.dmem.wdata := 0.U
-  io.dmem.wstrb := 0.U
-  io.dmem.bready := false.B
-
   val is_load = !io.in.bits.signals.lsu.mem_write && io.in.bits.signals.lsu.mem_valid
-  val not_bus = !is_load
-
-  val arsize = MuxLookup(io.in.bits.signals.lsu.mem_rd, RWORD)(Seq(
-    RBYTE -> 0.U,
-    RHALF -> 1.U,
-    RWORD -> 2.U,
-    RBYTEU -> 0.U,
-    RHALFU -> 1.U
-  ))
-
-  val loadValid = RegInit(VecInit(Seq.fill(loadSlots)(false.B)))
-  val loadMeta = Reg(Vec(loadSlots, new LSU_WBU_IO))
-  val loadMemRd = Reg(Vec(loadSlots, UInt(3.W)))
-  val loadAddr = Reg(Vec(loadSlots, UInt(32.W)))
-  val freeMask = VecInit(loadValid.map(v => !v)).asUInt
-  val hasFreeSlot = freeMask.orR
-  val allocSlot = PriorityEncoder(freeMask)
-  val respSlot = io.dmem.rid(loadSlotW - 1, 0)
-  val respSlotValid = io.dmem.rvalid && loadValid(respSlot)
-  val staleResp = io.dmem.rvalid && !loadValid(respSlot)
 
   def makeBase(in: EXU_LSU_IO): LSU_WBU_IO = {
     val b = Wire(new LSU_WBU_IO)
@@ -121,79 +113,62 @@ class LSU(val conf: CoreConfig) extends Module {
     b
   }
 
-  def extendLoad(raw: UInt, memRd: UInt): UInt = {
-    MuxLookup(memRd, raw)(Seq(
-      RBYTE -> raw(7, 0).asSInt.pad(32).asUInt,
-      RHALF -> raw(15, 0).asSInt.pad(32).asUInt,
-      RWORD -> raw(31, 0),
-      RBYTEU -> raw(7, 0).asUInt.pad(32),
-      RHALFU -> raw(15, 0).asUInt.pad(32)
-    ))
-  }
-
   val inBase = makeBase(io.in.bits)
-  val fwdDone = io.in.valid && is_load && io.st_fwd_valid && !io.st_fwd_wait && !io.is_flush
-  val directDone = io.in.valid && !io.is_flush && (not_bus || fwdDone)
-  val canIssueBusLoad =
-    io.in.valid && is_load && !io.st_fwd_wait && !io.st_fwd_valid &&
-    !io.is_flush && hasFreeSlot && !respSlotValid
+  val lq = Module(new LoadQueue(conf))
+  lq.io.alloc.valid := io.in.valid && is_load && !io.is_flush
+  lq.io.alloc.bits.meta := inBase
+  lq.io.alloc.bits.addr := io.in.bits.alu_result
+  lq.io.alloc.bits.memRd := io.in.bits.signals.lsu.mem_rd
+  lq.io.robHead := io.rob_head
+  lq.io.commit0Valid := io.commit0_valid
+  lq.io.commit0Rob := io.commit0_rob
+  lq.io.commit1Valid := io.commit1_valid
+  lq.io.commit1Rob := io.commit1_rob
+  lq.io.flush := io.flush
+  lq.io.flushIdx := io.flush_idx
+  lq.io.flushAll := io.flush_all
+  lq.io.mmioReady := io.mmio_ready
+  lq.io.fwdWait := io.st_fwd_wait
+  lq.io.fwdValid := io.st_fwd_valid
+  lq.io.fwdData := io.st_fwd_data
+  lq.io.fwdUnknownOnly := io.st_fwd_unknown_only
+  lq.io.fwdUnknownMask := io.st_fwd_unknown_mask
+  lq.io.storeResolve0Valid := io.store_resolve0_valid
+  lq.io.storeResolve0Rob := io.store_resolve0_rob
+  lq.io.storeResolve0Addr := io.store_resolve0_addr
+  lq.io.storeResolve0Mask := io.store_resolve0_mask
+  lq.io.storeResolve1Valid := io.store_resolve1_valid
+  lq.io.storeResolve1Rob := io.store_resolve1_rob
+  lq.io.storeResolve1Addr := io.store_resolve1_addr
+  lq.io.storeResolve1Mask := io.store_resolve1_mask
+  io.dmem <> lq.io.dmem
 
-  io.dmem.arvalid := canIssueBusLoad
-  io.dmem.arsize := arsize
-  io.dmem.araddr := io.in.bits.alu_result
-  io.dmem.arid := allocSlot
+  io.ld_query_valid := lq.io.queryValid
+  io.ld_query_rob := lq.io.queryRob
+  io.ld_query_addr := lq.io.queryAddr
+  io.ld_query_mem_rd := lq.io.queryMemRd
+  io.mem_violation_valid := lq.io.violationValid
+  io.mem_violation_rob := lq.io.violationRob
+  io.mem_violation_pc := lq.io.violationPc
+  io.lq_outstanding := lq.io.outstanding
 
-  val arFire = io.dmem.arvalid && io.dmem.arready
-  io.dmem.rready := (respSlotValid && io.out.ready) || staleResp
+  val directValid = io.in.valid && !is_load && !io.is_flush
+  lq.io.wb.ready := io.out.ready
+  io.out.valid := lq.io.wb.valid || directValid
+  io.out.bits := Mux(lq.io.wb.valid, lq.io.wb.bits, inBase)
+  io.in.ready := !io.in.valid || io.is_flush || Mux(is_load,
+    lq.io.alloc.ready, !lq.io.wb.valid && io.out.ready)
 
-  val respByteOffset = loadAddr(respSlot)(1, 0)
-  val respOffset = io.dmem.rdata >> (respByteOffset << 3)
-  val respOut = Wire(new LSU_WBU_IO)
-  respOut := loadMeta(respSlot)
-  respOut.mem_read := extendLoad(respOffset, loadMemRd(respSlot))
-  respOut.fwd_valid := false.B
-  respOut.fwd_data := 0.U
-  val hasLaf = io.dmem.rresp =/= 0.U
-  respOut.state.state := hasLaf || loadMeta(respSlot).state.state
-  respOut.state.state_num := Mux(hasLaf, IRQ_LAF, loadMeta(respSlot).state.state_num)
-
-  val fwdExt = extendLoad(io.st_fwd_data, io.in.bits.signals.lsu.mem_rd)
-  val directOut = Wire(new LSU_WBU_IO)
-  directOut := inBase
-  directOut.fwd_valid := fwdDone
-  directOut.fwd_data := io.st_fwd_data
-  directOut.mem_read := Mux(fwdDone, fwdExt, 0.U)
-
-  io.out.valid := respSlotValid || directDone
-  io.out.bits := Mux(respSlotValid, respOut, directOut)
-
-  io.in.ready := MuxCase(false.B, Seq(
-    (io.is_flush || !io.in.valid) -> true.B,
-    respSlotValid -> false.B,
-    (io.in.valid && is_load && io.st_fwd_wait) -> false.B,
-    directDone -> io.out.ready,
-    canIssueBusLoad -> io.dmem.arready
-  ))
-
-  when(arFire) {
-    loadValid(allocSlot) := true.B
-    loadMeta(allocSlot) := inBase
-    loadMemRd(allocSlot) := io.in.bits.signals.lsu.mem_rd
-    loadAddr(allocSlot) := io.in.bits.alu_result
-  }
-
-  when(io.dmem.rvalid && io.dmem.rready && loadValid(respSlot)) {
-    loadValid(respSlot) := false.B
-  }
-
-  io.bus_busy := loadValid.asUInt.orR || io.dmem.arvalid
+  io.bus_busy := lq.io.outstanding =/= 0.U || io.dmem.arvalid
 
   if (conf.statistics) {
-    PM(conf, clock, EVENT_LSU_READ, 1.U, arFire)
+    PM(conf, clock, EVENT_LSU_READ, 1.U, io.dmem.arvalid && io.dmem.arready)
     PM(conf, clock, EVENT_LSU_WRITE, 1.U, false.B)
-    PM(conf, clock, EVENT_LSU_LATENCY, 1.U, loadValid.asUInt.orR && (!io.dmem.rvalid || io.out.ready))
-    PM(conf, clock, EVENT_LSU_SQ_WAIT, 1.U, io.in.valid && is_load && io.st_fwd_wait && !io.is_flush)
-    PM(conf, clock, EVENT_LSU_SQ_FORWARD, 1.U, directDone && io.out.ready && fwdDone)
-    PM(conf, clock, EVENT_LSU_BUS_WAIT, 1.U, loadValid.asUInt.orR && !io.dmem.rvalid)
+    PM(conf, clock, EVENT_LSU_LATENCY, lq.io.outstanding, lq.io.outstanding =/= 0.U)
+    PM(conf, clock, EVENT_LSU_SQ_WAIT, 1.U, lq.io.queryValid && io.st_fwd_wait)
+    PM(conf, clock, EVENT_LSU_SQ_FORWARD, 1.U,
+      lq.io.wb.valid && lq.io.wb.ready && lq.io.wb.bits.fwd_valid)
+    PM(conf, clock, EVENT_LSU_BUS_WAIT, 1.U,
+      lq.io.queryValid && !io.st_fwd_wait && !io.st_fwd_valid && !io.dmem.arready)
   }
 }

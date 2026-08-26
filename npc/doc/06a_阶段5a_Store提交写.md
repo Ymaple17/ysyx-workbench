@@ -2,15 +2,15 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：store 对内存的修改只发生在 **ROB head 提交**；LSU 只算地址/数据，写通道恒静默。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：与 5b 一并落地（见 [06b](06b_阶段5b_Load冲突与去memhead.md)）。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：LSU 只计算 store 地址/数据/掩码并写 ROB；只有 head commit 状态机发 AW/W、等待 B 后才退休。
+- **当前参考核**：5a/5b 最小语义已落地；阶段 10a 又让普通 PMEM store 提交进 StoreBuffer，不再等待总线 B，MMIO 仍直写独占。
+- **后续扩展**：5b 去掉 `mem@head` 对 load 的全局限制，补更老 store 冲突检测与前递。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
 **前置**：4c 绿（异常已认 ROB head；精确异常要求未提交 store 可「没发生过」）。  
 **目标**：store 对内存的修改只发生在 **ROB head 提交**；LSU 只算地址/数据，写通道恒静默。  
-**仓库状态**：与 5b 一并落地（见 [06b](06b_阶段5b_Load冲突与去memhead.md)）。
+**本章阶段快照**：与 5b 一并落地（见 [06b](06b_阶段5b_Load冲突与去memhead.md)）。
 
 **铁律**：执行序可以先算 `mem_addr` / `mem_wdata`，但 AXI 写（aw/w/b）只能由 **commit 状态机** 发起；wrong-path store 未提交则永不改内存。
 
@@ -126,7 +126,7 @@ store_commit_ready := (cm_st_state === s_CM_B) && io.dmem.bvalid && io.dmem.brea
 rob.io.commit_fire := … && (!cm_is_store || store_commit_ready)
 ```
 
-仅 **`is_irq` 取消写**；**mispred 不得**打断正在 commit 的更老 store（否则 AXI/xbar 卡死）。
+进入写事务前，`commit_gap` 必须排除 store 状态机忙碌，因此外部中断不能在事务中途被采样。AW 或 W 任一通道一旦握手，事务就不可取消；即使之后出现 redirect 请求，也必须保持状态直到另一通道和 B 响应完成。**mispred 不得**打断正在 commit 的更老 store，否则 AXI/xbar 会卡死。
 
 ### 4.4 dmem 仲裁
 
@@ -203,7 +203,7 @@ LSU 侧 awready/wready/bvalid 恒假（写口不接 LSU）
 IDLE + head_store_pending + !bus_busy → 锁存 → W
 W：aw_done && w_done → B
 B：b 握手 → IDLE，同拍 commit_fire（store）
-is_irq → 强制 IDLE（丢半截写；异常路径已另议）
+中断采样条件排除 W/B 状态；已接受的事务必须排空到 B 握手，禁止强制回 IDLE
 mispred → 不碰 SM
 ```
 

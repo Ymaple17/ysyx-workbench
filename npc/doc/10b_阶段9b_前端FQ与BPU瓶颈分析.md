@@ -2,15 +2,15 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：判断 IPC 低是因为后端算不动，还是前端喂不饱、分支错太多、FQ backpressure 太重。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：Stage9a baseline 已固定；当前统计显示 FQ Full、BPU miss、head store commit wait 都值得优先检查。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：补 FQ full/empty、fetch stall、方向错/目标错/未预测 JALR、head/store wait 分类，并用同一 workload 计算各项占比。
+- **当前参考核**：正文 FQ Full、BPU miss、store wait 是 Stage9b 快照；10a-10m 已分别处理这些瓶颈，当前剩余指标见最终摘要。
+- **后续扩展**：9c 对 FQ/BHT 等参数做单变量扫描；只有结构瓶颈被数据证明后才进入阶段 10。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
 **前置**：9a 已固定 baseline。  
 **目标**：判断 IPC 低是因为后端算不动，还是前端喂不饱、分支错太多、FQ backpressure 太重。  
-**仓库状态**：Stage9a baseline 已固定；当前统计显示 FQ Full、BPU miss、head store commit wait 都值得优先检查。
+**本章阶段快照**：Stage9a baseline 已固定；当章统计显示 FQ Full、BPU miss、head store commit wait 都值得优先检查。
 
 ---
 
@@ -42,16 +42,16 @@ when(is_bp_flush) { bpFlushCnt := bpFlushCnt + 1.U }
 
 ---
 
-## 3. 当前参考核
+## 3. Stage9b 本章基线
 
-当前参考核前端已经有 FetchQueue 和轻量 BPU，但不是高级预测器。阶段 9b 只做诊断和小修：
+Stage9b 入口前端已经有 FetchQueue 和轻量 BPU，但不是高级预测器。本章只做诊断和小修：
 
 - 检查 flush 后 FQ 是否确实清干净
 - 检查 redirect PC 是否及时送回 IFU
 - 检查 BPU 更新是否只在 commit 后发生
 - 检查 FQ backpressure 是否把 IFU 长时间压住
 
-当前 microbench(test) 的 9a 数据：
+Stage9a microbench(test) 基线数据：
 
 | 指标 | 数值 | 含义 |
 |------|------|------|
@@ -87,7 +87,7 @@ when(is_bp_flush) { bpFlushCnt := bpFlushCnt + 1.U }
 
 ## 6. 本轮参考核实现
 
-Stage9b 没有提前引入 TAGE、宽取指或 StoreBuffer，而是先做两个小步：
+Stage9b 没有提前引入 TAGE、宽取指或 StoreBuffer，而是先做三个小步：
 
 1. BPU 冷启动优化：BHT 初值从强不跳改为弱不跳；BHT 增加 valid 位，未训练项按 backward-taken / forward-not-taken 预测。
 2. FQ 深度小幅增大：`FQ_SIZE` 从 4 改为 8，用更深的取指队列吸收后端短暂停顿。
@@ -130,7 +130,7 @@ PM(conf, clock, EVENT_BPU_UNPREDICTED, 1.U,
 | IPC | `0.4119` | `0.4121` | `0.4122` |
 | Total Cycles | `1268745` | `1267668` | `1268071` |
 | BPU Hit Rate | `64.16%` | `64.30%` | `64.43%` |
-| BPU Mispredicts | `42840` | `42614` | `42492` |
+| Predicted branch dir/target miss | `42840` | `42614` | `42492` |
 | BP Flushes | `50756` | `50529` | `50408` |
 | FQ Full | `351450` | `350867` | `302451` |
 | FQ Empty | `74796` | `75634` | `74952` |
@@ -141,11 +141,13 @@ BPU + FQ=8 版本新增的 miss 分类：
 
 | 分类 | 数值 | 含义 |
 |------|------|------|
-| Direction Miss | `41909` | 当前主要 BPU 问题仍是方向预测 |
+| Direction Miss | `41909` | Stage9b 的主要 BPU 问题仍是方向预测 |
 | Target Miss | `583` | 目标预测不是主要瓶颈 |
 | Unpredicted JALR | `7916` | 间接跳转还没有 BTB/间接预测支持 |
 
-结论：Stage9b 的小步优化方向正确，但 IPC 提升很小。当前最大的真实限制仍然不是 FQ 容量本身，而是方向预测质量、顺序 store commit 等更深层瓶颈。FQ=8 可以保留，因为它显著降低了 FQ Full 和 IFU Pipeline Stall；更激进的 FQ 参数扫描放到 Stage9c。
+`42492 = 41909 + 583` 只统计已预测分支的方向/目标错误；再加 `7916` 次未预测 JALR，才得到总 `BP Flushes=50408`。因此不能把 `42492` 单独标成全部 BPU flush/mispredict。
+
+结论：Stage9b 的小步优化方向正确，但 IPC 提升很小。当章最大的真实限制仍然不是 FQ 容量本身，而是方向预测质量、顺序 store commit 等更深层瓶颈。FQ=8 可以保留，因为它显著降低了 FQ Full 和 IFU Pipeline Stall；更激进的 FQ 参数扫描放到 Stage9c。
 
 验收结果：
 

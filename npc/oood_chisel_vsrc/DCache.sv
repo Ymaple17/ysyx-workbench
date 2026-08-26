@@ -10,7 +10,6 @@ module DCache(
   output [1:0]  io_cpu_rresp,
   output        io_cpu_rvalid,
   output [3:0]  io_cpu_rid,
-  input         io_cpu_rready,
   output [31:0] io_mem_araddr,
   output        io_mem_arvalid,
   input         io_mem_arready,
@@ -21,7 +20,10 @@ module DCache(
   input         io_invalidate_valid,
   input  [31:0] io_invalidate_addr,
   input         io_invalidate2_valid,
-  input  [31:0] io_invalidate2_addr
+  input  [31:0] io_invalidate2_addr,
+  input         io_invalidate3_valid,
+  input  [31:0] io_invalidate3_addr,
+  output        io_busy
 );
 
   reg         lines_0_valid;
@@ -286,6 +288,8 @@ module DCache(
     io_invalidate_valid & io_invalidate_addr - 32'h80000000 < 32'h8000000;
   wire        _killMshrNow_T_6 =
     io_invalidate2_valid & io_invalidate2_addr - 32'h80000000 < 32'h8000000;
+  wire        _killMshrNow_T_12 =
+    io_invalidate3_valid & io_invalidate3_addr - 32'h80000000 < 32'h8000000;
   reg         casez_tmp;
   always_comb begin
     casez (io_cpu_araddr[8:3])
@@ -823,7 +827,9 @@ module DCache(
     & ~(_killMshrNow_T_1 & io_invalidate_addr[8:3] == io_cpu_araddr[8:3]
         & io_invalidate_addr[31:9] == io_cpu_araddr[31:9] | _killMshrNow_T_6
         & io_invalidate2_addr[8:3] == io_cpu_araddr[8:3]
-        & io_invalidate2_addr[31:9] == io_cpu_araddr[31:9]);
+        & io_invalidate2_addr[31:9] == io_cpu_araddr[31:9] | _killMshrNow_T_12
+        & io_invalidate3_addr[8:3] == io_cpu_araddr[8:3]
+        & io_invalidate3_addr[31:9] == io_cpu_araddr[31:9]);
   reg         hitRespValid;
   reg  [31:0] hitRespData;
   reg  [3:0]  hitRespId;
@@ -1380,6 +1386,272 @@ module DCache(
         casez_tmp_6 = lines_63_tag;
     endcase
   end // always_comb
+  reg         casez_tmp_7;
+  always_comb begin
+    casez (io_invalidate3_addr[8:3])
+      6'b000000:
+        casez_tmp_7 = lines_0_valid;
+      6'b000001:
+        casez_tmp_7 = lines_1_valid;
+      6'b000010:
+        casez_tmp_7 = lines_2_valid;
+      6'b000011:
+        casez_tmp_7 = lines_3_valid;
+      6'b000100:
+        casez_tmp_7 = lines_4_valid;
+      6'b000101:
+        casez_tmp_7 = lines_5_valid;
+      6'b000110:
+        casez_tmp_7 = lines_6_valid;
+      6'b000111:
+        casez_tmp_7 = lines_7_valid;
+      6'b001000:
+        casez_tmp_7 = lines_8_valid;
+      6'b001001:
+        casez_tmp_7 = lines_9_valid;
+      6'b001010:
+        casez_tmp_7 = lines_10_valid;
+      6'b001011:
+        casez_tmp_7 = lines_11_valid;
+      6'b001100:
+        casez_tmp_7 = lines_12_valid;
+      6'b001101:
+        casez_tmp_7 = lines_13_valid;
+      6'b001110:
+        casez_tmp_7 = lines_14_valid;
+      6'b001111:
+        casez_tmp_7 = lines_15_valid;
+      6'b010000:
+        casez_tmp_7 = lines_16_valid;
+      6'b010001:
+        casez_tmp_7 = lines_17_valid;
+      6'b010010:
+        casez_tmp_7 = lines_18_valid;
+      6'b010011:
+        casez_tmp_7 = lines_19_valid;
+      6'b010100:
+        casez_tmp_7 = lines_20_valid;
+      6'b010101:
+        casez_tmp_7 = lines_21_valid;
+      6'b010110:
+        casez_tmp_7 = lines_22_valid;
+      6'b010111:
+        casez_tmp_7 = lines_23_valid;
+      6'b011000:
+        casez_tmp_7 = lines_24_valid;
+      6'b011001:
+        casez_tmp_7 = lines_25_valid;
+      6'b011010:
+        casez_tmp_7 = lines_26_valid;
+      6'b011011:
+        casez_tmp_7 = lines_27_valid;
+      6'b011100:
+        casez_tmp_7 = lines_28_valid;
+      6'b011101:
+        casez_tmp_7 = lines_29_valid;
+      6'b011110:
+        casez_tmp_7 = lines_30_valid;
+      6'b011111:
+        casez_tmp_7 = lines_31_valid;
+      6'b100000:
+        casez_tmp_7 = lines_32_valid;
+      6'b100001:
+        casez_tmp_7 = lines_33_valid;
+      6'b100010:
+        casez_tmp_7 = lines_34_valid;
+      6'b100011:
+        casez_tmp_7 = lines_35_valid;
+      6'b100100:
+        casez_tmp_7 = lines_36_valid;
+      6'b100101:
+        casez_tmp_7 = lines_37_valid;
+      6'b100110:
+        casez_tmp_7 = lines_38_valid;
+      6'b100111:
+        casez_tmp_7 = lines_39_valid;
+      6'b101000:
+        casez_tmp_7 = lines_40_valid;
+      6'b101001:
+        casez_tmp_7 = lines_41_valid;
+      6'b101010:
+        casez_tmp_7 = lines_42_valid;
+      6'b101011:
+        casez_tmp_7 = lines_43_valid;
+      6'b101100:
+        casez_tmp_7 = lines_44_valid;
+      6'b101101:
+        casez_tmp_7 = lines_45_valid;
+      6'b101110:
+        casez_tmp_7 = lines_46_valid;
+      6'b101111:
+        casez_tmp_7 = lines_47_valid;
+      6'b110000:
+        casez_tmp_7 = lines_48_valid;
+      6'b110001:
+        casez_tmp_7 = lines_49_valid;
+      6'b110010:
+        casez_tmp_7 = lines_50_valid;
+      6'b110011:
+        casez_tmp_7 = lines_51_valid;
+      6'b110100:
+        casez_tmp_7 = lines_52_valid;
+      6'b110101:
+        casez_tmp_7 = lines_53_valid;
+      6'b110110:
+        casez_tmp_7 = lines_54_valid;
+      6'b110111:
+        casez_tmp_7 = lines_55_valid;
+      6'b111000:
+        casez_tmp_7 = lines_56_valid;
+      6'b111001:
+        casez_tmp_7 = lines_57_valid;
+      6'b111010:
+        casez_tmp_7 = lines_58_valid;
+      6'b111011:
+        casez_tmp_7 = lines_59_valid;
+      6'b111100:
+        casez_tmp_7 = lines_60_valid;
+      6'b111101:
+        casez_tmp_7 = lines_61_valid;
+      6'b111110:
+        casez_tmp_7 = lines_62_valid;
+      default:
+        casez_tmp_7 = lines_63_valid;
+    endcase
+  end // always_comb
+  reg  [22:0] casez_tmp_8;
+  always_comb begin
+    casez (io_invalidate3_addr[8:3])
+      6'b000000:
+        casez_tmp_8 = lines_0_tag;
+      6'b000001:
+        casez_tmp_8 = lines_1_tag;
+      6'b000010:
+        casez_tmp_8 = lines_2_tag;
+      6'b000011:
+        casez_tmp_8 = lines_3_tag;
+      6'b000100:
+        casez_tmp_8 = lines_4_tag;
+      6'b000101:
+        casez_tmp_8 = lines_5_tag;
+      6'b000110:
+        casez_tmp_8 = lines_6_tag;
+      6'b000111:
+        casez_tmp_8 = lines_7_tag;
+      6'b001000:
+        casez_tmp_8 = lines_8_tag;
+      6'b001001:
+        casez_tmp_8 = lines_9_tag;
+      6'b001010:
+        casez_tmp_8 = lines_10_tag;
+      6'b001011:
+        casez_tmp_8 = lines_11_tag;
+      6'b001100:
+        casez_tmp_8 = lines_12_tag;
+      6'b001101:
+        casez_tmp_8 = lines_13_tag;
+      6'b001110:
+        casez_tmp_8 = lines_14_tag;
+      6'b001111:
+        casez_tmp_8 = lines_15_tag;
+      6'b010000:
+        casez_tmp_8 = lines_16_tag;
+      6'b010001:
+        casez_tmp_8 = lines_17_tag;
+      6'b010010:
+        casez_tmp_8 = lines_18_tag;
+      6'b010011:
+        casez_tmp_8 = lines_19_tag;
+      6'b010100:
+        casez_tmp_8 = lines_20_tag;
+      6'b010101:
+        casez_tmp_8 = lines_21_tag;
+      6'b010110:
+        casez_tmp_8 = lines_22_tag;
+      6'b010111:
+        casez_tmp_8 = lines_23_tag;
+      6'b011000:
+        casez_tmp_8 = lines_24_tag;
+      6'b011001:
+        casez_tmp_8 = lines_25_tag;
+      6'b011010:
+        casez_tmp_8 = lines_26_tag;
+      6'b011011:
+        casez_tmp_8 = lines_27_tag;
+      6'b011100:
+        casez_tmp_8 = lines_28_tag;
+      6'b011101:
+        casez_tmp_8 = lines_29_tag;
+      6'b011110:
+        casez_tmp_8 = lines_30_tag;
+      6'b011111:
+        casez_tmp_8 = lines_31_tag;
+      6'b100000:
+        casez_tmp_8 = lines_32_tag;
+      6'b100001:
+        casez_tmp_8 = lines_33_tag;
+      6'b100010:
+        casez_tmp_8 = lines_34_tag;
+      6'b100011:
+        casez_tmp_8 = lines_35_tag;
+      6'b100100:
+        casez_tmp_8 = lines_36_tag;
+      6'b100101:
+        casez_tmp_8 = lines_37_tag;
+      6'b100110:
+        casez_tmp_8 = lines_38_tag;
+      6'b100111:
+        casez_tmp_8 = lines_39_tag;
+      6'b101000:
+        casez_tmp_8 = lines_40_tag;
+      6'b101001:
+        casez_tmp_8 = lines_41_tag;
+      6'b101010:
+        casez_tmp_8 = lines_42_tag;
+      6'b101011:
+        casez_tmp_8 = lines_43_tag;
+      6'b101100:
+        casez_tmp_8 = lines_44_tag;
+      6'b101101:
+        casez_tmp_8 = lines_45_tag;
+      6'b101110:
+        casez_tmp_8 = lines_46_tag;
+      6'b101111:
+        casez_tmp_8 = lines_47_tag;
+      6'b110000:
+        casez_tmp_8 = lines_48_tag;
+      6'b110001:
+        casez_tmp_8 = lines_49_tag;
+      6'b110010:
+        casez_tmp_8 = lines_50_tag;
+      6'b110011:
+        casez_tmp_8 = lines_51_tag;
+      6'b110100:
+        casez_tmp_8 = lines_52_tag;
+      6'b110101:
+        casez_tmp_8 = lines_53_tag;
+      6'b110110:
+        casez_tmp_8 = lines_54_tag;
+      6'b110111:
+        casez_tmp_8 = lines_55_tag;
+      6'b111000:
+        casez_tmp_8 = lines_56_tag;
+      6'b111001:
+        casez_tmp_8 = lines_57_tag;
+      6'b111010:
+        casez_tmp_8 = lines_58_tag;
+      6'b111011:
+        casez_tmp_8 = lines_59_tag;
+      6'b111100:
+        casez_tmp_8 = lines_60_tag;
+      6'b111101:
+        casez_tmp_8 = lines_61_tag;
+      6'b111110:
+        casez_tmp_8 = lines_62_tag;
+      default:
+        casez_tmp_8 = lines_63_tag;
+    endcase
+  end // always_comb
   wire        _GEN_0 = cpuArFire & cpuCacheable;
   wire        _GEN_1 = _GEN_0 & ~cpuHit;
   wire        killMshrNow =
@@ -1387,8 +1659,9 @@ module DCache(
     & (_killMshrNow_T_1 & io_invalidate_addr[8:3] == mshrAddr[8:3]
        & io_invalidate_addr[31:9] == mshrAddr[31:9] | _killMshrNow_T_6
        & io_invalidate2_addr[8:3] == mshrAddr[8:3]
-       & io_invalidate2_addr[31:9] == mshrAddr[31:9]);
-  wire        cpuRespFire = respValid & io_cpu_rready;
+       & io_invalidate2_addr[31:9] == mshrAddr[31:9] | _killMshrNow_T_12
+       & io_invalidate3_addr[8:3] == mshrAddr[8:3]
+       & io_invalidate3_addr[31:9] == mshrAddr[31:9]);
   wire        _GEN_2 = ~cpuArFire | cpuHit;
   wire        _GEN_3 = _GEN_2 & mshrState;
   wire        _GEN_4 = io_mem_rvalid & io_mem_rready_0;
@@ -1721,6 +1994,8 @@ module DCache(
   wire        _GEN_200 = _GEN_136 & (&(io_invalidate_addr[8:3]));
   wire        _GEN_201 =
     _killMshrNow_T_6 & casez_tmp_5 & casez_tmp_6 == io_invalidate2_addr[31:9];
+  wire        _GEN_202 =
+    _killMshrNow_T_12 & casez_tmp_7 & casez_tmp_8 == io_invalidate3_addr[31:9];
   always @(posedge clock) begin
     if (reset) begin
       lines_0_valid <= 1'h0;
@@ -1999,587 +2274,651 @@ module DCache(
     end
     else begin
       lines_0_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h0 | _GEN_137) & _GEN_8
-          : ~_GEN_137 & _GEN_8;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h0)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h0 | _GEN_137) & _GEN_8
+             : ~_GEN_137 & _GEN_8);
       if (_GEN_7) begin
         lines_0_tag <= mshrAddr[31:9];
         lines_0_data_0 <= nextLine_0;
         lines_0_data_1 <= nextLine_1;
       end
       lines_1_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h1 | _GEN_138) & _GEN_10
-          : ~_GEN_138 & _GEN_10;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h1)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h1 | _GEN_138) & _GEN_10
+             : ~_GEN_138 & _GEN_10);
       if (_GEN_9) begin
         lines_1_tag <= mshrAddr[31:9];
         lines_1_data_0 <= nextLine_0;
         lines_1_data_1 <= nextLine_1;
       end
       lines_2_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h2 | _GEN_139) & _GEN_12
-          : ~_GEN_139 & _GEN_12;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h2)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h2 | _GEN_139) & _GEN_12
+             : ~_GEN_139 & _GEN_12);
       if (_GEN_11) begin
         lines_2_tag <= mshrAddr[31:9];
         lines_2_data_0 <= nextLine_0;
         lines_2_data_1 <= nextLine_1;
       end
       lines_3_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h3 | _GEN_140) & _GEN_14
-          : ~_GEN_140 & _GEN_14;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h3)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h3 | _GEN_140) & _GEN_14
+             : ~_GEN_140 & _GEN_14);
       if (_GEN_13) begin
         lines_3_tag <= mshrAddr[31:9];
         lines_3_data_0 <= nextLine_0;
         lines_3_data_1 <= nextLine_1;
       end
       lines_4_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h4 | _GEN_141) & _GEN_16
-          : ~_GEN_141 & _GEN_16;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h4)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h4 | _GEN_141) & _GEN_16
+             : ~_GEN_141 & _GEN_16);
       if (_GEN_15) begin
         lines_4_tag <= mshrAddr[31:9];
         lines_4_data_0 <= nextLine_0;
         lines_4_data_1 <= nextLine_1;
       end
       lines_5_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h5 | _GEN_142) & _GEN_18
-          : ~_GEN_142 & _GEN_18;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h5)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h5 | _GEN_142) & _GEN_18
+             : ~_GEN_142 & _GEN_18);
       if (_GEN_17) begin
         lines_5_tag <= mshrAddr[31:9];
         lines_5_data_0 <= nextLine_0;
         lines_5_data_1 <= nextLine_1;
       end
       lines_6_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h6 | _GEN_143) & _GEN_20
-          : ~_GEN_143 & _GEN_20;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h6)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h6 | _GEN_143) & _GEN_20
+             : ~_GEN_143 & _GEN_20);
       if (_GEN_19) begin
         lines_6_tag <= mshrAddr[31:9];
         lines_6_data_0 <= nextLine_0;
         lines_6_data_1 <= nextLine_1;
       end
       lines_7_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h7 | _GEN_144) & _GEN_22
-          : ~_GEN_144 & _GEN_22;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h7)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h7 | _GEN_144) & _GEN_22
+             : ~_GEN_144 & _GEN_22);
       if (_GEN_21) begin
         lines_7_tag <= mshrAddr[31:9];
         lines_7_data_0 <= nextLine_0;
         lines_7_data_1 <= nextLine_1;
       end
       lines_8_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h8 | _GEN_145) & _GEN_24
-          : ~_GEN_145 & _GEN_24;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h8)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h8 | _GEN_145) & _GEN_24
+             : ~_GEN_145 & _GEN_24);
       if (_GEN_23) begin
         lines_8_tag <= mshrAddr[31:9];
         lines_8_data_0 <= nextLine_0;
         lines_8_data_1 <= nextLine_1;
       end
       lines_9_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h9 | _GEN_146) & _GEN_26
-          : ~_GEN_146 & _GEN_26;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h9)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h9 | _GEN_146) & _GEN_26
+             : ~_GEN_146 & _GEN_26);
       if (_GEN_25) begin
         lines_9_tag <= mshrAddr[31:9];
         lines_9_data_0 <= nextLine_0;
         lines_9_data_1 <= nextLine_1;
       end
       lines_10_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'hA | _GEN_147) & _GEN_28
-          : ~_GEN_147 & _GEN_28;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'hA)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'hA | _GEN_147) & _GEN_28
+             : ~_GEN_147 & _GEN_28);
       if (_GEN_27) begin
         lines_10_tag <= mshrAddr[31:9];
         lines_10_data_0 <= nextLine_0;
         lines_10_data_1 <= nextLine_1;
       end
       lines_11_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'hB | _GEN_148) & _GEN_30
-          : ~_GEN_148 & _GEN_30;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'hB)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'hB | _GEN_148) & _GEN_30
+             : ~_GEN_148 & _GEN_30);
       if (_GEN_29) begin
         lines_11_tag <= mshrAddr[31:9];
         lines_11_data_0 <= nextLine_0;
         lines_11_data_1 <= nextLine_1;
       end
       lines_12_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'hC | _GEN_149) & _GEN_32
-          : ~_GEN_149 & _GEN_32;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'hC)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'hC | _GEN_149) & _GEN_32
+             : ~_GEN_149 & _GEN_32);
       if (_GEN_31) begin
         lines_12_tag <= mshrAddr[31:9];
         lines_12_data_0 <= nextLine_0;
         lines_12_data_1 <= nextLine_1;
       end
       lines_13_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'hD | _GEN_150) & _GEN_34
-          : ~_GEN_150 & _GEN_34;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'hD)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'hD | _GEN_150) & _GEN_34
+             : ~_GEN_150 & _GEN_34);
       if (_GEN_33) begin
         lines_13_tag <= mshrAddr[31:9];
         lines_13_data_0 <= nextLine_0;
         lines_13_data_1 <= nextLine_1;
       end
       lines_14_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'hE | _GEN_151) & _GEN_36
-          : ~_GEN_151 & _GEN_36;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'hE)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'hE | _GEN_151) & _GEN_36
+             : ~_GEN_151 & _GEN_36);
       if (_GEN_35) begin
         lines_14_tag <= mshrAddr[31:9];
         lines_14_data_0 <= nextLine_0;
         lines_14_data_1 <= nextLine_1;
       end
       lines_15_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'hF | _GEN_152) & _GEN_38
-          : ~_GEN_152 & _GEN_38;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'hF)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'hF | _GEN_152) & _GEN_38
+             : ~_GEN_152 & _GEN_38);
       if (_GEN_37) begin
         lines_15_tag <= mshrAddr[31:9];
         lines_15_data_0 <= nextLine_0;
         lines_15_data_1 <= nextLine_1;
       end
       lines_16_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h10 | _GEN_153) & _GEN_40
-          : ~_GEN_153 & _GEN_40;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h10)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h10 | _GEN_153) & _GEN_40
+             : ~_GEN_153 & _GEN_40);
       if (_GEN_39) begin
         lines_16_tag <= mshrAddr[31:9];
         lines_16_data_0 <= nextLine_0;
         lines_16_data_1 <= nextLine_1;
       end
       lines_17_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h11 | _GEN_154) & _GEN_42
-          : ~_GEN_154 & _GEN_42;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h11)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h11 | _GEN_154) & _GEN_42
+             : ~_GEN_154 & _GEN_42);
       if (_GEN_41) begin
         lines_17_tag <= mshrAddr[31:9];
         lines_17_data_0 <= nextLine_0;
         lines_17_data_1 <= nextLine_1;
       end
       lines_18_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h12 | _GEN_155) & _GEN_44
-          : ~_GEN_155 & _GEN_44;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h12)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h12 | _GEN_155) & _GEN_44
+             : ~_GEN_155 & _GEN_44);
       if (_GEN_43) begin
         lines_18_tag <= mshrAddr[31:9];
         lines_18_data_0 <= nextLine_0;
         lines_18_data_1 <= nextLine_1;
       end
       lines_19_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h13 | _GEN_156) & _GEN_46
-          : ~_GEN_156 & _GEN_46;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h13)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h13 | _GEN_156) & _GEN_46
+             : ~_GEN_156 & _GEN_46);
       if (_GEN_45) begin
         lines_19_tag <= mshrAddr[31:9];
         lines_19_data_0 <= nextLine_0;
         lines_19_data_1 <= nextLine_1;
       end
       lines_20_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h14 | _GEN_157) & _GEN_48
-          : ~_GEN_157 & _GEN_48;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h14)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h14 | _GEN_157) & _GEN_48
+             : ~_GEN_157 & _GEN_48);
       if (_GEN_47) begin
         lines_20_tag <= mshrAddr[31:9];
         lines_20_data_0 <= nextLine_0;
         lines_20_data_1 <= nextLine_1;
       end
       lines_21_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h15 | _GEN_158) & _GEN_50
-          : ~_GEN_158 & _GEN_50;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h15)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h15 | _GEN_158) & _GEN_50
+             : ~_GEN_158 & _GEN_50);
       if (_GEN_49) begin
         lines_21_tag <= mshrAddr[31:9];
         lines_21_data_0 <= nextLine_0;
         lines_21_data_1 <= nextLine_1;
       end
       lines_22_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h16 | _GEN_159) & _GEN_52
-          : ~_GEN_159 & _GEN_52;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h16)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h16 | _GEN_159) & _GEN_52
+             : ~_GEN_159 & _GEN_52);
       if (_GEN_51) begin
         lines_22_tag <= mshrAddr[31:9];
         lines_22_data_0 <= nextLine_0;
         lines_22_data_1 <= nextLine_1;
       end
       lines_23_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h17 | _GEN_160) & _GEN_54
-          : ~_GEN_160 & _GEN_54;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h17)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h17 | _GEN_160) & _GEN_54
+             : ~_GEN_160 & _GEN_54);
       if (_GEN_53) begin
         lines_23_tag <= mshrAddr[31:9];
         lines_23_data_0 <= nextLine_0;
         lines_23_data_1 <= nextLine_1;
       end
       lines_24_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h18 | _GEN_161) & _GEN_56
-          : ~_GEN_161 & _GEN_56;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h18)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h18 | _GEN_161) & _GEN_56
+             : ~_GEN_161 & _GEN_56);
       if (_GEN_55) begin
         lines_24_tag <= mshrAddr[31:9];
         lines_24_data_0 <= nextLine_0;
         lines_24_data_1 <= nextLine_1;
       end
       lines_25_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h19 | _GEN_162) & _GEN_58
-          : ~_GEN_162 & _GEN_58;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h19)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h19 | _GEN_162) & _GEN_58
+             : ~_GEN_162 & _GEN_58);
       if (_GEN_57) begin
         lines_25_tag <= mshrAddr[31:9];
         lines_25_data_0 <= nextLine_0;
         lines_25_data_1 <= nextLine_1;
       end
       lines_26_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h1A | _GEN_163) & _GEN_60
-          : ~_GEN_163 & _GEN_60;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h1A)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h1A | _GEN_163) & _GEN_60
+             : ~_GEN_163 & _GEN_60);
       if (_GEN_59) begin
         lines_26_tag <= mshrAddr[31:9];
         lines_26_data_0 <= nextLine_0;
         lines_26_data_1 <= nextLine_1;
       end
       lines_27_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h1B | _GEN_164) & _GEN_62
-          : ~_GEN_164 & _GEN_62;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h1B)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h1B | _GEN_164) & _GEN_62
+             : ~_GEN_164 & _GEN_62);
       if (_GEN_61) begin
         lines_27_tag <= mshrAddr[31:9];
         lines_27_data_0 <= nextLine_0;
         lines_27_data_1 <= nextLine_1;
       end
       lines_28_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h1C | _GEN_165) & _GEN_64
-          : ~_GEN_165 & _GEN_64;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h1C)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h1C | _GEN_165) & _GEN_64
+             : ~_GEN_165 & _GEN_64);
       if (_GEN_63) begin
         lines_28_tag <= mshrAddr[31:9];
         lines_28_data_0 <= nextLine_0;
         lines_28_data_1 <= nextLine_1;
       end
       lines_29_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h1D | _GEN_166) & _GEN_66
-          : ~_GEN_166 & _GEN_66;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h1D)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h1D | _GEN_166) & _GEN_66
+             : ~_GEN_166 & _GEN_66);
       if (_GEN_65) begin
         lines_29_tag <= mshrAddr[31:9];
         lines_29_data_0 <= nextLine_0;
         lines_29_data_1 <= nextLine_1;
       end
       lines_30_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h1E | _GEN_167) & _GEN_68
-          : ~_GEN_167 & _GEN_68;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h1E)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h1E | _GEN_167) & _GEN_68
+             : ~_GEN_167 & _GEN_68);
       if (_GEN_67) begin
         lines_30_tag <= mshrAddr[31:9];
         lines_30_data_0 <= nextLine_0;
         lines_30_data_1 <= nextLine_1;
       end
       lines_31_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h1F | _GEN_168) & _GEN_70
-          : ~_GEN_168 & _GEN_70;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h1F)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h1F | _GEN_168) & _GEN_70
+             : ~_GEN_168 & _GEN_70);
       if (_GEN_69) begin
         lines_31_tag <= mshrAddr[31:9];
         lines_31_data_0 <= nextLine_0;
         lines_31_data_1 <= nextLine_1;
       end
       lines_32_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h20 | _GEN_169) & _GEN_72
-          : ~_GEN_169 & _GEN_72;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h20)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h20 | _GEN_169) & _GEN_72
+             : ~_GEN_169 & _GEN_72);
       if (_GEN_71) begin
         lines_32_tag <= mshrAddr[31:9];
         lines_32_data_0 <= nextLine_0;
         lines_32_data_1 <= nextLine_1;
       end
       lines_33_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h21 | _GEN_170) & _GEN_74
-          : ~_GEN_170 & _GEN_74;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h21)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h21 | _GEN_170) & _GEN_74
+             : ~_GEN_170 & _GEN_74);
       if (_GEN_73) begin
         lines_33_tag <= mshrAddr[31:9];
         lines_33_data_0 <= nextLine_0;
         lines_33_data_1 <= nextLine_1;
       end
       lines_34_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h22 | _GEN_171) & _GEN_76
-          : ~_GEN_171 & _GEN_76;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h22)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h22 | _GEN_171) & _GEN_76
+             : ~_GEN_171 & _GEN_76);
       if (_GEN_75) begin
         lines_34_tag <= mshrAddr[31:9];
         lines_34_data_0 <= nextLine_0;
         lines_34_data_1 <= nextLine_1;
       end
       lines_35_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h23 | _GEN_172) & _GEN_78
-          : ~_GEN_172 & _GEN_78;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h23)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h23 | _GEN_172) & _GEN_78
+             : ~_GEN_172 & _GEN_78);
       if (_GEN_77) begin
         lines_35_tag <= mshrAddr[31:9];
         lines_35_data_0 <= nextLine_0;
         lines_35_data_1 <= nextLine_1;
       end
       lines_36_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h24 | _GEN_173) & _GEN_80
-          : ~_GEN_173 & _GEN_80;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h24)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h24 | _GEN_173) & _GEN_80
+             : ~_GEN_173 & _GEN_80);
       if (_GEN_79) begin
         lines_36_tag <= mshrAddr[31:9];
         lines_36_data_0 <= nextLine_0;
         lines_36_data_1 <= nextLine_1;
       end
       lines_37_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h25 | _GEN_174) & _GEN_82
-          : ~_GEN_174 & _GEN_82;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h25)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h25 | _GEN_174) & _GEN_82
+             : ~_GEN_174 & _GEN_82);
       if (_GEN_81) begin
         lines_37_tag <= mshrAddr[31:9];
         lines_37_data_0 <= nextLine_0;
         lines_37_data_1 <= nextLine_1;
       end
       lines_38_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h26 | _GEN_175) & _GEN_84
-          : ~_GEN_175 & _GEN_84;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h26)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h26 | _GEN_175) & _GEN_84
+             : ~_GEN_175 & _GEN_84);
       if (_GEN_83) begin
         lines_38_tag <= mshrAddr[31:9];
         lines_38_data_0 <= nextLine_0;
         lines_38_data_1 <= nextLine_1;
       end
       lines_39_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h27 | _GEN_176) & _GEN_86
-          : ~_GEN_176 & _GEN_86;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h27)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h27 | _GEN_176) & _GEN_86
+             : ~_GEN_176 & _GEN_86);
       if (_GEN_85) begin
         lines_39_tag <= mshrAddr[31:9];
         lines_39_data_0 <= nextLine_0;
         lines_39_data_1 <= nextLine_1;
       end
       lines_40_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h28 | _GEN_177) & _GEN_88
-          : ~_GEN_177 & _GEN_88;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h28)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h28 | _GEN_177) & _GEN_88
+             : ~_GEN_177 & _GEN_88);
       if (_GEN_87) begin
         lines_40_tag <= mshrAddr[31:9];
         lines_40_data_0 <= nextLine_0;
         lines_40_data_1 <= nextLine_1;
       end
       lines_41_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h29 | _GEN_178) & _GEN_90
-          : ~_GEN_178 & _GEN_90;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h29)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h29 | _GEN_178) & _GEN_90
+             : ~_GEN_178 & _GEN_90);
       if (_GEN_89) begin
         lines_41_tag <= mshrAddr[31:9];
         lines_41_data_0 <= nextLine_0;
         lines_41_data_1 <= nextLine_1;
       end
       lines_42_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h2A | _GEN_179) & _GEN_92
-          : ~_GEN_179 & _GEN_92;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h2A)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h2A | _GEN_179) & _GEN_92
+             : ~_GEN_179 & _GEN_92);
       if (_GEN_91) begin
         lines_42_tag <= mshrAddr[31:9];
         lines_42_data_0 <= nextLine_0;
         lines_42_data_1 <= nextLine_1;
       end
       lines_43_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h2B | _GEN_180) & _GEN_94
-          : ~_GEN_180 & _GEN_94;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h2B)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h2B | _GEN_180) & _GEN_94
+             : ~_GEN_180 & _GEN_94);
       if (_GEN_93) begin
         lines_43_tag <= mshrAddr[31:9];
         lines_43_data_0 <= nextLine_0;
         lines_43_data_1 <= nextLine_1;
       end
       lines_44_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h2C | _GEN_181) & _GEN_96
-          : ~_GEN_181 & _GEN_96;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h2C)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h2C | _GEN_181) & _GEN_96
+             : ~_GEN_181 & _GEN_96);
       if (_GEN_95) begin
         lines_44_tag <= mshrAddr[31:9];
         lines_44_data_0 <= nextLine_0;
         lines_44_data_1 <= nextLine_1;
       end
       lines_45_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h2D | _GEN_182) & _GEN_98
-          : ~_GEN_182 & _GEN_98;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h2D)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h2D | _GEN_182) & _GEN_98
+             : ~_GEN_182 & _GEN_98);
       if (_GEN_97) begin
         lines_45_tag <= mshrAddr[31:9];
         lines_45_data_0 <= nextLine_0;
         lines_45_data_1 <= nextLine_1;
       end
       lines_46_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h2E | _GEN_183) & _GEN_100
-          : ~_GEN_183 & _GEN_100;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h2E)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h2E | _GEN_183) & _GEN_100
+             : ~_GEN_183 & _GEN_100);
       if (_GEN_99) begin
         lines_46_tag <= mshrAddr[31:9];
         lines_46_data_0 <= nextLine_0;
         lines_46_data_1 <= nextLine_1;
       end
       lines_47_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h2F | _GEN_184) & _GEN_102
-          : ~_GEN_184 & _GEN_102;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h2F)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h2F | _GEN_184) & _GEN_102
+             : ~_GEN_184 & _GEN_102);
       if (_GEN_101) begin
         lines_47_tag <= mshrAddr[31:9];
         lines_47_data_0 <= nextLine_0;
         lines_47_data_1 <= nextLine_1;
       end
       lines_48_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h30 | _GEN_185) & _GEN_104
-          : ~_GEN_185 & _GEN_104;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h30)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h30 | _GEN_185) & _GEN_104
+             : ~_GEN_185 & _GEN_104);
       if (_GEN_103) begin
         lines_48_tag <= mshrAddr[31:9];
         lines_48_data_0 <= nextLine_0;
         lines_48_data_1 <= nextLine_1;
       end
       lines_49_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h31 | _GEN_186) & _GEN_106
-          : ~_GEN_186 & _GEN_106;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h31)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h31 | _GEN_186) & _GEN_106
+             : ~_GEN_186 & _GEN_106);
       if (_GEN_105) begin
         lines_49_tag <= mshrAddr[31:9];
         lines_49_data_0 <= nextLine_0;
         lines_49_data_1 <= nextLine_1;
       end
       lines_50_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h32 | _GEN_187) & _GEN_108
-          : ~_GEN_187 & _GEN_108;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h32)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h32 | _GEN_187) & _GEN_108
+             : ~_GEN_187 & _GEN_108);
       if (_GEN_107) begin
         lines_50_tag <= mshrAddr[31:9];
         lines_50_data_0 <= nextLine_0;
         lines_50_data_1 <= nextLine_1;
       end
       lines_51_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h33 | _GEN_188) & _GEN_110
-          : ~_GEN_188 & _GEN_110;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h33)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h33 | _GEN_188) & _GEN_110
+             : ~_GEN_188 & _GEN_110);
       if (_GEN_109) begin
         lines_51_tag <= mshrAddr[31:9];
         lines_51_data_0 <= nextLine_0;
         lines_51_data_1 <= nextLine_1;
       end
       lines_52_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h34 | _GEN_189) & _GEN_112
-          : ~_GEN_189 & _GEN_112;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h34)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h34 | _GEN_189) & _GEN_112
+             : ~_GEN_189 & _GEN_112);
       if (_GEN_111) begin
         lines_52_tag <= mshrAddr[31:9];
         lines_52_data_0 <= nextLine_0;
         lines_52_data_1 <= nextLine_1;
       end
       lines_53_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h35 | _GEN_190) & _GEN_114
-          : ~_GEN_190 & _GEN_114;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h35)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h35 | _GEN_190) & _GEN_114
+             : ~_GEN_190 & _GEN_114);
       if (_GEN_113) begin
         lines_53_tag <= mshrAddr[31:9];
         lines_53_data_0 <= nextLine_0;
         lines_53_data_1 <= nextLine_1;
       end
       lines_54_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h36 | _GEN_191) & _GEN_116
-          : ~_GEN_191 & _GEN_116;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h36)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h36 | _GEN_191) & _GEN_116
+             : ~_GEN_191 & _GEN_116);
       if (_GEN_115) begin
         lines_54_tag <= mshrAddr[31:9];
         lines_54_data_0 <= nextLine_0;
         lines_54_data_1 <= nextLine_1;
       end
       lines_55_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h37 | _GEN_192) & _GEN_118
-          : ~_GEN_192 & _GEN_118;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h37)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h37 | _GEN_192) & _GEN_118
+             : ~_GEN_192 & _GEN_118);
       if (_GEN_117) begin
         lines_55_tag <= mshrAddr[31:9];
         lines_55_data_0 <= nextLine_0;
         lines_55_data_1 <= nextLine_1;
       end
       lines_56_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h38 | _GEN_193) & _GEN_120
-          : ~_GEN_193 & _GEN_120;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h38)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h38 | _GEN_193) & _GEN_120
+             : ~_GEN_193 & _GEN_120);
       if (_GEN_119) begin
         lines_56_tag <= mshrAddr[31:9];
         lines_56_data_0 <= nextLine_0;
         lines_56_data_1 <= nextLine_1;
       end
       lines_57_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h39 | _GEN_194) & _GEN_122
-          : ~_GEN_194 & _GEN_122;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h39)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h39 | _GEN_194) & _GEN_122
+             : ~_GEN_194 & _GEN_122);
       if (_GEN_121) begin
         lines_57_tag <= mshrAddr[31:9];
         lines_57_data_0 <= nextLine_0;
         lines_57_data_1 <= nextLine_1;
       end
       lines_58_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h3A | _GEN_195) & _GEN_124
-          : ~_GEN_195 & _GEN_124;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h3A)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h3A | _GEN_195) & _GEN_124
+             : ~_GEN_195 & _GEN_124);
       if (_GEN_123) begin
         lines_58_tag <= mshrAddr[31:9];
         lines_58_data_0 <= nextLine_0;
         lines_58_data_1 <= nextLine_1;
       end
       lines_59_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h3B | _GEN_196) & _GEN_126
-          : ~_GEN_196 & _GEN_126;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h3B)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h3B | _GEN_196) & _GEN_126
+             : ~_GEN_196 & _GEN_126);
       if (_GEN_125) begin
         lines_59_tag <= mshrAddr[31:9];
         lines_59_data_0 <= nextLine_0;
         lines_59_data_1 <= nextLine_1;
       end
       lines_60_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h3C | _GEN_197) & _GEN_128
-          : ~_GEN_197 & _GEN_128;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h3C)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h3C | _GEN_197) & _GEN_128
+             : ~_GEN_197 & _GEN_128);
       if (_GEN_127) begin
         lines_60_tag <= mshrAddr[31:9];
         lines_60_data_0 <= nextLine_0;
         lines_60_data_1 <= nextLine_1;
       end
       lines_61_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h3D | _GEN_198) & _GEN_130
-          : ~_GEN_198 & _GEN_130;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h3D)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h3D | _GEN_198) & _GEN_130
+             : ~_GEN_198 & _GEN_130);
       if (_GEN_129) begin
         lines_61_tag <= mshrAddr[31:9];
         lines_61_data_0 <= nextLine_0;
         lines_61_data_1 <= nextLine_1;
       end
       lines_62_valid <=
-        _GEN_201
-          ? ~(io_invalidate2_addr[8:3] == 6'h3E | _GEN_199) & _GEN_132
-          : ~_GEN_199 & _GEN_132;
+        ~(_GEN_202 & io_invalidate3_addr[8:3] == 6'h3E)
+        & (_GEN_201
+             ? ~(io_invalidate2_addr[8:3] == 6'h3E | _GEN_199) & _GEN_132
+             : ~_GEN_199 & _GEN_132);
       if (_GEN_131) begin
         lines_62_tag <= mshrAddr[31:9];
         lines_62_data_0 <= nextLine_0;
         lines_62_data_1 <= nextLine_1;
       end
       lines_63_valid <=
-        _GEN_201
-          ? ~((&(io_invalidate2_addr[8:3])) | _GEN_200) & _GEN_134
-          : ~_GEN_200 & _GEN_134;
+        ~(_GEN_202 & (&(io_invalidate3_addr[8:3])))
+        & (_GEN_201
+             ? ~((&(io_invalidate2_addr[8:3])) | _GEN_200) & _GEN_134
+             : ~_GEN_200 & _GEN_134);
       if (_GEN_133) begin
         lines_63_tag <= mshrAddr[31:9];
         lines_63_data_0 <= nextLine_0;
         lines_63_data_1 <= nextLine_1;
       end
-      hitRespValid <= _GEN | ~(cpuRespFire & hitRespValid) & hitRespValid;
+      hitRespValid <= _GEN | ~(respValid & hitRespValid) & hitRespValid;
       if (_GEN) begin
         hitRespData <= io_cpu_araddr[2] ? casez_tmp_2 : casez_tmp_1;
         hitRespId <= io_cpu_arid;
       end
-      missRespValid <= _GEN_135 | (~cpuRespFire | hitRespValid) & missRespValid;
+      missRespValid <= _GEN_135 | (~respValid | hitRespValid) & missRespValid;
       if (mshrValid & mshrState & _GEN_4) begin
         if (mshrCacheable) begin
           if (mshrFillIdx) begin
@@ -2692,5 +3031,6 @@ module DCache(
       : 32'h0;
   assign io_mem_arvalid = mshrValid & ~mshrState;
   assign io_mem_rready = io_mem_rready_0;
+  assign io_busy = mshrValid | hitRespValid | missRespValid;
 endmodule
 

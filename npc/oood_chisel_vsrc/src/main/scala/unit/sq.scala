@@ -28,9 +28,16 @@ class StoreQueueIO extends Bundle {
   val wb_addr  = Input(UInt(32.W))
   val wb_data  = Input(UInt(32.W))
   val wb_mask  = Input(UInt(4.W))
+  val wb1_valid = Input(Bool())
+  val wb1_rob   = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val wb1_addr  = Input(UInt(32.W))
+  val wb1_data  = Input(UInt(32.W))
+  val wb1_mask  = Input(UInt(4.W))
 
   val commit_valid = Input(Bool())
   val commit_rob   = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val commit1_valid = Input(Bool())
+  val commit1_rob   = Input(UInt(OoOParams.ROB_PTR_W.W))
 
   val flush     = Input(Bool())
   val flush_idx = Input(UInt(OoOParams.ROB_PTR_W.W))
@@ -45,6 +52,9 @@ class StoreQueueIO extends Bundle {
   val fwd_valid = Output(Bool())
   val fwd_data  = Output(UInt(32.W))
   val wait_load = Output(Bool())
+  val wait_unknown = Output(Bool())
+  val wait_partial = Output(Bool())
+  val older_unresolved_mask = Output(UInt(OoOParams.ROB_SIZE.W))
 }
 
 class StoreQueue extends Module {
@@ -101,6 +111,10 @@ class StoreQueue extends Module {
       entries(io.commit_rob).valid := false.B
       entries(io.commit_rob).addr_ready := false.B
     }
+    when(io.commit1_valid) {
+      entries(io.commit1_rob).valid := false.B
+      entries(io.commit1_rob).addr_ready := false.B
+    }
 
     when(io.alloc0_valid) {
       entries(io.alloc0_rob).valid := true.B
@@ -124,6 +138,12 @@ class StoreQueue extends Module {
       entries(io.wb_rob).data := io.wb_data
       entries(io.wb_rob).mask := io.wb_mask
     }
+    when(io.wb1_valid && entries(io.wb1_rob).valid) {
+      entries(io.wb1_rob).addr_ready := true.B
+      entries(io.wb1_rob).addr := io.wb1_addr
+      entries(io.wb1_rob).data := io.wb1_data
+      entries(io.wb1_rob).mask := io.wb1_mask
+    }
   }
   io.unresolved_mask := VecInit((0 until n).map { i =>
     entries(i).valid && !entries(i).addr_ready
@@ -131,7 +151,8 @@ class StoreQueue extends Module {
 
   val ldAge = age(io.ld_rob)
   val fwdHits = Wire(Vec(n, Bool()))
-  val waitHits = Wire(Vec(n, Bool()))
+  val unknownHits = Wire(Vec(n, Bool()))
+  val partialHits = Wire(Vec(n, Bool()))
   val fwdData = Wire(Vec(n, UInt(32.W)))
   val fwdAge = Wire(Vec(n, UInt(OoOParams.ROB_PTR_W.W)))
 
@@ -146,8 +167,8 @@ class StoreQueue extends Module {
     val fullCover = (loadMask & storeMask) === loadMask
     val overlap = (loadMask & storeMask) =/= 0.U
 
-    waitHits(i) := io.ld_valid && (unresolved ||
-      (olderStore && sameWord && overlap && !fullCover))
+    unknownHits(i) := io.ld_valid && unresolved
+    partialHits(i) := io.ld_valid && olderStore && sameWord && overlap && !fullCover
     fwdHits(i) := io.ld_valid && olderStore && sameWord && fullCover
     fwdData(i) := storeShiftData(e.data, e.addr) >> (io.ld_addr(1, 0) << 3)
     fwdAge(i) := eAge
@@ -161,7 +182,10 @@ class StoreQueue extends Module {
     bestFwdOH(i) := fwdHits(i) && !hasYoungerOlder
   }
 
-  io.wait_load := waitHits.asUInt.orR
+  io.wait_unknown := unknownHits.asUInt.orR
+  io.wait_partial := partialHits.asUInt.orR
+  io.wait_load := io.wait_unknown || io.wait_partial
+  io.older_unresolved_mask := unknownHits.asUInt
   io.fwd_valid := fwdHits.asUInt.orR && !io.wait_load
   io.fwd_data := Mux1H(bestFwdOH, fwdData)
 }

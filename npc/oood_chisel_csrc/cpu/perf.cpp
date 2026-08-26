@@ -51,6 +51,20 @@ void print_perf_stats(unsigned long long cycles) {
     printf("FQ Enq2: %lld\n", counters[EVENT_FQ_ENQ2]);
     printf("FQ Space One: %lld\n", counters[EVENT_FQ_SPACE_ONE]);
     printf("Fetch Redirect Bubble: %lld\n", counters[EVENT_FETCH_REDIRECT_BUBBLE]);
+    printf("Fetch Blocks: %lld\n", counters[EVENT_FETCH_BLOCK]);
+    printf("Fetch Valid Instructions: %lld\n", counters[EVENT_FETCH_VALID_INST]);
+    printf("Fetch Two-Instruction Blocks: %lld\n", counters[EVENT_FETCH_BLOCK2]);
+    printf("FetchBuffer Full Cycles: %lld\n", counters[EVENT_FETCH_BUFFER_FULL]);
+    printf("FTQ Full Cycles: %lld\n", counters[EVENT_FTQ_FULL]);
+    printf("Fetch Line Tails: %lld\n", counters[EVENT_FETCH_LINE_TAIL]);
+    printf("Spec GHR Rollbacks: %lld\n", counters[EVENT_SPEC_GHR_ROLLBACK]);
+    printf("RAS Rollbacks: %lld\n", counters[EVENT_RAS_ROLLBACK]);
+    printf("FTQ High Water: %lld\n", counters[EVENT_FTQ_HIGH_WATER]);
+    printf("FTQ Stale Recover: %lld\n", counters[EVENT_FTQ_STALE_RECOVER]);
+    if (counters[EVENT_FETCH_BLOCK] > 0) {
+        printf("Average Fetch Width: %.4f\n",
+               (double)counters[EVENT_FETCH_VALID_INST] / counters[EVENT_FETCH_BLOCK]);
+    }
     if (counters[EVENT_FETCH_SLOT0_VALID] > 0) {
         printf("Fetch Slot1 Util: %.2f%%\n",
                100.0 * counters[EVENT_FETCH_SLOT1_VALID] / counters[EVENT_FETCH_SLOT0_VALID]);
@@ -81,6 +95,10 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Unpredicted JALR:  %lld\n", counters[EVENT_BPU_UNPREDICTED]);
     printf("Tagged Hits:       %lld\n", counters[EVENT_BPU_TAGGED_HIT]);
     printf("Indirect Hits:     %lld\n", counters[EVENT_BPU_INDIRECT_HIT]);
+    printf("TAGE Alternate:    %lld\n", counters[EVENT_TAGE_USE_ALT]);
+    printf("TAGE Allocations:  %lld\n", counters[EVENT_TAGE_ALLOC]);
+    printf("ITAGE Hits:        %lld\n", counters[EVENT_ITAGE_HIT]);
+    printf("ITAGE Allocations: %lld\n", counters[EVENT_ITAGE_ALLOC]);
     if (bpu_predict > 0) {
         printf("Hit Rate:     %.2f%%\n", 100.0 * (bpu_predict - bpu_mispred) / bpu_predict);
         printf("Mispredict Rate: %.2f%%\n", 100.0 * bpu_mispred / bpu_predict);
@@ -96,6 +114,10 @@ void print_perf_stats(unsigned long long cycles) {
     printf("\n[Writeback / Commit Bottlenecks]\n");
     printf("CDB Conflicts:       %lld\n", counters[EVENT_CDB_CONFLICT]);
     printf("CDB Blocked Results: %lld\n", counters[EVENT_CDB_BLOCKED]);
+    printf("ALU1 Issues:         %lld\n", counters[EVENT_ALU1_ISSUE]);
+    printf("Dual ALU Issues:     %lld\n", counters[EVENT_DUAL_ALU_ISSUE]);
+    printf("FU Same-Cycle Refill: %lld\n", counters[EVENT_FU_REFILL]);
+    printf("WB Age Reorders:     %lld\n", counters[EVENT_WB_AGE_REORDER]);
     printf("Commit Slot0:        %lld\n", counters[EVENT_COMMIT_SLOT0]);
     printf("Commit Slot1:        %lld\n", counters[EVENT_COMMIT_SLOT1]);
     printf("Commit2 Cycles:      %lld\n", counters[EVENT_COMMIT2]);
@@ -107,6 +129,10 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Commit Slot1 Block CSR:       %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_CSR]);
     printf("Commit Slot1 Block Special:   %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_SPECIAL]);
     printf("Commit Slot1 Block BP:        %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_BP]);
+    printf("Commit Slot1 Load:            %lld\n", counters[EVENT_COMMIT_SLOT1_LOAD]);
+    printf("Commit Slot1 Control:         %lld\n", counters[EVENT_COMMIT_SLOT1_CTRL]);
+    printf("Commit Slot1 Store:           %lld\n", counters[EVENT_COMMIT_SLOT1_STORE]);
+    printf("BPU Update Queue Block:       %lld\n", counters[EVENT_BPU_UPDATE_QUEUE_BLOCK]);
     if (counters[EVENT_COMMIT_SLOT0] > 0) {
         printf("Commit Slot1 Util:   %.2f%%\n",
                100.0 * counters[EVENT_COMMIT_SLOT1] / counters[EVENT_COMMIT_SLOT0]);
@@ -124,11 +150,21 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Reads: %lld\n", counters[EVENT_LSU_READ]);
     printf("Writes: %lld\n", counters[EVENT_LSU_WRITE]);
     printf("StoreBuffer Enq:   %lld\n", counters[EVENT_STORE_BUFFER_ENQ]);
+    printf("StoreBuffer Enq2:  %lld\n", counters[EVENT_STORE_BUFFER_ENQ2]);
     printf("StoreBuffer Drain: %lld\n", counters[EVENT_STORE_BUFFER_DRAIN]);
     printf("StoreBuffer Fwd:   %lld\n", counters[EVENT_STORE_BUFFER_FORWARD]);
     printf("SQ Wait Cycles: %lld\n", counters[EVENT_LSU_SQ_WAIT]);
     printf("SQ Forwards:    %lld\n", counters[EVENT_LSU_SQ_FORWARD]);
     printf("Bus Wait Cycles: %lld\n", counters[EVENT_LSU_BUS_WAIT]);
+    printf("LQ Alloc:        %lld\n", counters[EVENT_LQ_ALLOC]);
+    printf("LQ Full Cycles:  %lld\n", counters[EVENT_LQ_FULL]);
+    printf("LQ High Water:   %lld\n", counters[EVENT_LQ_HIGH_WATER]);
+    printf("Load Replays:    %lld\n", counters[EVENT_LOAD_REPLAY]);
+    printf("Replay Store Wait: %lld\n", counters[EVENT_REPLAY_STORE_WAIT]);
+    printf("Replay DCache Busy: %lld\n", counters[EVENT_REPLAY_DCACHE_BUSY]);
+    printf("Replay CDB Busy: %lld\n", counters[EVENT_REPLAY_CDB_BUSY]);
+    printf("Stale Load Resp: %lld\n", counters[EVENT_STALE_LOAD_RESP]);
+    printf("Mem Order Violation: %lld\n", counters[EVENT_MEM_ORDER_VIOLATION]);
     if (total_access > 0) {
         printf("Average Latency: %.2f cycles\n", (double)counters[EVENT_LSU_LATENCY] / total_access);
     }

@@ -2,15 +2,15 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：`csr.wen` 仅由 **commit** 拉高；关掉 WBU 对 CSR 的架构写；用 **在飞 CSR 串行化** 保住 ID 组合读正确性。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：参考实现已落地 — **单测 21/21 + cpu-tests 35/35**（验收请自勾）。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：只允许 ROB commit 拉高 `csr.wen`，CSR 源值在 ready 后进入 ROB，并用 `csr_inflight` 保证组合读到正确架构值。
+- **当前参考核**：本章阶段快照曾通过单测 21/21 与 cpu-tests 35/35；提交写 CSR 的语义继续保留在阶段 10m。
+- **后续扩展**：4c 把 ecall 和同步异常也改成 head 记录、下一拍 redirect/flush。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
 **前置**：4a（ROB 已有 CSR 字段）；建议与 4a 同批合入。  
 **目标**：`csr.wen` 仅由 **commit** 拉高；关掉 WBU 对 CSR 的架构写；用 **在飞 CSR 串行化** 保住 ID 组合读正确性。  
-**仓库状态**：参考实现已落地 — **单测 21/21 + cpu-tests 35/35**（验收请自勾）。
+**本章阶段快照**：参考实现已落地 — **单测 21/21 + cpu-tests 35/35**（验收请自勾）。
 
 **铁律**：CSR 是架构态；wrong-path / 非 head 完成不得写。读侧仍是 ID 组合读 → 必须限制「未提交 CSR 写」与「后继 CSR 读」重叠。
 
@@ -105,7 +105,7 @@ val csr_stall = id_is_csr && (csr_inflight || !id_s1_rdy)
 ```scala
 val cm_csr_wdata = MuxLookup(cm_bits.csr_sel, 0.U)(Seq(
   CSR_RD1 -> cm_bits.rs1_val,
-  CSR_XOR -> (cm_bits.rs1_val | cm_bits.csr_rd1),
+  CSR_XOR -> (cm_bits.rs1_val | cm_bits.csr_rd1), // 旧常量名；CSRRS 实际是 OR
   CSR_PC  -> cm_bits.pc
 ))
 csr.io.write.wen   := cm_fire && cm_bits.csr_write
@@ -223,6 +223,6 @@ wrong-path: 已 enq 被杀 → valid=0 → 永不 wen
 | `core/core.scala` | enq；`csr_inflight`/`csr_stall`；`csr.io.write` |
 | `core/wbu.scala` / `core/csr.scala` | `wen:=false`；`wen && !irq` |
 | `core/idu.scala` / `unit/rob.scala` | 组合读；`ROBEntry` CSR 字段 |
-| `common/consts.scala` | `CSR_RD1` / `CSR_XOR` / `CSR_PC` |
+| `common/consts.scala` | `CSR_RD1` / `CSR_XOR` / `CSR_PC`；其中 `CSR_XOR` 是历史命名，CSRRS 运算仍为 OR |
 
 验收锚点：**架构 CSR 翻转边沿 = `commit_fire` 边沿**。

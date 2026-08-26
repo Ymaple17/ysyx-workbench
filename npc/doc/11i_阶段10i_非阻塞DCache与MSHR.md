@@ -3,8 +3,8 @@
 ## 学习导航
 - **理论目标**：理解 blocking DCache 为什么会让 load miss 拖住后端；理解 MSHR、hit-under-miss、多 outstanding load、load replay 分别解决哪一层问题。
 - **最小实现**：实现 1-entry MSHR，让 DCache 在一个 cacheable miss/refill 未完成时仍可服务已命中的 cache line；LSU 侧加入返回 tag 和 stale 身份保护。
-- **当前参考核**：10i 已完成可编译、可回归的 MSHR 骨架和 DCache hit-under-miss 单测。默认保留 `LSU_MLP_ENABLE=false`，也就是不让 LSU 在有未完成访存时继续发新 LSU 指令；打开该开关的 MLP 实验功能正确但 IPC 明显退化，暂不作为参考核默认。
-- **后续扩展**：真正可提速的版本需要 load queue / replay、miss merge、多 MSHR、store/load 更精确的依赖跟踪、以及总线 burst/多 outstanding 支持。
+- **当前参考核**：10i 的 1-entry MSHR 与 DCache hit-under-miss 保留；10l 补齐 4-entry LQ、generation response identity、replay 和 stale drain 后，当前已安全保留 `LSU_MLP_ENABLE=true`。本章 MLP-on 退化的是“有 MSHR、无完整 LQ”的历史实验。
+- **后续扩展**：load queue / replay 与更精确的响应身份已在 10l 完成；当前仍可继续做 miss merge、多 MSHR、store-set/选择性 replay 和总线 burst/多 outstanding。
 - **验收方式**：`./mill -i mychisel.compile`、`OoOUnitTest`、cpu-tests smoke、`microbench(test)` 全绿；比较 `DCache Hit Under Miss`、`Head Not Ready`、`Bus Wait Cycles`、IPC，而不是只看“有没有 MSHR 结构”。
 
 ---
@@ -105,7 +105,7 @@ val d_lsu_stale = d_lsu_valid &&
 
 这条经验很重要：乱序核里不要只相信一个小索引。ROB index 会复用，跨 flush / commit / response 边界时最好带上 `pc` 或更完整的 identity。
 
-### 2.4 默认策略开关
+### 2.4 10i 阶段默认策略开关
 
 `common/ooo_params.scala` 增加：
 
@@ -113,7 +113,7 @@ val d_lsu_stale = d_lsu_valid &&
 val LSU_MLP_ENABLE = false
 ```
 
-默认 `false` 时，core 仍保持保守单 outstanding LSU 行为：
+10i 阶段默认 `false` 时，core 仍保持保守单 outstanding LSU 行为：
 
 ```scala
 val lsuCanOverlap =
@@ -121,7 +121,7 @@ val lsuCanOverlap =
   else (!lsu_stage_valid && !lsu.io.bus_busy)
 ```
 
-这让 10i 的硬件骨架留在代码里，但参考核默认不吃性能回退。以后要继续做 load queue / replay 时，可以打开 `LSU_MLP_ENABLE` 做 A/B。
+这让 10i 的硬件骨架留在代码里，但当时的保留点不吃性能回退。10l 加入完整 LQ/replay 后已经重新打开 `LSU_MLP_ENABLE=true`。
 
 ---
 
@@ -150,7 +150,7 @@ val lsuCanOverlap =
 - `./mill -i mychisel.test.testOnly unit.OoOUnitTest`：47/47 PASS
 - cpu-tests smoke：`dummy`、`add`、`add-longlong`、`bit`、`load-store`、`shift`、`string` PASS
 - `microbench mainargs=test`：PASS，`npc HIT GOOD TRAP at pc=0x800055f0`
-- retained 默认：`LSU_MLP_ENABLE=false`，microbench IPC `0.4342`
+- 10i retained 默认：`LSU_MLP_ENABLE=false`，microbench IPC `0.4342`；当前 10m 默认为 `true`
 
 ---
 

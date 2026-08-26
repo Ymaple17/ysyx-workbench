@@ -1,0 +1,10 @@
+point,status,correctness,ipc,cycles,commits,bpu_hit_pct,commit_slot1_util_pct,head_not_ready,avg_fetch_width,notes
+stage10j_baseline,baseline,pass,0.4357,1199577,522676,,,,,TAGE/ITAGE baseline
+stage10k_relaxed_retire,retained_stage_snapshot,pass,0.4565,1144512,522522,,,,,lane1 load/control/store retirement
+stage10l_lq_replay,retained_stage_snapshot,pass,0.4743,1101938,522596,87.75,21.91,557641,,4-entry LQ and tagged replay
+stage10m_frontend_credit6,rejected,pass,0.4723,1106357,522500,89.54,,,1.2484,frontend gain was backend-limited
+stage10m_fu_same_cycle_refill,retained_step,pass,0.5316,982733,522438,89.74,27.63,444395,1.2178,remove ALU/DIV result bubbles
+stage10m_store_chain_sb16,retained_step,pass,0.5434,961540,522462,89.71,27.80,449654,1.2194,direct next store drain and SB16
+stage10m_dual_integer_alu,preclosure_candidate,pass,0.6329,825390,522424,89.65,50.55,371257,1.3513,preclosure candidate before selective FTQ and bus protocol closure
+stage10m_final_run1,final_retained,pass,0.6381,818892,522548,89.51,51.23,363162,1.3858,strict PASS plus GOOD TRAP; 68/68 unit tests; 7 cpu-tests+difftest; FTQ stale recover 0
+stage10m_final_run2,repeat_confirmed,pass,0.6381,818892,522548,89.51,51.23,363162,1.3858,exact repeated summary; FTQ stale recover 0

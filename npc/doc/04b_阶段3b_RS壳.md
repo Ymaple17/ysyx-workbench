@@ -2,9 +2,9 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：引入保留站 **结构** 与 enq/issue/flush 时序；发射策略暂时与顺序核相同——**只发程序序最老且源就绪** 的指令。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：以 README 的参考实现水位和本章后续说明为准；参考核进度不等于你的学习进度。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：实现 RS enq/ready/issue/free/flush，但只允许程序序最老且源就绪项发射，先验证结构时序而不改变执行顺序。
+- **当前参考核**：阶段 10m 的 RS 已支持多 FU、双普通 ALU 和局部 oldest-ready 选择；本章是同一 entry 生命周期的保守起点。
+- **后续扩展**：3c 把 RS 输出真正接到派遣寄存器、EX 和 CDB，3d 再允许越过未就绪最老项。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
@@ -92,7 +92,7 @@ full = 无空槽 && 本拍不 issue
 
 ## 4. 与 core 的两种接法
 
-### 4.1 接法 A（推荐先做，仓库当前）：StageConnect 数据通路 + RS 影子
+### 4.1 接法 A（3b 推荐先做）：StageConnect 数据通路 + RS 影子
 
 ```text
 保留：StageConnect(idu_ren, exu.in)   // 与 3a 相同，功能已绿
@@ -137,7 +137,7 @@ flush 时：
 | `rs.full` 与 `issue_fire` 组合环 | issue_fire 用 en_id_ex，full 又挡 en_id_ex | `issue_fire` 用 `RegNext` 或拆数据通路 |
 | LSU young flush 组合环 | `is_flush` 依赖 `in.valid`，StageConnect 又依赖 flush | 顺序核 LSU/WBU 仅 irq 冲 |
 | hang 时 rob_count=0、PC 停旧址 | 派遣路径丢指令 / 冲刷策略 | 接法 A 先绿；再查 IFU redirect |
-| freeBits pop=16、ROB 空 | 正常（32 架构占用 +16 空闲） | 勿误判 freelist 耗尽 |
+| freeBits 的 popcount 等于复位可分配容量、ROB 空 | 正常（32 个初始架构映射不在 freelist，其余 `N_PHYS-32` 个槽空闲） | 勿误判 freelist 耗尽 |
 | BusyTable 单测 | 增加 rebuild 口后 idle 需 poke | 见 OoOUnitTest |
 
 ### 6.1 hang 诊断（仿真）

@@ -11,16 +11,22 @@ object OoOParams {
   val RS_SIZE   = 8
   val FQ_SIZE   = 8
   val FETCH_WIDTH = 2
+  val FETCH_BUFFER_SIZE = 2
+  val FTQ_SIZE = 16
+  val FTQ_PTR_W = log2Ceil(FTQ_SIZE)
+  val FTQ_GEN_W = 8
   val WIDE_FETCH_ENABLE = true
-  val WIDE_FETCH_MIN_SPACE = FQ_SIZE
+  val WIDE_FETCH_MIN_SPACE = 6
   val ISSUE_WIDTH = 2
   val DISPATCH_WIDTH = ISSUE_WIDTH
   val COMMIT_WIDTH = 2
   val CDB_NUM = 2
   val CP_DEPTH = 4
   val SQ_SIZE  = ROB_SIZE
-  val STORE_BUFFER_SIZE = 8
+  val STORE_BUFFER_SIZE = 16
   val DCACHE_SET = 64
   val DCACHE_BLOCK_SIZE = 8
-  val LSU_MLP_ENABLE = false
+  val LSU_MLP_ENABLE = true
+  val LQ_SIZE = 4
+  val LQ_SPECULATE_UNKNOWN_STORES = false
 }

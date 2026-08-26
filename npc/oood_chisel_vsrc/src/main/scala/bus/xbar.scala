@@ -42,17 +42,20 @@ class Xbar(coreConfig: CoreConfig) extends Module{
 
     val is_dmem = io.dmem.arvalid || io.dmem.awvalid
     val is_imem = io.imem.arvalid && !is_dmem && (state === s_SELECT)
+    val dmemWriteFire = io.dmem.awvalid && io.dmem.awready
+    val dmemReadFire = !io.dmem.awvalid && io.dmem.arvalid && io.dmem.arready
+    val dmemRequestFire = dmemWriteFire || dmemReadFire
+    val imemRequestFire = io.imem.arvalid && io.imem.arready
 
     // 5：dmem（含 commit store）优先，避免 IFU 连取时 IMEM 独占导致 awready 永不来
     next_state := MuxLookup(state, s_SELECT)(Seq(
         s_SELECT -> MuxCase(s_SELECT, Seq(
-            (is_dmem && (uart_read || uart_write)) -> s_UART,
-            (is_dmem && (clint_read || clint_write)) -> s_CLINT,
-            (is_dmem) -> s_DMEM,
-            (is_imem) -> s_IMEM
+            (is_dmem && dmemRequestFire && (uart_read || uart_write)) -> s_UART,
+            (is_dmem && dmemRequestFire && (clint_read || clint_write)) -> s_CLINT,
+            (is_dmem && dmemRequestFire) -> s_DMEM,
+            (is_imem && imemRequestFire) -> s_IMEM
         )),
-        s_IMEM -> Mux(io.soc.rvalid && io.soc.rready && io.soc.rlast,
-          Mux(is_dmem, s_SELECT, Mux(io.imem.arvalid, s_IMEM, s_SELECT)), s_IMEM),
+        s_IMEM -> Mux(io.soc.rvalid && io.soc.rready && io.soc.rlast, s_SELECT, s_IMEM),
         s_DMEM -> Mux(
           Mux(dmem_is_write, io.soc.bvalid && io.soc.bready, io.soc.rvalid && io.soc.rready),
           s_SELECT, s_DMEM),
@@ -64,8 +67,8 @@ class Xbar(coreConfig: CoreConfig) extends Module{
           s_SELECT, s_UART) else s_SELECT)
     ))
     state := next_state
-    when(state === s_SELECT && is_dmem) {
-      dmem_is_write := io.dmem.awvalid
+    when(state === s_SELECT && is_dmem && dmemRequestFire) {
+      dmem_is_write := dmemWriteFire
     }
 
     io.imem.setDefaults()

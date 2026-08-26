@@ -2,15 +2,15 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：把「单执行槽（d_reg→EXU→LSU→WBU 串行）」拆成 **多执行单元**（ALU / DIV / LSU 各占一个派遣口），RS 每拍可向多个 FU 同时发射。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：**参考实现已完成**（ALU / DIV / LSU 三条执行链，单 CDB 仲裁写回）。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：把 RS 输出分为 ALU、迭代 DIV、LSU 三类派遣口，三条执行链可并行驻留；单 CDB 先明确仲裁和 backpressure。
+- **当前参考核**：本章 ALU/DIV/LSU 三链 + 单 CDB 是阶段快照；阶段 10m 已增加第二整数 ALU、同拍 refill 和 4→2 oldest-result 写回。
+- **后续扩展**：8b 拓宽 FQ/rename/ROB/RS 的每拍入队，10c 再把单 CDB 扩为双 CDB。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
 **前置**：阶段 6 绿（FQ 已接线）；阶段 7 建议先做一轮参数扫描拿到 baseline。  
 **目标**：把「单执行槽（d_reg→EXU→LSU→WBU 串行）」拆成 **多执行单元**（ALU / DIV / LSU 各占一个派遣口），RS 每拍可向多个 FU 同时发射。  
-**仓库状态**：**参考实现已完成**（ALU / DIV / LSU 三条执行链，单 CDB 仲裁写回）。
+**本章阶段快照**：**参考实现已完成**（ALU / DIV / LSU 三条执行链，单 CDB 仲裁写回）。
 
 > 这是从「乱序单发」到「超标量」的**第一刀**：不改发射宽度，先把「一条指令占死执行通路」的瓶颈拆掉。DIV 或 load 卡住时，ALU 仍能干活。
 
@@ -68,7 +68,7 @@ RS ── port0 ──> d_alu ──> ALU  ──┐
 
 ### 2.2 RS 多口发射
 
-RS 当前 `issue_valid/issue_bits/issue_idx` 单口（`unit/rs.scala`：`issueOH = isOldestReady.asUInt` + `PriorityEncoder`）。8a 需要**每口一组候选 + 口间互斥**：ALU 口只收非 MUL/DIV/REM，DIV 口只收 MUL/DIV/REM，LSU 口只收 `mem_valid`；同一拍一条指令只能被一个口选走（交叉互斥）。
+阶段 8a 入口的 RS 是单口。8a 需要**每口一组候选 + 口间互斥**：ALU 口只收非访存、非 MUL/DIV/REM，DIV 口只收 MUL/DIV/REM，LSU 口只收 `mem_valid`；同一拍一条指令只能被一个口选走（交叉互斥）。
 
 候选/互斥/优先级（Chisel 风格，复用现 `canIssue` 与 `isOldestReady`）：
 
@@ -76,7 +76,7 @@ RS 当前 `issue_valid/issue_bits/issue_idx` 单口（`unit/rs.scala`：`issueOH
 val isMulDiv = VecInit((0 until n).map { i =>
   val c = entries(i).exu_alu_control
   (c === CTRL_MUL) || (c === CTRL_DIV) || (c === CTRL_REM) })
-val aluCan = VecInit((0 until n).map(i => canIssue(i) && !isMulDiv(i)))
+val aluCan = VecInit((0 until n).map(i => canIssue(i) && !entries(i).lsu_mem_valid && !isMulDiv(i)))
 val lsuCan = VecInit((0 until n).map(i => canIssue(i) && entries(i).lsu_mem_valid))
 val divCan = VecInit((0 until n).map(i => canIssue(i) && isMulDiv(i)))
 val aluOH = oldestReady(aluCan)                 // one-hot
@@ -108,18 +108,19 @@ val leave_alu = hold_alu && alu.io.out.valid && alu.io.out.ready
 ### 2.4 结果总线（多 CDB 或仲裁）
 
 - 多 FU 同时完成 → 写回端口可能冲突  
-- **方案 A（推荐初版）**：单 CDB + 拍内优先级仲裁（ALU > LSU > DIV）；输家下一拍再写回（ROB.done 延后一拍）  
+- **方案 A（推荐初版）**：单 CDB + 拍内仲裁；非赢家保持结果端 `valid` 和数据，直到后续获得 `ready`  
 - **方案 B**：PRF 双写口 + CDB×2 + RS 双唤醒口（成本高，放到 8b 再说）
 
 can_wb 仲裁的 Chisel 伪代码（单 CDB 赢家选取，门控沿用 `!done && !wb_young_*`）：
 
 ```scala
-val leave_v = VecInit(
-  leave_alu && (d_alu_bits.pdest =/= 0.U),
-  leave_lsu && (d_lsu_bits.pdest =/= 0.U),
-  leave_div && (d_div_bits.pdest =/= 0.U))      // 0=ALU 1=LSU 2=DIV
-val winner = PriorityEncoder(leave_v.asUInt)     // 最高优先位赢家
-can_wb   := leave_v.asUInt.orR && !wb_young_mis && !wb_young_flush
+val result_v = VecInit(alu.out.valid, lsu.out.valid, div.out.valid) // 所有指令都要令 ROB.done
+val winnerOH = PriorityEncoderOH(result_v.asUInt)
+alu.out.ready := cdb.ready && winnerOH(0)
+lsu.out.ready := cdb.ready && winnerOH(1)
+div.out.ready := cdb.ready && winnerOH(2)
+val winner = OHToUInt(winnerOH)
+can_wb   := cdb.fire && identity_match && !wb_young_mis && !wb_young_flush
 wb_pdest := MuxLookup(winner, 0.U)(Seq(
   0.U -> d_alu_bits.pdest, 1.U -> d_lsu_bits.pdest, 2.U -> d_div_bits.pdest))
 wb_val   := MuxLookup(winner, 0.U)(Seq(
@@ -129,19 +130,18 @@ rob.io.wb_idx  := MuxLookup(winner, 0.U)(Seq(
   0.U -> d_alu_bits.rob_idx, 1.U -> d_lsu_bits.rob_idx, 2.U -> d_div_bits.rob_idx))
 ```
 
-`cdb_val` 优先取赢家，RS 唤醒用赢家 pdest。输家不写 CDB：`rob.done` 仍 false，下一拍 `leave` 已结束——**输家的 done 由仲裁拍补置**（对非赢家 leave 再单独发一拍 `wb_fire`），别让 done 永远不置位。
+`cdb_val` 取赢家，RS 唤醒用赢家 pdest。store、branch 等 `pdest=0` 的指令仍必须竞争完成口并置 ROB.done，只是 PRF 写和 Busy clear 额外用 `pdest=/=0` 门控。非赢家的 `ready=false`，按 Decoupled 契约持续保持 `valid/bits`；不能让结果先 leave 再凭空“下一拍补 done”。
 
 ### 2.5 leave_* 与 free_rob 多口
 
 **禁止** `issue_fire` 弹槽（3d 铁律保持）；RS 按 rob_idx free，同拍多个 leave 各指各的 rob_idx 互不干扰。多口伪代码：
 
 ```scala
-rs.io.free_rob_fire := leave_alu || leave_lsu || leave_div
-rs.io.free_rob_idx  := Mux(leave_alu, d_alu_bits.rob_idx,
-                       Mux(leave_lsu, d_lsu_bits.rob_idx, d_div_bits.rob_idx))
+rs.io.free_rob_fire := can_wb
+rs.io.free_rob_idx  := wb_rob_idx
 ```
 
-现 `freeByRob(i) := free_rob_fire && valid && (rob_idx === free_rob_idx)` 每次只清一个槽——三个 leave 是三个 `leave_ex`，槽位释放由 rob_idx 决定。想同拍清多个可拆成 `free_rob_valid_0/1/2 + free_rob_idx_0/1/2`，RS 各扫一遍。
+单 CDB 每拍只有一个被身份验收的结果，因此只释放赢家对应的 RS 项。扩到多 CDB 后应提供同样数量的 `free_rob_valid/idx`，并对每个 RS entry OR-reduce 所有已接受写回命中；不能用一个优先级 Mux 丢掉其余完成项。
 
 ---
 
@@ -173,8 +173,8 @@ rs.io.free_rob_idx  := Mux(leave_alu, d_alu_bits.rob_idx,
 | 双写 PRF 冲突 | 双驱动/组合环 | 仲裁或真双口 |
 | DIV 未完成被别口顶掉 | 结果错 | 每口独立 hold 到 leave |
 | 分支 mispred 时多口 in-flight | 杀不干净 | flush_d 每口都接；can_wb 仍按 flush 挡 |
-| 输家 done 永远不置位 | ROB head 卡死 | 仲裁拍对非赢家 leave 补置 done |
-| 三口同拍 leave | free_rob_idx 打架 | Mux 优先级 + 各自 rob_idx |
+| 输家先 leave、结果未驻留 | ROB head 卡死 | 非赢家 `ready=false` 并保持 `valid/bits` |
+| 用一个 Mux 表示多个 accepted WB | 其余 RS 项泄漏 | 单 CDB 只接受赢家；多 CDB 配套多 free 口并 OR 命中 |
 
 ---
 
@@ -186,7 +186,7 @@ rs.io.free_rob_idx  := Mux(leave_alu, d_alu_bits.rob_idx,
 - 之后若干拍内 `alu/div/lsu` 的 `out.valid` 依次（乱序）出现  
 - 三口 `issue_*_valid` 同拍**各自**为 1，且三个 `issue_*_idx` 互不相同  
 - `d_div_valid` 连续保持多拍时 `d_alu_valid` 已换下一条 → DIV 不再堵 ALU 口  
-- 同拍 `can_wb` 最多 1；两路同时 leave 时输家 `done` 下一拍补置  
+- 同拍 `can_wb` 最多 1；两路同时完成时输家保持 `out.valid`，直到后续拍真正握手  
 - `rs.count` 不长期爆满、`rob.count` 稳步增长 → 入队/发射/写回平衡
 
 ---
@@ -216,8 +216,8 @@ rs.io.free_rob_idx  := Mux(leave_alu, d_alu_bits.rob_idx,
 
 → [09b](09b_阶段8b_多发射.md)：rename/FQ/ROB 加宽到 2 宽。
 
-## 本仓库实现对照
-这一版的参考实现已经把执行端拆成 3 条独立链，代码主要落在：
+## 阶段 8a 快照与当前扩展对照
+阶段 8a 快照把执行端拆成 3 条独立链；当前代码仍保留这三类链，并在 10m 增加 ALU1 和 4→2 写回。主要落点是：
 
 - `work/remote_repo/scala/core/core.scala`
 - `work/remote_repo/scala/unit/rs.scala`

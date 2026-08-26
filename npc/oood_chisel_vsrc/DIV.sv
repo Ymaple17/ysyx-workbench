@@ -29,10 +29,10 @@ module DIV(
   wire        _is_rem_T_1 = io_op == 5'h11;
   wire [5:0]  _cnt_T = cnt - 6'h1;
   wire        _GEN_0 = state & (|cnt);
-  wire [31:0] _shifted_T_3 = a_abs >> _cnt_T;
-  wire [31:0] shifted = {rem[30:0], _shifted_T_3[0]};
-  wire        _GEN_1 = shifted >= b_abs;
-  wire [63:0] _quo_T_2 = 64'h1 << _cnt_T;
+  wire [31:0] _GEN_1 = {27'h0, _cnt_T[4:0]};
+  wire [31:0] _shifted_T_1 = a_abs >> _GEN_1;
+  wire [31:0] shifted = {rem[30:0], _shifted_T_1[0]};
+  wire        _GEN_2 = shifted >= b_abs;
   always @(posedge clock) begin
     if (reset) begin
       state <= 1'h0;
@@ -71,8 +71,8 @@ module DIV(
     end
     else if (state) begin
       if (_GEN_0)
-        rem <= _GEN_1 ? {rem[30:0], _shifted_T_3[0]} - b_abs : shifted;
-      quo <= {32{state & (|cnt) & _GEN_1}} & _quo_T_2[31:0] | quo;
+        rem <= _GEN_2 ? {rem[30:0], _shifted_T_1[0]} - b_abs : shifted;
+      quo <= {32{state & (|cnt) & _GEN_2}} & 32'h1 << _GEN_1 | quo;
     end
     else if (io_req_valid) begin
       rem <= 32'h0;

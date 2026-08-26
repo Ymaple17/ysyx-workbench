@@ -33,7 +33,9 @@ module Rename2(
   input  [5:0]  io_cm1_old_phys,
                 io_cm1_new_phys,
   input  [4:0]  io_cm1_arch_rd,
-                io_rob_head,
+  input         io_cm1_cp_valid,
+  input  [1:0]  io_cm1_cp_idx,
+  input  [4:0]  io_rob_head,
   input         io_restore_cp,
   input  [1:0]  io_restore_cp_idx,
   output [5:0]  io_rat_out_0,
@@ -1317,13 +1319,26 @@ module Rename2(
   wire         _GEN_6 = io_cm_cp_idx == 2'h0;
   wire         _GEN_7 = io_cm_cp_idx == 2'h1;
   wire         _GEN_8 = io_cm_cp_idx == 2'h2;
-  wire         _GEN_9 = push0 & cpIdx0 == 2'h0;
-  wire         _GEN_10 = push0 & cpIdx0 == 2'h1;
-  wire         _GEN_11 = push0 & cpIdx0 == 2'h2;
-  wire         _GEN_12 = push0 & (&cpIdx0);
-  wire         _GEN_13 = cpIdx1 == 2'h0;
-  wire         _GEN_14 = cpIdx1 == 2'h1;
-  wire         _GEN_15 = cpIdx1 == 2'h2;
+  wire         _GEN_9 = io_commit1_fire & io_cm1_cp_valid;
+  wire         _GEN_10 = io_cm1_cp_idx == 2'h0;
+  wire         _GEN_11 = io_cm1_cp_idx == 2'h1;
+  wire         _GEN_12 = io_cm1_cp_idx == 2'h2;
+  wire         _GEN_13 = push0 & cpIdx0 == 2'h0;
+  wire         _GEN_14 = push0 & cpIdx0 == 2'h1;
+  wire         _GEN_15 = push0 & cpIdx0 == 2'h2;
+  wire         _GEN_16 = push0 & (&cpIdx0);
+  wire         _GEN_17 = cpIdx1 == 2'h0;
+  wire         _GEN_18 = push1 ? _GEN_17 | _GEN_13 | cps_0_valid : _GEN_13 | cps_0_valid;
+  wire         _GEN_19 = cpIdx1 == 2'h1;
+  wire         _GEN_20 = push1 ? _GEN_19 | _GEN_14 | cps_1_valid : _GEN_14 | cps_1_valid;
+  wire         _GEN_21 = cpIdx1 == 2'h2;
+  wire         _GEN_22 = push1 ? _GEN_21 | _GEN_15 | cps_2_valid : _GEN_15 | cps_2_valid;
+  wire         _GEN_23 =
+    push1 ? (&cpIdx1) | _GEN_16 | cps_3_valid : _GEN_16 | cps_3_valid;
+  wire         _GEN_24 = _GEN_5 & _GEN_6;
+  wire         _GEN_25 = _GEN_5 & _GEN_7;
+  wire         _GEN_26 = _GEN_5 & _GEN_8;
+  wire         _GEN_27 = _GEN_5 & (&io_cm_cp_idx);
   wire [126:0] _afterCommit_T_1 = 127'h1 << _GEN_3;
   wire [126:0] _afterCommit0_T_1 = 127'h1 << _GEN;
   wire [126:0] _freeBits_T_8 = 127'h1 << _GEN_3;
@@ -1359,32 +1374,32 @@ module Rename2(
   wire [5:0]   ratAfter1_29 = _ratAfter1_29_T_1 ? new1 : ratAfter0_29;
   wire [5:0]   ratAfter1_30 = _ratAfter1_30_T_1 ? new1 : ratAfter0_30;
   wire [5:0]   ratAfter1_31 = _ratAfter1_31_T_1 ? new1 : ratAfter0_31;
-  wire         _GEN_16 = commitReleasesPhys0 | commitReleasesPhys1;
+  wire         _GEN_28 = commitReleasesPhys0 | commitReleasesPhys1;
   wire [126:0] _cps_free_snap_T_10 = 127'h1 << _GEN;
-  wire [63:0]  _GEN_17 = _GEN_0 & _GEN_1 & _cps_free_snap_T_10[63:0];
+  wire [63:0]  _GEN_29 = _GEN_0 & _GEN_1 & _cps_free_snap_T_10[63:0];
   wire [126:0] _cps_free_snap_T_6 = 127'h1 << _GEN_3;
-  wire [63:0]  _GEN_18 =
+  wire [63:0]  _GEN_30 =
     (commitReleasesPhys1
-       ? _GEN_4 & _cps_free_snap_T_6[63:0] | _GEN_17 | freeAfter0
-       : _GEN_17 | freeAfter0) & 64'hFFFFFFFFFFFFFFFE;
+       ? _GEN_4 & _cps_free_snap_T_6[63:0] | _GEN_29 | freeAfter0
+       : _GEN_29 | freeAfter0) & 64'hFFFFFFFFFFFFFFFE;
   wire [126:0] _cps_free_snap_T_27 = 127'h1 << _GEN;
-  wire [63:0]  _GEN_19 = _GEN_0 & _GEN_1 & _cps_free_snap_T_27[63:0];
+  wire [63:0]  _GEN_31 = _GEN_0 & _GEN_1 & _cps_free_snap_T_27[63:0];
   wire [126:0] _cps_free_snap_T_23 = 127'h1 << _GEN_3;
-  wire [63:0]  _GEN_20 =
+  wire [63:0]  _GEN_32 =
     (commitReleasesPhys1
-       ? _GEN_4 & _cps_free_snap_T_23[63:0] | _GEN_19 | freeAfter1
-       : _GEN_19 | freeAfter1) & 64'hFFFFFFFFFFFFFFFE;
+       ? _GEN_4 & _cps_free_snap_T_23[63:0] | _GEN_31 | freeAfter1
+       : _GEN_31 | freeAfter1) & 64'hFFFFFFFFFFFFFFFE;
   wire [126:0] _cps_0_free_snap_T_10 = 127'h1 << _GEN;
-  wire [63:0]  _GEN_21 = _GEN_0 & _GEN_1 & _cps_0_free_snap_T_10[63:0];
+  wire [63:0]  _GEN_33 = _GEN_0 & _GEN_1 & _cps_0_free_snap_T_10[63:0];
   wire [126:0] _cps_0_free_snap_T_6 = 127'h1 << _GEN_3;
   wire [126:0] _cps_1_free_snap_T_10 = 127'h1 << _GEN;
-  wire [63:0]  _GEN_22 = _GEN_0 & _GEN_1 & _cps_1_free_snap_T_10[63:0];
+  wire [63:0]  _GEN_34 = _GEN_0 & _GEN_1 & _cps_1_free_snap_T_10[63:0];
   wire [126:0] _cps_1_free_snap_T_6 = 127'h1 << _GEN_3;
   wire [126:0] _cps_2_free_snap_T_10 = 127'h1 << _GEN;
-  wire [63:0]  _GEN_23 = _GEN_0 & _GEN_1 & _cps_2_free_snap_T_10[63:0];
+  wire [63:0]  _GEN_35 = _GEN_0 & _GEN_1 & _cps_2_free_snap_T_10[63:0];
   wire [126:0] _cps_2_free_snap_T_6 = 127'h1 << _GEN_3;
   wire [126:0] _cps_3_free_snap_T_10 = 127'h1 << _GEN;
-  wire [63:0]  _GEN_24 = _GEN_0 & _GEN_1 & _cps_3_free_snap_T_10[63:0];
+  wire [63:0]  _GEN_36 = _GEN_0 & _GEN_1 & _cps_3_free_snap_T_10[63:0];
   wire [126:0] _cps_3_free_snap_T_6 = 127'h1 << _GEN_3;
   always @(posedge clock) begin
     if (reset) begin
@@ -1933,11 +1948,11 @@ module Rename2(
       cps_0_valid <=
         ~io_rebuild
         & (io_restore_cp
-             ? (_GEN_5 ? ~(_GEN_6 | younger) & cps_0_valid : ~younger & cps_0_valid)
-             : ~(_GEN_5 & _GEN_6)
-               & (push1 ? _GEN_13 | _GEN_9 | cps_0_valid : _GEN_9 | cps_0_valid));
+             ? ~(_GEN_9 & _GEN_10)
+               & (_GEN_5 ? ~(_GEN_6 | younger) & cps_0_valid : ~younger & cps_0_valid)
+             : _GEN_9 ? ~(_GEN_10 | _GEN_24) & _GEN_18 : ~_GEN_24 & _GEN_18);
       if (~(io_rebuild | io_restore_cp)) begin
-        if (push1 & _GEN_13) begin
+        if (push1 & _GEN_17) begin
           cps_0_rob_idx <= io_cp_rob_idx1;
           cps_0_rat_snap_0 <= ratAfter1_0;
           cps_0_rat_snap_1 <= ratAfter1_1;
@@ -1971,9 +1986,9 @@ module Rename2(
           cps_0_rat_snap_29 <= ratAfter1_29;
           cps_0_rat_snap_30 <= ratAfter1_30;
           cps_0_rat_snap_31 <= ratAfter1_31;
-          cps_0_free_snap <= _GEN_20;
+          cps_0_free_snap <= _GEN_32;
         end
-        else if (_GEN_9) begin
+        else if (_GEN_13) begin
           cps_0_rob_idx <= io_cp_rob_idx0;
           cps_0_rat_snap_0 <= ratAfter0_0;
           cps_0_rat_snap_1 <= ratAfter0_1;
@@ -2007,14 +2022,14 @@ module Rename2(
           cps_0_rat_snap_29 <= ratAfter0_29;
           cps_0_rat_snap_30 <= ratAfter0_30;
           cps_0_rat_snap_31 <= ratAfter0_31;
-          cps_0_free_snap <= _GEN_18;
+          cps_0_free_snap <= _GEN_30;
         end
-        else if (_GEN_16 & cps_0_valid)
+        else if (_GEN_28 & cps_0_valid)
           cps_0_free_snap <=
             (commitReleasesPhys1
-               ? _GEN_4 & _cps_0_free_snap_T_6[63:0] | _GEN_21 | cps_0_free_snap
-               : _GEN_21 | cps_0_free_snap) & 64'hFFFFFFFFFFFFFFFE;
-        if (push1 & _GEN_14) begin
+               ? _GEN_4 & _cps_0_free_snap_T_6[63:0] | _GEN_33 | cps_0_free_snap
+               : _GEN_33 | cps_0_free_snap) & 64'hFFFFFFFFFFFFFFFE;
+        if (push1 & _GEN_19) begin
           cps_1_rob_idx <= io_cp_rob_idx1;
           cps_1_rat_snap_0 <= ratAfter1_0;
           cps_1_rat_snap_1 <= ratAfter1_1;
@@ -2048,9 +2063,9 @@ module Rename2(
           cps_1_rat_snap_29 <= ratAfter1_29;
           cps_1_rat_snap_30 <= ratAfter1_30;
           cps_1_rat_snap_31 <= ratAfter1_31;
-          cps_1_free_snap <= _GEN_20;
+          cps_1_free_snap <= _GEN_32;
         end
-        else if (_GEN_10) begin
+        else if (_GEN_14) begin
           cps_1_rob_idx <= io_cp_rob_idx0;
           cps_1_rat_snap_0 <= ratAfter0_0;
           cps_1_rat_snap_1 <= ratAfter0_1;
@@ -2084,14 +2099,14 @@ module Rename2(
           cps_1_rat_snap_29 <= ratAfter0_29;
           cps_1_rat_snap_30 <= ratAfter0_30;
           cps_1_rat_snap_31 <= ratAfter0_31;
-          cps_1_free_snap <= _GEN_18;
+          cps_1_free_snap <= _GEN_30;
         end
-        else if (_GEN_16 & cps_1_valid)
+        else if (_GEN_28 & cps_1_valid)
           cps_1_free_snap <=
             (commitReleasesPhys1
-               ? _GEN_4 & _cps_1_free_snap_T_6[63:0] | _GEN_22 | cps_1_free_snap
-               : _GEN_22 | cps_1_free_snap) & 64'hFFFFFFFFFFFFFFFE;
-        if (push1 & _GEN_15) begin
+               ? _GEN_4 & _cps_1_free_snap_T_6[63:0] | _GEN_34 | cps_1_free_snap
+               : _GEN_34 | cps_1_free_snap) & 64'hFFFFFFFFFFFFFFFE;
+        if (push1 & _GEN_21) begin
           cps_2_rob_idx <= io_cp_rob_idx1;
           cps_2_rat_snap_0 <= ratAfter1_0;
           cps_2_rat_snap_1 <= ratAfter1_1;
@@ -2125,9 +2140,9 @@ module Rename2(
           cps_2_rat_snap_29 <= ratAfter1_29;
           cps_2_rat_snap_30 <= ratAfter1_30;
           cps_2_rat_snap_31 <= ratAfter1_31;
-          cps_2_free_snap <= _GEN_20;
+          cps_2_free_snap <= _GEN_32;
         end
-        else if (_GEN_11) begin
+        else if (_GEN_15) begin
           cps_2_rob_idx <= io_cp_rob_idx0;
           cps_2_rat_snap_0 <= ratAfter0_0;
           cps_2_rat_snap_1 <= ratAfter0_1;
@@ -2161,13 +2176,13 @@ module Rename2(
           cps_2_rat_snap_29 <= ratAfter0_29;
           cps_2_rat_snap_30 <= ratAfter0_30;
           cps_2_rat_snap_31 <= ratAfter0_31;
-          cps_2_free_snap <= _GEN_18;
+          cps_2_free_snap <= _GEN_30;
         end
-        else if (_GEN_16 & cps_2_valid)
+        else if (_GEN_28 & cps_2_valid)
           cps_2_free_snap <=
             (commitReleasesPhys1
-               ? _GEN_4 & _cps_2_free_snap_T_6[63:0] | _GEN_23 | cps_2_free_snap
-               : _GEN_23 | cps_2_free_snap) & 64'hFFFFFFFFFFFFFFFE;
+               ? _GEN_4 & _cps_2_free_snap_T_6[63:0] | _GEN_35 | cps_2_free_snap
+               : _GEN_35 | cps_2_free_snap) & 64'hFFFFFFFFFFFFFFFE;
         if (push1 & (&cpIdx1)) begin
           cps_3_rob_idx <= io_cp_rob_idx1;
           cps_3_rat_snap_0 <= ratAfter1_0;
@@ -2202,9 +2217,9 @@ module Rename2(
           cps_3_rat_snap_29 <= ratAfter1_29;
           cps_3_rat_snap_30 <= ratAfter1_30;
           cps_3_rat_snap_31 <= ratAfter1_31;
-          cps_3_free_snap <= _GEN_20;
+          cps_3_free_snap <= _GEN_32;
         end
-        else if (_GEN_12) begin
+        else if (_GEN_16) begin
           cps_3_rob_idx <= io_cp_rob_idx0;
           cps_3_rat_snap_0 <= ratAfter0_0;
           cps_3_rat_snap_1 <= ratAfter0_1;
@@ -2238,34 +2253,34 @@ module Rename2(
           cps_3_rat_snap_29 <= ratAfter0_29;
           cps_3_rat_snap_30 <= ratAfter0_30;
           cps_3_rat_snap_31 <= ratAfter0_31;
-          cps_3_free_snap <= _GEN_18;
+          cps_3_free_snap <= _GEN_30;
         end
-        else if (_GEN_16 & cps_3_valid)
+        else if (_GEN_28 & cps_3_valid)
           cps_3_free_snap <=
             (commitReleasesPhys1
-               ? _GEN_4 & _cps_3_free_snap_T_6[63:0] | _GEN_24 | cps_3_free_snap
-               : _GEN_24 | cps_3_free_snap) & 64'hFFFFFFFFFFFFFFFE;
+               ? _GEN_4 & _cps_3_free_snap_T_6[63:0] | _GEN_36 | cps_3_free_snap
+               : _GEN_36 | cps_3_free_snap) & 64'hFFFFFFFFFFFFFFFE;
       end
       cps_1_valid <=
         ~io_rebuild
         & (io_restore_cp
-             ? (_GEN_5 ? ~(_GEN_7 | younger_1) & cps_1_valid : ~younger_1 & cps_1_valid)
-             : ~(_GEN_5 & _GEN_7)
-               & (push1 ? _GEN_14 | _GEN_10 | cps_1_valid : _GEN_10 | cps_1_valid));
+             ? ~(_GEN_9 & _GEN_11)
+               & (_GEN_5 ? ~(_GEN_7 | younger_1) & cps_1_valid : ~younger_1 & cps_1_valid)
+             : _GEN_9 ? ~(_GEN_11 | _GEN_25) & _GEN_20 : ~_GEN_25 & _GEN_20);
       cps_2_valid <=
         ~io_rebuild
         & (io_restore_cp
-             ? (_GEN_5 ? ~(_GEN_8 | younger_2) & cps_2_valid : ~younger_2 & cps_2_valid)
-             : ~(_GEN_5 & _GEN_8)
-               & (push1 ? _GEN_15 | _GEN_11 | cps_2_valid : _GEN_11 | cps_2_valid));
+             ? ~(_GEN_9 & _GEN_12)
+               & (_GEN_5 ? ~(_GEN_8 | younger_2) & cps_2_valid : ~younger_2 & cps_2_valid)
+             : _GEN_9 ? ~(_GEN_12 | _GEN_26) & _GEN_22 : ~_GEN_26 & _GEN_22);
       cps_3_valid <=
         ~io_rebuild
         & (io_restore_cp
-             ? (_GEN_5
-                  ? ~((&io_cm_cp_idx) | younger_3) & cps_3_valid
-                  : ~younger_3 & cps_3_valid)
-             : ~(_GEN_5 & (&io_cm_cp_idx))
-               & (push1 ? (&cpIdx1) | _GEN_12 | cps_3_valid : _GEN_12 | cps_3_valid));
+             ? ~(_GEN_9 & (&io_cm1_cp_idx))
+               & (_GEN_5
+                    ? ~((&io_cm_cp_idx) | younger_3) & cps_3_valid
+                    : ~younger_3 & cps_3_valid)
+             : _GEN_9 ? ~((&io_cm1_cp_idx) | _GEN_27) & _GEN_23 : ~_GEN_27 & _GEN_23);
     end
   end // always @(posedge)
   assign io_cp_idx0 = push0 & cps_0_valid ? _cpIdx0_T_5 : 2'h0;

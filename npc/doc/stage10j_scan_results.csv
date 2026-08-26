@@ -1,0 +1,4 @@
+tag,tage_table_size,tage_histories,itage_table_size,itage_histories,result,ipc,total_cycles,commit_inst,bpu_hit_pct,bpu_mispred,bp_flush,direction_miss,target_miss,unpredicted_jalr,tagged_hits,tage_use_alt,tage_alloc,indirect_hits,itage_hits,itage_alloc,fq_full,ifu_pipeline_stall,decision
+stage10i_baseline,single-override,10,pc-only,none,PASS,0.4342,1202931,522354,60.35,51998,52055,43716,8282,57,101007,0,na,12982,0,na,214972,103036,baseline
+stage10j_tage256,256,2/5/10,128,4/10,PASS,0.4357,1199577,522676,61.11,50910,50967,42618,8292,57,97411,4824,2393,12990,8856,37,217210,110438,retained
+stage10j_tage512,512,2/5/10,128,4/10,PASS,0.4339,1204275,522544,60.91,51162,51213,42864,8298,51,102348,4251,2215,13010,8870,35,226620,132788,rejected-capacity-regression

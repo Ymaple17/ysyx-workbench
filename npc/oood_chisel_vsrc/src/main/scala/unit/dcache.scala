@@ -21,6 +21,8 @@ class DCacheIO extends Bundle {
   val invalidate_addr  = Input(UInt(32.W))
   val invalidate2_valid = Input(Bool())
   val invalidate2_addr  = Input(UInt(32.W))
+  val invalidate3_valid = Input(Bool())
+  val invalidate3_addr  = Input(UInt(32.W))
   val busy = Output(Bool())
 }
 
@@ -59,9 +61,13 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   val inv2Cacheable = cacheable(io.invalidate2_addr)
   val inv2Index = indexOf(io.invalidate2_addr)
   val inv2Tag = tagOf(io.invalidate2_addr)
+  val inv3Cacheable = cacheable(io.invalidate3_addr)
+  val inv3Index = indexOf(io.invalidate3_addr)
+  val inv3Tag = tagOf(io.invalidate3_addr)
   val cpuInvalidatedNow =
     (io.invalidate_valid && invCacheable && invIndex === cpuIndex && invTag === cpuTag) ||
-    (io.invalidate2_valid && inv2Cacheable && inv2Index === cpuIndex && inv2Tag === cpuTag)
+    (io.invalidate2_valid && inv2Cacheable && inv2Index === cpuIndex && inv2Tag === cpuTag) ||
+    (io.invalidate3_valid && inv3Cacheable && inv3Index === cpuIndex && inv3Tag === cpuTag)
 
   val cpuHit = cpuCacheable && cpuLine.valid && (cpuLine.tag === cpuTag) && !cpuInvalidatedNow
   val cpuHitData = cpuLine.data(cpuWord)
@@ -93,7 +99,8 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   val killMshrNow =
     mshrValid && mshrCacheable && (
       (io.invalidate_valid && invCacheable && invIndex === mshrIndex && invTag === mshrTag) ||
-      (io.invalidate2_valid && inv2Cacheable && inv2Index === mshrIndex && inv2Tag === mshrTag)
+      (io.invalidate2_valid && inv2Cacheable && inv2Index === mshrIndex && inv2Tag === mshrTag) ||
+      (io.invalidate3_valid && inv3Cacheable && inv3Index === mshrIndex && inv3Tag === mshrTag)
     )
 
   val respValid = hitRespValid || missRespValid
@@ -224,6 +231,10 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   when(io.invalidate2_valid && inv2Cacheable &&
       lines(inv2Index).valid && (lines(inv2Index).tag === inv2Tag)) {
     lines(inv2Index).valid := false.B
+  }
+  when(io.invalidate3_valid && inv3Cacheable &&
+      lines(inv3Index).valid && (lines(inv3Index).tag === inv3Tag)) {
+    lines(inv3Index).valid := false.B
   }
   when(killMshrNow) {
     mshrKilled := true.B

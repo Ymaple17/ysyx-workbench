@@ -2,4 +2,98 @@
 `include "verification/layers-ysyx_25020039-Verification.sv"
 `ifndef layers_ysyx_25020039_Verification_Assert
 `define layers_ysyx_25020039_Verification_Assert
+bind BPUUpdateQueue BPUUpdateQueue_Verification_Assert verification_assert (
+  .reset  (reset),
+  ._GEN   (enqCount),
+  ._GEN_0 (_available_T_2),
+  .clock  (clock)
+);
+bind FTQ FTQ_Verification_Assert verification_assert (
+  .reset            (reset),
+  .entries_2_valid  (entries_2_valid),
+  .entries_3_valid  (entries_3_valid),
+  .entries_0_valid  (entries_0_valid),
+  .entries_1_valid  (entries_1_valid),
+  .entries_6_valid  (entries_6_valid),
+  .entries_7_valid  (entries_7_valid),
+  .entries_4_valid  (entries_4_valid),
+  .entries_5_valid  (entries_5_valid),
+  .entries_10_valid (entries_10_valid),
+  .entries_11_valid (entries_11_valid),
+  .entries_8_valid  (entries_8_valid),
+  .entries_9_valid  (entries_9_valid),
+  .entries_14_valid (entries_14_valid),
+  .entries_15_valid (entries_15_valid),
+  .entries_12_valid (entries_12_valid),
+  .entries_13_valid (entries_13_valid),
+  .count            (count),
+  .willFree_13      (willFree_13),
+  .willFree_12      (willFree_12),
+  .willFree_15      (willFree_15),
+  .willFree_14      (willFree_14),
+  .willFree_9       (willFree_9),
+  .willFree_8       (willFree_8),
+  .willFree_11      (willFree_11),
+  .willFree_10      (willFree_10),
+  .willFree_5       (willFree_5),
+  .willFree_4       (willFree_4),
+  .willFree_7       (willFree_7),
+  .willFree_6       (willFree_6),
+  .willFree_1       (willFree_1),
+  .willFree_0       (willFree_0),
+  .willFree_3       (willFree_3),
+  .willFree_2       (willFree_2),
+  ._GEN             (casez_tmp_23),
+  ._GEN_0           (~io_flush),
+  .io_commit0Valid  (io_commit0Valid),
+  .io_commit1Valid  (io_commit1Valid),
+  ._GEN_1           (~io_recoverFlush),
+  .clock            (clock)
+);
+bind IFU IFU_Verification_Assert verification_assert (
+  .reset               (reset),
+  .ftq_io_alloc_ready  (_ftq_io_alloc_ready),
+  .ftq_io_alloc_valid  (ftq_io_alloc_valid),
+  ._GEN                (work),
+  ._GEN_0              (~io_bp_recover_valid),
+  .ftq_io_recoverValid (_ftq_io_recoverValid),
+  .clock               (clock)
+);
+bind LoadQueue LoadQueue_Verification_Assert verification_assert (
+  .reset                      (reset),
+  .entries_0_meta_rob_idx     (entries_0_meta_rob_idx),
+  .io_alloc_bits_meta_rob_idx (io_alloc_bits_meta_rob_idx),
+  .entries_0_meta_pc          (entries_0_meta_pc),
+  .io_alloc_bits_meta_pc      (io_alloc_bits_meta_pc),
+  .entries_0_valid            (entries_0_valid),
+  .entries_0_meta_pdest       (entries_0_meta_pdest),
+  .io_alloc_bits_meta_pdest   (io_alloc_bits_meta_pdest),
+  .entries_1_meta_rob_idx     (entries_1_meta_rob_idx),
+  .entries_1_meta_pc          (entries_1_meta_pc),
+  .entries_1_valid            (entries_1_valid),
+  .entries_1_meta_pdest       (entries_1_meta_pdest),
+  .entries_2_meta_rob_idx     (entries_2_meta_rob_idx),
+  .entries_2_meta_pc          (entries_2_meta_pc),
+  .entries_2_valid            (entries_2_valid),
+  .entries_2_meta_pdest       (entries_2_meta_pdest),
+  .entries_3_meta_rob_idx     (entries_3_meta_rob_idx),
+  .entries_3_meta_pc          (entries_3_meta_pc),
+  .entries_3_valid            (entries_3_valid),
+  .entries_3_meta_pdest       (entries_3_meta_pdest),
+  ._GEN                       (_GEN_9),
+  .clock                      (clock)
+);
+bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (
+  .reset                 (reset),
+  ._GEN                  ({grant1_3, grant1_2}),
+  ._GEN_0                ({grant1_1, grant1_0}),
+  ._GEN_1                ({grant0_3, grant0_2}),
+  ._GEN_2                ({grant0_1, grant0_0}),
+  .io_out_0_valid        (|_io_out_0_valid_T),
+  .io_out_1_valid        (|_io_out_1_valid_T),
+  .io_out_0_bits_rob_idx (io_out_0_bits_rob_idx_0),
+  .io_robHead            (io_robHead),
+  .io_out_1_bits_rob_idx (io_out_1_bits_rob_idx_0),
+  .clock                 (clock)
+);
 `endif // layers_ysyx_25020039_Verification_Assert

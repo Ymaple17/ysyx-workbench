@@ -135,6 +135,13 @@ extract_microbench_csv() {
   local csv="$2"
   local tag="$3"
   require_path "${log}" "microbench log"
+  if ! grep -q "MicroBench PASS" "${log}" ||
+     ! grep -q "HIT GOOD TRAP" "${log}" ||
+     grep -Eq "npc: .*ABORT|\[HANG\]|\[BUS-ORPHAN\]|difftest.*MISMATCH" "${log}"; then
+    echo "[fail] microbench log did not reach a clean GOOD TRAP: ${log}" >&2
+    tail -120 "${log}" >&2 || true
+    exit 1
+  fi
 
   local total_cycles ipc commit_inst ifu_fetch bpu_hit bpu_mispred bp_flush
   local dir_miss target_miss unpred_jalr fq_full fq_empty ifu_pipe
@@ -143,11 +150,20 @@ extract_microbench_csv() {
   local commit_slot1_not_ready commit_slot1_block_slot0_excl commit_slot1_block_mem
   local commit_slot1_block_ctrl commit_slot1_block_csr commit_slot1_block_special
   local commit_slot1_block_bp
+  local commit_slot1_load commit_slot1_ctrl commit_slot1_store bpu_update_queue_block
   local store_buffer_full store_buffer_enq store_buffer_drain store_buffer_fwd
+  local store_buffer_enq2
   local dcache_access dcache_hit dcache_miss dcache_bypass dcache_hit_rate
   local dcache_mshr_alloc dcache_hit_under_miss dcache_mshr_refill
+  local lq_alloc lq_full lq_high_water load_replay replay_store_wait
+  local replay_dcache_busy replay_cdb_busy stale_load_resp mem_order_violation
   local fetch_slot0 fetch_slot1 fetch_slot1_killed fq_enq2 fq_space_one
   local fetch_redirect_bubble fetch_slot1_util bpu_tagged_hit bpu_indirect_hit
+  local fetch_blocks fetch_valid_inst fetch_block2 fetch_buffer_full ftq_full
+  local fetch_line_tails spec_ghr_rollbacks ras_rollbacks ftq_high_water
+  local ftq_stale_recover average_fetch_width
+  local tage_use_alt tage_alloc itage_hit itage_alloc
+  local alu1_issues dual_alu_issues fu_refill wb_age_reorders
 
   total_cycles="$(extract_metric "${log}" "Total Cycles")"
   ipc="$(extract_metric "${log}" "IPC")"
@@ -169,9 +185,28 @@ extract_microbench_csv() {
   fq_space_one="$(extract_metric "${log}" "FQ Space One")"
   fetch_redirect_bubble="$(extract_metric "${log}" "Fetch Redirect Bubble")"
   fetch_slot1_util="$(extract_metric "${log}" "Fetch Slot1 Util")"
+  fetch_blocks="$(extract_metric "${log}" "Fetch Blocks")"
+  fetch_valid_inst="$(extract_metric "${log}" "Fetch Valid Instructions")"
+  fetch_block2="$(extract_metric "${log}" "Fetch Two-Instruction Blocks")"
+  fetch_buffer_full="$(extract_metric "${log}" "FetchBuffer Full Cycles")"
+  ftq_full="$(extract_metric "${log}" "FTQ Full Cycles")"
+  fetch_line_tails="$(extract_metric "${log}" "Fetch Line Tails")"
+  spec_ghr_rollbacks="$(extract_metric "${log}" "Spec GHR Rollbacks")"
+  ras_rollbacks="$(extract_metric "${log}" "RAS Rollbacks")"
+  ftq_high_water="$(extract_metric "${log}" "FTQ High Water")"
+  ftq_stale_recover="$(extract_metric "${log}" "FTQ Stale Recover")"
+  average_fetch_width="$(extract_metric "${log}" "Average Fetch Width")"
   bpu_tagged_hit="$(extract_metric "${log}" "Tagged Hits")"
   bpu_indirect_hit="$(extract_metric "${log}" "Indirect Hits")"
+  tage_use_alt="$(extract_metric "${log}" "TAGE Alternate")"
+  tage_alloc="$(extract_metric "${log}" "TAGE Allocations")"
+  itage_hit="$(extract_metric "${log}" "ITAGE Hits")"
+  itage_alloc="$(extract_metric "${log}" "ITAGE Allocations")"
   cdb_conflicts="$(extract_metric "${log}" "CDB Conflicts")"
+  alu1_issues="$(extract_metric "${log}" "ALU1 Issues")"
+  dual_alu_issues="$(extract_metric "${log}" "Dual ALU Issues")"
+  fu_refill="$(extract_metric "${log}" "FU Same-Cycle Refill")"
+  wb_age_reorders="$(extract_metric "${log}" "WB Age Reorders")"
   commit_slot0="$(extract_metric "${log}" "Commit Slot0")"
   commit_slot1="$(extract_metric "${log}" "Commit Slot1")"
   commit2_cycles="$(extract_metric "${log}" "Commit2 Cycles")"
@@ -183,11 +218,16 @@ extract_microbench_csv() {
   commit_slot1_block_csr="$(extract_metric "${log}" "Commit Slot1 Block CSR")"
   commit_slot1_block_special="$(extract_metric "${log}" "Commit Slot1 Block Special")"
   commit_slot1_block_bp="$(extract_metric "${log}" "Commit Slot1 Block BP")"
+  commit_slot1_load="$(extract_metric "${log}" "Commit Slot1 Load")"
+  commit_slot1_ctrl="$(extract_metric "${log}" "Commit Slot1 Control")"
+  commit_slot1_store="$(extract_metric "${log}" "Commit Slot1 Store")"
+  bpu_update_queue_block="$(extract_metric "${log}" "BPU Update Queue Block")"
   commit_slot1_util="$(extract_metric "${log}" "Commit Slot1 Util")"
   head_wait="$(extract_metric "${log}" "Head Not Ready")"
   wait_store_commit="$(extract_metric "${log}" "Wait Store Commit")"
   store_buffer_full="$(extract_metric "${log}" "StoreBuffer Full")"
   store_buffer_enq="$(extract_metric "${log}" "StoreBuffer Enq")"
+  store_buffer_enq2="$(extract_metric "${log}" "StoreBuffer Enq2")"
   store_buffer_drain="$(extract_metric "${log}" "StoreBuffer Drain")"
   store_buffer_fwd="$(extract_metric "${log}" "StoreBuffer Fwd")"
   dcache_access="$(extract_metric "${log}" "DCache Accesses")"
@@ -198,10 +238,24 @@ extract_microbench_csv() {
   dcache_hit_under_miss="$(extract_metric "${log}" "DCache Hit Under Miss")"
   dcache_mshr_refill="$(extract_metric "${log}" "DCache MSHR Refill")"
   dcache_hit_rate="$(extract_metric "${log}" "DCache Hit Rate")"
+  lq_alloc="$(extract_metric "${log}" "LQ Alloc")"
+  lq_full="$(extract_metric "${log}" "LQ Full Cycles")"
+  lq_high_water="$(extract_metric "${log}" "LQ High Water")"
+  load_replay="$(extract_metric "${log}" "Load Replays")"
+  replay_store_wait="$(extract_metric "${log}" "Replay Store Wait")"
+  replay_dcache_busy="$(extract_metric "${log}" "Replay DCache Busy")"
+  replay_cdb_busy="$(extract_metric "${log}" "Replay CDB Busy")"
+  stale_load_resp="$(extract_metric "${log}" "Stale Load Resp")"
+  mem_order_violation="$(extract_metric "${log}" "Mem Order Violation")"
+
+  if [[ -z "${ipc}" || -z "${total_cycles}" || -z "${commit_inst}" ]]; then
+    echo "[fail] microbench performance summary is incomplete: ${log}" >&2
+    exit 1
+  fi
 
   {
-    echo "tag,ipc,total_cycles,commit_inst,ifu_fetch,bpu_hit_pct,bpu_mispred,bp_flush,dir_miss,target_miss,unpred_jalr,fq_full,fq_empty,ifu_pipeline_stall,fetch_slot0,fetch_slot1,fetch_slot1_killed,fq_enq2,fq_space_one,fetch_redirect_bubble,fetch_slot1_util_pct,bpu_tagged_hit,bpu_indirect_hit,cdb_conflicts,commit_slot0,commit_slot1,commit2_cycles,commit_slot1_block,commit_slot1_not_ready,commit_slot1_block_slot0_excl,commit_slot1_block_mem,commit_slot1_block_ctrl,commit_slot1_block_csr,commit_slot1_block_special,commit_slot1_block_bp,commit_slot1_util_pct,head_wait,wait_store_commit,store_buffer_full,store_buffer_enq,store_buffer_drain,store_buffer_fwd,dcache_access,dcache_hit,dcache_miss,dcache_bypass,dcache_mshr_alloc,dcache_hit_under_miss,dcache_mshr_refill,dcache_hit_rate_pct,result"
-    echo "${tag},${ipc},${total_cycles},${commit_inst},${ifu_fetch},${bpu_hit},${bpu_mispred},${bp_flush},${dir_miss},${target_miss},${unpred_jalr},${fq_full},${fq_empty},${ifu_pipe},${fetch_slot0},${fetch_slot1},${fetch_slot1_killed},${fq_enq2},${fq_space_one},${fetch_redirect_bubble},${fetch_slot1_util},${bpu_tagged_hit},${bpu_indirect_hit},${cdb_conflicts},${commit_slot0},${commit_slot1},${commit2_cycles},${commit_slot1_block},${commit_slot1_not_ready},${commit_slot1_block_slot0_excl},${commit_slot1_block_mem},${commit_slot1_block_ctrl},${commit_slot1_block_csr},${commit_slot1_block_special},${commit_slot1_block_bp},${commit_slot1_util},${head_wait},${wait_store_commit},${store_buffer_full},${store_buffer_enq},${store_buffer_drain},${store_buffer_fwd},${dcache_access},${dcache_hit},${dcache_miss},${dcache_bypass},${dcache_mshr_alloc},${dcache_hit_under_miss},${dcache_mshr_refill},${dcache_hit_rate},PASS"
+    echo "tag,ipc,total_cycles,commit_inst,ifu_fetch,bpu_hit_pct,bpu_mispred,bp_flush,dir_miss,target_miss,unpred_jalr,fq_full,fq_empty,ifu_pipeline_stall,fetch_slot0,fetch_slot1,fetch_slot1_killed,fq_enq2,fq_space_one,fetch_redirect_bubble,fetch_slot1_util_pct,fetch_blocks,fetch_valid_inst,fetch_block2,fetch_buffer_full,ftq_full,fetch_line_tails,spec_ghr_rollbacks,ras_rollbacks,ftq_high_water,ftq_stale_recover,average_fetch_width,bpu_tagged_hit,bpu_indirect_hit,tage_use_alt,tage_alloc,itage_hit,itage_alloc,cdb_conflicts,alu1_issues,dual_alu_issues,fu_refill,wb_age_reorders,commit_slot0,commit_slot1,commit2_cycles,commit_slot1_block,commit_slot1_not_ready,commit_slot1_block_slot0_excl,commit_slot1_block_mem,commit_slot1_block_ctrl,commit_slot1_block_csr,commit_slot1_block_special,commit_slot1_block_bp,commit_slot1_load,commit_slot1_ctrl,commit_slot1_store,bpu_update_queue_block,commit_slot1_util_pct,head_wait,wait_store_commit,store_buffer_full,store_buffer_enq,store_buffer_enq2,store_buffer_drain,store_buffer_fwd,dcache_access,dcache_hit,dcache_miss,dcache_bypass,dcache_mshr_alloc,dcache_hit_under_miss,dcache_mshr_refill,dcache_hit_rate_pct,lq_alloc,lq_full,lq_high_water,load_replay,replay_store_wait,replay_dcache_busy,replay_cdb_busy,stale_load_resp,mem_order_violation,result"
+    echo "${tag},${ipc},${total_cycles},${commit_inst},${ifu_fetch},${bpu_hit},${bpu_mispred},${bp_flush},${dir_miss},${target_miss},${unpred_jalr},${fq_full},${fq_empty},${ifu_pipe},${fetch_slot0},${fetch_slot1},${fetch_slot1_killed},${fq_enq2},${fq_space_one},${fetch_redirect_bubble},${fetch_slot1_util},${fetch_blocks},${fetch_valid_inst},${fetch_block2},${fetch_buffer_full},${ftq_full},${fetch_line_tails},${spec_ghr_rollbacks},${ras_rollbacks},${ftq_high_water},${ftq_stale_recover},${average_fetch_width},${bpu_tagged_hit},${bpu_indirect_hit},${tage_use_alt},${tage_alloc},${itage_hit},${itage_alloc},${cdb_conflicts},${alu1_issues},${dual_alu_issues},${fu_refill},${wb_age_reorders},${commit_slot0},${commit_slot1},${commit2_cycles},${commit_slot1_block},${commit_slot1_not_ready},${commit_slot1_block_slot0_excl},${commit_slot1_block_mem},${commit_slot1_block_ctrl},${commit_slot1_block_csr},${commit_slot1_block_special},${commit_slot1_block_bp},${commit_slot1_load},${commit_slot1_ctrl},${commit_slot1_store},${bpu_update_queue_block},${commit_slot1_util},${head_wait},${wait_store_commit},${store_buffer_full},${store_buffer_enq},${store_buffer_enq2},${store_buffer_drain},${store_buffer_fwd},${dcache_access},${dcache_hit},${dcache_miss},${dcache_bypass},${dcache_mshr_alloc},${dcache_hit_under_miss},${dcache_mshr_refill},${dcache_hit_rate},${lq_alloc},${lq_full},${lq_high_water},${load_replay},${replay_store_wait},${replay_dcache_busy},${replay_cdb_busy},${stale_load_resp},${mem_order_violation},PASS"
   } > "${csv}"
   echo "[summary] ${csv}"
 }
@@ -252,10 +306,12 @@ run_microbench() {
   require_path "${bin}" "microbench binary"
   run_logged "microbench" \
     bash -lc "cd \"${NPC_HOME}\" && timeout \"${MICRO_TIMEOUT}\" make sim PROGRAM=\"${bin}\""
-  if grep -q "MicroBench PASS" "${OUT_DIR}/microbench.log"; then
+  if grep -q "MicroBench PASS" "${OUT_DIR}/microbench.log" &&
+     grep -q "HIT GOOD TRAP" "${OUT_DIR}/microbench.log" &&
+     ! grep -Eq "npc: .*ABORT|\[HANG\]|\[BUS-ORPHAN\]|difftest.*MISMATCH" "${OUT_DIR}/microbench.log"; then
     extract_microbench_csv "${OUT_DIR}/microbench.log" "${OUT_DIR}/microbench_summary.csv" "${TAG}"
   else
-    echo "[fail] microbench: PASS marker not found" >&2
+    echo "[fail] microbench: clean PASS/GOOD TRAP sequence not found" >&2
     tail -120 "${OUT_DIR}/microbench.log" >&2 || true
     exit 1
   fi

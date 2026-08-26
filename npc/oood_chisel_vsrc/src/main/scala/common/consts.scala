@@ -156,5 +156,9 @@ object BPU_Config{
     val BHT_INIT = 1 // weak not-taken; a taken branch becomes predicted-taken after one update
     val BHT_COLD_STATIC = true // cold entries use backward-taken / forward-not-taken
     val TAGGED_BHT_TAG_BITS = 8
+    val TAGE_TABLE_SIZE = 256
+    val TAGE_HISTORY_LENGTHS = Seq(2, 5, 10)
     val INDIRECT_TARGET_SIZE = 256
+    val ITAGE_TABLE_SIZE = 128
+    val ITAGE_HISTORY_LENGTHS = Seq(4, 10)
 }

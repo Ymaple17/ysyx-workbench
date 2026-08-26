@@ -144,7 +144,7 @@ class SRAM extends Module{
   val rresp_reg = RegInit(OKAY)
 
   r_next_state := MuxLookup(r_state, s_R_IDLE)(Seq(
-    s_R_IDLE -> Mux(io.sram.arvalid && is_valid_addr(io.sram.araddr), s_R_WAIT, s_R_IDLE),
+    s_R_IDLE -> Mux(io.sram.arvalid, s_R_WAIT, s_R_IDLE),
     s_R_WAIT -> Mux(r_delay_cnt === random_delay, s_R_DATA, s_R_WAIT),
     s_R_DATA -> Mux(io.sram.rready, s_R_IDLE, s_R_DATA)
   ))
@@ -225,4 +225,3 @@ class SRAM extends Module{
   }
   
 }
-

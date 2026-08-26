@@ -14,8 +14,15 @@ module StoreQueue(
   input  [31:0] io_wb_addr,
                 io_wb_data,
   input  [3:0]  io_wb_mask,
+  input         io_wb1_valid,
+  input  [4:0]  io_wb1_rob,
+  input  [31:0] io_wb1_addr,
+                io_wb1_data,
+  input  [3:0]  io_wb1_mask,
   input         io_commit_valid,
   input  [4:0]  io_commit_rob,
+  input         io_commit1_valid,
+  input  [4:0]  io_commit1_rob,
   input         io_flush,
   input  [4:0]  io_flush_idx,
   input         io_flush_all,
@@ -259,6 +266,75 @@ module StoreQueue(
         casez_tmp = entries_31_valid;
     endcase
   end // always_comb
+  reg         casez_tmp_0;
+  always_comb begin
+    casez (io_wb1_rob)
+      5'b00000:
+        casez_tmp_0 = entries_0_valid;
+      5'b00001:
+        casez_tmp_0 = entries_1_valid;
+      5'b00010:
+        casez_tmp_0 = entries_2_valid;
+      5'b00011:
+        casez_tmp_0 = entries_3_valid;
+      5'b00100:
+        casez_tmp_0 = entries_4_valid;
+      5'b00101:
+        casez_tmp_0 = entries_5_valid;
+      5'b00110:
+        casez_tmp_0 = entries_6_valid;
+      5'b00111:
+        casez_tmp_0 = entries_7_valid;
+      5'b01000:
+        casez_tmp_0 = entries_8_valid;
+      5'b01001:
+        casez_tmp_0 = entries_9_valid;
+      5'b01010:
+        casez_tmp_0 = entries_10_valid;
+      5'b01011:
+        casez_tmp_0 = entries_11_valid;
+      5'b01100:
+        casez_tmp_0 = entries_12_valid;
+      5'b01101:
+        casez_tmp_0 = entries_13_valid;
+      5'b01110:
+        casez_tmp_0 = entries_14_valid;
+      5'b01111:
+        casez_tmp_0 = entries_15_valid;
+      5'b10000:
+        casez_tmp_0 = entries_16_valid;
+      5'b10001:
+        casez_tmp_0 = entries_17_valid;
+      5'b10010:
+        casez_tmp_0 = entries_18_valid;
+      5'b10011:
+        casez_tmp_0 = entries_19_valid;
+      5'b10100:
+        casez_tmp_0 = entries_20_valid;
+      5'b10101:
+        casez_tmp_0 = entries_21_valid;
+      5'b10110:
+        casez_tmp_0 = entries_22_valid;
+      5'b10111:
+        casez_tmp_0 = entries_23_valid;
+      5'b11000:
+        casez_tmp_0 = entries_24_valid;
+      5'b11001:
+        casez_tmp_0 = entries_25_valid;
+      5'b11010:
+        casez_tmp_0 = entries_26_valid;
+      5'b11011:
+        casez_tmp_0 = entries_27_valid;
+      5'b11100:
+        casez_tmp_0 = entries_28_valid;
+      5'b11101:
+        casez_tmp_0 = entries_29_valid;
+      5'b11110:
+        casez_tmp_0 = entries_30_valid;
+      default:
+        casez_tmp_0 = entries_31_valid;
+    endcase
+  end // always_comb
   wire [4:0]  _ldAge_T = io_ld_rob - io_rob_head;
   wire        olderStore = entries_0_valid & idxAge < _ldAge_T;
   wire        sameWord = entries_0_addr_ready & entries_0_addr[31:2] == io_ld_addr[31:2];
@@ -276,8 +352,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T = _loadMask_T[3:0] & _storeMask_T_1[3:0];
-  wire        fwdHits_0 =
-    io_ld_valid & olderStore & sameWord & _overlap_T == _loadMask_T[3:0];
+  wire        _fwdHits_0_T = io_ld_valid & olderStore;
+  wire        fwdHits_0 = _fwdHits_0_T & sameWord & _overlap_T == _loadMask_T[3:0];
   wire [62:0] _GEN_0 = {58'h0, io_ld_addr[1:0], 3'h0};
   wire [62:0] _fwdData_0_T_4 =
     {31'h0, entries_0_data} << {58'h0, entries_0_addr[1:0], 3'h0} >> _GEN_0;
@@ -294,8 +370,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_1 = _loadMask_T_1[3:0] & _storeMask_T_4[3:0];
-  wire        fwdHits_1 =
-    io_ld_valid & olderStore_1 & sameWord_1 & _overlap_T_1 == _loadMask_T_1[3:0];
+  wire        _fwdHits_1_T = io_ld_valid & olderStore_1;
+  wire        fwdHits_1 = _fwdHits_1_T & sameWord_1 & _overlap_T_1 == _loadMask_T_1[3:0];
   wire [62:0] _fwdData_1_T_4 =
     {31'h0, entries_1_data} << {58'h0, entries_1_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_4 = 5'h2 - io_rob_head;
@@ -311,8 +387,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_2 = _loadMask_T_2[3:0] & _storeMask_T_7[3:0];
-  wire        fwdHits_2 =
-    io_ld_valid & olderStore_2 & sameWord_2 & _overlap_T_2 == _loadMask_T_2[3:0];
+  wire        _fwdHits_2_T = io_ld_valid & olderStore_2;
+  wire        fwdHits_2 = _fwdHits_2_T & sameWord_2 & _overlap_T_2 == _loadMask_T_2[3:0];
   wire [62:0] _fwdData_2_T_4 =
     {31'h0, entries_2_data} << {58'h0, entries_2_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_6 = 5'h3 - io_rob_head;
@@ -328,8 +404,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_3 = _loadMask_T_3[3:0] & _storeMask_T_10[3:0];
-  wire        fwdHits_3 =
-    io_ld_valid & olderStore_3 & sameWord_3 & _overlap_T_3 == _loadMask_T_3[3:0];
+  wire        _fwdHits_3_T = io_ld_valid & olderStore_3;
+  wire        fwdHits_3 = _fwdHits_3_T & sameWord_3 & _overlap_T_3 == _loadMask_T_3[3:0];
   wire [62:0] _fwdData_3_T_4 =
     {31'h0, entries_3_data} << {58'h0, entries_3_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_8 = 5'h4 - io_rob_head;
@@ -345,8 +421,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_4 = _loadMask_T_4[3:0] & _storeMask_T_13[3:0];
-  wire        fwdHits_4 =
-    io_ld_valid & olderStore_4 & sameWord_4 & _overlap_T_4 == _loadMask_T_4[3:0];
+  wire        _fwdHits_4_T = io_ld_valid & olderStore_4;
+  wire        fwdHits_4 = _fwdHits_4_T & sameWord_4 & _overlap_T_4 == _loadMask_T_4[3:0];
   wire [62:0] _fwdData_4_T_4 =
     {31'h0, entries_4_data} << {58'h0, entries_4_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_10 = 5'h5 - io_rob_head;
@@ -362,8 +438,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_5 = _loadMask_T_5[3:0] & _storeMask_T_16[3:0];
-  wire        fwdHits_5 =
-    io_ld_valid & olderStore_5 & sameWord_5 & _overlap_T_5 == _loadMask_T_5[3:0];
+  wire        _fwdHits_5_T = io_ld_valid & olderStore_5;
+  wire        fwdHits_5 = _fwdHits_5_T & sameWord_5 & _overlap_T_5 == _loadMask_T_5[3:0];
   wire [62:0] _fwdData_5_T_4 =
     {31'h0, entries_5_data} << {58'h0, entries_5_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_12 = 5'h6 - io_rob_head;
@@ -379,8 +455,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_6 = _loadMask_T_6[3:0] & _storeMask_T_19[3:0];
-  wire        fwdHits_6 =
-    io_ld_valid & olderStore_6 & sameWord_6 & _overlap_T_6 == _loadMask_T_6[3:0];
+  wire        _fwdHits_6_T = io_ld_valid & olderStore_6;
+  wire        fwdHits_6 = _fwdHits_6_T & sameWord_6 & _overlap_T_6 == _loadMask_T_6[3:0];
   wire [62:0] _fwdData_6_T_4 =
     {31'h0, entries_6_data} << {58'h0, entries_6_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_14 = 5'h7 - io_rob_head;
@@ -396,8 +472,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_7 = _loadMask_T_7[3:0] & _storeMask_T_22[3:0];
-  wire        fwdHits_7 =
-    io_ld_valid & olderStore_7 & sameWord_7 & _overlap_T_7 == _loadMask_T_7[3:0];
+  wire        _fwdHits_7_T = io_ld_valid & olderStore_7;
+  wire        fwdHits_7 = _fwdHits_7_T & sameWord_7 & _overlap_T_7 == _loadMask_T_7[3:0];
   wire [62:0] _fwdData_7_T_4 =
     {31'h0, entries_7_data} << {58'h0, entries_7_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_16 = 5'h8 - io_rob_head;
@@ -413,8 +489,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_8 = _loadMask_T_8[3:0] & _storeMask_T_25[3:0];
-  wire        fwdHits_8 =
-    io_ld_valid & olderStore_8 & sameWord_8 & _overlap_T_8 == _loadMask_T_8[3:0];
+  wire        _fwdHits_8_T = io_ld_valid & olderStore_8;
+  wire        fwdHits_8 = _fwdHits_8_T & sameWord_8 & _overlap_T_8 == _loadMask_T_8[3:0];
   wire [62:0] _fwdData_8_T_4 =
     {31'h0, entries_8_data} << {58'h0, entries_8_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_18 = 5'h9 - io_rob_head;
@@ -430,8 +506,8 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_9 = _loadMask_T_9[3:0] & _storeMask_T_28[3:0];
-  wire        fwdHits_9 =
-    io_ld_valid & olderStore_9 & sameWord_9 & _overlap_T_9 == _loadMask_T_9[3:0];
+  wire        _fwdHits_9_T = io_ld_valid & olderStore_9;
+  wire        fwdHits_9 = _fwdHits_9_T & sameWord_9 & _overlap_T_9 == _loadMask_T_9[3:0];
   wire [62:0] _fwdData_9_T_4 =
     {31'h0, entries_9_data} << {58'h0, entries_9_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_20 = 5'hA - io_rob_head;
@@ -447,8 +523,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_10 = _loadMask_T_10[3:0] & _storeMask_T_31[3:0];
+  wire        _fwdHits_10_T = io_ld_valid & olderStore_10;
   wire        fwdHits_10 =
-    io_ld_valid & olderStore_10 & sameWord_10 & _overlap_T_10 == _loadMask_T_10[3:0];
+    _fwdHits_10_T & sameWord_10 & _overlap_T_10 == _loadMask_T_10[3:0];
   wire [62:0] _fwdData_10_T_4 =
     {31'h0, entries_10_data} << {58'h0, entries_10_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_22 = 5'hB - io_rob_head;
@@ -464,8 +541,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_11 = _loadMask_T_11[3:0] & _storeMask_T_34[3:0];
+  wire        _fwdHits_11_T = io_ld_valid & olderStore_11;
   wire        fwdHits_11 =
-    io_ld_valid & olderStore_11 & sameWord_11 & _overlap_T_11 == _loadMask_T_11[3:0];
+    _fwdHits_11_T & sameWord_11 & _overlap_T_11 == _loadMask_T_11[3:0];
   wire [62:0] _fwdData_11_T_4 =
     {31'h0, entries_11_data} << {58'h0, entries_11_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_24 = 5'hC - io_rob_head;
@@ -481,8 +559,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_12 = _loadMask_T_12[3:0] & _storeMask_T_37[3:0];
+  wire        _fwdHits_12_T = io_ld_valid & olderStore_12;
   wire        fwdHits_12 =
-    io_ld_valid & olderStore_12 & sameWord_12 & _overlap_T_12 == _loadMask_T_12[3:0];
+    _fwdHits_12_T & sameWord_12 & _overlap_T_12 == _loadMask_T_12[3:0];
   wire [62:0] _fwdData_12_T_4 =
     {31'h0, entries_12_data} << {58'h0, entries_12_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_26 = 5'hD - io_rob_head;
@@ -498,8 +577,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_13 = _loadMask_T_13[3:0] & _storeMask_T_40[3:0];
+  wire        _fwdHits_13_T = io_ld_valid & olderStore_13;
   wire        fwdHits_13 =
-    io_ld_valid & olderStore_13 & sameWord_13 & _overlap_T_13 == _loadMask_T_13[3:0];
+    _fwdHits_13_T & sameWord_13 & _overlap_T_13 == _loadMask_T_13[3:0];
   wire [62:0] _fwdData_13_T_4 =
     {31'h0, entries_13_data} << {58'h0, entries_13_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_28 = 5'hE - io_rob_head;
@@ -515,8 +595,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_14 = _loadMask_T_14[3:0] & _storeMask_T_43[3:0];
+  wire        _fwdHits_14_T = io_ld_valid & olderStore_14;
   wire        fwdHits_14 =
-    io_ld_valid & olderStore_14 & sameWord_14 & _overlap_T_14 == _loadMask_T_14[3:0];
+    _fwdHits_14_T & sameWord_14 & _overlap_T_14 == _loadMask_T_14[3:0];
   wire [62:0] _fwdData_14_T_4 =
     {31'h0, entries_14_data} << {58'h0, entries_14_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_30 = 5'hF - io_rob_head;
@@ -532,8 +613,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_15 = _loadMask_T_15[3:0] & _storeMask_T_46[3:0];
+  wire        _fwdHits_15_T = io_ld_valid & olderStore_15;
   wire        fwdHits_15 =
-    io_ld_valid & olderStore_15 & sameWord_15 & _overlap_T_15 == _loadMask_T_15[3:0];
+    _fwdHits_15_T & sameWord_15 & _overlap_T_15 == _loadMask_T_15[3:0];
   wire [62:0] _fwdData_15_T_4 =
     {31'h0, entries_15_data} << {58'h0, entries_15_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_32 = 5'h10 - io_rob_head;
@@ -549,8 +631,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_16 = _loadMask_T_16[3:0] & _storeMask_T_49[3:0];
+  wire        _fwdHits_16_T = io_ld_valid & olderStore_16;
   wire        fwdHits_16 =
-    io_ld_valid & olderStore_16 & sameWord_16 & _overlap_T_16 == _loadMask_T_16[3:0];
+    _fwdHits_16_T & sameWord_16 & _overlap_T_16 == _loadMask_T_16[3:0];
   wire [62:0] _fwdData_16_T_4 =
     {31'h0, entries_16_data} << {58'h0, entries_16_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_34 = 5'h11 - io_rob_head;
@@ -566,8 +649,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_17 = _loadMask_T_17[3:0] & _storeMask_T_52[3:0];
+  wire        _fwdHits_17_T = io_ld_valid & olderStore_17;
   wire        fwdHits_17 =
-    io_ld_valid & olderStore_17 & sameWord_17 & _overlap_T_17 == _loadMask_T_17[3:0];
+    _fwdHits_17_T & sameWord_17 & _overlap_T_17 == _loadMask_T_17[3:0];
   wire [62:0] _fwdData_17_T_4 =
     {31'h0, entries_17_data} << {58'h0, entries_17_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_36 = 5'h12 - io_rob_head;
@@ -583,8 +667,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_18 = _loadMask_T_18[3:0] & _storeMask_T_55[3:0];
+  wire        _fwdHits_18_T = io_ld_valid & olderStore_18;
   wire        fwdHits_18 =
-    io_ld_valid & olderStore_18 & sameWord_18 & _overlap_T_18 == _loadMask_T_18[3:0];
+    _fwdHits_18_T & sameWord_18 & _overlap_T_18 == _loadMask_T_18[3:0];
   wire [62:0] _fwdData_18_T_4 =
     {31'h0, entries_18_data} << {58'h0, entries_18_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_38 = 5'h13 - io_rob_head;
@@ -600,8 +685,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_19 = _loadMask_T_19[3:0] & _storeMask_T_58[3:0];
+  wire        _fwdHits_19_T = io_ld_valid & olderStore_19;
   wire        fwdHits_19 =
-    io_ld_valid & olderStore_19 & sameWord_19 & _overlap_T_19 == _loadMask_T_19[3:0];
+    _fwdHits_19_T & sameWord_19 & _overlap_T_19 == _loadMask_T_19[3:0];
   wire [62:0] _fwdData_19_T_4 =
     {31'h0, entries_19_data} << {58'h0, entries_19_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_40 = 5'h14 - io_rob_head;
@@ -617,8 +703,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_20 = _loadMask_T_20[3:0] & _storeMask_T_61[3:0];
+  wire        _fwdHits_20_T = io_ld_valid & olderStore_20;
   wire        fwdHits_20 =
-    io_ld_valid & olderStore_20 & sameWord_20 & _overlap_T_20 == _loadMask_T_20[3:0];
+    _fwdHits_20_T & sameWord_20 & _overlap_T_20 == _loadMask_T_20[3:0];
   wire [62:0] _fwdData_20_T_4 =
     {31'h0, entries_20_data} << {58'h0, entries_20_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_42 = 5'h15 - io_rob_head;
@@ -634,8 +721,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_21 = _loadMask_T_21[3:0] & _storeMask_T_64[3:0];
+  wire        _fwdHits_21_T = io_ld_valid & olderStore_21;
   wire        fwdHits_21 =
-    io_ld_valid & olderStore_21 & sameWord_21 & _overlap_T_21 == _loadMask_T_21[3:0];
+    _fwdHits_21_T & sameWord_21 & _overlap_T_21 == _loadMask_T_21[3:0];
   wire [62:0] _fwdData_21_T_4 =
     {31'h0, entries_21_data} << {58'h0, entries_21_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_44 = 5'h16 - io_rob_head;
@@ -651,8 +739,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_22 = _loadMask_T_22[3:0] & _storeMask_T_67[3:0];
+  wire        _fwdHits_22_T = io_ld_valid & olderStore_22;
   wire        fwdHits_22 =
-    io_ld_valid & olderStore_22 & sameWord_22 & _overlap_T_22 == _loadMask_T_22[3:0];
+    _fwdHits_22_T & sameWord_22 & _overlap_T_22 == _loadMask_T_22[3:0];
   wire [62:0] _fwdData_22_T_4 =
     {31'h0, entries_22_data} << {58'h0, entries_22_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_46 = 5'h17 - io_rob_head;
@@ -668,8 +757,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_23 = _loadMask_T_23[3:0] & _storeMask_T_70[3:0];
+  wire        _fwdHits_23_T = io_ld_valid & olderStore_23;
   wire        fwdHits_23 =
-    io_ld_valid & olderStore_23 & sameWord_23 & _overlap_T_23 == _loadMask_T_23[3:0];
+    _fwdHits_23_T & sameWord_23 & _overlap_T_23 == _loadMask_T_23[3:0];
   wire [62:0] _fwdData_23_T_4 =
     {31'h0, entries_23_data} << {58'h0, entries_23_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_48 = 5'h18 - io_rob_head;
@@ -685,8 +775,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_24 = _loadMask_T_24[3:0] & _storeMask_T_73[3:0];
+  wire        _fwdHits_24_T = io_ld_valid & olderStore_24;
   wire        fwdHits_24 =
-    io_ld_valid & olderStore_24 & sameWord_24 & _overlap_T_24 == _loadMask_T_24[3:0];
+    _fwdHits_24_T & sameWord_24 & _overlap_T_24 == _loadMask_T_24[3:0];
   wire [62:0] _fwdData_24_T_4 =
     {31'h0, entries_24_data} << {58'h0, entries_24_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_50 = 5'h19 - io_rob_head;
@@ -702,8 +793,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_25 = _loadMask_T_25[3:0] & _storeMask_T_76[3:0];
+  wire        _fwdHits_25_T = io_ld_valid & olderStore_25;
   wire        fwdHits_25 =
-    io_ld_valid & olderStore_25 & sameWord_25 & _overlap_T_25 == _loadMask_T_25[3:0];
+    _fwdHits_25_T & sameWord_25 & _overlap_T_25 == _loadMask_T_25[3:0];
   wire [62:0] _fwdData_25_T_4 =
     {31'h0, entries_25_data} << {58'h0, entries_25_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_52 = 5'h1A - io_rob_head;
@@ -719,8 +811,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_26 = _loadMask_T_26[3:0] & _storeMask_T_79[3:0];
+  wire        _fwdHits_26_T = io_ld_valid & olderStore_26;
   wire        fwdHits_26 =
-    io_ld_valid & olderStore_26 & sameWord_26 & _overlap_T_26 == _loadMask_T_26[3:0];
+    _fwdHits_26_T & sameWord_26 & _overlap_T_26 == _loadMask_T_26[3:0];
   wire [62:0] _fwdData_26_T_4 =
     {31'h0, entries_26_data} << {58'h0, entries_26_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_54 = 5'h1B - io_rob_head;
@@ -736,8 +829,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_27 = _loadMask_T_27[3:0] & _storeMask_T_82[3:0];
+  wire        _fwdHits_27_T = io_ld_valid & olderStore_27;
   wire        fwdHits_27 =
-    io_ld_valid & olderStore_27 & sameWord_27 & _overlap_T_27 == _loadMask_T_27[3:0];
+    _fwdHits_27_T & sameWord_27 & _overlap_T_27 == _loadMask_T_27[3:0];
   wire [62:0] _fwdData_27_T_4 =
     {31'h0, entries_27_data} << {58'h0, entries_27_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_56 = 5'h1C - io_rob_head;
@@ -753,8 +847,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_28 = _loadMask_T_28[3:0] & _storeMask_T_85[3:0];
+  wire        _fwdHits_28_T = io_ld_valid & olderStore_28;
   wire        fwdHits_28 =
-    io_ld_valid & olderStore_28 & sameWord_28 & _overlap_T_28 == _loadMask_T_28[3:0];
+    _fwdHits_28_T & sameWord_28 & _overlap_T_28 == _loadMask_T_28[3:0];
   wire [62:0] _fwdData_28_T_4 =
     {31'h0, entries_28_data} << {58'h0, entries_28_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_58 = 5'h1D - io_rob_head;
@@ -770,8 +865,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_29 = _loadMask_T_29[3:0] & _storeMask_T_88[3:0];
+  wire        _fwdHits_29_T = io_ld_valid & olderStore_29;
   wire        fwdHits_29 =
-    io_ld_valid & olderStore_29 & sameWord_29 & _overlap_T_29 == _loadMask_T_29[3:0];
+    _fwdHits_29_T & sameWord_29 & _overlap_T_29 == _loadMask_T_29[3:0];
   wire [62:0] _fwdData_29_T_4 =
     {31'h0, entries_29_data} << {58'h0, entries_29_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_60 = 5'h1E - io_rob_head;
@@ -787,8 +883,9 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_30 = _loadMask_T_30[3:0] & _storeMask_T_91[3:0];
+  wire        _fwdHits_30_T = io_ld_valid & olderStore_30;
   wire        fwdHits_30 =
-    io_ld_valid & olderStore_30 & sameWord_30 & _overlap_T_30 == _loadMask_T_30[3:0];
+    _fwdHits_30_T & sameWord_30 & _overlap_T_30 == _loadMask_T_30[3:0];
   wire [62:0] _fwdData_30_T_4 =
     {31'h0, entries_30_data} << {58'h0, entries_30_addr[1:0], 3'h0} >> _GEN_0;
   wire [4:0]  _eAge_T_62 = 5'h1F - io_rob_head;
@@ -804,107 +901,98 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_31 = _loadMask_T_31[3:0] & _storeMask_T_94[3:0];
+  wire        _fwdHits_31_T = io_ld_valid & olderStore_31;
   wire        fwdHits_31 =
-    io_ld_valid & olderStore_31 & sameWord_31 & _overlap_T_31 == _loadMask_T_31[3:0];
+    _fwdHits_31_T & sameWord_31 & _overlap_T_31 == _loadMask_T_31[3:0];
   wire [62:0] _fwdData_31_T_4 =
     {31'h0, entries_31_data} << {58'h0, entries_31_addr[1:0], 3'h0} >> _GEN_0;
-  wire [31:0] _io_wait_load_T =
-    {io_ld_valid
-       & (olderStore_31 & ~entries_31_addr_ready | olderStore_31 & sameWord_31
-          & (|_overlap_T_31) & _overlap_T_31 != _loadMask_T_31[3:0]),
-     io_ld_valid
-       & (olderStore_30 & ~entries_30_addr_ready | olderStore_30 & sameWord_30
-          & (|_overlap_T_30) & _overlap_T_30 != _loadMask_T_30[3:0]),
-     io_ld_valid
-       & (olderStore_29 & ~entries_29_addr_ready | olderStore_29 & sameWord_29
-          & (|_overlap_T_29) & _overlap_T_29 != _loadMask_T_29[3:0]),
-     io_ld_valid
-       & (olderStore_28 & ~entries_28_addr_ready | olderStore_28 & sameWord_28
-          & (|_overlap_T_28) & _overlap_T_28 != _loadMask_T_28[3:0]),
-     io_ld_valid
-       & (olderStore_27 & ~entries_27_addr_ready | olderStore_27 & sameWord_27
-          & (|_overlap_T_27) & _overlap_T_27 != _loadMask_T_27[3:0]),
-     io_ld_valid
-       & (olderStore_26 & ~entries_26_addr_ready | olderStore_26 & sameWord_26
-          & (|_overlap_T_26) & _overlap_T_26 != _loadMask_T_26[3:0]),
-     io_ld_valid
-       & (olderStore_25 & ~entries_25_addr_ready | olderStore_25 & sameWord_25
-          & (|_overlap_T_25) & _overlap_T_25 != _loadMask_T_25[3:0]),
-     io_ld_valid
-       & (olderStore_24 & ~entries_24_addr_ready | olderStore_24 & sameWord_24
-          & (|_overlap_T_24) & _overlap_T_24 != _loadMask_T_24[3:0]),
-     io_ld_valid
-       & (olderStore_23 & ~entries_23_addr_ready | olderStore_23 & sameWord_23
-          & (|_overlap_T_23) & _overlap_T_23 != _loadMask_T_23[3:0]),
-     io_ld_valid
-       & (olderStore_22 & ~entries_22_addr_ready | olderStore_22 & sameWord_22
-          & (|_overlap_T_22) & _overlap_T_22 != _loadMask_T_22[3:0]),
-     io_ld_valid
-       & (olderStore_21 & ~entries_21_addr_ready | olderStore_21 & sameWord_21
-          & (|_overlap_T_21) & _overlap_T_21 != _loadMask_T_21[3:0]),
-     io_ld_valid
-       & (olderStore_20 & ~entries_20_addr_ready | olderStore_20 & sameWord_20
-          & (|_overlap_T_20) & _overlap_T_20 != _loadMask_T_20[3:0]),
-     io_ld_valid
-       & (olderStore_19 & ~entries_19_addr_ready | olderStore_19 & sameWord_19
-          & (|_overlap_T_19) & _overlap_T_19 != _loadMask_T_19[3:0]),
-     io_ld_valid
-       & (olderStore_18 & ~entries_18_addr_ready | olderStore_18 & sameWord_18
-          & (|_overlap_T_18) & _overlap_T_18 != _loadMask_T_18[3:0]),
-     io_ld_valid
-       & (olderStore_17 & ~entries_17_addr_ready | olderStore_17 & sameWord_17
-          & (|_overlap_T_17) & _overlap_T_17 != _loadMask_T_17[3:0]),
-     io_ld_valid
-       & (olderStore_16 & ~entries_16_addr_ready | olderStore_16 & sameWord_16
-          & (|_overlap_T_16) & _overlap_T_16 != _loadMask_T_16[3:0]),
-     io_ld_valid
-       & (olderStore_15 & ~entries_15_addr_ready | olderStore_15 & sameWord_15
-          & (|_overlap_T_15) & _overlap_T_15 != _loadMask_T_15[3:0]),
-     io_ld_valid
-       & (olderStore_14 & ~entries_14_addr_ready | olderStore_14 & sameWord_14
-          & (|_overlap_T_14) & _overlap_T_14 != _loadMask_T_14[3:0]),
-     io_ld_valid
-       & (olderStore_13 & ~entries_13_addr_ready | olderStore_13 & sameWord_13
-          & (|_overlap_T_13) & _overlap_T_13 != _loadMask_T_13[3:0]),
-     io_ld_valid
-       & (olderStore_12 & ~entries_12_addr_ready | olderStore_12 & sameWord_12
-          & (|_overlap_T_12) & _overlap_T_12 != _loadMask_T_12[3:0]),
-     io_ld_valid
-       & (olderStore_11 & ~entries_11_addr_ready | olderStore_11 & sameWord_11
-          & (|_overlap_T_11) & _overlap_T_11 != _loadMask_T_11[3:0]),
-     io_ld_valid
-       & (olderStore_10 & ~entries_10_addr_ready | olderStore_10 & sameWord_10
-          & (|_overlap_T_10) & _overlap_T_10 != _loadMask_T_10[3:0]),
-     io_ld_valid
-       & (olderStore_9 & ~entries_9_addr_ready | olderStore_9 & sameWord_9
-          & (|_overlap_T_9) & _overlap_T_9 != _loadMask_T_9[3:0]),
-     io_ld_valid
-       & (olderStore_8 & ~entries_8_addr_ready | olderStore_8 & sameWord_8
-          & (|_overlap_T_8) & _overlap_T_8 != _loadMask_T_8[3:0]),
-     io_ld_valid
-       & (olderStore_7 & ~entries_7_addr_ready | olderStore_7 & sameWord_7
-          & (|_overlap_T_7) & _overlap_T_7 != _loadMask_T_7[3:0]),
-     io_ld_valid
-       & (olderStore_6 & ~entries_6_addr_ready | olderStore_6 & sameWord_6
-          & (|_overlap_T_6) & _overlap_T_6 != _loadMask_T_6[3:0]),
-     io_ld_valid
-       & (olderStore_5 & ~entries_5_addr_ready | olderStore_5 & sameWord_5
-          & (|_overlap_T_5) & _overlap_T_5 != _loadMask_T_5[3:0]),
-     io_ld_valid
-       & (olderStore_4 & ~entries_4_addr_ready | olderStore_4 & sameWord_4
-          & (|_overlap_T_4) & _overlap_T_4 != _loadMask_T_4[3:0]),
-     io_ld_valid
-       & (olderStore_3 & ~entries_3_addr_ready | olderStore_3 & sameWord_3
-          & (|_overlap_T_3) & _overlap_T_3 != _loadMask_T_3[3:0]),
-     io_ld_valid
-       & (olderStore_2 & ~entries_2_addr_ready | olderStore_2 & sameWord_2
-          & (|_overlap_T_2) & _overlap_T_2 != _loadMask_T_2[3:0]),
-     io_ld_valid
-       & (olderStore_1 & ~entries_1_addr_ready | olderStore_1 & sameWord_1
-          & (|_overlap_T_1) & _overlap_T_1 != _loadMask_T_1[3:0]),
-     io_ld_valid
-       & (olderStore & ~entries_0_addr_ready | olderStore & sameWord & (|_overlap_T)
-          & _overlap_T != _loadMask_T[3:0])};
+  wire        io_wait_load_0 =
+    (|{io_ld_valid & olderStore_31 & ~entries_31_addr_ready,
+       io_ld_valid & olderStore_30 & ~entries_30_addr_ready,
+       io_ld_valid & olderStore_29 & ~entries_29_addr_ready,
+       io_ld_valid & olderStore_28 & ~entries_28_addr_ready,
+       io_ld_valid & olderStore_27 & ~entries_27_addr_ready,
+       io_ld_valid & olderStore_26 & ~entries_26_addr_ready,
+       io_ld_valid & olderStore_25 & ~entries_25_addr_ready,
+       io_ld_valid & olderStore_24 & ~entries_24_addr_ready,
+       io_ld_valid & olderStore_23 & ~entries_23_addr_ready,
+       io_ld_valid & olderStore_22 & ~entries_22_addr_ready,
+       io_ld_valid & olderStore_21 & ~entries_21_addr_ready,
+       io_ld_valid & olderStore_20 & ~entries_20_addr_ready,
+       io_ld_valid & olderStore_19 & ~entries_19_addr_ready,
+       io_ld_valid & olderStore_18 & ~entries_18_addr_ready,
+       io_ld_valid & olderStore_17 & ~entries_17_addr_ready,
+       io_ld_valid & olderStore_16 & ~entries_16_addr_ready,
+       io_ld_valid & olderStore_15 & ~entries_15_addr_ready,
+       io_ld_valid & olderStore_14 & ~entries_14_addr_ready,
+       io_ld_valid & olderStore_13 & ~entries_13_addr_ready,
+       io_ld_valid & olderStore_12 & ~entries_12_addr_ready,
+       io_ld_valid & olderStore_11 & ~entries_11_addr_ready,
+       io_ld_valid & olderStore_10 & ~entries_10_addr_ready,
+       io_ld_valid & olderStore_9 & ~entries_9_addr_ready,
+       io_ld_valid & olderStore_8 & ~entries_8_addr_ready,
+       io_ld_valid & olderStore_7 & ~entries_7_addr_ready,
+       io_ld_valid & olderStore_6 & ~entries_6_addr_ready,
+       io_ld_valid & olderStore_5 & ~entries_5_addr_ready,
+       io_ld_valid & olderStore_4 & ~entries_4_addr_ready,
+       io_ld_valid & olderStore_3 & ~entries_3_addr_ready,
+       io_ld_valid & olderStore_2 & ~entries_2_addr_ready,
+       io_ld_valid & olderStore_1 & ~entries_1_addr_ready,
+       io_ld_valid & olderStore & ~entries_0_addr_ready})
+    | (|{_fwdHits_31_T & sameWord_31 & (|_overlap_T_31)
+           & _overlap_T_31 != _loadMask_T_31[3:0],
+         _fwdHits_30_T & sameWord_30 & (|_overlap_T_30)
+           & _overlap_T_30 != _loadMask_T_30[3:0],
+         _fwdHits_29_T & sameWord_29 & (|_overlap_T_29)
+           & _overlap_T_29 != _loadMask_T_29[3:0],
+         _fwdHits_28_T & sameWord_28 & (|_overlap_T_28)
+           & _overlap_T_28 != _loadMask_T_28[3:0],
+         _fwdHits_27_T & sameWord_27 & (|_overlap_T_27)
+           & _overlap_T_27 != _loadMask_T_27[3:0],
+         _fwdHits_26_T & sameWord_26 & (|_overlap_T_26)
+           & _overlap_T_26 != _loadMask_T_26[3:0],
+         _fwdHits_25_T & sameWord_25 & (|_overlap_T_25)
+           & _overlap_T_25 != _loadMask_T_25[3:0],
+         _fwdHits_24_T & sameWord_24 & (|_overlap_T_24)
+           & _overlap_T_24 != _loadMask_T_24[3:0],
+         _fwdHits_23_T & sameWord_23 & (|_overlap_T_23)
+           & _overlap_T_23 != _loadMask_T_23[3:0],
+         _fwdHits_22_T & sameWord_22 & (|_overlap_T_22)
+           & _overlap_T_22 != _loadMask_T_22[3:0],
+         _fwdHits_21_T & sameWord_21 & (|_overlap_T_21)
+           & _overlap_T_21 != _loadMask_T_21[3:0],
+         _fwdHits_20_T & sameWord_20 & (|_overlap_T_20)
+           & _overlap_T_20 != _loadMask_T_20[3:0],
+         _fwdHits_19_T & sameWord_19 & (|_overlap_T_19)
+           & _overlap_T_19 != _loadMask_T_19[3:0],
+         _fwdHits_18_T & sameWord_18 & (|_overlap_T_18)
+           & _overlap_T_18 != _loadMask_T_18[3:0],
+         _fwdHits_17_T & sameWord_17 & (|_overlap_T_17)
+           & _overlap_T_17 != _loadMask_T_17[3:0],
+         _fwdHits_16_T & sameWord_16 & (|_overlap_T_16)
+           & _overlap_T_16 != _loadMask_T_16[3:0],
+         _fwdHits_15_T & sameWord_15 & (|_overlap_T_15)
+           & _overlap_T_15 != _loadMask_T_15[3:0],
+         _fwdHits_14_T & sameWord_14 & (|_overlap_T_14)
+           & _overlap_T_14 != _loadMask_T_14[3:0],
+         _fwdHits_13_T & sameWord_13 & (|_overlap_T_13)
+           & _overlap_T_13 != _loadMask_T_13[3:0],
+         _fwdHits_12_T & sameWord_12 & (|_overlap_T_12)
+           & _overlap_T_12 != _loadMask_T_12[3:0],
+         _fwdHits_11_T & sameWord_11 & (|_overlap_T_11)
+           & _overlap_T_11 != _loadMask_T_11[3:0],
+         _fwdHits_10_T & sameWord_10 & (|_overlap_T_10)
+           & _overlap_T_10 != _loadMask_T_10[3:0],
+         _fwdHits_9_T & sameWord_9 & (|_overlap_T_9) & _overlap_T_9 != _loadMask_T_9[3:0],
+         _fwdHits_8_T & sameWord_8 & (|_overlap_T_8) & _overlap_T_8 != _loadMask_T_8[3:0],
+         _fwdHits_7_T & sameWord_7 & (|_overlap_T_7) & _overlap_T_7 != _loadMask_T_7[3:0],
+         _fwdHits_6_T & sameWord_6 & (|_overlap_T_6) & _overlap_T_6 != _loadMask_T_6[3:0],
+         _fwdHits_5_T & sameWord_5 & (|_overlap_T_5) & _overlap_T_5 != _loadMask_T_5[3:0],
+         _fwdHits_4_T & sameWord_4 & (|_overlap_T_4) & _overlap_T_4 != _loadMask_T_4[3:0],
+         _fwdHits_3_T & sameWord_3 & (|_overlap_T_3) & _overlap_T_3 != _loadMask_T_3[3:0],
+         _fwdHits_2_T & sameWord_2 & (|_overlap_T_2) & _overlap_T_2 != _loadMask_T_2[3:0],
+         _fwdHits_1_T & sameWord_1 & (|_overlap_T_1) & _overlap_T_1 != _loadMask_T_1[3:0],
+         _fwdHits_0_T & sameWord & (|_overlap_T) & _overlap_T != _loadMask_T[3:0]});
   wire [31:0] _GEN_1 =
     (fwdHits_0
      & ~(fwdHits_1 & _eAge_T_2 > idxAge | fwdHits_2 & _eAge_T_4 > idxAge | fwdHits_3
@@ -1521,365 +1609,552 @@ module StoreQueue(
            | fwdHits_30 & _eAge_T_60 > _eAge_T_62)
          ? _fwdData_31_T_4[31:0]
          : 32'h0);
-  wire        _GEN_9 = io_alloc1_valid & (&io_alloc1_rob);
   wire [4:0]  _flushAge_T = io_flush_idx - io_rob_head;
-  wire        _GEN_10 = io_flush & entries_0_valid & idxAge > _flushAge_T;
-  wire        _GEN_11 = io_flush & entries_1_valid & 5'h1 - io_rob_head > _flushAge_T;
-  wire        _GEN_12 = io_flush & entries_2_valid & 5'h2 - io_rob_head > _flushAge_T;
-  wire        _GEN_13 = io_flush & entries_3_valid & 5'h3 - io_rob_head > _flushAge_T;
-  wire        _GEN_14 = io_flush & entries_4_valid & 5'h4 - io_rob_head > _flushAge_T;
-  wire        _GEN_15 = io_flush & entries_5_valid & 5'h5 - io_rob_head > _flushAge_T;
-  wire        _GEN_16 = io_flush & entries_6_valid & 5'h6 - io_rob_head > _flushAge_T;
-  wire        _GEN_17 = io_flush & entries_7_valid & 5'h7 - io_rob_head > _flushAge_T;
-  wire        _GEN_18 = io_flush & entries_8_valid & 5'h8 - io_rob_head > _flushAge_T;
-  wire        _GEN_19 = io_flush & entries_9_valid & 5'h9 - io_rob_head > _flushAge_T;
-  wire        _GEN_20 = io_flush & entries_10_valid & 5'hA - io_rob_head > _flushAge_T;
-  wire        _GEN_21 = io_flush & entries_11_valid & 5'hB - io_rob_head > _flushAge_T;
-  wire        _GEN_22 = io_flush & entries_12_valid & 5'hC - io_rob_head > _flushAge_T;
-  wire        _GEN_23 = io_flush & entries_13_valid & 5'hD - io_rob_head > _flushAge_T;
-  wire        _GEN_24 = io_flush & entries_14_valid & 5'hE - io_rob_head > _flushAge_T;
-  wire        _GEN_25 = io_flush & entries_15_valid & 5'hF - io_rob_head > _flushAge_T;
-  wire        _GEN_26 = io_flush & entries_16_valid & 5'h10 - io_rob_head > _flushAge_T;
-  wire        _GEN_27 = io_flush & entries_17_valid & 5'h11 - io_rob_head > _flushAge_T;
-  wire        _GEN_28 = io_flush & entries_18_valid & 5'h12 - io_rob_head > _flushAge_T;
-  wire        _GEN_29 = io_flush & entries_19_valid & 5'h13 - io_rob_head > _flushAge_T;
-  wire        _GEN_30 = io_flush & entries_20_valid & 5'h14 - io_rob_head > _flushAge_T;
-  wire        _GEN_31 = io_flush & entries_21_valid & 5'h15 - io_rob_head > _flushAge_T;
-  wire        _GEN_32 = io_flush & entries_22_valid & 5'h16 - io_rob_head > _flushAge_T;
-  wire        _GEN_33 = io_flush & entries_23_valid & 5'h17 - io_rob_head > _flushAge_T;
-  wire        _GEN_34 = io_flush & entries_24_valid & 5'h18 - io_rob_head > _flushAge_T;
-  wire        _GEN_35 = io_flush & entries_25_valid & 5'h19 - io_rob_head > _flushAge_T;
-  wire        _GEN_36 = io_flush & entries_26_valid & 5'h1A - io_rob_head > _flushAge_T;
-  wire        _GEN_37 = io_flush & entries_27_valid & 5'h1B - io_rob_head > _flushAge_T;
-  wire        _GEN_38 = io_flush & entries_28_valid & 5'h1C - io_rob_head > _flushAge_T;
-  wire        _GEN_39 = io_flush & entries_29_valid & 5'h1D - io_rob_head > _flushAge_T;
-  wire        _GEN_40 = io_flush & entries_30_valid & 5'h1E - io_rob_head > _flushAge_T;
-  wire        _GEN_41 = io_flush & entries_31_valid & 5'h1F - io_rob_head > _flushAge_T;
-  wire        _GEN_42 = io_commit_rob == 5'h0 | _GEN_10;
-  wire        _GEN_43 =
-    io_commit_valid ? ~_GEN_42 & entries_0_valid : ~_GEN_10 & entries_0_valid;
-  wire        _GEN_44 = io_commit_rob == 5'h1 | _GEN_11;
-  wire        _GEN_45 =
-    io_commit_valid ? ~_GEN_44 & entries_1_valid : ~_GEN_11 & entries_1_valid;
-  wire        _GEN_46 = io_commit_rob == 5'h2 | _GEN_12;
-  wire        _GEN_47 =
-    io_commit_valid ? ~_GEN_46 & entries_2_valid : ~_GEN_12 & entries_2_valid;
-  wire        _GEN_48 = io_commit_rob == 5'h3 | _GEN_13;
-  wire        _GEN_49 =
-    io_commit_valid ? ~_GEN_48 & entries_3_valid : ~_GEN_13 & entries_3_valid;
-  wire        _GEN_50 = io_commit_rob == 5'h4 | _GEN_14;
-  wire        _GEN_51 =
-    io_commit_valid ? ~_GEN_50 & entries_4_valid : ~_GEN_14 & entries_4_valid;
-  wire        _GEN_52 = io_commit_rob == 5'h5 | _GEN_15;
-  wire        _GEN_53 =
-    io_commit_valid ? ~_GEN_52 & entries_5_valid : ~_GEN_15 & entries_5_valid;
-  wire        _GEN_54 = io_commit_rob == 5'h6 | _GEN_16;
-  wire        _GEN_55 =
-    io_commit_valid ? ~_GEN_54 & entries_6_valid : ~_GEN_16 & entries_6_valid;
-  wire        _GEN_56 = io_commit_rob == 5'h7 | _GEN_17;
-  wire        _GEN_57 =
-    io_commit_valid ? ~_GEN_56 & entries_7_valid : ~_GEN_17 & entries_7_valid;
-  wire        _GEN_58 = io_commit_rob == 5'h8 | _GEN_18;
-  wire        _GEN_59 =
-    io_commit_valid ? ~_GEN_58 & entries_8_valid : ~_GEN_18 & entries_8_valid;
-  wire        _GEN_60 = io_commit_rob == 5'h9 | _GEN_19;
-  wire        _GEN_61 =
-    io_commit_valid ? ~_GEN_60 & entries_9_valid : ~_GEN_19 & entries_9_valid;
-  wire        _GEN_62 = io_commit_rob == 5'hA | _GEN_20;
-  wire        _GEN_63 =
-    io_commit_valid ? ~_GEN_62 & entries_10_valid : ~_GEN_20 & entries_10_valid;
-  wire        _GEN_64 = io_commit_rob == 5'hB | _GEN_21;
-  wire        _GEN_65 =
-    io_commit_valid ? ~_GEN_64 & entries_11_valid : ~_GEN_21 & entries_11_valid;
-  wire        _GEN_66 = io_commit_rob == 5'hC | _GEN_22;
-  wire        _GEN_67 =
-    io_commit_valid ? ~_GEN_66 & entries_12_valid : ~_GEN_22 & entries_12_valid;
-  wire        _GEN_68 = io_commit_rob == 5'hD | _GEN_23;
-  wire        _GEN_69 =
-    io_commit_valid ? ~_GEN_68 & entries_13_valid : ~_GEN_23 & entries_13_valid;
-  wire        _GEN_70 = io_commit_rob == 5'hE | _GEN_24;
-  wire        _GEN_71 =
-    io_commit_valid ? ~_GEN_70 & entries_14_valid : ~_GEN_24 & entries_14_valid;
-  wire        _GEN_72 = io_commit_rob == 5'hF | _GEN_25;
+  wire        _GEN_9 = io_flush & entries_0_valid & idxAge > _flushAge_T;
+  wire        _GEN_10 = io_flush & entries_1_valid & 5'h1 - io_rob_head > _flushAge_T;
+  wire        _GEN_11 = io_flush & entries_2_valid & 5'h2 - io_rob_head > _flushAge_T;
+  wire        _GEN_12 = io_flush & entries_3_valid & 5'h3 - io_rob_head > _flushAge_T;
+  wire        _GEN_13 = io_flush & entries_4_valid & 5'h4 - io_rob_head > _flushAge_T;
+  wire        _GEN_14 = io_flush & entries_5_valid & 5'h5 - io_rob_head > _flushAge_T;
+  wire        _GEN_15 = io_flush & entries_6_valid & 5'h6 - io_rob_head > _flushAge_T;
+  wire        _GEN_16 = io_flush & entries_7_valid & 5'h7 - io_rob_head > _flushAge_T;
+  wire        _GEN_17 = io_flush & entries_8_valid & 5'h8 - io_rob_head > _flushAge_T;
+  wire        _GEN_18 = io_flush & entries_9_valid & 5'h9 - io_rob_head > _flushAge_T;
+  wire        _GEN_19 = io_flush & entries_10_valid & 5'hA - io_rob_head > _flushAge_T;
+  wire        _GEN_20 = io_flush & entries_11_valid & 5'hB - io_rob_head > _flushAge_T;
+  wire        _GEN_21 = io_flush & entries_12_valid & 5'hC - io_rob_head > _flushAge_T;
+  wire        _GEN_22 = io_flush & entries_13_valid & 5'hD - io_rob_head > _flushAge_T;
+  wire        _GEN_23 = io_flush & entries_14_valid & 5'hE - io_rob_head > _flushAge_T;
+  wire        _GEN_24 = io_flush & entries_15_valid & 5'hF - io_rob_head > _flushAge_T;
+  wire        _GEN_25 = io_flush & entries_16_valid & 5'h10 - io_rob_head > _flushAge_T;
+  wire        _GEN_26 = io_flush & entries_17_valid & 5'h11 - io_rob_head > _flushAge_T;
+  wire        _GEN_27 = io_flush & entries_18_valid & 5'h12 - io_rob_head > _flushAge_T;
+  wire        _GEN_28 = io_flush & entries_19_valid & 5'h13 - io_rob_head > _flushAge_T;
+  wire        _GEN_29 = io_flush & entries_20_valid & 5'h14 - io_rob_head > _flushAge_T;
+  wire        _GEN_30 = io_flush & entries_21_valid & 5'h15 - io_rob_head > _flushAge_T;
+  wire        _GEN_31 = io_flush & entries_22_valid & 5'h16 - io_rob_head > _flushAge_T;
+  wire        _GEN_32 = io_flush & entries_23_valid & 5'h17 - io_rob_head > _flushAge_T;
+  wire        _GEN_33 = io_flush & entries_24_valid & 5'h18 - io_rob_head > _flushAge_T;
+  wire        _GEN_34 = io_flush & entries_25_valid & 5'h19 - io_rob_head > _flushAge_T;
+  wire        _GEN_35 = io_flush & entries_26_valid & 5'h1A - io_rob_head > _flushAge_T;
+  wire        _GEN_36 = io_flush & entries_27_valid & 5'h1B - io_rob_head > _flushAge_T;
+  wire        _GEN_37 = io_flush & entries_28_valid & 5'h1C - io_rob_head > _flushAge_T;
+  wire        _GEN_38 = io_flush & entries_29_valid & 5'h1D - io_rob_head > _flushAge_T;
+  wire        _GEN_39 = io_flush & entries_30_valid & 5'h1E - io_rob_head > _flushAge_T;
+  wire        _GEN_40 = io_flush & entries_31_valid & 5'h1F - io_rob_head > _flushAge_T;
+  wire        _GEN_41 = io_commit_rob == 5'h0 | _GEN_9;
+  wire        _GEN_42 = io_commit_rob == 5'h1 | _GEN_10;
+  wire        _GEN_43 = io_commit_rob == 5'h2 | _GEN_11;
+  wire        _GEN_44 = io_commit_rob == 5'h3 | _GEN_12;
+  wire        _GEN_45 = io_commit_rob == 5'h4 | _GEN_13;
+  wire        _GEN_46 = io_commit_rob == 5'h5 | _GEN_14;
+  wire        _GEN_47 = io_commit_rob == 5'h6 | _GEN_15;
+  wire        _GEN_48 = io_commit_rob == 5'h7 | _GEN_16;
+  wire        _GEN_49 = io_commit_rob == 5'h8 | _GEN_17;
+  wire        _GEN_50 = io_commit_rob == 5'h9 | _GEN_18;
+  wire        _GEN_51 = io_commit_rob == 5'hA | _GEN_19;
+  wire        _GEN_52 = io_commit_rob == 5'hB | _GEN_20;
+  wire        _GEN_53 = io_commit_rob == 5'hC | _GEN_21;
+  wire        _GEN_54 = io_commit_rob == 5'hD | _GEN_22;
+  wire        _GEN_55 = io_commit_rob == 5'hE | _GEN_23;
+  wire        _GEN_56 = io_commit_rob == 5'hF | _GEN_24;
+  wire        _GEN_57 = io_commit_rob == 5'h10 | _GEN_25;
+  wire        _GEN_58 = io_commit_rob == 5'h11 | _GEN_26;
+  wire        _GEN_59 = io_commit_rob == 5'h12 | _GEN_27;
+  wire        _GEN_60 = io_commit_rob == 5'h13 | _GEN_28;
+  wire        _GEN_61 = io_commit_rob == 5'h14 | _GEN_29;
+  wire        _GEN_62 = io_commit_rob == 5'h15 | _GEN_30;
+  wire        _GEN_63 = io_commit_rob == 5'h16 | _GEN_31;
+  wire        _GEN_64 = io_commit_rob == 5'h17 | _GEN_32;
+  wire        _GEN_65 = io_commit_rob == 5'h18 | _GEN_33;
+  wire        _GEN_66 = io_commit_rob == 5'h19 | _GEN_34;
+  wire        _GEN_67 = io_commit_rob == 5'h1A | _GEN_35;
+  wire        _GEN_68 = io_commit_rob == 5'h1B | _GEN_36;
+  wire        _GEN_69 = io_commit_rob == 5'h1C | _GEN_37;
+  wire        _GEN_70 = io_commit_rob == 5'h1D | _GEN_38;
+  wire        _GEN_71 = io_commit_rob == 5'h1E | _GEN_39;
+  wire        _GEN_72 = (&io_commit_rob) | _GEN_40;
   wire        _GEN_73 =
-    io_commit_valid ? ~_GEN_72 & entries_15_valid : ~_GEN_25 & entries_15_valid;
-  wire        _GEN_74 = io_commit_rob == 5'h10 | _GEN_26;
+    io_commit_valid ? ~_GEN_41 & entries_0_addr_ready : ~_GEN_9 & entries_0_addr_ready;
+  wire        _GEN_74 =
+    io_commit_valid ? ~_GEN_42 & entries_1_addr_ready : ~_GEN_10 & entries_1_addr_ready;
   wire        _GEN_75 =
-    io_commit_valid ? ~_GEN_74 & entries_16_valid : ~_GEN_26 & entries_16_valid;
-  wire        _GEN_76 = io_commit_rob == 5'h11 | _GEN_27;
+    io_commit_valid ? ~_GEN_43 & entries_2_addr_ready : ~_GEN_11 & entries_2_addr_ready;
+  wire        _GEN_76 =
+    io_commit_valid ? ~_GEN_44 & entries_3_addr_ready : ~_GEN_12 & entries_3_addr_ready;
   wire        _GEN_77 =
-    io_commit_valid ? ~_GEN_76 & entries_17_valid : ~_GEN_27 & entries_17_valid;
-  wire        _GEN_78 = io_commit_rob == 5'h12 | _GEN_28;
+    io_commit_valid ? ~_GEN_45 & entries_4_addr_ready : ~_GEN_13 & entries_4_addr_ready;
+  wire        _GEN_78 =
+    io_commit_valid ? ~_GEN_46 & entries_5_addr_ready : ~_GEN_14 & entries_5_addr_ready;
   wire        _GEN_79 =
-    io_commit_valid ? ~_GEN_78 & entries_18_valid : ~_GEN_28 & entries_18_valid;
-  wire        _GEN_80 = io_commit_rob == 5'h13 | _GEN_29;
+    io_commit_valid ? ~_GEN_47 & entries_6_addr_ready : ~_GEN_15 & entries_6_addr_ready;
+  wire        _GEN_80 =
+    io_commit_valid ? ~_GEN_48 & entries_7_addr_ready : ~_GEN_16 & entries_7_addr_ready;
   wire        _GEN_81 =
-    io_commit_valid ? ~_GEN_80 & entries_19_valid : ~_GEN_29 & entries_19_valid;
-  wire        _GEN_82 = io_commit_rob == 5'h14 | _GEN_30;
+    io_commit_valid ? ~_GEN_49 & entries_8_addr_ready : ~_GEN_17 & entries_8_addr_ready;
+  wire        _GEN_82 =
+    io_commit_valid ? ~_GEN_50 & entries_9_addr_ready : ~_GEN_18 & entries_9_addr_ready;
   wire        _GEN_83 =
-    io_commit_valid ? ~_GEN_82 & entries_20_valid : ~_GEN_30 & entries_20_valid;
-  wire        _GEN_84 = io_commit_rob == 5'h15 | _GEN_31;
+    io_commit_valid ? ~_GEN_51 & entries_10_addr_ready : ~_GEN_19 & entries_10_addr_ready;
+  wire        _GEN_84 =
+    io_commit_valid ? ~_GEN_52 & entries_11_addr_ready : ~_GEN_20 & entries_11_addr_ready;
   wire        _GEN_85 =
-    io_commit_valid ? ~_GEN_84 & entries_21_valid : ~_GEN_31 & entries_21_valid;
-  wire        _GEN_86 = io_commit_rob == 5'h16 | _GEN_32;
+    io_commit_valid ? ~_GEN_53 & entries_12_addr_ready : ~_GEN_21 & entries_12_addr_ready;
+  wire        _GEN_86 =
+    io_commit_valid ? ~_GEN_54 & entries_13_addr_ready : ~_GEN_22 & entries_13_addr_ready;
   wire        _GEN_87 =
-    io_commit_valid ? ~_GEN_86 & entries_22_valid : ~_GEN_32 & entries_22_valid;
-  wire        _GEN_88 = io_commit_rob == 5'h17 | _GEN_33;
+    io_commit_valid ? ~_GEN_55 & entries_14_addr_ready : ~_GEN_23 & entries_14_addr_ready;
+  wire        _GEN_88 =
+    io_commit_valid ? ~_GEN_56 & entries_15_addr_ready : ~_GEN_24 & entries_15_addr_ready;
   wire        _GEN_89 =
-    io_commit_valid ? ~_GEN_88 & entries_23_valid : ~_GEN_33 & entries_23_valid;
-  wire        _GEN_90 = io_commit_rob == 5'h18 | _GEN_34;
+    io_commit_valid ? ~_GEN_57 & entries_16_addr_ready : ~_GEN_25 & entries_16_addr_ready;
+  wire        _GEN_90 =
+    io_commit_valid ? ~_GEN_58 & entries_17_addr_ready : ~_GEN_26 & entries_17_addr_ready;
   wire        _GEN_91 =
-    io_commit_valid ? ~_GEN_90 & entries_24_valid : ~_GEN_34 & entries_24_valid;
-  wire        _GEN_92 = io_commit_rob == 5'h19 | _GEN_35;
+    io_commit_valid ? ~_GEN_59 & entries_18_addr_ready : ~_GEN_27 & entries_18_addr_ready;
+  wire        _GEN_92 =
+    io_commit_valid ? ~_GEN_60 & entries_19_addr_ready : ~_GEN_28 & entries_19_addr_ready;
   wire        _GEN_93 =
-    io_commit_valid ? ~_GEN_92 & entries_25_valid : ~_GEN_35 & entries_25_valid;
-  wire        _GEN_94 = io_commit_rob == 5'h1A | _GEN_36;
+    io_commit_valid ? ~_GEN_61 & entries_20_addr_ready : ~_GEN_29 & entries_20_addr_ready;
+  wire        _GEN_94 =
+    io_commit_valid ? ~_GEN_62 & entries_21_addr_ready : ~_GEN_30 & entries_21_addr_ready;
   wire        _GEN_95 =
-    io_commit_valid ? ~_GEN_94 & entries_26_valid : ~_GEN_36 & entries_26_valid;
-  wire        _GEN_96 = io_commit_rob == 5'h1B | _GEN_37;
+    io_commit_valid ? ~_GEN_63 & entries_22_addr_ready : ~_GEN_31 & entries_22_addr_ready;
+  wire        _GEN_96 =
+    io_commit_valid ? ~_GEN_64 & entries_23_addr_ready : ~_GEN_32 & entries_23_addr_ready;
   wire        _GEN_97 =
-    io_commit_valid ? ~_GEN_96 & entries_27_valid : ~_GEN_37 & entries_27_valid;
-  wire        _GEN_98 = io_commit_rob == 5'h1C | _GEN_38;
+    io_commit_valid ? ~_GEN_65 & entries_24_addr_ready : ~_GEN_33 & entries_24_addr_ready;
+  wire        _GEN_98 =
+    io_commit_valid ? ~_GEN_66 & entries_25_addr_ready : ~_GEN_34 & entries_25_addr_ready;
   wire        _GEN_99 =
-    io_commit_valid ? ~_GEN_98 & entries_28_valid : ~_GEN_38 & entries_28_valid;
-  wire        _GEN_100 = io_commit_rob == 5'h1D | _GEN_39;
+    io_commit_valid ? ~_GEN_67 & entries_26_addr_ready : ~_GEN_35 & entries_26_addr_ready;
+  wire        _GEN_100 =
+    io_commit_valid ? ~_GEN_68 & entries_27_addr_ready : ~_GEN_36 & entries_27_addr_ready;
   wire        _GEN_101 =
-    io_commit_valid ? ~_GEN_100 & entries_29_valid : ~_GEN_39 & entries_29_valid;
-  wire        _GEN_102 = io_commit_rob == 5'h1E | _GEN_40;
+    io_commit_valid ? ~_GEN_69 & entries_28_addr_ready : ~_GEN_37 & entries_28_addr_ready;
+  wire        _GEN_102 =
+    io_commit_valid ? ~_GEN_70 & entries_29_addr_ready : ~_GEN_38 & entries_29_addr_ready;
   wire        _GEN_103 =
-    io_commit_valid ? ~_GEN_102 & entries_30_valid : ~_GEN_40 & entries_30_valid;
-  wire        _GEN_104 = (&io_commit_rob) | _GEN_41;
-  wire        _GEN_105 =
-    io_commit_valid ? ~_GEN_104 & entries_31_valid : ~_GEN_41 & entries_31_valid;
+    io_commit_valid ? ~_GEN_71 & entries_30_addr_ready : ~_GEN_39 & entries_30_addr_ready;
+  wire        _GEN_104 =
+    io_commit_valid ? ~_GEN_72 & entries_31_addr_ready : ~_GEN_40 & entries_31_addr_ready;
+  wire        _GEN_105 = io_commit1_valid & io_commit1_rob == 5'h0;
   wire        _GEN_106 =
-    io_commit_valid ? ~_GEN_42 & entries_0_addr_ready : ~_GEN_10 & entries_0_addr_ready;
-  wire        _GEN_107 =
-    io_commit_valid ? ~_GEN_44 & entries_1_addr_ready : ~_GEN_11 & entries_1_addr_ready;
+    ~_GEN_105
+    & (io_commit_valid ? ~_GEN_41 & entries_0_valid : ~_GEN_9 & entries_0_valid);
+  wire        _GEN_107 = io_commit1_valid & io_commit1_rob == 5'h1;
   wire        _GEN_108 =
-    io_commit_valid ? ~_GEN_46 & entries_2_addr_ready : ~_GEN_12 & entries_2_addr_ready;
-  wire        _GEN_109 =
-    io_commit_valid ? ~_GEN_48 & entries_3_addr_ready : ~_GEN_13 & entries_3_addr_ready;
+    ~_GEN_107
+    & (io_commit_valid ? ~_GEN_42 & entries_1_valid : ~_GEN_10 & entries_1_valid);
+  wire        _GEN_109 = io_commit1_valid & io_commit1_rob == 5'h2;
   wire        _GEN_110 =
-    io_commit_valid ? ~_GEN_50 & entries_4_addr_ready : ~_GEN_14 & entries_4_addr_ready;
-  wire        _GEN_111 =
-    io_commit_valid ? ~_GEN_52 & entries_5_addr_ready : ~_GEN_15 & entries_5_addr_ready;
+    ~_GEN_109
+    & (io_commit_valid ? ~_GEN_43 & entries_2_valid : ~_GEN_11 & entries_2_valid);
+  wire        _GEN_111 = io_commit1_valid & io_commit1_rob == 5'h3;
   wire        _GEN_112 =
-    io_commit_valid ? ~_GEN_54 & entries_6_addr_ready : ~_GEN_16 & entries_6_addr_ready;
-  wire        _GEN_113 =
-    io_commit_valid ? ~_GEN_56 & entries_7_addr_ready : ~_GEN_17 & entries_7_addr_ready;
+    ~_GEN_111
+    & (io_commit_valid ? ~_GEN_44 & entries_3_valid : ~_GEN_12 & entries_3_valid);
+  wire        _GEN_113 = io_commit1_valid & io_commit1_rob == 5'h4;
   wire        _GEN_114 =
-    io_commit_valid ? ~_GEN_58 & entries_8_addr_ready : ~_GEN_18 & entries_8_addr_ready;
-  wire        _GEN_115 =
-    io_commit_valid ? ~_GEN_60 & entries_9_addr_ready : ~_GEN_19 & entries_9_addr_ready;
+    ~_GEN_113
+    & (io_commit_valid ? ~_GEN_45 & entries_4_valid : ~_GEN_13 & entries_4_valid);
+  wire        _GEN_115 = io_commit1_valid & io_commit1_rob == 5'h5;
   wire        _GEN_116 =
-    io_commit_valid ? ~_GEN_62 & entries_10_addr_ready : ~_GEN_20 & entries_10_addr_ready;
-  wire        _GEN_117 =
-    io_commit_valid ? ~_GEN_64 & entries_11_addr_ready : ~_GEN_21 & entries_11_addr_ready;
+    ~_GEN_115
+    & (io_commit_valid ? ~_GEN_46 & entries_5_valid : ~_GEN_14 & entries_5_valid);
+  wire        _GEN_117 = io_commit1_valid & io_commit1_rob == 5'h6;
   wire        _GEN_118 =
-    io_commit_valid ? ~_GEN_66 & entries_12_addr_ready : ~_GEN_22 & entries_12_addr_ready;
-  wire        _GEN_119 =
-    io_commit_valid ? ~_GEN_68 & entries_13_addr_ready : ~_GEN_23 & entries_13_addr_ready;
+    ~_GEN_117
+    & (io_commit_valid ? ~_GEN_47 & entries_6_valid : ~_GEN_15 & entries_6_valid);
+  wire        _GEN_119 = io_commit1_valid & io_commit1_rob == 5'h7;
   wire        _GEN_120 =
-    io_commit_valid ? ~_GEN_70 & entries_14_addr_ready : ~_GEN_24 & entries_14_addr_ready;
-  wire        _GEN_121 =
-    io_commit_valid ? ~_GEN_72 & entries_15_addr_ready : ~_GEN_25 & entries_15_addr_ready;
+    ~_GEN_119
+    & (io_commit_valid ? ~_GEN_48 & entries_7_valid : ~_GEN_16 & entries_7_valid);
+  wire        _GEN_121 = io_commit1_valid & io_commit1_rob == 5'h8;
   wire        _GEN_122 =
-    io_commit_valid ? ~_GEN_74 & entries_16_addr_ready : ~_GEN_26 & entries_16_addr_ready;
-  wire        _GEN_123 =
-    io_commit_valid ? ~_GEN_76 & entries_17_addr_ready : ~_GEN_27 & entries_17_addr_ready;
+    ~_GEN_121
+    & (io_commit_valid ? ~_GEN_49 & entries_8_valid : ~_GEN_17 & entries_8_valid);
+  wire        _GEN_123 = io_commit1_valid & io_commit1_rob == 5'h9;
   wire        _GEN_124 =
-    io_commit_valid ? ~_GEN_78 & entries_18_addr_ready : ~_GEN_28 & entries_18_addr_ready;
-  wire        _GEN_125 =
-    io_commit_valid ? ~_GEN_80 & entries_19_addr_ready : ~_GEN_29 & entries_19_addr_ready;
+    ~_GEN_123
+    & (io_commit_valid ? ~_GEN_50 & entries_9_valid : ~_GEN_18 & entries_9_valid);
+  wire        _GEN_125 = io_commit1_valid & io_commit1_rob == 5'hA;
   wire        _GEN_126 =
-    io_commit_valid ? ~_GEN_82 & entries_20_addr_ready : ~_GEN_30 & entries_20_addr_ready;
-  wire        _GEN_127 =
-    io_commit_valid ? ~_GEN_84 & entries_21_addr_ready : ~_GEN_31 & entries_21_addr_ready;
+    ~_GEN_125
+    & (io_commit_valid ? ~_GEN_51 & entries_10_valid : ~_GEN_19 & entries_10_valid);
+  wire        _GEN_127 = io_commit1_valid & io_commit1_rob == 5'hB;
   wire        _GEN_128 =
-    io_commit_valid ? ~_GEN_86 & entries_22_addr_ready : ~_GEN_32 & entries_22_addr_ready;
-  wire        _GEN_129 =
-    io_commit_valid ? ~_GEN_88 & entries_23_addr_ready : ~_GEN_33 & entries_23_addr_ready;
+    ~_GEN_127
+    & (io_commit_valid ? ~_GEN_52 & entries_11_valid : ~_GEN_20 & entries_11_valid);
+  wire        _GEN_129 = io_commit1_valid & io_commit1_rob == 5'hC;
   wire        _GEN_130 =
-    io_commit_valid ? ~_GEN_90 & entries_24_addr_ready : ~_GEN_34 & entries_24_addr_ready;
-  wire        _GEN_131 =
-    io_commit_valid ? ~_GEN_92 & entries_25_addr_ready : ~_GEN_35 & entries_25_addr_ready;
+    ~_GEN_129
+    & (io_commit_valid ? ~_GEN_53 & entries_12_valid : ~_GEN_21 & entries_12_valid);
+  wire        _GEN_131 = io_commit1_valid & io_commit1_rob == 5'hD;
   wire        _GEN_132 =
-    io_commit_valid ? ~_GEN_94 & entries_26_addr_ready : ~_GEN_36 & entries_26_addr_ready;
-  wire        _GEN_133 =
-    io_commit_valid ? ~_GEN_96 & entries_27_addr_ready : ~_GEN_37 & entries_27_addr_ready;
+    ~_GEN_131
+    & (io_commit_valid ? ~_GEN_54 & entries_13_valid : ~_GEN_22 & entries_13_valid);
+  wire        _GEN_133 = io_commit1_valid & io_commit1_rob == 5'hE;
   wire        _GEN_134 =
-    io_commit_valid ? ~_GEN_98 & entries_28_addr_ready : ~_GEN_38 & entries_28_addr_ready;
-  wire        _GEN_135 =
-    io_commit_valid
-      ? ~_GEN_100 & entries_29_addr_ready
-      : ~_GEN_39 & entries_29_addr_ready;
+    ~_GEN_133
+    & (io_commit_valid ? ~_GEN_55 & entries_14_valid : ~_GEN_23 & entries_14_valid);
+  wire        _GEN_135 = io_commit1_valid & io_commit1_rob == 5'hF;
   wire        _GEN_136 =
-    io_commit_valid
-      ? ~_GEN_102 & entries_30_addr_ready
-      : ~_GEN_40 & entries_30_addr_ready;
-  wire        _GEN_137 =
-    io_commit_valid
-      ? ~_GEN_104 & entries_31_addr_ready
-      : ~_GEN_41 & entries_31_addr_ready;
-  wire        _GEN_138 = io_alloc0_valid & io_alloc0_rob == 5'h0;
-  wire        _GEN_139 = io_alloc0_valid & io_alloc0_rob == 5'h1;
-  wire        _GEN_140 = io_alloc0_valid & io_alloc0_rob == 5'h2;
-  wire        _GEN_141 = io_alloc0_valid & io_alloc0_rob == 5'h3;
-  wire        _GEN_142 = io_alloc0_valid & io_alloc0_rob == 5'h4;
-  wire        _GEN_143 = io_alloc0_valid & io_alloc0_rob == 5'h5;
-  wire        _GEN_144 = io_alloc0_valid & io_alloc0_rob == 5'h6;
-  wire        _GEN_145 = io_alloc0_valid & io_alloc0_rob == 5'h7;
-  wire        _GEN_146 = io_alloc0_valid & io_alloc0_rob == 5'h8;
-  wire        _GEN_147 = io_alloc0_valid & io_alloc0_rob == 5'h9;
-  wire        _GEN_148 = io_alloc0_valid & io_alloc0_rob == 5'hA;
-  wire        _GEN_149 = io_alloc0_valid & io_alloc0_rob == 5'hB;
-  wire        _GEN_150 = io_alloc0_valid & io_alloc0_rob == 5'hC;
-  wire        _GEN_151 = io_alloc0_valid & io_alloc0_rob == 5'hD;
-  wire        _GEN_152 = io_alloc0_valid & io_alloc0_rob == 5'hE;
-  wire        _GEN_153 = io_alloc0_valid & io_alloc0_rob == 5'hF;
-  wire        _GEN_154 = io_alloc0_valid & io_alloc0_rob == 5'h10;
-  wire        _GEN_155 = io_alloc0_valid & io_alloc0_rob == 5'h11;
-  wire        _GEN_156 = io_alloc0_valid & io_alloc0_rob == 5'h12;
-  wire        _GEN_157 = io_alloc0_valid & io_alloc0_rob == 5'h13;
-  wire        _GEN_158 = io_alloc0_valid & io_alloc0_rob == 5'h14;
-  wire        _GEN_159 = io_alloc0_valid & io_alloc0_rob == 5'h15;
-  wire        _GEN_160 = io_alloc0_valid & io_alloc0_rob == 5'h16;
-  wire        _GEN_161 = io_alloc0_valid & io_alloc0_rob == 5'h17;
-  wire        _GEN_162 = io_alloc0_valid & io_alloc0_rob == 5'h18;
-  wire        _GEN_163 = io_alloc0_valid & io_alloc0_rob == 5'h19;
-  wire        _GEN_164 = io_alloc0_valid & io_alloc0_rob == 5'h1A;
-  wire        _GEN_165 = io_alloc0_valid & io_alloc0_rob == 5'h1B;
-  wire        _GEN_166 = io_alloc0_valid & io_alloc0_rob == 5'h1C;
-  wire        _GEN_167 = io_alloc0_valid & io_alloc0_rob == 5'h1D;
-  wire        _GEN_168 = io_alloc0_valid & io_alloc0_rob == 5'h1E;
-  wire        _GEN_169 = io_alloc0_valid & (&io_alloc0_rob);
-  wire        _GEN_170 = io_alloc1_rob == 5'h0;
-  wire        _GEN_171 = _GEN_170 | _GEN_138;
-  wire        _GEN_172 = io_alloc1_rob == 5'h1;
-  wire        _GEN_173 = _GEN_172 | _GEN_139;
-  wire        _GEN_174 = io_alloc1_rob == 5'h2;
-  wire        _GEN_175 = _GEN_174 | _GEN_140;
-  wire        _GEN_176 = io_alloc1_rob == 5'h3;
-  wire        _GEN_177 = _GEN_176 | _GEN_141;
-  wire        _GEN_178 = io_alloc1_rob == 5'h4;
-  wire        _GEN_179 = _GEN_178 | _GEN_142;
-  wire        _GEN_180 = io_alloc1_rob == 5'h5;
-  wire        _GEN_181 = _GEN_180 | _GEN_143;
-  wire        _GEN_182 = io_alloc1_rob == 5'h6;
-  wire        _GEN_183 = _GEN_182 | _GEN_144;
-  wire        _GEN_184 = io_alloc1_rob == 5'h7;
-  wire        _GEN_185 = _GEN_184 | _GEN_145;
-  wire        _GEN_186 = io_alloc1_rob == 5'h8;
-  wire        _GEN_187 = _GEN_186 | _GEN_146;
-  wire        _GEN_188 = io_alloc1_rob == 5'h9;
-  wire        _GEN_189 = _GEN_188 | _GEN_147;
-  wire        _GEN_190 = io_alloc1_rob == 5'hA;
-  wire        _GEN_191 = _GEN_190 | _GEN_148;
-  wire        _GEN_192 = io_alloc1_rob == 5'hB;
-  wire        _GEN_193 = _GEN_192 | _GEN_149;
-  wire        _GEN_194 = io_alloc1_rob == 5'hC;
-  wire        _GEN_195 = _GEN_194 | _GEN_150;
-  wire        _GEN_196 = io_alloc1_rob == 5'hD;
-  wire        _GEN_197 = _GEN_196 | _GEN_151;
-  wire        _GEN_198 = io_alloc1_rob == 5'hE;
-  wire        _GEN_199 = _GEN_198 | _GEN_152;
-  wire        _GEN_200 = io_alloc1_rob == 5'hF;
-  wire        _GEN_201 = _GEN_200 | _GEN_153;
-  wire        _GEN_202 = io_alloc1_rob == 5'h10;
-  wire        _GEN_203 = _GEN_202 | _GEN_154;
-  wire        _GEN_204 = io_alloc1_rob == 5'h11;
-  wire        _GEN_205 = _GEN_204 | _GEN_155;
-  wire        _GEN_206 = io_alloc1_rob == 5'h12;
-  wire        _GEN_207 = _GEN_206 | _GEN_156;
-  wire        _GEN_208 = io_alloc1_rob == 5'h13;
-  wire        _GEN_209 = _GEN_208 | _GEN_157;
-  wire        _GEN_210 = io_alloc1_rob == 5'h14;
-  wire        _GEN_211 = _GEN_210 | _GEN_158;
-  wire        _GEN_212 = io_alloc1_rob == 5'h15;
-  wire        _GEN_213 = _GEN_212 | _GEN_159;
-  wire        _GEN_214 = io_alloc1_rob == 5'h16;
-  wire        _GEN_215 = _GEN_214 | _GEN_160;
-  wire        _GEN_216 = io_alloc1_rob == 5'h17;
-  wire        _GEN_217 = _GEN_216 | _GEN_161;
-  wire        _GEN_218 = io_alloc1_rob == 5'h18;
-  wire        _GEN_219 = _GEN_218 | _GEN_162;
-  wire        _GEN_220 = io_alloc1_rob == 5'h19;
-  wire        _GEN_221 = _GEN_220 | _GEN_163;
-  wire        _GEN_222 = io_alloc1_rob == 5'h1A;
-  wire        _GEN_223 = _GEN_222 | _GEN_164;
-  wire        _GEN_224 = io_alloc1_rob == 5'h1B;
-  wire        _GEN_225 = _GEN_224 | _GEN_165;
-  wire        _GEN_226 = io_alloc1_rob == 5'h1C;
-  wire        _GEN_227 = _GEN_226 | _GEN_166;
-  wire        _GEN_228 = io_alloc1_rob == 5'h1D;
-  wire        _GEN_229 = _GEN_228 | _GEN_167;
-  wire        _GEN_230 = io_alloc1_rob == 5'h1E;
-  wire        _GEN_231 = _GEN_230 | _GEN_168;
-  wire        _GEN_232 = (&io_alloc1_rob) | _GEN_169;
-  wire        _GEN_233 = io_wb_valid & casez_tmp;
-  wire        _GEN_234 = _GEN_233 & io_wb_rob == 5'h0;
-  wire        _GEN_235 = _GEN_233 & io_wb_rob == 5'h1;
-  wire        _GEN_236 = _GEN_233 & io_wb_rob == 5'h2;
-  wire        _GEN_237 = _GEN_233 & io_wb_rob == 5'h3;
-  wire        _GEN_238 = _GEN_233 & io_wb_rob == 5'h4;
-  wire        _GEN_239 = _GEN_233 & io_wb_rob == 5'h5;
-  wire        _GEN_240 = _GEN_233 & io_wb_rob == 5'h6;
-  wire        _GEN_241 = _GEN_233 & io_wb_rob == 5'h7;
-  wire        _GEN_242 = _GEN_233 & io_wb_rob == 5'h8;
-  wire        _GEN_243 = _GEN_233 & io_wb_rob == 5'h9;
-  wire        _GEN_244 = _GEN_233 & io_wb_rob == 5'hA;
-  wire        _GEN_245 = _GEN_233 & io_wb_rob == 5'hB;
-  wire        _GEN_246 = _GEN_233 & io_wb_rob == 5'hC;
-  wire        _GEN_247 = _GEN_233 & io_wb_rob == 5'hD;
-  wire        _GEN_248 = _GEN_233 & io_wb_rob == 5'hE;
-  wire        _GEN_249 = _GEN_233 & io_wb_rob == 5'hF;
-  wire        _GEN_250 = _GEN_233 & io_wb_rob == 5'h10;
-  wire        _GEN_251 = _GEN_233 & io_wb_rob == 5'h11;
-  wire        _GEN_252 = _GEN_233 & io_wb_rob == 5'h12;
-  wire        _GEN_253 = _GEN_233 & io_wb_rob == 5'h13;
-  wire        _GEN_254 = _GEN_233 & io_wb_rob == 5'h14;
-  wire        _GEN_255 = _GEN_233 & io_wb_rob == 5'h15;
-  wire        _GEN_256 = _GEN_233 & io_wb_rob == 5'h16;
-  wire        _GEN_257 = _GEN_233 & io_wb_rob == 5'h17;
-  wire        _GEN_258 = _GEN_233 & io_wb_rob == 5'h18;
-  wire        _GEN_259 = _GEN_233 & io_wb_rob == 5'h19;
-  wire        _GEN_260 = _GEN_233 & io_wb_rob == 5'h1A;
-  wire        _GEN_261 = _GEN_233 & io_wb_rob == 5'h1B;
-  wire        _GEN_262 = _GEN_233 & io_wb_rob == 5'h1C;
-  wire        _GEN_263 = _GEN_233 & io_wb_rob == 5'h1D;
-  wire        _GEN_264 = _GEN_233 & io_wb_rob == 5'h1E;
-  wire        _GEN_265 = _GEN_233 & (&io_wb_rob);
-  wire        _GEN_266 = io_alloc1_valid & _GEN_170;
-  wire        _GEN_267 = io_alloc1_valid & _GEN_172;
-  wire        _GEN_268 = io_alloc1_valid & _GEN_174;
-  wire        _GEN_269 = io_alloc1_valid & _GEN_176;
-  wire        _GEN_270 = io_alloc1_valid & _GEN_178;
-  wire        _GEN_271 = io_alloc1_valid & _GEN_180;
-  wire        _GEN_272 = io_alloc1_valid & _GEN_182;
-  wire        _GEN_273 = io_alloc1_valid & _GEN_184;
-  wire        _GEN_274 = io_alloc1_valid & _GEN_186;
-  wire        _GEN_275 = io_alloc1_valid & _GEN_188;
-  wire        _GEN_276 = io_alloc1_valid & _GEN_190;
-  wire        _GEN_277 = io_alloc1_valid & _GEN_192;
-  wire        _GEN_278 = io_alloc1_valid & _GEN_194;
-  wire        _GEN_279 = io_alloc1_valid & _GEN_196;
-  wire        _GEN_280 = io_alloc1_valid & _GEN_198;
-  wire        _GEN_281 = io_alloc1_valid & _GEN_200;
-  wire        _GEN_282 = io_alloc1_valid & _GEN_202;
-  wire        _GEN_283 = io_alloc1_valid & _GEN_204;
-  wire        _GEN_284 = io_alloc1_valid & _GEN_206;
-  wire        _GEN_285 = io_alloc1_valid & _GEN_208;
-  wire        _GEN_286 = io_alloc1_valid & _GEN_210;
-  wire        _GEN_287 = io_alloc1_valid & _GEN_212;
-  wire        _GEN_288 = io_alloc1_valid & _GEN_214;
-  wire        _GEN_289 = io_alloc1_valid & _GEN_216;
-  wire        _GEN_290 = io_alloc1_valid & _GEN_218;
-  wire        _GEN_291 = io_alloc1_valid & _GEN_220;
-  wire        _GEN_292 = io_alloc1_valid & _GEN_222;
-  wire        _GEN_293 = io_alloc1_valid & _GEN_224;
-  wire        _GEN_294 = io_alloc1_valid & _GEN_226;
-  wire        _GEN_295 = io_alloc1_valid & _GEN_228;
-  wire        _GEN_296 = io_alloc1_valid & _GEN_230;
+    ~_GEN_135
+    & (io_commit_valid ? ~_GEN_56 & entries_15_valid : ~_GEN_24 & entries_15_valid);
+  wire        _GEN_137 = io_commit1_valid & io_commit1_rob == 5'h10;
+  wire        _GEN_138 =
+    ~_GEN_137
+    & (io_commit_valid ? ~_GEN_57 & entries_16_valid : ~_GEN_25 & entries_16_valid);
+  wire        _GEN_139 = io_commit1_valid & io_commit1_rob == 5'h11;
+  wire        _GEN_140 =
+    ~_GEN_139
+    & (io_commit_valid ? ~_GEN_58 & entries_17_valid : ~_GEN_26 & entries_17_valid);
+  wire        _GEN_141 = io_commit1_valid & io_commit1_rob == 5'h12;
+  wire        _GEN_142 =
+    ~_GEN_141
+    & (io_commit_valid ? ~_GEN_59 & entries_18_valid : ~_GEN_27 & entries_18_valid);
+  wire        _GEN_143 = io_commit1_valid & io_commit1_rob == 5'h13;
+  wire        _GEN_144 =
+    ~_GEN_143
+    & (io_commit_valid ? ~_GEN_60 & entries_19_valid : ~_GEN_28 & entries_19_valid);
+  wire        _GEN_145 = io_commit1_valid & io_commit1_rob == 5'h14;
+  wire        _GEN_146 =
+    ~_GEN_145
+    & (io_commit_valid ? ~_GEN_61 & entries_20_valid : ~_GEN_29 & entries_20_valid);
+  wire        _GEN_147 = io_commit1_valid & io_commit1_rob == 5'h15;
+  wire        _GEN_148 =
+    ~_GEN_147
+    & (io_commit_valid ? ~_GEN_62 & entries_21_valid : ~_GEN_30 & entries_21_valid);
+  wire        _GEN_149 = io_commit1_valid & io_commit1_rob == 5'h16;
+  wire        _GEN_150 =
+    ~_GEN_149
+    & (io_commit_valid ? ~_GEN_63 & entries_22_valid : ~_GEN_31 & entries_22_valid);
+  wire        _GEN_151 = io_commit1_valid & io_commit1_rob == 5'h17;
+  wire        _GEN_152 =
+    ~_GEN_151
+    & (io_commit_valid ? ~_GEN_64 & entries_23_valid : ~_GEN_32 & entries_23_valid);
+  wire        _GEN_153 = io_commit1_valid & io_commit1_rob == 5'h18;
+  wire        _GEN_154 =
+    ~_GEN_153
+    & (io_commit_valid ? ~_GEN_65 & entries_24_valid : ~_GEN_33 & entries_24_valid);
+  wire        _GEN_155 = io_commit1_valid & io_commit1_rob == 5'h19;
+  wire        _GEN_156 =
+    ~_GEN_155
+    & (io_commit_valid ? ~_GEN_66 & entries_25_valid : ~_GEN_34 & entries_25_valid);
+  wire        _GEN_157 = io_commit1_valid & io_commit1_rob == 5'h1A;
+  wire        _GEN_158 =
+    ~_GEN_157
+    & (io_commit_valid ? ~_GEN_67 & entries_26_valid : ~_GEN_35 & entries_26_valid);
+  wire        _GEN_159 = io_commit1_valid & io_commit1_rob == 5'h1B;
+  wire        _GEN_160 =
+    ~_GEN_159
+    & (io_commit_valid ? ~_GEN_68 & entries_27_valid : ~_GEN_36 & entries_27_valid);
+  wire        _GEN_161 = io_commit1_valid & io_commit1_rob == 5'h1C;
+  wire        _GEN_162 =
+    ~_GEN_161
+    & (io_commit_valid ? ~_GEN_69 & entries_28_valid : ~_GEN_37 & entries_28_valid);
+  wire        _GEN_163 = io_commit1_valid & io_commit1_rob == 5'h1D;
+  wire        _GEN_164 =
+    ~_GEN_163
+    & (io_commit_valid ? ~_GEN_70 & entries_29_valid : ~_GEN_38 & entries_29_valid);
+  wire        _GEN_165 = io_commit1_valid & io_commit1_rob == 5'h1E;
+  wire        _GEN_166 =
+    ~_GEN_165
+    & (io_commit_valid ? ~_GEN_71 & entries_30_valid : ~_GEN_39 & entries_30_valid);
+  wire        _GEN_167 = io_commit1_valid & (&io_commit1_rob);
+  wire        _GEN_168 =
+    ~_GEN_167
+    & (io_commit_valid ? ~_GEN_72 & entries_31_valid : ~_GEN_40 & entries_31_valid);
+  wire        _GEN_169 = io_alloc0_rob == 5'h0;
+  wire        _GEN_170 = io_alloc0_valid & _GEN_169;
+  wire        _GEN_171 = io_alloc0_rob == 5'h1;
+  wire        _GEN_172 = io_alloc0_valid & _GEN_171;
+  wire        _GEN_173 = io_alloc0_rob == 5'h2;
+  wire        _GEN_174 = io_alloc0_valid & _GEN_173;
+  wire        _GEN_175 = io_alloc0_rob == 5'h3;
+  wire        _GEN_176 = io_alloc0_valid & _GEN_175;
+  wire        _GEN_177 = io_alloc0_rob == 5'h4;
+  wire        _GEN_178 = io_alloc0_valid & _GEN_177;
+  wire        _GEN_179 = io_alloc0_rob == 5'h5;
+  wire        _GEN_180 = io_alloc0_valid & _GEN_179;
+  wire        _GEN_181 = io_alloc0_rob == 5'h6;
+  wire        _GEN_182 = io_alloc0_valid & _GEN_181;
+  wire        _GEN_183 = io_alloc0_rob == 5'h7;
+  wire        _GEN_184 = io_alloc0_valid & _GEN_183;
+  wire        _GEN_185 = io_alloc0_rob == 5'h8;
+  wire        _GEN_186 = io_alloc0_valid & _GEN_185;
+  wire        _GEN_187 = io_alloc0_rob == 5'h9;
+  wire        _GEN_188 = io_alloc0_valid & _GEN_187;
+  wire        _GEN_189 = io_alloc0_rob == 5'hA;
+  wire        _GEN_190 = io_alloc0_valid & _GEN_189;
+  wire        _GEN_191 = io_alloc0_rob == 5'hB;
+  wire        _GEN_192 = io_alloc0_valid & _GEN_191;
+  wire        _GEN_193 = io_alloc0_rob == 5'hC;
+  wire        _GEN_194 = io_alloc0_valid & _GEN_193;
+  wire        _GEN_195 = io_alloc0_rob == 5'hD;
+  wire        _GEN_196 = io_alloc0_valid & _GEN_195;
+  wire        _GEN_197 = io_alloc0_rob == 5'hE;
+  wire        _GEN_198 = io_alloc0_valid & _GEN_197;
+  wire        _GEN_199 = io_alloc0_rob == 5'hF;
+  wire        _GEN_200 = io_alloc0_valid & _GEN_199;
+  wire        _GEN_201 = io_alloc0_rob == 5'h10;
+  wire        _GEN_202 = io_alloc0_valid & _GEN_201;
+  wire        _GEN_203 = io_alloc0_rob == 5'h11;
+  wire        _GEN_204 = io_alloc0_valid & _GEN_203;
+  wire        _GEN_205 = io_alloc0_rob == 5'h12;
+  wire        _GEN_206 = io_alloc0_valid & _GEN_205;
+  wire        _GEN_207 = io_alloc0_rob == 5'h13;
+  wire        _GEN_208 = io_alloc0_valid & _GEN_207;
+  wire        _GEN_209 = io_alloc0_rob == 5'h14;
+  wire        _GEN_210 = io_alloc0_valid & _GEN_209;
+  wire        _GEN_211 = io_alloc0_rob == 5'h15;
+  wire        _GEN_212 = io_alloc0_valid & _GEN_211;
+  wire        _GEN_213 = io_alloc0_rob == 5'h16;
+  wire        _GEN_214 = io_alloc0_valid & _GEN_213;
+  wire        _GEN_215 = io_alloc0_rob == 5'h17;
+  wire        _GEN_216 = io_alloc0_valid & _GEN_215;
+  wire        _GEN_217 = io_alloc0_rob == 5'h18;
+  wire        _GEN_218 = io_alloc0_valid & _GEN_217;
+  wire        _GEN_219 = io_alloc0_rob == 5'h19;
+  wire        _GEN_220 = io_alloc0_valid & _GEN_219;
+  wire        _GEN_221 = io_alloc0_rob == 5'h1A;
+  wire        _GEN_222 = io_alloc0_valid & _GEN_221;
+  wire        _GEN_223 = io_alloc0_rob == 5'h1B;
+  wire        _GEN_224 = io_alloc0_valid & _GEN_223;
+  wire        _GEN_225 = io_alloc0_rob == 5'h1C;
+  wire        _GEN_226 = io_alloc0_valid & _GEN_225;
+  wire        _GEN_227 = io_alloc0_rob == 5'h1D;
+  wire        _GEN_228 = io_alloc0_valid & _GEN_227;
+  wire        _GEN_229 = io_alloc0_rob == 5'h1E;
+  wire        _GEN_230 = io_alloc0_valid & _GEN_229;
+  wire        _GEN_231 = io_alloc0_valid & (&io_alloc0_rob);
+  wire        _GEN_232 = io_alloc1_rob == 5'h0;
+  wire        _GEN_233 = io_alloc1_rob == 5'h1;
+  wire        _GEN_234 = io_alloc1_rob == 5'h2;
+  wire        _GEN_235 = io_alloc1_rob == 5'h3;
+  wire        _GEN_236 = io_alloc1_rob == 5'h4;
+  wire        _GEN_237 = io_alloc1_rob == 5'h5;
+  wire        _GEN_238 = io_alloc1_rob == 5'h6;
+  wire        _GEN_239 = io_alloc1_rob == 5'h7;
+  wire        _GEN_240 = io_alloc1_rob == 5'h8;
+  wire        _GEN_241 = io_alloc1_rob == 5'h9;
+  wire        _GEN_242 = io_alloc1_rob == 5'hA;
+  wire        _GEN_243 = io_alloc1_rob == 5'hB;
+  wire        _GEN_244 = io_alloc1_rob == 5'hC;
+  wire        _GEN_245 = io_alloc1_rob == 5'hD;
+  wire        _GEN_246 = io_alloc1_rob == 5'hE;
+  wire        _GEN_247 = io_alloc1_rob == 5'hF;
+  wire        _GEN_248 = io_alloc1_rob == 5'h10;
+  wire        _GEN_249 = io_alloc1_rob == 5'h11;
+  wire        _GEN_250 = io_alloc1_rob == 5'h12;
+  wire        _GEN_251 = io_alloc1_rob == 5'h13;
+  wire        _GEN_252 = io_alloc1_rob == 5'h14;
+  wire        _GEN_253 = io_alloc1_rob == 5'h15;
+  wire        _GEN_254 = io_alloc1_rob == 5'h16;
+  wire        _GEN_255 = io_alloc1_rob == 5'h17;
+  wire        _GEN_256 = io_alloc1_rob == 5'h18;
+  wire        _GEN_257 = io_alloc1_rob == 5'h19;
+  wire        _GEN_258 = io_alloc1_rob == 5'h1A;
+  wire        _GEN_259 = io_alloc1_rob == 5'h1B;
+  wire        _GEN_260 = io_alloc1_rob == 5'h1C;
+  wire        _GEN_261 = io_alloc1_rob == 5'h1D;
+  wire        _GEN_262 = io_alloc1_rob == 5'h1E;
+  wire        _GEN_263 = io_alloc1_valid & _GEN_232;
+  wire        _GEN_264 =
+    ~_GEN_263
+    & (io_alloc0_valid ? ~(_GEN_169 | _GEN_105) & _GEN_73 : ~_GEN_105 & _GEN_73);
+  wire        _GEN_265 = io_alloc1_valid & _GEN_233;
+  wire        _GEN_266 =
+    ~_GEN_265
+    & (io_alloc0_valid ? ~(_GEN_171 | _GEN_107) & _GEN_74 : ~_GEN_107 & _GEN_74);
+  wire        _GEN_267 = io_alloc1_valid & _GEN_234;
+  wire        _GEN_268 =
+    ~_GEN_267
+    & (io_alloc0_valid ? ~(_GEN_173 | _GEN_109) & _GEN_75 : ~_GEN_109 & _GEN_75);
+  wire        _GEN_269 = io_alloc1_valid & _GEN_235;
+  wire        _GEN_270 =
+    ~_GEN_269
+    & (io_alloc0_valid ? ~(_GEN_175 | _GEN_111) & _GEN_76 : ~_GEN_111 & _GEN_76);
+  wire        _GEN_271 = io_alloc1_valid & _GEN_236;
+  wire        _GEN_272 =
+    ~_GEN_271
+    & (io_alloc0_valid ? ~(_GEN_177 | _GEN_113) & _GEN_77 : ~_GEN_113 & _GEN_77);
+  wire        _GEN_273 = io_alloc1_valid & _GEN_237;
+  wire        _GEN_274 =
+    ~_GEN_273
+    & (io_alloc0_valid ? ~(_GEN_179 | _GEN_115) & _GEN_78 : ~_GEN_115 & _GEN_78);
+  wire        _GEN_275 = io_alloc1_valid & _GEN_238;
+  wire        _GEN_276 =
+    ~_GEN_275
+    & (io_alloc0_valid ? ~(_GEN_181 | _GEN_117) & _GEN_79 : ~_GEN_117 & _GEN_79);
+  wire        _GEN_277 = io_alloc1_valid & _GEN_239;
+  wire        _GEN_278 =
+    ~_GEN_277
+    & (io_alloc0_valid ? ~(_GEN_183 | _GEN_119) & _GEN_80 : ~_GEN_119 & _GEN_80);
+  wire        _GEN_279 = io_alloc1_valid & _GEN_240;
+  wire        _GEN_280 =
+    ~_GEN_279
+    & (io_alloc0_valid ? ~(_GEN_185 | _GEN_121) & _GEN_81 : ~_GEN_121 & _GEN_81);
+  wire        _GEN_281 = io_alloc1_valid & _GEN_241;
+  wire        _GEN_282 =
+    ~_GEN_281
+    & (io_alloc0_valid ? ~(_GEN_187 | _GEN_123) & _GEN_82 : ~_GEN_123 & _GEN_82);
+  wire        _GEN_283 = io_alloc1_valid & _GEN_242;
+  wire        _GEN_284 =
+    ~_GEN_283
+    & (io_alloc0_valid ? ~(_GEN_189 | _GEN_125) & _GEN_83 : ~_GEN_125 & _GEN_83);
+  wire        _GEN_285 = io_alloc1_valid & _GEN_243;
+  wire        _GEN_286 =
+    ~_GEN_285
+    & (io_alloc0_valid ? ~(_GEN_191 | _GEN_127) & _GEN_84 : ~_GEN_127 & _GEN_84);
+  wire        _GEN_287 = io_alloc1_valid & _GEN_244;
+  wire        _GEN_288 =
+    ~_GEN_287
+    & (io_alloc0_valid ? ~(_GEN_193 | _GEN_129) & _GEN_85 : ~_GEN_129 & _GEN_85);
+  wire        _GEN_289 = io_alloc1_valid & _GEN_245;
+  wire        _GEN_290 =
+    ~_GEN_289
+    & (io_alloc0_valid ? ~(_GEN_195 | _GEN_131) & _GEN_86 : ~_GEN_131 & _GEN_86);
+  wire        _GEN_291 = io_alloc1_valid & _GEN_246;
+  wire        _GEN_292 =
+    ~_GEN_291
+    & (io_alloc0_valid ? ~(_GEN_197 | _GEN_133) & _GEN_87 : ~_GEN_133 & _GEN_87);
+  wire        _GEN_293 = io_alloc1_valid & _GEN_247;
+  wire        _GEN_294 =
+    ~_GEN_293
+    & (io_alloc0_valid ? ~(_GEN_199 | _GEN_135) & _GEN_88 : ~_GEN_135 & _GEN_88);
+  wire        _GEN_295 = io_alloc1_valid & _GEN_248;
+  wire        _GEN_296 =
+    ~_GEN_295
+    & (io_alloc0_valid ? ~(_GEN_201 | _GEN_137) & _GEN_89 : ~_GEN_137 & _GEN_89);
+  wire        _GEN_297 = io_alloc1_valid & _GEN_249;
+  wire        _GEN_298 =
+    ~_GEN_297
+    & (io_alloc0_valid ? ~(_GEN_203 | _GEN_139) & _GEN_90 : ~_GEN_139 & _GEN_90);
+  wire        _GEN_299 = io_alloc1_valid & _GEN_250;
+  wire        _GEN_300 =
+    ~_GEN_299
+    & (io_alloc0_valid ? ~(_GEN_205 | _GEN_141) & _GEN_91 : ~_GEN_141 & _GEN_91);
+  wire        _GEN_301 = io_alloc1_valid & _GEN_251;
+  wire        _GEN_302 =
+    ~_GEN_301
+    & (io_alloc0_valid ? ~(_GEN_207 | _GEN_143) & _GEN_92 : ~_GEN_143 & _GEN_92);
+  wire        _GEN_303 = io_alloc1_valid & _GEN_252;
+  wire        _GEN_304 =
+    ~_GEN_303
+    & (io_alloc0_valid ? ~(_GEN_209 | _GEN_145) & _GEN_93 : ~_GEN_145 & _GEN_93);
+  wire        _GEN_305 = io_alloc1_valid & _GEN_253;
+  wire        _GEN_306 =
+    ~_GEN_305
+    & (io_alloc0_valid ? ~(_GEN_211 | _GEN_147) & _GEN_94 : ~_GEN_147 & _GEN_94);
+  wire        _GEN_307 = io_alloc1_valid & _GEN_254;
+  wire        _GEN_308 =
+    ~_GEN_307
+    & (io_alloc0_valid ? ~(_GEN_213 | _GEN_149) & _GEN_95 : ~_GEN_149 & _GEN_95);
+  wire        _GEN_309 = io_alloc1_valid & _GEN_255;
+  wire        _GEN_310 =
+    ~_GEN_309
+    & (io_alloc0_valid ? ~(_GEN_215 | _GEN_151) & _GEN_96 : ~_GEN_151 & _GEN_96);
+  wire        _GEN_311 = io_alloc1_valid & _GEN_256;
+  wire        _GEN_312 =
+    ~_GEN_311
+    & (io_alloc0_valid ? ~(_GEN_217 | _GEN_153) & _GEN_97 : ~_GEN_153 & _GEN_97);
+  wire        _GEN_313 = io_alloc1_valid & _GEN_257;
+  wire        _GEN_314 =
+    ~_GEN_313
+    & (io_alloc0_valid ? ~(_GEN_219 | _GEN_155) & _GEN_98 : ~_GEN_155 & _GEN_98);
+  wire        _GEN_315 = io_alloc1_valid & _GEN_258;
+  wire        _GEN_316 =
+    ~_GEN_315
+    & (io_alloc0_valid ? ~(_GEN_221 | _GEN_157) & _GEN_99 : ~_GEN_157 & _GEN_99);
+  wire        _GEN_317 = io_alloc1_valid & _GEN_259;
+  wire        _GEN_318 =
+    ~_GEN_317
+    & (io_alloc0_valid ? ~(_GEN_223 | _GEN_159) & _GEN_100 : ~_GEN_159 & _GEN_100);
+  wire        _GEN_319 = io_alloc1_valid & _GEN_260;
+  wire        _GEN_320 =
+    ~_GEN_319
+    & (io_alloc0_valid ? ~(_GEN_225 | _GEN_161) & _GEN_101 : ~_GEN_161 & _GEN_101);
+  wire        _GEN_321 = io_alloc1_valid & _GEN_261;
+  wire        _GEN_322 =
+    ~_GEN_321
+    & (io_alloc0_valid ? ~(_GEN_227 | _GEN_163) & _GEN_102 : ~_GEN_163 & _GEN_102);
+  wire        _GEN_323 = io_alloc1_valid & _GEN_262;
+  wire        _GEN_324 =
+    ~_GEN_323
+    & (io_alloc0_valid ? ~(_GEN_229 | _GEN_165) & _GEN_103 : ~_GEN_165 & _GEN_103);
+  wire        _GEN_325 = io_alloc1_valid & (&io_alloc1_rob);
+  wire        _GEN_326 =
+    ~_GEN_325
+    & (io_alloc0_valid
+         ? ~((&io_alloc0_rob) | _GEN_167) & _GEN_104
+         : ~_GEN_167 & _GEN_104);
+  wire        _GEN_327 = io_wb_valid & casez_tmp;
+  wire        _GEN_328 = _GEN_327 & io_wb_rob == 5'h0;
+  wire        _GEN_329 = _GEN_327 & io_wb_rob == 5'h1;
+  wire        _GEN_330 = _GEN_327 & io_wb_rob == 5'h2;
+  wire        _GEN_331 = _GEN_327 & io_wb_rob == 5'h3;
+  wire        _GEN_332 = _GEN_327 & io_wb_rob == 5'h4;
+  wire        _GEN_333 = _GEN_327 & io_wb_rob == 5'h5;
+  wire        _GEN_334 = _GEN_327 & io_wb_rob == 5'h6;
+  wire        _GEN_335 = _GEN_327 & io_wb_rob == 5'h7;
+  wire        _GEN_336 = _GEN_327 & io_wb_rob == 5'h8;
+  wire        _GEN_337 = _GEN_327 & io_wb_rob == 5'h9;
+  wire        _GEN_338 = _GEN_327 & io_wb_rob == 5'hA;
+  wire        _GEN_339 = _GEN_327 & io_wb_rob == 5'hB;
+  wire        _GEN_340 = _GEN_327 & io_wb_rob == 5'hC;
+  wire        _GEN_341 = _GEN_327 & io_wb_rob == 5'hD;
+  wire        _GEN_342 = _GEN_327 & io_wb_rob == 5'hE;
+  wire        _GEN_343 = _GEN_327 & io_wb_rob == 5'hF;
+  wire        _GEN_344 = _GEN_327 & io_wb_rob == 5'h10;
+  wire        _GEN_345 = _GEN_327 & io_wb_rob == 5'h11;
+  wire        _GEN_346 = _GEN_327 & io_wb_rob == 5'h12;
+  wire        _GEN_347 = _GEN_327 & io_wb_rob == 5'h13;
+  wire        _GEN_348 = _GEN_327 & io_wb_rob == 5'h14;
+  wire        _GEN_349 = _GEN_327 & io_wb_rob == 5'h15;
+  wire        _GEN_350 = _GEN_327 & io_wb_rob == 5'h16;
+  wire        _GEN_351 = _GEN_327 & io_wb_rob == 5'h17;
+  wire        _GEN_352 = _GEN_327 & io_wb_rob == 5'h18;
+  wire        _GEN_353 = _GEN_327 & io_wb_rob == 5'h19;
+  wire        _GEN_354 = _GEN_327 & io_wb_rob == 5'h1A;
+  wire        _GEN_355 = _GEN_327 & io_wb_rob == 5'h1B;
+  wire        _GEN_356 = _GEN_327 & io_wb_rob == 5'h1C;
+  wire        _GEN_357 = _GEN_327 & io_wb_rob == 5'h1D;
+  wire        _GEN_358 = _GEN_327 & io_wb_rob == 5'h1E;
+  wire        _GEN_359 = _GEN_327 & (&io_wb_rob);
+  wire        _GEN_360 = io_wb1_valid & casez_tmp_0;
+  wire        _GEN_361 = io_wb1_rob == 5'h0;
+  wire        _GEN_362 = io_wb1_rob == 5'h1;
+  wire        _GEN_363 = io_wb1_rob == 5'h2;
+  wire        _GEN_364 = io_wb1_rob == 5'h3;
+  wire        _GEN_365 = io_wb1_rob == 5'h4;
+  wire        _GEN_366 = io_wb1_rob == 5'h5;
+  wire        _GEN_367 = io_wb1_rob == 5'h6;
+  wire        _GEN_368 = io_wb1_rob == 5'h7;
+  wire        _GEN_369 = io_wb1_rob == 5'h8;
+  wire        _GEN_370 = io_wb1_rob == 5'h9;
+  wire        _GEN_371 = io_wb1_rob == 5'hA;
+  wire        _GEN_372 = io_wb1_rob == 5'hB;
+  wire        _GEN_373 = io_wb1_rob == 5'hC;
+  wire        _GEN_374 = io_wb1_rob == 5'hD;
+  wire        _GEN_375 = io_wb1_rob == 5'hE;
+  wire        _GEN_376 = io_wb1_rob == 5'hF;
+  wire        _GEN_377 = io_wb1_rob == 5'h10;
+  wire        _GEN_378 = io_wb1_rob == 5'h11;
+  wire        _GEN_379 = io_wb1_rob == 5'h12;
+  wire        _GEN_380 = io_wb1_rob == 5'h13;
+  wire        _GEN_381 = io_wb1_rob == 5'h14;
+  wire        _GEN_382 = io_wb1_rob == 5'h15;
+  wire        _GEN_383 = io_wb1_rob == 5'h16;
+  wire        _GEN_384 = io_wb1_rob == 5'h17;
+  wire        _GEN_385 = io_wb1_rob == 5'h18;
+  wire        _GEN_386 = io_wb1_rob == 5'h19;
+  wire        _GEN_387 = io_wb1_rob == 5'h1A;
+  wire        _GEN_388 = io_wb1_rob == 5'h1B;
+  wire        _GEN_389 = io_wb1_rob == 5'h1C;
+  wire        _GEN_390 = io_wb1_rob == 5'h1D;
+  wire        _GEN_391 = io_wb1_rob == 5'h1E;
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
@@ -2045,649 +2320,812 @@ module StoreQueue(
     end
     else begin
       entries_0_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_171 | _GEN_43 : _GEN_138 | _GEN_43);
-      entries_0_addr_ready <=
         ~io_flush_all
-        & (_GEN_234 | (io_alloc1_valid ? ~_GEN_171 & _GEN_106 : ~_GEN_138 & _GEN_106));
+        & (io_alloc1_valid ? _GEN_232 | _GEN_170 | _GEN_106 : _GEN_170 | _GEN_106);
+      entries_0_addr_ready <=
+        ~io_flush_all & (_GEN_360 ? _GEN_361 | _GEN_328 | _GEN_264 : _GEN_328 | _GEN_264);
       if (io_flush_all) begin
       end
       else begin
-        if (_GEN_234) begin
+        if (_GEN_360 & _GEN_361) begin
+          entries_0_addr <= io_wb1_addr;
+          entries_0_data <= io_wb1_data;
+          entries_0_mask <= io_wb1_mask;
+        end
+        else if (_GEN_328) begin
           entries_0_addr <= io_wb_addr;
           entries_0_data <= io_wb_data;
           entries_0_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_266 | _GEN_138) begin
+          if (_GEN_263 | _GEN_170) begin
             entries_0_addr <= 32'h0;
             entries_0_data <= 32'h0;
           end
-          if (_GEN_266)
+          if (_GEN_263)
             entries_0_mask <= io_alloc1_mask;
-          else if (_GEN_138)
+          else if (_GEN_170)
             entries_0_mask <= io_alloc0_mask;
         end
-        if (_GEN_235) begin
+        if (_GEN_360 & _GEN_362) begin
+          entries_1_addr <= io_wb1_addr;
+          entries_1_data <= io_wb1_data;
+          entries_1_mask <= io_wb1_mask;
+        end
+        else if (_GEN_329) begin
           entries_1_addr <= io_wb_addr;
           entries_1_data <= io_wb_data;
           entries_1_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_267 | _GEN_139) begin
+          if (_GEN_265 | _GEN_172) begin
             entries_1_addr <= 32'h0;
             entries_1_data <= 32'h0;
           end
-          if (_GEN_267)
+          if (_GEN_265)
             entries_1_mask <= io_alloc1_mask;
-          else if (_GEN_139)
+          else if (_GEN_172)
             entries_1_mask <= io_alloc0_mask;
         end
-        if (_GEN_236) begin
+        if (_GEN_360 & _GEN_363) begin
+          entries_2_addr <= io_wb1_addr;
+          entries_2_data <= io_wb1_data;
+          entries_2_mask <= io_wb1_mask;
+        end
+        else if (_GEN_330) begin
           entries_2_addr <= io_wb_addr;
           entries_2_data <= io_wb_data;
           entries_2_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_268 | _GEN_140) begin
+          if (_GEN_267 | _GEN_174) begin
             entries_2_addr <= 32'h0;
             entries_2_data <= 32'h0;
           end
-          if (_GEN_268)
+          if (_GEN_267)
             entries_2_mask <= io_alloc1_mask;
-          else if (_GEN_140)
+          else if (_GEN_174)
             entries_2_mask <= io_alloc0_mask;
         end
-        if (_GEN_237) begin
+        if (_GEN_360 & _GEN_364) begin
+          entries_3_addr <= io_wb1_addr;
+          entries_3_data <= io_wb1_data;
+          entries_3_mask <= io_wb1_mask;
+        end
+        else if (_GEN_331) begin
           entries_3_addr <= io_wb_addr;
           entries_3_data <= io_wb_data;
           entries_3_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_269 | _GEN_141) begin
+          if (_GEN_269 | _GEN_176) begin
             entries_3_addr <= 32'h0;
             entries_3_data <= 32'h0;
           end
           if (_GEN_269)
             entries_3_mask <= io_alloc1_mask;
-          else if (_GEN_141)
+          else if (_GEN_176)
             entries_3_mask <= io_alloc0_mask;
         end
-        if (_GEN_238) begin
+        if (_GEN_360 & _GEN_365) begin
+          entries_4_addr <= io_wb1_addr;
+          entries_4_data <= io_wb1_data;
+          entries_4_mask <= io_wb1_mask;
+        end
+        else if (_GEN_332) begin
           entries_4_addr <= io_wb_addr;
           entries_4_data <= io_wb_data;
           entries_4_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_270 | _GEN_142) begin
+          if (_GEN_271 | _GEN_178) begin
             entries_4_addr <= 32'h0;
             entries_4_data <= 32'h0;
           end
-          if (_GEN_270)
+          if (_GEN_271)
             entries_4_mask <= io_alloc1_mask;
-          else if (_GEN_142)
+          else if (_GEN_178)
             entries_4_mask <= io_alloc0_mask;
         end
-        if (_GEN_239) begin
+        if (_GEN_360 & _GEN_366) begin
+          entries_5_addr <= io_wb1_addr;
+          entries_5_data <= io_wb1_data;
+          entries_5_mask <= io_wb1_mask;
+        end
+        else if (_GEN_333) begin
           entries_5_addr <= io_wb_addr;
           entries_5_data <= io_wb_data;
           entries_5_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_271 | _GEN_143) begin
+          if (_GEN_273 | _GEN_180) begin
             entries_5_addr <= 32'h0;
             entries_5_data <= 32'h0;
           end
-          if (_GEN_271)
+          if (_GEN_273)
             entries_5_mask <= io_alloc1_mask;
-          else if (_GEN_143)
+          else if (_GEN_180)
             entries_5_mask <= io_alloc0_mask;
         end
-        if (_GEN_240) begin
+        if (_GEN_360 & _GEN_367) begin
+          entries_6_addr <= io_wb1_addr;
+          entries_6_data <= io_wb1_data;
+          entries_6_mask <= io_wb1_mask;
+        end
+        else if (_GEN_334) begin
           entries_6_addr <= io_wb_addr;
           entries_6_data <= io_wb_data;
           entries_6_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_272 | _GEN_144) begin
+          if (_GEN_275 | _GEN_182) begin
             entries_6_addr <= 32'h0;
             entries_6_data <= 32'h0;
           end
-          if (_GEN_272)
+          if (_GEN_275)
             entries_6_mask <= io_alloc1_mask;
-          else if (_GEN_144)
+          else if (_GEN_182)
             entries_6_mask <= io_alloc0_mask;
         end
-        if (_GEN_241) begin
+        if (_GEN_360 & _GEN_368) begin
+          entries_7_addr <= io_wb1_addr;
+          entries_7_data <= io_wb1_data;
+          entries_7_mask <= io_wb1_mask;
+        end
+        else if (_GEN_335) begin
           entries_7_addr <= io_wb_addr;
           entries_7_data <= io_wb_data;
           entries_7_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_273 | _GEN_145) begin
+          if (_GEN_277 | _GEN_184) begin
             entries_7_addr <= 32'h0;
             entries_7_data <= 32'h0;
           end
-          if (_GEN_273)
+          if (_GEN_277)
             entries_7_mask <= io_alloc1_mask;
-          else if (_GEN_145)
+          else if (_GEN_184)
             entries_7_mask <= io_alloc0_mask;
         end
-        if (_GEN_242) begin
+        if (_GEN_360 & _GEN_369) begin
+          entries_8_addr <= io_wb1_addr;
+          entries_8_data <= io_wb1_data;
+          entries_8_mask <= io_wb1_mask;
+        end
+        else if (_GEN_336) begin
           entries_8_addr <= io_wb_addr;
           entries_8_data <= io_wb_data;
           entries_8_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_274 | _GEN_146) begin
+          if (_GEN_279 | _GEN_186) begin
             entries_8_addr <= 32'h0;
             entries_8_data <= 32'h0;
           end
-          if (_GEN_274)
+          if (_GEN_279)
             entries_8_mask <= io_alloc1_mask;
-          else if (_GEN_146)
+          else if (_GEN_186)
             entries_8_mask <= io_alloc0_mask;
         end
-        if (_GEN_243) begin
+        if (_GEN_360 & _GEN_370) begin
+          entries_9_addr <= io_wb1_addr;
+          entries_9_data <= io_wb1_data;
+          entries_9_mask <= io_wb1_mask;
+        end
+        else if (_GEN_337) begin
           entries_9_addr <= io_wb_addr;
           entries_9_data <= io_wb_data;
           entries_9_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_275 | _GEN_147) begin
+          if (_GEN_281 | _GEN_188) begin
             entries_9_addr <= 32'h0;
             entries_9_data <= 32'h0;
           end
-          if (_GEN_275)
+          if (_GEN_281)
             entries_9_mask <= io_alloc1_mask;
-          else if (_GEN_147)
+          else if (_GEN_188)
             entries_9_mask <= io_alloc0_mask;
         end
-        if (_GEN_244) begin
+        if (_GEN_360 & _GEN_371) begin
+          entries_10_addr <= io_wb1_addr;
+          entries_10_data <= io_wb1_data;
+          entries_10_mask <= io_wb1_mask;
+        end
+        else if (_GEN_338) begin
           entries_10_addr <= io_wb_addr;
           entries_10_data <= io_wb_data;
           entries_10_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_276 | _GEN_148) begin
+          if (_GEN_283 | _GEN_190) begin
             entries_10_addr <= 32'h0;
             entries_10_data <= 32'h0;
           end
-          if (_GEN_276)
+          if (_GEN_283)
             entries_10_mask <= io_alloc1_mask;
-          else if (_GEN_148)
+          else if (_GEN_190)
             entries_10_mask <= io_alloc0_mask;
         end
-        if (_GEN_245) begin
+        if (_GEN_360 & _GEN_372) begin
+          entries_11_addr <= io_wb1_addr;
+          entries_11_data <= io_wb1_data;
+          entries_11_mask <= io_wb1_mask;
+        end
+        else if (_GEN_339) begin
           entries_11_addr <= io_wb_addr;
           entries_11_data <= io_wb_data;
           entries_11_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_277 | _GEN_149) begin
+          if (_GEN_285 | _GEN_192) begin
             entries_11_addr <= 32'h0;
             entries_11_data <= 32'h0;
           end
-          if (_GEN_277)
+          if (_GEN_285)
             entries_11_mask <= io_alloc1_mask;
-          else if (_GEN_149)
+          else if (_GEN_192)
             entries_11_mask <= io_alloc0_mask;
         end
-        if (_GEN_246) begin
+        if (_GEN_360 & _GEN_373) begin
+          entries_12_addr <= io_wb1_addr;
+          entries_12_data <= io_wb1_data;
+          entries_12_mask <= io_wb1_mask;
+        end
+        else if (_GEN_340) begin
           entries_12_addr <= io_wb_addr;
           entries_12_data <= io_wb_data;
           entries_12_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_278 | _GEN_150) begin
+          if (_GEN_287 | _GEN_194) begin
             entries_12_addr <= 32'h0;
             entries_12_data <= 32'h0;
           end
-          if (_GEN_278)
+          if (_GEN_287)
             entries_12_mask <= io_alloc1_mask;
-          else if (_GEN_150)
+          else if (_GEN_194)
             entries_12_mask <= io_alloc0_mask;
         end
-        if (_GEN_247) begin
+        if (_GEN_360 & _GEN_374) begin
+          entries_13_addr <= io_wb1_addr;
+          entries_13_data <= io_wb1_data;
+          entries_13_mask <= io_wb1_mask;
+        end
+        else if (_GEN_341) begin
           entries_13_addr <= io_wb_addr;
           entries_13_data <= io_wb_data;
           entries_13_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_279 | _GEN_151) begin
+          if (_GEN_289 | _GEN_196) begin
             entries_13_addr <= 32'h0;
             entries_13_data <= 32'h0;
           end
-          if (_GEN_279)
+          if (_GEN_289)
             entries_13_mask <= io_alloc1_mask;
-          else if (_GEN_151)
+          else if (_GEN_196)
             entries_13_mask <= io_alloc0_mask;
         end
-        if (_GEN_248) begin
+        if (_GEN_360 & _GEN_375) begin
+          entries_14_addr <= io_wb1_addr;
+          entries_14_data <= io_wb1_data;
+          entries_14_mask <= io_wb1_mask;
+        end
+        else if (_GEN_342) begin
           entries_14_addr <= io_wb_addr;
           entries_14_data <= io_wb_data;
           entries_14_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_280 | _GEN_152) begin
+          if (_GEN_291 | _GEN_198) begin
             entries_14_addr <= 32'h0;
             entries_14_data <= 32'h0;
           end
-          if (_GEN_280)
+          if (_GEN_291)
             entries_14_mask <= io_alloc1_mask;
-          else if (_GEN_152)
+          else if (_GEN_198)
             entries_14_mask <= io_alloc0_mask;
         end
-        if (_GEN_249) begin
+        if (_GEN_360 & _GEN_376) begin
+          entries_15_addr <= io_wb1_addr;
+          entries_15_data <= io_wb1_data;
+          entries_15_mask <= io_wb1_mask;
+        end
+        else if (_GEN_343) begin
           entries_15_addr <= io_wb_addr;
           entries_15_data <= io_wb_data;
           entries_15_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_281 | _GEN_153) begin
+          if (_GEN_293 | _GEN_200) begin
             entries_15_addr <= 32'h0;
             entries_15_data <= 32'h0;
           end
-          if (_GEN_281)
+          if (_GEN_293)
             entries_15_mask <= io_alloc1_mask;
-          else if (_GEN_153)
+          else if (_GEN_200)
             entries_15_mask <= io_alloc0_mask;
         end
-        if (_GEN_250) begin
+        if (_GEN_360 & _GEN_377) begin
+          entries_16_addr <= io_wb1_addr;
+          entries_16_data <= io_wb1_data;
+          entries_16_mask <= io_wb1_mask;
+        end
+        else if (_GEN_344) begin
           entries_16_addr <= io_wb_addr;
           entries_16_data <= io_wb_data;
           entries_16_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_282 | _GEN_154) begin
+          if (_GEN_295 | _GEN_202) begin
             entries_16_addr <= 32'h0;
             entries_16_data <= 32'h0;
           end
-          if (_GEN_282)
+          if (_GEN_295)
             entries_16_mask <= io_alloc1_mask;
-          else if (_GEN_154)
+          else if (_GEN_202)
             entries_16_mask <= io_alloc0_mask;
         end
-        if (_GEN_251) begin
+        if (_GEN_360 & _GEN_378) begin
+          entries_17_addr <= io_wb1_addr;
+          entries_17_data <= io_wb1_data;
+          entries_17_mask <= io_wb1_mask;
+        end
+        else if (_GEN_345) begin
           entries_17_addr <= io_wb_addr;
           entries_17_data <= io_wb_data;
           entries_17_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_283 | _GEN_155) begin
+          if (_GEN_297 | _GEN_204) begin
             entries_17_addr <= 32'h0;
             entries_17_data <= 32'h0;
           end
-          if (_GEN_283)
+          if (_GEN_297)
             entries_17_mask <= io_alloc1_mask;
-          else if (_GEN_155)
+          else if (_GEN_204)
             entries_17_mask <= io_alloc0_mask;
         end
-        if (_GEN_252) begin
+        if (_GEN_360 & _GEN_379) begin
+          entries_18_addr <= io_wb1_addr;
+          entries_18_data <= io_wb1_data;
+          entries_18_mask <= io_wb1_mask;
+        end
+        else if (_GEN_346) begin
           entries_18_addr <= io_wb_addr;
           entries_18_data <= io_wb_data;
           entries_18_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_284 | _GEN_156) begin
+          if (_GEN_299 | _GEN_206) begin
             entries_18_addr <= 32'h0;
             entries_18_data <= 32'h0;
           end
-          if (_GEN_284)
+          if (_GEN_299)
             entries_18_mask <= io_alloc1_mask;
-          else if (_GEN_156)
+          else if (_GEN_206)
             entries_18_mask <= io_alloc0_mask;
         end
-        if (_GEN_253) begin
+        if (_GEN_360 & _GEN_380) begin
+          entries_19_addr <= io_wb1_addr;
+          entries_19_data <= io_wb1_data;
+          entries_19_mask <= io_wb1_mask;
+        end
+        else if (_GEN_347) begin
           entries_19_addr <= io_wb_addr;
           entries_19_data <= io_wb_data;
           entries_19_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_285 | _GEN_157) begin
+          if (_GEN_301 | _GEN_208) begin
             entries_19_addr <= 32'h0;
             entries_19_data <= 32'h0;
           end
-          if (_GEN_285)
+          if (_GEN_301)
             entries_19_mask <= io_alloc1_mask;
-          else if (_GEN_157)
+          else if (_GEN_208)
             entries_19_mask <= io_alloc0_mask;
         end
-        if (_GEN_254) begin
+        if (_GEN_360 & _GEN_381) begin
+          entries_20_addr <= io_wb1_addr;
+          entries_20_data <= io_wb1_data;
+          entries_20_mask <= io_wb1_mask;
+        end
+        else if (_GEN_348) begin
           entries_20_addr <= io_wb_addr;
           entries_20_data <= io_wb_data;
           entries_20_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_286 | _GEN_158) begin
+          if (_GEN_303 | _GEN_210) begin
             entries_20_addr <= 32'h0;
             entries_20_data <= 32'h0;
           end
-          if (_GEN_286)
+          if (_GEN_303)
             entries_20_mask <= io_alloc1_mask;
-          else if (_GEN_158)
+          else if (_GEN_210)
             entries_20_mask <= io_alloc0_mask;
         end
-        if (_GEN_255) begin
+        if (_GEN_360 & _GEN_382) begin
+          entries_21_addr <= io_wb1_addr;
+          entries_21_data <= io_wb1_data;
+          entries_21_mask <= io_wb1_mask;
+        end
+        else if (_GEN_349) begin
           entries_21_addr <= io_wb_addr;
           entries_21_data <= io_wb_data;
           entries_21_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_287 | _GEN_159) begin
+          if (_GEN_305 | _GEN_212) begin
             entries_21_addr <= 32'h0;
             entries_21_data <= 32'h0;
           end
-          if (_GEN_287)
+          if (_GEN_305)
             entries_21_mask <= io_alloc1_mask;
-          else if (_GEN_159)
+          else if (_GEN_212)
             entries_21_mask <= io_alloc0_mask;
         end
-        if (_GEN_256) begin
+        if (_GEN_360 & _GEN_383) begin
+          entries_22_addr <= io_wb1_addr;
+          entries_22_data <= io_wb1_data;
+          entries_22_mask <= io_wb1_mask;
+        end
+        else if (_GEN_350) begin
           entries_22_addr <= io_wb_addr;
           entries_22_data <= io_wb_data;
           entries_22_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_288 | _GEN_160) begin
+          if (_GEN_307 | _GEN_214) begin
             entries_22_addr <= 32'h0;
             entries_22_data <= 32'h0;
           end
-          if (_GEN_288)
+          if (_GEN_307)
             entries_22_mask <= io_alloc1_mask;
-          else if (_GEN_160)
+          else if (_GEN_214)
             entries_22_mask <= io_alloc0_mask;
         end
-        if (_GEN_257) begin
+        if (_GEN_360 & _GEN_384) begin
+          entries_23_addr <= io_wb1_addr;
+          entries_23_data <= io_wb1_data;
+          entries_23_mask <= io_wb1_mask;
+        end
+        else if (_GEN_351) begin
           entries_23_addr <= io_wb_addr;
           entries_23_data <= io_wb_data;
           entries_23_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_289 | _GEN_161) begin
+          if (_GEN_309 | _GEN_216) begin
             entries_23_addr <= 32'h0;
             entries_23_data <= 32'h0;
           end
-          if (_GEN_289)
+          if (_GEN_309)
             entries_23_mask <= io_alloc1_mask;
-          else if (_GEN_161)
+          else if (_GEN_216)
             entries_23_mask <= io_alloc0_mask;
         end
-        if (_GEN_258) begin
+        if (_GEN_360 & _GEN_385) begin
+          entries_24_addr <= io_wb1_addr;
+          entries_24_data <= io_wb1_data;
+          entries_24_mask <= io_wb1_mask;
+        end
+        else if (_GEN_352) begin
           entries_24_addr <= io_wb_addr;
           entries_24_data <= io_wb_data;
           entries_24_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_290 | _GEN_162) begin
+          if (_GEN_311 | _GEN_218) begin
             entries_24_addr <= 32'h0;
             entries_24_data <= 32'h0;
           end
-          if (_GEN_290)
+          if (_GEN_311)
             entries_24_mask <= io_alloc1_mask;
-          else if (_GEN_162)
+          else if (_GEN_218)
             entries_24_mask <= io_alloc0_mask;
         end
-        if (_GEN_259) begin
+        if (_GEN_360 & _GEN_386) begin
+          entries_25_addr <= io_wb1_addr;
+          entries_25_data <= io_wb1_data;
+          entries_25_mask <= io_wb1_mask;
+        end
+        else if (_GEN_353) begin
           entries_25_addr <= io_wb_addr;
           entries_25_data <= io_wb_data;
           entries_25_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_291 | _GEN_163) begin
+          if (_GEN_313 | _GEN_220) begin
             entries_25_addr <= 32'h0;
             entries_25_data <= 32'h0;
           end
-          if (_GEN_291)
+          if (_GEN_313)
             entries_25_mask <= io_alloc1_mask;
-          else if (_GEN_163)
+          else if (_GEN_220)
             entries_25_mask <= io_alloc0_mask;
         end
-        if (_GEN_260) begin
+        if (_GEN_360 & _GEN_387) begin
+          entries_26_addr <= io_wb1_addr;
+          entries_26_data <= io_wb1_data;
+          entries_26_mask <= io_wb1_mask;
+        end
+        else if (_GEN_354) begin
           entries_26_addr <= io_wb_addr;
           entries_26_data <= io_wb_data;
           entries_26_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_292 | _GEN_164) begin
+          if (_GEN_315 | _GEN_222) begin
             entries_26_addr <= 32'h0;
             entries_26_data <= 32'h0;
           end
-          if (_GEN_292)
+          if (_GEN_315)
             entries_26_mask <= io_alloc1_mask;
-          else if (_GEN_164)
+          else if (_GEN_222)
             entries_26_mask <= io_alloc0_mask;
         end
-        if (_GEN_261) begin
+        if (_GEN_360 & _GEN_388) begin
+          entries_27_addr <= io_wb1_addr;
+          entries_27_data <= io_wb1_data;
+          entries_27_mask <= io_wb1_mask;
+        end
+        else if (_GEN_355) begin
           entries_27_addr <= io_wb_addr;
           entries_27_data <= io_wb_data;
           entries_27_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_293 | _GEN_165) begin
+          if (_GEN_317 | _GEN_224) begin
             entries_27_addr <= 32'h0;
             entries_27_data <= 32'h0;
           end
-          if (_GEN_293)
+          if (_GEN_317)
             entries_27_mask <= io_alloc1_mask;
-          else if (_GEN_165)
+          else if (_GEN_224)
             entries_27_mask <= io_alloc0_mask;
         end
-        if (_GEN_262) begin
+        if (_GEN_360 & _GEN_389) begin
+          entries_28_addr <= io_wb1_addr;
+          entries_28_data <= io_wb1_data;
+          entries_28_mask <= io_wb1_mask;
+        end
+        else if (_GEN_356) begin
           entries_28_addr <= io_wb_addr;
           entries_28_data <= io_wb_data;
           entries_28_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_294 | _GEN_166) begin
+          if (_GEN_319 | _GEN_226) begin
             entries_28_addr <= 32'h0;
             entries_28_data <= 32'h0;
           end
-          if (_GEN_294)
+          if (_GEN_319)
             entries_28_mask <= io_alloc1_mask;
-          else if (_GEN_166)
+          else if (_GEN_226)
             entries_28_mask <= io_alloc0_mask;
         end
-        if (_GEN_263) begin
+        if (_GEN_360 & _GEN_390) begin
+          entries_29_addr <= io_wb1_addr;
+          entries_29_data <= io_wb1_data;
+          entries_29_mask <= io_wb1_mask;
+        end
+        else if (_GEN_357) begin
           entries_29_addr <= io_wb_addr;
           entries_29_data <= io_wb_data;
           entries_29_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_295 | _GEN_167) begin
+          if (_GEN_321 | _GEN_228) begin
             entries_29_addr <= 32'h0;
             entries_29_data <= 32'h0;
           end
-          if (_GEN_295)
+          if (_GEN_321)
             entries_29_mask <= io_alloc1_mask;
-          else if (_GEN_167)
+          else if (_GEN_228)
             entries_29_mask <= io_alloc0_mask;
         end
-        if (_GEN_264) begin
+        if (_GEN_360 & _GEN_391) begin
+          entries_30_addr <= io_wb1_addr;
+          entries_30_data <= io_wb1_data;
+          entries_30_mask <= io_wb1_mask;
+        end
+        else if (_GEN_358) begin
           entries_30_addr <= io_wb_addr;
           entries_30_data <= io_wb_data;
           entries_30_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_296 | _GEN_168) begin
+          if (_GEN_323 | _GEN_230) begin
             entries_30_addr <= 32'h0;
             entries_30_data <= 32'h0;
           end
-          if (_GEN_296)
+          if (_GEN_323)
             entries_30_mask <= io_alloc1_mask;
-          else if (_GEN_168)
+          else if (_GEN_230)
             entries_30_mask <= io_alloc0_mask;
         end
-        if (_GEN_265) begin
+        if (_GEN_360 & (&io_wb1_rob)) begin
+          entries_31_addr <= io_wb1_addr;
+          entries_31_data <= io_wb1_data;
+          entries_31_mask <= io_wb1_mask;
+        end
+        else if (_GEN_359) begin
           entries_31_addr <= io_wb_addr;
           entries_31_data <= io_wb_data;
           entries_31_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_9 | _GEN_169) begin
+          if (_GEN_325 | _GEN_231) begin
             entries_31_addr <= 32'h0;
             entries_31_data <= 32'h0;
           end
-          if (_GEN_9)
+          if (_GEN_325)
             entries_31_mask <= io_alloc1_mask;
-          else if (_GEN_169)
+          else if (_GEN_231)
             entries_31_mask <= io_alloc0_mask;
         end
       end
       entries_1_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_173 | _GEN_45 : _GEN_139 | _GEN_45);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_233 | _GEN_172 | _GEN_108 : _GEN_172 | _GEN_108);
       entries_1_addr_ready <=
-        ~io_flush_all
-        & (_GEN_235 | (io_alloc1_valid ? ~_GEN_173 & _GEN_107 : ~_GEN_139 & _GEN_107));
+        ~io_flush_all & (_GEN_360 ? _GEN_362 | _GEN_329 | _GEN_266 : _GEN_329 | _GEN_266);
       entries_2_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_175 | _GEN_47 : _GEN_140 | _GEN_47);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_234 | _GEN_174 | _GEN_110 : _GEN_174 | _GEN_110);
       entries_2_addr_ready <=
-        ~io_flush_all
-        & (_GEN_236 | (io_alloc1_valid ? ~_GEN_175 & _GEN_108 : ~_GEN_140 & _GEN_108));
+        ~io_flush_all & (_GEN_360 ? _GEN_363 | _GEN_330 | _GEN_268 : _GEN_330 | _GEN_268);
       entries_3_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_177 | _GEN_49 : _GEN_141 | _GEN_49);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_235 | _GEN_176 | _GEN_112 : _GEN_176 | _GEN_112);
       entries_3_addr_ready <=
-        ~io_flush_all
-        & (_GEN_237 | (io_alloc1_valid ? ~_GEN_177 & _GEN_109 : ~_GEN_141 & _GEN_109));
+        ~io_flush_all & (_GEN_360 ? _GEN_364 | _GEN_331 | _GEN_270 : _GEN_331 | _GEN_270);
       entries_4_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_179 | _GEN_51 : _GEN_142 | _GEN_51);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_236 | _GEN_178 | _GEN_114 : _GEN_178 | _GEN_114);
       entries_4_addr_ready <=
-        ~io_flush_all
-        & (_GEN_238 | (io_alloc1_valid ? ~_GEN_179 & _GEN_110 : ~_GEN_142 & _GEN_110));
+        ~io_flush_all & (_GEN_360 ? _GEN_365 | _GEN_332 | _GEN_272 : _GEN_332 | _GEN_272);
       entries_5_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_181 | _GEN_53 : _GEN_143 | _GEN_53);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_237 | _GEN_180 | _GEN_116 : _GEN_180 | _GEN_116);
       entries_5_addr_ready <=
-        ~io_flush_all
-        & (_GEN_239 | (io_alloc1_valid ? ~_GEN_181 & _GEN_111 : ~_GEN_143 & _GEN_111));
+        ~io_flush_all & (_GEN_360 ? _GEN_366 | _GEN_333 | _GEN_274 : _GEN_333 | _GEN_274);
       entries_6_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_183 | _GEN_55 : _GEN_144 | _GEN_55);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_238 | _GEN_182 | _GEN_118 : _GEN_182 | _GEN_118);
       entries_6_addr_ready <=
-        ~io_flush_all
-        & (_GEN_240 | (io_alloc1_valid ? ~_GEN_183 & _GEN_112 : ~_GEN_144 & _GEN_112));
+        ~io_flush_all & (_GEN_360 ? _GEN_367 | _GEN_334 | _GEN_276 : _GEN_334 | _GEN_276);
       entries_7_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_185 | _GEN_57 : _GEN_145 | _GEN_57);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_239 | _GEN_184 | _GEN_120 : _GEN_184 | _GEN_120);
       entries_7_addr_ready <=
-        ~io_flush_all
-        & (_GEN_241 | (io_alloc1_valid ? ~_GEN_185 & _GEN_113 : ~_GEN_145 & _GEN_113));
+        ~io_flush_all & (_GEN_360 ? _GEN_368 | _GEN_335 | _GEN_278 : _GEN_335 | _GEN_278);
       entries_8_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_187 | _GEN_59 : _GEN_146 | _GEN_59);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_240 | _GEN_186 | _GEN_122 : _GEN_186 | _GEN_122);
       entries_8_addr_ready <=
-        ~io_flush_all
-        & (_GEN_242 | (io_alloc1_valid ? ~_GEN_187 & _GEN_114 : ~_GEN_146 & _GEN_114));
+        ~io_flush_all & (_GEN_360 ? _GEN_369 | _GEN_336 | _GEN_280 : _GEN_336 | _GEN_280);
       entries_9_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_189 | _GEN_61 : _GEN_147 | _GEN_61);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_241 | _GEN_188 | _GEN_124 : _GEN_188 | _GEN_124);
       entries_9_addr_ready <=
-        ~io_flush_all
-        & (_GEN_243 | (io_alloc1_valid ? ~_GEN_189 & _GEN_115 : ~_GEN_147 & _GEN_115));
+        ~io_flush_all & (_GEN_360 ? _GEN_370 | _GEN_337 | _GEN_282 : _GEN_337 | _GEN_282);
       entries_10_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_191 | _GEN_63 : _GEN_148 | _GEN_63);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_242 | _GEN_190 | _GEN_126 : _GEN_190 | _GEN_126);
       entries_10_addr_ready <=
-        ~io_flush_all
-        & (_GEN_244 | (io_alloc1_valid ? ~_GEN_191 & _GEN_116 : ~_GEN_148 & _GEN_116));
+        ~io_flush_all & (_GEN_360 ? _GEN_371 | _GEN_338 | _GEN_284 : _GEN_338 | _GEN_284);
       entries_11_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_193 | _GEN_65 : _GEN_149 | _GEN_65);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_243 | _GEN_192 | _GEN_128 : _GEN_192 | _GEN_128);
       entries_11_addr_ready <=
-        ~io_flush_all
-        & (_GEN_245 | (io_alloc1_valid ? ~_GEN_193 & _GEN_117 : ~_GEN_149 & _GEN_117));
+        ~io_flush_all & (_GEN_360 ? _GEN_372 | _GEN_339 | _GEN_286 : _GEN_339 | _GEN_286);
       entries_12_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_195 | _GEN_67 : _GEN_150 | _GEN_67);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_244 | _GEN_194 | _GEN_130 : _GEN_194 | _GEN_130);
       entries_12_addr_ready <=
-        ~io_flush_all
-        & (_GEN_246 | (io_alloc1_valid ? ~_GEN_195 & _GEN_118 : ~_GEN_150 & _GEN_118));
+        ~io_flush_all & (_GEN_360 ? _GEN_373 | _GEN_340 | _GEN_288 : _GEN_340 | _GEN_288);
       entries_13_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_197 | _GEN_69 : _GEN_151 | _GEN_69);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_245 | _GEN_196 | _GEN_132 : _GEN_196 | _GEN_132);
       entries_13_addr_ready <=
-        ~io_flush_all
-        & (_GEN_247 | (io_alloc1_valid ? ~_GEN_197 & _GEN_119 : ~_GEN_151 & _GEN_119));
+        ~io_flush_all & (_GEN_360 ? _GEN_374 | _GEN_341 | _GEN_290 : _GEN_341 | _GEN_290);
       entries_14_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_199 | _GEN_71 : _GEN_152 | _GEN_71);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_246 | _GEN_198 | _GEN_134 : _GEN_198 | _GEN_134);
       entries_14_addr_ready <=
-        ~io_flush_all
-        & (_GEN_248 | (io_alloc1_valid ? ~_GEN_199 & _GEN_120 : ~_GEN_152 & _GEN_120));
+        ~io_flush_all & (_GEN_360 ? _GEN_375 | _GEN_342 | _GEN_292 : _GEN_342 | _GEN_292);
       entries_15_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_201 | _GEN_73 : _GEN_153 | _GEN_73);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_247 | _GEN_200 | _GEN_136 : _GEN_200 | _GEN_136);
       entries_15_addr_ready <=
-        ~io_flush_all
-        & (_GEN_249 | (io_alloc1_valid ? ~_GEN_201 & _GEN_121 : ~_GEN_153 & _GEN_121));
+        ~io_flush_all & (_GEN_360 ? _GEN_376 | _GEN_343 | _GEN_294 : _GEN_343 | _GEN_294);
       entries_16_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_203 | _GEN_75 : _GEN_154 | _GEN_75);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_248 | _GEN_202 | _GEN_138 : _GEN_202 | _GEN_138);
       entries_16_addr_ready <=
-        ~io_flush_all
-        & (_GEN_250 | (io_alloc1_valid ? ~_GEN_203 & _GEN_122 : ~_GEN_154 & _GEN_122));
+        ~io_flush_all & (_GEN_360 ? _GEN_377 | _GEN_344 | _GEN_296 : _GEN_344 | _GEN_296);
       entries_17_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_205 | _GEN_77 : _GEN_155 | _GEN_77);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_249 | _GEN_204 | _GEN_140 : _GEN_204 | _GEN_140);
       entries_17_addr_ready <=
-        ~io_flush_all
-        & (_GEN_251 | (io_alloc1_valid ? ~_GEN_205 & _GEN_123 : ~_GEN_155 & _GEN_123));
+        ~io_flush_all & (_GEN_360 ? _GEN_378 | _GEN_345 | _GEN_298 : _GEN_345 | _GEN_298);
       entries_18_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_207 | _GEN_79 : _GEN_156 | _GEN_79);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_250 | _GEN_206 | _GEN_142 : _GEN_206 | _GEN_142);
       entries_18_addr_ready <=
-        ~io_flush_all
-        & (_GEN_252 | (io_alloc1_valid ? ~_GEN_207 & _GEN_124 : ~_GEN_156 & _GEN_124));
+        ~io_flush_all & (_GEN_360 ? _GEN_379 | _GEN_346 | _GEN_300 : _GEN_346 | _GEN_300);
       entries_19_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_209 | _GEN_81 : _GEN_157 | _GEN_81);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_251 | _GEN_208 | _GEN_144 : _GEN_208 | _GEN_144);
       entries_19_addr_ready <=
-        ~io_flush_all
-        & (_GEN_253 | (io_alloc1_valid ? ~_GEN_209 & _GEN_125 : ~_GEN_157 & _GEN_125));
+        ~io_flush_all & (_GEN_360 ? _GEN_380 | _GEN_347 | _GEN_302 : _GEN_347 | _GEN_302);
       entries_20_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_211 | _GEN_83 : _GEN_158 | _GEN_83);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_252 | _GEN_210 | _GEN_146 : _GEN_210 | _GEN_146);
       entries_20_addr_ready <=
-        ~io_flush_all
-        & (_GEN_254 | (io_alloc1_valid ? ~_GEN_211 & _GEN_126 : ~_GEN_158 & _GEN_126));
+        ~io_flush_all & (_GEN_360 ? _GEN_381 | _GEN_348 | _GEN_304 : _GEN_348 | _GEN_304);
       entries_21_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_213 | _GEN_85 : _GEN_159 | _GEN_85);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_253 | _GEN_212 | _GEN_148 : _GEN_212 | _GEN_148);
       entries_21_addr_ready <=
-        ~io_flush_all
-        & (_GEN_255 | (io_alloc1_valid ? ~_GEN_213 & _GEN_127 : ~_GEN_159 & _GEN_127));
+        ~io_flush_all & (_GEN_360 ? _GEN_382 | _GEN_349 | _GEN_306 : _GEN_349 | _GEN_306);
       entries_22_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_215 | _GEN_87 : _GEN_160 | _GEN_87);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_254 | _GEN_214 | _GEN_150 : _GEN_214 | _GEN_150);
       entries_22_addr_ready <=
-        ~io_flush_all
-        & (_GEN_256 | (io_alloc1_valid ? ~_GEN_215 & _GEN_128 : ~_GEN_160 & _GEN_128));
+        ~io_flush_all & (_GEN_360 ? _GEN_383 | _GEN_350 | _GEN_308 : _GEN_350 | _GEN_308);
       entries_23_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_217 | _GEN_89 : _GEN_161 | _GEN_89);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_255 | _GEN_216 | _GEN_152 : _GEN_216 | _GEN_152);
       entries_23_addr_ready <=
-        ~io_flush_all
-        & (_GEN_257 | (io_alloc1_valid ? ~_GEN_217 & _GEN_129 : ~_GEN_161 & _GEN_129));
+        ~io_flush_all & (_GEN_360 ? _GEN_384 | _GEN_351 | _GEN_310 : _GEN_351 | _GEN_310);
       entries_24_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_219 | _GEN_91 : _GEN_162 | _GEN_91);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_256 | _GEN_218 | _GEN_154 : _GEN_218 | _GEN_154);
       entries_24_addr_ready <=
-        ~io_flush_all
-        & (_GEN_258 | (io_alloc1_valid ? ~_GEN_219 & _GEN_130 : ~_GEN_162 & _GEN_130));
+        ~io_flush_all & (_GEN_360 ? _GEN_385 | _GEN_352 | _GEN_312 : _GEN_352 | _GEN_312);
       entries_25_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_221 | _GEN_93 : _GEN_163 | _GEN_93);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_257 | _GEN_220 | _GEN_156 : _GEN_220 | _GEN_156);
       entries_25_addr_ready <=
-        ~io_flush_all
-        & (_GEN_259 | (io_alloc1_valid ? ~_GEN_221 & _GEN_131 : ~_GEN_163 & _GEN_131));
+        ~io_flush_all & (_GEN_360 ? _GEN_386 | _GEN_353 | _GEN_314 : _GEN_353 | _GEN_314);
       entries_26_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_223 | _GEN_95 : _GEN_164 | _GEN_95);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_258 | _GEN_222 | _GEN_158 : _GEN_222 | _GEN_158);
       entries_26_addr_ready <=
-        ~io_flush_all
-        & (_GEN_260 | (io_alloc1_valid ? ~_GEN_223 & _GEN_132 : ~_GEN_164 & _GEN_132));
+        ~io_flush_all & (_GEN_360 ? _GEN_387 | _GEN_354 | _GEN_316 : _GEN_354 | _GEN_316);
       entries_27_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_225 | _GEN_97 : _GEN_165 | _GEN_97);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_259 | _GEN_224 | _GEN_160 : _GEN_224 | _GEN_160);
       entries_27_addr_ready <=
-        ~io_flush_all
-        & (_GEN_261 | (io_alloc1_valid ? ~_GEN_225 & _GEN_133 : ~_GEN_165 & _GEN_133));
+        ~io_flush_all & (_GEN_360 ? _GEN_388 | _GEN_355 | _GEN_318 : _GEN_355 | _GEN_318);
       entries_28_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_227 | _GEN_99 : _GEN_166 | _GEN_99);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_260 | _GEN_226 | _GEN_162 : _GEN_226 | _GEN_162);
       entries_28_addr_ready <=
-        ~io_flush_all
-        & (_GEN_262 | (io_alloc1_valid ? ~_GEN_227 & _GEN_134 : ~_GEN_166 & _GEN_134));
+        ~io_flush_all & (_GEN_360 ? _GEN_389 | _GEN_356 | _GEN_320 : _GEN_356 | _GEN_320);
       entries_29_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_229 | _GEN_101 : _GEN_167 | _GEN_101);
+        ~io_flush_all
+        & (io_alloc1_valid ? _GEN_261 | _GEN_228 | _GEN_164 : _GEN_228 | _GEN_164);
       entries_29_addr_ready <=
-        ~io_flush_all
-        & (_GEN_263 | (io_alloc1_valid ? ~_GEN_229 & _GEN_135 : ~_GEN_167 & _GEN_135));
+        ~io_flush_all & (_GEN_360 ? _GEN_390 | _GEN_357 | _GEN_322 : _GEN_357 | _GEN_322);
       entries_30_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_231 | _GEN_103 : _GEN_168 | _GEN_103);
-      entries_30_addr_ready <=
         ~io_flush_all
-        & (_GEN_264 | (io_alloc1_valid ? ~_GEN_231 & _GEN_136 : ~_GEN_168 & _GEN_136));
+        & (io_alloc1_valid ? _GEN_262 | _GEN_230 | _GEN_166 : _GEN_230 | _GEN_166);
+      entries_30_addr_ready <=
+        ~io_flush_all & (_GEN_360 ? _GEN_391 | _GEN_358 | _GEN_324 : _GEN_358 | _GEN_324);
       entries_31_valid <=
-        ~io_flush_all & (io_alloc1_valid ? _GEN_232 | _GEN_105 : _GEN_169 | _GEN_105);
+        ~io_flush_all
+        & (io_alloc1_valid
+             ? (&io_alloc1_rob) | _GEN_231 | _GEN_168
+             : _GEN_231 | _GEN_168);
       entries_31_addr_ready <=
         ~io_flush_all
-        & (_GEN_265 | (io_alloc1_valid ? ~_GEN_232 & _GEN_137 : ~_GEN_169 & _GEN_137));
+        & (_GEN_360 ? (&io_wb1_rob) | _GEN_359 | _GEN_326 : _GEN_359 | _GEN_326);
     end
   end // always @(posedge)
   assign io_unresolved_mask =
@@ -2755,9 +3193,9 @@ module StoreQueue(
        fwdHits_3,
        fwdHits_2,
        fwdHits_1,
-       fwdHits_0}) & ~(|_io_wait_load_T);
+       fwdHits_0}) & ~io_wait_load_0;
   assign io_fwd_data =
     _GEN_1 | _GEN_2 | _GEN_3 | _GEN_4 | _GEN_5 | _GEN_6 | _GEN_7 | _GEN_8;
-  assign io_wait_load = |_io_wait_load_T;
+  assign io_wait_load = io_wait_load_0;
 endmodule
 

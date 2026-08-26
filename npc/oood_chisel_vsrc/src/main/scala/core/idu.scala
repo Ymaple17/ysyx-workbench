@@ -30,6 +30,8 @@ class IDU_EXU_IO extends Bundle{
   val bp_taken = Output(Bool())
   val bp_target = Output(UInt(32.W))
   val bp_index = Output(UInt(log2Ceil(BHT_SIZE).W))
+  val ftq_idx = Output(UInt(OoOParams.FTQ_PTR_W.W))
+  val ftq_generation = Output(UInt(OoOParams.FTQ_GEN_W.W))
 
   val inst = Output(UInt(32.W))
   val rob_idx = Output(UInt(OoOParams.ROB_PTR_W.W))
@@ -107,6 +109,8 @@ class IDU(val conf: CoreConfig) extends Module{
     io.out.bits.bp_taken := io.in.bits.bp_taken
     io.out.bits.bp_target := io.in.bits.bp_target
     io.out.bits.bp_index := io.in.bits.bp_index
+    io.out.bits.ftq_idx := io.in.bits.ftq_idx
+    io.out.bits.ftq_generation := io.in.bits.ftq_generation
 
     io.out.bits.inst := io.in.bits.inst
     io.out.bits.rob_idx := 0.U

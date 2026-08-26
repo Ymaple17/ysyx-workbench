@@ -27,7 +27,7 @@ module SRAM(
   reg  [31:0] rdata_reg;
   reg  [1:0]  rresp_reg;
   wire        io_sram_arready_0 = r_state == 2'h0;
-  wire        _r_next_state_T_14 = r_state == 2'h1;
+  wire        _r_next_state_T_6 = r_state == 2'h1;
   wire        io_sram_rvalid_0 = r_state == 2'h2;
   wire        _GEN =
     araddr_reg[31] & araddr_reg < 32'h8FFFFFFF | araddr_reg > 32'h9FFFFFFF
@@ -55,7 +55,7 @@ module SRAM(
     awaddr_reg[31] & awaddr_reg < 32'h8FFFFFFF | awaddr_reg > 32'h9FFFFFFF
     & awaddr_reg < 32'hA0000007;
   wire        _GEN_2 = _GEN_0 & _GEN_1;
-  wire        _GEN_3 = io_sram_arvalid & io_sram_arready_0;
+  wire        _GEN_3 = io_sram_arready_0 & io_sram_arvalid;
   wire        _GEN_4 = io_sram_awvalid & io_sram_awready_0;
   always @(posedge clock) begin
     if (reset) begin
@@ -70,15 +70,10 @@ module SRAM(
       r_state <=
         io_sram_rvalid_0
           ? {~io_sram_rready, 1'h0}
-          : _r_next_state_T_14
-              ? ((|r_delay_cnt) ? 2'h1 : 2'h2)
-              : {1'h0,
-                 io_sram_arready_0 & io_sram_arvalid
-                   & (io_sram_araddr[31] & io_sram_araddr < 32'h8FFFFFFF
-                      | io_sram_araddr > 32'h9FFFFFFF & io_sram_araddr < 32'hA0000007)};
+          : _r_next_state_T_6 ? ((|r_delay_cnt) ? 2'h1 : 2'h2) : {1'h0, _GEN_3};
       if (_GEN_3)
         araddr_reg <= io_sram_araddr;
-      if (~_r_next_state_T_14 | (|r_delay_cnt)) begin
+      if (~_r_next_state_T_6 | (|r_delay_cnt)) begin
       end
       else begin
         rdata_reg <= _GEN ? _pmem_rdata : 32'h0;
@@ -88,7 +83,7 @@ module SRAM(
       if (_GEN_4)
         awaddr_reg <= io_sram_awaddr;
     end
-    if (_r_next_state_T_14 & (|r_delay_cnt))
+    if (_r_next_state_T_6 & (|r_delay_cnt))
       r_delay_cnt <= r_delay_cnt - 32'h1;
     else if (_GEN_3)
       r_delay_cnt <= 32'h0;
@@ -100,10 +95,10 @@ module SRAM(
   Pmem pmem (
     .clk   (clock),
     .rst   (reset),
-    .ren   (_r_next_state_T_14 & ~(|r_delay_cnt) & _GEN),
+    .ren   (_r_next_state_T_6 & ~(|r_delay_cnt) & _GEN),
     .wen   (_GEN_0 & _GEN_1),
     .raddr
-      (~_r_next_state_T_14 | (|r_delay_cnt) | ~_GEN ? 32'h0 : araddr_reg & 32'hFFFFFFFC),
+      (~_r_next_state_T_6 | (|r_delay_cnt) | ~_GEN ? 32'h0 : araddr_reg & 32'hFFFFFFFC),
     .waddr (_GEN_2 ? awaddr_reg & 32'hFFFFFFFC : 32'h0),
     .wdata (_GEN_2 ? io_sram_wdata : 32'h0),
     .wmask (_GEN_2 ? io_sram_wstrb : 4'h0),

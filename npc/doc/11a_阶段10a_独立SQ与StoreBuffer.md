@@ -4,15 +4,15 @@
 
 - **理论目标**：理解 store/load 消歧和 store 提交解耦：load 不能读旧值，但 store 也不应该一直卡住 ROB head 等总线 B 响应。
 - **最小实现**：把 Stage8d 的 ROB-backed `StoreQueue` 改成独立状态表；普通 PMEM store 在 commit 时进入 4 项 `StoreBuffer`，之后由 buffer 后台按 FIFO 写总线。
-- **当前参考核**：**已完成 Stage10a**。`StoreQueue` 已不再读取 `rob.io.entries`，而是在 dispatch/wb/commit/flush 接口下维护自己的 store 表；StoreBuffer 已接入 commit、load forwarding 和 AXI 写出。
-- **后续扩展**：更大/可配置 SQ，SQ commit 数据直接驱动 StoreBuffer、store 合并、更大 StoreBuffer、DCache 写合并、非阻塞 cache/MLP。
+- **当前参考核**：Stage10a 的独立 `StoreQueue`、commit/load-forward/AXI StoreBuffer 均保留；到 10m StoreBuffer 已扩为 16 项，并能在 B response 同拍直接启动下一条 drain。正文中的 Stage10a 数字仍是本章历史快照。
+- **后续扩展**：10b/10i/10l 已补 DCache、1-entry MSHR、LQ/replay 与安全 MLP；10m 已把 StoreBuffer 扩为 16。仍可继续做 SQ commit 直出、store merge、write-combining 和多 MSHR。
 - **验收方式**：`./mill -i mychisel.compile`、`unit.OoOUnitTest`、cpu-tests smoke、`microbench mainargs=test`；重点比较 `Wait Store Commit`、`StoreBuffer Full/Enq/Drain/Fwd` 和 IPC。
 
 ---
 
 **前置**：阶段 8d 已跑通 load-store 消歧；阶段 9 已确认 `Wait Store Commit` 很高。  
 **目标**：让未提交 store 由独立 SQ 消歧，让已提交但未写完的 store 进入 StoreBuffer，减少 ROB/store/LSU 的耦合。  
-**仓库状态**：Stage10a 已接线并通过回归。
+**本章阶段快照**：Stage10a 已接线并通过回归。
 
 ---
 

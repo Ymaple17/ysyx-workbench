@@ -1,11 +1,11 @@
 # 阶段 10c：宽提交与多 CDB
 
-## 学习导览
+## 学习导航
 
 - **理论目标**：理解提交带宽和写回带宽为什么会限制 IPC；知道 2-wide commit、双 CDB、双唤醒、双 PRF 写口之间的关系。
 - **最小实现**：在不破坏现有 difftest 单提交接口的前提下，先把结果总线从单 CDB 扩成 2 CDB，让一拍最多两个 FU 结果进入 PRF/ROB/RS。
-- **当前参考核**：最新参考核已在 10f 把 `COMMIT_WIDTH` 提到 2；本章讲解的是 10c 当章先完成 `CDB_NUM=2`、仍保留 1-wide commit 的原因。
-- **后续扩展**：拓宽顶层 `commit_*` / C++ difftest 协议后，再做真正 2-wide retire；之后配套扩 ROB/RS/PRF、宽取指和更强 BPU。
+- **当前参考核**：`CDB_NUM=2` 和 `COMMIT_WIDTH=2` 均已保留；10k 已放宽 lane1 类型，10m 又加入第二整数 ALU，四类结果 `ALU0/LSU/ALU1/DIV` 由独立的 4→2 `WritebackArbiter` 按 ROB age 选择最老两项。本章仍按 10c 历史顺序解释为什么先扩写回再扩退休。
+- **后续扩展**：10f/10g/10m 已完成双退休、ROB/PRF 扩容、持续双取指与双整数 ALU；当前可继续研究更多 CDB、分类型 issue queue 和 banked PRF。
 - **验收方式**：`mychisel.compile`、`OoOUnitTest`、cpu-tests + difftest、`microbench(test)` 全部通过；记录 before/after IPC 和 CDB 计数器。
 
 ---
@@ -20,7 +20,7 @@
 
 这种瓶颈和“发射是否多宽”无关。只要结果不能及时写 PRF、清 Busy、唤醒 RS，后续指令就会继续等。
 
-本仓库当前还有一个现实约束：C++ difftest 只看单个提交事件：
+10c 入口基线还有一个现实约束：C++ difftest 只看单个提交事件：
 
 ```text
 io_commit_valid
@@ -34,7 +34,7 @@ io_arch_rdata[0..31]
 
 ---
 
-## 2. 当前参考核改了什么
+## 2. 10c 本章阶段快照改了什么
 
 ### 2.1 参数
 
@@ -45,7 +45,7 @@ io_arch_rdata[0..31]
 val COMMIT_WIDTH = 1
 val CDB_NUM = 2
 
-// 10f 后的最新参考核
+// 10f 阶段快照
 val COMMIT_WIDTH = 2
 ```
 
@@ -85,7 +85,7 @@ clr_en2/clr_addr2
 
 ### 2.4 ROB
 
-ROB 保持单提交，但写回端扩成两路：
+10c 阶段 ROB 保持单提交，但写回端扩成两路：
 
 ```scala
 wb_fire/wb_idx/wb_val/...
@@ -187,7 +187,7 @@ BPU commit update x2 或 slot0-only
 C++ difftest commit event x2
 ```
 
-当前参考核没有做这一步，是为了保持每个阶段都能 difftest 自测绿。
+10c 阶段没有做这一步，是为了保持该阶段 difftest 自测绿；10f/10k 后已完成。
 
 ---
 
@@ -222,7 +222,7 @@ scripts/stage9_regress.sh --mode full --tag stage10c_cdb2_store2_final \
 | Head Not Ready | 未记录同口径 | `580912` |
 | DCache hit rate | `72.06%` | `71.72%` |
 
-结论：双 CDB 已经把写回冲突清掉，但 IPC 只小幅提升。更大的墙在前端和提交/访存等待：`FQ Full=269899`、`FQ Empty=75113`、`Head Not Ready=580912`。后续 10d/10e 已经验证：宽取指基础设施可以接上，但在当时 1-wide commit/ROB16 下默认开启 slot1 会退化；预测器小幅升级能改善保留点，真正 2-wide retire 已在 10f 补上，更大后端容量仍是下一道硬墙。
+10c 阶段结论：双 CDB 已经把写回冲突清掉，但 IPC 只小幅提升。更大的墙在前端和提交/访存等待：`FQ Full=269899`、`FQ Empty=75113`、`Head Not Ready=580912`。后续 10d/10e 验证了当时 1-wide commit/ROB16 下直接开启 slot1 会退化；10f-10m 已补双退休、扩窗口、LQ/FTQ 与第二 ALU，不能再把这里的旧瓶颈描述成当前状态。
 
 ---
 
@@ -288,6 +288,7 @@ ysyx_25020039__DOT___core_io_dmem_rready
 - 10f 已完成：拓宽 C++ difftest commit 协议，并接入真正 `COMMIT_WIDTH=2` 的最小 2-wide retire。
 - 10f 已完成：为 commit 增加 slot0/slot1/commit2/slot1 block 计数器。
 - 10f 已完成：宽提交时处理 `arch_rf` / `arch_rat` 双更新，以及同一架构寄存器两次提交的优先级。
-- 后续 10g/10h：扩 ROB/RS/PRF/FQ 后重新评估持续 2-wide fetch；否则前端 slot1 容易被小窗口和 flush 压力吞掉收益。
+- 10g/10h 已完成：扩 ROB/PRF 后重新评估 wide fetch；10m 再以 FetchBuffer/FTQ、FU refill 和双整数 ALU形成最终保留点。
+- 当前 10m：`COMMIT_WIDTH=2`、`CDB_NUM=2`，`ALU0/LSU/ALU1/DIV` 经独立 4→2 oldest-result arbiter 写回；最终 IPC `0.6381`。
 
 下一章：[11d_阶段10d_宽取指与前端带宽.md](11d_阶段10d_宽取指与前端带宽.md)。

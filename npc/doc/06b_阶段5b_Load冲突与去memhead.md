@@ -2,15 +2,15 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：去掉 mem@head；load 与更老未提交 store 正确转发/等待；无总线死锁。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：参考实现已落地 — **单测 21/21 + cpu-tests 35/35 + microbench(test) PASS**。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：load 可在非 ROB head 执行；检查所有更老 store，完整覆盖则前递，地址未知/部分重叠则等待，无冲突才读总线。
+- **当前参考核**：本章 21/21、35/35 与 microbench PASS 是阶段快照；阶段 10m 已用独立 SQ + StoreBuffer + LQ/replay 模块化同一规则。
+- **后续扩展**：阶段 6 加 FetchQueue；内存侧随后在 8d/10a/10l 演进为独立 SQ、StoreBuffer 和 LoadQueue。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
 **前置**：5a（store@commit；dmem 读←LSU、写←commit SM）。  
 **目标**：去掉 mem@head；load 与更老未提交 store 正确转发/等待；无总线死锁。  
-**仓库状态**：参考实现已落地 — **单测 21/21 + cpu-tests 35/35 + microbench(test) PASS**。
+**本章阶段快照**：参考实现已落地 — **单测 21/21 + cpu-tests 35/35 + microbench(test) PASS**。
 
 **铁律**：放开访存发射后，必须按 **程序序** 查更老 store；`!addr_ready` 的更老 store 在 **RS** 挡 load，禁止进 LSU 空等（单 FU 死锁）。
 
@@ -97,7 +97,7 @@ canIssue(load) := ready && !olderCtrl && !olderStPend
   fullCover = (load_mask ⊆ store_mask) → stFwdHits
   overlap && !fullCover → stWaitHits
 
-选程序序最老的 fwd hit 作为转发源
+选“最年轻的 older store”（所有命中项里 age 最大、离 load 最近者）作为转发源
 st_fwd_wait = any wait
 st_fwd_valid = any fwd && !wait
 ```
@@ -157,7 +157,7 @@ cm_writing → 关新 AR（即使另一条 load ready）
 1. 确认 5a：`addr_ready`/`mem_wdata`、commit SM、LSU 不写。  
 2. core 驱动 `rs.rob_st_pending`。  
 3. RS：删 mem@head；加 load 的 `olderStPend`。  
-4. core：实现 `stFwdHits` / `stWaitHits` / 最老优先；接 `lsu.st_fwd_*`。  
+4. core：实现 `stFwdHits` / `stWaitHits` / 最年轻 older 优先；接 `lsu.st_fwd_*`。  
 5. LSU：`can_issue_load` / `fwd_done` / `fwd_ext`。  
 6. 自建：sw+lw、中间插 div、sb/lb 部分重叠、wrong-path store。  
 7. 全量 cpu-tests + microbench(test)。
@@ -171,7 +171,7 @@ cm_writing → 关新 AR（即使另一条 load ready）
 | 在 LSU 等 `!addr_ready` | 单 FU 死锁 | RS `rob_st_pending` 挡 |
 | 转发漏扩展 | `lbu` 得 `0xffffff80` | `fwd_ext` 按 `mem_rd` |
 | 部分重叠当全字 fwd | 数据错 | `fullCover` vs `overlap` |
-| 选年轻 store 转发 | 序错 | 最老 `stFwdAge` |
+| 选最老的匹配 store | 连续同地址 store 时读到旧值 | 在全部 older 命中中选年龄最大的项，即离 load 最近的 store |
 | 年龄用指针直比 | 环绕错 | `robAge` 相对 head |
 | 去 mem@head 忘 olderCtrl | 越过未决分支 | 保留 jump 门控 |
 | wait 时仍拉 arvalid | 占总线 | `can_issue_load` 含 `!wait` |

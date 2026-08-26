@@ -2,15 +2,15 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：固定一个可复现 baseline，把 IPC、stall、分支、访存、提交等指标记录下来，后续优化只和这个基线比较。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：Stage9a 计数器已接线；当前 microbench(test) baseline IPC 约 `0.4119`。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：固定 microbench(test) 和构建参数，接入 cycles/commits、前端、BPU、CDB、ROB head、访存等待计数并输出可机器解析摘要。
+- **当前参考核**：Stage9a 的 IPC `0.4119` 是阶段 8 参考核基线；同一 PerfMonitor 体系已扩展到 10m，最终 IPC `0.6381`。
+- **后续扩展**：9b 用计数器区分前端供给、预测错误和后端 head wait；不先凭感觉改结构。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
 **前置**：阶段 8 参考核能稳定通过 difftest / cpu-tests / microbench(test)。  
 **目标**：固定一个可复现 baseline，把 IPC、stall、分支、访存、提交等指标记录下来，后续优化只和这个基线比较。  
-**仓库状态**：Stage9a 计数器已接线；当前 microbench(test) baseline IPC 约 `0.4119`。
+**本章阶段快照**：Stage9a 计数器已接线；当章 microbench(test) baseline IPC 约 `0.4119`。
 
 ---
 
@@ -61,9 +61,9 @@ when(fl_stall)       { flEmptyCnt := flEmptyCnt + 1.U }
 
 ---
 
-## 3. 当前参考核
+## 3. Stage9a 本章基线
 
-当前阶段 8 参考核已知 microbench(test) 结果：
+Stage9a 入口的阶段 8 参考核 microbench(test) 结果：
 
 - `MicroBench PASS`
 - `npc HIT GOOD TRAP at pc=0x800055f0`
@@ -95,9 +95,9 @@ Stage9a 接线后的 baseline：
 初步判断：
 
 - `FQ Full` 和 BPU miss 很高，9b 应优先看前端 backpressure、redirect、BPU 更新/恢复节奏。
-- `CDB conflicts` 不低，但 `CDB blocked results = 0`，说明当前单 CDB 有仲裁压力，不过还不是首要吞吐阻塞点。
+- `CDB conflicts` 不低，但 `CDB blocked results = 0`，说明 Stage9a 当时的单 CDB 有仲裁压力，不过还不是首要吞吐阻塞点；当前参考核已是 2 CDB。
 - `wait store commit` 很高，说明原顺序 store 提交通路确实会拖住 ROB head；这给阶段 10a 的 store buffer 提供了证据，但阶段 9 先记录，不马上动结构。
-- `SQ wait cycles = 0`，说明当前 microbench(test) 下未知地址 store 几乎没有挡住 load；8d 的 StoreQueue 主要在少量 forward 上发挥作用。
+- `SQ wait cycles = 0`，说明 Stage9a workload 下未知地址 store 几乎没有挡住 load；8d 的 StoreQueue 主要在少量 forward 上发挥作用。
 
 ---
 

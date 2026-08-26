@@ -68,11 +68,12 @@ class DIV extends Module{
     }.elsewhen(state === s_BUSY) {
         when(cnt =/= 0.U) {
             // restoring：先移位再与 b_abs 比较
-            val shifted = Cat(rem(30, 0), a_abs(cnt - 1.U))
+            val bit_idx = (cnt - 1.U)(4, 0)
+            val shifted = Cat(rem(30, 0), a_abs(bit_idx))
             rem := shifted
             when(shifted >= b_abs) {
                 rem := shifted - b_abs
-                quo := quo | (1.U << (cnt - 1.U))
+                quo := quo | (1.U << bit_idx)
             }
             cnt := cnt - 1.U
         }

@@ -2,15 +2,15 @@
 
 ## 学习导航
 - **理论目标**：本章先理解：仿真结束 / trap 只在 **ROB head 提交** ebreak 时触发；wrong-path ebreak 永不 `sim_exit`。
-- **最小实现**：先做能通过 difftest 的最小闭环，不把后续扩展提前塞进本章。
-- **当前参考核**：已落地（cpu-tests 靠 ebreak 收尾，35/35）。
-- **后续扩展**：正文里的选做、进阶或阶段 10 内容只作为方向，等最小实现和回归稳定后再进入。
+- **最小实现**：只在 ebreak 成为 ROB head 且真正提交时产生 `sim_exit`；被 flush 的 ebreak 不得结束仿真。
+- **当前参考核**：该规则已被阶段 10m 继承；正文 35/35 是本章阶段快照，最终 cpu-tests 口径见 README。
+- **后续扩展**：4e 用同样的“head 锁存、下一拍 redirect”模式实现 mret。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 
 ---
 **前置**：4c 绿（异常/ecall 已认 ROB head commit）。  
 **目标**：仿真结束 / trap 只在 **ROB head 提交** ebreak 时触发；wrong-path ebreak 永不 `sim_exit`。  
-**仓库状态**：已落地（cpu-tests 靠 ebreak 收尾，35/35）。
+**本章阶段快照**：已落地（cpu-tests 靠 ebreak 收尾，35/35）。
 
 **铁律**：ebreak 是架构可见的「程序结束/陷入」事件，必须挂在 `commit_fire` 上，不能挂在 ID 译码或 WBU valid。
 

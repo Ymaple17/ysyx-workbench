@@ -40,6 +40,8 @@ class ROBEntry extends Bundle {
   val bp_taken      = Bool()
   val bp_target     = UInt(32.W)
   val bp_index      = UInt(log2Ceil(BHT_SIZE).W)
+  val ftq_idx       = UInt(OoOParams.FTQ_PTR_W.W)
+  val ftq_generation = UInt(OoOParams.FTQ_GEN_W.W)
   val cp_idx        = UInt(log2Ceil(OoOParams.CP_DEPTH).W)
   val actual_taken  = Bool()
   val actual_target = UInt(32.W)

@@ -11,6 +11,8 @@ module IDU(
                 io_in_bits_bp_taken,
   input  [31:0] io_in_bits_bp_target,
   input  [9:0]  io_in_bits_bp_index,
+  input  [3:0]  io_in_bits_ftq_idx,
+  input  [7:0]  io_in_bits_ftq_generation,
   input         io_out_ready,
   output        io_out_valid,
   output [1:0]  io_out_bits_signals_exu_alu_srcA,
@@ -37,6 +39,8 @@ module IDU(
                 io_out_bits_bp_taken,
   output [31:0] io_out_bits_bp_target,
   output [9:0]  io_out_bits_bp_index,
+  output [3:0]  io_out_bits_ftq_idx,
+  output [7:0]  io_out_bits_ftq_generation,
   output [31:0] io_out_bits_inst,
   output [11:0] io_csr_raddr,
   input  [31:0] io_csr_rdata,
@@ -158,6 +162,8 @@ module IDU(
   assign io_out_bits_bp_taken = io_in_bits_bp_taken;
   assign io_out_bits_bp_target = io_in_bits_bp_target;
   assign io_out_bits_bp_index = io_in_bits_bp_index;
+  assign io_out_bits_ftq_idx = io_in_bits_ftq_idx;
+  assign io_out_bits_ftq_generation = io_in_bits_ftq_generation;
   assign io_out_bits_inst = io_in_bits_inst;
   assign io_csr_raddr = io_in_bits_inst[31:20];
   assign io_is_fencei = io_is_fencei_0;

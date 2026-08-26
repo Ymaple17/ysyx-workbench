@@ -35,6 +35,8 @@ class RSEntry extends Bundle {
   val bp_taken   = Bool()
   val bp_target  = UInt(32.W)
   val bp_index   = UInt(log2Ceil(BHT_SIZE).W)
+  val ftq_idx    = UInt(OoOParams.FTQ_PTR_W.W)
+  val ftq_generation = UInt(OoOParams.FTQ_GEN_W.W)
   val exu_alu_srcA    = UInt(2.W)
   val exu_alu_srcB    = UInt(2.W)
   val exu_alu_control = UInt(5.W)
@@ -67,12 +69,19 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     val issue_alu_valid = Output(Bool())
     val issue_alu_bits  = Output(new RSEntry)
     val issue_alu_idx   = Output(UInt(log2Ceil(n).W))
+    val issue_alu_fire  = Input(Bool())
+    val issue_alu1_valid = Output(Bool())
+    val issue_alu1_bits  = Output(new RSEntry)
+    val issue_alu1_idx   = Output(UInt(log2Ceil(n).W))
+    val issue_alu1_fire  = Input(Bool())
     val issue_div_valid = Output(Bool())
     val issue_div_bits  = Output(new RSEntry)
     val issue_div_idx   = Output(UInt(log2Ceil(n).W))
+    val issue_div_fire  = Input(Bool())
     val issue_lsu_valid = Output(Bool())
     val issue_lsu_bits  = Output(new RSEntry)
     val issue_lsu_idx   = Output(UInt(log2Ceil(n).W))
+    val issue_lsu_fire  = Input(Bool())
     val issue_valid = Output(Bool())
     val issue_bits  = Output(new RSEntry)
     val issue_idx   = Output(UInt(log2Ceil(n).W))
@@ -155,10 +164,17 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
   }
 
   val aluOH = oldestOH(VecInit((0 until n).map(i => canIssue(i) && !isLoad(i) && !isMulDiv(i))))
+  val alu1Eligible = VecInit((0 until n).map { i =>
+    canIssue(i) && !isLoad(i) && !isMulDiv(i) && !aluOH(i) &&
+      entries(i).exu_jump === JUMP_NONE && !entries(i).wbu_csr_write &&
+      !entries(i).is_ebreak && !entries(i).is_fencei && !entries(i).state.state
+  })
+  val alu1OH = oldestOH(alu1Eligible)
   val divOH = oldestOH(VecInit((0 until n).map(i => canIssue(i) && isMulDiv(i))))
   val lsuOH = oldestOH(VecInit((0 until n).map(i => canIssue(i) && isLoad(i))))
 
   val aluIdx = PriorityEncoder(aluOH.asUInt)
+  val alu1Idx = PriorityEncoder(alu1OH.asUInt)
   val divIdx = PriorityEncoder(divOH.asUInt)
   val lsuIdx = PriorityEncoder(lsuOH.asUInt)
   val legacyOH = oldestOH(VecInit((0 until n).map(i => canIssue(i))))
@@ -167,6 +183,9 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
   io.issue_alu_valid := aluOH.asUInt.orR && !io.flush
   io.issue_alu_bits  := entries(aluIdx)
   io.issue_alu_idx   := aluIdx
+  io.issue_alu1_valid := alu1OH.asUInt.orR && !io.flush
+  io.issue_alu1_bits  := entries(alu1Idx)
+  io.issue_alu1_idx   := alu1Idx
   io.issue_div_valid := divOH.asUInt.orR && !io.flush
   io.issue_div_bits  := entries(divIdx)
   io.issue_div_idx   := divIdx
@@ -231,6 +250,18 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
       when(freeByRob(i)) {
         entries(i).valid := false.B
       }
+    }
+    when(io.issue_lsu_fire) {
+      entries(io.issue_lsu_idx).issued := true.B
+    }
+    when(io.issue_alu_fire) {
+      entries(io.issue_alu_idx).issued := true.B
+    }
+    when(io.issue_alu1_fire) {
+      entries(io.issue_alu1_idx).issued := true.B
+    }
+    when(io.issue_div_fire) {
+      entries(io.issue_div_idx).issued := true.B
     }
     when(io.issue_fire) {
       entries(io.issue_idx).issued := true.B

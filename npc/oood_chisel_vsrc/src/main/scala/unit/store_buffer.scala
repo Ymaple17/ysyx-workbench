@@ -15,6 +15,7 @@ class StoreBufferEntry extends Bundle {
 
 class StoreBufferIO(size: Int) extends Bundle {
   val enq = Flipped(Decoupled(new StoreBufferEntry))
+  val enq1 = Flipped(Decoupled(new StoreBufferEntry))
 
   val ld_valid  = Input(Bool())
   val ld_addr   = Input(UInt(32.W))
@@ -33,6 +34,7 @@ class StoreBufferIO(size: Int) extends Bundle {
   val full  = Output(Bool())
   val busy  = Output(Bool())
   val count = Output(UInt(log2Ceil(size + 1).W))
+  val free = Output(UInt(log2Ceil(size + 1).W))
 }
 
 class StoreBuffer(size: Int = OoOParams.STORE_BUFFER_SIZE) extends Module {
@@ -58,20 +60,33 @@ class StoreBuffer(size: Int = OoOParams.STORE_BUFFER_SIZE) extends Module {
 
   val bFire = io.dmem.bvalid && io.dmem.bready
   val deqFire = (state === sResp) && bFire
-  io.enq.ready := !io.full || deqFire
+  val available = size.U - count + deqFire.asUInt
+  val enqCount = PopCount(Seq(io.enq.valid, io.enq1.valid))
+  val batchReady = enqCount <= available
+  io.enq.ready := batchReady
+  io.enq1.ready := batchReady
+  io.free := available
   io.deq_valid := deqFire
   io.deq_addr := entries(head).addr
 
-  when(io.enq.fire) {
+  val doEnq0 = io.enq.valid && batchReady
+  val doEnq1 = io.enq1.valid && batchReady
+  val tail1 = (tail + doEnq0.asUInt)(ptrW - 1, 0)
+  when(doEnq0) {
     entries(tail) := io.enq.bits
-    tail := tail + 1.U
+  }
+  when(doEnq1) {
+    entries(tail1) := io.enq1.bits
+  }
+  when(doEnq0 || doEnq1) {
+    tail := tail + PopCount(Seq(doEnq0, doEnq1))
   }
 
   when(deqFire) {
     head := head + 1.U
   }
 
-  count := count + io.enq.fire.asUInt - deqFire.asUInt
+  count := count + PopCount(Seq(doEnq0, doEnq1)) - deqFire.asUInt
 
   val headEntry = entries(head)
   val headOff = headEntry.addr(1, 0)
@@ -99,7 +114,8 @@ class StoreBuffer(size: Int = OoOParams.STORE_BUFFER_SIZE) extends Module {
     }
   }.elsewhen(state === sResp) {
     when(bFire) {
-      state := sIdle
+      val remaining = count + PopCount(Seq(doEnq0, doEnq1)) - 1.U
+      state := Mux(remaining =/= 0.U && !io.bus_busy, sWrite, sIdle)
       awDone := false.B
       wDone := false.B
     }

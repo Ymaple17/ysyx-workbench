@@ -7,6 +7,11 @@ module StoreBuffer(
   input  [31:0] io_enq_bits_addr,
                 io_enq_bits_data,
   input  [3:0]  io_enq_bits_mask,
+  output        io_enq1_ready,
+  input         io_enq1_valid,
+  input  [31:0] io_enq1_bits_addr,
+                io_enq1_bits_data,
+  input  [3:0]  io_enq1_bits_mask,
   input         io_ld_valid,
   input  [31:0] io_ld_addr,
   input  [2:0]  io_ld_mem_rd,
@@ -26,7 +31,8 @@ module StoreBuffer(
                 io_deq_valid,
   output [31:0] io_deq_addr,
   output        io_empty,
-                io_busy
+                io_busy,
+  output [4:0]  io_free
 );
 
   wire        io_dmem_bready_0;
@@ -54,653 +60,2092 @@ module StoreBuffer(
   reg  [31:0] entries_7_addr;
   reg  [31:0] entries_7_data;
   reg  [3:0]  entries_7_mask;
-  reg  [2:0]  idx;
-  reg  [2:0]  tail;
-  reg  [3:0]  count;
+  reg  [31:0] entries_8_addr;
+  reg  [31:0] entries_8_data;
+  reg  [3:0]  entries_8_mask;
+  reg  [31:0] entries_9_addr;
+  reg  [31:0] entries_9_data;
+  reg  [3:0]  entries_9_mask;
+  reg  [31:0] entries_10_addr;
+  reg  [31:0] entries_10_data;
+  reg  [3:0]  entries_10_mask;
+  reg  [31:0] entries_11_addr;
+  reg  [31:0] entries_11_data;
+  reg  [3:0]  entries_11_mask;
+  reg  [31:0] entries_12_addr;
+  reg  [31:0] entries_12_data;
+  reg  [3:0]  entries_12_mask;
+  reg  [31:0] entries_13_addr;
+  reg  [31:0] entries_13_data;
+  reg  [3:0]  entries_13_mask;
+  reg  [31:0] entries_14_addr;
+  reg  [31:0] entries_14_data;
+  reg  [3:0]  entries_14_mask;
+  reg  [31:0] entries_15_addr;
+  reg  [31:0] entries_15_data;
+  reg  [3:0]  entries_15_mask;
+  reg  [3:0]  idx;
+  reg  [3:0]  tail;
+  reg  [4:0]  count;
   reg  [1:0]  state;
   reg         awDone;
   reg         wDone;
-  wire        io_empty_0 = count == 4'h0;
+  wire        io_empty_0 = count == 5'h0;
   wire        bFire = io_dmem_bvalid & io_dmem_bready_0;
   assign io_dmem_bready_0 = state == 2'h2;
-  wire        io_enq_ready_0 = count != 4'h8 | bFire;
+  wire [4:0]  _GEN = {4'h0, bFire};
+  wire [4:0]  _available_T_2 = 5'h10 - count + _GEN;
+  wire        batchReady =
+    {3'h0, {1'h0, io_enq_valid} + {1'h0, io_enq1_valid}} <= _available_T_2;
   reg  [31:0] casez_tmp;
   always_comb begin
     casez (idx)
-      3'b000:
+      4'b0000:
         casez_tmp = entries_0_addr;
-      3'b001:
+      4'b0001:
         casez_tmp = entries_1_addr;
-      3'b010:
+      4'b0010:
         casez_tmp = entries_2_addr;
-      3'b011:
+      4'b0011:
         casez_tmp = entries_3_addr;
-      3'b100:
+      4'b0100:
         casez_tmp = entries_4_addr;
-      3'b101:
+      4'b0101:
         casez_tmp = entries_5_addr;
-      3'b110:
+      4'b0110:
         casez_tmp = entries_6_addr;
-      default:
+      4'b0111:
         casez_tmp = entries_7_addr;
+      4'b1000:
+        casez_tmp = entries_8_addr;
+      4'b1001:
+        casez_tmp = entries_9_addr;
+      4'b1010:
+        casez_tmp = entries_10_addr;
+      4'b1011:
+        casez_tmp = entries_11_addr;
+      4'b1100:
+        casez_tmp = entries_12_addr;
+      4'b1101:
+        casez_tmp = entries_13_addr;
+      4'b1110:
+        casez_tmp = entries_14_addr;
+      default:
+        casez_tmp = entries_15_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_0;
   always_comb begin
     casez (idx)
-      3'b000:
+      4'b0000:
         casez_tmp_0 = entries_0_data;
-      3'b001:
+      4'b0001:
         casez_tmp_0 = entries_1_data;
-      3'b010:
+      4'b0010:
         casez_tmp_0 = entries_2_data;
-      3'b011:
+      4'b0011:
         casez_tmp_0 = entries_3_data;
-      3'b100:
+      4'b0100:
         casez_tmp_0 = entries_4_data;
-      3'b101:
+      4'b0101:
         casez_tmp_0 = entries_5_data;
-      3'b110:
+      4'b0110:
         casez_tmp_0 = entries_6_data;
-      default:
+      4'b0111:
         casez_tmp_0 = entries_7_data;
+      4'b1000:
+        casez_tmp_0 = entries_8_data;
+      4'b1001:
+        casez_tmp_0 = entries_9_data;
+      4'b1010:
+        casez_tmp_0 = entries_10_data;
+      4'b1011:
+        casez_tmp_0 = entries_11_data;
+      4'b1100:
+        casez_tmp_0 = entries_12_data;
+      4'b1101:
+        casez_tmp_0 = entries_13_data;
+      4'b1110:
+        casez_tmp_0 = entries_14_data;
+      default:
+        casez_tmp_0 = entries_15_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_1;
   always_comb begin
     casez (idx)
-      3'b000:
+      4'b0000:
         casez_tmp_1 = entries_0_mask;
-      3'b001:
+      4'b0001:
         casez_tmp_1 = entries_1_mask;
-      3'b010:
+      4'b0010:
         casez_tmp_1 = entries_2_mask;
-      3'b011:
+      4'b0011:
         casez_tmp_1 = entries_3_mask;
-      3'b100:
+      4'b0100:
         casez_tmp_1 = entries_4_mask;
-      3'b101:
+      4'b0101:
         casez_tmp_1 = entries_5_mask;
-      3'b110:
+      4'b0110:
         casez_tmp_1 = entries_6_mask;
-      default:
+      4'b0111:
         casez_tmp_1 = entries_7_mask;
+      4'b1000:
+        casez_tmp_1 = entries_8_mask;
+      4'b1001:
+        casez_tmp_1 = entries_9_mask;
+      4'b1010:
+        casez_tmp_1 = entries_10_mask;
+      4'b1011:
+        casez_tmp_1 = entries_11_mask;
+      4'b1100:
+        casez_tmp_1 = entries_12_mask;
+      4'b1101:
+        casez_tmp_1 = entries_13_mask;
+      4'b1110:
+        casez_tmp_1 = entries_14_mask;
+      default:
+        casez_tmp_1 = entries_15_mask;
     endcase
   end // always_comb
-  wire [6:0]  _GEN = {3'h0, casez_tmp_1};
-  wire [6:0]  _headMask_T = _GEN << casez_tmp[1:0];
-  wire [62:0] _GEN_0 = {31'h0, casez_tmp_0};
-  wire [62:0] headData = _GEN_0 << {58'h0, casez_tmp[1:0], 3'h0};
+  wire [6:0]  _GEN_0 = {3'h0, casez_tmp_1};
+  wire [6:0]  _headMask_T = _GEN_0 << casez_tmp[1:0];
+  wire [62:0] _GEN_1 = {31'h0, casez_tmp_0};
+  wire [62:0] headData = _GEN_1 << {58'h0, casez_tmp[1:0], 3'h0};
   wire        _io_dmem_wvalid_T = state == 2'h1;
   wire        io_dmem_awvalid_0 = _io_dmem_wvalid_T & ~awDone;
   wire        io_dmem_wvalid_0 = _io_dmem_wvalid_T & ~wDone;
   wire        sameWord = casez_tmp[31:2] == io_ld_addr[31:2];
-  wire [6:0]  _storeMask_T_1 = _GEN << casez_tmp[1:0];
-  wire        _loadMask_base_T_65 = io_ld_mem_rd == 3'h2;
-  wire        _loadMask_base_T_67 = io_ld_mem_rd == 3'h3;
-  wire        _loadMask_base_T_69 = io_ld_mem_rd == 3'h4;
-  wire        _loadMask_base_T_71 = io_ld_mem_rd == 3'h5;
-  wire [6:0]  _GEN_1 = {5'h0, io_ld_addr[1:0]};
+  wire [6:0]  _storeMask_T_1 = _GEN_0 << casez_tmp[1:0];
+  wire        _loadMask_base_T_137 = io_ld_mem_rd == 3'h2;
+  wire        _loadMask_base_T_139 = io_ld_mem_rd == 3'h3;
+  wire        _loadMask_base_T_141 = io_ld_mem_rd == 3'h4;
+  wire        _loadMask_base_T_143 = io_ld_mem_rd == 3'h5;
+  wire [6:0]  _GEN_2 = {5'h0, io_ld_addr[1:0]};
   wire [6:0]  _loadMask_T =
     {3'h0,
-     _loadMask_base_T_71
+     _loadMask_base_T_143
        ? 4'h3
-       : _loadMask_base_T_69
+       : _loadMask_base_T_141
            ? 4'h1
-           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
   wire [3:0]  _overlap_T = _loadMask_T[3:0] & _storeMask_T_1[3:0];
   wire        _fwdHits_0_T = io_ld_valid & (|count);
   wire        fwdHits_0 = _fwdHits_0_T & sameWord & _overlap_T == _loadMask_T[3:0];
-  wire [62:0] _GEN_2 = {58'h0, io_ld_addr[1:0], 3'h0};
-  wire [62:0] _fwdData_0_T_4 = _GEN_0 << {58'h0, casez_tmp[1:0], 3'h0} >> _GEN_2;
-  wire [2:0]  _idx_T_2 = idx + 3'h1;
+  wire [62:0] _GEN_3 = {58'h0, io_ld_addr[1:0], 3'h0};
+  wire [62:0] _fwdData_0_T_4 = _GEN_1 << {58'h0, casez_tmp[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_2 = idx + 4'h1;
   reg  [31:0] casez_tmp_2;
   always_comb begin
     casez (_idx_T_2)
-      3'b000:
+      4'b0000:
         casez_tmp_2 = entries_0_addr;
-      3'b001:
+      4'b0001:
         casez_tmp_2 = entries_1_addr;
-      3'b010:
+      4'b0010:
         casez_tmp_2 = entries_2_addr;
-      3'b011:
+      4'b0011:
         casez_tmp_2 = entries_3_addr;
-      3'b100:
+      4'b0100:
         casez_tmp_2 = entries_4_addr;
-      3'b101:
+      4'b0101:
         casez_tmp_2 = entries_5_addr;
-      3'b110:
+      4'b0110:
         casez_tmp_2 = entries_6_addr;
-      default:
+      4'b0111:
         casez_tmp_2 = entries_7_addr;
+      4'b1000:
+        casez_tmp_2 = entries_8_addr;
+      4'b1001:
+        casez_tmp_2 = entries_9_addr;
+      4'b1010:
+        casez_tmp_2 = entries_10_addr;
+      4'b1011:
+        casez_tmp_2 = entries_11_addr;
+      4'b1100:
+        casez_tmp_2 = entries_12_addr;
+      4'b1101:
+        casez_tmp_2 = entries_13_addr;
+      4'b1110:
+        casez_tmp_2 = entries_14_addr;
+      default:
+        casez_tmp_2 = entries_15_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_3;
   always_comb begin
     casez (_idx_T_2)
-      3'b000:
+      4'b0000:
         casez_tmp_3 = entries_0_data;
-      3'b001:
+      4'b0001:
         casez_tmp_3 = entries_1_data;
-      3'b010:
+      4'b0010:
         casez_tmp_3 = entries_2_data;
-      3'b011:
+      4'b0011:
         casez_tmp_3 = entries_3_data;
-      3'b100:
+      4'b0100:
         casez_tmp_3 = entries_4_data;
-      3'b101:
+      4'b0101:
         casez_tmp_3 = entries_5_data;
-      3'b110:
+      4'b0110:
         casez_tmp_3 = entries_6_data;
-      default:
+      4'b0111:
         casez_tmp_3 = entries_7_data;
+      4'b1000:
+        casez_tmp_3 = entries_8_data;
+      4'b1001:
+        casez_tmp_3 = entries_9_data;
+      4'b1010:
+        casez_tmp_3 = entries_10_data;
+      4'b1011:
+        casez_tmp_3 = entries_11_data;
+      4'b1100:
+        casez_tmp_3 = entries_12_data;
+      4'b1101:
+        casez_tmp_3 = entries_13_data;
+      4'b1110:
+        casez_tmp_3 = entries_14_data;
+      default:
+        casez_tmp_3 = entries_15_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_4;
   always_comb begin
     casez (_idx_T_2)
-      3'b000:
+      4'b0000:
         casez_tmp_4 = entries_0_mask;
-      3'b001:
+      4'b0001:
         casez_tmp_4 = entries_1_mask;
-      3'b010:
+      4'b0010:
         casez_tmp_4 = entries_2_mask;
-      3'b011:
+      4'b0011:
         casez_tmp_4 = entries_3_mask;
-      3'b100:
+      4'b0100:
         casez_tmp_4 = entries_4_mask;
-      3'b101:
+      4'b0101:
         casez_tmp_4 = entries_5_mask;
-      3'b110:
+      4'b0110:
         casez_tmp_4 = entries_6_mask;
-      default:
+      4'b0111:
         casez_tmp_4 = entries_7_mask;
+      4'b1000:
+        casez_tmp_4 = entries_8_mask;
+      4'b1001:
+        casez_tmp_4 = entries_9_mask;
+      4'b1010:
+        casez_tmp_4 = entries_10_mask;
+      4'b1011:
+        casez_tmp_4 = entries_11_mask;
+      4'b1100:
+        casez_tmp_4 = entries_12_mask;
+      4'b1101:
+        casez_tmp_4 = entries_13_mask;
+      4'b1110:
+        casez_tmp_4 = entries_14_mask;
+      default:
+        casez_tmp_4 = entries_15_mask;
     endcase
   end // always_comb
   wire        sameWord_1 = casez_tmp_2[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_3 = {3'h0, casez_tmp_4} << casez_tmp_2[1:0];
   wire [6:0]  _loadMask_T_1 =
     {3'h0,
-     _loadMask_base_T_71
+     _loadMask_base_T_143
        ? 4'h3
-       : _loadMask_base_T_69
+       : _loadMask_base_T_141
            ? 4'h1
-           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
   wire [3:0]  _overlap_T_1 = _loadMask_T_1[3:0] & _storeMask_T_3[3:0];
-  wire        _fwdHits_1_T = io_ld_valid & (|(count[3:1]));
+  wire        _fwdHits_1_T = io_ld_valid & (|(count[4:1]));
   wire        fwdHits_1 = _fwdHits_1_T & sameWord_1 & _overlap_T_1 == _loadMask_T_1[3:0];
   wire [62:0] _fwdData_1_T_4 =
-    {31'h0, casez_tmp_3} << {58'h0, casez_tmp_2[1:0], 3'h0} >> _GEN_2;
-  wire [2:0]  _idx_T_4 = idx + 3'h2;
+    {31'h0, casez_tmp_3} << {58'h0, casez_tmp_2[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_4 = idx + 4'h2;
   reg  [31:0] casez_tmp_5;
   always_comb begin
     casez (_idx_T_4)
-      3'b000:
+      4'b0000:
         casez_tmp_5 = entries_0_addr;
-      3'b001:
+      4'b0001:
         casez_tmp_5 = entries_1_addr;
-      3'b010:
+      4'b0010:
         casez_tmp_5 = entries_2_addr;
-      3'b011:
+      4'b0011:
         casez_tmp_5 = entries_3_addr;
-      3'b100:
+      4'b0100:
         casez_tmp_5 = entries_4_addr;
-      3'b101:
+      4'b0101:
         casez_tmp_5 = entries_5_addr;
-      3'b110:
+      4'b0110:
         casez_tmp_5 = entries_6_addr;
-      default:
+      4'b0111:
         casez_tmp_5 = entries_7_addr;
+      4'b1000:
+        casez_tmp_5 = entries_8_addr;
+      4'b1001:
+        casez_tmp_5 = entries_9_addr;
+      4'b1010:
+        casez_tmp_5 = entries_10_addr;
+      4'b1011:
+        casez_tmp_5 = entries_11_addr;
+      4'b1100:
+        casez_tmp_5 = entries_12_addr;
+      4'b1101:
+        casez_tmp_5 = entries_13_addr;
+      4'b1110:
+        casez_tmp_5 = entries_14_addr;
+      default:
+        casez_tmp_5 = entries_15_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_6;
   always_comb begin
     casez (_idx_T_4)
-      3'b000:
+      4'b0000:
         casez_tmp_6 = entries_0_data;
-      3'b001:
+      4'b0001:
         casez_tmp_6 = entries_1_data;
-      3'b010:
+      4'b0010:
         casez_tmp_6 = entries_2_data;
-      3'b011:
+      4'b0011:
         casez_tmp_6 = entries_3_data;
-      3'b100:
+      4'b0100:
         casez_tmp_6 = entries_4_data;
-      3'b101:
+      4'b0101:
         casez_tmp_6 = entries_5_data;
-      3'b110:
+      4'b0110:
         casez_tmp_6 = entries_6_data;
-      default:
+      4'b0111:
         casez_tmp_6 = entries_7_data;
+      4'b1000:
+        casez_tmp_6 = entries_8_data;
+      4'b1001:
+        casez_tmp_6 = entries_9_data;
+      4'b1010:
+        casez_tmp_6 = entries_10_data;
+      4'b1011:
+        casez_tmp_6 = entries_11_data;
+      4'b1100:
+        casez_tmp_6 = entries_12_data;
+      4'b1101:
+        casez_tmp_6 = entries_13_data;
+      4'b1110:
+        casez_tmp_6 = entries_14_data;
+      default:
+        casez_tmp_6 = entries_15_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_7;
   always_comb begin
     casez (_idx_T_4)
-      3'b000:
+      4'b0000:
         casez_tmp_7 = entries_0_mask;
-      3'b001:
+      4'b0001:
         casez_tmp_7 = entries_1_mask;
-      3'b010:
+      4'b0010:
         casez_tmp_7 = entries_2_mask;
-      3'b011:
+      4'b0011:
         casez_tmp_7 = entries_3_mask;
-      3'b100:
+      4'b0100:
         casez_tmp_7 = entries_4_mask;
-      3'b101:
+      4'b0101:
         casez_tmp_7 = entries_5_mask;
-      3'b110:
+      4'b0110:
         casez_tmp_7 = entries_6_mask;
-      default:
+      4'b0111:
         casez_tmp_7 = entries_7_mask;
+      4'b1000:
+        casez_tmp_7 = entries_8_mask;
+      4'b1001:
+        casez_tmp_7 = entries_9_mask;
+      4'b1010:
+        casez_tmp_7 = entries_10_mask;
+      4'b1011:
+        casez_tmp_7 = entries_11_mask;
+      4'b1100:
+        casez_tmp_7 = entries_12_mask;
+      4'b1101:
+        casez_tmp_7 = entries_13_mask;
+      4'b1110:
+        casez_tmp_7 = entries_14_mask;
+      default:
+        casez_tmp_7 = entries_15_mask;
     endcase
   end // always_comb
   wire        sameWord_2 = casez_tmp_5[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_5 = {3'h0, casez_tmp_7} << casez_tmp_5[1:0];
   wire [6:0]  _loadMask_T_2 =
     {3'h0,
-     _loadMask_base_T_71
+     _loadMask_base_T_143
        ? 4'h3
-       : _loadMask_base_T_69
+       : _loadMask_base_T_141
            ? 4'h1
-           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
   wire [3:0]  _overlap_T_2 = _loadMask_T_2[3:0] & _storeMask_T_5[3:0];
-  wire        _fwdHits_2_T = io_ld_valid & count > 4'h2;
+  wire        _fwdHits_2_T = io_ld_valid & count > 5'h2;
   wire        fwdHits_2 = _fwdHits_2_T & sameWord_2 & _overlap_T_2 == _loadMask_T_2[3:0];
   wire [62:0] _fwdData_2_T_4 =
-    {31'h0, casez_tmp_6} << {58'h0, casez_tmp_5[1:0], 3'h0} >> _GEN_2;
-  wire [2:0]  _idx_T_6 = idx + 3'h3;
+    {31'h0, casez_tmp_6} << {58'h0, casez_tmp_5[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_6 = idx + 4'h3;
   reg  [31:0] casez_tmp_8;
   always_comb begin
     casez (_idx_T_6)
-      3'b000:
+      4'b0000:
         casez_tmp_8 = entries_0_addr;
-      3'b001:
+      4'b0001:
         casez_tmp_8 = entries_1_addr;
-      3'b010:
+      4'b0010:
         casez_tmp_8 = entries_2_addr;
-      3'b011:
+      4'b0011:
         casez_tmp_8 = entries_3_addr;
-      3'b100:
+      4'b0100:
         casez_tmp_8 = entries_4_addr;
-      3'b101:
+      4'b0101:
         casez_tmp_8 = entries_5_addr;
-      3'b110:
+      4'b0110:
         casez_tmp_8 = entries_6_addr;
-      default:
+      4'b0111:
         casez_tmp_8 = entries_7_addr;
+      4'b1000:
+        casez_tmp_8 = entries_8_addr;
+      4'b1001:
+        casez_tmp_8 = entries_9_addr;
+      4'b1010:
+        casez_tmp_8 = entries_10_addr;
+      4'b1011:
+        casez_tmp_8 = entries_11_addr;
+      4'b1100:
+        casez_tmp_8 = entries_12_addr;
+      4'b1101:
+        casez_tmp_8 = entries_13_addr;
+      4'b1110:
+        casez_tmp_8 = entries_14_addr;
+      default:
+        casez_tmp_8 = entries_15_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_9;
   always_comb begin
     casez (_idx_T_6)
-      3'b000:
+      4'b0000:
         casez_tmp_9 = entries_0_data;
-      3'b001:
+      4'b0001:
         casez_tmp_9 = entries_1_data;
-      3'b010:
+      4'b0010:
         casez_tmp_9 = entries_2_data;
-      3'b011:
+      4'b0011:
         casez_tmp_9 = entries_3_data;
-      3'b100:
+      4'b0100:
         casez_tmp_9 = entries_4_data;
-      3'b101:
+      4'b0101:
         casez_tmp_9 = entries_5_data;
-      3'b110:
+      4'b0110:
         casez_tmp_9 = entries_6_data;
-      default:
+      4'b0111:
         casez_tmp_9 = entries_7_data;
+      4'b1000:
+        casez_tmp_9 = entries_8_data;
+      4'b1001:
+        casez_tmp_9 = entries_9_data;
+      4'b1010:
+        casez_tmp_9 = entries_10_data;
+      4'b1011:
+        casez_tmp_9 = entries_11_data;
+      4'b1100:
+        casez_tmp_9 = entries_12_data;
+      4'b1101:
+        casez_tmp_9 = entries_13_data;
+      4'b1110:
+        casez_tmp_9 = entries_14_data;
+      default:
+        casez_tmp_9 = entries_15_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_10;
   always_comb begin
     casez (_idx_T_6)
-      3'b000:
+      4'b0000:
         casez_tmp_10 = entries_0_mask;
-      3'b001:
+      4'b0001:
         casez_tmp_10 = entries_1_mask;
-      3'b010:
+      4'b0010:
         casez_tmp_10 = entries_2_mask;
-      3'b011:
+      4'b0011:
         casez_tmp_10 = entries_3_mask;
-      3'b100:
+      4'b0100:
         casez_tmp_10 = entries_4_mask;
-      3'b101:
+      4'b0101:
         casez_tmp_10 = entries_5_mask;
-      3'b110:
+      4'b0110:
         casez_tmp_10 = entries_6_mask;
-      default:
+      4'b0111:
         casez_tmp_10 = entries_7_mask;
+      4'b1000:
+        casez_tmp_10 = entries_8_mask;
+      4'b1001:
+        casez_tmp_10 = entries_9_mask;
+      4'b1010:
+        casez_tmp_10 = entries_10_mask;
+      4'b1011:
+        casez_tmp_10 = entries_11_mask;
+      4'b1100:
+        casez_tmp_10 = entries_12_mask;
+      4'b1101:
+        casez_tmp_10 = entries_13_mask;
+      4'b1110:
+        casez_tmp_10 = entries_14_mask;
+      default:
+        casez_tmp_10 = entries_15_mask;
     endcase
   end // always_comb
   wire        sameWord_3 = casez_tmp_8[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_7 = {3'h0, casez_tmp_10} << casez_tmp_8[1:0];
   wire [6:0]  _loadMask_T_3 =
     {3'h0,
-     _loadMask_base_T_71
+     _loadMask_base_T_143
        ? 4'h3
-       : _loadMask_base_T_69
+       : _loadMask_base_T_141
            ? 4'h1
-           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
   wire [3:0]  _overlap_T_3 = _loadMask_T_3[3:0] & _storeMask_T_7[3:0];
-  wire        _fwdHits_3_T = io_ld_valid & (|(count[3:2]));
+  wire        _fwdHits_3_T = io_ld_valid & (|(count[4:2]));
   wire        fwdHits_3 = _fwdHits_3_T & sameWord_3 & _overlap_T_3 == _loadMask_T_3[3:0];
   wire [62:0] _fwdData_3_T_4 =
-    {31'h0, casez_tmp_9} << {58'h0, casez_tmp_8[1:0], 3'h0} >> _GEN_2;
-  wire [2:0]  _idx_T_8 = idx - 3'h4;
+    {31'h0, casez_tmp_9} << {58'h0, casez_tmp_8[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_8 = idx + 4'h4;
   reg  [31:0] casez_tmp_11;
   always_comb begin
     casez (_idx_T_8)
-      3'b000:
+      4'b0000:
         casez_tmp_11 = entries_0_addr;
-      3'b001:
+      4'b0001:
         casez_tmp_11 = entries_1_addr;
-      3'b010:
+      4'b0010:
         casez_tmp_11 = entries_2_addr;
-      3'b011:
+      4'b0011:
         casez_tmp_11 = entries_3_addr;
-      3'b100:
+      4'b0100:
         casez_tmp_11 = entries_4_addr;
-      3'b101:
+      4'b0101:
         casez_tmp_11 = entries_5_addr;
-      3'b110:
+      4'b0110:
         casez_tmp_11 = entries_6_addr;
-      default:
+      4'b0111:
         casez_tmp_11 = entries_7_addr;
+      4'b1000:
+        casez_tmp_11 = entries_8_addr;
+      4'b1001:
+        casez_tmp_11 = entries_9_addr;
+      4'b1010:
+        casez_tmp_11 = entries_10_addr;
+      4'b1011:
+        casez_tmp_11 = entries_11_addr;
+      4'b1100:
+        casez_tmp_11 = entries_12_addr;
+      4'b1101:
+        casez_tmp_11 = entries_13_addr;
+      4'b1110:
+        casez_tmp_11 = entries_14_addr;
+      default:
+        casez_tmp_11 = entries_15_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_12;
   always_comb begin
     casez (_idx_T_8)
-      3'b000:
+      4'b0000:
         casez_tmp_12 = entries_0_data;
-      3'b001:
+      4'b0001:
         casez_tmp_12 = entries_1_data;
-      3'b010:
+      4'b0010:
         casez_tmp_12 = entries_2_data;
-      3'b011:
+      4'b0011:
         casez_tmp_12 = entries_3_data;
-      3'b100:
+      4'b0100:
         casez_tmp_12 = entries_4_data;
-      3'b101:
+      4'b0101:
         casez_tmp_12 = entries_5_data;
-      3'b110:
+      4'b0110:
         casez_tmp_12 = entries_6_data;
-      default:
+      4'b0111:
         casez_tmp_12 = entries_7_data;
+      4'b1000:
+        casez_tmp_12 = entries_8_data;
+      4'b1001:
+        casez_tmp_12 = entries_9_data;
+      4'b1010:
+        casez_tmp_12 = entries_10_data;
+      4'b1011:
+        casez_tmp_12 = entries_11_data;
+      4'b1100:
+        casez_tmp_12 = entries_12_data;
+      4'b1101:
+        casez_tmp_12 = entries_13_data;
+      4'b1110:
+        casez_tmp_12 = entries_14_data;
+      default:
+        casez_tmp_12 = entries_15_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_13;
   always_comb begin
     casez (_idx_T_8)
-      3'b000:
+      4'b0000:
         casez_tmp_13 = entries_0_mask;
-      3'b001:
+      4'b0001:
         casez_tmp_13 = entries_1_mask;
-      3'b010:
+      4'b0010:
         casez_tmp_13 = entries_2_mask;
-      3'b011:
+      4'b0011:
         casez_tmp_13 = entries_3_mask;
-      3'b100:
+      4'b0100:
         casez_tmp_13 = entries_4_mask;
-      3'b101:
+      4'b0101:
         casez_tmp_13 = entries_5_mask;
-      3'b110:
+      4'b0110:
         casez_tmp_13 = entries_6_mask;
-      default:
+      4'b0111:
         casez_tmp_13 = entries_7_mask;
+      4'b1000:
+        casez_tmp_13 = entries_8_mask;
+      4'b1001:
+        casez_tmp_13 = entries_9_mask;
+      4'b1010:
+        casez_tmp_13 = entries_10_mask;
+      4'b1011:
+        casez_tmp_13 = entries_11_mask;
+      4'b1100:
+        casez_tmp_13 = entries_12_mask;
+      4'b1101:
+        casez_tmp_13 = entries_13_mask;
+      4'b1110:
+        casez_tmp_13 = entries_14_mask;
+      default:
+        casez_tmp_13 = entries_15_mask;
     endcase
   end // always_comb
   wire        sameWord_4 = casez_tmp_11[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_9 = {3'h0, casez_tmp_13} << casez_tmp_11[1:0];
   wire [6:0]  _loadMask_T_4 =
     {3'h0,
-     _loadMask_base_T_71
+     _loadMask_base_T_143
        ? 4'h3
-       : _loadMask_base_T_69
+       : _loadMask_base_T_141
            ? 4'h1
-           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
   wire [3:0]  _overlap_T_4 = _loadMask_T_4[3:0] & _storeMask_T_9[3:0];
-  wire        _fwdHits_4_T = io_ld_valid & count > 4'h4;
+  wire        _fwdHits_4_T = io_ld_valid & count > 5'h4;
   wire        fwdHits_4 = _fwdHits_4_T & sameWord_4 & _overlap_T_4 == _loadMask_T_4[3:0];
   wire [62:0] _fwdData_4_T_4 =
-    {31'h0, casez_tmp_12} << {58'h0, casez_tmp_11[1:0], 3'h0} >> _GEN_2;
-  wire [2:0]  _idx_T_10 = idx - 3'h3;
+    {31'h0, casez_tmp_12} << {58'h0, casez_tmp_11[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_10 = idx + 4'h5;
   reg  [31:0] casez_tmp_14;
   always_comb begin
     casez (_idx_T_10)
-      3'b000:
+      4'b0000:
         casez_tmp_14 = entries_0_addr;
-      3'b001:
+      4'b0001:
         casez_tmp_14 = entries_1_addr;
-      3'b010:
+      4'b0010:
         casez_tmp_14 = entries_2_addr;
-      3'b011:
+      4'b0011:
         casez_tmp_14 = entries_3_addr;
-      3'b100:
+      4'b0100:
         casez_tmp_14 = entries_4_addr;
-      3'b101:
+      4'b0101:
         casez_tmp_14 = entries_5_addr;
-      3'b110:
+      4'b0110:
         casez_tmp_14 = entries_6_addr;
-      default:
+      4'b0111:
         casez_tmp_14 = entries_7_addr;
+      4'b1000:
+        casez_tmp_14 = entries_8_addr;
+      4'b1001:
+        casez_tmp_14 = entries_9_addr;
+      4'b1010:
+        casez_tmp_14 = entries_10_addr;
+      4'b1011:
+        casez_tmp_14 = entries_11_addr;
+      4'b1100:
+        casez_tmp_14 = entries_12_addr;
+      4'b1101:
+        casez_tmp_14 = entries_13_addr;
+      4'b1110:
+        casez_tmp_14 = entries_14_addr;
+      default:
+        casez_tmp_14 = entries_15_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_15;
   always_comb begin
     casez (_idx_T_10)
-      3'b000:
+      4'b0000:
         casez_tmp_15 = entries_0_data;
-      3'b001:
+      4'b0001:
         casez_tmp_15 = entries_1_data;
-      3'b010:
+      4'b0010:
         casez_tmp_15 = entries_2_data;
-      3'b011:
+      4'b0011:
         casez_tmp_15 = entries_3_data;
-      3'b100:
+      4'b0100:
         casez_tmp_15 = entries_4_data;
-      3'b101:
+      4'b0101:
         casez_tmp_15 = entries_5_data;
-      3'b110:
+      4'b0110:
         casez_tmp_15 = entries_6_data;
-      default:
+      4'b0111:
         casez_tmp_15 = entries_7_data;
+      4'b1000:
+        casez_tmp_15 = entries_8_data;
+      4'b1001:
+        casez_tmp_15 = entries_9_data;
+      4'b1010:
+        casez_tmp_15 = entries_10_data;
+      4'b1011:
+        casez_tmp_15 = entries_11_data;
+      4'b1100:
+        casez_tmp_15 = entries_12_data;
+      4'b1101:
+        casez_tmp_15 = entries_13_data;
+      4'b1110:
+        casez_tmp_15 = entries_14_data;
+      default:
+        casez_tmp_15 = entries_15_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_16;
   always_comb begin
     casez (_idx_T_10)
-      3'b000:
+      4'b0000:
         casez_tmp_16 = entries_0_mask;
-      3'b001:
+      4'b0001:
         casez_tmp_16 = entries_1_mask;
-      3'b010:
+      4'b0010:
         casez_tmp_16 = entries_2_mask;
-      3'b011:
+      4'b0011:
         casez_tmp_16 = entries_3_mask;
-      3'b100:
+      4'b0100:
         casez_tmp_16 = entries_4_mask;
-      3'b101:
+      4'b0101:
         casez_tmp_16 = entries_5_mask;
-      3'b110:
+      4'b0110:
         casez_tmp_16 = entries_6_mask;
-      default:
+      4'b0111:
         casez_tmp_16 = entries_7_mask;
+      4'b1000:
+        casez_tmp_16 = entries_8_mask;
+      4'b1001:
+        casez_tmp_16 = entries_9_mask;
+      4'b1010:
+        casez_tmp_16 = entries_10_mask;
+      4'b1011:
+        casez_tmp_16 = entries_11_mask;
+      4'b1100:
+        casez_tmp_16 = entries_12_mask;
+      4'b1101:
+        casez_tmp_16 = entries_13_mask;
+      4'b1110:
+        casez_tmp_16 = entries_14_mask;
+      default:
+        casez_tmp_16 = entries_15_mask;
     endcase
   end // always_comb
   wire        sameWord_5 = casez_tmp_14[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_11 = {3'h0, casez_tmp_16} << casez_tmp_14[1:0];
   wire [6:0]  _loadMask_T_5 =
     {3'h0,
-     _loadMask_base_T_71
+     _loadMask_base_T_143
        ? 4'h3
-       : _loadMask_base_T_69
+       : _loadMask_base_T_141
            ? 4'h1
-           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
   wire [3:0]  _overlap_T_5 = _loadMask_T_5[3:0] & _storeMask_T_11[3:0];
-  wire        _fwdHits_5_T = io_ld_valid & count > 4'h5;
+  wire        _fwdHits_5_T = io_ld_valid & count > 5'h5;
   wire        fwdHits_5 = _fwdHits_5_T & sameWord_5 & _overlap_T_5 == _loadMask_T_5[3:0];
   wire [62:0] _fwdData_5_T_4 =
-    {31'h0, casez_tmp_15} << {58'h0, casez_tmp_14[1:0], 3'h0} >> _GEN_2;
-  wire [2:0]  _idx_T_12 = idx - 3'h2;
+    {31'h0, casez_tmp_15} << {58'h0, casez_tmp_14[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_12 = idx + 4'h6;
   reg  [31:0] casez_tmp_17;
   always_comb begin
     casez (_idx_T_12)
-      3'b000:
+      4'b0000:
         casez_tmp_17 = entries_0_addr;
-      3'b001:
+      4'b0001:
         casez_tmp_17 = entries_1_addr;
-      3'b010:
+      4'b0010:
         casez_tmp_17 = entries_2_addr;
-      3'b011:
+      4'b0011:
         casez_tmp_17 = entries_3_addr;
-      3'b100:
+      4'b0100:
         casez_tmp_17 = entries_4_addr;
-      3'b101:
+      4'b0101:
         casez_tmp_17 = entries_5_addr;
-      3'b110:
+      4'b0110:
         casez_tmp_17 = entries_6_addr;
-      default:
+      4'b0111:
         casez_tmp_17 = entries_7_addr;
+      4'b1000:
+        casez_tmp_17 = entries_8_addr;
+      4'b1001:
+        casez_tmp_17 = entries_9_addr;
+      4'b1010:
+        casez_tmp_17 = entries_10_addr;
+      4'b1011:
+        casez_tmp_17 = entries_11_addr;
+      4'b1100:
+        casez_tmp_17 = entries_12_addr;
+      4'b1101:
+        casez_tmp_17 = entries_13_addr;
+      4'b1110:
+        casez_tmp_17 = entries_14_addr;
+      default:
+        casez_tmp_17 = entries_15_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_18;
   always_comb begin
     casez (_idx_T_12)
-      3'b000:
+      4'b0000:
         casez_tmp_18 = entries_0_data;
-      3'b001:
+      4'b0001:
         casez_tmp_18 = entries_1_data;
-      3'b010:
+      4'b0010:
         casez_tmp_18 = entries_2_data;
-      3'b011:
+      4'b0011:
         casez_tmp_18 = entries_3_data;
-      3'b100:
+      4'b0100:
         casez_tmp_18 = entries_4_data;
-      3'b101:
+      4'b0101:
         casez_tmp_18 = entries_5_data;
-      3'b110:
+      4'b0110:
         casez_tmp_18 = entries_6_data;
-      default:
+      4'b0111:
         casez_tmp_18 = entries_7_data;
+      4'b1000:
+        casez_tmp_18 = entries_8_data;
+      4'b1001:
+        casez_tmp_18 = entries_9_data;
+      4'b1010:
+        casez_tmp_18 = entries_10_data;
+      4'b1011:
+        casez_tmp_18 = entries_11_data;
+      4'b1100:
+        casez_tmp_18 = entries_12_data;
+      4'b1101:
+        casez_tmp_18 = entries_13_data;
+      4'b1110:
+        casez_tmp_18 = entries_14_data;
+      default:
+        casez_tmp_18 = entries_15_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_19;
   always_comb begin
     casez (_idx_T_12)
-      3'b000:
+      4'b0000:
         casez_tmp_19 = entries_0_mask;
-      3'b001:
+      4'b0001:
         casez_tmp_19 = entries_1_mask;
-      3'b010:
+      4'b0010:
         casez_tmp_19 = entries_2_mask;
-      3'b011:
+      4'b0011:
         casez_tmp_19 = entries_3_mask;
-      3'b100:
+      4'b0100:
         casez_tmp_19 = entries_4_mask;
-      3'b101:
+      4'b0101:
         casez_tmp_19 = entries_5_mask;
-      3'b110:
+      4'b0110:
         casez_tmp_19 = entries_6_mask;
-      default:
+      4'b0111:
         casez_tmp_19 = entries_7_mask;
+      4'b1000:
+        casez_tmp_19 = entries_8_mask;
+      4'b1001:
+        casez_tmp_19 = entries_9_mask;
+      4'b1010:
+        casez_tmp_19 = entries_10_mask;
+      4'b1011:
+        casez_tmp_19 = entries_11_mask;
+      4'b1100:
+        casez_tmp_19 = entries_12_mask;
+      4'b1101:
+        casez_tmp_19 = entries_13_mask;
+      4'b1110:
+        casez_tmp_19 = entries_14_mask;
+      default:
+        casez_tmp_19 = entries_15_mask;
     endcase
   end // always_comb
   wire        sameWord_6 = casez_tmp_17[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_13 = {3'h0, casez_tmp_19} << casez_tmp_17[1:0];
   wire [6:0]  _loadMask_T_6 =
     {3'h0,
-     _loadMask_base_T_71
+     _loadMask_base_T_143
        ? 4'h3
-       : _loadMask_base_T_69
+       : _loadMask_base_T_141
            ? 4'h1
-           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
   wire [3:0]  _overlap_T_6 = _loadMask_T_6[3:0] & _storeMask_T_13[3:0];
-  wire        _fwdHits_6_T = io_ld_valid & count > 4'h6;
+  wire        _fwdHits_6_T = io_ld_valid & count > 5'h6;
   wire        fwdHits_6 = _fwdHits_6_T & sameWord_6 & _overlap_T_6 == _loadMask_T_6[3:0];
   wire [62:0] _fwdData_6_T_4 =
-    {31'h0, casez_tmp_18} << {58'h0, casez_tmp_17[1:0], 3'h0} >> _GEN_2;
-  wire [2:0]  _idx_T_14 = idx - 3'h1;
+    {31'h0, casez_tmp_18} << {58'h0, casez_tmp_17[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_14 = idx + 4'h7;
   reg  [31:0] casez_tmp_20;
   always_comb begin
     casez (_idx_T_14)
-      3'b000:
+      4'b0000:
         casez_tmp_20 = entries_0_addr;
-      3'b001:
+      4'b0001:
         casez_tmp_20 = entries_1_addr;
-      3'b010:
+      4'b0010:
         casez_tmp_20 = entries_2_addr;
-      3'b011:
+      4'b0011:
         casez_tmp_20 = entries_3_addr;
-      3'b100:
+      4'b0100:
         casez_tmp_20 = entries_4_addr;
-      3'b101:
+      4'b0101:
         casez_tmp_20 = entries_5_addr;
-      3'b110:
+      4'b0110:
         casez_tmp_20 = entries_6_addr;
-      default:
+      4'b0111:
         casez_tmp_20 = entries_7_addr;
+      4'b1000:
+        casez_tmp_20 = entries_8_addr;
+      4'b1001:
+        casez_tmp_20 = entries_9_addr;
+      4'b1010:
+        casez_tmp_20 = entries_10_addr;
+      4'b1011:
+        casez_tmp_20 = entries_11_addr;
+      4'b1100:
+        casez_tmp_20 = entries_12_addr;
+      4'b1101:
+        casez_tmp_20 = entries_13_addr;
+      4'b1110:
+        casez_tmp_20 = entries_14_addr;
+      default:
+        casez_tmp_20 = entries_15_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_21;
   always_comb begin
     casez (_idx_T_14)
-      3'b000:
+      4'b0000:
         casez_tmp_21 = entries_0_data;
-      3'b001:
+      4'b0001:
         casez_tmp_21 = entries_1_data;
-      3'b010:
+      4'b0010:
         casez_tmp_21 = entries_2_data;
-      3'b011:
+      4'b0011:
         casez_tmp_21 = entries_3_data;
-      3'b100:
+      4'b0100:
         casez_tmp_21 = entries_4_data;
-      3'b101:
+      4'b0101:
         casez_tmp_21 = entries_5_data;
-      3'b110:
+      4'b0110:
         casez_tmp_21 = entries_6_data;
-      default:
+      4'b0111:
         casez_tmp_21 = entries_7_data;
+      4'b1000:
+        casez_tmp_21 = entries_8_data;
+      4'b1001:
+        casez_tmp_21 = entries_9_data;
+      4'b1010:
+        casez_tmp_21 = entries_10_data;
+      4'b1011:
+        casez_tmp_21 = entries_11_data;
+      4'b1100:
+        casez_tmp_21 = entries_12_data;
+      4'b1101:
+        casez_tmp_21 = entries_13_data;
+      4'b1110:
+        casez_tmp_21 = entries_14_data;
+      default:
+        casez_tmp_21 = entries_15_data;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_22;
   always_comb begin
     casez (_idx_T_14)
-      3'b000:
+      4'b0000:
         casez_tmp_22 = entries_0_mask;
-      3'b001:
+      4'b0001:
         casez_tmp_22 = entries_1_mask;
-      3'b010:
+      4'b0010:
         casez_tmp_22 = entries_2_mask;
-      3'b011:
+      4'b0011:
         casez_tmp_22 = entries_3_mask;
-      3'b100:
+      4'b0100:
         casez_tmp_22 = entries_4_mask;
-      3'b101:
+      4'b0101:
         casez_tmp_22 = entries_5_mask;
-      3'b110:
+      4'b0110:
         casez_tmp_22 = entries_6_mask;
-      default:
+      4'b0111:
         casez_tmp_22 = entries_7_mask;
+      4'b1000:
+        casez_tmp_22 = entries_8_mask;
+      4'b1001:
+        casez_tmp_22 = entries_9_mask;
+      4'b1010:
+        casez_tmp_22 = entries_10_mask;
+      4'b1011:
+        casez_tmp_22 = entries_11_mask;
+      4'b1100:
+        casez_tmp_22 = entries_12_mask;
+      4'b1101:
+        casez_tmp_22 = entries_13_mask;
+      4'b1110:
+        casez_tmp_22 = entries_14_mask;
+      default:
+        casez_tmp_22 = entries_15_mask;
     endcase
   end // always_comb
   wire        sameWord_7 = casez_tmp_20[31:2] == io_ld_addr[31:2];
   wire [6:0]  _storeMask_T_15 = {3'h0, casez_tmp_22} << casez_tmp_20[1:0];
   wire [6:0]  _loadMask_T_7 =
     {3'h0,
-     _loadMask_base_T_71
+     _loadMask_base_T_143
        ? 4'h3
-       : _loadMask_base_T_69
+       : _loadMask_base_T_141
            ? 4'h1
-           : _loadMask_base_T_67 ? 4'hF : {2'h0, _loadMask_base_T_65, 1'h1}} << _GEN_1;
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
   wire [3:0]  _overlap_T_7 = _loadMask_T_7[3:0] & _storeMask_T_15[3:0];
-  wire        _fwdHits_7_T = io_ld_valid & count[3];
+  wire        _fwdHits_7_T = io_ld_valid & (|(count[4:3]));
   wire        fwdHits_7 = _fwdHits_7_T & sameWord_7 & _overlap_T_7 == _loadMask_T_7[3:0];
   wire [62:0] _fwdData_7_T_4 =
-    {31'h0, casez_tmp_21} << {58'h0, casez_tmp_20[1:0], 3'h0} >> _GEN_2;
-  wire [7:0]  _io_ld_wait_T =
-    {_fwdHits_7_T & sameWord_7 & (|_overlap_T_7) & _overlap_T_7 != _loadMask_T_7[3:0],
+    {31'h0, casez_tmp_21} << {58'h0, casez_tmp_20[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_16 = idx - 4'h8;
+  reg  [31:0] casez_tmp_23;
+  always_comb begin
+    casez (_idx_T_16)
+      4'b0000:
+        casez_tmp_23 = entries_0_addr;
+      4'b0001:
+        casez_tmp_23 = entries_1_addr;
+      4'b0010:
+        casez_tmp_23 = entries_2_addr;
+      4'b0011:
+        casez_tmp_23 = entries_3_addr;
+      4'b0100:
+        casez_tmp_23 = entries_4_addr;
+      4'b0101:
+        casez_tmp_23 = entries_5_addr;
+      4'b0110:
+        casez_tmp_23 = entries_6_addr;
+      4'b0111:
+        casez_tmp_23 = entries_7_addr;
+      4'b1000:
+        casez_tmp_23 = entries_8_addr;
+      4'b1001:
+        casez_tmp_23 = entries_9_addr;
+      4'b1010:
+        casez_tmp_23 = entries_10_addr;
+      4'b1011:
+        casez_tmp_23 = entries_11_addr;
+      4'b1100:
+        casez_tmp_23 = entries_12_addr;
+      4'b1101:
+        casez_tmp_23 = entries_13_addr;
+      4'b1110:
+        casez_tmp_23 = entries_14_addr;
+      default:
+        casez_tmp_23 = entries_15_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_24;
+  always_comb begin
+    casez (_idx_T_16)
+      4'b0000:
+        casez_tmp_24 = entries_0_data;
+      4'b0001:
+        casez_tmp_24 = entries_1_data;
+      4'b0010:
+        casez_tmp_24 = entries_2_data;
+      4'b0011:
+        casez_tmp_24 = entries_3_data;
+      4'b0100:
+        casez_tmp_24 = entries_4_data;
+      4'b0101:
+        casez_tmp_24 = entries_5_data;
+      4'b0110:
+        casez_tmp_24 = entries_6_data;
+      4'b0111:
+        casez_tmp_24 = entries_7_data;
+      4'b1000:
+        casez_tmp_24 = entries_8_data;
+      4'b1001:
+        casez_tmp_24 = entries_9_data;
+      4'b1010:
+        casez_tmp_24 = entries_10_data;
+      4'b1011:
+        casez_tmp_24 = entries_11_data;
+      4'b1100:
+        casez_tmp_24 = entries_12_data;
+      4'b1101:
+        casez_tmp_24 = entries_13_data;
+      4'b1110:
+        casez_tmp_24 = entries_14_data;
+      default:
+        casez_tmp_24 = entries_15_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_25;
+  always_comb begin
+    casez (_idx_T_16)
+      4'b0000:
+        casez_tmp_25 = entries_0_mask;
+      4'b0001:
+        casez_tmp_25 = entries_1_mask;
+      4'b0010:
+        casez_tmp_25 = entries_2_mask;
+      4'b0011:
+        casez_tmp_25 = entries_3_mask;
+      4'b0100:
+        casez_tmp_25 = entries_4_mask;
+      4'b0101:
+        casez_tmp_25 = entries_5_mask;
+      4'b0110:
+        casez_tmp_25 = entries_6_mask;
+      4'b0111:
+        casez_tmp_25 = entries_7_mask;
+      4'b1000:
+        casez_tmp_25 = entries_8_mask;
+      4'b1001:
+        casez_tmp_25 = entries_9_mask;
+      4'b1010:
+        casez_tmp_25 = entries_10_mask;
+      4'b1011:
+        casez_tmp_25 = entries_11_mask;
+      4'b1100:
+        casez_tmp_25 = entries_12_mask;
+      4'b1101:
+        casez_tmp_25 = entries_13_mask;
+      4'b1110:
+        casez_tmp_25 = entries_14_mask;
+      default:
+        casez_tmp_25 = entries_15_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_8 = casez_tmp_23[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_17 = {3'h0, casez_tmp_25} << casez_tmp_23[1:0];
+  wire [6:0]  _loadMask_T_8 =
+    {3'h0,
+     _loadMask_base_T_143
+       ? 4'h3
+       : _loadMask_base_T_141
+           ? 4'h1
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
+  wire [3:0]  _overlap_T_8 = _loadMask_T_8[3:0] & _storeMask_T_17[3:0];
+  wire        _fwdHits_8_T = io_ld_valid & count > 5'h8;
+  wire        fwdHits_8 = _fwdHits_8_T & sameWord_8 & _overlap_T_8 == _loadMask_T_8[3:0];
+  wire [62:0] _fwdData_8_T_4 =
+    {31'h0, casez_tmp_24} << {58'h0, casez_tmp_23[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_18 = idx - 4'h7;
+  reg  [31:0] casez_tmp_26;
+  always_comb begin
+    casez (_idx_T_18)
+      4'b0000:
+        casez_tmp_26 = entries_0_addr;
+      4'b0001:
+        casez_tmp_26 = entries_1_addr;
+      4'b0010:
+        casez_tmp_26 = entries_2_addr;
+      4'b0011:
+        casez_tmp_26 = entries_3_addr;
+      4'b0100:
+        casez_tmp_26 = entries_4_addr;
+      4'b0101:
+        casez_tmp_26 = entries_5_addr;
+      4'b0110:
+        casez_tmp_26 = entries_6_addr;
+      4'b0111:
+        casez_tmp_26 = entries_7_addr;
+      4'b1000:
+        casez_tmp_26 = entries_8_addr;
+      4'b1001:
+        casez_tmp_26 = entries_9_addr;
+      4'b1010:
+        casez_tmp_26 = entries_10_addr;
+      4'b1011:
+        casez_tmp_26 = entries_11_addr;
+      4'b1100:
+        casez_tmp_26 = entries_12_addr;
+      4'b1101:
+        casez_tmp_26 = entries_13_addr;
+      4'b1110:
+        casez_tmp_26 = entries_14_addr;
+      default:
+        casez_tmp_26 = entries_15_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_27;
+  always_comb begin
+    casez (_idx_T_18)
+      4'b0000:
+        casez_tmp_27 = entries_0_data;
+      4'b0001:
+        casez_tmp_27 = entries_1_data;
+      4'b0010:
+        casez_tmp_27 = entries_2_data;
+      4'b0011:
+        casez_tmp_27 = entries_3_data;
+      4'b0100:
+        casez_tmp_27 = entries_4_data;
+      4'b0101:
+        casez_tmp_27 = entries_5_data;
+      4'b0110:
+        casez_tmp_27 = entries_6_data;
+      4'b0111:
+        casez_tmp_27 = entries_7_data;
+      4'b1000:
+        casez_tmp_27 = entries_8_data;
+      4'b1001:
+        casez_tmp_27 = entries_9_data;
+      4'b1010:
+        casez_tmp_27 = entries_10_data;
+      4'b1011:
+        casez_tmp_27 = entries_11_data;
+      4'b1100:
+        casez_tmp_27 = entries_12_data;
+      4'b1101:
+        casez_tmp_27 = entries_13_data;
+      4'b1110:
+        casez_tmp_27 = entries_14_data;
+      default:
+        casez_tmp_27 = entries_15_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_28;
+  always_comb begin
+    casez (_idx_T_18)
+      4'b0000:
+        casez_tmp_28 = entries_0_mask;
+      4'b0001:
+        casez_tmp_28 = entries_1_mask;
+      4'b0010:
+        casez_tmp_28 = entries_2_mask;
+      4'b0011:
+        casez_tmp_28 = entries_3_mask;
+      4'b0100:
+        casez_tmp_28 = entries_4_mask;
+      4'b0101:
+        casez_tmp_28 = entries_5_mask;
+      4'b0110:
+        casez_tmp_28 = entries_6_mask;
+      4'b0111:
+        casez_tmp_28 = entries_7_mask;
+      4'b1000:
+        casez_tmp_28 = entries_8_mask;
+      4'b1001:
+        casez_tmp_28 = entries_9_mask;
+      4'b1010:
+        casez_tmp_28 = entries_10_mask;
+      4'b1011:
+        casez_tmp_28 = entries_11_mask;
+      4'b1100:
+        casez_tmp_28 = entries_12_mask;
+      4'b1101:
+        casez_tmp_28 = entries_13_mask;
+      4'b1110:
+        casez_tmp_28 = entries_14_mask;
+      default:
+        casez_tmp_28 = entries_15_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_9 = casez_tmp_26[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_19 = {3'h0, casez_tmp_28} << casez_tmp_26[1:0];
+  wire [6:0]  _loadMask_T_9 =
+    {3'h0,
+     _loadMask_base_T_143
+       ? 4'h3
+       : _loadMask_base_T_141
+           ? 4'h1
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
+  wire [3:0]  _overlap_T_9 = _loadMask_T_9[3:0] & _storeMask_T_19[3:0];
+  wire        _fwdHits_9_T = io_ld_valid & count > 5'h9;
+  wire        fwdHits_9 = _fwdHits_9_T & sameWord_9 & _overlap_T_9 == _loadMask_T_9[3:0];
+  wire [62:0] _fwdData_9_T_4 =
+    {31'h0, casez_tmp_27} << {58'h0, casez_tmp_26[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_20 = idx - 4'h6;
+  reg  [31:0] casez_tmp_29;
+  always_comb begin
+    casez (_idx_T_20)
+      4'b0000:
+        casez_tmp_29 = entries_0_addr;
+      4'b0001:
+        casez_tmp_29 = entries_1_addr;
+      4'b0010:
+        casez_tmp_29 = entries_2_addr;
+      4'b0011:
+        casez_tmp_29 = entries_3_addr;
+      4'b0100:
+        casez_tmp_29 = entries_4_addr;
+      4'b0101:
+        casez_tmp_29 = entries_5_addr;
+      4'b0110:
+        casez_tmp_29 = entries_6_addr;
+      4'b0111:
+        casez_tmp_29 = entries_7_addr;
+      4'b1000:
+        casez_tmp_29 = entries_8_addr;
+      4'b1001:
+        casez_tmp_29 = entries_9_addr;
+      4'b1010:
+        casez_tmp_29 = entries_10_addr;
+      4'b1011:
+        casez_tmp_29 = entries_11_addr;
+      4'b1100:
+        casez_tmp_29 = entries_12_addr;
+      4'b1101:
+        casez_tmp_29 = entries_13_addr;
+      4'b1110:
+        casez_tmp_29 = entries_14_addr;
+      default:
+        casez_tmp_29 = entries_15_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_30;
+  always_comb begin
+    casez (_idx_T_20)
+      4'b0000:
+        casez_tmp_30 = entries_0_data;
+      4'b0001:
+        casez_tmp_30 = entries_1_data;
+      4'b0010:
+        casez_tmp_30 = entries_2_data;
+      4'b0011:
+        casez_tmp_30 = entries_3_data;
+      4'b0100:
+        casez_tmp_30 = entries_4_data;
+      4'b0101:
+        casez_tmp_30 = entries_5_data;
+      4'b0110:
+        casez_tmp_30 = entries_6_data;
+      4'b0111:
+        casez_tmp_30 = entries_7_data;
+      4'b1000:
+        casez_tmp_30 = entries_8_data;
+      4'b1001:
+        casez_tmp_30 = entries_9_data;
+      4'b1010:
+        casez_tmp_30 = entries_10_data;
+      4'b1011:
+        casez_tmp_30 = entries_11_data;
+      4'b1100:
+        casez_tmp_30 = entries_12_data;
+      4'b1101:
+        casez_tmp_30 = entries_13_data;
+      4'b1110:
+        casez_tmp_30 = entries_14_data;
+      default:
+        casez_tmp_30 = entries_15_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_31;
+  always_comb begin
+    casez (_idx_T_20)
+      4'b0000:
+        casez_tmp_31 = entries_0_mask;
+      4'b0001:
+        casez_tmp_31 = entries_1_mask;
+      4'b0010:
+        casez_tmp_31 = entries_2_mask;
+      4'b0011:
+        casez_tmp_31 = entries_3_mask;
+      4'b0100:
+        casez_tmp_31 = entries_4_mask;
+      4'b0101:
+        casez_tmp_31 = entries_5_mask;
+      4'b0110:
+        casez_tmp_31 = entries_6_mask;
+      4'b0111:
+        casez_tmp_31 = entries_7_mask;
+      4'b1000:
+        casez_tmp_31 = entries_8_mask;
+      4'b1001:
+        casez_tmp_31 = entries_9_mask;
+      4'b1010:
+        casez_tmp_31 = entries_10_mask;
+      4'b1011:
+        casez_tmp_31 = entries_11_mask;
+      4'b1100:
+        casez_tmp_31 = entries_12_mask;
+      4'b1101:
+        casez_tmp_31 = entries_13_mask;
+      4'b1110:
+        casez_tmp_31 = entries_14_mask;
+      default:
+        casez_tmp_31 = entries_15_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_10 = casez_tmp_29[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_21 = {3'h0, casez_tmp_31} << casez_tmp_29[1:0];
+  wire [6:0]  _loadMask_T_10 =
+    {3'h0,
+     _loadMask_base_T_143
+       ? 4'h3
+       : _loadMask_base_T_141
+           ? 4'h1
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
+  wire [3:0]  _overlap_T_10 = _loadMask_T_10[3:0] & _storeMask_T_21[3:0];
+  wire        _fwdHits_10_T = io_ld_valid & count > 5'hA;
+  wire        fwdHits_10 =
+    _fwdHits_10_T & sameWord_10 & _overlap_T_10 == _loadMask_T_10[3:0];
+  wire [62:0] _fwdData_10_T_4 =
+    {31'h0, casez_tmp_30} << {58'h0, casez_tmp_29[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_22 = idx - 4'h5;
+  reg  [31:0] casez_tmp_32;
+  always_comb begin
+    casez (_idx_T_22)
+      4'b0000:
+        casez_tmp_32 = entries_0_addr;
+      4'b0001:
+        casez_tmp_32 = entries_1_addr;
+      4'b0010:
+        casez_tmp_32 = entries_2_addr;
+      4'b0011:
+        casez_tmp_32 = entries_3_addr;
+      4'b0100:
+        casez_tmp_32 = entries_4_addr;
+      4'b0101:
+        casez_tmp_32 = entries_5_addr;
+      4'b0110:
+        casez_tmp_32 = entries_6_addr;
+      4'b0111:
+        casez_tmp_32 = entries_7_addr;
+      4'b1000:
+        casez_tmp_32 = entries_8_addr;
+      4'b1001:
+        casez_tmp_32 = entries_9_addr;
+      4'b1010:
+        casez_tmp_32 = entries_10_addr;
+      4'b1011:
+        casez_tmp_32 = entries_11_addr;
+      4'b1100:
+        casez_tmp_32 = entries_12_addr;
+      4'b1101:
+        casez_tmp_32 = entries_13_addr;
+      4'b1110:
+        casez_tmp_32 = entries_14_addr;
+      default:
+        casez_tmp_32 = entries_15_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_33;
+  always_comb begin
+    casez (_idx_T_22)
+      4'b0000:
+        casez_tmp_33 = entries_0_data;
+      4'b0001:
+        casez_tmp_33 = entries_1_data;
+      4'b0010:
+        casez_tmp_33 = entries_2_data;
+      4'b0011:
+        casez_tmp_33 = entries_3_data;
+      4'b0100:
+        casez_tmp_33 = entries_4_data;
+      4'b0101:
+        casez_tmp_33 = entries_5_data;
+      4'b0110:
+        casez_tmp_33 = entries_6_data;
+      4'b0111:
+        casez_tmp_33 = entries_7_data;
+      4'b1000:
+        casez_tmp_33 = entries_8_data;
+      4'b1001:
+        casez_tmp_33 = entries_9_data;
+      4'b1010:
+        casez_tmp_33 = entries_10_data;
+      4'b1011:
+        casez_tmp_33 = entries_11_data;
+      4'b1100:
+        casez_tmp_33 = entries_12_data;
+      4'b1101:
+        casez_tmp_33 = entries_13_data;
+      4'b1110:
+        casez_tmp_33 = entries_14_data;
+      default:
+        casez_tmp_33 = entries_15_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_34;
+  always_comb begin
+    casez (_idx_T_22)
+      4'b0000:
+        casez_tmp_34 = entries_0_mask;
+      4'b0001:
+        casez_tmp_34 = entries_1_mask;
+      4'b0010:
+        casez_tmp_34 = entries_2_mask;
+      4'b0011:
+        casez_tmp_34 = entries_3_mask;
+      4'b0100:
+        casez_tmp_34 = entries_4_mask;
+      4'b0101:
+        casez_tmp_34 = entries_5_mask;
+      4'b0110:
+        casez_tmp_34 = entries_6_mask;
+      4'b0111:
+        casez_tmp_34 = entries_7_mask;
+      4'b1000:
+        casez_tmp_34 = entries_8_mask;
+      4'b1001:
+        casez_tmp_34 = entries_9_mask;
+      4'b1010:
+        casez_tmp_34 = entries_10_mask;
+      4'b1011:
+        casez_tmp_34 = entries_11_mask;
+      4'b1100:
+        casez_tmp_34 = entries_12_mask;
+      4'b1101:
+        casez_tmp_34 = entries_13_mask;
+      4'b1110:
+        casez_tmp_34 = entries_14_mask;
+      default:
+        casez_tmp_34 = entries_15_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_11 = casez_tmp_32[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_23 = {3'h0, casez_tmp_34} << casez_tmp_32[1:0];
+  wire [6:0]  _loadMask_T_11 =
+    {3'h0,
+     _loadMask_base_T_143
+       ? 4'h3
+       : _loadMask_base_T_141
+           ? 4'h1
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
+  wire [3:0]  _overlap_T_11 = _loadMask_T_11[3:0] & _storeMask_T_23[3:0];
+  wire        _fwdHits_11_T = io_ld_valid & count > 5'hB;
+  wire        fwdHits_11 =
+    _fwdHits_11_T & sameWord_11 & _overlap_T_11 == _loadMask_T_11[3:0];
+  wire [62:0] _fwdData_11_T_4 =
+    {31'h0, casez_tmp_33} << {58'h0, casez_tmp_32[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_24 = idx - 4'h4;
+  reg  [31:0] casez_tmp_35;
+  always_comb begin
+    casez (_idx_T_24)
+      4'b0000:
+        casez_tmp_35 = entries_0_addr;
+      4'b0001:
+        casez_tmp_35 = entries_1_addr;
+      4'b0010:
+        casez_tmp_35 = entries_2_addr;
+      4'b0011:
+        casez_tmp_35 = entries_3_addr;
+      4'b0100:
+        casez_tmp_35 = entries_4_addr;
+      4'b0101:
+        casez_tmp_35 = entries_5_addr;
+      4'b0110:
+        casez_tmp_35 = entries_6_addr;
+      4'b0111:
+        casez_tmp_35 = entries_7_addr;
+      4'b1000:
+        casez_tmp_35 = entries_8_addr;
+      4'b1001:
+        casez_tmp_35 = entries_9_addr;
+      4'b1010:
+        casez_tmp_35 = entries_10_addr;
+      4'b1011:
+        casez_tmp_35 = entries_11_addr;
+      4'b1100:
+        casez_tmp_35 = entries_12_addr;
+      4'b1101:
+        casez_tmp_35 = entries_13_addr;
+      4'b1110:
+        casez_tmp_35 = entries_14_addr;
+      default:
+        casez_tmp_35 = entries_15_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_36;
+  always_comb begin
+    casez (_idx_T_24)
+      4'b0000:
+        casez_tmp_36 = entries_0_data;
+      4'b0001:
+        casez_tmp_36 = entries_1_data;
+      4'b0010:
+        casez_tmp_36 = entries_2_data;
+      4'b0011:
+        casez_tmp_36 = entries_3_data;
+      4'b0100:
+        casez_tmp_36 = entries_4_data;
+      4'b0101:
+        casez_tmp_36 = entries_5_data;
+      4'b0110:
+        casez_tmp_36 = entries_6_data;
+      4'b0111:
+        casez_tmp_36 = entries_7_data;
+      4'b1000:
+        casez_tmp_36 = entries_8_data;
+      4'b1001:
+        casez_tmp_36 = entries_9_data;
+      4'b1010:
+        casez_tmp_36 = entries_10_data;
+      4'b1011:
+        casez_tmp_36 = entries_11_data;
+      4'b1100:
+        casez_tmp_36 = entries_12_data;
+      4'b1101:
+        casez_tmp_36 = entries_13_data;
+      4'b1110:
+        casez_tmp_36 = entries_14_data;
+      default:
+        casez_tmp_36 = entries_15_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_37;
+  always_comb begin
+    casez (_idx_T_24)
+      4'b0000:
+        casez_tmp_37 = entries_0_mask;
+      4'b0001:
+        casez_tmp_37 = entries_1_mask;
+      4'b0010:
+        casez_tmp_37 = entries_2_mask;
+      4'b0011:
+        casez_tmp_37 = entries_3_mask;
+      4'b0100:
+        casez_tmp_37 = entries_4_mask;
+      4'b0101:
+        casez_tmp_37 = entries_5_mask;
+      4'b0110:
+        casez_tmp_37 = entries_6_mask;
+      4'b0111:
+        casez_tmp_37 = entries_7_mask;
+      4'b1000:
+        casez_tmp_37 = entries_8_mask;
+      4'b1001:
+        casez_tmp_37 = entries_9_mask;
+      4'b1010:
+        casez_tmp_37 = entries_10_mask;
+      4'b1011:
+        casez_tmp_37 = entries_11_mask;
+      4'b1100:
+        casez_tmp_37 = entries_12_mask;
+      4'b1101:
+        casez_tmp_37 = entries_13_mask;
+      4'b1110:
+        casez_tmp_37 = entries_14_mask;
+      default:
+        casez_tmp_37 = entries_15_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_12 = casez_tmp_35[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_25 = {3'h0, casez_tmp_37} << casez_tmp_35[1:0];
+  wire [6:0]  _loadMask_T_12 =
+    {3'h0,
+     _loadMask_base_T_143
+       ? 4'h3
+       : _loadMask_base_T_141
+           ? 4'h1
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
+  wire [3:0]  _overlap_T_12 = _loadMask_T_12[3:0] & _storeMask_T_25[3:0];
+  wire        _fwdHits_12_T = io_ld_valid & count > 5'hC;
+  wire        fwdHits_12 =
+    _fwdHits_12_T & sameWord_12 & _overlap_T_12 == _loadMask_T_12[3:0];
+  wire [62:0] _fwdData_12_T_4 =
+    {31'h0, casez_tmp_36} << {58'h0, casez_tmp_35[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_26 = idx - 4'h3;
+  reg  [31:0] casez_tmp_38;
+  always_comb begin
+    casez (_idx_T_26)
+      4'b0000:
+        casez_tmp_38 = entries_0_addr;
+      4'b0001:
+        casez_tmp_38 = entries_1_addr;
+      4'b0010:
+        casez_tmp_38 = entries_2_addr;
+      4'b0011:
+        casez_tmp_38 = entries_3_addr;
+      4'b0100:
+        casez_tmp_38 = entries_4_addr;
+      4'b0101:
+        casez_tmp_38 = entries_5_addr;
+      4'b0110:
+        casez_tmp_38 = entries_6_addr;
+      4'b0111:
+        casez_tmp_38 = entries_7_addr;
+      4'b1000:
+        casez_tmp_38 = entries_8_addr;
+      4'b1001:
+        casez_tmp_38 = entries_9_addr;
+      4'b1010:
+        casez_tmp_38 = entries_10_addr;
+      4'b1011:
+        casez_tmp_38 = entries_11_addr;
+      4'b1100:
+        casez_tmp_38 = entries_12_addr;
+      4'b1101:
+        casez_tmp_38 = entries_13_addr;
+      4'b1110:
+        casez_tmp_38 = entries_14_addr;
+      default:
+        casez_tmp_38 = entries_15_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_39;
+  always_comb begin
+    casez (_idx_T_26)
+      4'b0000:
+        casez_tmp_39 = entries_0_data;
+      4'b0001:
+        casez_tmp_39 = entries_1_data;
+      4'b0010:
+        casez_tmp_39 = entries_2_data;
+      4'b0011:
+        casez_tmp_39 = entries_3_data;
+      4'b0100:
+        casez_tmp_39 = entries_4_data;
+      4'b0101:
+        casez_tmp_39 = entries_5_data;
+      4'b0110:
+        casez_tmp_39 = entries_6_data;
+      4'b0111:
+        casez_tmp_39 = entries_7_data;
+      4'b1000:
+        casez_tmp_39 = entries_8_data;
+      4'b1001:
+        casez_tmp_39 = entries_9_data;
+      4'b1010:
+        casez_tmp_39 = entries_10_data;
+      4'b1011:
+        casez_tmp_39 = entries_11_data;
+      4'b1100:
+        casez_tmp_39 = entries_12_data;
+      4'b1101:
+        casez_tmp_39 = entries_13_data;
+      4'b1110:
+        casez_tmp_39 = entries_14_data;
+      default:
+        casez_tmp_39 = entries_15_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_40;
+  always_comb begin
+    casez (_idx_T_26)
+      4'b0000:
+        casez_tmp_40 = entries_0_mask;
+      4'b0001:
+        casez_tmp_40 = entries_1_mask;
+      4'b0010:
+        casez_tmp_40 = entries_2_mask;
+      4'b0011:
+        casez_tmp_40 = entries_3_mask;
+      4'b0100:
+        casez_tmp_40 = entries_4_mask;
+      4'b0101:
+        casez_tmp_40 = entries_5_mask;
+      4'b0110:
+        casez_tmp_40 = entries_6_mask;
+      4'b0111:
+        casez_tmp_40 = entries_7_mask;
+      4'b1000:
+        casez_tmp_40 = entries_8_mask;
+      4'b1001:
+        casez_tmp_40 = entries_9_mask;
+      4'b1010:
+        casez_tmp_40 = entries_10_mask;
+      4'b1011:
+        casez_tmp_40 = entries_11_mask;
+      4'b1100:
+        casez_tmp_40 = entries_12_mask;
+      4'b1101:
+        casez_tmp_40 = entries_13_mask;
+      4'b1110:
+        casez_tmp_40 = entries_14_mask;
+      default:
+        casez_tmp_40 = entries_15_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_13 = casez_tmp_38[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_27 = {3'h0, casez_tmp_40} << casez_tmp_38[1:0];
+  wire [6:0]  _loadMask_T_13 =
+    {3'h0,
+     _loadMask_base_T_143
+       ? 4'h3
+       : _loadMask_base_T_141
+           ? 4'h1
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
+  wire [3:0]  _overlap_T_13 = _loadMask_T_13[3:0] & _storeMask_T_27[3:0];
+  wire        _fwdHits_13_T = io_ld_valid & count > 5'hD;
+  wire        fwdHits_13 =
+    _fwdHits_13_T & sameWord_13 & _overlap_T_13 == _loadMask_T_13[3:0];
+  wire [62:0] _fwdData_13_T_4 =
+    {31'h0, casez_tmp_39} << {58'h0, casez_tmp_38[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_28 = idx - 4'h2;
+  reg  [31:0] casez_tmp_41;
+  always_comb begin
+    casez (_idx_T_28)
+      4'b0000:
+        casez_tmp_41 = entries_0_addr;
+      4'b0001:
+        casez_tmp_41 = entries_1_addr;
+      4'b0010:
+        casez_tmp_41 = entries_2_addr;
+      4'b0011:
+        casez_tmp_41 = entries_3_addr;
+      4'b0100:
+        casez_tmp_41 = entries_4_addr;
+      4'b0101:
+        casez_tmp_41 = entries_5_addr;
+      4'b0110:
+        casez_tmp_41 = entries_6_addr;
+      4'b0111:
+        casez_tmp_41 = entries_7_addr;
+      4'b1000:
+        casez_tmp_41 = entries_8_addr;
+      4'b1001:
+        casez_tmp_41 = entries_9_addr;
+      4'b1010:
+        casez_tmp_41 = entries_10_addr;
+      4'b1011:
+        casez_tmp_41 = entries_11_addr;
+      4'b1100:
+        casez_tmp_41 = entries_12_addr;
+      4'b1101:
+        casez_tmp_41 = entries_13_addr;
+      4'b1110:
+        casez_tmp_41 = entries_14_addr;
+      default:
+        casez_tmp_41 = entries_15_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_42;
+  always_comb begin
+    casez (_idx_T_28)
+      4'b0000:
+        casez_tmp_42 = entries_0_data;
+      4'b0001:
+        casez_tmp_42 = entries_1_data;
+      4'b0010:
+        casez_tmp_42 = entries_2_data;
+      4'b0011:
+        casez_tmp_42 = entries_3_data;
+      4'b0100:
+        casez_tmp_42 = entries_4_data;
+      4'b0101:
+        casez_tmp_42 = entries_5_data;
+      4'b0110:
+        casez_tmp_42 = entries_6_data;
+      4'b0111:
+        casez_tmp_42 = entries_7_data;
+      4'b1000:
+        casez_tmp_42 = entries_8_data;
+      4'b1001:
+        casez_tmp_42 = entries_9_data;
+      4'b1010:
+        casez_tmp_42 = entries_10_data;
+      4'b1011:
+        casez_tmp_42 = entries_11_data;
+      4'b1100:
+        casez_tmp_42 = entries_12_data;
+      4'b1101:
+        casez_tmp_42 = entries_13_data;
+      4'b1110:
+        casez_tmp_42 = entries_14_data;
+      default:
+        casez_tmp_42 = entries_15_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_43;
+  always_comb begin
+    casez (_idx_T_28)
+      4'b0000:
+        casez_tmp_43 = entries_0_mask;
+      4'b0001:
+        casez_tmp_43 = entries_1_mask;
+      4'b0010:
+        casez_tmp_43 = entries_2_mask;
+      4'b0011:
+        casez_tmp_43 = entries_3_mask;
+      4'b0100:
+        casez_tmp_43 = entries_4_mask;
+      4'b0101:
+        casez_tmp_43 = entries_5_mask;
+      4'b0110:
+        casez_tmp_43 = entries_6_mask;
+      4'b0111:
+        casez_tmp_43 = entries_7_mask;
+      4'b1000:
+        casez_tmp_43 = entries_8_mask;
+      4'b1001:
+        casez_tmp_43 = entries_9_mask;
+      4'b1010:
+        casez_tmp_43 = entries_10_mask;
+      4'b1011:
+        casez_tmp_43 = entries_11_mask;
+      4'b1100:
+        casez_tmp_43 = entries_12_mask;
+      4'b1101:
+        casez_tmp_43 = entries_13_mask;
+      4'b1110:
+        casez_tmp_43 = entries_14_mask;
+      default:
+        casez_tmp_43 = entries_15_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_14 = casez_tmp_41[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_29 = {3'h0, casez_tmp_43} << casez_tmp_41[1:0];
+  wire [6:0]  _loadMask_T_14 =
+    {3'h0,
+     _loadMask_base_T_143
+       ? 4'h3
+       : _loadMask_base_T_141
+           ? 4'h1
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
+  wire [3:0]  _overlap_T_14 = _loadMask_T_14[3:0] & _storeMask_T_29[3:0];
+  wire        _fwdHits_14_T = io_ld_valid & count > 5'hE;
+  wire        fwdHits_14 =
+    _fwdHits_14_T & sameWord_14 & _overlap_T_14 == _loadMask_T_14[3:0];
+  wire [62:0] _fwdData_14_T_4 =
+    {31'h0, casez_tmp_42} << {58'h0, casez_tmp_41[1:0], 3'h0} >> _GEN_3;
+  wire [3:0]  _idx_T_30 = idx - 4'h1;
+  reg  [31:0] casez_tmp_44;
+  always_comb begin
+    casez (_idx_T_30)
+      4'b0000:
+        casez_tmp_44 = entries_0_addr;
+      4'b0001:
+        casez_tmp_44 = entries_1_addr;
+      4'b0010:
+        casez_tmp_44 = entries_2_addr;
+      4'b0011:
+        casez_tmp_44 = entries_3_addr;
+      4'b0100:
+        casez_tmp_44 = entries_4_addr;
+      4'b0101:
+        casez_tmp_44 = entries_5_addr;
+      4'b0110:
+        casez_tmp_44 = entries_6_addr;
+      4'b0111:
+        casez_tmp_44 = entries_7_addr;
+      4'b1000:
+        casez_tmp_44 = entries_8_addr;
+      4'b1001:
+        casez_tmp_44 = entries_9_addr;
+      4'b1010:
+        casez_tmp_44 = entries_10_addr;
+      4'b1011:
+        casez_tmp_44 = entries_11_addr;
+      4'b1100:
+        casez_tmp_44 = entries_12_addr;
+      4'b1101:
+        casez_tmp_44 = entries_13_addr;
+      4'b1110:
+        casez_tmp_44 = entries_14_addr;
+      default:
+        casez_tmp_44 = entries_15_addr;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_45;
+  always_comb begin
+    casez (_idx_T_30)
+      4'b0000:
+        casez_tmp_45 = entries_0_data;
+      4'b0001:
+        casez_tmp_45 = entries_1_data;
+      4'b0010:
+        casez_tmp_45 = entries_2_data;
+      4'b0011:
+        casez_tmp_45 = entries_3_data;
+      4'b0100:
+        casez_tmp_45 = entries_4_data;
+      4'b0101:
+        casez_tmp_45 = entries_5_data;
+      4'b0110:
+        casez_tmp_45 = entries_6_data;
+      4'b0111:
+        casez_tmp_45 = entries_7_data;
+      4'b1000:
+        casez_tmp_45 = entries_8_data;
+      4'b1001:
+        casez_tmp_45 = entries_9_data;
+      4'b1010:
+        casez_tmp_45 = entries_10_data;
+      4'b1011:
+        casez_tmp_45 = entries_11_data;
+      4'b1100:
+        casez_tmp_45 = entries_12_data;
+      4'b1101:
+        casez_tmp_45 = entries_13_data;
+      4'b1110:
+        casez_tmp_45 = entries_14_data;
+      default:
+        casez_tmp_45 = entries_15_data;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_46;
+  always_comb begin
+    casez (_idx_T_30)
+      4'b0000:
+        casez_tmp_46 = entries_0_mask;
+      4'b0001:
+        casez_tmp_46 = entries_1_mask;
+      4'b0010:
+        casez_tmp_46 = entries_2_mask;
+      4'b0011:
+        casez_tmp_46 = entries_3_mask;
+      4'b0100:
+        casez_tmp_46 = entries_4_mask;
+      4'b0101:
+        casez_tmp_46 = entries_5_mask;
+      4'b0110:
+        casez_tmp_46 = entries_6_mask;
+      4'b0111:
+        casez_tmp_46 = entries_7_mask;
+      4'b1000:
+        casez_tmp_46 = entries_8_mask;
+      4'b1001:
+        casez_tmp_46 = entries_9_mask;
+      4'b1010:
+        casez_tmp_46 = entries_10_mask;
+      4'b1011:
+        casez_tmp_46 = entries_11_mask;
+      4'b1100:
+        casez_tmp_46 = entries_12_mask;
+      4'b1101:
+        casez_tmp_46 = entries_13_mask;
+      4'b1110:
+        casez_tmp_46 = entries_14_mask;
+      default:
+        casez_tmp_46 = entries_15_mask;
+    endcase
+  end // always_comb
+  wire        sameWord_15 = casez_tmp_44[31:2] == io_ld_addr[31:2];
+  wire [6:0]  _storeMask_T_31 = {3'h0, casez_tmp_46} << casez_tmp_44[1:0];
+  wire [6:0]  _loadMask_T_15 =
+    {3'h0,
+     _loadMask_base_T_143
+       ? 4'h3
+       : _loadMask_base_T_141
+           ? 4'h1
+           : _loadMask_base_T_139 ? 4'hF : {2'h0, _loadMask_base_T_137, 1'h1}} << _GEN_2;
+  wire [3:0]  _overlap_T_15 = _loadMask_T_15[3:0] & _storeMask_T_31[3:0];
+  wire        _fwdHits_15_T = io_ld_valid & count[4];
+  wire        fwdHits_15 =
+    _fwdHits_15_T & sameWord_15 & _overlap_T_15 == _loadMask_T_15[3:0];
+  wire [62:0] _fwdData_15_T_4 =
+    {31'h0, casez_tmp_45} << {58'h0, casez_tmp_44[1:0], 3'h0} >> _GEN_3;
+  wire [15:0] _io_ld_wait_T =
+    {_fwdHits_15_T & sameWord_15 & (|_overlap_T_15)
+       & _overlap_T_15 != _loadMask_T_15[3:0],
+     _fwdHits_14_T & sameWord_14 & (|_overlap_T_14)
+       & _overlap_T_14 != _loadMask_T_14[3:0],
+     _fwdHits_13_T & sameWord_13 & (|_overlap_T_13)
+       & _overlap_T_13 != _loadMask_T_13[3:0],
+     _fwdHits_12_T & sameWord_12 & (|_overlap_T_12)
+       & _overlap_T_12 != _loadMask_T_12[3:0],
+     _fwdHits_11_T & sameWord_11 & (|_overlap_T_11)
+       & _overlap_T_11 != _loadMask_T_11[3:0],
+     _fwdHits_10_T & sameWord_10 & (|_overlap_T_10)
+       & _overlap_T_10 != _loadMask_T_10[3:0],
+     _fwdHits_9_T & sameWord_9 & (|_overlap_T_9) & _overlap_T_9 != _loadMask_T_9[3:0],
+     _fwdHits_8_T & sameWord_8 & (|_overlap_T_8) & _overlap_T_8 != _loadMask_T_8[3:0],
+     _fwdHits_7_T & sameWord_7 & (|_overlap_T_7) & _overlap_T_7 != _loadMask_T_7[3:0],
      _fwdHits_6_T & sameWord_6 & (|_overlap_T_6) & _overlap_T_6 != _loadMask_T_6[3:0],
      _fwdHits_5_T & sameWord_5 & (|_overlap_T_5) & _overlap_T_5 != _loadMask_T_5[3:0],
      _fwdHits_4_T & sameWord_4 & (|_overlap_T_4) & _overlap_T_4 != _loadMask_T_4[3:0],
@@ -708,9 +2153,14 @@ module StoreBuffer(
      _fwdHits_2_T & sameWord_2 & (|_overlap_T_2) & _overlap_T_2 != _loadMask_T_2[3:0],
      _fwdHits_1_T & sameWord_1 & (|_overlap_T_1) & _overlap_T_1 != _loadMask_T_1[3:0],
      _fwdHits_0_T & sameWord & (|_overlap_T) & _overlap_T != _loadMask_T[3:0]};
-  wire        _count_T = io_enq_ready_0 & io_enq_valid;
-  wire        _GEN_3 = state == 2'h0;
-  wire        _GEN_4 = state == 2'h1;
+  wire        doEnq0 = io_enq_valid & batchReady;
+  wire        doEnq1 = io_enq1_valid & batchReady;
+  wire [3:0]  _tail1_T = tail + {3'h0, doEnq0};
+  wire [1:0]  _GEN_4 = {1'h0, doEnq0};
+  wire [1:0]  _GEN_5 = {1'h0, doEnq1};
+  wire [4:0]  _GEN_6 = {3'h0, _GEN_4 + _GEN_5};
+  wire        _GEN_7 = state == 2'h0;
+  wire        _GEN_8 = state == 2'h1;
   wire        awFire = io_dmem_awvalid_0 & io_dmem_awready;
   wire        wFire = io_dmem_wvalid_0 & io_dmem_wready;
   always @(posedge clock) begin
@@ -739,79 +2189,232 @@ module StoreBuffer(
       entries_7_addr <= 32'h0;
       entries_7_data <= 32'h0;
       entries_7_mask <= 4'h0;
-      idx <= 3'h0;
-      tail <= 3'h0;
-      count <= 4'h0;
+      entries_8_addr <= 32'h0;
+      entries_8_data <= 32'h0;
+      entries_8_mask <= 4'h0;
+      entries_9_addr <= 32'h0;
+      entries_9_data <= 32'h0;
+      entries_9_mask <= 4'h0;
+      entries_10_addr <= 32'h0;
+      entries_10_data <= 32'h0;
+      entries_10_mask <= 4'h0;
+      entries_11_addr <= 32'h0;
+      entries_11_data <= 32'h0;
+      entries_11_mask <= 4'h0;
+      entries_12_addr <= 32'h0;
+      entries_12_data <= 32'h0;
+      entries_12_mask <= 4'h0;
+      entries_13_addr <= 32'h0;
+      entries_13_data <= 32'h0;
+      entries_13_mask <= 4'h0;
+      entries_14_addr <= 32'h0;
+      entries_14_data <= 32'h0;
+      entries_14_mask <= 4'h0;
+      entries_15_addr <= 32'h0;
+      entries_15_data <= 32'h0;
+      entries_15_mask <= 4'h0;
+      idx <= 4'h0;
+      tail <= 4'h0;
+      count <= 5'h0;
       state <= 2'h0;
       awDone <= 1'h0;
       wDone <= 1'h0;
     end
     else begin
-      if (_count_T & tail == 3'h0) begin
+      if (doEnq1 & _tail1_T == 4'h0) begin
+        entries_0_addr <= io_enq1_bits_addr;
+        entries_0_data <= io_enq1_bits_data;
+        entries_0_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h0) begin
         entries_0_addr <= io_enq_bits_addr;
         entries_0_data <= io_enq_bits_data;
         entries_0_mask <= io_enq_bits_mask;
       end
-      if (_count_T & tail == 3'h1) begin
+      if (doEnq1 & _tail1_T == 4'h1) begin
+        entries_1_addr <= io_enq1_bits_addr;
+        entries_1_data <= io_enq1_bits_data;
+        entries_1_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h1) begin
         entries_1_addr <= io_enq_bits_addr;
         entries_1_data <= io_enq_bits_data;
         entries_1_mask <= io_enq_bits_mask;
       end
-      if (_count_T & tail == 3'h2) begin
+      if (doEnq1 & _tail1_T == 4'h2) begin
+        entries_2_addr <= io_enq1_bits_addr;
+        entries_2_data <= io_enq1_bits_data;
+        entries_2_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h2) begin
         entries_2_addr <= io_enq_bits_addr;
         entries_2_data <= io_enq_bits_data;
         entries_2_mask <= io_enq_bits_mask;
       end
-      if (_count_T & tail == 3'h3) begin
+      if (doEnq1 & _tail1_T == 4'h3) begin
+        entries_3_addr <= io_enq1_bits_addr;
+        entries_3_data <= io_enq1_bits_data;
+        entries_3_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h3) begin
         entries_3_addr <= io_enq_bits_addr;
         entries_3_data <= io_enq_bits_data;
         entries_3_mask <= io_enq_bits_mask;
       end
-      if (_count_T & tail == 3'h4) begin
+      if (doEnq1 & _tail1_T == 4'h4) begin
+        entries_4_addr <= io_enq1_bits_addr;
+        entries_4_data <= io_enq1_bits_data;
+        entries_4_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h4) begin
         entries_4_addr <= io_enq_bits_addr;
         entries_4_data <= io_enq_bits_data;
         entries_4_mask <= io_enq_bits_mask;
       end
-      if (_count_T & tail == 3'h5) begin
+      if (doEnq1 & _tail1_T == 4'h5) begin
+        entries_5_addr <= io_enq1_bits_addr;
+        entries_5_data <= io_enq1_bits_data;
+        entries_5_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h5) begin
         entries_5_addr <= io_enq_bits_addr;
         entries_5_data <= io_enq_bits_data;
         entries_5_mask <= io_enq_bits_mask;
       end
-      if (_count_T & tail == 3'h6) begin
+      if (doEnq1 & _tail1_T == 4'h6) begin
+        entries_6_addr <= io_enq1_bits_addr;
+        entries_6_data <= io_enq1_bits_data;
+        entries_6_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h6) begin
         entries_6_addr <= io_enq_bits_addr;
         entries_6_data <= io_enq_bits_data;
         entries_6_mask <= io_enq_bits_mask;
       end
-      if (_count_T & (&tail)) begin
+      if (doEnq1 & _tail1_T == 4'h7) begin
+        entries_7_addr <= io_enq1_bits_addr;
+        entries_7_data <= io_enq1_bits_data;
+        entries_7_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h7) begin
         entries_7_addr <= io_enq_bits_addr;
         entries_7_data <= io_enq_bits_data;
         entries_7_mask <= io_enq_bits_mask;
       end
+      if (doEnq1 & _tail1_T == 4'h8) begin
+        entries_8_addr <= io_enq1_bits_addr;
+        entries_8_data <= io_enq1_bits_data;
+        entries_8_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h8) begin
+        entries_8_addr <= io_enq_bits_addr;
+        entries_8_data <= io_enq_bits_data;
+        entries_8_mask <= io_enq_bits_mask;
+      end
+      if (doEnq1 & _tail1_T == 4'h9) begin
+        entries_9_addr <= io_enq1_bits_addr;
+        entries_9_data <= io_enq1_bits_data;
+        entries_9_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'h9) begin
+        entries_9_addr <= io_enq_bits_addr;
+        entries_9_data <= io_enq_bits_data;
+        entries_9_mask <= io_enq_bits_mask;
+      end
+      if (doEnq1 & _tail1_T == 4'hA) begin
+        entries_10_addr <= io_enq1_bits_addr;
+        entries_10_data <= io_enq1_bits_data;
+        entries_10_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'hA) begin
+        entries_10_addr <= io_enq_bits_addr;
+        entries_10_data <= io_enq_bits_data;
+        entries_10_mask <= io_enq_bits_mask;
+      end
+      if (doEnq1 & _tail1_T == 4'hB) begin
+        entries_11_addr <= io_enq1_bits_addr;
+        entries_11_data <= io_enq1_bits_data;
+        entries_11_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'hB) begin
+        entries_11_addr <= io_enq_bits_addr;
+        entries_11_data <= io_enq_bits_data;
+        entries_11_mask <= io_enq_bits_mask;
+      end
+      if (doEnq1 & _tail1_T == 4'hC) begin
+        entries_12_addr <= io_enq1_bits_addr;
+        entries_12_data <= io_enq1_bits_data;
+        entries_12_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'hC) begin
+        entries_12_addr <= io_enq_bits_addr;
+        entries_12_data <= io_enq_bits_data;
+        entries_12_mask <= io_enq_bits_mask;
+      end
+      if (doEnq1 & _tail1_T == 4'hD) begin
+        entries_13_addr <= io_enq1_bits_addr;
+        entries_13_data <= io_enq1_bits_data;
+        entries_13_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'hD) begin
+        entries_13_addr <= io_enq_bits_addr;
+        entries_13_data <= io_enq_bits_data;
+        entries_13_mask <= io_enq_bits_mask;
+      end
+      if (doEnq1 & _tail1_T == 4'hE) begin
+        entries_14_addr <= io_enq1_bits_addr;
+        entries_14_data <= io_enq1_bits_data;
+        entries_14_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & tail == 4'hE) begin
+        entries_14_addr <= io_enq_bits_addr;
+        entries_14_data <= io_enq_bits_data;
+        entries_14_mask <= io_enq_bits_mask;
+      end
+      if (doEnq1 & (&_tail1_T)) begin
+        entries_15_addr <= io_enq1_bits_addr;
+        entries_15_data <= io_enq1_bits_data;
+        entries_15_mask <= io_enq1_bits_mask;
+      end
+      else if (doEnq0 & (&tail)) begin
+        entries_15_addr <= io_enq_bits_addr;
+        entries_15_data <= io_enq_bits_data;
+        entries_15_mask <= io_enq_bits_mask;
+      end
       if (bFire)
-        idx <= idx + 3'h1;
-      if (_count_T)
-        tail <= tail + 3'h1;
-      count <= count + {3'h0, _count_T} - {3'h0, bFire};
-      if (_GEN_3) begin
+        idx <= idx + 4'h1;
+      if (doEnq0 | doEnq1)
+        tail <= tail + {2'h0, _GEN_4 + _GEN_5};
+      count <= count + _GEN_6 - _GEN;
+      if (_GEN_7) begin
         if (io_empty_0 | io_bus_busy) begin
         end
         else
           state <= 2'h1;
       end
-      else if (_GEN_4) begin
+      else if (_GEN_8) begin
         if ((awDone | awFire) & (wDone | wFire))
           state <= 2'h2;
       end
       else if (bFire)
-        state <= 2'h0;
-      awDone <= ~_GEN_3 & (_GEN_4 ? awFire | awDone : ~bFire & awDone);
-      wDone <= ~_GEN_3 & (_GEN_4 ? wFire | wDone : ~bFire & wDone);
+        state <= {1'h0, (|(count + _GEN_6 - 5'h1)) & ~io_bus_busy};
+      awDone <= ~_GEN_7 & (_GEN_8 ? awFire | awDone : ~bFire & awDone);
+      wDone <= ~_GEN_7 & (_GEN_8 ? wFire | wDone : ~bFire & wDone);
     end
   end // always @(posedge)
-  assign io_enq_ready = io_enq_ready_0;
+  assign io_enq_ready = batchReady;
+  assign io_enq1_ready = batchReady;
   assign io_ld_wait = |_io_ld_wait_T;
   assign io_ld_fwd_valid =
-    (|{fwdHits_7,
+    (|{fwdHits_15,
+       fwdHits_14,
+       fwdHits_13,
+       fwdHits_12,
+       fwdHits_11,
+       fwdHits_10,
+       fwdHits_9,
+       fwdHits_8,
+       fwdHits_7,
        fwdHits_6,
        fwdHits_5,
        fwdHits_4,
@@ -821,24 +2424,69 @@ module StoreBuffer(
        fwdHits_0}) & ~(|_io_ld_wait_T);
   assign io_ld_fwd_data =
     (fwdHits_0
-     & ~(fwdHits_1 | fwdHits_2 | fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6
-         | fwdHits_7)
+     & ~(fwdHits_1 | fwdHits_2 | fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7
+         | fwdHits_8 | fwdHits_9 | fwdHits_10 | fwdHits_11 | fwdHits_12 | fwdHits_13
+         | fwdHits_14 | fwdHits_15)
        ? _fwdData_0_T_4[31:0]
        : 32'h0)
     | (fwdHits_1
-       & ~(fwdHits_2 | fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7)
+       & ~(fwdHits_2 | fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7
+           | fwdHits_8 | fwdHits_9 | fwdHits_10 | fwdHits_11 | fwdHits_12 | fwdHits_13
+           | fwdHits_14 | fwdHits_15)
          ? _fwdData_1_T_4[31:0]
          : 32'h0)
-    | (fwdHits_2 & ~(fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7)
+    | (fwdHits_2
+       & ~(fwdHits_3 | fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7 | fwdHits_8
+           | fwdHits_9 | fwdHits_10 | fwdHits_11 | fwdHits_12 | fwdHits_13 | fwdHits_14
+           | fwdHits_15)
          ? _fwdData_2_T_4[31:0]
          : 32'h0)
-    | (fwdHits_3 & ~(fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7)
+    | (fwdHits_3
+       & ~(fwdHits_4 | fwdHits_5 | fwdHits_6 | fwdHits_7 | fwdHits_8 | fwdHits_9
+           | fwdHits_10 | fwdHits_11 | fwdHits_12 | fwdHits_13 | fwdHits_14 | fwdHits_15)
          ? _fwdData_3_T_4[31:0]
          : 32'h0)
-    | (fwdHits_4 & ~(fwdHits_5 | fwdHits_6 | fwdHits_7) ? _fwdData_4_T_4[31:0] : 32'h0)
-    | (fwdHits_5 & ~(fwdHits_6 | fwdHits_7) ? _fwdData_5_T_4[31:0] : 32'h0)
-    | (fwdHits_6 & ~fwdHits_7 ? _fwdData_6_T_4[31:0] : 32'h0)
-    | (fwdHits_7 ? _fwdData_7_T_4[31:0] : 32'h0);
+    | (fwdHits_4
+       & ~(fwdHits_5 | fwdHits_6 | fwdHits_7 | fwdHits_8 | fwdHits_9 | fwdHits_10
+           | fwdHits_11 | fwdHits_12 | fwdHits_13 | fwdHits_14 | fwdHits_15)
+         ? _fwdData_4_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_5
+       & ~(fwdHits_6 | fwdHits_7 | fwdHits_8 | fwdHits_9 | fwdHits_10 | fwdHits_11
+           | fwdHits_12 | fwdHits_13 | fwdHits_14 | fwdHits_15)
+         ? _fwdData_5_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_6
+       & ~(fwdHits_7 | fwdHits_8 | fwdHits_9 | fwdHits_10 | fwdHits_11 | fwdHits_12
+           | fwdHits_13 | fwdHits_14 | fwdHits_15)
+         ? _fwdData_6_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_7
+       & ~(fwdHits_8 | fwdHits_9 | fwdHits_10 | fwdHits_11 | fwdHits_12 | fwdHits_13
+           | fwdHits_14 | fwdHits_15)
+         ? _fwdData_7_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_8
+       & ~(fwdHits_9 | fwdHits_10 | fwdHits_11 | fwdHits_12 | fwdHits_13 | fwdHits_14
+           | fwdHits_15)
+         ? _fwdData_8_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_9
+       & ~(fwdHits_10 | fwdHits_11 | fwdHits_12 | fwdHits_13 | fwdHits_14 | fwdHits_15)
+         ? _fwdData_9_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_10 & ~(fwdHits_11 | fwdHits_12 | fwdHits_13 | fwdHits_14 | fwdHits_15)
+         ? _fwdData_10_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_11 & ~(fwdHits_12 | fwdHits_13 | fwdHits_14 | fwdHits_15)
+         ? _fwdData_11_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_12 & ~(fwdHits_13 | fwdHits_14 | fwdHits_15)
+         ? _fwdData_12_T_4[31:0]
+         : 32'h0)
+    | (fwdHits_13 & ~(fwdHits_14 | fwdHits_15) ? _fwdData_13_T_4[31:0] : 32'h0)
+    | (fwdHits_14 & ~fwdHits_15 ? _fwdData_14_T_4[31:0] : 32'h0)
+    | (fwdHits_15 ? _fwdData_15_T_4[31:0] : 32'h0);
   assign io_dmem_awaddr = casez_tmp;
   assign io_dmem_awvalid = io_dmem_awvalid_0;
   assign io_dmem_wdata = headData[31:0];
@@ -849,5 +2497,6 @@ module StoreBuffer(
   assign io_deq_addr = casez_tmp;
   assign io_empty = io_empty_0;
   assign io_busy = |state;
+  assign io_free = _available_T_2;
 endmodule
 

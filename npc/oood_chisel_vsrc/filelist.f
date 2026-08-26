@@ -1,5 +1,14 @@
 IMM.sv
 BPU.sv
+verification/assert/BPUUpdateQueue_Verification_Assert.sv
+verification/BPUUpdateQueue_Verification.sv
+BPUUpdateQueue.sv
+FetchBuffer.sv
+verification/assert/FTQ_Verification_Assert.sv
+verification/FTQ_Verification.sv
+FTQ.sv
+verification/assert/IFU_Verification_Assert.sv
+verification/IFU_Verification.sv
 IFU.sv
 Control.sv
 IDU.sv
@@ -7,6 +16,9 @@ ALU.sv
 PC.sv
 DIV.sv
 EXU.sv
+verification/assert/LoadQueue_Verification_Assert.sv
+verification/LoadQueue_Verification.sv
+LoadQueue.sv
 LSU.sv
 WBU.sv
 CSR.sv
@@ -20,6 +32,9 @@ RS.sv
 FetchQueue.sv
 StoreQueue.sv
 StoreBuffer.sv
+verification/assert/WritebackArbiter_Verification_Assert.sv
+verification/WritebackArbiter_Verification.sv
+WritebackArbiter.sv
 Core.sv
 Xbar.sv
 Clint.sv

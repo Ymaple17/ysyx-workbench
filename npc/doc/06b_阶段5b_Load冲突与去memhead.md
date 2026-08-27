@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：去掉 mem@head；load 与更老未提交 store 正确转发/等待；无总线死锁。
 - **最小实现**：load 可在非 ROB head 执行；检查所有更老 store，完整覆盖则前递，地址未知/部分重叠则等待，无冲突才读总线。
-- **当前参考核**：本章 21/21、35/35 与 microbench PASS 是阶段快照；阶段 10m 已用独立 SQ + StoreBuffer + LQ/replay 模块化同一规则。
+- **当前参考核**：本章 21/21、35/35 与 microbench PASS 是阶段快照；阶段 11d 已用独立 SQ + burst StoreBuffer + LQ/replay 模块化同一规则。
 - **后续扩展**：阶段 6 加 FetchQueue；内存侧随后在 8d/10a/10l 演进为独立 SQ、StoreBuffer 和 LoadQueue。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

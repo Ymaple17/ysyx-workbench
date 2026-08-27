@@ -83,6 +83,13 @@ bind LoadQueue LoadQueue_Verification_Assert verification_assert (
   ._GEN                       (_GEN_9),
   .clock                      (clock)
 );
+bind StoreBuffer StoreBuffer_Verification_Assert verification_assert (
+  .reset  (reset),
+  ._GEN   (_burstStart_T),
+  ._GEN_0 (burstStart),
+  ._GEN_1 (nextBurstCount),
+  .clock  (clock)
+);
 bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (
   .reset                 (reset),
   ._GEN                  ({grant1_3, grant1_2}),
@@ -95,5 +102,19 @@ bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (
   .io_robHead            (io_robHead),
   .io_out_1_bits_rob_idx (io_out_1_bits_rob_idx_0),
   .clock                 (clock)
+);
+bind Core Core_Verification_Assert verification_assert (
+  .reset  (reset),
+  ._GEN   (lsu_io_is_flush),
+  ._GEN_0 (lsu_stage_push),
+  .clock  (clock),
+  ._GEN_1 (~flush_lsu_d)
+);
+bind SRAM SRAM_Verification_Assert verification_assert (
+  .reset         (reset),
+  .io_sram_wlast (io_sram_wlast),
+  ._GEN          (wFinal),
+  ._GEN_0        (wFire),
+  .clock         (clock)
 );
 `endif // layers_ysyx_25020039_Verification_Assert

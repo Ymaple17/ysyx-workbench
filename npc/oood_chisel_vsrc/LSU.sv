@@ -41,6 +41,7 @@ module LSU(
                 io_dmem_araddr,
   output        io_dmem_arvalid,
   output [3:0]  io_dmem_arid,
+  output [2:0]  io_dmem_arsize,
   input         io_dmem_arready,
   input  [31:0] io_dmem_rdata,
   input  [1:0]  io_dmem_rresp,
@@ -73,7 +74,9 @@ module LSU(
   input  [3:0]  io_store_resolve1_mask,
   output        io_mem_violation_valid,
   output [4:0]  io_mem_violation_rob,
-  output [31:0] io_mem_violation_pc
+  output [31:0] io_mem_violation_pc,
+                io_debug_lq_head_alloc_pc,
+  output [1:0]  io_debug_lq_head_remove_reason
 );
 
   wire        _lq_io_alloc_ready;
@@ -142,6 +145,7 @@ module LSU(
     .io_dmem_araddr                               (io_dmem_araddr),
     .io_dmem_arvalid                              (_lq_io_dmem_arvalid),
     .io_dmem_arid                                 (io_dmem_arid),
+    .io_dmem_arsize                               (io_dmem_arsize),
     .io_dmem_arready                              (io_dmem_arready),
     .io_dmem_rdata                                (io_dmem_rdata),
     .io_dmem_rresp                                (io_dmem_rresp),
@@ -174,7 +178,9 @@ module LSU(
     .io_violationValid                            (io_mem_violation_valid),
     .io_violationRob                              (io_mem_violation_rob),
     .io_violationPc                               (io_mem_violation_pc),
-    .io_outstanding                               (_lq_io_outstanding)
+    .io_outstanding                               (_lq_io_outstanding),
+    .io_debugHeadAllocPc                          (io_debug_lq_head_alloc_pc),
+    .io_debugHeadRemoveReason                     (io_debug_lq_head_remove_reason)
   );
   PerfMonitor pm (
     .clock    (clock),

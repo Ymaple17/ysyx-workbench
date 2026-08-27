@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：把「单执行槽（d_reg→EXU→LSU→WBU 串行）」拆成 **多执行单元**（ALU / DIV / LSU 各占一个派遣口），RS 每拍可向多个 FU 同时发射。
 - **最小实现**：把 RS 输出分为 ALU、迭代 DIV、LSU 三类派遣口，三条执行链可并行驻留；单 CDB 先明确仲裁和 backpressure。
-- **当前参考核**：本章 ALU/DIV/LSU 三链 + 单 CDB 是阶段快照；阶段 10m 已增加第二整数 ALU、同拍 refill 和 4→2 oldest-result 写回。
+- **当前参考核**：本章 ALU/DIV/LSU 三链 + 单 CDB 是阶段快照；阶段 11d 已增加第二整数 ALU、同拍 wake/select/refill、控制流直接完成和 4→2 oldest-result 写回。
 - **后续扩展**：8b 拓宽 FQ/rename/ROB/RS 的每拍入队，10c 再把单 CDB 扩为双 CDB。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：仅当 fencei 成为 ROB head 时刷 ICache；握手完成前停住 head；完成后冲前端，PC=pc+4。
 - **最小实现**：fence.i 到 ROB head 后等待 store 侧排空并完成 ICache invalidate，再 flush 前端并从 `pc+4` 重取。
-- **当前参考核**：该路径已被阶段 10m 的 ICache/FetchBuffer/FQ/FTQ flush 继承；`t2_fencei_smc` PASS 是本章定向快照。
+- **当前参考核**：该路径已被阶段 11d 的 ICache/FetchBuffer/FQ/FTQ flush 继承；`t2_fencei_smc` PASS 是本章定向快照。
 - **后续扩展**：4g 在提交间隙接外部中断，不能与 head side effect 或 redirect 竞争。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

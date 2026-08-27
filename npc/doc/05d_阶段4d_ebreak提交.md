@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：仿真结束 / trap 只在 **ROB head 提交** ebreak 时触发；wrong-path ebreak 永不 `sim_exit`。
 - **最小实现**：只在 ebreak 成为 ROB head 且真正提交时产生 `sim_exit`；被 flush 的 ebreak 不得结束仿真。
-- **当前参考核**：该规则已被阶段 10m 继承；正文 35/35 是本章阶段快照，最终 cpu-tests 口径见 README。
+- **当前参考核**：该规则已被阶段 11d 继承；正文 35/35 是本章阶段快照，最终 cpu-tests 口径见 README。
 - **后续扩展**：4e 用同样的“head 锁存、下一拍 redirect”模式实现 mret。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

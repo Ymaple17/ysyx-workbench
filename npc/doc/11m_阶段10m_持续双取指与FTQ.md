@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：理解“接口宽度为 2”和“平均每拍持续供给接近 2 条”是两回事；用 fetch block、缓冲和 FTQ 管理预测元数据与恢复。
 - **最小实现**：先解耦 ICache→FetchBuffer→FQ，再支持稳定双指令 block 与 cache-line 边界；最后加入 FTQ 和 speculative history 精确恢复。
-- **当前参考核**：**已严格收官**。2-entry FetchBuffer、16-entry/8-bit-generation FTQ、跨 line 已命中 slot1、speculative GHR/RAS、选择性 FTQ 截断、ALU/DIV 同拍 refill、第二整数 ALU 和 4→2 oldest-result 写回均已保留。两次 microbench+difftest 都得到 IPC `0.6381`、平均取指宽度 `1.3858`，且 `FTQ Stale Recover=0`。
+- **当前参考核**：本章作为阶段 10m 已严格收官，历史结果为两次 IPC `0.6381`、平均取指宽度 `1.3858`、`FTQ Stale Recover=0`；阶段 11d 在其上继续增加同拍 CDB wake/select、访存服务率重构和有效前端。10m 结构均保留，但不再是仓库最终水位。
 - **后续扩展**：更宽 fetch block、uop/fetch-block cache、多 bank ICache、解码队列、loop buffer。
 - **验收方式**：定向验证 taken mask、跨 line、backpressure、redirect 和 FTQ 回滚；性能上同时看有效取指宽度、FQ 压力、错路入队、redirect latency 与 IPC。
 

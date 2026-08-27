@@ -4,38 +4,57 @@ module SRAM(
                 reset,
   input  [31:0] io_sram_araddr,
   input         io_sram_arvalid,
+  input  [7:0]  io_sram_arlen,
+  input  [2:0]  io_sram_arsize,
+  input  [1:0]  io_sram_arburst,
   output        io_sram_arready,
   output [31:0] io_sram_rdata,
   output [1:0]  io_sram_rresp,
   output        io_sram_rvalid,
+                io_sram_rlast,
   input         io_sram_rready,
   input  [31:0] io_sram_awaddr,
   input         io_sram_awvalid,
+  input  [7:0]  io_sram_awlen,
+  input  [2:0]  io_sram_awsize,
+  input  [1:0]  io_sram_awburst,
   output        io_sram_awready,
   input  [31:0] io_sram_wdata,
   input  [3:0]  io_sram_wstrb,
   input         io_sram_wvalid,
+                io_sram_wlast,
   output        io_sram_wready,
                 io_sram_bvalid,
   input         io_sram_bready
 );
 
+  wire        io_sram_wready_0;
   wire [31:0] _pmem_rdata;
   reg  [1:0]  r_state;
   reg  [31:0] r_delay_cnt;
   reg  [31:0] araddr_reg;
-  reg  [31:0] rdata_reg;
-  reg  [1:0]  rresp_reg;
+  reg  [7:0]  arlen_reg;
+  reg  [2:0]  arsize_reg;
+  reg  [1:0]  arburst_reg;
+  reg  [7:0]  rbeat_reg;
+  wire        io_sram_rlast_0 = rbeat_reg == arlen_reg;
   wire        io_sram_arready_0 = r_state == 2'h0;
-  wire        _r_next_state_T_6 = r_state == 2'h1;
   wire        io_sram_rvalid_0 = r_state == 2'h2;
-  wire        _GEN =
-    araddr_reg[31] & araddr_reg < 32'h8FFFFFFF | araddr_reg > 32'h9FFFFFFF
-    & araddr_reg < 32'hA0000007;
+  wire [38:0] _beatAddr_T =
+    {7'h0, araddr_reg} + (arburst_reg == 2'h0 ? 39'h0 : {31'h0, rbeat_reg} << arsize_reg);
+  wire        beatAddrValid =
+    (|(_beatAddr_T[38:31])) & _beatAddr_T < 39'h8FFFFFFF | _beatAddr_T > 39'h9FFFFFFF
+    & _beatAddr_T < 39'hA0000007;
   reg  [1:0]  w_state;
   reg  [31:0] w_delay_cnt;
   reg  [31:0] awaddr_reg;
-  wire        io_sram_wready_0 = w_state == 2'h2;
+  reg  [7:0]  awlen_reg;
+  reg  [2:0]  awsize_reg;
+  reg  [1:0]  awburst_reg;
+  reg  [7:0]  wbeat_reg;
+  wire        wFire = io_sram_wvalid & io_sram_wready_0;
+  wire        wFinal = wbeat_reg == awlen_reg;
+  assign io_sram_wready_0 = w_state == 2'h2;
   reg  [1:0]  casez_tmp;
   always_comb begin
     casez (w_state)
@@ -44,70 +63,92 @@ module SRAM(
       2'b01:
         casez_tmp = (|w_delay_cnt) ? 2'h1 : 2'h2;
       2'b10:
-        casez_tmp = {1'h1, io_sram_wvalid};
+        casez_tmp = {1'h1, wFire & wFinal};
       default:
         casez_tmp = io_sram_bready ? 2'h0 : 2'h3;
     endcase
   end // always_comb
   wire        io_sram_awready_0 = w_state == 2'h0;
-  wire        _GEN_0 = io_sram_wvalid & io_sram_wready_0;
-  wire        _GEN_1 =
-    awaddr_reg[31] & awaddr_reg < 32'h8FFFFFFF | awaddr_reg > 32'h9FFFFFFF
-    & awaddr_reg < 32'hA0000007;
-  wire        _GEN_2 = _GEN_0 & _GEN_1;
-  wire        _GEN_3 = io_sram_arready_0 & io_sram_arvalid;
-  wire        _GEN_4 = io_sram_awvalid & io_sram_awready_0;
+  wire [31:0] writeBeatAddr =
+    awburst_reg == 2'h1
+      ? awaddr_reg + {17'h0, {7'h0, wbeat_reg} << awsize_reg}
+      : awaddr_reg;
+  wire        _GEN =
+    writeBeatAddr[31] & writeBeatAddr < 32'h8FFFFFFF | writeBeatAddr > 32'h9FFFFFFF
+    & writeBeatAddr < 32'hA0000007;
+  wire        _GEN_0 = wFire & _GEN;
+  wire        _GEN_1 = io_sram_arready_0 & io_sram_arvalid;
+  wire        _r_next_state_T_8 = r_state == 2'h1;
+  wire        _GEN_2 = io_sram_awvalid & io_sram_awready_0;
   always @(posedge clock) begin
     if (reset) begin
       r_state <= 2'h0;
       araddr_reg <= 32'h0;
-      rdata_reg <= 32'h0;
-      rresp_reg <= 2'h0;
+      arlen_reg <= 8'h0;
+      arsize_reg <= 3'h2;
+      arburst_reg <= 2'h1;
+      rbeat_reg <= 8'h0;
       w_state <= 2'h0;
       awaddr_reg <= 32'h0;
+      awlen_reg <= 8'h0;
+      awsize_reg <= 3'h0;
+      awburst_reg <= 2'h0;
+      wbeat_reg <= 8'h0;
     end
     else begin
       r_state <=
         io_sram_rvalid_0
-          ? {~io_sram_rready, 1'h0}
-          : _r_next_state_T_6 ? ((|r_delay_cnt) ? 2'h1 : 2'h2) : {1'h0, _GEN_3};
-      if (_GEN_3)
+          ? {~(io_sram_rready & io_sram_rlast_0), 1'h0}
+          : _r_next_state_T_8 ? ((|r_delay_cnt) ? 2'h1 : 2'h2) : {1'h0, _GEN_1};
+      if (_GEN_1) begin
         araddr_reg <= io_sram_araddr;
-      if (~_r_next_state_T_6 | (|r_delay_cnt)) begin
+        arlen_reg <= io_sram_arlen;
+        arsize_reg <= io_sram_arsize;
+        arburst_reg <= io_sram_arburst;
       end
-      else begin
-        rdata_reg <= _GEN ? _pmem_rdata : 32'h0;
-        rresp_reg <= {~_GEN, 1'h0};
-      end
+      if (io_sram_rvalid_0 & io_sram_rready & rbeat_reg != arlen_reg)
+        rbeat_reg <= rbeat_reg + 8'h1;
+      else if (_GEN_1)
+        rbeat_reg <= 8'h0;
       w_state <= casez_tmp;
-      if (_GEN_4)
+      if (_GEN_2) begin
         awaddr_reg <= io_sram_awaddr;
+        awlen_reg <= io_sram_awlen;
+        awsize_reg <= io_sram_awsize;
+        awburst_reg <= io_sram_awburst;
+      end
+      if (~wFire | wbeat_reg == awlen_reg) begin
+        if (_GEN_2)
+          wbeat_reg <= 8'h0;
+      end
+      else
+        wbeat_reg <= wbeat_reg + 8'h1;
     end
-    if (_r_next_state_T_6 & (|r_delay_cnt))
+    if (_r_next_state_T_8 & (|r_delay_cnt))
       r_delay_cnt <= r_delay_cnt - 32'h1;
-    else if (_GEN_3)
+    else if (_GEN_1)
       r_delay_cnt <= 32'h0;
     if (w_state == 2'h1 & (|w_delay_cnt))
       w_delay_cnt <= w_delay_cnt - 32'h1;
-    else if (_GEN_4)
+    else if (_GEN_2)
       w_delay_cnt <= 32'h0;
   end // always @(posedge)
   Pmem pmem (
     .clk   (clock),
     .rst   (reset),
-    .ren   (_r_next_state_T_6 & ~(|r_delay_cnt) & _GEN),
-    .wen   (_GEN_0 & _GEN_1),
-    .raddr
-      (~_r_next_state_T_6 | (|r_delay_cnt) | ~_GEN ? 32'h0 : araddr_reg & 32'hFFFFFFFC),
-    .waddr (_GEN_2 ? awaddr_reg & 32'hFFFFFFFC : 32'h0),
-    .wdata (_GEN_2 ? io_sram_wdata : 32'h0),
-    .wmask (_GEN_2 ? io_sram_wstrb : 4'h0),
+    .ren   (io_sram_rvalid_0 & beatAddrValid),
+    .wen   (wFire & _GEN),
+    .raddr ({_beatAddr_T[31:2], 2'h0}),
+    .waddr (_GEN_0 ? writeBeatAddr & 32'hFFFFFFFC : 32'h0),
+    .wdata (_GEN_0 ? io_sram_wdata : 32'h0),
+    .wmask (_GEN_0 ? io_sram_wstrb : 4'h0),
     .rdata (_pmem_rdata)
   );
   assign io_sram_arready = io_sram_arready_0;
-  assign io_sram_rdata = rdata_reg;
-  assign io_sram_rresp = rresp_reg;
+  assign io_sram_rdata = beatAddrValid ? _pmem_rdata : 32'h0;
+  assign io_sram_rresp = {~beatAddrValid, 1'h0};
   assign io_sram_rvalid = io_sram_rvalid_0;
+  assign io_sram_rlast = io_sram_rlast_0;
   assign io_sram_awready = io_sram_awready_0;
   assign io_sram_wready = io_sram_wready_0;
   assign io_sram_bvalid = &w_state;

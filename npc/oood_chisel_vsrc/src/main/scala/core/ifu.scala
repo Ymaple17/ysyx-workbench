@@ -293,6 +293,9 @@ class IFU(val conf: CoreConfig) extends Module{
     PM(conf, clock, EVENT_TAGE_USE_ALT, 1.U,
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_tage_use_alt) ||
         (fetchPacket.valid(1) && bpu.io.bp1_tage_use_alt)))
+    PM(conf, clock, EVENT_BIMODAL_SELECTED, 1.U,
+      captureFire && ((fetchPacket.valid(0) && bpu.io.bp_bimodal_selected) ||
+        (fetchPacket.valid(1) && bpu.io.bp1_bimodal_selected)))
     PM(conf, clock, EVENT_TAGE_ALLOC, 1.U, bpu.io.tage_alloc)
     PM(conf, clock, EVENT_ITAGE_HIT, 1.U,
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_itage_hit) ||

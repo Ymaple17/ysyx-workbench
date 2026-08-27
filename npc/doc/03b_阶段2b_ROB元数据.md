@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：ROB 正确 enq / wb / commit / flush；**数据通路保持 2a 恒等**。
 - **最小实现**：在恒等映射下接通 ROB enq、同身份 writeback、head commit、flush 截断及同拍计数，保持原顺序数据通路。
-- **当前参考核**：阶段 10m 的 ROB 已扩为 32 项、双入队/双写回/双提交；本章只建立其最小生命周期和指针不变量。
+- **当前参考核**：阶段 11d 的 ROB 为 32 项、双入队/双写回/双提交，并增加无目的控制流直接完成 sideband；本章只建立最小生命周期和指针不变量。
 - **后续扩展**：2c 打开写目的物理寄存器分配、`old_phys` 回收和 flush 重建。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

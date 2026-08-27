@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：分清 Load Queue、MSHR 与 replay 的职责，建立多条 load 在飞、精确内存依赖和错误路径回收的完整模型。
 - **最小实现**：先加入带 generation 的 LQ 和保守 store 依赖；再加入可重放的瞬时失败；最后选做“越过未知地址 store”与违例恢复。
-- **当前参考核**：**已实现 4-entry LQ/replay 保留点**。`LSU_MLP_ENABLE=true`，AXI response ID 为 `generation + lqIdx`，支持 stale drain、CDB/依赖/DCache busy replay 和 hit-under-miss；`LQ_SPECULATE_UNKNOWN_STORES=false`，因此默认不越过未知 older store。10l 阶段快照 IPC `0.4743`。
+- **当前参考核**：**已实现并保留 4-entry LQ/replay**。`LSU_MLP_ENABLE=true`，AXI response ID 为 `generation + lqIdx`；阶段 11d 又加入新请求同拍 cache response 匹配。`LQ_SPECULATE_UNKNOWN_STORES=false`，因此默认不越过未知 older store。10l 的 IPC `0.4743` 仍是阶段快照。
 - **后续扩展**：多 MSHR、同 line miss merge、选择性 replay、store-set 预测、总线多 outstanding。
 - **验收方式**：先证明 stale response、flush、转发和违例恢复正确，再看 outstanding load 数、replay 原因、hit-under-miss 和 IPC。
 
@@ -233,8 +233,10 @@ MSHR_MERGE / HIT_UNDER_MISS
 验收顺序：
 
 ```bash
+cd $NPC_HOME/oood_chisel_vsrc
 ./mill -i mychisel.compile
 ./mill -i mychisel.test.testOnly unit.OoOUnitTest
+cd $NPC_HOME
 scripts/stage9_regress.sh --mode cpu --tag stage10l_cpu
 scripts/stage9_regress.sh --mode microbench --tag stage10l_mlp
 ```
@@ -251,7 +253,7 @@ scripts/stage9_regress.sh --mode microbench --tag stage10l_mlp
 | `scala/core/lsu.scala` | 地址生成、LQ/SQ/DCache 接线 |
 | `scala/unit/sq.scala` | older store mask、forward、violation compare |
 | `scala/unit/store_buffer.scala` | 已提交 store 的前递查询 |
-| `scala/unit/dcache.scala` | 当前 1-entry MSHR、tagged response、hit-under-miss；多 MSHR/merge 是后续扩展 |
+| `scala/unit/dcache.scala` | 10l 当时为 1-entry MSHR；11b 已增加 secondary slot、same-line merge 与同拍 hit response |
 | `scala/unit/rob.scala` | load exception、commit/free、recovery |
 | `scala/core/core.scala` | flush/CDB/ROB 身份接线 |
 | `scala/common/ooo_params.scala` | 当前 `LQ_SIZE` 与功能开关；增加多 MSHR 时再引入 `MSHR_NUM` |

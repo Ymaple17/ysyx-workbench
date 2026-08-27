@@ -67,6 +67,8 @@ class LoadQueueIO(depth: Int) extends Bundle {
   val outstanding = Output(UInt(log2Ceil(depth + 1).W))
   val full = Output(Bool())
   val staleResp = Output(Bool())
+  val debugHeadAllocPc = Output(UInt(32.W))
+  val debugHeadRemoveReason = Output(UInt(2.W))
 }
 
 class LoadQueue(
@@ -84,6 +86,10 @@ class LoadQueue(
   private val sWait :: sWaitResp :: sResult :: sComplete :: Nil = Enum(4)
   val entries = RegInit(VecInit(Seq.fill(depth)(0.U.asTypeOf(new LoadQueueEntry(indexWidth)))))
   val retryPtr = RegInit(0.U(indexWidth.W))
+  val debugAllocPc = RegInit(VecInit(Seq.fill(OoOParams.ROB_SIZE)(0.U(32.W))))
+  val debugRemoveReason = RegInit(VecInit(Seq.fill(OoOParams.ROB_SIZE)(0.U(2.W))))
+  io.debugHeadAllocPc := debugAllocPc(io.robHead)
+  io.debugHeadRemoveReason := debugRemoveReason(io.robHead)
 
   def age(idx: UInt): UInt =
     (idx - io.robHead)(OoOParams.ROB_PTR_W - 1, 0)
@@ -184,21 +190,29 @@ class LoadQueue(
 
   val respIdx = io.dmem.rid(indexWidth - 1, 0)
   val respGeneration = io.dmem.rid(3, indexWidth)
-  val respMatches = io.dmem.rvalid && alive(respIdx) &&
+  val respMatchesOutstanding = io.dmem.rvalid && alive(respIdx) &&
     entries(respIdx).state === sWaitResp &&
     entries(respIdx).generation === respGeneration
+  val respMatchesCurrent = io.dmem.rvalid && arFire &&
+    io.dmem.rid === io.dmem.arid && !respMatchesOutstanding
+  val respMatches = respMatchesOutstanding || respMatchesCurrent
   io.staleResp := io.dmem.rvalid && !respMatches
   io.dmem.rready := true.B
 
-  val responseMeta = Wire(new LSU_WBU_IO)
-  responseMeta := entries(respIdx).meta
-  val responseOffset = io.dmem.rdata >> (entries(respIdx).addr(1, 0) << 3)
-  responseMeta.mem_read := extendLoad(responseOffset, entries(respIdx).memRd)
-  responseMeta.fwd_valid := false.B
-  responseMeta.fwd_data := 0.U
   val responseFault = io.dmem.rresp =/= 0.U
-  responseMeta.state.state := responseFault || entries(respIdx).meta.state.state
-  responseMeta.state.state_num := Mux(responseFault, IRQ_LAF, entries(respIdx).meta.state.state_num)
+  def responseMetaFor(entry: LoadQueueEntry): LSU_WBU_IO = {
+    val meta = Wire(new LSU_WBU_IO)
+    meta := entry.meta
+    val offset = io.dmem.rdata >> (entry.addr(1, 0) << 3)
+    meta.mem_read := extendLoad(offset, entry.memRd)
+    meta.fwd_valid := false.B
+    meta.fwd_data := 0.U
+    meta.state.state := responseFault || entry.meta.state.state
+    meta.state.state_num := Mux(responseFault, IRQ_LAF, entry.meta.state.state_num)
+    meta
+  }
+  val outstandingResponseMeta = responseMetaFor(entries(respIdx))
+  val currentResponseMeta = responseMetaFor(schedEntry)
 
   val forwardMeta = Wire(new LSU_WBU_IO)
   forwardMeta := schedEntry.meta
@@ -268,6 +282,8 @@ class LoadQueue(
     entries(allocIdx).memRd := io.alloc.bits.memRd
     entries(allocIdx).state := sWait
     entries(allocIdx).bypassedStores := 0.U
+    debugAllocPc(io.alloc.bits.meta.rob_idx) := io.alloc.bits.meta.pc
+    debugRemoveReason(io.alloc.bits.meta.rob_idx) := 0.U
   }
 
   when(schedValid && (io.fwdWait || schedulerForward || schedulerBus)) {
@@ -281,11 +297,16 @@ class LoadQueue(
     entries(schedIdx).state := sWaitResp
     entries(schedIdx).bypassedStores := Mux(canBypassUnknown, io.fwdUnknownMask, 0.U)
   }
-  when(io.dmem.rvalid && io.dmem.rready && respMatches) {
-    entries(respIdx).meta := responseMeta
+  when(io.dmem.rvalid && io.dmem.rready && respMatchesOutstanding) {
+    entries(respIdx).meta := outstandingResponseMeta
     entries(respIdx).state := sResult
   }
+  when(io.dmem.rvalid && io.dmem.rready && respMatchesCurrent) {
+    entries(schedIdx).meta := currentResponseMeta
+    entries(schedIdx).state := sResult
+  }
   when(io.wb.fire) {
+    debugRemoveReason(entries(wbIdx).meta.rob_idx) := 1.U
     if (speculateUnknownStores) {
       entries(wbIdx).state := sComplete
     } else {
@@ -300,6 +321,7 @@ class LoadQueue(
   when(io.commit0Valid) {
     for (i <- 0 until depth) {
       when(entries(i).valid && entries(i).meta.rob_idx === io.commit0Rob) {
+        debugRemoveReason(io.commit0Rob) := 2.U
         entries(i).valid := false.B
         entries(i).generation := entries(i).generation + 1.U
       }
@@ -308,6 +330,7 @@ class LoadQueue(
   when(io.commit1Valid) {
     for (i <- 0 until depth) {
       when(entries(i).valid && entries(i).meta.rob_idx === io.commit1Rob) {
+        debugRemoveReason(io.commit1Rob) := 2.U
         entries(i).valid := false.B
         entries(i).generation := entries(i).generation + 1.U
       }
@@ -324,6 +347,7 @@ class LoadQueue(
   }.elsewhen(io.flush) {
     for (i <- 0 until depth) {
       when(killedBySelectiveFlush(i)) {
+        debugRemoveReason(entries(i).meta.rob_idx) := 3.U
         entries(i).valid := false.B
         entries(i).generation := entries(i).generation + 1.U
       }

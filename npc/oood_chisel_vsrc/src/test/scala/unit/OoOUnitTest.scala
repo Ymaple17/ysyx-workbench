@@ -330,6 +330,12 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.wb1_actual_target.poke(0.U)
     dut.io.wb1_state.state.poke(false.B)
     dut.io.wb1_state.state_num.poke(0.U)
+    dut.io.ctrl_wb_fire.poke(false.B)
+    dut.io.ctrl_wb_idx.poke(0.U)
+    dut.io.ctrl_wb_state.state.poke(false.B)
+    dut.io.ctrl_wb_state.state_num.poke(0.U)
+    dut.io.ctrl_wb_actual_taken.poke(false.B)
+    dut.io.ctrl_wb_actual_target.poke(0.U)
     // zero critical enq fields
     dut.io.enq_bits.valid.poke(false.B)
     dut.io.enq_bits.done.poke(false.B)
@@ -494,6 +500,28 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "retire a direct control completion without a data writeback" in {
+    simulate(new ROB()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleRob(dut)
+      dut.io.enq_fire.poke(true.B)
+      dut.io.enq_bits.pc.poke("h80000100".U)
+      dut.io.enq_bits.jump.poke(0.U)
+      dut.clock.step()
+      idleRob(dut)
+
+      dut.io.ctrl_wb_fire.poke(true.B)
+      dut.io.ctrl_wb_idx.poke(0.U)
+      dut.io.ctrl_wb_actual_taken.poke(true.B)
+      dut.io.ctrl_wb_actual_target.poke("h80000200".U)
+      dut.io.commit_valid.expect(true.B)
+      dut.io.commit_fire.poke(true.B)
+      dut.clock.step()
+      idleRob(dut)
+      dut.io.count.expect(0.U)
+    }
+  }
+
   it should "commit two completed entries in one cycle" in {
     simulate(new ROB()) { dut =>
       resetDut(dut.clock, dut.reset)
@@ -591,6 +619,8 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.free_rob_idx.poke(0.U)
     dut.io.free_rob1_fire.poke(false.B)
     dut.io.free_rob1_idx.poke(0.U)
+    dut.io.free_ctrl_fire.poke(false.B)
+    dut.io.free_ctrl_idx.poke(0.U)
     dut.io.flush.poke(false.B)
     dut.io.flush_all.poke(false.B)
     dut.io.flush_idx.poke(0.U)
@@ -818,6 +848,33 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "select and bypass a resident entry on the CDB wakeup cycle" in {
+    simulate(new RS()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleRs(dut)
+      dut.io.enq_fire.poke(true.B)
+      dut.io.enq_bits.rob_idx.poke(3.U)
+      dut.io.enq_bits.src1_ready.poke(false.B)
+      dut.io.enq_bits.src2_ready.poke(false.B)
+      dut.io.enq_bits.src1_phys.poke(9.U)
+      dut.io.enq_bits.src2_phys.poke(10.U)
+      dut.clock.step()
+      dut.io.enq_fire.poke(false.B)
+      dut.io.issue_alu_valid.expect(false.B)
+
+      dut.io.cdb_valid.poke(true.B)
+      dut.io.cdb_pdest.poke(9.U)
+      dut.io.cdb_val.poke("h12345678".U)
+      dut.io.cdb1_valid.poke(true.B)
+      dut.io.cdb1_pdest.poke(10.U)
+      dut.io.cdb1_val.poke("h89abcdef".U)
+      dut.io.issue_alu_valid.expect(true.B)
+      dut.io.issue_alu_bits.rob_idx.expect(3.U)
+      dut.io.issue_alu_bits.src1_val.expect("h12345678".U)
+      dut.io.issue_alu_bits.src2_val.expect("h89abcdef".U)
+    }
+  }
+
   it should "free_rob by idx not issue slot" in {
     simulate(new RS()) { dut =>
       resetDut(dut.clock, dut.reset)
@@ -860,6 +917,26 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.free_rob_idx.poke(0.U)
       dut.io.free_rob1_fire.poke(true.B)
       dut.io.free_rob1_idx.poke(1.U)
+      dut.clock.step()
+      idleRs(dut)
+      dut.io.count.expect(0.U)
+    }
+  }
+
+  it should "free an issued control entry through the completion sideband" in {
+    simulate(new RS()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleRs(dut)
+      dut.io.enq_fire.poke(true.B)
+      dut.io.enq_bits.rob_idx.poke(7.U)
+      dut.clock.step()
+      dut.io.enq_fire.poke(false.B)
+      dut.io.issue_alu_fire.poke(true.B)
+      dut.clock.step()
+      dut.io.issue_alu_fire.poke(false.B)
+      dut.io.count.expect(1.U)
+      dut.io.free_ctrl_fire.poke(true.B)
+      dut.io.free_ctrl_idx.poke(7.U)
       dut.clock.step()
       idleRs(dut)
       dut.io.count.expect(0.U)
@@ -1419,6 +1496,34 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "accept a same-cycle cache response for a new request" in {
+    simulate(new LoadQueue(new core.CoreConfig(32))) { dut =>
+      idleLoadQueue(dut)
+      resetDut(dut.clock, dut.reset)
+      idleLoadQueue(dut)
+      allocLoad(dut, 3, BigInt("80000060", 16), BigInt("80001204", 16))
+      dut.clock.step()
+
+      idleLoadQueue(dut)
+      dut.io.wb.ready.poke(true.B)
+      dut.io.dmem.arready.poke(true.B)
+      dut.io.dmem.rvalid.poke(true.B)
+      dut.io.dmem.rid.poke(0.U)
+      dut.io.dmem.rdata.poke("ha1b2c3d4".U)
+      dut.io.dmem.rlast.poke(true.B)
+      dut.io.dmem.arvalid.expect(true.B)
+      dut.io.dmem.arid.expect(0.U)
+      dut.io.staleResp.expect(false.B)
+      dut.clock.step()
+
+      idleLoadQueue(dut)
+      dut.io.wb.ready.poke(true.B)
+      dut.io.wb.valid.expect(true.B)
+      dut.io.wb.bits.rob_idx.expect(3.U)
+      dut.io.wb.bits.mem_read.expect("ha1b2c3d4".U)
+    }
+  }
+
   it should "drain a stale response after selective flush" in {
     simulate(new LoadQueue(new core.CoreConfig(32))) { dut =>
       idleLoadQueue(dut)
@@ -1555,23 +1660,38 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.invalidate2_addr.poke(0.U)
     dut.io.invalidate3_valid.poke(false.B)
     dut.io.invalidate3_addr.poke(0.U)
+    dut.io.store_valid.poke(false.B)
+    dut.io.store_addr.poke(0.U)
+    dut.io.store_data.poke(0.U)
+    dut.io.store_mask.poke(0.U)
+    dut.io.store2_valid.poke(false.B)
+    dut.io.store2_addr.poke(0.U)
+    dut.io.store2_data.poke(0.U)
+    dut.io.store2_mask.poke(0.U)
+    dut.io.store3_valid.poke(false.B)
+    dut.io.store3_addr.poke(0.U)
+    dut.io.store3_data.poke(0.U)
+    dut.io.store3_mask.poke(0.U)
   }
 
   def fillDCacheLine(dut: DCache, base: BigInt, values: Seq[BigInt]): Unit = {
+    dut.io.mem.arvalid.expect(true.B)
+    dut.io.mem.araddr.expect(base.U)
+    dut.io.mem.arlen.expect((values.length - 1).U)
+    dut.io.mem.arburst.expect(1.U)
+    dut.io.mem.arready.poke(true.B)
+    dut.clock.step()
+    dut.io.mem.arready.poke(false.B)
     for (i <- values.indices) {
-      dut.io.mem.arvalid.expect(true.B)
-      dut.io.mem.araddr.expect((base + i * 4).U)
-      dut.io.mem.arready.poke(true.B)
-      dut.clock.step()
-      dut.io.mem.arready.poke(false.B)
       dut.io.mem.rvalid.poke(true.B)
       dut.io.mem.rdata.poke(values(i).U)
       dut.io.mem.rresp.poke(0.U)
-      dut.io.mem.rlast.poke(true.B)
+      dut.io.mem.rlast.poke((i == values.length - 1).B)
       dut.io.mem.rid.poke(0.U)
       dut.clock.step()
-      dut.io.mem.rvalid.poke(false.B)
     }
+    dut.io.mem.rvalid.poke(false.B)
+    dut.io.mem.rlast.poke(false.B)
   }
 
   it should "fill a line on miss and hit within the same line" in {
@@ -1606,6 +1726,72 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.cpu.rdata.expect(values(2).U)
       dut.io.cpu.rready.poke(true.B)
       dut.clock.step()
+    }
+  }
+
+  it should "return an accepted cached hit in the request cycle" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val base = BigInt("80001000", 16)
+      val values = (0 until 8).map(i => BigInt("16000000", 16) + i)
+
+      dut.io.cpu.araddr.poke(base.U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      fillDCacheLine(dut, base, values)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+
+      dut.io.cpu.araddr.poke((base + 12).U)
+      dut.io.cpu.arid.poke(7.U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.rready.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(7.U)
+      dut.io.cpu.rdata.expect(values(3).U)
+      dut.clock.step()
+
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.cpu.rvalid.expect(false.B)
+    }
+  }
+
+  it should "accept a cached hit while the previous hit response leaves" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val base = BigInt("80000000", 16)
+      val values = (0 until 8).map(i => BigInt("18000000", 16) + i)
+
+      dut.io.cpu.araddr.poke(base.U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      fillDCacheLine(dut, base, values)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+
+      dut.io.cpu.rready.poke(false.B)
+      dut.io.cpu.araddr.poke((base + 4).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+
+      dut.io.cpu.rready.poke(true.B)
+      dut.io.cpu.rdata.expect(values(1).U)
+      dut.io.cpu.araddr.poke((base + 8).U)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.cpu.rready.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rdata.expect(values(2).U)
     }
   }
 
@@ -1666,6 +1852,169 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "queue a second miss while the first line refills" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val base0 = BigInt("80004000", 16)
+      val base1 = BigInt("80005000", 16)
+      val values0 = (0 until 8).map(i => BigInt("61000000", 16) + i)
+      val values1 = (0 until 8).map(i => BigInt("62000000", 16) + i)
+
+      dut.io.cpu.arid.poke(1.U)
+      dut.io.cpu.araddr.poke((base0 + 4).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arvalid.expect(true.B)
+      dut.io.mem.araddr.expect(base0.U)
+      dut.io.mem.arready.poke(true.B)
+      dut.clock.step()
+      dut.io.mem.arready.poke(false.B)
+
+      dut.io.cpu.arid.poke(2.U)
+      dut.io.cpu.araddr.poke((base1 + 8).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+
+      for (i <- values0.indices) {
+        dut.io.mem.rvalid.poke(true.B)
+        dut.io.mem.rdata.poke(values0(i).U)
+        dut.io.mem.rlast.poke((i == values0.length - 1).B)
+        dut.clock.step()
+      }
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.mem.rlast.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(1.U)
+      dut.io.cpu.rdata.expect(values0(1).U)
+      dut.io.mem.arvalid.expect(true.B)
+      dut.io.mem.araddr.expect(base1.U)
+
+      dut.io.cpu.rready.poke(true.B)
+      dut.io.mem.arready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+      dut.io.mem.arready.poke(false.B)
+      for (i <- values1.indices) {
+        dut.io.mem.rvalid.poke(true.B)
+        dut.io.mem.rdata.poke(values1(i).U)
+        dut.io.mem.rlast.poke((i == values1.length - 1).B)
+        dut.clock.step()
+      }
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.mem.rlast.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(2.U)
+      dut.io.cpu.rdata.expect(values1(2).U)
+    }
+  }
+
+  it should "merge a second request to the line being refilled" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val base = BigInt("80006000", 16)
+      val values = (0 until 8).map(i => BigInt("63000000", 16) + i)
+
+      dut.io.cpu.arid.poke(3.U)
+      dut.io.cpu.araddr.poke((base + 4).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arready.poke(true.B)
+      dut.clock.step()
+      dut.io.mem.arready.poke(false.B)
+
+      dut.io.cpu.arid.poke(4.U)
+      dut.io.cpu.araddr.poke((base + 8).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      for (i <- values.indices) {
+        dut.io.mem.rvalid.poke(true.B)
+        dut.io.mem.rdata.poke(values(i).U)
+        dut.io.mem.rlast.poke((i == values.length - 1).B)
+        dut.clock.step()
+      }
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.mem.rlast.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(3.U)
+      dut.io.cpu.rdata.expect(values(1).U)
+      dut.io.mem.arvalid.expect(false.B)
+
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(4.U)
+      dut.io.cpu.rdata.expect(values(2).U)
+      dut.io.mem.arvalid.expect(false.B)
+    }
+  }
+
+  it should "hold a third miss while a merged response is produced" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val base0 = BigInt("80007000", 16)
+      val base1 = BigInt("80008000", 16)
+      val values0 = (0 until 8).map(i => BigInt("64000000", 16) + i)
+
+      dut.io.cpu.arid.poke(5.U)
+      dut.io.cpu.araddr.poke((base0 + 4).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arready.poke(true.B)
+      dut.clock.step()
+      dut.io.mem.arready.poke(false.B)
+
+      dut.io.cpu.arid.poke(6.U)
+      dut.io.cpu.araddr.poke((base0 + 8).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      for (i <- values0.indices) {
+        dut.io.mem.rvalid.poke(true.B)
+        dut.io.mem.rdata.poke(values0(i).U)
+        dut.io.mem.rlast.poke((i == values0.length - 1).B)
+        dut.clock.step()
+      }
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.mem.rlast.poke(false.B)
+
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(5.U)
+      dut.io.cpu.rready.poke(true.B)
+      dut.io.cpu.arid.poke(7.U)
+      dut.io.cpu.araddr.poke((base1 + 12).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(false.B)
+      dut.clock.step()
+
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(6.U)
+      dut.io.cpu.arready.expect(false.B)
+      dut.clock.step()
+
+      dut.io.cpu.rready.poke(false.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arvalid.expect(true.B)
+      dut.io.mem.araddr.expect(base1.U)
+    }
+  }
+
   it should "invalidate a cached line on store notification" in {
     simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
       idleDCache(dut)
@@ -1694,6 +2043,51 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.cpu.arvalid.poke(false.B)
       dut.io.mem.arvalid.expect(true.B)
       dut.io.mem.araddr.expect(base.U)
+    }
+  }
+
+  it should "update a cached word from three ordered store ports" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val base = BigInt("80000000", 16)
+      val values = Seq(BigInt("11223344", 16)) ++
+        (1 until 8).map(i => BigInt("30000000", 16) + i)
+
+      dut.io.cpu.araddr.poke(base.U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      fillDCacheLine(dut, base, values)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+
+      dut.io.store3_valid.poke(true.B)
+      dut.io.store3_addr.poke(base.U)
+      dut.io.store3_data.poke("h55".U)
+      dut.io.store3_mask.poke(WBYTE)
+      dut.io.store_valid.poke(true.B)
+      dut.io.store_addr.poke((base + 1).U)
+      dut.io.store_data.poke("haa".U)
+      dut.io.store_mask.poke(WBYTE)
+      dut.io.store2_valid.poke(true.B)
+      dut.io.store2_addr.poke((base + 2).U)
+      dut.io.store2_data.poke("hbb".U)
+      dut.io.store2_mask.poke(WBYTE)
+      dut.clock.step()
+      dut.io.store3_valid.poke(false.B)
+      dut.io.store_valid.poke(false.B)
+      dut.io.store2_valid.poke(false.B)
+
+      dut.io.cpu.araddr.poke(base.U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rdata.expect("h11bbaa55".U)
     }
   }
 
@@ -1748,6 +2142,7 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.mem.arready.poke(false.B)
       dut.io.mem.rvalid.poke(true.B)
       dut.io.mem.rdata.poke(values(0).U)
+      dut.io.mem.rlast.poke(false.B)
       dut.clock.step()
       dut.io.mem.rvalid.poke(false.B)
 
@@ -1757,16 +2152,13 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.invalidate_valid.poke(false.B)
 
       for (i <- 1 until values.length) {
-        dut.io.mem.arvalid.expect(true.B)
-        dut.io.mem.araddr.expect((base + i * 4).U)
-        dut.io.mem.arready.poke(true.B)
-        dut.clock.step()
-        dut.io.mem.arready.poke(false.B)
         dut.io.mem.rvalid.poke(true.B)
         dut.io.mem.rdata.poke(values(i).U)
+        dut.io.mem.rlast.poke((i == values.length - 1).B)
         dut.clock.step()
-        dut.io.mem.rvalid.poke(false.B)
       }
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.mem.rlast.poke(false.B)
       dut.io.cpu.rvalid.expect(true.B)
       dut.io.cpu.rdata.expect(values(1).U)
       dut.io.cpu.rready.poke(true.B)
@@ -1909,15 +2301,23 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.dmem.wdata.expect("h12345678".U)
       dut.io.dmem.wstrb.expect("b1111".U)
       dut.io.dmem.awvalid.expect(true.B)
+      dut.io.dmem.awlen.expect(0.U)
       dut.io.dmem.wvalid.expect(true.B)
+      dut.io.dmem.wlast.expect(true.B)
       dut.io.dmem.awready.poke(true.B)
       dut.io.dmem.wready.poke(true.B)
+      dut.io.drain_valid.expect(true.B)
+      dut.io.drain_addr.expect("h80000000".U)
+      dut.io.drain_data.expect("h12345678".U)
+      dut.io.drain_mask.expect("b1111".U)
       dut.clock.step()
 
       dut.io.dmem.awready.poke(false.B)
       dut.io.dmem.wready.poke(false.B)
       dut.io.dmem.bvalid.poke(true.B)
       dut.io.dmem.bready.expect(true.B)
+      dut.io.deq_valid.expect(true.B)
+      dut.io.deq_count.expect(1.U)
       dut.clock.step()
 
       dut.io.dmem.bvalid.poke(false.B)
@@ -1926,7 +2326,7 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
-  it should "start the next write immediately after a response" in {
+  it should "drain adjacent words in one ordered AXI burst" in {
     simulate(new StoreBuffer()) { dut =>
       resetDut(dut.clock, dut.reset)
       idleStoreBuffer(dut)
@@ -1944,16 +2344,30 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.dmem.awready.poke(true.B)
       dut.io.dmem.wready.poke(true.B)
       dut.io.dmem.awvalid.expect(true.B)
+      dut.io.dmem.awaddr.expect("h80000000".U)
+      dut.io.dmem.awlen.expect(1.U)
+      dut.io.dmem.wdata.expect("h11111111".U)
+      dut.io.dmem.wlast.expect(false.B)
+      dut.io.drain_valid.expect(true.B)
+      dut.io.drain_addr.expect("h80000000".U)
+      dut.io.drain_data.expect("h11111111".U)
       dut.clock.step()
       dut.io.dmem.awready.poke(false.B)
+      dut.io.dmem.wdata.expect("h22222222".U)
+      dut.io.dmem.wlast.expect(true.B)
+      dut.io.drain_valid.expect(true.B)
+      dut.io.drain_addr.expect("h80000004".U)
+      dut.io.drain_data.expect("h22222222".U)
+      dut.clock.step()
       dut.io.dmem.wready.poke(false.B)
       dut.io.dmem.bvalid.poke(true.B)
+      dut.io.dmem.bready.expect(true.B)
+      dut.io.deq_valid.expect(true.B)
+      dut.io.deq_count.expect(2.U)
       dut.clock.step()
       dut.io.dmem.bvalid.poke(false.B)
-      dut.io.dmem.awvalid.expect(true.B)
-      dut.io.dmem.wvalid.expect(true.B)
-      dut.io.dmem.awaddr.expect("h80000004".U)
-      dut.io.count.expect(1.U)
+      dut.io.empty.expect(true.B)
+      dut.io.count.expect(0.U)
     }
   }
 
@@ -2018,15 +2432,52 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.enq1.bits.mask.poke(WWORD)
       dut.io.enq.ready.expect(true.B)
       dut.io.enq1.ready.expect(true.B)
+      dut.io.merged.expect(1.U)
       dut.clock.step()
       idleStoreBuffer(dut)
       dut.io.bus_busy.poke(true.B)
-      dut.io.count.expect(2.U)
+      dut.io.count.expect(1.U)
       dut.io.ld_valid.poke(true.B)
       dut.io.ld_addr.poke("h80000000".U)
       dut.io.ld_mem_rd.poke(RWORD)
       dut.io.ld_fwd_valid.expect(true.B)
       dut.io.ld_fwd_data.expect("h22222222".U)
+    }
+  }
+
+  it should "merge partial stores byte-wise for forwarding and drain" in {
+    simulate(new StoreBuffer()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleStoreBuffer(dut)
+      dut.io.bus_busy.poke(true.B)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.addr.poke("h80000000".U)
+      dut.io.enq.bits.data.poke("haa".U)
+      dut.io.enq.bits.mask.poke(WBYTE)
+      dut.clock.step()
+      dut.io.enq.bits.addr.poke("h80000001".U)
+      dut.io.enq.bits.data.poke("hbb".U)
+      dut.io.enq.bits.mask.poke(WBYTE)
+      dut.io.merged.expect(1.U)
+      dut.clock.step()
+
+      idleStoreBuffer(dut)
+      dut.io.bus_busy.poke(true.B)
+      dut.io.count.expect(1.U)
+      dut.io.ld_valid.poke(true.B)
+      dut.io.ld_addr.poke("h80000000".U)
+      dut.io.ld_mem_rd.poke(RHALFU)
+      dut.io.ld_wait.expect(false.B)
+      dut.io.ld_fwd_valid.expect(true.B)
+      dut.io.ld_fwd_data.expect("hbbaa".U)
+
+      dut.io.ld_valid.poke(false.B)
+      dut.io.bus_busy.poke(false.B)
+      dut.clock.step()
+      dut.io.dmem.awaddr.expect("h80000000".U)
+      dut.io.dmem.awsize.expect(2.U)
+      dut.io.dmem.wstrb.expect("b0011".U)
+      dut.io.dmem.wdata.expect("h0000bbaa".U)
     }
   }
 
@@ -2043,6 +2494,8 @@ class OoOUnitTest extends AnyFlatSpec {
         dut.clock.step()
       }
       dut.io.count.expect((OoOParams.STORE_BUFFER_SIZE - 1).U)
+      dut.io.enq.bits.addr.poke("h80000200".U)
+      dut.io.enq.bits.data.poke("h44".U)
       dut.io.enq1.valid.poke(true.B)
       dut.io.enq1.bits.addr.poke("h80000100".U)
       dut.io.enq1.bits.data.poke("h55".U)
@@ -2520,6 +2973,11 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.update_target.poke("h80001000".U)
       dut.clock.step()
       idleBpu(dut)
+      dut.io.predict_inst.poke(jalrX5)
+      dut.io.bp_valid.expect(true.B)
+      dut.io.bp_target.expect("h80001000".U)
+
+      idleBpu(dut)
       dut.io.update_valid.poke(true.B)
       dut.io.update_is_jalr.poke(true.B)
       dut.io.update_pc.poke("h80000000".U)
@@ -2603,6 +3061,45 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.bp_valid.expect(true.B)
       dut.io.bp_target.expect("h80001000".U)
       dut.io.bp_itage_hit.expect(true.B)
+    }
+  }
+
+  it should "select bimodal after a PC-stable branch beats the history path" in {
+    simulate(new BPU(conf, bhtSize = 16, indirectSize = 16,
+      tageTableSize = 16, itageTableSize = 16)) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleBpu(dut)
+      val backwardBeq = "hfe000ee3".U
+      dut.io.predict_inst.poke(backwardBeq)
+      val indexA = dut.io.bp_index.peek().litValue
+
+      dut.io.update_valid.poke(true.B)
+      dut.io.update_is_branch.poke(true.B)
+      dut.io.update_taken.poke(true.B)
+      dut.io.update_pc.poke("h80000000".U)
+      dut.io.update_index.poke(indexA.U)
+      dut.clock.step()
+
+      idleBpu(dut)
+      dut.io.update_valid.poke(true.B)
+      dut.io.update_is_branch.poke(true.B)
+      dut.io.update_taken.poke(false.B)
+      dut.io.update_pc.poke("h80000004".U)
+      dut.io.update_index.poke(indexA.U)
+      dut.clock.step()
+
+      idleBpu(dut)
+      dut.io.update_valid.poke(true.B)
+      dut.io.update_is_branch.poke(true.B)
+      dut.io.update_taken.poke(true.B)
+      dut.io.update_pc.poke("h80000000".U)
+      dut.io.update_index.poke(indexA.U)
+      dut.clock.step()
+
+      idleBpu(dut)
+      dut.io.predict_inst.poke(backwardBeq)
+      dut.io.bp_bimodal_selected.expect(true.B)
+      dut.io.bp_taken.expect(true.B)
     }
   }
 }

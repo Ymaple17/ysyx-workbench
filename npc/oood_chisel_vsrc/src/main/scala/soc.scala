@@ -19,6 +19,9 @@ class NPC_IO(conf: CoreConfig) extends Bundle {
   val commit_mem_addr1 = if (conf.npc) Some(Output(UInt(32.W))) else None
   val commit_is_load1  = if (conf.npc) Some(Output(Bool())) else None
   val arch_rdata      = if (conf.npc) Some(Output(Vec(32, UInt(32.W)))) else None
+  val debug_lq_head_alloc_pc = if (conf.npc) Some(Output(UInt(32.W))) else None
+  val debug_lq_head_remove_reason = if (conf.npc) Some(Output(UInt(2.W))) else None
+  val debug_wb_head_reject_flags = if (conf.npc) Some(Output(UInt(4.W))) else None
 }
 
 class ysyx_25020039(val coreConfig: CoreConfig) extends Module {
@@ -46,6 +49,9 @@ class ysyx_25020039(val coreConfig: CoreConfig) extends Module {
     io.commit_mem_addr1.get := core.io.commit_mem_addr1
     io.commit_is_load1.get  := core.io.commit_is_load1
     io.arch_rdata.get      := core.io.arch_rdata
+    io.debug_lq_head_alloc_pc.get := core.io.debug_lq_head_alloc_pc
+    io.debug_lq_head_remove_reason.get := core.io.debug_lq_head_remove_reason
+    io.debug_wb_head_reject_flags.get := core.io.debug_wb_head_reject_flags
   }
 
   core.io.imem <> xbar.io.imem

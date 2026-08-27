@@ -4,7 +4,6 @@ import chisel3._
 import chisel3.util._
 import bus.AXI4Master
 import common.MEM_READ._
-import common.MEM_WMASK._
 import common.OoOParams
 
 class StoreBufferEntry extends Bundle {
@@ -29,6 +28,14 @@ class StoreBufferIO(size: Int) extends Bundle {
 
   val deq_valid = Output(Bool())
   val deq_addr  = Output(UInt(32.W))
+  val deq_count = Output(UInt(log2Ceil(size + 1).W))
+  val drain_valid = Output(Bool())
+  val drain_addr = Output(UInt(32.W))
+  val drain_data = Output(UInt(32.W))
+  val drain_mask = Output(UInt(4.W))
+  val merged = Output(UInt(2.W))
+  val write_burst = Output(Bool())
+  val write_beats = Output(UInt(4.W))
 
   val empty = Output(Bool())
   val full  = Output(Bool())
@@ -52,72 +59,162 @@ class StoreBuffer(size: Int = OoOParams.STORE_BUFFER_SIZE) extends Module {
   val state = RegInit(sIdle)
   val awDone = RegInit(false.B)
   val wDone = RegInit(false.B)
+  private val maxBurst = 8.min(size)
+  private val burstW = log2Ceil(maxBurst + 1)
+  val burstCount = RegInit(1.U(burstW.W))
+  val writeBeat = RegInit(0.U(log2Ceil(maxBurst).max(1).W))
+
+  def expandMask(mask: UInt): UInt =
+    Cat((3 to 0 by -1).map(i => Fill(8, mask(i))))
+
+  def normalize(raw: StoreBufferEntry): StoreBufferEntry = {
+    val out = Wire(new StoreBufferEntry)
+    val off = raw.addr(1, 0)
+    out.addr := raw.addr & "hffff_fffc".U
+    out.data := raw.data << (off << 3)
+    out.mask := (raw.mask << off)(3, 0)
+    out
+  }
+
+  def merge(older: StoreBufferEntry, younger: StoreBufferEntry): StoreBufferEntry = {
+    val out = Wire(new StoreBufferEntry)
+    val youngBits = expandMask(younger.mask)
+    out.addr := older.addr
+    out.data := (older.data & ~youngBits) | (younger.data & youngBits)
+    out.mask := older.mask | younger.mask
+    out
+  }
+
+  def loadMaskBytes(memRd: UInt, addr: UInt): UInt = {
+    val base = MuxLookup(memRd, "b0001".U(4.W))(Seq(
+      RBYTE  -> "b0001".U(4.W),
+      RHALF  -> "b0011".U(4.W),
+      RWORD  -> "b1111".U(4.W),
+      RBYTEU -> "b0001".U(4.W),
+      RHALFU -> "b0011".U(4.W)
+    ))
+    (base << addr(1, 0))(3, 0)
+  }
 
   io.empty := count === 0.U
   io.full := count === size.U
   io.busy := state =/= sIdle
   io.count := count
 
+  val in0 = normalize(io.enq.bits)
+  val in1 = normalize(io.enq1.bits)
+  val headEntry = entries(head)
+  val burstPrefix = Wire(Vec(maxBurst, Bool()))
+  for (off <- 0 until maxBurst) {
+    val idx = (head + off.U)(ptrW - 1, 0)
+    val entryMatches = off.U < count &&
+      entries(idx).addr === (headEntry.addr + (off * 4).U) &&
+      entries(idx).addr(31, 12) === headEntry.addr(31, 12)
+    burstPrefix(off) := entryMatches && (if (off == 0) true.B else burstPrefix(off - 1))
+  }
+  val nextBurstCount = PopCount(burstPrefix)
+
   val bFire = io.dmem.bvalid && io.dmem.bready
   val deqFire = (state === sResp) && bFire
-  val available = size.U - count + deqFire.asUInt
-  val enqCount = PopCount(Seq(io.enq.valid, io.enq1.valid))
-  val batchReady = enqCount <= available
+  val deqCount = Mux(deqFire, burstCount, 0.U)
+  val available = size.U - count + deqCount
+
+  val lastIdx = (tail - 1.U)(ptrW - 1, 0)
+  val lastOffset = (lastIdx - head)(ptrW - 1, 0)
+  val lastInActiveBurst = state =/= sIdle && lastOffset < burstCount
+  val lastMutable = count =/= 0.U && !lastInActiveBurst
+  val merge0Existing = io.enq.valid && lastMutable && entries(lastIdx).addr === in0.addr
+  val pairSameWord = io.enq.valid && io.enq1.valid && in0.addr === in1.addr
+  val merge1Existing = !io.enq.valid && io.enq1.valid && lastMutable &&
+    entries(lastIdx).addr === in1.addr
+  val slot0Needed = io.enq.valid && !merge0Existing
+  val slot1Needed = io.enq1.valid && !pairSameWord && !merge1Existing
+  val slotsNeeded = PopCount(Seq(slot0Needed, slot1Needed))
+  val batchReady = slotsNeeded <= available
   io.enq.ready := batchReady
   io.enq1.ready := batchReady
   io.free := available
-  io.deq_valid := deqFire
-  io.deq_addr := entries(head).addr
 
   val doEnq0 = io.enq.valid && batchReady
   val doEnq1 = io.enq1.valid && batchReady
-  val tail1 = (tail + doEnq0.asUInt)(ptrW - 1, 0)
-  when(doEnq0) {
-    entries(tail) := io.enq.bits
-  }
-  when(doEnq1) {
-    entries(tail1) := io.enq1.bits
-  }
-  when(doEnq0 || doEnq1) {
-    tail := tail + PopCount(Seq(doEnq0, doEnq1))
+  val acceptedSlots = Mux(batchReady, slotsNeeded, 0.U)
+  io.merged := PopCount(Seq(
+    doEnq0 && merge0Existing,
+    doEnq1 && (pairSameWord || merge1Existing)))
+
+  when(doEnq0 && doEnq1 && pairSameWord) {
+    when(merge0Existing) {
+      entries(lastIdx) := merge(merge(entries(lastIdx), in0), in1)
+    }.otherwise {
+      entries(tail) := merge(in0, in1)
+    }
+  }.elsewhen(doEnq0 && doEnq1) {
+    when(merge0Existing) {
+      entries(lastIdx) := merge(entries(lastIdx), in0)
+      entries(tail) := in1
+    }.otherwise {
+      entries(tail) := in0
+      entries((tail + 1.U)(ptrW - 1, 0)) := in1
+    }
+  }.elsewhen(doEnq0) {
+    when(merge0Existing) {
+      entries(lastIdx) := merge(entries(lastIdx), in0)
+    }.otherwise {
+      entries(tail) := in0
+    }
+  }.elsewhen(doEnq1) {
+    when(merge1Existing) {
+      entries(lastIdx) := merge(entries(lastIdx), in1)
+    }.otherwise {
+      entries(tail) := in1
+    }
   }
 
+  when(acceptedSlots =/= 0.U) {
+    tail := tail + acceptedSlots
+  }
   when(deqFire) {
-    head := head + 1.U
+    head := head + burstCount
   }
+  count := count + acceptedSlots - deqCount
 
-  count := count + PopCount(Seq(doEnq0, doEnq1)) - deqFire.asUInt
-
-  val headEntry = entries(head)
-  val headOff = headEntry.addr(1, 0)
-  val headMask = (headEntry.mask << headOff)(3, 0)
-  val headData = headEntry.data << (headOff << 3)
-  val headSize = MuxLookup(headEntry.mask, 2.U(3.W))(Seq(
-    WBYTE(3, 0) -> 0.U(3.W),
-    WHALF(3, 0) -> 1.U(3.W),
-    WWORD(3, 0) -> 2.U(3.W)
-  ))
+  io.deq_valid := deqFire
+  io.deq_addr := headEntry.addr
+  io.deq_count := deqCount
+  val burstStart = state === sIdle && !io.empty && !io.bus_busy
+  io.write_burst := burstStart
+  io.write_beats := Mux(burstStart, nextBurstCount, 0.U)
 
   when(state === sIdle) {
     awDone := false.B
     wDone := false.B
-    when(!io.empty && !io.bus_busy) {
+    writeBeat := 0.U
+    when(burstStart) {
+      assert(nextBurstCount =/= 0.U, "a non-empty StoreBuffer must form a write burst")
+      burstCount := nextBurstCount
       state := sWrite
     }
   }.elsewhen(state === sWrite) {
     val awFire = io.dmem.awvalid && io.dmem.awready
     val wFire = io.dmem.wvalid && io.dmem.wready
+    val lastWFire = wFire && writeBeat === (burstCount - 1.U)
     when(awFire) { awDone := true.B }
-    when(wFire) { wDone := true.B }
-    when((awDone || awFire) && (wDone || wFire)) {
+    when(wFire) {
+      when(lastWFire) {
+        wDone := true.B
+      }.otherwise {
+        writeBeat := writeBeat + 1.U
+      }
+    }
+    when((awDone || awFire) && (wDone || lastWFire)) {
       state := sResp
     }
   }.elsewhen(state === sResp) {
     when(bFire) {
-      val remaining = count + PopCount(Seq(doEnq0, doEnq1)) - 1.U
-      state := Mux(remaining =/= 0.U && !io.bus_busy, sWrite, sIdle)
+      state := sIdle
       awDone := false.B
       wDone := false.B
+      writeBeat := 0.U
     }
   }
 
@@ -132,62 +229,38 @@ class StoreBuffer(size: Int = OoOParams.STORE_BUFFER_SIZE) extends Module {
   io.dmem.awaddr := headEntry.addr
   io.dmem.awvalid := (state === sWrite) && !awDone
   io.dmem.awid := 0.U
-  io.dmem.awlen := 0.U
-  io.dmem.awsize := headSize
+  io.dmem.awlen := burstCount - 1.U
+  io.dmem.awsize := 2.U
   io.dmem.awburst := 1.U
-  io.dmem.wdata := headData
-  io.dmem.wstrb := headMask
+  val writeIdx = (head + writeBeat)(ptrW - 1, 0)
+  io.dmem.wdata := entries(writeIdx).data
+  io.dmem.wstrb := entries(writeIdx).mask
   io.dmem.wvalid := (state === sWrite) && !wDone
-  io.dmem.wlast := true.B
+  io.dmem.wlast := writeBeat === (burstCount - 1.U)
   io.dmem.bready := state === sResp
+  io.drain_valid := io.dmem.wvalid && io.dmem.wready
+  io.drain_addr := entries(writeIdx).addr
+  io.drain_data := entries(writeIdx).data
+  io.drain_mask := entries(writeIdx).mask
 
-  def storeMaskBytes(raw: UInt, addr: UInt): UInt = {
-    val off = addr(1, 0)
-    (raw(3, 0) << off)(3, 0)
-  }
-
-  def storeShiftData(raw: UInt, addr: UInt): UInt = {
-    val off = addr(1, 0)
-    raw << (off << 3)
-  }
-
-  def loadMaskBytes(memRd: UInt, addr: UInt): UInt = {
-    val off = addr(1, 0)
-    val base = MuxLookup(memRd, "b0001".U(4.W))(Seq(
-      RBYTE  -> "b0001".U(4.W),
-      RHALF  -> "b0011".U(4.W),
-      RWORD  -> "b1111".U(4.W),
-      RBYTEU -> "b0001".U(4.W),
-      RHALFU -> "b0011".U(4.W)
-    ))
-    (base << off)(3, 0)
-  }
-
-  val fwdHits = Wire(Vec(size, Bool()))
-  val waitHits = Wire(Vec(size, Bool()))
-  val fwdData = Wire(Vec(size, UInt(32.W)))
+  val mergedData = Wire(Vec(size + 1, UInt(32.W)))
+  val mergedMask = Wire(Vec(size + 1, UInt(4.W)))
+  mergedData(0) := 0.U
+  mergedMask(0) := 0.U
   for (off <- 0 until size) {
     val idx = (head + off.U)(ptrW - 1, 0)
-    val valid = off.U < count
     val e = entries(idx)
-    val sameWord = e.addr(31, 2) === io.ld_addr(31, 2)
-    val storeMask = storeMaskBytes(e.mask, e.addr)
-    val loadMask = loadMaskBytes(io.ld_mem_rd, io.ld_addr)
-    val fullCover = (loadMask & storeMask) === loadMask
-    val overlap = (loadMask & storeMask) =/= 0.U
-
-    waitHits(off) := io.ld_valid && valid && sameWord && overlap && !fullCover
-    fwdHits(off) := io.ld_valid && valid && sameWord && fullCover
-    fwdData(off) := storeShiftData(e.data, e.addr) >> (io.ld_addr(1, 0) << 3)
+    val hit = off.U < count && e.addr(31, 2) === io.ld_addr(31, 2)
+    val bits = expandMask(e.mask)
+    mergedData(off + 1) := Mux(hit,
+      (mergedData(off) & ~bits) | (e.data & bits), mergedData(off))
+    mergedMask(off + 1) := Mux(hit, mergedMask(off) | e.mask, mergedMask(off))
   }
 
-  val bestFwdOH = Wire(Vec(size, Bool()))
-  for (i <- 0 until size) {
-    val hasYounger = (i + 1 until size).map(j => fwdHits(j)).foldLeft(false.B)(_ || _)
-    bestFwdOH(i) := fwdHits(i) && !hasYounger
-  }
-
-  io.ld_wait := waitHits.asUInt.orR
-  io.ld_fwd_valid := fwdHits.asUInt.orR && !io.ld_wait
-  io.ld_fwd_data := Mux1H(bestFwdOH, fwdData)
+  val loadMask = loadMaskBytes(io.ld_mem_rd, io.ld_addr)
+  val overlap = (mergedMask(size) & loadMask) =/= 0.U
+  val fullCover = (mergedMask(size) & loadMask) === loadMask
+  io.ld_wait := io.ld_valid && overlap && !fullCover
+  io.ld_fwd_valid := io.ld_valid && fullCover
+  io.ld_fwd_data := mergedData(size) >> (io.ld_addr(1, 0) << 3)
 }

@@ -5,5 +5,8 @@ bind BPUUpdateQueue BPUUpdateQueue_Verification verification ();
 bind FTQ FTQ_Verification verification ();
 bind IFU IFU_Verification verification ();
 bind LoadQueue LoadQueue_Verification verification ();
+bind StoreBuffer StoreBuffer_Verification verification ();
 bind WritebackArbiter WritebackArbiter_Verification verification ();
+bind Core Core_Verification verification ();
+bind SRAM SRAM_Verification verification ();
 `endif // layers_ysyx_25020039_Verification

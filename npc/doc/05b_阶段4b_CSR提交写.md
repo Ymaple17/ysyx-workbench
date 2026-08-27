@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：`csr.wen` 仅由 **commit** 拉高；关掉 WBU 对 CSR 的架构写；用 **在飞 CSR 串行化** 保住 ID 组合读正确性。
 - **最小实现**：只允许 ROB commit 拉高 `csr.wen`，CSR 源值在 ready 后进入 ROB，并用 `csr_inflight` 保证组合读到正确架构值。
-- **当前参考核**：本章阶段快照曾通过单测 21/21 与 cpu-tests 35/35；提交写 CSR 的语义继续保留在阶段 10m。
+- **当前参考核**：本章阶段快照曾通过单测 21/21 与 cpu-tests 35/35；提交写 CSR 的语义继续保留在阶段 11d。
 - **后续扩展**：4c 把 ecall 和同步异常也改成 head 记录、下一拍 redirect/flush。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

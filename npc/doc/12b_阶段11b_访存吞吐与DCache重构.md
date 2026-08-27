@@ -2,14 +2,14 @@
 
 ## 学习导航
 - **理论目标**：分清 load queue 深度、cache 命中延迟、cache 服务率、miss-level parallelism 和 store 可见性，理解为何“非阻塞 cache”不能只加一个 MSHR 参数。
-- **最小实现**：先让 DCache hit response 支持同拍出入，再打通 burst refill；把 DCache 扩到合理 line/容量/相联度并实现 store-hit 更新与连续 store 合并，最后才增加 MSHR 和 LQ 深度。
-- **当前参考核**：阶段 10m 为 512B direct-mapped DCache、8B line、1-entry MSHR、4-entry LQ、16-entry StoreBuffer；可 hit-under-miss，但外部数据事务仍基本串行，连续 hit 和连续 store 都有服务率瓶颈。本章 RTL 尚未实现。
-- **后续扩展**：最小实现稳定后可做 2-4 个 MSHR、same-line miss merge、LQ8、write-back/write-allocate；乱序 load 越过未知 store 仍是独立的高风险扩展。
-- **验收方式**：单测连续 hit、miss merge、burst `last`、store-load forwarding、同 line store 合并、flush stale response 和 MMIO；再以 hit rate、replay、SB full、总线利用率及 IPC 做 A/B。
+- **最小实现**：让 DCache 命中请求/响应可在同拍流过；打通 AXI read/write burst；扩为 32B line；实现双提交 store-hit update、StoreBuffer 合并/连续写 burst、drain 精确更新；增加一个 secondary miss slot 和 same-line merge。
+- **当前参考核**：**已实现**。DCache 为 `64 sets * 32B = 2KiB` direct-mapped，命中 response 使用 2-entry `flow+pipe` 队列；miss 侧为 1 个 active MSHR 加 1 个 secondary slot，支持 same-line merge。LQ 保留 4 项，StoreBuffer 保留 16 项并可形成最多 8-beat 连续写 burst。
+- **后续扩展**：当前 SRAM/xbar 一次只允许一个 read owner，所以多个可并行发 AR 的完整 MSHR 表不会增加底层服务率。待总线/slave 支持多 ID outstanding 后，再评估 2-4 个独立 MSHR、LQ8、2-way、write-back/write-allocate；未知 older store speculation 仍是独立高风险扩展。
+- **验收方式**：连续/同拍 hit、response backpressure、secondary miss、same-line merge、burst `last`、store-load forwarding、三路有序 cache 更新、flush stale response 和 MMIO 均有定向测试；整机以 hit rate、replay、SB full、总线 burst 及 IPC 做 A/B。
 
 ---
 
-## 1. 当前访存墙
+## 1. 阶段 10m 的访存墙
 
 当前数据侧测量：
 
@@ -22,7 +22,7 @@
 | LQ full | `7761` | 有压力，但不是第一顺位 |
 | committed stores | `50776` | 每条仍形成独立外部写 |
 
-源码结构解释了这些数字：
+阶段 10m 源码结构解释了这些数字：
 
 ```text
 DCache: 64 sets * 8B, direct-mapped = 512B
@@ -53,29 +53,23 @@ Xbar/SRAM: 一次只推进一个 data transaction
 
 ---
 
-## 3. 11b-1：连续 hit 每拍接收
+## 3. 11b-1：命中同拍返回且每拍接收
 
-当前 response buffer 应改成标准弹性规则：
+参考核最终使用标准 Decoupled `flow+pipe` 队列：
 
 ```scala
-val respLeave = hitRespValid && io.cpuResp.ready
-val respCanAccept = !hitRespValid || respLeave
-val acceptHit = cpuHit && respCanAccept
-
-when (acceptHit) {
-  hitRespBits := newResp
-  hitRespValid := true.B
-}.elsewhen (respLeave) {
-  hitRespValid := false.B
-}
+val hitRespQ = Module(new Queue(new DCacheReadResp, 2,
+  pipe = true, flow = true))
+hitRespQ.io.enq.valid := io.cpu.arvalid && cpuHit
+hitRespQ.io.enq.bits  := hitResp
 ```
 
-请求侧只有在本拍真的能生成并保存 response 时才 `ready`。连续命中的理想时序：
+`enq.valid` 只依赖请求 valid 和 tag hit，不能依赖由 queue ready 形成的 `cpuArFire`，否则会形成 `valid -> ready -> fire -> valid` 组合环。LQ 同时识别“已有 outstanding response”和“本拍新请求 response”，因此 flow 命中可在请求被接受的同一拍完成。连续命中的理想时序：
 
 ```text
-N:   accept load A
-N+1: return A + accept load B
-N+2: return B + accept load C
+N:   accept/return A
+N+1: accept/return B
+N+2: accept/return C
 ```
 
 定向测试必须包含 response 下游 backpressure，证明旧 response 未消费时新请求不会覆盖它。
@@ -110,9 +104,9 @@ N+2: return B + accept load C
 
 ---
 
-## 5. 11b-3：合理的 cache 几何
+## 5. 11b-3：选择实际保留的 cache 几何
 
-建议第一组可控参数：
+理论候选可以从下面一组参数开始：
 
 ```text
 capacity: 2 KiB 或 4 KiB
@@ -131,11 +125,13 @@ replacement: 1-bit pseudo-LRU（2-way）
 
 每个点记录 access/hit/miss、conflict replacement、refill cycles、总线 beats 和 IPC。
 
+当前参考核保留 `64 sets * 32B * 1 way = 2KiB`。它在 burst、store-hit update 和精确 drain 更新接通后得到 `56332/1567` hit/miss、命中率 `97.29%`；因此没有为了“看起来更像商业核”继续增加 2-way。早期直接把 8B 改成 32B 曾退化甚至暴露 stale-line 错误，说明几何参数必须在协议和一致性路径之后评估。
+
 ---
 
 ## 6. 11b-4：store 不应把 cache 当旁观者
 
-当前所有 cacheable store 都失效 DCache，再由 StoreBuffer 写穿到内存。这保证了简单正确性，但浪费局部性并制造 `SB Full`。
+阶段 10m 的 cacheable store 会失效 DCache，再由 StoreBuffer 写穿到内存。这保证了简单正确性，但浪费局部性并制造 `SB Full`。
 
 ### 6.1 最小 store-hit update
 
@@ -167,19 +163,21 @@ write-back/write-allocate 能进一步减少外部写，但会引入 dirty evict
 
 ---
 
-## 7. 11b-5：最后增加 MSHR 和 LQ
+## 7. 11b-5：secondary miss slot 与 same-line merge
 
-在 hit throughput、burst 和 store path 都稳定后，才把 MSHR 从 1 扩到 2-4：
+在 hit throughput、burst 和 store path 都稳定后，参考核先增加一项 secondary request 状态：
 
 | 字段 | 作用 |
 |------|------|
-| valid / lineAddr | miss 身份 |
-| waiters | 同 line 多个 load 的 LQ identity |
-| refill buffer / beat | 已收到的数据 |
-| victim way / killInstall | 安装位置与失效竞态 |
-| AXI id / generation | 回包路由与 flush stale guard |
+| `pendingValid/cacheable/addr/size/id` | active MSHR 忙时保存第二个请求身份 |
+| active MSHR refill buffer / beat | 当前总线 burst 已收到的数据 |
+| same-line compare | secondary 与 active 同 line 时复用 refill |
+| `killInstall` 与三路 store update | enqueue/commit/drain 竞态保护 |
+| AXI id / LQ generation | 回包路由与 flush stale guard |
 
-同 line miss 应 merge 到已有 MSHR，不重复发 AR；不同 line miss 在总线可仲裁时并行挂起。LQ 可随之从 4 扩到 8，但每条 response 必须通过 generation+slot/ROB identity 找到原 load。
+同 line secondary miss 在 active refill 完成时直接从 refill buffer 取目标 word，不重复发 AR；不同 line secondary miss 在 active 完成后提升为下一个 MSHR。该结构能容纳两个请求身份，但底层仍只有一个 read burst owner，所以准确名称是“active MSHR + secondary slot”，不是两个并行 refill MSHR。
+
+参考核继续保留 `LQ_SIZE=4`：最终严格结果 `LQ Full Cycles=325`、`DCache Busy Replay=964`，已不再构成扩到 LQ8 的证据。扩 LQ/完整多 MSHR 是总线真正支持多 outstanding 后的一组联合实验，不是当前实现的隐藏能力。
 
 `LQ_SPECULATE_UNKNOWN_STORES` 仍保持 `false`。越过未知 older store 需要 violation detector 和精确 replay，是独立实验，不应和 cache 重构同批打开。
 
@@ -235,13 +233,30 @@ IPC / cycles / commits
 
 ---
 
-## 11. 验收清单（你完成后自勾）
+## 11. 当前参考结果
+
+从阶段 10m 到阶段 11 最终点：
+
+| 指标 | 10m | Stage11 final | 变化 |
+|------|----:|------------------:|-----:|
+| DCache hit rate | `71.28%` | `97.29%` | `+26.01pp` |
+| DCache busy replay | `54040` | `964` | `-98.22%` |
+| StoreBuffer full | `41278` | `1348` | `-96.73%` |
+| LQ full | `7761` | `325` | `-95.81%` |
+| secondary alloc / same-line merge | `0 / 0` | `442 / 241` | 路径真实启用 |
+| write bursts / beats | 单 store 外写 | `27814 / 49265` | 连续 store 合并为 burst |
+
+32B line 的第一次长测在 Dinic 暴露过真实一致性缺口：line 可能在 store enqueue 后、内存 drain 前 refill，旧实现只在 enqueue 更新 cache，导致 refill 重新安装旧值。最终设计让 StoreBuffer 在每个 accepted W beat 输出 `drain_addr/data/mask`，DCache 按 `drain -> commit lane0 -> commit lane1` 的程序序更新，并阻止冲突 refill 覆盖新 store。
+
+---
+
+## 12. 验收清单（你完成后自勾）
 
 - [ ] DCache 连续 hit 已达到 1 request/cycle
 - [ ] SRAM/Xbar/DCache burst 语义通过 backpressure 和错误响应测试
 - [ ] 32B line、容量和相联度经过单变量 A/B 后选出保留点
 - [ ] cacheable store 支持 store-hit update 和安全 write combining
-- [ ] 多 MSHR/same-line merge 在服务端变宽后接入，LQ 身份与 stale guard 正确
+- [ ] active MSHR + secondary slot/same-line merge 已接入，LQ 身份与 stale guard 正确
 - [ ] `DCache Busy Replay`、`StoreBuffer Full`、load/store head wait 和总周期显著下降
 - [ ] 全量 cpu-tests+difftest 与 microbench 严格回归通过
 

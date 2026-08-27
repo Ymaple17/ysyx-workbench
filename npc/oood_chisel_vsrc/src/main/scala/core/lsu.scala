@@ -81,6 +81,8 @@ class LSU_IO(xlen: Int) extends Bundle {
   val mem_violation_pc = Output(UInt(32.W))
   val lq_outstanding = Output(UInt(log2Ceil(OoOParams.LQ_SIZE + 1).W))
   val bus_busy = Output(Bool())
+  val debug_lq_head_alloc_pc = Output(UInt(32.W))
+  val debug_lq_head_remove_reason = Output(UInt(2.W))
 }
 
 class LSU(val conf: CoreConfig) extends Module {
@@ -151,6 +153,8 @@ class LSU(val conf: CoreConfig) extends Module {
   io.mem_violation_rob := lq.io.violationRob
   io.mem_violation_pc := lq.io.violationPc
   io.lq_outstanding := lq.io.outstanding
+  io.debug_lq_head_alloc_pc := lq.io.debugHeadAllocPc
+  io.debug_lq_head_remove_reason := lq.io.debugHeadRemoveReason
 
   val directValid = io.in.valid && !is_load && !io.is_flush
   lq.io.wb.ready := io.out.ready

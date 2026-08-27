@@ -27,7 +27,7 @@
 | 12 | [阶段11路线](12_阶段11_IPC从0.6到1.md) → [12a](12a_阶段11a_依赖链与执行吞吐.md) → [12b](12b_阶段11b_访存吞吐与DCache重构.md) → [12c](12c_阶段11c_持续前端与有效宽度.md) → [12d](12d_阶段11d_IPC1验收与回归.md) | **阶段 11 IPC 0.6 → 1.0**（依赖链 / 访存吞吐 / 有效前端 / 严格收口） |
 | 13 | [13a](13a_阶段12a_MMU与虚拟内存.md) → [13b](13b_阶段12b_多核与一致性.md) | **阶段 12 系统扩展**（MMU/SV32、多核一致性，后置可选） |
 
-**参考实现水位（≠ 你的学习勾选）**：源码已完成 **阶段 10m 教学参考核**。它是真乱序双发核：取指、rename/dispatch 和 commit 主干均为 2-wide；RS 则向 `ALU0/ALU1/LSU/DIV` 四类分布式端口各选本地最老 ready 项，完成结果经 4→2 oldest-result 仲裁进入 2 CDB。10k 放宽 lane1 的普通 load、控制流和 cacheable store 退休；10l 加入 4-entry LoadQueue、tagged response、replay 和 DCache hit-under-miss；10m 加入 2-entry FetchBuffer、16-entry generation-tagged FTQ、speculative GHR/RAS 恢复、持续双槽供给，并用 ALU/DIV 同拍 refill 和第二整数 ALU 让后端接住前端宽度。当前保留 `ROB_SIZE=32`、`N_PHYS=64`、`RS_SIZE=8`、`STORE_BUFFER_SIZE=16`、`WIDE_FETCH_MIN_SPACE=6`、`LSU_MLP_ENABLE=true`、`LQ_SIZE=4`、`LQ_SPECULATE_UNKNOWN_STORES=false`；TAGE 为 3×256 项、历史 2/5/10，ITAGE 为 2×128 项、历史 4/10。最终严格回归连续两次得到 IPC **`0.6381`**（`818892` cycles / `522548` commits），两次逐字段一致，`FTQ Stale Recover=0`；相对 10j 的 `0.4357` 提升约 **`46.5%`**。最终还通过 `OoOUnitTest` **68/68**、7 项 cpu-tests+difftest 和无 Chisel elaboration warning 的 RTL 生成。**阶段 11 讲义已经补齐，但 RTL 尚未施工，IPC 1.0 是下一阶段目标，不是当前结果。** 你的学习验收清单仍由你自己完成；MMU 与多核一致性继续后移到阶段 12。
+**参考实现水位（≠ 你的学习勾选）**：源码已完成并严格验收 **阶段 11d 教学参考核**。它是真乱序双发核：fetch、rename/dispatch 和 commit 主干均为 2-wide；RS 向 `ALU0/ALU1/LSU/DIV` 四类分布式端口各选本地 oldest-ready，完成结果经 4→2 age arbiter 进入 2 CDB。阶段 11 在 10m 上加入 accepted-CDB 同拍 wake/select/value bypass、弹性 LSU、无目的控制流 ROB/RS 直接完成、predicted-not-taken branch+lane1、bimodal/TAGE tournament；访存侧加入 AXI read/write burst、16-entry StoreBuffer 合并/连续写、`64×32B=2KiB` direct-mapped DCache、同拍 hit response、1 active MSHR + 1 secondary slot/same-line merge，以及 LQ4 tagged replay。当前仍保留 `ROB_SIZE=32`、`N_PHYS=64`、`RS_SIZE=8`、`FQ_SIZE=8`、`FETCH_BUFFER_SIZE=2`、`FTQ_SIZE=16`、`WIDE_FETCH_MIN_SPACE=6`、`LQ_SPECULATE_UNKNOWN_STORES=false`；TAGE 为 3×256 项、历史 2/5/10，ITAGE 为 2×128 项、历史 4/10。最终 full regression 通过 `OoOUnitTest` **80/80**、7/7 cpu-tests+difftest、零 compile/chisel-gen warning；两轮 microbench 的 98 列摘要除 `tag` 外其余 97 个字段一致：IPC **`1.0117`**（`516339` cycles / `522374` commits）、DCache hit rate `97.29%`、`FTQ Stale Recover=0`、`Mem Order Violation=0`。结果与目录见 [阶段 11d](12d_阶段11d_IPC1验收与回归.md)。你的学习验收清单仍由你自己完成；MMU 与多核一致性继续后移到阶段 12。
 
 ## 原则
 
@@ -46,6 +46,8 @@ cd $NPC_HOME
 scripts/stage9_regress.sh --mode full --tag final_check
 # 阶段 10 最终收官：full regression + 重复 microbench + IPC/FTQ/双 ALU 门槛
 scripts/stage10_final.sh
+# 阶段 11 最终收官：完整回归 + 同一二进制复跑 + IPC >= 1.0
+scripts/stage11_final.sh
 ```
 
 脚本默认覆盖本阶段验收口径：逐项单测、`cpu-tests`、`microbench(test)`。microbench 只有同时出现 `MicroBench PASS` 与 `HIT GOOD TRAP`、没有 HANG/ABORT/difftest mismatch、且 IPC/cycles/commits 三项非空时才算通过。

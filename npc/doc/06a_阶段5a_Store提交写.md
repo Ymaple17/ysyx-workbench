@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：store 对内存的修改只发生在 **ROB head 提交**；LSU 只算地址/数据，写通道恒静默。
 - **最小实现**：LSU 只计算 store 地址/数据/掩码并写 ROB；只有 head commit 状态机发 AW/W、等待 B 后才退休。
-- **当前参考核**：5a/5b 最小语义已落地；阶段 10a 又让普通 PMEM store 提交进 StoreBuffer，不再等待总线 B，MMIO 仍直写独占。
+- **当前参考核**：5a/5b 最小语义已落地；普通 PMEM store 提交进 Stage11d 的 StoreBuffer16，可合并并组成写 burst，不等待总线 B；MMIO 仍直写独占。
 - **后续扩展**：5b 去掉 `mem@head` 对 load 的全局限制，补更老 store 冲突检测与前递。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

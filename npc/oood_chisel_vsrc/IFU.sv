@@ -125,6 +125,7 @@ module IFU(
   wire [9:0]  _bpu_io_bp_index;
   wire        _bpu_io_bp_tagged_hit;
   wire        _bpu_io_bp_tage_use_alt;
+  wire        _bpu_io_bp_bimodal_selected;
   wire        _bpu_io_bp_indirect_hit;
   wire        _bpu_io_bp_itage_hit;
   wire        _bpu_io_bp1_valid;
@@ -133,6 +134,7 @@ module IFU(
   wire [9:0]  _bpu_io_bp1_index;
   wire        _bpu_io_bp1_tagged_hit;
   wire        _bpu_io_bp1_tage_use_alt;
+  wire        _bpu_io_bp1_bimodal_selected;
   wire        _bpu_io_bp1_indirect_hit;
   wire        _bpu_io_bp1_itage_hit;
   wire [31:0] _bpu_io_spec_ras_0;
@@ -201,85 +203,88 @@ module IFU(
     end
   end // always @(posedge)
   BPU bpu (
-    .clock                 (clock),
-    .reset                 (reset),
-    .io_predict_pc         (io_in_bits_next_pc),
-    .io_predict_inst       (io_imem_rdata),
-    .io_predict_pc1        (bpu_io_predict_pc1),
-    .io_predict_inst1      (io_imem_rdata1),
-    .io_bp_valid           (_bpu_io_bp_valid),
-    .io_bp_taken           (_bpu_io_bp_taken),
-    .io_bp_target          (_bpu_io_bp_target),
-    .io_bp_index           (_bpu_io_bp_index),
-    .io_bp_tagged_hit      (_bpu_io_bp_tagged_hit),
-    .io_bp_tage_use_alt    (_bpu_io_bp_tage_use_alt),
-    .io_bp_indirect_hit    (_bpu_io_bp_indirect_hit),
-    .io_bp_itage_hit       (_bpu_io_bp_itage_hit),
-    .io_bp1_valid          (_bpu_io_bp1_valid),
-    .io_bp1_taken          (_bpu_io_bp1_taken),
-    .io_bp1_target         (_bpu_io_bp1_target),
-    .io_bp1_index          (_bpu_io_bp1_index),
-    .io_bp1_tagged_hit     (_bpu_io_bp1_tagged_hit),
-    .io_bp1_tage_use_alt   (_bpu_io_bp1_tage_use_alt),
-    .io_bp1_indirect_hit   (_bpu_io_bp1_indirect_hit),
-    .io_bp1_itage_hit      (_bpu_io_bp1_itage_hit),
-    .io_update_pc          (_bpuUpdates_io_deq_bits_pc),
-    .io_update_target      (_bpuUpdates_io_deq_bits_target),
-    .io_update_valid       (_bpuUpdates_io_deq_valid),
-    .io_update_taken       (_bpuUpdates_io_deq_bits_taken),
-    .io_update_is_branch   (_bpuUpdates_io_deq_bits_isBranch),
-    .io_update_is_jalr     (_bpuUpdates_io_deq_bits_isJalr),
-    .io_update_index       (_bpuUpdates_io_deq_bits_index),
-    .io_update_is_call     (_bpuUpdates_io_deq_bits_isCall),
-    .io_update_is_ret      (_bpuUpdates_io_deq_bits_isRet),
-    .io_spec_advance_valid (work),
-    .io_spec_advance_mask  (bpu_io_spec_advance_mask),
-    .io_recover_valid      (bpu_io_recover_valid),
-    .io_recover_pc         (io_bp_recover_pc),
-    .io_recover_index      (io_bp_recover_index),
-    .io_recover_taken      (io_bp_recover_taken),
-    .io_recover_is_branch  (io_bp_recover_is_branch),
-    .io_recover_is_call    (io_bp_recover_is_call),
-    .io_recover_is_ret     (io_bp_recover_is_ret),
-    .io_recover_ras_0      (_ftq_io_recover_ras_0),
-    .io_recover_ras_1      (_ftq_io_recover_ras_1),
-    .io_recover_ras_2      (_ftq_io_recover_ras_2),
-    .io_recover_ras_3      (_ftq_io_recover_ras_3),
-    .io_recover_ras_4      (_ftq_io_recover_ras_4),
-    .io_recover_ras_5      (_ftq_io_recover_ras_5),
-    .io_recover_ras_6      (_ftq_io_recover_ras_6),
-    .io_recover_ras_7      (_ftq_io_recover_ras_7),
-    .io_recover_ras_8      (_ftq_io_recover_ras_8),
-    .io_recover_ras_9      (_ftq_io_recover_ras_9),
-    .io_recover_ras_10     (_ftq_io_recover_ras_10),
-    .io_recover_ras_11     (_ftq_io_recover_ras_11),
-    .io_recover_ras_12     (_ftq_io_recover_ras_12),
-    .io_recover_ras_13     (_ftq_io_recover_ras_13),
-    .io_recover_ras_14     (_ftq_io_recover_ras_14),
-    .io_recover_ras_15     (_ftq_io_recover_ras_15),
-    .io_recover_ras_ptr    (_ftq_io_recover_rasPtr),
-    .io_recover_ras_count  (_ftq_io_recover_rasCount),
-    .io_reset_spec         (io_is_flush & (~io_bp_recover_valid | ~_ftq_io_recoverValid)),
-    .io_spec_ras_0         (_bpu_io_spec_ras_0),
-    .io_spec_ras_1         (_bpu_io_spec_ras_1),
-    .io_spec_ras_2         (_bpu_io_spec_ras_2),
-    .io_spec_ras_3         (_bpu_io_spec_ras_3),
-    .io_spec_ras_4         (_bpu_io_spec_ras_4),
-    .io_spec_ras_5         (_bpu_io_spec_ras_5),
-    .io_spec_ras_6         (_bpu_io_spec_ras_6),
-    .io_spec_ras_7         (_bpu_io_spec_ras_7),
-    .io_spec_ras_8         (_bpu_io_spec_ras_8),
-    .io_spec_ras_9         (_bpu_io_spec_ras_9),
-    .io_spec_ras_10        (_bpu_io_spec_ras_10),
-    .io_spec_ras_11        (_bpu_io_spec_ras_11),
-    .io_spec_ras_12        (_bpu_io_spec_ras_12),
-    .io_spec_ras_13        (_bpu_io_spec_ras_13),
-    .io_spec_ras_14        (_bpu_io_spec_ras_14),
-    .io_spec_ras_15        (_bpu_io_spec_ras_15),
-    .io_spec_ras_ptr       (_bpu_io_spec_ras_ptr),
-    .io_spec_ras_count     (_bpu_io_spec_ras_count),
-    .io_tage_alloc         (_bpu_io_tage_alloc),
-    .io_itage_alloc        (_bpu_io_itage_alloc)
+    .clock                   (clock),
+    .reset                   (reset),
+    .io_predict_pc           (io_in_bits_next_pc),
+    .io_predict_inst         (io_imem_rdata),
+    .io_predict_pc1          (bpu_io_predict_pc1),
+    .io_predict_inst1        (io_imem_rdata1),
+    .io_bp_valid             (_bpu_io_bp_valid),
+    .io_bp_taken             (_bpu_io_bp_taken),
+    .io_bp_target            (_bpu_io_bp_target),
+    .io_bp_index             (_bpu_io_bp_index),
+    .io_bp_tagged_hit        (_bpu_io_bp_tagged_hit),
+    .io_bp_tage_use_alt      (_bpu_io_bp_tage_use_alt),
+    .io_bp_bimodal_selected  (_bpu_io_bp_bimodal_selected),
+    .io_bp_indirect_hit      (_bpu_io_bp_indirect_hit),
+    .io_bp_itage_hit         (_bpu_io_bp_itage_hit),
+    .io_bp1_valid            (_bpu_io_bp1_valid),
+    .io_bp1_taken            (_bpu_io_bp1_taken),
+    .io_bp1_target           (_bpu_io_bp1_target),
+    .io_bp1_index            (_bpu_io_bp1_index),
+    .io_bp1_tagged_hit       (_bpu_io_bp1_tagged_hit),
+    .io_bp1_tage_use_alt     (_bpu_io_bp1_tage_use_alt),
+    .io_bp1_bimodal_selected (_bpu_io_bp1_bimodal_selected),
+    .io_bp1_indirect_hit     (_bpu_io_bp1_indirect_hit),
+    .io_bp1_itage_hit        (_bpu_io_bp1_itage_hit),
+    .io_update_pc            (_bpuUpdates_io_deq_bits_pc),
+    .io_update_target        (_bpuUpdates_io_deq_bits_target),
+    .io_update_valid         (_bpuUpdates_io_deq_valid),
+    .io_update_taken         (_bpuUpdates_io_deq_bits_taken),
+    .io_update_is_branch     (_bpuUpdates_io_deq_bits_isBranch),
+    .io_update_is_jalr       (_bpuUpdates_io_deq_bits_isJalr),
+    .io_update_index         (_bpuUpdates_io_deq_bits_index),
+    .io_update_is_call       (_bpuUpdates_io_deq_bits_isCall),
+    .io_update_is_ret        (_bpuUpdates_io_deq_bits_isRet),
+    .io_spec_advance_valid   (work),
+    .io_spec_advance_mask    (bpu_io_spec_advance_mask),
+    .io_recover_valid        (bpu_io_recover_valid),
+    .io_recover_pc           (io_bp_recover_pc),
+    .io_recover_index        (io_bp_recover_index),
+    .io_recover_taken        (io_bp_recover_taken),
+    .io_recover_is_branch    (io_bp_recover_is_branch),
+    .io_recover_is_call      (io_bp_recover_is_call),
+    .io_recover_is_ret       (io_bp_recover_is_ret),
+    .io_recover_ras_0        (_ftq_io_recover_ras_0),
+    .io_recover_ras_1        (_ftq_io_recover_ras_1),
+    .io_recover_ras_2        (_ftq_io_recover_ras_2),
+    .io_recover_ras_3        (_ftq_io_recover_ras_3),
+    .io_recover_ras_4        (_ftq_io_recover_ras_4),
+    .io_recover_ras_5        (_ftq_io_recover_ras_5),
+    .io_recover_ras_6        (_ftq_io_recover_ras_6),
+    .io_recover_ras_7        (_ftq_io_recover_ras_7),
+    .io_recover_ras_8        (_ftq_io_recover_ras_8),
+    .io_recover_ras_9        (_ftq_io_recover_ras_9),
+    .io_recover_ras_10       (_ftq_io_recover_ras_10),
+    .io_recover_ras_11       (_ftq_io_recover_ras_11),
+    .io_recover_ras_12       (_ftq_io_recover_ras_12),
+    .io_recover_ras_13       (_ftq_io_recover_ras_13),
+    .io_recover_ras_14       (_ftq_io_recover_ras_14),
+    .io_recover_ras_15       (_ftq_io_recover_ras_15),
+    .io_recover_ras_ptr      (_ftq_io_recover_rasPtr),
+    .io_recover_ras_count    (_ftq_io_recover_rasCount),
+    .io_reset_spec
+      (io_is_flush & (~io_bp_recover_valid | ~_ftq_io_recoverValid)),
+    .io_spec_ras_0           (_bpu_io_spec_ras_0),
+    .io_spec_ras_1           (_bpu_io_spec_ras_1),
+    .io_spec_ras_2           (_bpu_io_spec_ras_2),
+    .io_spec_ras_3           (_bpu_io_spec_ras_3),
+    .io_spec_ras_4           (_bpu_io_spec_ras_4),
+    .io_spec_ras_5           (_bpu_io_spec_ras_5),
+    .io_spec_ras_6           (_bpu_io_spec_ras_6),
+    .io_spec_ras_7           (_bpu_io_spec_ras_7),
+    .io_spec_ras_8           (_bpu_io_spec_ras_8),
+    .io_spec_ras_9           (_bpu_io_spec_ras_9),
+    .io_spec_ras_10          (_bpu_io_spec_ras_10),
+    .io_spec_ras_11          (_bpu_io_spec_ras_11),
+    .io_spec_ras_12          (_bpu_io_spec_ras_12),
+    .io_spec_ras_13          (_bpu_io_spec_ras_13),
+    .io_spec_ras_14          (_bpu_io_spec_ras_14),
+    .io_spec_ras_15          (_bpu_io_spec_ras_15),
+    .io_spec_ras_ptr         (_bpu_io_spec_ras_ptr),
+    .io_spec_ras_count       (_bpu_io_spec_ras_count),
+    .io_tage_alloc           (_bpu_io_tage_alloc),
+    .io_itage_alloc          (_bpu_io_itage_alloc)
   );
   BPUUpdateQueue bpuUpdates (
     .clock                  (clock),
@@ -493,11 +498,20 @@ module IFU(
   );
   PerfMonitor pm_9 (
     .clock    (clock),
+    .event_id (32'h6F),
+    .data     (64'h1),
+    .enable
+      (work
+       & (fetchPacket_valid_0 & _bpu_io_bp_bimodal_selected | fetchPacket_valid_1
+          & _bpu_io_bp1_bimodal_selected))
+  );
+  PerfMonitor pm_10 (
+    .clock    (clock),
     .event_id (32'h46),
     .data     (64'h1),
     .enable   (_bpu_io_tage_alloc)
   );
-  PerfMonitor pm_10 (
+  PerfMonitor pm_11 (
     .clock    (clock),
     .event_id (32'h47),
     .data     (64'h1),
@@ -506,73 +520,73 @@ module IFU(
        & (fetchPacket_valid_0 & _bpu_io_bp_itage_hit | fetchPacket_valid_1
           & _bpu_io_bp1_itage_hit))
   );
-  PerfMonitor pm_11 (
+  PerfMonitor pm_12 (
     .clock    (clock),
     .event_id (32'h48),
     .data     (64'h1),
     .enable   (_bpu_io_itage_alloc)
   );
-  PerfMonitor pm_12 (
+  PerfMonitor pm_13 (
     .clock    (clock),
     .event_id (32'h57),
     .data     (64'h1),
     .enable   (work)
   );
-  PerfMonitor pm_13 (
+  PerfMonitor pm_14 (
     .clock    (clock),
     .event_id (32'h58),
     .data     ({62'h0, {1'h0, fetchPacket_valid_0} + {1'h0, fetchPacket_valid_1}}),
     .enable   (work)
   );
-  PerfMonitor pm_14 (
+  PerfMonitor pm_15 (
     .clock    (clock),
     .event_id (32'h59),
     .data     (64'h1),
     .enable   (_GEN_0)
   );
-  PerfMonitor pm_15 (
+  PerfMonitor pm_16 (
     .clock    (clock),
     .event_id (32'h5A),
     .data     (64'h1),
     .enable   (captureCandidate & _fetchBuffer_io_full)
   );
-  PerfMonitor pm_16 (
+  PerfMonitor pm_17 (
     .clock    (clock),
     .event_id (32'h5B),
     .data     (64'h1),
     .enable   (captureCandidate & _ftq_io_full)
   );
-  PerfMonitor pm_17 (
+  PerfMonitor pm_18 (
     .clock    (clock),
     .event_id (32'h5C),
     .data     (64'h1),
     .enable   (work & ~io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp))
   );
-  PerfMonitor pm_18 (
+  PerfMonitor pm_19 (
     .clock    (clock),
     .event_id (32'h5D),
     .data     (64'h1),
     .enable   (bpu_io_recover_valid)
   );
-  PerfMonitor pm_19 (
+  PerfMonitor pm_20 (
     .clock    (clock),
     .event_id (32'h5E),
     .data     (64'h1),
     .enable   (bpu_io_recover_valid & (io_bp_recover_is_call | io_bp_recover_is_ret))
   );
-  PerfMonitor pm_20 (
+  PerfMonitor pm_21 (
     .clock    (clock),
     .event_id (32'h5F),
     .data     ({59'h0, _ftq_io_count - ftqHighWater}),
     .enable   (_GEN)
   );
-  PerfMonitor pm_21 (
+  PerfMonitor pm_22 (
     .clock    (clock),
     .event_id (32'h60),
     .data     (64'h1),
     .enable   (io_bp_recover_valid & ~_ftq_io_recoverValid)
   );
-  PerfMonitor pm_22 (
+  PerfMonitor pm_23 (
     .clock    (clock),
     .event_id (32'h34),
     .data     (64'h1),

@@ -95,6 +95,8 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     val free_rob_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
     val free_rob1_fire = Input(Bool())
     val free_rob1_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
+    val free_ctrl_fire = Input(Bool())
+    val free_ctrl_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
 
     val cdb_valid = Input(Bool())
     val cdb_pdest = Input(UInt(OoOParams.PHYS_W.W))
@@ -119,13 +121,44 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
   for (i <- 0 until n) {
     freeByRob(i) := entries(i).valid && (
       (io.free_rob_fire && entries(i).rob_idx === io.free_rob_idx) ||
-      (io.free_rob1_fire && entries(i).rob_idx === io.free_rob1_idx)
+      (io.free_rob1_fire && entries(i).rob_idx === io.free_rob1_idx) ||
+      (io.free_ctrl_fire && entries(i).rob_idx === io.free_ctrl_idx)
     )
   }
 
   val canIssue = Wire(Vec(n, Bool()))
   val isMulDiv = Wire(Vec(n, Bool()))
   val isLoad   = Wire(Vec(n, Bool()))
+  val issueEntries = Wire(Vec(n, new RSEntry))
+  for (i <- 0 until n) {
+    val e = WireDefault(entries(i))
+    val cdbHit1 = io.cdb_valid && (io.cdb_pdest =/= 0.U) &&
+      !entries(i).src1_ready && (entries(i).src1_phys === io.cdb_pdest)
+    val cdbHit2 = io.cdb_valid && (io.cdb_pdest =/= 0.U) &&
+      !entries(i).src2_ready && (entries(i).src2_phys === io.cdb_pdest)
+    val cdb1Hit1 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
+      !entries(i).src1_ready && (entries(i).src1_phys === io.cdb1_pdest)
+    val cdb1Hit2 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
+      !entries(i).src2_ready && (entries(i).src2_phys === io.cdb1_pdest)
+    when(cdbHit1) {
+      e.src1_ready := true.B
+      e.src1_val := io.cdb_val
+    }
+    when(cdbHit2) {
+      e.src2_ready := true.B
+      e.src2_val := io.cdb_val
+    }
+    when(cdb1Hit1) {
+      e.src1_ready := true.B
+      e.src1_val := io.cdb1_val
+    }
+    when(cdb1Hit2) {
+      e.src2_ready := true.B
+      e.src2_val := io.cdb1_val
+    }
+    issueEntries(i) := e
+  }
+
   def hasOlderPendingStore(robIdx: UInt): Bool = {
     val myAge = age(robIdx)
     (0 until OoOParams.ROB_SIZE).map { j =>
@@ -147,7 +180,8 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
 
     val waitOlderStore = entries(i).valid && entries(i).lsu_mem_valid &&
       !entries(i).lsu_mem_write && hasOlderPendingStore(entries(i).rob_idx)
-    val ready = entries(i).valid && !entries(i).issued && entries(i).src1_ready && entries(i).src2_ready && !freeByRob(i)
+    val ready = entries(i).valid && !entries(i).issued && issueEntries(i).src1_ready &&
+      issueEntries(i).src2_ready && !freeByRob(i)
     canIssue(i) := ready && !waitOlderStore
   }
 
@@ -181,19 +215,19 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
   val legacyIdx = PriorityEncoder(legacyOH.asUInt)
 
   io.issue_alu_valid := aluOH.asUInt.orR && !io.flush
-  io.issue_alu_bits  := entries(aluIdx)
+  io.issue_alu_bits := issueEntries(aluIdx)
   io.issue_alu_idx   := aluIdx
   io.issue_alu1_valid := alu1OH.asUInt.orR && !io.flush
-  io.issue_alu1_bits  := entries(alu1Idx)
+  io.issue_alu1_bits := issueEntries(alu1Idx)
   io.issue_alu1_idx   := alu1Idx
   io.issue_div_valid := divOH.asUInt.orR && !io.flush
-  io.issue_div_bits  := entries(divIdx)
+  io.issue_div_bits := issueEntries(divIdx)
   io.issue_div_idx   := divIdx
   io.issue_lsu_valid := lsuOH.asUInt.orR && !io.flush
-  io.issue_lsu_bits  := entries(lsuIdx)
+  io.issue_lsu_bits := issueEntries(lsuIdx)
   io.issue_lsu_idx   := lsuIdx
   io.issue_valid := legacyOH.asUInt.orR && !io.flush
-  io.issue_bits  := entries(legacyIdx)
+  io.issue_bits := issueEntries(legacyIdx)
   io.issue_idx   := legacyIdx
 
   val willFreeRob = freeByRob.asUInt.orR

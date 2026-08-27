@@ -4,7 +4,7 @@
 
 - **理论目标**：理解提交带宽和写回带宽为什么会限制 IPC；知道 2-wide commit、双 CDB、双唤醒、双 PRF 写口之间的关系。
 - **最小实现**：在不破坏现有 difftest 单提交接口的前提下，先把结果总线从单 CDB 扩成 2 CDB，让一拍最多两个 FU 结果进入 PRF/ROB/RS。
-- **当前参考核**：`CDB_NUM=2` 和 `COMMIT_WIDTH=2` 均已保留；10k 已放宽 lane1 类型，10m 又加入第二整数 ALU，四类结果 `ALU0/LSU/ALU1/DIV` 由独立的 4→2 `WritebackArbiter` 按 ROB age 选择最老两项。本章仍按 10c 历史顺序解释为什么先扩写回再扩退休。
+- **当前参考核**：`CDB_NUM=2` 和 `COMMIT_WIDTH=2` 均已保留；四类结果 `ALU0/LSU/ALU1/DIV` 由独立 4→2 `WritebackArbiter` 按 ROB age 选最老两项。阶段 11d 又让无目的普通控制流通过独立 ROB/RS sideband 完成，避免占数据 CDB；本章仍按 10c 历史顺序解释为什么先扩写回再扩退休。
 - **后续扩展**：10f/10g/10m 已完成双退休、ROB/PRF 扩容、持续双取指与双整数 ALU；当前可继续研究更多 CDB、分类型 issue queue 和 banked PRF。
 - **验收方式**：`mychisel.compile`、`OoOUnitTest`、cpu-tests + difftest、`microbench(test)` 全部通过；记录 before/after IPC 和 CDB 计数器。
 
@@ -289,6 +289,6 @@ ysyx_25020039__DOT___core_io_dmem_rready
 - 10f 已完成：为 commit 增加 slot0/slot1/commit2/slot1 block 计数器。
 - 10f 已完成：宽提交时处理 `arch_rf` / `arch_rat` 双更新，以及同一架构寄存器两次提交的优先级。
 - 10g/10h 已完成：扩 ROB/PRF 后重新评估 wide fetch；10m 再以 FetchBuffer/FTQ、FU refill 和双整数 ALU形成最终保留点。
-- 当前 10m：`COMMIT_WIDTH=2`、`CDB_NUM=2`，`ALU0/LSU/ALU1/DIV` 经独立 4→2 oldest-result arbiter 写回；最终 IPC `0.6381`。
+- 10m 历史收官：`COMMIT_WIDTH=2`、`CDB_NUM=2`，`ALU0/LSU/ALU1/DIV` 经独立 4→2 oldest-result arbiter 写回；当时 IPC `0.6381`。Stage11d 继续保留双 CDB，并增加控制流直接完成 sideband。
 
 下一章：[11d_阶段10d_宽取指与前端带宽.md](11d_阶段10d_宽取指与前端带宽.md)。

@@ -140,43 +140,46 @@ class SRAM extends Module{
   val r_delay_cnt = Reg(UInt(32.W))
   val araddr_reg = RegInit(0.U(32.W))
   val arid_reg = RegInit(0.U(4.W))
-  val rdata_reg = RegInit(0.U(32.W))
-  val rresp_reg = RegInit(OKAY)
+  val arlen_reg = RegInit(0.U(8.W))
+  val arsize_reg = RegInit(2.U(3.W))
+  val arburst_reg = RegInit(1.U(2.W))
+  val rbeat_reg = RegInit(0.U(8.W))
 
   r_next_state := MuxLookup(r_state, s_R_IDLE)(Seq(
     s_R_IDLE -> Mux(io.sram.arvalid, s_R_WAIT, s_R_IDLE),
     s_R_WAIT -> Mux(r_delay_cnt === random_delay, s_R_DATA, s_R_WAIT),
-    s_R_DATA -> Mux(io.sram.rready, s_R_IDLE, s_R_DATA)
+    s_R_DATA -> Mux(io.sram.rready && (rbeat_reg === arlen_reg), s_R_IDLE, s_R_DATA)
   ))
   r_state := r_next_state
 
   io.sram.arready := (r_state === s_R_IDLE)
   io.sram.rvalid := (r_state === s_R_DATA)
   io.sram.rid := arid_reg
-  io.sram.rresp := rresp_reg
-  io.sram.rdata := rdata_reg
-  io.sram.rlast := true.B
+  val beatOffset = Mux(arburst_reg === 0.U, 0.U(32.W), rbeat_reg.pad(32) << arsize_reg)
+  val beatAddr = araddr_reg + beatOffset
+  val beatAddrValid = is_valid_addr(beatAddr)
+  io.sram.rresp := Mux(beatAddrValid, OKAY, SLVERR)
+  io.sram.rdata := Mux(beatAddrValid, pmem.io.rdata, 0.U)
+  io.sram.rlast := rbeat_reg === arlen_reg
+  pmem.io.ren := (r_state === s_R_DATA) && beatAddrValid
+  pmem.io.raddr := beatAddr & "hfffffffc".U
 
   when(io.sram.arvalid && io.sram.arready) {
     araddr_reg := io.sram.araddr
     arid_reg := io.sram.arid
-    r_delay_cnt := 0.U
+    arlen_reg := io.sram.arlen
+    arsize_reg := io.sram.arsize
+    arburst_reg := io.sram.arburst
+    rbeat_reg := 0.U
+    r_delay_cnt := random_delay
   }
 
-  when(r_state === s_R_WAIT) {
-    when(r_delay_cnt =/= 0.U) {
-      r_delay_cnt := r_delay_cnt - 1.U
-    }.otherwise {
-      when(is_valid_addr(araddr_reg)) {
-        pmem.io.ren   := true.B
-        pmem.io.raddr := araddr_reg & "hfffffffc".U
-        rdata_reg    := pmem.io.rdata
-        rresp_reg    := OKAY
-      }.otherwise {
-        rdata_reg := 0.U
-        rresp_reg := SLVERR
-      }
-    }
+  when(r_state === s_R_WAIT && r_delay_cnt =/= 0.U) {
+    r_delay_cnt := r_delay_cnt - 1.U
+  }
+
+  when(r_state === s_R_DATA && io.sram.rready && (rbeat_reg =/= arlen_reg)) {
+    rbeat_reg := rbeat_reg + 1.U
   }
 
   val s_W_IDLE :: s_W_WAIT :: s_W_DATA :: s_W_RESP :: Nil = Enum(4)
@@ -186,12 +189,18 @@ class SRAM extends Module{
 
   val awaddr_reg = RegInit(0.U(32.W))
   val awid_reg = RegInit(0.U(4.W))
+  val awlen_reg = RegInit(0.U(8.W))
+  val awsize_reg = RegInit(0.U(3.W))
+  val awburst_reg = RegInit(0.U(2.W))
+  val wbeat_reg = RegInit(0.U(8.W))
   val bresp_reg = RegInit(OKAY)
+  val wFire = io.sram.wvalid && io.sram.wready
+  val wFinal = wbeat_reg === awlen_reg
 
   w_next_state := MuxLookup(w_state, s_W_IDLE)(Seq(
     s_W_IDLE -> Mux(io.sram.awvalid, s_W_WAIT, s_W_IDLE),
     s_W_WAIT -> Mux(w_delay_cnt === random_delay, s_W_DATA, s_W_WAIT),
-    s_W_DATA -> Mux(io.sram.wvalid, s_W_RESP, s_W_DATA),
+    s_W_DATA -> Mux(wFire && wFinal, s_W_RESP, s_W_DATA),
     s_W_RESP -> Mux(io.sram.bready, s_W_IDLE, s_W_RESP)
   ))
   w_state := w_next_state
@@ -205,6 +214,11 @@ class SRAM extends Module{
   when(io.sram.awvalid && io.sram.awready) {
     awaddr_reg := io.sram.awaddr
     awid_reg := io.sram.awid
+    awlen_reg := io.sram.awlen
+    awsize_reg := io.sram.awsize
+    awburst_reg := io.sram.awburst
+    wbeat_reg := 0.U
+    bresp_reg := OKAY
     w_delay_cnt := random_delay
   }
 
@@ -212,15 +226,20 @@ class SRAM extends Module{
     w_delay_cnt := w_delay_cnt - 1.U
   }
 
-  when(io.sram.wvalid && io.sram.wready) {
-    when(is_valid_addr(awaddr_reg)) {
+  val writeBeatAddr = Mux(awburst_reg === 1.U,
+    awaddr_reg + (wbeat_reg << awsize_reg), awaddr_reg)
+  when(wFire) {
+    assert(io.sram.wlast === wFinal, "AXI write last must match AWLEN")
+    when(is_valid_addr(writeBeatAddr)) {
       pmem.io.wen := true.B
-      pmem.io.waddr := awaddr_reg & "hfffffffc".U
+      pmem.io.waddr := writeBeatAddr & "hfffffffc".U
       pmem.io.wdata := io.sram.wdata
       pmem.io.wmask := io.sram.wstrb
-      bresp_reg := OKAY
     }.otherwise {
       bresp_reg := SLVERR
+    }
+    when(!wFinal) {
+      wbeat_reg := wbeat_reg + 1.U
     }
   }
   

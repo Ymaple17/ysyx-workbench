@@ -12,6 +12,7 @@ module RS(
   input  [31:0] io_enq_bits_src1_val,
                 io_enq_bits_src2_val,
   input  [5:0]  io_enq_bits_pdest,
+  input         io_enq_bits_do_rename,
   input  [31:0] io_enq_bits_pc,
                 io_enq_bits_inst,
                 io_enq_bits_imm_ext,
@@ -43,9 +44,12 @@ module RS(
   output        io_issue_alu_valid,
   output [4:0]  io_issue_alu_bits_rob_idx,
   output [1:0]  io_issue_alu_bits_cp_idx,
+  output [5:0]  io_issue_alu_bits_src1_phys,
+                io_issue_alu_bits_src2_phys,
   output [31:0] io_issue_alu_bits_src1_val,
                 io_issue_alu_bits_src2_val,
   output [5:0]  io_issue_alu_bits_pdest,
+  output        io_issue_alu_bits_do_rename,
   output [31:0] io_issue_alu_bits_pc,
                 io_issue_alu_bits_inst,
                 io_issue_alu_bits_imm_ext,
@@ -71,6 +75,8 @@ module RS(
   input         io_issue_alu_fire,
   output        io_issue_alu1_valid,
   output [4:0]  io_issue_alu1_bits_rob_idx,
+  output [5:0]  io_issue_alu1_bits_src1_phys,
+                io_issue_alu1_bits_src2_phys,
   output [31:0] io_issue_alu1_bits_src1_val,
                 io_issue_alu1_bits_src2_val,
   output [5:0]  io_issue_alu1_bits_pdest,
@@ -92,6 +98,8 @@ module RS(
   input         io_issue_alu1_fire,
   output        io_issue_div_valid,
   output [4:0]  io_issue_div_bits_rob_idx,
+  output [5:0]  io_issue_div_bits_src1_phys,
+                io_issue_div_bits_src2_phys,
   output [31:0] io_issue_div_bits_src1_val,
                 io_issue_div_bits_src2_val,
   output [5:0]  io_issue_div_bits_pdest,
@@ -113,6 +121,8 @@ module RS(
   input         io_issue_div_fire,
   output        io_issue_lsu_valid,
   output [4:0]  io_issue_lsu_bits_rob_idx,
+  output [5:0]  io_issue_lsu_bits_src1_phys,
+                io_issue_lsu_bits_src2_phys,
   output [31:0] io_issue_lsu_bits_src1_val,
                 io_issue_lsu_bits_src2_val,
   output [5:0]  io_issue_lsu_bits_pdest,
@@ -142,6 +152,7 @@ module RS(
   input  [31:0] io_enq1_bits_src1_val,
                 io_enq1_bits_src2_val,
   input  [5:0]  io_enq1_bits_pdest,
+  input         io_enq1_bits_do_rename,
   input  [31:0] io_enq1_bits_pc,
                 io_enq1_bits_inst,
                 io_enq1_bits_imm_ext,
@@ -171,6 +182,8 @@ module RS(
   input  [4:0]  io_free_rob_idx,
   input         io_free_rob1_fire,
   input  [4:0]  io_free_rob1_idx,
+  input         io_free_ctrl_fire,
+  input  [4:0]  io_free_ctrl_idx,
   input         io_cdb_valid,
   input  [5:0]  io_cdb_pdest,
   input  [31:0] io_cdb_val,
@@ -194,6 +207,7 @@ module RS(
   reg  [31:0] entries_0_src1_val;
   reg  [31:0] entries_0_src2_val;
   reg  [5:0]  entries_0_pdest;
+  reg         entries_0_do_rename;
   reg  [31:0] entries_0_pc;
   reg  [31:0] entries_0_inst;
   reg  [31:0] entries_0_imm_ext;
@@ -230,6 +244,7 @@ module RS(
   reg  [31:0] entries_1_src1_val;
   reg  [31:0] entries_1_src2_val;
   reg  [5:0]  entries_1_pdest;
+  reg         entries_1_do_rename;
   reg  [31:0] entries_1_pc;
   reg  [31:0] entries_1_inst;
   reg  [31:0] entries_1_imm_ext;
@@ -266,6 +281,7 @@ module RS(
   reg  [31:0] entries_2_src1_val;
   reg  [31:0] entries_2_src2_val;
   reg  [5:0]  entries_2_pdest;
+  reg         entries_2_do_rename;
   reg  [31:0] entries_2_pc;
   reg  [31:0] entries_2_inst;
   reg  [31:0] entries_2_imm_ext;
@@ -302,6 +318,7 @@ module RS(
   reg  [31:0] entries_3_src1_val;
   reg  [31:0] entries_3_src2_val;
   reg  [5:0]  entries_3_pdest;
+  reg         entries_3_do_rename;
   reg  [31:0] entries_3_pc;
   reg  [31:0] entries_3_inst;
   reg  [31:0] entries_3_imm_ext;
@@ -338,6 +355,7 @@ module RS(
   reg  [31:0] entries_4_src1_val;
   reg  [31:0] entries_4_src2_val;
   reg  [5:0]  entries_4_pdest;
+  reg         entries_4_do_rename;
   reg  [31:0] entries_4_pc;
   reg  [31:0] entries_4_inst;
   reg  [31:0] entries_4_imm_ext;
@@ -374,6 +392,7 @@ module RS(
   reg  [31:0] entries_5_src1_val;
   reg  [31:0] entries_5_src2_val;
   reg  [5:0]  entries_5_pdest;
+  reg         entries_5_do_rename;
   reg  [31:0] entries_5_pc;
   reg  [31:0] entries_5_inst;
   reg  [31:0] entries_5_imm_ext;
@@ -410,6 +429,7 @@ module RS(
   reg  [31:0] entries_6_src1_val;
   reg  [31:0] entries_6_src2_val;
   reg  [5:0]  entries_6_pdest;
+  reg         entries_6_do_rename;
   reg  [31:0] entries_6_pc;
   reg  [31:0] entries_6_inst;
   reg  [31:0] entries_6_imm_ext;
@@ -446,6 +466,7 @@ module RS(
   reg  [31:0] entries_7_src1_val;
   reg  [31:0] entries_7_src2_val;
   reg  [5:0]  entries_7_pdest;
+  reg         entries_7_do_rename;
   reg  [31:0] entries_7_pc;
   reg  [31:0] entries_7_inst;
   reg  [31:0] entries_7_imm_ext;
@@ -481,35 +502,171 @@ module RS(
   wire        freeByRob_0 =
     entries_0_valid
     & (io_free_rob_fire & entries_0_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_0_rob_idx == io_free_rob1_idx);
+       & entries_0_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_0_rob_idx == io_free_ctrl_idx);
   wire        freeByRob_1 =
     entries_1_valid
     & (io_free_rob_fire & entries_1_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_1_rob_idx == io_free_rob1_idx);
+       & entries_1_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_1_rob_idx == io_free_ctrl_idx);
   wire        freeByRob_2 =
     entries_2_valid
     & (io_free_rob_fire & entries_2_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_2_rob_idx == io_free_rob1_idx);
+       & entries_2_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_2_rob_idx == io_free_ctrl_idx);
   wire        freeByRob_3 =
     entries_3_valid
     & (io_free_rob_fire & entries_3_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_3_rob_idx == io_free_rob1_idx);
+       & entries_3_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_3_rob_idx == io_free_ctrl_idx);
   wire        freeByRob_4 =
     entries_4_valid
     & (io_free_rob_fire & entries_4_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_4_rob_idx == io_free_rob1_idx);
+       & entries_4_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_4_rob_idx == io_free_ctrl_idx);
   wire        freeByRob_5 =
     entries_5_valid
     & (io_free_rob_fire & entries_5_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_5_rob_idx == io_free_rob1_idx);
+       & entries_5_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_5_rob_idx == io_free_ctrl_idx);
   wire        freeByRob_6 =
     entries_6_valid
     & (io_free_rob_fire & entries_6_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_6_rob_idx == io_free_rob1_idx);
+       & entries_6_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_6_rob_idx == io_free_ctrl_idx);
   wire        freeByRob_7 =
     entries_7_valid
     & (io_free_rob_fire & entries_7_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_7_rob_idx == io_free_rob1_idx);
+       & entries_7_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_7_rob_idx == io_free_ctrl_idx);
+  wire        _cdbHit1_T_4 = entries_0_src1_phys == io_cdb_pdest;
+  wire        cdbHit1 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_0_src1_ready & _cdbHit1_T_4;
+  wire        _cdbHit2_T_4 = entries_0_src2_phys == io_cdb_pdest;
+  wire        cdbHit2 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_0_src2_ready & _cdbHit2_T_4;
+  wire        _cdb1Hit1_T_4 = entries_0_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit1 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_0_src1_ready & _cdb1Hit1_T_4;
+  wire        _cdb1Hit2_T_4 = entries_0_src2_phys == io_cdb1_pdest;
+  wire        cdb1Hit2 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_0_src2_ready & _cdb1Hit2_T_4;
+  wire [31:0] e_src1_val =
+    cdb1Hit1 ? io_cdb1_val : cdbHit1 ? io_cdb_val : entries_0_src1_val;
+  wire [31:0] e_src2_val =
+    cdb1Hit2 ? io_cdb1_val : cdbHit2 ? io_cdb_val : entries_0_src2_val;
+  wire        _cdbHit1_T_9 = entries_1_src1_phys == io_cdb_pdest;
+  wire        cdbHit1_1 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_1_src1_ready & _cdbHit1_T_9;
+  wire        _cdbHit2_T_9 = entries_1_src2_phys == io_cdb_pdest;
+  wire        cdbHit2_1 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_1_src2_ready & _cdbHit2_T_9;
+  wire        _cdb1Hit1_T_9 = entries_1_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit1_1 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_1_src1_ready & _cdb1Hit1_T_9;
+  wire        _cdb1Hit2_T_9 = entries_1_src2_phys == io_cdb1_pdest;
+  wire        cdb1Hit2_1 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_1_src2_ready & _cdb1Hit2_T_9;
+  wire [31:0] e_1_src1_val =
+    cdb1Hit1_1 ? io_cdb1_val : cdbHit1_1 ? io_cdb_val : entries_1_src1_val;
+  wire [31:0] e_1_src2_val =
+    cdb1Hit2_1 ? io_cdb1_val : cdbHit2_1 ? io_cdb_val : entries_1_src2_val;
+  wire        _cdbHit1_T_14 = entries_2_src1_phys == io_cdb_pdest;
+  wire        cdbHit1_2 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_2_src1_ready & _cdbHit1_T_14;
+  wire        _cdbHit2_T_14 = entries_2_src2_phys == io_cdb_pdest;
+  wire        cdbHit2_2 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_2_src2_ready & _cdbHit2_T_14;
+  wire        _cdb1Hit1_T_14 = entries_2_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit1_2 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_2_src1_ready & _cdb1Hit1_T_14;
+  wire        _cdb1Hit2_T_14 = entries_2_src2_phys == io_cdb1_pdest;
+  wire        cdb1Hit2_2 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_2_src2_ready & _cdb1Hit2_T_14;
+  wire [31:0] e_2_src1_val =
+    cdb1Hit1_2 ? io_cdb1_val : cdbHit1_2 ? io_cdb_val : entries_2_src1_val;
+  wire [31:0] e_2_src2_val =
+    cdb1Hit2_2 ? io_cdb1_val : cdbHit2_2 ? io_cdb_val : entries_2_src2_val;
+  wire        _cdbHit1_T_19 = entries_3_src1_phys == io_cdb_pdest;
+  wire        cdbHit1_3 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_3_src1_ready & _cdbHit1_T_19;
+  wire        _cdbHit2_T_19 = entries_3_src2_phys == io_cdb_pdest;
+  wire        cdbHit2_3 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_3_src2_ready & _cdbHit2_T_19;
+  wire        _cdb1Hit1_T_19 = entries_3_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit1_3 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_3_src1_ready & _cdb1Hit1_T_19;
+  wire        _cdb1Hit2_T_19 = entries_3_src2_phys == io_cdb1_pdest;
+  wire        cdb1Hit2_3 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_3_src2_ready & _cdb1Hit2_T_19;
+  wire [31:0] e_3_src1_val =
+    cdb1Hit1_3 ? io_cdb1_val : cdbHit1_3 ? io_cdb_val : entries_3_src1_val;
+  wire [31:0] e_3_src2_val =
+    cdb1Hit2_3 ? io_cdb1_val : cdbHit2_3 ? io_cdb_val : entries_3_src2_val;
+  wire        _cdbHit1_T_24 = entries_4_src1_phys == io_cdb_pdest;
+  wire        cdbHit1_4 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_4_src1_ready & _cdbHit1_T_24;
+  wire        _cdbHit2_T_24 = entries_4_src2_phys == io_cdb_pdest;
+  wire        cdbHit2_4 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_4_src2_ready & _cdbHit2_T_24;
+  wire        _cdb1Hit1_T_24 = entries_4_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit1_4 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_4_src1_ready & _cdb1Hit1_T_24;
+  wire        _cdb1Hit2_T_24 = entries_4_src2_phys == io_cdb1_pdest;
+  wire        cdb1Hit2_4 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_4_src2_ready & _cdb1Hit2_T_24;
+  wire [31:0] e_4_src1_val =
+    cdb1Hit1_4 ? io_cdb1_val : cdbHit1_4 ? io_cdb_val : entries_4_src1_val;
+  wire [31:0] e_4_src2_val =
+    cdb1Hit2_4 ? io_cdb1_val : cdbHit2_4 ? io_cdb_val : entries_4_src2_val;
+  wire        _cdbHit1_T_29 = entries_5_src1_phys == io_cdb_pdest;
+  wire        cdbHit1_5 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_5_src1_ready & _cdbHit1_T_29;
+  wire        _cdbHit2_T_29 = entries_5_src2_phys == io_cdb_pdest;
+  wire        cdbHit2_5 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_5_src2_ready & _cdbHit2_T_29;
+  wire        _cdb1Hit1_T_29 = entries_5_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit1_5 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_5_src1_ready & _cdb1Hit1_T_29;
+  wire        _cdb1Hit2_T_29 = entries_5_src2_phys == io_cdb1_pdest;
+  wire        cdb1Hit2_5 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_5_src2_ready & _cdb1Hit2_T_29;
+  wire [31:0] e_5_src1_val =
+    cdb1Hit1_5 ? io_cdb1_val : cdbHit1_5 ? io_cdb_val : entries_5_src1_val;
+  wire [31:0] e_5_src2_val =
+    cdb1Hit2_5 ? io_cdb1_val : cdbHit2_5 ? io_cdb_val : entries_5_src2_val;
+  wire        _cdbHit1_T_34 = entries_6_src1_phys == io_cdb_pdest;
+  wire        cdbHit1_6 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_6_src1_ready & _cdbHit1_T_34;
+  wire        _cdbHit2_T_34 = entries_6_src2_phys == io_cdb_pdest;
+  wire        cdbHit2_6 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_6_src2_ready & _cdbHit2_T_34;
+  wire        _cdb1Hit1_T_34 = entries_6_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit1_6 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_6_src1_ready & _cdb1Hit1_T_34;
+  wire        _cdb1Hit2_T_34 = entries_6_src2_phys == io_cdb1_pdest;
+  wire        cdb1Hit2_6 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_6_src2_ready & _cdb1Hit2_T_34;
+  wire [31:0] e_6_src1_val =
+    cdb1Hit1_6 ? io_cdb1_val : cdbHit1_6 ? io_cdb_val : entries_6_src1_val;
+  wire [31:0] e_6_src2_val =
+    cdb1Hit2_6 ? io_cdb1_val : cdbHit2_6 ? io_cdb_val : entries_6_src2_val;
+  wire        _cdbHit1_T_39 = entries_7_src1_phys == io_cdb_pdest;
+  wire        cdbHit1_7 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_7_src1_ready & _cdbHit1_T_39;
+  wire        _cdbHit2_T_39 = entries_7_src2_phys == io_cdb_pdest;
+  wire        cdbHit2_7 =
+    io_cdb_valid & (|io_cdb_pdest) & ~entries_7_src2_ready & _cdbHit2_T_39;
+  wire        _cdb1Hit1_T_39 = entries_7_src1_phys == io_cdb1_pdest;
+  wire        cdb1Hit1_7 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_7_src1_ready & _cdb1Hit1_T_39;
+  wire        _cdb1Hit2_T_39 = entries_7_src2_phys == io_cdb1_pdest;
+  wire        cdb1Hit2_7 =
+    io_cdb1_valid & (|io_cdb1_pdest) & ~entries_7_src2_ready & _cdb1Hit2_T_39;
+  wire [31:0] e_7_src1_val =
+    cdb1Hit1_7 ? io_cdb1_val : cdbHit1_7 ? io_cdb_val : entries_7_src1_val;
+  wire [31:0] e_7_src2_val =
+    cdb1Hit2_7 ? io_cdb1_val : cdbHit2_7 ? io_cdb_val : entries_7_src2_val;
   wire        isMulDiv_0 =
     entries_0_valid
     & (entries_0_exu_alu_control == 5'hA | entries_0_exu_alu_control == 5'hB
@@ -550,8 +707,8 @@ module RS(
   wire [4:0]  _waitOlderStore_T_1773 = 5'h1E - io_rob_head;
   wire [4:0]  _waitOlderStore_T_1779 = 5'h1F - io_rob_head;
   wire        canIssue_0 =
-    entries_0_valid & ~entries_0_issued & entries_0_src1_ready & entries_0_src2_ready
-    & ~freeByRob_0
+    entries_0_valid & ~entries_0_issued & (cdb1Hit1 | cdbHit1 | entries_0_src1_ready)
+    & (cdb1Hit2 | cdbHit2 | entries_0_src2_ready) & ~freeByRob_0
     & ~(entries_0_valid & entries_0_lsu_mem_valid & ~entries_0_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_386
            | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_386
@@ -593,8 +750,8 @@ module RS(
        | entries_1_exu_alu_control == 5'h10 | entries_1_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_392 = entries_1_rob_idx - io_rob_head;
   wire        canIssue_1 =
-    entries_1_valid & ~entries_1_issued & entries_1_src1_ready & entries_1_src2_ready
-    & ~freeByRob_1
+    entries_1_valid & ~entries_1_issued & (cdb1Hit1_1 | cdbHit1_1 | entries_1_src1_ready)
+    & (cdb1Hit2_1 | cdbHit2_1 | entries_1_src2_ready) & ~freeByRob_1
     & ~(entries_1_valid & entries_1_lsu_mem_valid & ~entries_1_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_392
            | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_392
@@ -636,8 +793,8 @@ module RS(
        | entries_2_exu_alu_control == 5'h10 | entries_2_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_398 = entries_2_rob_idx - io_rob_head;
   wire        canIssue_2 =
-    entries_2_valid & ~entries_2_issued & entries_2_src1_ready & entries_2_src2_ready
-    & ~freeByRob_2
+    entries_2_valid & ~entries_2_issued & (cdb1Hit1_2 | cdbHit1_2 | entries_2_src1_ready)
+    & (cdb1Hit2_2 | cdbHit2_2 | entries_2_src2_ready) & ~freeByRob_2
     & ~(entries_2_valid & entries_2_lsu_mem_valid & ~entries_2_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_398
            | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_398
@@ -679,8 +836,8 @@ module RS(
        | entries_3_exu_alu_control == 5'h10 | entries_3_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_404 = entries_3_rob_idx - io_rob_head;
   wire        canIssue_3 =
-    entries_3_valid & ~entries_3_issued & entries_3_src1_ready & entries_3_src2_ready
-    & ~freeByRob_3
+    entries_3_valid & ~entries_3_issued & (cdb1Hit1_3 | cdbHit1_3 | entries_3_src1_ready)
+    & (cdb1Hit2_3 | cdbHit2_3 | entries_3_src2_ready) & ~freeByRob_3
     & ~(entries_3_valid & entries_3_lsu_mem_valid & ~entries_3_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_404
            | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_404
@@ -722,8 +879,8 @@ module RS(
        | entries_4_exu_alu_control == 5'h10 | entries_4_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_410 = entries_4_rob_idx - io_rob_head;
   wire        canIssue_4 =
-    entries_4_valid & ~entries_4_issued & entries_4_src1_ready & entries_4_src2_ready
-    & ~freeByRob_4
+    entries_4_valid & ~entries_4_issued & (cdb1Hit1_4 | cdbHit1_4 | entries_4_src1_ready)
+    & (cdb1Hit2_4 | cdbHit2_4 | entries_4_src2_ready) & ~freeByRob_4
     & ~(entries_4_valid & entries_4_lsu_mem_valid & ~entries_4_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_410
            | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_410
@@ -765,8 +922,8 @@ module RS(
        | entries_5_exu_alu_control == 5'h10 | entries_5_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_416 = entries_5_rob_idx - io_rob_head;
   wire        canIssue_5 =
-    entries_5_valid & ~entries_5_issued & entries_5_src1_ready & entries_5_src2_ready
-    & ~freeByRob_5
+    entries_5_valid & ~entries_5_issued & (cdb1Hit1_5 | cdbHit1_5 | entries_5_src1_ready)
+    & (cdb1Hit2_5 | cdbHit2_5 | entries_5_src2_ready) & ~freeByRob_5
     & ~(entries_5_valid & entries_5_lsu_mem_valid & ~entries_5_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_416
            | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_416
@@ -808,8 +965,8 @@ module RS(
        | entries_6_exu_alu_control == 5'h10 | entries_6_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_422 = entries_6_rob_idx - io_rob_head;
   wire        canIssue_6 =
-    entries_6_valid & ~entries_6_issued & entries_6_src1_ready & entries_6_src2_ready
-    & ~freeByRob_6
+    entries_6_valid & ~entries_6_issued & (cdb1Hit1_6 | cdbHit1_6 | entries_6_src1_ready)
+    & (cdb1Hit2_6 | cdbHit2_6 | entries_6_src2_ready) & ~freeByRob_6
     & ~(entries_6_valid & entries_6_lsu_mem_valid & ~entries_6_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_422
            | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_422
@@ -851,8 +1008,8 @@ module RS(
        | entries_7_exu_alu_control == 5'h10 | entries_7_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_428 = entries_7_rob_idx - io_rob_head;
   wire        canIssue_7 =
-    entries_7_valid & ~entries_7_issued & entries_7_src1_ready & entries_7_src2_ready
-    & ~freeByRob_7
+    entries_7_valid & ~entries_7_issued & (cdb1Hit1_7 | cdbHit1_7 | entries_7_src1_ready)
+    & (cdb1Hit2_7 | cdbHit2_7 | entries_7_src2_ready) & ~freeByRob_7
     & ~(entries_7_valid & entries_7_lsu_mem_valid & ~entries_7_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_428
            | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_428
@@ -1277,1726 +1434,1915 @@ module RS(
         casez_tmp_0 = entries_7_cp_idx;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_1;
+  reg  [5:0]  casez_tmp_1;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_1 = entries_0_src1_val;
+        casez_tmp_1 = entries_0_src1_phys;
       3'b001:
-        casez_tmp_1 = entries_1_src1_val;
+        casez_tmp_1 = entries_1_src1_phys;
       3'b010:
-        casez_tmp_1 = entries_2_src1_val;
+        casez_tmp_1 = entries_2_src1_phys;
       3'b011:
-        casez_tmp_1 = entries_3_src1_val;
+        casez_tmp_1 = entries_3_src1_phys;
       3'b100:
-        casez_tmp_1 = entries_4_src1_val;
+        casez_tmp_1 = entries_4_src1_phys;
       3'b101:
-        casez_tmp_1 = entries_5_src1_val;
+        casez_tmp_1 = entries_5_src1_phys;
       3'b110:
-        casez_tmp_1 = entries_6_src1_val;
+        casez_tmp_1 = entries_6_src1_phys;
       default:
-        casez_tmp_1 = entries_7_src1_val;
+        casez_tmp_1 = entries_7_src1_phys;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_2;
+  reg  [5:0]  casez_tmp_2;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_2 = entries_0_src2_val;
+        casez_tmp_2 = entries_0_src2_phys;
       3'b001:
-        casez_tmp_2 = entries_1_src2_val;
+        casez_tmp_2 = entries_1_src2_phys;
       3'b010:
-        casez_tmp_2 = entries_2_src2_val;
+        casez_tmp_2 = entries_2_src2_phys;
       3'b011:
-        casez_tmp_2 = entries_3_src2_val;
+        casez_tmp_2 = entries_3_src2_phys;
       3'b100:
-        casez_tmp_2 = entries_4_src2_val;
+        casez_tmp_2 = entries_4_src2_phys;
       3'b101:
-        casez_tmp_2 = entries_5_src2_val;
+        casez_tmp_2 = entries_5_src2_phys;
       3'b110:
-        casez_tmp_2 = entries_6_src2_val;
+        casez_tmp_2 = entries_6_src2_phys;
       default:
-        casez_tmp_2 = entries_7_src2_val;
+        casez_tmp_2 = entries_7_src2_phys;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_3;
+  reg  [31:0] casez_tmp_3;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_3 = entries_0_pdest;
+        casez_tmp_3 = e_src1_val;
       3'b001:
-        casez_tmp_3 = entries_1_pdest;
+        casez_tmp_3 = e_1_src1_val;
       3'b010:
-        casez_tmp_3 = entries_2_pdest;
+        casez_tmp_3 = e_2_src1_val;
       3'b011:
-        casez_tmp_3 = entries_3_pdest;
+        casez_tmp_3 = e_3_src1_val;
       3'b100:
-        casez_tmp_3 = entries_4_pdest;
+        casez_tmp_3 = e_4_src1_val;
       3'b101:
-        casez_tmp_3 = entries_5_pdest;
+        casez_tmp_3 = e_5_src1_val;
       3'b110:
-        casez_tmp_3 = entries_6_pdest;
+        casez_tmp_3 = e_6_src1_val;
       default:
-        casez_tmp_3 = entries_7_pdest;
+        casez_tmp_3 = e_7_src1_val;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_4;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_4 = entries_0_pc;
+        casez_tmp_4 = e_src2_val;
       3'b001:
-        casez_tmp_4 = entries_1_pc;
+        casez_tmp_4 = e_1_src2_val;
       3'b010:
-        casez_tmp_4 = entries_2_pc;
+        casez_tmp_4 = e_2_src2_val;
       3'b011:
-        casez_tmp_4 = entries_3_pc;
+        casez_tmp_4 = e_3_src2_val;
       3'b100:
-        casez_tmp_4 = entries_4_pc;
+        casez_tmp_4 = e_4_src2_val;
       3'b101:
-        casez_tmp_4 = entries_5_pc;
+        casez_tmp_4 = e_5_src2_val;
       3'b110:
-        casez_tmp_4 = entries_6_pc;
+        casez_tmp_4 = e_6_src2_val;
       default:
-        casez_tmp_4 = entries_7_pc;
+        casez_tmp_4 = e_7_src2_val;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_5;
+  reg  [5:0]  casez_tmp_5;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_5 = entries_0_inst;
+        casez_tmp_5 = entries_0_pdest;
       3'b001:
-        casez_tmp_5 = entries_1_inst;
+        casez_tmp_5 = entries_1_pdest;
       3'b010:
-        casez_tmp_5 = entries_2_inst;
+        casez_tmp_5 = entries_2_pdest;
       3'b011:
-        casez_tmp_5 = entries_3_inst;
+        casez_tmp_5 = entries_3_pdest;
       3'b100:
-        casez_tmp_5 = entries_4_inst;
+        casez_tmp_5 = entries_4_pdest;
       3'b101:
-        casez_tmp_5 = entries_5_inst;
+        casez_tmp_5 = entries_5_pdest;
       3'b110:
-        casez_tmp_5 = entries_6_inst;
+        casez_tmp_5 = entries_6_pdest;
       default:
-        casez_tmp_5 = entries_7_inst;
+        casez_tmp_5 = entries_7_pdest;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_6;
+  reg         casez_tmp_6;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_6 = entries_0_imm_ext;
+        casez_tmp_6 = entries_0_do_rename;
       3'b001:
-        casez_tmp_6 = entries_1_imm_ext;
+        casez_tmp_6 = entries_1_do_rename;
       3'b010:
-        casez_tmp_6 = entries_2_imm_ext;
+        casez_tmp_6 = entries_2_do_rename;
       3'b011:
-        casez_tmp_6 = entries_3_imm_ext;
+        casez_tmp_6 = entries_3_do_rename;
       3'b100:
-        casez_tmp_6 = entries_4_imm_ext;
+        casez_tmp_6 = entries_4_do_rename;
       3'b101:
-        casez_tmp_6 = entries_5_imm_ext;
+        casez_tmp_6 = entries_5_do_rename;
       3'b110:
-        casez_tmp_6 = entries_6_imm_ext;
+        casez_tmp_6 = entries_6_do_rename;
       default:
-        casez_tmp_6 = entries_7_imm_ext;
+        casez_tmp_6 = entries_7_do_rename;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_7;
+  reg  [31:0] casez_tmp_7;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_7 = entries_0_waddr;
+        casez_tmp_7 = entries_0_pc;
       3'b001:
-        casez_tmp_7 = entries_1_waddr;
+        casez_tmp_7 = entries_1_pc;
       3'b010:
-        casez_tmp_7 = entries_2_waddr;
+        casez_tmp_7 = entries_2_pc;
       3'b011:
-        casez_tmp_7 = entries_3_waddr;
+        casez_tmp_7 = entries_3_pc;
       3'b100:
-        casez_tmp_7 = entries_4_waddr;
+        casez_tmp_7 = entries_4_pc;
       3'b101:
-        casez_tmp_7 = entries_5_waddr;
+        casez_tmp_7 = entries_5_pc;
       3'b110:
-        casez_tmp_7 = entries_6_waddr;
+        casez_tmp_7 = entries_6_pc;
       default:
-        casez_tmp_7 = entries_7_waddr;
+        casez_tmp_7 = entries_7_pc;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_8;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_8 = entries_0_csr_rd1;
+        casez_tmp_8 = entries_0_inst;
       3'b001:
-        casez_tmp_8 = entries_1_csr_rd1;
+        casez_tmp_8 = entries_1_inst;
       3'b010:
-        casez_tmp_8 = entries_2_csr_rd1;
+        casez_tmp_8 = entries_2_inst;
       3'b011:
-        casez_tmp_8 = entries_3_csr_rd1;
+        casez_tmp_8 = entries_3_inst;
       3'b100:
-        casez_tmp_8 = entries_4_csr_rd1;
+        casez_tmp_8 = entries_4_inst;
       3'b101:
-        casez_tmp_8 = entries_5_csr_rd1;
+        casez_tmp_8 = entries_5_inst;
       3'b110:
-        casez_tmp_8 = entries_6_csr_rd1;
+        casez_tmp_8 = entries_6_inst;
       default:
-        casez_tmp_8 = entries_7_csr_rd1;
+        casez_tmp_8 = entries_7_inst;
     endcase
   end // always_comb
-  reg         casez_tmp_9;
+  reg  [31:0] casez_tmp_9;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_9 = entries_0_state_state;
+        casez_tmp_9 = entries_0_imm_ext;
       3'b001:
-        casez_tmp_9 = entries_1_state_state;
+        casez_tmp_9 = entries_1_imm_ext;
       3'b010:
-        casez_tmp_9 = entries_2_state_state;
+        casez_tmp_9 = entries_2_imm_ext;
       3'b011:
-        casez_tmp_9 = entries_3_state_state;
+        casez_tmp_9 = entries_3_imm_ext;
       3'b100:
-        casez_tmp_9 = entries_4_state_state;
+        casez_tmp_9 = entries_4_imm_ext;
       3'b101:
-        casez_tmp_9 = entries_5_state_state;
+        casez_tmp_9 = entries_5_imm_ext;
       3'b110:
-        casez_tmp_9 = entries_6_state_state;
+        casez_tmp_9 = entries_6_imm_ext;
       default:
-        casez_tmp_9 = entries_7_state_state;
+        casez_tmp_9 = entries_7_imm_ext;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_10;
+  reg  [4:0]  casez_tmp_10;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_10 = entries_0_state_state_num;
+        casez_tmp_10 = entries_0_waddr;
       3'b001:
-        casez_tmp_10 = entries_1_state_state_num;
+        casez_tmp_10 = entries_1_waddr;
       3'b010:
-        casez_tmp_10 = entries_2_state_state_num;
+        casez_tmp_10 = entries_2_waddr;
       3'b011:
-        casez_tmp_10 = entries_3_state_state_num;
+        casez_tmp_10 = entries_3_waddr;
       3'b100:
-        casez_tmp_10 = entries_4_state_state_num;
+        casez_tmp_10 = entries_4_waddr;
       3'b101:
-        casez_tmp_10 = entries_5_state_state_num;
+        casez_tmp_10 = entries_5_waddr;
       3'b110:
-        casez_tmp_10 = entries_6_state_state_num;
+        casez_tmp_10 = entries_6_waddr;
       default:
-        casez_tmp_10 = entries_7_state_state_num;
+        casez_tmp_10 = entries_7_waddr;
     endcase
   end // always_comb
-  reg         casez_tmp_11;
+  reg  [31:0] casez_tmp_11;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_11 = entries_0_bp_valid;
+        casez_tmp_11 = entries_0_csr_rd1;
       3'b001:
-        casez_tmp_11 = entries_1_bp_valid;
+        casez_tmp_11 = entries_1_csr_rd1;
       3'b010:
-        casez_tmp_11 = entries_2_bp_valid;
+        casez_tmp_11 = entries_2_csr_rd1;
       3'b011:
-        casez_tmp_11 = entries_3_bp_valid;
+        casez_tmp_11 = entries_3_csr_rd1;
       3'b100:
-        casez_tmp_11 = entries_4_bp_valid;
+        casez_tmp_11 = entries_4_csr_rd1;
       3'b101:
-        casez_tmp_11 = entries_5_bp_valid;
+        casez_tmp_11 = entries_5_csr_rd1;
       3'b110:
-        casez_tmp_11 = entries_6_bp_valid;
+        casez_tmp_11 = entries_6_csr_rd1;
       default:
-        casez_tmp_11 = entries_7_bp_valid;
+        casez_tmp_11 = entries_7_csr_rd1;
     endcase
   end // always_comb
   reg         casez_tmp_12;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_12 = entries_0_bp_taken;
+        casez_tmp_12 = entries_0_state_state;
       3'b001:
-        casez_tmp_12 = entries_1_bp_taken;
+        casez_tmp_12 = entries_1_state_state;
       3'b010:
-        casez_tmp_12 = entries_2_bp_taken;
+        casez_tmp_12 = entries_2_state_state;
       3'b011:
-        casez_tmp_12 = entries_3_bp_taken;
+        casez_tmp_12 = entries_3_state_state;
       3'b100:
-        casez_tmp_12 = entries_4_bp_taken;
+        casez_tmp_12 = entries_4_state_state;
       3'b101:
-        casez_tmp_12 = entries_5_bp_taken;
+        casez_tmp_12 = entries_5_state_state;
       3'b110:
-        casez_tmp_12 = entries_6_bp_taken;
+        casez_tmp_12 = entries_6_state_state;
       default:
-        casez_tmp_12 = entries_7_bp_taken;
+        casez_tmp_12 = entries_7_state_state;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_13;
+  reg  [7:0]  casez_tmp_13;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_13 = entries_0_bp_target;
+        casez_tmp_13 = entries_0_state_state_num;
       3'b001:
-        casez_tmp_13 = entries_1_bp_target;
+        casez_tmp_13 = entries_1_state_state_num;
       3'b010:
-        casez_tmp_13 = entries_2_bp_target;
+        casez_tmp_13 = entries_2_state_state_num;
       3'b011:
-        casez_tmp_13 = entries_3_bp_target;
+        casez_tmp_13 = entries_3_state_state_num;
       3'b100:
-        casez_tmp_13 = entries_4_bp_target;
+        casez_tmp_13 = entries_4_state_state_num;
       3'b101:
-        casez_tmp_13 = entries_5_bp_target;
+        casez_tmp_13 = entries_5_state_state_num;
       3'b110:
-        casez_tmp_13 = entries_6_bp_target;
+        casez_tmp_13 = entries_6_state_state_num;
       default:
-        casez_tmp_13 = entries_7_bp_target;
+        casez_tmp_13 = entries_7_state_state_num;
     endcase
   end // always_comb
-  reg  [9:0]  casez_tmp_14;
+  reg         casez_tmp_14;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_14 = entries_0_bp_index;
+        casez_tmp_14 = entries_0_bp_valid;
       3'b001:
-        casez_tmp_14 = entries_1_bp_index;
+        casez_tmp_14 = entries_1_bp_valid;
       3'b010:
-        casez_tmp_14 = entries_2_bp_index;
+        casez_tmp_14 = entries_2_bp_valid;
       3'b011:
-        casez_tmp_14 = entries_3_bp_index;
+        casez_tmp_14 = entries_3_bp_valid;
       3'b100:
-        casez_tmp_14 = entries_4_bp_index;
+        casez_tmp_14 = entries_4_bp_valid;
       3'b101:
-        casez_tmp_14 = entries_5_bp_index;
+        casez_tmp_14 = entries_5_bp_valid;
       3'b110:
-        casez_tmp_14 = entries_6_bp_index;
+        casez_tmp_14 = entries_6_bp_valid;
       default:
-        casez_tmp_14 = entries_7_bp_index;
+        casez_tmp_14 = entries_7_bp_valid;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_15;
+  reg         casez_tmp_15;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_15 = entries_0_ftq_idx;
+        casez_tmp_15 = entries_0_bp_taken;
       3'b001:
-        casez_tmp_15 = entries_1_ftq_idx;
+        casez_tmp_15 = entries_1_bp_taken;
       3'b010:
-        casez_tmp_15 = entries_2_ftq_idx;
+        casez_tmp_15 = entries_2_bp_taken;
       3'b011:
-        casez_tmp_15 = entries_3_ftq_idx;
+        casez_tmp_15 = entries_3_bp_taken;
       3'b100:
-        casez_tmp_15 = entries_4_ftq_idx;
+        casez_tmp_15 = entries_4_bp_taken;
       3'b101:
-        casez_tmp_15 = entries_5_ftq_idx;
+        casez_tmp_15 = entries_5_bp_taken;
       3'b110:
-        casez_tmp_15 = entries_6_ftq_idx;
+        casez_tmp_15 = entries_6_bp_taken;
       default:
-        casez_tmp_15 = entries_7_ftq_idx;
+        casez_tmp_15 = entries_7_bp_taken;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_16;
+  reg  [31:0] casez_tmp_16;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_16 = entries_0_ftq_generation;
+        casez_tmp_16 = entries_0_bp_target;
       3'b001:
-        casez_tmp_16 = entries_1_ftq_generation;
+        casez_tmp_16 = entries_1_bp_target;
       3'b010:
-        casez_tmp_16 = entries_2_ftq_generation;
+        casez_tmp_16 = entries_2_bp_target;
       3'b011:
-        casez_tmp_16 = entries_3_ftq_generation;
+        casez_tmp_16 = entries_3_bp_target;
       3'b100:
-        casez_tmp_16 = entries_4_ftq_generation;
+        casez_tmp_16 = entries_4_bp_target;
       3'b101:
-        casez_tmp_16 = entries_5_ftq_generation;
+        casez_tmp_16 = entries_5_bp_target;
       3'b110:
-        casez_tmp_16 = entries_6_ftq_generation;
+        casez_tmp_16 = entries_6_bp_target;
       default:
-        casez_tmp_16 = entries_7_ftq_generation;
+        casez_tmp_16 = entries_7_bp_target;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_17;
+  reg  [9:0]  casez_tmp_17;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_17 = entries_0_exu_alu_srcA;
+        casez_tmp_17 = entries_0_bp_index;
       3'b001:
-        casez_tmp_17 = entries_1_exu_alu_srcA;
+        casez_tmp_17 = entries_1_bp_index;
       3'b010:
-        casez_tmp_17 = entries_2_exu_alu_srcA;
+        casez_tmp_17 = entries_2_bp_index;
       3'b011:
-        casez_tmp_17 = entries_3_exu_alu_srcA;
+        casez_tmp_17 = entries_3_bp_index;
       3'b100:
-        casez_tmp_17 = entries_4_exu_alu_srcA;
+        casez_tmp_17 = entries_4_bp_index;
       3'b101:
-        casez_tmp_17 = entries_5_exu_alu_srcA;
+        casez_tmp_17 = entries_5_bp_index;
       3'b110:
-        casez_tmp_17 = entries_6_exu_alu_srcA;
+        casez_tmp_17 = entries_6_bp_index;
       default:
-        casez_tmp_17 = entries_7_exu_alu_srcA;
+        casez_tmp_17 = entries_7_bp_index;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_18;
+  reg  [3:0]  casez_tmp_18;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_18 = entries_0_exu_alu_srcB;
+        casez_tmp_18 = entries_0_ftq_idx;
       3'b001:
-        casez_tmp_18 = entries_1_exu_alu_srcB;
+        casez_tmp_18 = entries_1_ftq_idx;
       3'b010:
-        casez_tmp_18 = entries_2_exu_alu_srcB;
+        casez_tmp_18 = entries_2_ftq_idx;
       3'b011:
-        casez_tmp_18 = entries_3_exu_alu_srcB;
+        casez_tmp_18 = entries_3_ftq_idx;
       3'b100:
-        casez_tmp_18 = entries_4_exu_alu_srcB;
+        casez_tmp_18 = entries_4_ftq_idx;
       3'b101:
-        casez_tmp_18 = entries_5_exu_alu_srcB;
+        casez_tmp_18 = entries_5_ftq_idx;
       3'b110:
-        casez_tmp_18 = entries_6_exu_alu_srcB;
+        casez_tmp_18 = entries_6_ftq_idx;
       default:
-        casez_tmp_18 = entries_7_exu_alu_srcB;
+        casez_tmp_18 = entries_7_ftq_idx;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_19;
+  reg  [7:0]  casez_tmp_19;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_19 = entries_0_exu_alu_control;
+        casez_tmp_19 = entries_0_ftq_generation;
       3'b001:
-        casez_tmp_19 = entries_1_exu_alu_control;
+        casez_tmp_19 = entries_1_ftq_generation;
       3'b010:
-        casez_tmp_19 = entries_2_exu_alu_control;
+        casez_tmp_19 = entries_2_ftq_generation;
       3'b011:
-        casez_tmp_19 = entries_3_exu_alu_control;
+        casez_tmp_19 = entries_3_ftq_generation;
       3'b100:
-        casez_tmp_19 = entries_4_exu_alu_control;
+        casez_tmp_19 = entries_4_ftq_generation;
       3'b101:
-        casez_tmp_19 = entries_5_exu_alu_control;
+        casez_tmp_19 = entries_5_ftq_generation;
       3'b110:
-        casez_tmp_19 = entries_6_exu_alu_control;
+        casez_tmp_19 = entries_6_ftq_generation;
       default:
-        casez_tmp_19 = entries_7_exu_alu_control;
+        casez_tmp_19 = entries_7_ftq_generation;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_20;
+  reg  [1:0]  casez_tmp_20;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_20 = entries_0_exu_jump;
+        casez_tmp_20 = entries_0_exu_alu_srcA;
       3'b001:
-        casez_tmp_20 = entries_1_exu_jump;
+        casez_tmp_20 = entries_1_exu_alu_srcA;
       3'b010:
-        casez_tmp_20 = entries_2_exu_jump;
+        casez_tmp_20 = entries_2_exu_alu_srcA;
       3'b011:
-        casez_tmp_20 = entries_3_exu_jump;
+        casez_tmp_20 = entries_3_exu_alu_srcA;
       3'b100:
-        casez_tmp_20 = entries_4_exu_jump;
+        casez_tmp_20 = entries_4_exu_alu_srcA;
       3'b101:
-        casez_tmp_20 = entries_5_exu_jump;
+        casez_tmp_20 = entries_5_exu_alu_srcA;
       3'b110:
-        casez_tmp_20 = entries_6_exu_jump;
+        casez_tmp_20 = entries_6_exu_alu_srcA;
       default:
-        casez_tmp_20 = entries_7_exu_jump;
+        casez_tmp_20 = entries_7_exu_alu_srcA;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_21;
+  reg  [1:0]  casez_tmp_21;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_21 = entries_0_lsu_mem_rd;
+        casez_tmp_21 = entries_0_exu_alu_srcB;
       3'b001:
-        casez_tmp_21 = entries_1_lsu_mem_rd;
+        casez_tmp_21 = entries_1_exu_alu_srcB;
       3'b010:
-        casez_tmp_21 = entries_2_lsu_mem_rd;
+        casez_tmp_21 = entries_2_exu_alu_srcB;
       3'b011:
-        casez_tmp_21 = entries_3_lsu_mem_rd;
+        casez_tmp_21 = entries_3_exu_alu_srcB;
       3'b100:
-        casez_tmp_21 = entries_4_lsu_mem_rd;
+        casez_tmp_21 = entries_4_exu_alu_srcB;
       3'b101:
-        casez_tmp_21 = entries_5_lsu_mem_rd;
+        casez_tmp_21 = entries_5_exu_alu_srcB;
       3'b110:
-        casez_tmp_21 = entries_6_lsu_mem_rd;
+        casez_tmp_21 = entries_6_exu_alu_srcB;
       default:
-        casez_tmp_21 = entries_7_lsu_mem_rd;
+        casez_tmp_21 = entries_7_exu_alu_srcB;
     endcase
   end // always_comb
-  reg         casez_tmp_22;
+  reg  [4:0]  casez_tmp_22;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_22 = entries_0_lsu_mem_write;
+        casez_tmp_22 = entries_0_exu_alu_control;
       3'b001:
-        casez_tmp_22 = entries_1_lsu_mem_write;
+        casez_tmp_22 = entries_1_exu_alu_control;
       3'b010:
-        casez_tmp_22 = entries_2_lsu_mem_write;
+        casez_tmp_22 = entries_2_exu_alu_control;
       3'b011:
-        casez_tmp_22 = entries_3_lsu_mem_write;
+        casez_tmp_22 = entries_3_exu_alu_control;
       3'b100:
-        casez_tmp_22 = entries_4_lsu_mem_write;
+        casez_tmp_22 = entries_4_exu_alu_control;
       3'b101:
-        casez_tmp_22 = entries_5_lsu_mem_write;
+        casez_tmp_22 = entries_5_exu_alu_control;
       3'b110:
-        casez_tmp_22 = entries_6_lsu_mem_write;
+        casez_tmp_22 = entries_6_exu_alu_control;
       default:
-        casez_tmp_22 = entries_7_lsu_mem_write;
+        casez_tmp_22 = entries_7_exu_alu_control;
     endcase
   end // always_comb
-  reg         casez_tmp_23;
+  reg  [3:0]  casez_tmp_23;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_23 = entries_0_lsu_mem_valid;
+        casez_tmp_23 = entries_0_exu_jump;
       3'b001:
-        casez_tmp_23 = entries_1_lsu_mem_valid;
+        casez_tmp_23 = entries_1_exu_jump;
       3'b010:
-        casez_tmp_23 = entries_2_lsu_mem_valid;
+        casez_tmp_23 = entries_2_exu_jump;
       3'b011:
-        casez_tmp_23 = entries_3_lsu_mem_valid;
+        casez_tmp_23 = entries_3_exu_jump;
       3'b100:
-        casez_tmp_23 = entries_4_lsu_mem_valid;
+        casez_tmp_23 = entries_4_exu_jump;
       3'b101:
-        casez_tmp_23 = entries_5_lsu_mem_valid;
+        casez_tmp_23 = entries_5_exu_jump;
       3'b110:
-        casez_tmp_23 = entries_6_lsu_mem_valid;
+        casez_tmp_23 = entries_6_exu_jump;
       default:
-        casez_tmp_23 = entries_7_lsu_mem_valid;
+        casez_tmp_23 = entries_7_exu_jump;
     endcase
   end // always_comb
-  reg         casez_tmp_24;
+  reg  [2:0]  casez_tmp_24;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_24 = entries_0_wbu_reg_write;
+        casez_tmp_24 = entries_0_lsu_mem_rd;
       3'b001:
-        casez_tmp_24 = entries_1_wbu_reg_write;
+        casez_tmp_24 = entries_1_lsu_mem_rd;
       3'b010:
-        casez_tmp_24 = entries_2_wbu_reg_write;
+        casez_tmp_24 = entries_2_lsu_mem_rd;
       3'b011:
-        casez_tmp_24 = entries_3_wbu_reg_write;
+        casez_tmp_24 = entries_3_lsu_mem_rd;
       3'b100:
-        casez_tmp_24 = entries_4_wbu_reg_write;
+        casez_tmp_24 = entries_4_lsu_mem_rd;
       3'b101:
-        casez_tmp_24 = entries_5_wbu_reg_write;
+        casez_tmp_24 = entries_5_lsu_mem_rd;
       3'b110:
-        casez_tmp_24 = entries_6_wbu_reg_write;
+        casez_tmp_24 = entries_6_lsu_mem_rd;
       default:
-        casez_tmp_24 = entries_7_wbu_reg_write;
+        casez_tmp_24 = entries_7_lsu_mem_rd;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_25;
+  reg         casez_tmp_25;
   always_comb begin
     casez (aluIdx)
       3'b000:
-        casez_tmp_25 = entries_0_wbu_reg_write_sel;
+        casez_tmp_25 = entries_0_lsu_mem_write;
       3'b001:
-        casez_tmp_25 = entries_1_wbu_reg_write_sel;
+        casez_tmp_25 = entries_1_lsu_mem_write;
       3'b010:
-        casez_tmp_25 = entries_2_wbu_reg_write_sel;
+        casez_tmp_25 = entries_2_lsu_mem_write;
       3'b011:
-        casez_tmp_25 = entries_3_wbu_reg_write_sel;
+        casez_tmp_25 = entries_3_lsu_mem_write;
       3'b100:
-        casez_tmp_25 = entries_4_wbu_reg_write_sel;
+        casez_tmp_25 = entries_4_lsu_mem_write;
       3'b101:
-        casez_tmp_25 = entries_5_wbu_reg_write_sel;
+        casez_tmp_25 = entries_5_lsu_mem_write;
       3'b110:
-        casez_tmp_25 = entries_6_wbu_reg_write_sel;
+        casez_tmp_25 = entries_6_lsu_mem_write;
       default:
-        casez_tmp_25 = entries_7_wbu_reg_write_sel;
+        casez_tmp_25 = entries_7_lsu_mem_write;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_26;
+  reg         casez_tmp_26;
+  always_comb begin
+    casez (aluIdx)
+      3'b000:
+        casez_tmp_26 = entries_0_lsu_mem_valid;
+      3'b001:
+        casez_tmp_26 = entries_1_lsu_mem_valid;
+      3'b010:
+        casez_tmp_26 = entries_2_lsu_mem_valid;
+      3'b011:
+        casez_tmp_26 = entries_3_lsu_mem_valid;
+      3'b100:
+        casez_tmp_26 = entries_4_lsu_mem_valid;
+      3'b101:
+        casez_tmp_26 = entries_5_lsu_mem_valid;
+      3'b110:
+        casez_tmp_26 = entries_6_lsu_mem_valid;
+      default:
+        casez_tmp_26 = entries_7_lsu_mem_valid;
+    endcase
+  end // always_comb
+  reg         casez_tmp_27;
+  always_comb begin
+    casez (aluIdx)
+      3'b000:
+        casez_tmp_27 = entries_0_wbu_reg_write;
+      3'b001:
+        casez_tmp_27 = entries_1_wbu_reg_write;
+      3'b010:
+        casez_tmp_27 = entries_2_wbu_reg_write;
+      3'b011:
+        casez_tmp_27 = entries_3_wbu_reg_write;
+      3'b100:
+        casez_tmp_27 = entries_4_wbu_reg_write;
+      3'b101:
+        casez_tmp_27 = entries_5_wbu_reg_write;
+      3'b110:
+        casez_tmp_27 = entries_6_wbu_reg_write;
+      default:
+        casez_tmp_27 = entries_7_wbu_reg_write;
+    endcase
+  end // always_comb
+  reg  [2:0]  casez_tmp_28;
+  always_comb begin
+    casez (aluIdx)
+      3'b000:
+        casez_tmp_28 = entries_0_wbu_reg_write_sel;
+      3'b001:
+        casez_tmp_28 = entries_1_wbu_reg_write_sel;
+      3'b010:
+        casez_tmp_28 = entries_2_wbu_reg_write_sel;
+      3'b011:
+        casez_tmp_28 = entries_3_wbu_reg_write_sel;
+      3'b100:
+        casez_tmp_28 = entries_4_wbu_reg_write_sel;
+      3'b101:
+        casez_tmp_28 = entries_5_wbu_reg_write_sel;
+      3'b110:
+        casez_tmp_28 = entries_6_wbu_reg_write_sel;
+      default:
+        casez_tmp_28 = entries_7_wbu_reg_write_sel;
+    endcase
+  end // always_comb
+  reg  [4:0]  casez_tmp_29;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_26 = entries_0_rob_idx;
+        casez_tmp_29 = entries_0_rob_idx;
       3'b001:
-        casez_tmp_26 = entries_1_rob_idx;
+        casez_tmp_29 = entries_1_rob_idx;
       3'b010:
-        casez_tmp_26 = entries_2_rob_idx;
+        casez_tmp_29 = entries_2_rob_idx;
       3'b011:
-        casez_tmp_26 = entries_3_rob_idx;
+        casez_tmp_29 = entries_3_rob_idx;
       3'b100:
-        casez_tmp_26 = entries_4_rob_idx;
+        casez_tmp_29 = entries_4_rob_idx;
       3'b101:
-        casez_tmp_26 = entries_5_rob_idx;
+        casez_tmp_29 = entries_5_rob_idx;
       3'b110:
-        casez_tmp_26 = entries_6_rob_idx;
+        casez_tmp_29 = entries_6_rob_idx;
       default:
-        casez_tmp_26 = entries_7_rob_idx;
+        casez_tmp_29 = entries_7_rob_idx;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_27;
+  reg  [5:0]  casez_tmp_30;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_27 = entries_0_src1_val;
+        casez_tmp_30 = entries_0_src1_phys;
       3'b001:
-        casez_tmp_27 = entries_1_src1_val;
+        casez_tmp_30 = entries_1_src1_phys;
       3'b010:
-        casez_tmp_27 = entries_2_src1_val;
+        casez_tmp_30 = entries_2_src1_phys;
       3'b011:
-        casez_tmp_27 = entries_3_src1_val;
+        casez_tmp_30 = entries_3_src1_phys;
       3'b100:
-        casez_tmp_27 = entries_4_src1_val;
+        casez_tmp_30 = entries_4_src1_phys;
       3'b101:
-        casez_tmp_27 = entries_5_src1_val;
+        casez_tmp_30 = entries_5_src1_phys;
       3'b110:
-        casez_tmp_27 = entries_6_src1_val;
+        casez_tmp_30 = entries_6_src1_phys;
       default:
-        casez_tmp_27 = entries_7_src1_val;
+        casez_tmp_30 = entries_7_src1_phys;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_28;
+  reg  [5:0]  casez_tmp_31;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_28 = entries_0_src2_val;
+        casez_tmp_31 = entries_0_src2_phys;
       3'b001:
-        casez_tmp_28 = entries_1_src2_val;
+        casez_tmp_31 = entries_1_src2_phys;
       3'b010:
-        casez_tmp_28 = entries_2_src2_val;
+        casez_tmp_31 = entries_2_src2_phys;
       3'b011:
-        casez_tmp_28 = entries_3_src2_val;
+        casez_tmp_31 = entries_3_src2_phys;
       3'b100:
-        casez_tmp_28 = entries_4_src2_val;
+        casez_tmp_31 = entries_4_src2_phys;
       3'b101:
-        casez_tmp_28 = entries_5_src2_val;
+        casez_tmp_31 = entries_5_src2_phys;
       3'b110:
-        casez_tmp_28 = entries_6_src2_val;
+        casez_tmp_31 = entries_6_src2_phys;
       default:
-        casez_tmp_28 = entries_7_src2_val;
+        casez_tmp_31 = entries_7_src2_phys;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_29;
+  reg  [31:0] casez_tmp_32;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_29 = entries_0_pdest;
+        casez_tmp_32 = e_src1_val;
       3'b001:
-        casez_tmp_29 = entries_1_pdest;
+        casez_tmp_32 = e_1_src1_val;
       3'b010:
-        casez_tmp_29 = entries_2_pdest;
+        casez_tmp_32 = e_2_src1_val;
       3'b011:
-        casez_tmp_29 = entries_3_pdest;
+        casez_tmp_32 = e_3_src1_val;
       3'b100:
-        casez_tmp_29 = entries_4_pdest;
+        casez_tmp_32 = e_4_src1_val;
       3'b101:
-        casez_tmp_29 = entries_5_pdest;
+        casez_tmp_32 = e_5_src1_val;
       3'b110:
-        casez_tmp_29 = entries_6_pdest;
+        casez_tmp_32 = e_6_src1_val;
       default:
-        casez_tmp_29 = entries_7_pdest;
-    endcase
-  end // always_comb
-  reg  [31:0] casez_tmp_30;
-  always_comb begin
-    casez (alu1Idx)
-      3'b000:
-        casez_tmp_30 = entries_0_pc;
-      3'b001:
-        casez_tmp_30 = entries_1_pc;
-      3'b010:
-        casez_tmp_30 = entries_2_pc;
-      3'b011:
-        casez_tmp_30 = entries_3_pc;
-      3'b100:
-        casez_tmp_30 = entries_4_pc;
-      3'b101:
-        casez_tmp_30 = entries_5_pc;
-      3'b110:
-        casez_tmp_30 = entries_6_pc;
-      default:
-        casez_tmp_30 = entries_7_pc;
-    endcase
-  end // always_comb
-  reg  [31:0] casez_tmp_31;
-  always_comb begin
-    casez (alu1Idx)
-      3'b000:
-        casez_tmp_31 = entries_0_imm_ext;
-      3'b001:
-        casez_tmp_31 = entries_1_imm_ext;
-      3'b010:
-        casez_tmp_31 = entries_2_imm_ext;
-      3'b011:
-        casez_tmp_31 = entries_3_imm_ext;
-      3'b100:
-        casez_tmp_31 = entries_4_imm_ext;
-      3'b101:
-        casez_tmp_31 = entries_5_imm_ext;
-      3'b110:
-        casez_tmp_31 = entries_6_imm_ext;
-      default:
-        casez_tmp_31 = entries_7_imm_ext;
-    endcase
-  end // always_comb
-  reg  [4:0]  casez_tmp_32;
-  always_comb begin
-    casez (alu1Idx)
-      3'b000:
-        casez_tmp_32 = entries_0_waddr;
-      3'b001:
-        casez_tmp_32 = entries_1_waddr;
-      3'b010:
-        casez_tmp_32 = entries_2_waddr;
-      3'b011:
-        casez_tmp_32 = entries_3_waddr;
-      3'b100:
-        casez_tmp_32 = entries_4_waddr;
-      3'b101:
-        casez_tmp_32 = entries_5_waddr;
-      3'b110:
-        casez_tmp_32 = entries_6_waddr;
-      default:
-        casez_tmp_32 = entries_7_waddr;
+        casez_tmp_32 = e_7_src1_val;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_33;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_33 = entries_0_csr_rd1;
+        casez_tmp_33 = e_src2_val;
       3'b001:
-        casez_tmp_33 = entries_1_csr_rd1;
+        casez_tmp_33 = e_1_src2_val;
       3'b010:
-        casez_tmp_33 = entries_2_csr_rd1;
+        casez_tmp_33 = e_2_src2_val;
       3'b011:
-        casez_tmp_33 = entries_3_csr_rd1;
+        casez_tmp_33 = e_3_src2_val;
       3'b100:
-        casez_tmp_33 = entries_4_csr_rd1;
+        casez_tmp_33 = e_4_src2_val;
       3'b101:
-        casez_tmp_33 = entries_5_csr_rd1;
+        casez_tmp_33 = e_5_src2_val;
       3'b110:
-        casez_tmp_33 = entries_6_csr_rd1;
+        casez_tmp_33 = e_6_src2_val;
       default:
-        casez_tmp_33 = entries_7_csr_rd1;
+        casez_tmp_33 = e_7_src2_val;
     endcase
   end // always_comb
-  reg         casez_tmp_34;
+  reg  [5:0]  casez_tmp_34;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_34 = entries_0_state_state;
+        casez_tmp_34 = entries_0_pdest;
       3'b001:
-        casez_tmp_34 = entries_1_state_state;
+        casez_tmp_34 = entries_1_pdest;
       3'b010:
-        casez_tmp_34 = entries_2_state_state;
+        casez_tmp_34 = entries_2_pdest;
       3'b011:
-        casez_tmp_34 = entries_3_state_state;
+        casez_tmp_34 = entries_3_pdest;
       3'b100:
-        casez_tmp_34 = entries_4_state_state;
+        casez_tmp_34 = entries_4_pdest;
       3'b101:
-        casez_tmp_34 = entries_5_state_state;
+        casez_tmp_34 = entries_5_pdest;
       3'b110:
-        casez_tmp_34 = entries_6_state_state;
+        casez_tmp_34 = entries_6_pdest;
       default:
-        casez_tmp_34 = entries_7_state_state;
+        casez_tmp_34 = entries_7_pdest;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_35;
+  reg  [31:0] casez_tmp_35;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_35 = entries_0_state_state_num;
+        casez_tmp_35 = entries_0_pc;
       3'b001:
-        casez_tmp_35 = entries_1_state_state_num;
+        casez_tmp_35 = entries_1_pc;
       3'b010:
-        casez_tmp_35 = entries_2_state_state_num;
+        casez_tmp_35 = entries_2_pc;
       3'b011:
-        casez_tmp_35 = entries_3_state_state_num;
+        casez_tmp_35 = entries_3_pc;
       3'b100:
-        casez_tmp_35 = entries_4_state_state_num;
+        casez_tmp_35 = entries_4_pc;
       3'b101:
-        casez_tmp_35 = entries_5_state_state_num;
+        casez_tmp_35 = entries_5_pc;
       3'b110:
-        casez_tmp_35 = entries_6_state_state_num;
+        casez_tmp_35 = entries_6_pc;
       default:
-        casez_tmp_35 = entries_7_state_state_num;
+        casez_tmp_35 = entries_7_pc;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_36;
+  reg  [31:0] casez_tmp_36;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_36 = entries_0_exu_alu_srcA;
+        casez_tmp_36 = entries_0_imm_ext;
       3'b001:
-        casez_tmp_36 = entries_1_exu_alu_srcA;
+        casez_tmp_36 = entries_1_imm_ext;
       3'b010:
-        casez_tmp_36 = entries_2_exu_alu_srcA;
+        casez_tmp_36 = entries_2_imm_ext;
       3'b011:
-        casez_tmp_36 = entries_3_exu_alu_srcA;
+        casez_tmp_36 = entries_3_imm_ext;
       3'b100:
-        casez_tmp_36 = entries_4_exu_alu_srcA;
+        casez_tmp_36 = entries_4_imm_ext;
       3'b101:
-        casez_tmp_36 = entries_5_exu_alu_srcA;
+        casez_tmp_36 = entries_5_imm_ext;
       3'b110:
-        casez_tmp_36 = entries_6_exu_alu_srcA;
+        casez_tmp_36 = entries_6_imm_ext;
       default:
-        casez_tmp_36 = entries_7_exu_alu_srcA;
+        casez_tmp_36 = entries_7_imm_ext;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_37;
+  reg  [4:0]  casez_tmp_37;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_37 = entries_0_exu_alu_srcB;
+        casez_tmp_37 = entries_0_waddr;
       3'b001:
-        casez_tmp_37 = entries_1_exu_alu_srcB;
+        casez_tmp_37 = entries_1_waddr;
       3'b010:
-        casez_tmp_37 = entries_2_exu_alu_srcB;
+        casez_tmp_37 = entries_2_waddr;
       3'b011:
-        casez_tmp_37 = entries_3_exu_alu_srcB;
+        casez_tmp_37 = entries_3_waddr;
       3'b100:
-        casez_tmp_37 = entries_4_exu_alu_srcB;
+        casez_tmp_37 = entries_4_waddr;
       3'b101:
-        casez_tmp_37 = entries_5_exu_alu_srcB;
+        casez_tmp_37 = entries_5_waddr;
       3'b110:
-        casez_tmp_37 = entries_6_exu_alu_srcB;
+        casez_tmp_37 = entries_6_waddr;
       default:
-        casez_tmp_37 = entries_7_exu_alu_srcB;
+        casez_tmp_37 = entries_7_waddr;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_38;
+  reg  [31:0] casez_tmp_38;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_38 = entries_0_exu_alu_control;
+        casez_tmp_38 = entries_0_csr_rd1;
       3'b001:
-        casez_tmp_38 = entries_1_exu_alu_control;
+        casez_tmp_38 = entries_1_csr_rd1;
       3'b010:
-        casez_tmp_38 = entries_2_exu_alu_control;
+        casez_tmp_38 = entries_2_csr_rd1;
       3'b011:
-        casez_tmp_38 = entries_3_exu_alu_control;
+        casez_tmp_38 = entries_3_csr_rd1;
       3'b100:
-        casez_tmp_38 = entries_4_exu_alu_control;
+        casez_tmp_38 = entries_4_csr_rd1;
       3'b101:
-        casez_tmp_38 = entries_5_exu_alu_control;
+        casez_tmp_38 = entries_5_csr_rd1;
       3'b110:
-        casez_tmp_38 = entries_6_exu_alu_control;
+        casez_tmp_38 = entries_6_csr_rd1;
       default:
-        casez_tmp_38 = entries_7_exu_alu_control;
+        casez_tmp_38 = entries_7_csr_rd1;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_39;
+  reg         casez_tmp_39;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_39 = entries_0_exu_jump;
+        casez_tmp_39 = entries_0_state_state;
       3'b001:
-        casez_tmp_39 = entries_1_exu_jump;
+        casez_tmp_39 = entries_1_state_state;
       3'b010:
-        casez_tmp_39 = entries_2_exu_jump;
+        casez_tmp_39 = entries_2_state_state;
       3'b011:
-        casez_tmp_39 = entries_3_exu_jump;
+        casez_tmp_39 = entries_3_state_state;
       3'b100:
-        casez_tmp_39 = entries_4_exu_jump;
+        casez_tmp_39 = entries_4_state_state;
       3'b101:
-        casez_tmp_39 = entries_5_exu_jump;
+        casez_tmp_39 = entries_5_state_state;
       3'b110:
-        casez_tmp_39 = entries_6_exu_jump;
+        casez_tmp_39 = entries_6_state_state;
       default:
-        casez_tmp_39 = entries_7_exu_jump;
+        casez_tmp_39 = entries_7_state_state;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_40;
+  reg  [7:0]  casez_tmp_40;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_40 = entries_0_lsu_mem_rd;
+        casez_tmp_40 = entries_0_state_state_num;
       3'b001:
-        casez_tmp_40 = entries_1_lsu_mem_rd;
+        casez_tmp_40 = entries_1_state_state_num;
       3'b010:
-        casez_tmp_40 = entries_2_lsu_mem_rd;
+        casez_tmp_40 = entries_2_state_state_num;
       3'b011:
-        casez_tmp_40 = entries_3_lsu_mem_rd;
+        casez_tmp_40 = entries_3_state_state_num;
       3'b100:
-        casez_tmp_40 = entries_4_lsu_mem_rd;
+        casez_tmp_40 = entries_4_state_state_num;
       3'b101:
-        casez_tmp_40 = entries_5_lsu_mem_rd;
+        casez_tmp_40 = entries_5_state_state_num;
       3'b110:
-        casez_tmp_40 = entries_6_lsu_mem_rd;
+        casez_tmp_40 = entries_6_state_state_num;
       default:
-        casez_tmp_40 = entries_7_lsu_mem_rd;
+        casez_tmp_40 = entries_7_state_state_num;
     endcase
   end // always_comb
-  reg         casez_tmp_41;
+  reg  [1:0]  casez_tmp_41;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_41 = entries_0_lsu_mem_write;
+        casez_tmp_41 = entries_0_exu_alu_srcA;
       3'b001:
-        casez_tmp_41 = entries_1_lsu_mem_write;
+        casez_tmp_41 = entries_1_exu_alu_srcA;
       3'b010:
-        casez_tmp_41 = entries_2_lsu_mem_write;
+        casez_tmp_41 = entries_2_exu_alu_srcA;
       3'b011:
-        casez_tmp_41 = entries_3_lsu_mem_write;
+        casez_tmp_41 = entries_3_exu_alu_srcA;
       3'b100:
-        casez_tmp_41 = entries_4_lsu_mem_write;
+        casez_tmp_41 = entries_4_exu_alu_srcA;
       3'b101:
-        casez_tmp_41 = entries_5_lsu_mem_write;
+        casez_tmp_41 = entries_5_exu_alu_srcA;
       3'b110:
-        casez_tmp_41 = entries_6_lsu_mem_write;
+        casez_tmp_41 = entries_6_exu_alu_srcA;
       default:
-        casez_tmp_41 = entries_7_lsu_mem_write;
+        casez_tmp_41 = entries_7_exu_alu_srcA;
     endcase
   end // always_comb
-  reg         casez_tmp_42;
+  reg  [1:0]  casez_tmp_42;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_42 = entries_0_lsu_mem_valid;
+        casez_tmp_42 = entries_0_exu_alu_srcB;
       3'b001:
-        casez_tmp_42 = entries_1_lsu_mem_valid;
+        casez_tmp_42 = entries_1_exu_alu_srcB;
       3'b010:
-        casez_tmp_42 = entries_2_lsu_mem_valid;
+        casez_tmp_42 = entries_2_exu_alu_srcB;
       3'b011:
-        casez_tmp_42 = entries_3_lsu_mem_valid;
+        casez_tmp_42 = entries_3_exu_alu_srcB;
       3'b100:
-        casez_tmp_42 = entries_4_lsu_mem_valid;
+        casez_tmp_42 = entries_4_exu_alu_srcB;
       3'b101:
-        casez_tmp_42 = entries_5_lsu_mem_valid;
+        casez_tmp_42 = entries_5_exu_alu_srcB;
       3'b110:
-        casez_tmp_42 = entries_6_lsu_mem_valid;
+        casez_tmp_42 = entries_6_exu_alu_srcB;
       default:
-        casez_tmp_42 = entries_7_lsu_mem_valid;
+        casez_tmp_42 = entries_7_exu_alu_srcB;
     endcase
   end // always_comb
-  reg         casez_tmp_43;
+  reg  [4:0]  casez_tmp_43;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_43 = entries_0_wbu_reg_write;
+        casez_tmp_43 = entries_0_exu_alu_control;
       3'b001:
-        casez_tmp_43 = entries_1_wbu_reg_write;
+        casez_tmp_43 = entries_1_exu_alu_control;
       3'b010:
-        casez_tmp_43 = entries_2_wbu_reg_write;
+        casez_tmp_43 = entries_2_exu_alu_control;
       3'b011:
-        casez_tmp_43 = entries_3_wbu_reg_write;
+        casez_tmp_43 = entries_3_exu_alu_control;
       3'b100:
-        casez_tmp_43 = entries_4_wbu_reg_write;
+        casez_tmp_43 = entries_4_exu_alu_control;
       3'b101:
-        casez_tmp_43 = entries_5_wbu_reg_write;
+        casez_tmp_43 = entries_5_exu_alu_control;
       3'b110:
-        casez_tmp_43 = entries_6_wbu_reg_write;
+        casez_tmp_43 = entries_6_exu_alu_control;
       default:
-        casez_tmp_43 = entries_7_wbu_reg_write;
+        casez_tmp_43 = entries_7_exu_alu_control;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_44;
+  reg  [3:0]  casez_tmp_44;
   always_comb begin
     casez (alu1Idx)
       3'b000:
-        casez_tmp_44 = entries_0_wbu_reg_write_sel;
+        casez_tmp_44 = entries_0_exu_jump;
       3'b001:
-        casez_tmp_44 = entries_1_wbu_reg_write_sel;
+        casez_tmp_44 = entries_1_exu_jump;
       3'b010:
-        casez_tmp_44 = entries_2_wbu_reg_write_sel;
+        casez_tmp_44 = entries_2_exu_jump;
       3'b011:
-        casez_tmp_44 = entries_3_wbu_reg_write_sel;
+        casez_tmp_44 = entries_3_exu_jump;
       3'b100:
-        casez_tmp_44 = entries_4_wbu_reg_write_sel;
+        casez_tmp_44 = entries_4_exu_jump;
       3'b101:
-        casez_tmp_44 = entries_5_wbu_reg_write_sel;
+        casez_tmp_44 = entries_5_exu_jump;
       3'b110:
-        casez_tmp_44 = entries_6_wbu_reg_write_sel;
+        casez_tmp_44 = entries_6_exu_jump;
       default:
-        casez_tmp_44 = entries_7_wbu_reg_write_sel;
+        casez_tmp_44 = entries_7_exu_jump;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_45;
+  reg  [2:0]  casez_tmp_45;
+  always_comb begin
+    casez (alu1Idx)
+      3'b000:
+        casez_tmp_45 = entries_0_lsu_mem_rd;
+      3'b001:
+        casez_tmp_45 = entries_1_lsu_mem_rd;
+      3'b010:
+        casez_tmp_45 = entries_2_lsu_mem_rd;
+      3'b011:
+        casez_tmp_45 = entries_3_lsu_mem_rd;
+      3'b100:
+        casez_tmp_45 = entries_4_lsu_mem_rd;
+      3'b101:
+        casez_tmp_45 = entries_5_lsu_mem_rd;
+      3'b110:
+        casez_tmp_45 = entries_6_lsu_mem_rd;
+      default:
+        casez_tmp_45 = entries_7_lsu_mem_rd;
+    endcase
+  end // always_comb
+  reg         casez_tmp_46;
+  always_comb begin
+    casez (alu1Idx)
+      3'b000:
+        casez_tmp_46 = entries_0_lsu_mem_write;
+      3'b001:
+        casez_tmp_46 = entries_1_lsu_mem_write;
+      3'b010:
+        casez_tmp_46 = entries_2_lsu_mem_write;
+      3'b011:
+        casez_tmp_46 = entries_3_lsu_mem_write;
+      3'b100:
+        casez_tmp_46 = entries_4_lsu_mem_write;
+      3'b101:
+        casez_tmp_46 = entries_5_lsu_mem_write;
+      3'b110:
+        casez_tmp_46 = entries_6_lsu_mem_write;
+      default:
+        casez_tmp_46 = entries_7_lsu_mem_write;
+    endcase
+  end // always_comb
+  reg         casez_tmp_47;
+  always_comb begin
+    casez (alu1Idx)
+      3'b000:
+        casez_tmp_47 = entries_0_lsu_mem_valid;
+      3'b001:
+        casez_tmp_47 = entries_1_lsu_mem_valid;
+      3'b010:
+        casez_tmp_47 = entries_2_lsu_mem_valid;
+      3'b011:
+        casez_tmp_47 = entries_3_lsu_mem_valid;
+      3'b100:
+        casez_tmp_47 = entries_4_lsu_mem_valid;
+      3'b101:
+        casez_tmp_47 = entries_5_lsu_mem_valid;
+      3'b110:
+        casez_tmp_47 = entries_6_lsu_mem_valid;
+      default:
+        casez_tmp_47 = entries_7_lsu_mem_valid;
+    endcase
+  end // always_comb
+  reg         casez_tmp_48;
+  always_comb begin
+    casez (alu1Idx)
+      3'b000:
+        casez_tmp_48 = entries_0_wbu_reg_write;
+      3'b001:
+        casez_tmp_48 = entries_1_wbu_reg_write;
+      3'b010:
+        casez_tmp_48 = entries_2_wbu_reg_write;
+      3'b011:
+        casez_tmp_48 = entries_3_wbu_reg_write;
+      3'b100:
+        casez_tmp_48 = entries_4_wbu_reg_write;
+      3'b101:
+        casez_tmp_48 = entries_5_wbu_reg_write;
+      3'b110:
+        casez_tmp_48 = entries_6_wbu_reg_write;
+      default:
+        casez_tmp_48 = entries_7_wbu_reg_write;
+    endcase
+  end // always_comb
+  reg  [2:0]  casez_tmp_49;
+  always_comb begin
+    casez (alu1Idx)
+      3'b000:
+        casez_tmp_49 = entries_0_wbu_reg_write_sel;
+      3'b001:
+        casez_tmp_49 = entries_1_wbu_reg_write_sel;
+      3'b010:
+        casez_tmp_49 = entries_2_wbu_reg_write_sel;
+      3'b011:
+        casez_tmp_49 = entries_3_wbu_reg_write_sel;
+      3'b100:
+        casez_tmp_49 = entries_4_wbu_reg_write_sel;
+      3'b101:
+        casez_tmp_49 = entries_5_wbu_reg_write_sel;
+      3'b110:
+        casez_tmp_49 = entries_6_wbu_reg_write_sel;
+      default:
+        casez_tmp_49 = entries_7_wbu_reg_write_sel;
+    endcase
+  end // always_comb
+  reg  [4:0]  casez_tmp_50;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_45 = entries_0_rob_idx;
+        casez_tmp_50 = entries_0_rob_idx;
       3'b001:
-        casez_tmp_45 = entries_1_rob_idx;
+        casez_tmp_50 = entries_1_rob_idx;
       3'b010:
-        casez_tmp_45 = entries_2_rob_idx;
+        casez_tmp_50 = entries_2_rob_idx;
       3'b011:
-        casez_tmp_45 = entries_3_rob_idx;
+        casez_tmp_50 = entries_3_rob_idx;
       3'b100:
-        casez_tmp_45 = entries_4_rob_idx;
+        casez_tmp_50 = entries_4_rob_idx;
       3'b101:
-        casez_tmp_45 = entries_5_rob_idx;
+        casez_tmp_50 = entries_5_rob_idx;
       3'b110:
-        casez_tmp_45 = entries_6_rob_idx;
+        casez_tmp_50 = entries_6_rob_idx;
       default:
-        casez_tmp_45 = entries_7_rob_idx;
+        casez_tmp_50 = entries_7_rob_idx;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_46;
+  reg  [5:0]  casez_tmp_51;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_46 = entries_0_src1_val;
+        casez_tmp_51 = entries_0_src1_phys;
       3'b001:
-        casez_tmp_46 = entries_1_src1_val;
+        casez_tmp_51 = entries_1_src1_phys;
       3'b010:
-        casez_tmp_46 = entries_2_src1_val;
+        casez_tmp_51 = entries_2_src1_phys;
       3'b011:
-        casez_tmp_46 = entries_3_src1_val;
+        casez_tmp_51 = entries_3_src1_phys;
       3'b100:
-        casez_tmp_46 = entries_4_src1_val;
+        casez_tmp_51 = entries_4_src1_phys;
       3'b101:
-        casez_tmp_46 = entries_5_src1_val;
+        casez_tmp_51 = entries_5_src1_phys;
       3'b110:
-        casez_tmp_46 = entries_6_src1_val;
+        casez_tmp_51 = entries_6_src1_phys;
       default:
-        casez_tmp_46 = entries_7_src1_val;
+        casez_tmp_51 = entries_7_src1_phys;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_47;
+  reg  [5:0]  casez_tmp_52;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_47 = entries_0_src2_val;
+        casez_tmp_52 = entries_0_src2_phys;
       3'b001:
-        casez_tmp_47 = entries_1_src2_val;
+        casez_tmp_52 = entries_1_src2_phys;
       3'b010:
-        casez_tmp_47 = entries_2_src2_val;
+        casez_tmp_52 = entries_2_src2_phys;
       3'b011:
-        casez_tmp_47 = entries_3_src2_val;
+        casez_tmp_52 = entries_3_src2_phys;
       3'b100:
-        casez_tmp_47 = entries_4_src2_val;
+        casez_tmp_52 = entries_4_src2_phys;
       3'b101:
-        casez_tmp_47 = entries_5_src2_val;
+        casez_tmp_52 = entries_5_src2_phys;
       3'b110:
-        casez_tmp_47 = entries_6_src2_val;
+        casez_tmp_52 = entries_6_src2_phys;
       default:
-        casez_tmp_47 = entries_7_src2_val;
+        casez_tmp_52 = entries_7_src2_phys;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_48;
+  reg  [31:0] casez_tmp_53;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_48 = entries_0_pdest;
+        casez_tmp_53 = e_src1_val;
       3'b001:
-        casez_tmp_48 = entries_1_pdest;
+        casez_tmp_53 = e_1_src1_val;
       3'b010:
-        casez_tmp_48 = entries_2_pdest;
+        casez_tmp_53 = e_2_src1_val;
       3'b011:
-        casez_tmp_48 = entries_3_pdest;
+        casez_tmp_53 = e_3_src1_val;
       3'b100:
-        casez_tmp_48 = entries_4_pdest;
+        casez_tmp_53 = e_4_src1_val;
       3'b101:
-        casez_tmp_48 = entries_5_pdest;
+        casez_tmp_53 = e_5_src1_val;
       3'b110:
-        casez_tmp_48 = entries_6_pdest;
+        casez_tmp_53 = e_6_src1_val;
       default:
-        casez_tmp_48 = entries_7_pdest;
+        casez_tmp_53 = e_7_src1_val;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_49;
+  reg  [31:0] casez_tmp_54;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_49 = entries_0_pc;
+        casez_tmp_54 = e_src2_val;
       3'b001:
-        casez_tmp_49 = entries_1_pc;
+        casez_tmp_54 = e_1_src2_val;
       3'b010:
-        casez_tmp_49 = entries_2_pc;
+        casez_tmp_54 = e_2_src2_val;
       3'b011:
-        casez_tmp_49 = entries_3_pc;
+        casez_tmp_54 = e_3_src2_val;
       3'b100:
-        casez_tmp_49 = entries_4_pc;
+        casez_tmp_54 = e_4_src2_val;
       3'b101:
-        casez_tmp_49 = entries_5_pc;
+        casez_tmp_54 = e_5_src2_val;
       3'b110:
-        casez_tmp_49 = entries_6_pc;
+        casez_tmp_54 = e_6_src2_val;
       default:
-        casez_tmp_49 = entries_7_pc;
+        casez_tmp_54 = e_7_src2_val;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_50;
+  reg  [5:0]  casez_tmp_55;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_50 = entries_0_imm_ext;
+        casez_tmp_55 = entries_0_pdest;
       3'b001:
-        casez_tmp_50 = entries_1_imm_ext;
+        casez_tmp_55 = entries_1_pdest;
       3'b010:
-        casez_tmp_50 = entries_2_imm_ext;
+        casez_tmp_55 = entries_2_pdest;
       3'b011:
-        casez_tmp_50 = entries_3_imm_ext;
+        casez_tmp_55 = entries_3_pdest;
       3'b100:
-        casez_tmp_50 = entries_4_imm_ext;
+        casez_tmp_55 = entries_4_pdest;
       3'b101:
-        casez_tmp_50 = entries_5_imm_ext;
+        casez_tmp_55 = entries_5_pdest;
       3'b110:
-        casez_tmp_50 = entries_6_imm_ext;
+        casez_tmp_55 = entries_6_pdest;
       default:
-        casez_tmp_50 = entries_7_imm_ext;
+        casez_tmp_55 = entries_7_pdest;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_51;
+  reg  [31:0] casez_tmp_56;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_51 = entries_0_waddr;
+        casez_tmp_56 = entries_0_pc;
       3'b001:
-        casez_tmp_51 = entries_1_waddr;
+        casez_tmp_56 = entries_1_pc;
       3'b010:
-        casez_tmp_51 = entries_2_waddr;
+        casez_tmp_56 = entries_2_pc;
       3'b011:
-        casez_tmp_51 = entries_3_waddr;
+        casez_tmp_56 = entries_3_pc;
       3'b100:
-        casez_tmp_51 = entries_4_waddr;
+        casez_tmp_56 = entries_4_pc;
       3'b101:
-        casez_tmp_51 = entries_5_waddr;
+        casez_tmp_56 = entries_5_pc;
       3'b110:
-        casez_tmp_51 = entries_6_waddr;
+        casez_tmp_56 = entries_6_pc;
       default:
-        casez_tmp_51 = entries_7_waddr;
+        casez_tmp_56 = entries_7_pc;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_52;
+  reg  [31:0] casez_tmp_57;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_52 = entries_0_csr_rd1;
+        casez_tmp_57 = entries_0_imm_ext;
       3'b001:
-        casez_tmp_52 = entries_1_csr_rd1;
+        casez_tmp_57 = entries_1_imm_ext;
       3'b010:
-        casez_tmp_52 = entries_2_csr_rd1;
+        casez_tmp_57 = entries_2_imm_ext;
       3'b011:
-        casez_tmp_52 = entries_3_csr_rd1;
+        casez_tmp_57 = entries_3_imm_ext;
       3'b100:
-        casez_tmp_52 = entries_4_csr_rd1;
+        casez_tmp_57 = entries_4_imm_ext;
       3'b101:
-        casez_tmp_52 = entries_5_csr_rd1;
+        casez_tmp_57 = entries_5_imm_ext;
       3'b110:
-        casez_tmp_52 = entries_6_csr_rd1;
+        casez_tmp_57 = entries_6_imm_ext;
       default:
-        casez_tmp_52 = entries_7_csr_rd1;
+        casez_tmp_57 = entries_7_imm_ext;
     endcase
   end // always_comb
-  reg         casez_tmp_53;
+  reg  [4:0]  casez_tmp_58;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_53 = entries_0_state_state;
+        casez_tmp_58 = entries_0_waddr;
       3'b001:
-        casez_tmp_53 = entries_1_state_state;
+        casez_tmp_58 = entries_1_waddr;
       3'b010:
-        casez_tmp_53 = entries_2_state_state;
+        casez_tmp_58 = entries_2_waddr;
       3'b011:
-        casez_tmp_53 = entries_3_state_state;
+        casez_tmp_58 = entries_3_waddr;
       3'b100:
-        casez_tmp_53 = entries_4_state_state;
+        casez_tmp_58 = entries_4_waddr;
       3'b101:
-        casez_tmp_53 = entries_5_state_state;
+        casez_tmp_58 = entries_5_waddr;
       3'b110:
-        casez_tmp_53 = entries_6_state_state;
+        casez_tmp_58 = entries_6_waddr;
       default:
-        casez_tmp_53 = entries_7_state_state;
+        casez_tmp_58 = entries_7_waddr;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_54;
+  reg  [31:0] casez_tmp_59;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_54 = entries_0_state_state_num;
+        casez_tmp_59 = entries_0_csr_rd1;
       3'b001:
-        casez_tmp_54 = entries_1_state_state_num;
+        casez_tmp_59 = entries_1_csr_rd1;
       3'b010:
-        casez_tmp_54 = entries_2_state_state_num;
+        casez_tmp_59 = entries_2_csr_rd1;
       3'b011:
-        casez_tmp_54 = entries_3_state_state_num;
+        casez_tmp_59 = entries_3_csr_rd1;
       3'b100:
-        casez_tmp_54 = entries_4_state_state_num;
+        casez_tmp_59 = entries_4_csr_rd1;
       3'b101:
-        casez_tmp_54 = entries_5_state_state_num;
+        casez_tmp_59 = entries_5_csr_rd1;
       3'b110:
-        casez_tmp_54 = entries_6_state_state_num;
+        casez_tmp_59 = entries_6_csr_rd1;
       default:
-        casez_tmp_54 = entries_7_state_state_num;
-    endcase
-  end // always_comb
-  reg  [1:0]  casez_tmp_55;
-  always_comb begin
-    casez (divIdx)
-      3'b000:
-        casez_tmp_55 = entries_0_exu_alu_srcA;
-      3'b001:
-        casez_tmp_55 = entries_1_exu_alu_srcA;
-      3'b010:
-        casez_tmp_55 = entries_2_exu_alu_srcA;
-      3'b011:
-        casez_tmp_55 = entries_3_exu_alu_srcA;
-      3'b100:
-        casez_tmp_55 = entries_4_exu_alu_srcA;
-      3'b101:
-        casez_tmp_55 = entries_5_exu_alu_srcA;
-      3'b110:
-        casez_tmp_55 = entries_6_exu_alu_srcA;
-      default:
-        casez_tmp_55 = entries_7_exu_alu_srcA;
-    endcase
-  end // always_comb
-  reg  [1:0]  casez_tmp_56;
-  always_comb begin
-    casez (divIdx)
-      3'b000:
-        casez_tmp_56 = entries_0_exu_alu_srcB;
-      3'b001:
-        casez_tmp_56 = entries_1_exu_alu_srcB;
-      3'b010:
-        casez_tmp_56 = entries_2_exu_alu_srcB;
-      3'b011:
-        casez_tmp_56 = entries_3_exu_alu_srcB;
-      3'b100:
-        casez_tmp_56 = entries_4_exu_alu_srcB;
-      3'b101:
-        casez_tmp_56 = entries_5_exu_alu_srcB;
-      3'b110:
-        casez_tmp_56 = entries_6_exu_alu_srcB;
-      default:
-        casez_tmp_56 = entries_7_exu_alu_srcB;
-    endcase
-  end // always_comb
-  reg  [4:0]  casez_tmp_57;
-  always_comb begin
-    casez (divIdx)
-      3'b000:
-        casez_tmp_57 = entries_0_exu_alu_control;
-      3'b001:
-        casez_tmp_57 = entries_1_exu_alu_control;
-      3'b010:
-        casez_tmp_57 = entries_2_exu_alu_control;
-      3'b011:
-        casez_tmp_57 = entries_3_exu_alu_control;
-      3'b100:
-        casez_tmp_57 = entries_4_exu_alu_control;
-      3'b101:
-        casez_tmp_57 = entries_5_exu_alu_control;
-      3'b110:
-        casez_tmp_57 = entries_6_exu_alu_control;
-      default:
-        casez_tmp_57 = entries_7_exu_alu_control;
-    endcase
-  end // always_comb
-  reg  [3:0]  casez_tmp_58;
-  always_comb begin
-    casez (divIdx)
-      3'b000:
-        casez_tmp_58 = entries_0_exu_jump;
-      3'b001:
-        casez_tmp_58 = entries_1_exu_jump;
-      3'b010:
-        casez_tmp_58 = entries_2_exu_jump;
-      3'b011:
-        casez_tmp_58 = entries_3_exu_jump;
-      3'b100:
-        casez_tmp_58 = entries_4_exu_jump;
-      3'b101:
-        casez_tmp_58 = entries_5_exu_jump;
-      3'b110:
-        casez_tmp_58 = entries_6_exu_jump;
-      default:
-        casez_tmp_58 = entries_7_exu_jump;
-    endcase
-  end // always_comb
-  reg  [2:0]  casez_tmp_59;
-  always_comb begin
-    casez (divIdx)
-      3'b000:
-        casez_tmp_59 = entries_0_lsu_mem_rd;
-      3'b001:
-        casez_tmp_59 = entries_1_lsu_mem_rd;
-      3'b010:
-        casez_tmp_59 = entries_2_lsu_mem_rd;
-      3'b011:
-        casez_tmp_59 = entries_3_lsu_mem_rd;
-      3'b100:
-        casez_tmp_59 = entries_4_lsu_mem_rd;
-      3'b101:
-        casez_tmp_59 = entries_5_lsu_mem_rd;
-      3'b110:
-        casez_tmp_59 = entries_6_lsu_mem_rd;
-      default:
-        casez_tmp_59 = entries_7_lsu_mem_rd;
+        casez_tmp_59 = entries_7_csr_rd1;
     endcase
   end // always_comb
   reg         casez_tmp_60;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_60 = entries_0_lsu_mem_write;
+        casez_tmp_60 = entries_0_state_state;
       3'b001:
-        casez_tmp_60 = entries_1_lsu_mem_write;
+        casez_tmp_60 = entries_1_state_state;
       3'b010:
-        casez_tmp_60 = entries_2_lsu_mem_write;
+        casez_tmp_60 = entries_2_state_state;
       3'b011:
-        casez_tmp_60 = entries_3_lsu_mem_write;
+        casez_tmp_60 = entries_3_state_state;
       3'b100:
-        casez_tmp_60 = entries_4_lsu_mem_write;
+        casez_tmp_60 = entries_4_state_state;
       3'b101:
-        casez_tmp_60 = entries_5_lsu_mem_write;
+        casez_tmp_60 = entries_5_state_state;
       3'b110:
-        casez_tmp_60 = entries_6_lsu_mem_write;
+        casez_tmp_60 = entries_6_state_state;
       default:
-        casez_tmp_60 = entries_7_lsu_mem_write;
+        casez_tmp_60 = entries_7_state_state;
     endcase
   end // always_comb
-  reg         casez_tmp_61;
+  reg  [7:0]  casez_tmp_61;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_61 = entries_0_lsu_mem_valid;
+        casez_tmp_61 = entries_0_state_state_num;
       3'b001:
-        casez_tmp_61 = entries_1_lsu_mem_valid;
+        casez_tmp_61 = entries_1_state_state_num;
       3'b010:
-        casez_tmp_61 = entries_2_lsu_mem_valid;
+        casez_tmp_61 = entries_2_state_state_num;
       3'b011:
-        casez_tmp_61 = entries_3_lsu_mem_valid;
+        casez_tmp_61 = entries_3_state_state_num;
       3'b100:
-        casez_tmp_61 = entries_4_lsu_mem_valid;
+        casez_tmp_61 = entries_4_state_state_num;
       3'b101:
-        casez_tmp_61 = entries_5_lsu_mem_valid;
+        casez_tmp_61 = entries_5_state_state_num;
       3'b110:
-        casez_tmp_61 = entries_6_lsu_mem_valid;
+        casez_tmp_61 = entries_6_state_state_num;
       default:
-        casez_tmp_61 = entries_7_lsu_mem_valid;
+        casez_tmp_61 = entries_7_state_state_num;
     endcase
   end // always_comb
-  reg         casez_tmp_62;
+  reg  [1:0]  casez_tmp_62;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_62 = entries_0_wbu_reg_write;
+        casez_tmp_62 = entries_0_exu_alu_srcA;
       3'b001:
-        casez_tmp_62 = entries_1_wbu_reg_write;
+        casez_tmp_62 = entries_1_exu_alu_srcA;
       3'b010:
-        casez_tmp_62 = entries_2_wbu_reg_write;
+        casez_tmp_62 = entries_2_exu_alu_srcA;
       3'b011:
-        casez_tmp_62 = entries_3_wbu_reg_write;
+        casez_tmp_62 = entries_3_exu_alu_srcA;
       3'b100:
-        casez_tmp_62 = entries_4_wbu_reg_write;
+        casez_tmp_62 = entries_4_exu_alu_srcA;
       3'b101:
-        casez_tmp_62 = entries_5_wbu_reg_write;
+        casez_tmp_62 = entries_5_exu_alu_srcA;
       3'b110:
-        casez_tmp_62 = entries_6_wbu_reg_write;
+        casez_tmp_62 = entries_6_exu_alu_srcA;
       default:
-        casez_tmp_62 = entries_7_wbu_reg_write;
+        casez_tmp_62 = entries_7_exu_alu_srcA;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_63;
+  reg  [1:0]  casez_tmp_63;
   always_comb begin
     casez (divIdx)
       3'b000:
-        casez_tmp_63 = entries_0_wbu_reg_write_sel;
+        casez_tmp_63 = entries_0_exu_alu_srcB;
       3'b001:
-        casez_tmp_63 = entries_1_wbu_reg_write_sel;
+        casez_tmp_63 = entries_1_exu_alu_srcB;
       3'b010:
-        casez_tmp_63 = entries_2_wbu_reg_write_sel;
+        casez_tmp_63 = entries_2_exu_alu_srcB;
       3'b011:
-        casez_tmp_63 = entries_3_wbu_reg_write_sel;
+        casez_tmp_63 = entries_3_exu_alu_srcB;
       3'b100:
-        casez_tmp_63 = entries_4_wbu_reg_write_sel;
+        casez_tmp_63 = entries_4_exu_alu_srcB;
       3'b101:
-        casez_tmp_63 = entries_5_wbu_reg_write_sel;
+        casez_tmp_63 = entries_5_exu_alu_srcB;
       3'b110:
-        casez_tmp_63 = entries_6_wbu_reg_write_sel;
+        casez_tmp_63 = entries_6_exu_alu_srcB;
       default:
-        casez_tmp_63 = entries_7_wbu_reg_write_sel;
+        casez_tmp_63 = entries_7_exu_alu_srcB;
     endcase
   end // always_comb
   reg  [4:0]  casez_tmp_64;
   always_comb begin
-    casez (lsuIdx)
+    casez (divIdx)
       3'b000:
-        casez_tmp_64 = entries_0_rob_idx;
+        casez_tmp_64 = entries_0_exu_alu_control;
       3'b001:
-        casez_tmp_64 = entries_1_rob_idx;
+        casez_tmp_64 = entries_1_exu_alu_control;
       3'b010:
-        casez_tmp_64 = entries_2_rob_idx;
+        casez_tmp_64 = entries_2_exu_alu_control;
       3'b011:
-        casez_tmp_64 = entries_3_rob_idx;
+        casez_tmp_64 = entries_3_exu_alu_control;
       3'b100:
-        casez_tmp_64 = entries_4_rob_idx;
+        casez_tmp_64 = entries_4_exu_alu_control;
       3'b101:
-        casez_tmp_64 = entries_5_rob_idx;
+        casez_tmp_64 = entries_5_exu_alu_control;
       3'b110:
-        casez_tmp_64 = entries_6_rob_idx;
+        casez_tmp_64 = entries_6_exu_alu_control;
       default:
-        casez_tmp_64 = entries_7_rob_idx;
+        casez_tmp_64 = entries_7_exu_alu_control;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_65;
+  reg  [3:0]  casez_tmp_65;
+  always_comb begin
+    casez (divIdx)
+      3'b000:
+        casez_tmp_65 = entries_0_exu_jump;
+      3'b001:
+        casez_tmp_65 = entries_1_exu_jump;
+      3'b010:
+        casez_tmp_65 = entries_2_exu_jump;
+      3'b011:
+        casez_tmp_65 = entries_3_exu_jump;
+      3'b100:
+        casez_tmp_65 = entries_4_exu_jump;
+      3'b101:
+        casez_tmp_65 = entries_5_exu_jump;
+      3'b110:
+        casez_tmp_65 = entries_6_exu_jump;
+      default:
+        casez_tmp_65 = entries_7_exu_jump;
+    endcase
+  end // always_comb
+  reg  [2:0]  casez_tmp_66;
+  always_comb begin
+    casez (divIdx)
+      3'b000:
+        casez_tmp_66 = entries_0_lsu_mem_rd;
+      3'b001:
+        casez_tmp_66 = entries_1_lsu_mem_rd;
+      3'b010:
+        casez_tmp_66 = entries_2_lsu_mem_rd;
+      3'b011:
+        casez_tmp_66 = entries_3_lsu_mem_rd;
+      3'b100:
+        casez_tmp_66 = entries_4_lsu_mem_rd;
+      3'b101:
+        casez_tmp_66 = entries_5_lsu_mem_rd;
+      3'b110:
+        casez_tmp_66 = entries_6_lsu_mem_rd;
+      default:
+        casez_tmp_66 = entries_7_lsu_mem_rd;
+    endcase
+  end // always_comb
+  reg         casez_tmp_67;
+  always_comb begin
+    casez (divIdx)
+      3'b000:
+        casez_tmp_67 = entries_0_lsu_mem_write;
+      3'b001:
+        casez_tmp_67 = entries_1_lsu_mem_write;
+      3'b010:
+        casez_tmp_67 = entries_2_lsu_mem_write;
+      3'b011:
+        casez_tmp_67 = entries_3_lsu_mem_write;
+      3'b100:
+        casez_tmp_67 = entries_4_lsu_mem_write;
+      3'b101:
+        casez_tmp_67 = entries_5_lsu_mem_write;
+      3'b110:
+        casez_tmp_67 = entries_6_lsu_mem_write;
+      default:
+        casez_tmp_67 = entries_7_lsu_mem_write;
+    endcase
+  end // always_comb
+  reg         casez_tmp_68;
+  always_comb begin
+    casez (divIdx)
+      3'b000:
+        casez_tmp_68 = entries_0_lsu_mem_valid;
+      3'b001:
+        casez_tmp_68 = entries_1_lsu_mem_valid;
+      3'b010:
+        casez_tmp_68 = entries_2_lsu_mem_valid;
+      3'b011:
+        casez_tmp_68 = entries_3_lsu_mem_valid;
+      3'b100:
+        casez_tmp_68 = entries_4_lsu_mem_valid;
+      3'b101:
+        casez_tmp_68 = entries_5_lsu_mem_valid;
+      3'b110:
+        casez_tmp_68 = entries_6_lsu_mem_valid;
+      default:
+        casez_tmp_68 = entries_7_lsu_mem_valid;
+    endcase
+  end // always_comb
+  reg         casez_tmp_69;
+  always_comb begin
+    casez (divIdx)
+      3'b000:
+        casez_tmp_69 = entries_0_wbu_reg_write;
+      3'b001:
+        casez_tmp_69 = entries_1_wbu_reg_write;
+      3'b010:
+        casez_tmp_69 = entries_2_wbu_reg_write;
+      3'b011:
+        casez_tmp_69 = entries_3_wbu_reg_write;
+      3'b100:
+        casez_tmp_69 = entries_4_wbu_reg_write;
+      3'b101:
+        casez_tmp_69 = entries_5_wbu_reg_write;
+      3'b110:
+        casez_tmp_69 = entries_6_wbu_reg_write;
+      default:
+        casez_tmp_69 = entries_7_wbu_reg_write;
+    endcase
+  end // always_comb
+  reg  [2:0]  casez_tmp_70;
+  always_comb begin
+    casez (divIdx)
+      3'b000:
+        casez_tmp_70 = entries_0_wbu_reg_write_sel;
+      3'b001:
+        casez_tmp_70 = entries_1_wbu_reg_write_sel;
+      3'b010:
+        casez_tmp_70 = entries_2_wbu_reg_write_sel;
+      3'b011:
+        casez_tmp_70 = entries_3_wbu_reg_write_sel;
+      3'b100:
+        casez_tmp_70 = entries_4_wbu_reg_write_sel;
+      3'b101:
+        casez_tmp_70 = entries_5_wbu_reg_write_sel;
+      3'b110:
+        casez_tmp_70 = entries_6_wbu_reg_write_sel;
+      default:
+        casez_tmp_70 = entries_7_wbu_reg_write_sel;
+    endcase
+  end // always_comb
+  reg  [4:0]  casez_tmp_71;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_65 = entries_0_src1_val;
+        casez_tmp_71 = entries_0_rob_idx;
       3'b001:
-        casez_tmp_65 = entries_1_src1_val;
+        casez_tmp_71 = entries_1_rob_idx;
       3'b010:
-        casez_tmp_65 = entries_2_src1_val;
+        casez_tmp_71 = entries_2_rob_idx;
       3'b011:
-        casez_tmp_65 = entries_3_src1_val;
+        casez_tmp_71 = entries_3_rob_idx;
       3'b100:
-        casez_tmp_65 = entries_4_src1_val;
+        casez_tmp_71 = entries_4_rob_idx;
       3'b101:
-        casez_tmp_65 = entries_5_src1_val;
+        casez_tmp_71 = entries_5_rob_idx;
       3'b110:
-        casez_tmp_65 = entries_6_src1_val;
+        casez_tmp_71 = entries_6_rob_idx;
       default:
-        casez_tmp_65 = entries_7_src1_val;
+        casez_tmp_71 = entries_7_rob_idx;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_66;
+  reg  [5:0]  casez_tmp_72;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_66 = entries_0_src2_val;
+        casez_tmp_72 = entries_0_src1_phys;
       3'b001:
-        casez_tmp_66 = entries_1_src2_val;
+        casez_tmp_72 = entries_1_src1_phys;
       3'b010:
-        casez_tmp_66 = entries_2_src2_val;
+        casez_tmp_72 = entries_2_src1_phys;
       3'b011:
-        casez_tmp_66 = entries_3_src2_val;
+        casez_tmp_72 = entries_3_src1_phys;
       3'b100:
-        casez_tmp_66 = entries_4_src2_val;
+        casez_tmp_72 = entries_4_src1_phys;
       3'b101:
-        casez_tmp_66 = entries_5_src2_val;
+        casez_tmp_72 = entries_5_src1_phys;
       3'b110:
-        casez_tmp_66 = entries_6_src2_val;
+        casez_tmp_72 = entries_6_src1_phys;
       default:
-        casez_tmp_66 = entries_7_src2_val;
+        casez_tmp_72 = entries_7_src1_phys;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_67;
+  reg  [5:0]  casez_tmp_73;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_67 = entries_0_pdest;
+        casez_tmp_73 = entries_0_src2_phys;
       3'b001:
-        casez_tmp_67 = entries_1_pdest;
+        casez_tmp_73 = entries_1_src2_phys;
       3'b010:
-        casez_tmp_67 = entries_2_pdest;
+        casez_tmp_73 = entries_2_src2_phys;
       3'b011:
-        casez_tmp_67 = entries_3_pdest;
+        casez_tmp_73 = entries_3_src2_phys;
       3'b100:
-        casez_tmp_67 = entries_4_pdest;
+        casez_tmp_73 = entries_4_src2_phys;
       3'b101:
-        casez_tmp_67 = entries_5_pdest;
+        casez_tmp_73 = entries_5_src2_phys;
       3'b110:
-        casez_tmp_67 = entries_6_pdest;
+        casez_tmp_73 = entries_6_src2_phys;
       default:
-        casez_tmp_67 = entries_7_pdest;
+        casez_tmp_73 = entries_7_src2_phys;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_68;
+  reg  [31:0] casez_tmp_74;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_68 = entries_0_pc;
+        casez_tmp_74 = e_src1_val;
       3'b001:
-        casez_tmp_68 = entries_1_pc;
+        casez_tmp_74 = e_1_src1_val;
       3'b010:
-        casez_tmp_68 = entries_2_pc;
+        casez_tmp_74 = e_2_src1_val;
       3'b011:
-        casez_tmp_68 = entries_3_pc;
+        casez_tmp_74 = e_3_src1_val;
       3'b100:
-        casez_tmp_68 = entries_4_pc;
+        casez_tmp_74 = e_4_src1_val;
       3'b101:
-        casez_tmp_68 = entries_5_pc;
+        casez_tmp_74 = e_5_src1_val;
       3'b110:
-        casez_tmp_68 = entries_6_pc;
+        casez_tmp_74 = e_6_src1_val;
       default:
-        casez_tmp_68 = entries_7_pc;
+        casez_tmp_74 = e_7_src1_val;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_69;
+  reg  [31:0] casez_tmp_75;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_69 = entries_0_imm_ext;
+        casez_tmp_75 = e_src2_val;
       3'b001:
-        casez_tmp_69 = entries_1_imm_ext;
+        casez_tmp_75 = e_1_src2_val;
       3'b010:
-        casez_tmp_69 = entries_2_imm_ext;
+        casez_tmp_75 = e_2_src2_val;
       3'b011:
-        casez_tmp_69 = entries_3_imm_ext;
+        casez_tmp_75 = e_3_src2_val;
       3'b100:
-        casez_tmp_69 = entries_4_imm_ext;
+        casez_tmp_75 = e_4_src2_val;
       3'b101:
-        casez_tmp_69 = entries_5_imm_ext;
+        casez_tmp_75 = e_5_src2_val;
       3'b110:
-        casez_tmp_69 = entries_6_imm_ext;
+        casez_tmp_75 = e_6_src2_val;
       default:
-        casez_tmp_69 = entries_7_imm_ext;
+        casez_tmp_75 = e_7_src2_val;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_70;
+  reg  [5:0]  casez_tmp_76;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_70 = entries_0_waddr;
+        casez_tmp_76 = entries_0_pdest;
       3'b001:
-        casez_tmp_70 = entries_1_waddr;
+        casez_tmp_76 = entries_1_pdest;
       3'b010:
-        casez_tmp_70 = entries_2_waddr;
+        casez_tmp_76 = entries_2_pdest;
       3'b011:
-        casez_tmp_70 = entries_3_waddr;
+        casez_tmp_76 = entries_3_pdest;
       3'b100:
-        casez_tmp_70 = entries_4_waddr;
+        casez_tmp_76 = entries_4_pdest;
       3'b101:
-        casez_tmp_70 = entries_5_waddr;
+        casez_tmp_76 = entries_5_pdest;
       3'b110:
-        casez_tmp_70 = entries_6_waddr;
+        casez_tmp_76 = entries_6_pdest;
       default:
-        casez_tmp_70 = entries_7_waddr;
+        casez_tmp_76 = entries_7_pdest;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_71;
+  reg  [31:0] casez_tmp_77;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_71 = entries_0_csr_rd1;
+        casez_tmp_77 = entries_0_pc;
       3'b001:
-        casez_tmp_71 = entries_1_csr_rd1;
+        casez_tmp_77 = entries_1_pc;
       3'b010:
-        casez_tmp_71 = entries_2_csr_rd1;
+        casez_tmp_77 = entries_2_pc;
       3'b011:
-        casez_tmp_71 = entries_3_csr_rd1;
+        casez_tmp_77 = entries_3_pc;
       3'b100:
-        casez_tmp_71 = entries_4_csr_rd1;
+        casez_tmp_77 = entries_4_pc;
       3'b101:
-        casez_tmp_71 = entries_5_csr_rd1;
+        casez_tmp_77 = entries_5_pc;
       3'b110:
-        casez_tmp_71 = entries_6_csr_rd1;
+        casez_tmp_77 = entries_6_pc;
       default:
-        casez_tmp_71 = entries_7_csr_rd1;
+        casez_tmp_77 = entries_7_pc;
     endcase
   end // always_comb
-  reg         casez_tmp_72;
+  reg  [31:0] casez_tmp_78;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_72 = entries_0_state_state;
+        casez_tmp_78 = entries_0_imm_ext;
       3'b001:
-        casez_tmp_72 = entries_1_state_state;
+        casez_tmp_78 = entries_1_imm_ext;
       3'b010:
-        casez_tmp_72 = entries_2_state_state;
+        casez_tmp_78 = entries_2_imm_ext;
       3'b011:
-        casez_tmp_72 = entries_3_state_state;
+        casez_tmp_78 = entries_3_imm_ext;
       3'b100:
-        casez_tmp_72 = entries_4_state_state;
+        casez_tmp_78 = entries_4_imm_ext;
       3'b101:
-        casez_tmp_72 = entries_5_state_state;
+        casez_tmp_78 = entries_5_imm_ext;
       3'b110:
-        casez_tmp_72 = entries_6_state_state;
+        casez_tmp_78 = entries_6_imm_ext;
       default:
-        casez_tmp_72 = entries_7_state_state;
+        casez_tmp_78 = entries_7_imm_ext;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_73;
+  reg  [4:0]  casez_tmp_79;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_73 = entries_0_state_state_num;
+        casez_tmp_79 = entries_0_waddr;
       3'b001:
-        casez_tmp_73 = entries_1_state_state_num;
+        casez_tmp_79 = entries_1_waddr;
       3'b010:
-        casez_tmp_73 = entries_2_state_state_num;
+        casez_tmp_79 = entries_2_waddr;
       3'b011:
-        casez_tmp_73 = entries_3_state_state_num;
+        casez_tmp_79 = entries_3_waddr;
       3'b100:
-        casez_tmp_73 = entries_4_state_state_num;
+        casez_tmp_79 = entries_4_waddr;
       3'b101:
-        casez_tmp_73 = entries_5_state_state_num;
+        casez_tmp_79 = entries_5_waddr;
       3'b110:
-        casez_tmp_73 = entries_6_state_state_num;
+        casez_tmp_79 = entries_6_waddr;
       default:
-        casez_tmp_73 = entries_7_state_state_num;
+        casez_tmp_79 = entries_7_waddr;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_74;
+  reg  [31:0] casez_tmp_80;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_74 = entries_0_exu_alu_srcA;
+        casez_tmp_80 = entries_0_csr_rd1;
       3'b001:
-        casez_tmp_74 = entries_1_exu_alu_srcA;
+        casez_tmp_80 = entries_1_csr_rd1;
       3'b010:
-        casez_tmp_74 = entries_2_exu_alu_srcA;
+        casez_tmp_80 = entries_2_csr_rd1;
       3'b011:
-        casez_tmp_74 = entries_3_exu_alu_srcA;
+        casez_tmp_80 = entries_3_csr_rd1;
       3'b100:
-        casez_tmp_74 = entries_4_exu_alu_srcA;
+        casez_tmp_80 = entries_4_csr_rd1;
       3'b101:
-        casez_tmp_74 = entries_5_exu_alu_srcA;
+        casez_tmp_80 = entries_5_csr_rd1;
       3'b110:
-        casez_tmp_74 = entries_6_exu_alu_srcA;
+        casez_tmp_80 = entries_6_csr_rd1;
       default:
-        casez_tmp_74 = entries_7_exu_alu_srcA;
-    endcase
-  end // always_comb
-  reg  [1:0]  casez_tmp_75;
-  always_comb begin
-    casez (lsuIdx)
-      3'b000:
-        casez_tmp_75 = entries_0_exu_alu_srcB;
-      3'b001:
-        casez_tmp_75 = entries_1_exu_alu_srcB;
-      3'b010:
-        casez_tmp_75 = entries_2_exu_alu_srcB;
-      3'b011:
-        casez_tmp_75 = entries_3_exu_alu_srcB;
-      3'b100:
-        casez_tmp_75 = entries_4_exu_alu_srcB;
-      3'b101:
-        casez_tmp_75 = entries_5_exu_alu_srcB;
-      3'b110:
-        casez_tmp_75 = entries_6_exu_alu_srcB;
-      default:
-        casez_tmp_75 = entries_7_exu_alu_srcB;
-    endcase
-  end // always_comb
-  reg  [4:0]  casez_tmp_76;
-  always_comb begin
-    casez (lsuIdx)
-      3'b000:
-        casez_tmp_76 = entries_0_exu_alu_control;
-      3'b001:
-        casez_tmp_76 = entries_1_exu_alu_control;
-      3'b010:
-        casez_tmp_76 = entries_2_exu_alu_control;
-      3'b011:
-        casez_tmp_76 = entries_3_exu_alu_control;
-      3'b100:
-        casez_tmp_76 = entries_4_exu_alu_control;
-      3'b101:
-        casez_tmp_76 = entries_5_exu_alu_control;
-      3'b110:
-        casez_tmp_76 = entries_6_exu_alu_control;
-      default:
-        casez_tmp_76 = entries_7_exu_alu_control;
-    endcase
-  end // always_comb
-  reg  [3:0]  casez_tmp_77;
-  always_comb begin
-    casez (lsuIdx)
-      3'b000:
-        casez_tmp_77 = entries_0_exu_jump;
-      3'b001:
-        casez_tmp_77 = entries_1_exu_jump;
-      3'b010:
-        casez_tmp_77 = entries_2_exu_jump;
-      3'b011:
-        casez_tmp_77 = entries_3_exu_jump;
-      3'b100:
-        casez_tmp_77 = entries_4_exu_jump;
-      3'b101:
-        casez_tmp_77 = entries_5_exu_jump;
-      3'b110:
-        casez_tmp_77 = entries_6_exu_jump;
-      default:
-        casez_tmp_77 = entries_7_exu_jump;
-    endcase
-  end // always_comb
-  reg  [2:0]  casez_tmp_78;
-  always_comb begin
-    casez (lsuIdx)
-      3'b000:
-        casez_tmp_78 = entries_0_lsu_mem_rd;
-      3'b001:
-        casez_tmp_78 = entries_1_lsu_mem_rd;
-      3'b010:
-        casez_tmp_78 = entries_2_lsu_mem_rd;
-      3'b011:
-        casez_tmp_78 = entries_3_lsu_mem_rd;
-      3'b100:
-        casez_tmp_78 = entries_4_lsu_mem_rd;
-      3'b101:
-        casez_tmp_78 = entries_5_lsu_mem_rd;
-      3'b110:
-        casez_tmp_78 = entries_6_lsu_mem_rd;
-      default:
-        casez_tmp_78 = entries_7_lsu_mem_rd;
-    endcase
-  end // always_comb
-  reg         casez_tmp_79;
-  always_comb begin
-    casez (lsuIdx)
-      3'b000:
-        casez_tmp_79 = entries_0_lsu_mem_write;
-      3'b001:
-        casez_tmp_79 = entries_1_lsu_mem_write;
-      3'b010:
-        casez_tmp_79 = entries_2_lsu_mem_write;
-      3'b011:
-        casez_tmp_79 = entries_3_lsu_mem_write;
-      3'b100:
-        casez_tmp_79 = entries_4_lsu_mem_write;
-      3'b101:
-        casez_tmp_79 = entries_5_lsu_mem_write;
-      3'b110:
-        casez_tmp_79 = entries_6_lsu_mem_write;
-      default:
-        casez_tmp_79 = entries_7_lsu_mem_write;
-    endcase
-  end // always_comb
-  reg         casez_tmp_80;
-  always_comb begin
-    casez (lsuIdx)
-      3'b000:
-        casez_tmp_80 = entries_0_lsu_mem_valid;
-      3'b001:
-        casez_tmp_80 = entries_1_lsu_mem_valid;
-      3'b010:
-        casez_tmp_80 = entries_2_lsu_mem_valid;
-      3'b011:
-        casez_tmp_80 = entries_3_lsu_mem_valid;
-      3'b100:
-        casez_tmp_80 = entries_4_lsu_mem_valid;
-      3'b101:
-        casez_tmp_80 = entries_5_lsu_mem_valid;
-      3'b110:
-        casez_tmp_80 = entries_6_lsu_mem_valid;
-      default:
-        casez_tmp_80 = entries_7_lsu_mem_valid;
+        casez_tmp_80 = entries_7_csr_rd1;
     endcase
   end // always_comb
   reg         casez_tmp_81;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_81 = entries_0_wbu_reg_write;
+        casez_tmp_81 = entries_0_state_state;
       3'b001:
-        casez_tmp_81 = entries_1_wbu_reg_write;
+        casez_tmp_81 = entries_1_state_state;
       3'b010:
-        casez_tmp_81 = entries_2_wbu_reg_write;
+        casez_tmp_81 = entries_2_state_state;
       3'b011:
-        casez_tmp_81 = entries_3_wbu_reg_write;
+        casez_tmp_81 = entries_3_state_state;
       3'b100:
-        casez_tmp_81 = entries_4_wbu_reg_write;
+        casez_tmp_81 = entries_4_state_state;
       3'b101:
-        casez_tmp_81 = entries_5_wbu_reg_write;
+        casez_tmp_81 = entries_5_state_state;
       3'b110:
-        casez_tmp_81 = entries_6_wbu_reg_write;
+        casez_tmp_81 = entries_6_state_state;
       default:
-        casez_tmp_81 = entries_7_wbu_reg_write;
+        casez_tmp_81 = entries_7_state_state;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_82;
+  reg  [7:0]  casez_tmp_82;
   always_comb begin
     casez (lsuIdx)
       3'b000:
-        casez_tmp_82 = entries_0_wbu_reg_write_sel;
+        casez_tmp_82 = entries_0_state_state_num;
       3'b001:
-        casez_tmp_82 = entries_1_wbu_reg_write_sel;
+        casez_tmp_82 = entries_1_state_state_num;
       3'b010:
-        casez_tmp_82 = entries_2_wbu_reg_write_sel;
+        casez_tmp_82 = entries_2_state_state_num;
       3'b011:
-        casez_tmp_82 = entries_3_wbu_reg_write_sel;
+        casez_tmp_82 = entries_3_state_state_num;
       3'b100:
-        casez_tmp_82 = entries_4_wbu_reg_write_sel;
+        casez_tmp_82 = entries_4_state_state_num;
       3'b101:
-        casez_tmp_82 = entries_5_wbu_reg_write_sel;
+        casez_tmp_82 = entries_5_state_state_num;
       3'b110:
-        casez_tmp_82 = entries_6_wbu_reg_write_sel;
+        casez_tmp_82 = entries_6_state_state_num;
       default:
-        casez_tmp_82 = entries_7_wbu_reg_write_sel;
+        casez_tmp_82 = entries_7_state_state_num;
+    endcase
+  end // always_comb
+  reg  [1:0]  casez_tmp_83;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_83 = entries_0_exu_alu_srcA;
+      3'b001:
+        casez_tmp_83 = entries_1_exu_alu_srcA;
+      3'b010:
+        casez_tmp_83 = entries_2_exu_alu_srcA;
+      3'b011:
+        casez_tmp_83 = entries_3_exu_alu_srcA;
+      3'b100:
+        casez_tmp_83 = entries_4_exu_alu_srcA;
+      3'b101:
+        casez_tmp_83 = entries_5_exu_alu_srcA;
+      3'b110:
+        casez_tmp_83 = entries_6_exu_alu_srcA;
+      default:
+        casez_tmp_83 = entries_7_exu_alu_srcA;
+    endcase
+  end // always_comb
+  reg  [1:0]  casez_tmp_84;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_84 = entries_0_exu_alu_srcB;
+      3'b001:
+        casez_tmp_84 = entries_1_exu_alu_srcB;
+      3'b010:
+        casez_tmp_84 = entries_2_exu_alu_srcB;
+      3'b011:
+        casez_tmp_84 = entries_3_exu_alu_srcB;
+      3'b100:
+        casez_tmp_84 = entries_4_exu_alu_srcB;
+      3'b101:
+        casez_tmp_84 = entries_5_exu_alu_srcB;
+      3'b110:
+        casez_tmp_84 = entries_6_exu_alu_srcB;
+      default:
+        casez_tmp_84 = entries_7_exu_alu_srcB;
+    endcase
+  end // always_comb
+  reg  [4:0]  casez_tmp_85;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_85 = entries_0_exu_alu_control;
+      3'b001:
+        casez_tmp_85 = entries_1_exu_alu_control;
+      3'b010:
+        casez_tmp_85 = entries_2_exu_alu_control;
+      3'b011:
+        casez_tmp_85 = entries_3_exu_alu_control;
+      3'b100:
+        casez_tmp_85 = entries_4_exu_alu_control;
+      3'b101:
+        casez_tmp_85 = entries_5_exu_alu_control;
+      3'b110:
+        casez_tmp_85 = entries_6_exu_alu_control;
+      default:
+        casez_tmp_85 = entries_7_exu_alu_control;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_86;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_86 = entries_0_exu_jump;
+      3'b001:
+        casez_tmp_86 = entries_1_exu_jump;
+      3'b010:
+        casez_tmp_86 = entries_2_exu_jump;
+      3'b011:
+        casez_tmp_86 = entries_3_exu_jump;
+      3'b100:
+        casez_tmp_86 = entries_4_exu_jump;
+      3'b101:
+        casez_tmp_86 = entries_5_exu_jump;
+      3'b110:
+        casez_tmp_86 = entries_6_exu_jump;
+      default:
+        casez_tmp_86 = entries_7_exu_jump;
+    endcase
+  end // always_comb
+  reg  [2:0]  casez_tmp_87;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_87 = entries_0_lsu_mem_rd;
+      3'b001:
+        casez_tmp_87 = entries_1_lsu_mem_rd;
+      3'b010:
+        casez_tmp_87 = entries_2_lsu_mem_rd;
+      3'b011:
+        casez_tmp_87 = entries_3_lsu_mem_rd;
+      3'b100:
+        casez_tmp_87 = entries_4_lsu_mem_rd;
+      3'b101:
+        casez_tmp_87 = entries_5_lsu_mem_rd;
+      3'b110:
+        casez_tmp_87 = entries_6_lsu_mem_rd;
+      default:
+        casez_tmp_87 = entries_7_lsu_mem_rd;
+    endcase
+  end // always_comb
+  reg         casez_tmp_88;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_88 = entries_0_lsu_mem_write;
+      3'b001:
+        casez_tmp_88 = entries_1_lsu_mem_write;
+      3'b010:
+        casez_tmp_88 = entries_2_lsu_mem_write;
+      3'b011:
+        casez_tmp_88 = entries_3_lsu_mem_write;
+      3'b100:
+        casez_tmp_88 = entries_4_lsu_mem_write;
+      3'b101:
+        casez_tmp_88 = entries_5_lsu_mem_write;
+      3'b110:
+        casez_tmp_88 = entries_6_lsu_mem_write;
+      default:
+        casez_tmp_88 = entries_7_lsu_mem_write;
+    endcase
+  end // always_comb
+  reg         casez_tmp_89;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_89 = entries_0_lsu_mem_valid;
+      3'b001:
+        casez_tmp_89 = entries_1_lsu_mem_valid;
+      3'b010:
+        casez_tmp_89 = entries_2_lsu_mem_valid;
+      3'b011:
+        casez_tmp_89 = entries_3_lsu_mem_valid;
+      3'b100:
+        casez_tmp_89 = entries_4_lsu_mem_valid;
+      3'b101:
+        casez_tmp_89 = entries_5_lsu_mem_valid;
+      3'b110:
+        casez_tmp_89 = entries_6_lsu_mem_valid;
+      default:
+        casez_tmp_89 = entries_7_lsu_mem_valid;
+    endcase
+  end // always_comb
+  reg         casez_tmp_90;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_90 = entries_0_wbu_reg_write;
+      3'b001:
+        casez_tmp_90 = entries_1_wbu_reg_write;
+      3'b010:
+        casez_tmp_90 = entries_2_wbu_reg_write;
+      3'b011:
+        casez_tmp_90 = entries_3_wbu_reg_write;
+      3'b100:
+        casez_tmp_90 = entries_4_wbu_reg_write;
+      3'b101:
+        casez_tmp_90 = entries_5_wbu_reg_write;
+      3'b110:
+        casez_tmp_90 = entries_6_wbu_reg_write;
+      default:
+        casez_tmp_90 = entries_7_wbu_reg_write;
+    endcase
+  end // always_comb
+  reg  [2:0]  casez_tmp_91;
+  always_comb begin
+    casez (lsuIdx)
+      3'b000:
+        casez_tmp_91 = entries_0_wbu_reg_write_sel;
+      3'b001:
+        casez_tmp_91 = entries_1_wbu_reg_write_sel;
+      3'b010:
+        casez_tmp_91 = entries_2_wbu_reg_write_sel;
+      3'b011:
+        casez_tmp_91 = entries_3_wbu_reg_write_sel;
+      3'b100:
+        casez_tmp_91 = entries_4_wbu_reg_write_sel;
+      3'b101:
+        casez_tmp_91 = entries_5_wbu_reg_write_sel;
+      3'b110:
+        casez_tmp_91 = entries_6_wbu_reg_write_sel;
+      default:
+        casez_tmp_91 = entries_7_wbu_reg_write_sel;
     endcase
   end // always_comb
   wire        _GEN = io_issue_lsu_fire & lsuIdx == 3'h0;
@@ -3128,124 +3474,92 @@ module RS(
                           ? 3'h5
                           : {2'h3, ~(freeOrIssue[6] & _freeMask1_T[6])};
   wire        _GEN_31 = io_cdb_valid & (|io_cdb_pdest);
-  wire        _GEN_32 =
-    _GEN_31 & entries_0_valid & ~entries_0_src1_ready
-    & entries_0_src1_phys == io_cdb_pdest;
-  wire        _GEN_33 =
-    _GEN_31 & entries_0_valid & ~entries_0_src2_ready
-    & entries_0_src2_phys == io_cdb_pdest;
-  wire        _GEN_34 =
-    _GEN_31 & entries_1_valid & ~entries_1_src1_ready
-    & entries_1_src1_phys == io_cdb_pdest;
-  wire        _GEN_35 =
-    _GEN_31 & entries_1_valid & ~entries_1_src2_ready
-    & entries_1_src2_phys == io_cdb_pdest;
-  wire        _GEN_36 =
-    _GEN_31 & entries_2_valid & ~entries_2_src1_ready
-    & entries_2_src1_phys == io_cdb_pdest;
-  wire        _GEN_37 =
-    _GEN_31 & entries_2_valid & ~entries_2_src2_ready
-    & entries_2_src2_phys == io_cdb_pdest;
-  wire        _GEN_38 =
-    _GEN_31 & entries_3_valid & ~entries_3_src1_ready
-    & entries_3_src1_phys == io_cdb_pdest;
-  wire        _GEN_39 =
-    _GEN_31 & entries_3_valid & ~entries_3_src2_ready
-    & entries_3_src2_phys == io_cdb_pdest;
-  wire        _GEN_40 =
-    _GEN_31 & entries_4_valid & ~entries_4_src1_ready
-    & entries_4_src1_phys == io_cdb_pdest;
-  wire        _GEN_41 =
-    _GEN_31 & entries_4_valid & ~entries_4_src2_ready
-    & entries_4_src2_phys == io_cdb_pdest;
-  wire        _GEN_42 =
-    _GEN_31 & entries_5_valid & ~entries_5_src1_ready
-    & entries_5_src1_phys == io_cdb_pdest;
-  wire        _GEN_43 =
-    _GEN_31 & entries_5_valid & ~entries_5_src2_ready
-    & entries_5_src2_phys == io_cdb_pdest;
-  wire        _GEN_44 =
-    _GEN_31 & entries_6_valid & ~entries_6_src1_ready
-    & entries_6_src1_phys == io_cdb_pdest;
-  wire        _GEN_45 =
-    _GEN_31 & entries_6_valid & ~entries_6_src2_ready
-    & entries_6_src2_phys == io_cdb_pdest;
-  wire        _GEN_46 =
-    _GEN_31 & entries_7_valid & ~entries_7_src1_ready
-    & entries_7_src1_phys == io_cdb_pdest;
-  wire        _GEN_47 =
-    _GEN_31 & entries_7_valid & ~entries_7_src2_ready
-    & entries_7_src2_phys == io_cdb_pdest;
+  wire        _GEN_32 = _GEN_31 & entries_0_valid & ~entries_0_src1_ready & _cdbHit1_T_4;
+  wire        _GEN_33 = _GEN_31 & entries_0_valid & ~entries_0_src2_ready & _cdbHit2_T_4;
+  wire        _GEN_34 = _GEN_31 & entries_1_valid & ~entries_1_src1_ready & _cdbHit1_T_9;
+  wire        _GEN_35 = _GEN_31 & entries_1_valid & ~entries_1_src2_ready & _cdbHit2_T_9;
+  wire        _GEN_36 = _GEN_31 & entries_2_valid & ~entries_2_src1_ready & _cdbHit1_T_14;
+  wire        _GEN_37 = _GEN_31 & entries_2_valid & ~entries_2_src2_ready & _cdbHit2_T_14;
+  wire        _GEN_38 = _GEN_31 & entries_3_valid & ~entries_3_src1_ready & _cdbHit1_T_19;
+  wire        _GEN_39 = _GEN_31 & entries_3_valid & ~entries_3_src2_ready & _cdbHit2_T_19;
+  wire        _GEN_40 = _GEN_31 & entries_4_valid & ~entries_4_src1_ready & _cdbHit1_T_24;
+  wire        _GEN_41 = _GEN_31 & entries_4_valid & ~entries_4_src2_ready & _cdbHit2_T_24;
+  wire        _GEN_42 = _GEN_31 & entries_5_valid & ~entries_5_src1_ready & _cdbHit1_T_29;
+  wire        _GEN_43 = _GEN_31 & entries_5_valid & ~entries_5_src2_ready & _cdbHit2_T_29;
+  wire        _GEN_44 = _GEN_31 & entries_6_valid & ~entries_6_src1_ready & _cdbHit1_T_34;
+  wire        _GEN_45 = _GEN_31 & entries_6_valid & ~entries_6_src2_ready & _cdbHit2_T_34;
+  wire        _GEN_46 = _GEN_31 & entries_7_valid & ~entries_7_src1_ready & _cdbHit1_T_39;
+  wire        _GEN_47 = _GEN_31 & entries_7_valid & ~entries_7_src2_ready & _cdbHit2_T_39;
   wire        _GEN_48 = io_cdb1_valid & (|io_cdb1_pdest);
-  wire        _GEN_49 = ~entries_0_src1_ready & entries_0_src1_phys == io_cdb1_pdest;
+  wire        _GEN_49 = ~entries_0_src1_ready & _cdb1Hit1_T_4;
   wire        _GEN_50 = _GEN_48 & entries_0_valid;
   wire        _GEN_51 =
     _GEN_50 ? _GEN_49 | _GEN_32 | entries_0_src1_ready : _GEN_32 | entries_0_src1_ready;
   wire        _GEN_52 = _GEN_48 & entries_0_valid & _GEN_49;
-  wire        _GEN_53 = ~entries_0_src2_ready & entries_0_src2_phys == io_cdb1_pdest;
+  wire        _GEN_53 = ~entries_0_src2_ready & _cdb1Hit2_T_4;
   wire        _GEN_54 =
     _GEN_50 ? _GEN_53 | _GEN_33 | entries_0_src2_ready : _GEN_33 | entries_0_src2_ready;
   wire        _GEN_55 = _GEN_48 & entries_0_valid & _GEN_53;
-  wire        _GEN_56 = ~entries_1_src1_ready & entries_1_src1_phys == io_cdb1_pdest;
+  wire        _GEN_56 = ~entries_1_src1_ready & _cdb1Hit1_T_9;
   wire        _GEN_57 = _GEN_48 & entries_1_valid;
   wire        _GEN_58 =
     _GEN_57 ? _GEN_56 | _GEN_34 | entries_1_src1_ready : _GEN_34 | entries_1_src1_ready;
   wire        _GEN_59 = _GEN_48 & entries_1_valid & _GEN_56;
-  wire        _GEN_60 = ~entries_1_src2_ready & entries_1_src2_phys == io_cdb1_pdest;
+  wire        _GEN_60 = ~entries_1_src2_ready & _cdb1Hit2_T_9;
   wire        _GEN_61 =
     _GEN_57 ? _GEN_60 | _GEN_35 | entries_1_src2_ready : _GEN_35 | entries_1_src2_ready;
   wire        _GEN_62 = _GEN_48 & entries_1_valid & _GEN_60;
-  wire        _GEN_63 = ~entries_2_src1_ready & entries_2_src1_phys == io_cdb1_pdest;
+  wire        _GEN_63 = ~entries_2_src1_ready & _cdb1Hit1_T_14;
   wire        _GEN_64 = _GEN_48 & entries_2_valid;
   wire        _GEN_65 =
     _GEN_64 ? _GEN_63 | _GEN_36 | entries_2_src1_ready : _GEN_36 | entries_2_src1_ready;
   wire        _GEN_66 = _GEN_48 & entries_2_valid & _GEN_63;
-  wire        _GEN_67 = ~entries_2_src2_ready & entries_2_src2_phys == io_cdb1_pdest;
+  wire        _GEN_67 = ~entries_2_src2_ready & _cdb1Hit2_T_14;
   wire        _GEN_68 =
     _GEN_64 ? _GEN_67 | _GEN_37 | entries_2_src2_ready : _GEN_37 | entries_2_src2_ready;
   wire        _GEN_69 = _GEN_48 & entries_2_valid & _GEN_67;
-  wire        _GEN_70 = ~entries_3_src1_ready & entries_3_src1_phys == io_cdb1_pdest;
+  wire        _GEN_70 = ~entries_3_src1_ready & _cdb1Hit1_T_19;
   wire        _GEN_71 = _GEN_48 & entries_3_valid;
   wire        _GEN_72 =
     _GEN_71 ? _GEN_70 | _GEN_38 | entries_3_src1_ready : _GEN_38 | entries_3_src1_ready;
   wire        _GEN_73 = _GEN_48 & entries_3_valid & _GEN_70;
-  wire        _GEN_74 = ~entries_3_src2_ready & entries_3_src2_phys == io_cdb1_pdest;
+  wire        _GEN_74 = ~entries_3_src2_ready & _cdb1Hit2_T_19;
   wire        _GEN_75 =
     _GEN_71 ? _GEN_74 | _GEN_39 | entries_3_src2_ready : _GEN_39 | entries_3_src2_ready;
   wire        _GEN_76 = _GEN_48 & entries_3_valid & _GEN_74;
-  wire        _GEN_77 = ~entries_4_src1_ready & entries_4_src1_phys == io_cdb1_pdest;
+  wire        _GEN_77 = ~entries_4_src1_ready & _cdb1Hit1_T_24;
   wire        _GEN_78 = _GEN_48 & entries_4_valid;
   wire        _GEN_79 =
     _GEN_78 ? _GEN_77 | _GEN_40 | entries_4_src1_ready : _GEN_40 | entries_4_src1_ready;
   wire        _GEN_80 = _GEN_48 & entries_4_valid & _GEN_77;
-  wire        _GEN_81 = ~entries_4_src2_ready & entries_4_src2_phys == io_cdb1_pdest;
+  wire        _GEN_81 = ~entries_4_src2_ready & _cdb1Hit2_T_24;
   wire        _GEN_82 =
     _GEN_78 ? _GEN_81 | _GEN_41 | entries_4_src2_ready : _GEN_41 | entries_4_src2_ready;
   wire        _GEN_83 = _GEN_48 & entries_4_valid & _GEN_81;
-  wire        _GEN_84 = ~entries_5_src1_ready & entries_5_src1_phys == io_cdb1_pdest;
+  wire        _GEN_84 = ~entries_5_src1_ready & _cdb1Hit1_T_29;
   wire        _GEN_85 = _GEN_48 & entries_5_valid;
   wire        _GEN_86 =
     _GEN_85 ? _GEN_84 | _GEN_42 | entries_5_src1_ready : _GEN_42 | entries_5_src1_ready;
   wire        _GEN_87 = _GEN_48 & entries_5_valid & _GEN_84;
-  wire        _GEN_88 = ~entries_5_src2_ready & entries_5_src2_phys == io_cdb1_pdest;
+  wire        _GEN_88 = ~entries_5_src2_ready & _cdb1Hit2_T_29;
   wire        _GEN_89 =
     _GEN_85 ? _GEN_88 | _GEN_43 | entries_5_src2_ready : _GEN_43 | entries_5_src2_ready;
   wire        _GEN_90 = _GEN_48 & entries_5_valid & _GEN_88;
-  wire        _GEN_91 = ~entries_6_src1_ready & entries_6_src1_phys == io_cdb1_pdest;
+  wire        _GEN_91 = ~entries_6_src1_ready & _cdb1Hit1_T_34;
   wire        _GEN_92 = _GEN_48 & entries_6_valid;
   wire        _GEN_93 =
     _GEN_92 ? _GEN_91 | _GEN_44 | entries_6_src1_ready : _GEN_44 | entries_6_src1_ready;
   wire        _GEN_94 = _GEN_48 & entries_6_valid & _GEN_91;
-  wire        _GEN_95 = ~entries_6_src2_ready & entries_6_src2_phys == io_cdb1_pdest;
+  wire        _GEN_95 = ~entries_6_src2_ready & _cdb1Hit2_T_34;
   wire        _GEN_96 =
     _GEN_92 ? _GEN_95 | _GEN_45 | entries_6_src2_ready : _GEN_45 | entries_6_src2_ready;
   wire        _GEN_97 = _GEN_48 & entries_6_valid & _GEN_95;
-  wire        _GEN_98 = ~entries_7_src1_ready & entries_7_src1_phys == io_cdb1_pdest;
+  wire        _GEN_98 = ~entries_7_src1_ready & _cdb1Hit1_T_39;
   wire        _GEN_99 = _GEN_48 & entries_7_valid;
   wire        _GEN_100 =
     _GEN_99 ? _GEN_98 | _GEN_46 | entries_7_src1_ready : _GEN_46 | entries_7_src1_ready;
   wire        _GEN_101 = _GEN_48 & entries_7_valid & _GEN_98;
-  wire        _GEN_102 = ~entries_7_src2_ready & entries_7_src2_phys == io_cdb1_pdest;
+  wire        _GEN_102 = ~entries_7_src2_ready & _cdb1Hit2_T_39;
   wire        _GEN_103 =
     _GEN_99 ? _GEN_102 | _GEN_47 | entries_7_src2_ready : _GEN_47 | entries_7_src2_ready;
   wire        _GEN_104 = _GEN_48 & entries_7_valid & _GEN_102;
@@ -3259,20 +3573,20 @@ module RS(
   wire        _GEN_112 = ~freeByRob_6 & entries_6_valid;
   wire        _GEN_113 = ~freeByRob_7 & entries_7_valid;
   wire        _GEN_114 = io_enq_fire & (|freeOrIssue);
-  wire        cdbHit1 =
+  wire        cdbHit1_8 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq_bits_src1_ready
     & io_enq_bits_src1_phys == io_cdb_pdest;
-  wire        cdbHit2 =
+  wire        cdbHit2_8 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq_bits_src2_ready
     & io_enq_bits_src2_phys == io_cdb_pdest;
-  wire        cdb1Hit1 =
+  wire        cdb1Hit1_8 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq_bits_src1_ready
     & io_enq_bits_src1_phys == io_cdb1_pdest;
-  wire        cdb1Hit2 =
+  wire        cdb1Hit2_8 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq_bits_src2_ready
     & io_enq_bits_src2_phys == io_cdb1_pdest;
-  wire        e_src1_ready = cdb1Hit1 | cdbHit1 | io_enq_bits_src1_ready;
-  wire        e_src2_ready = cdb1Hit2 | cdbHit2 | io_enq_bits_src2_ready;
+  wire        e_8_src1_ready = cdb1Hit1_8 | cdbHit1_8 | io_enq_bits_src1_ready;
+  wire        e_8_src2_ready = cdb1Hit2_8 | cdbHit2_8 | io_enq_bits_src2_ready;
   wire        _GEN_115 = _GEN_114 & enqIdx == 3'h0;
   wire        _GEN_116 = _GEN_114 & enqIdx == 3'h1;
   wire        _GEN_117 = _GEN_114 & enqIdx == 3'h2;
@@ -3282,20 +3596,20 @@ module RS(
   wire        _GEN_121 = _GEN_114 & enqIdx == 3'h6;
   wire        _GEN_122 = _GEN_114 & (&enqIdx);
   wire        _GEN_123 = io_enq1_fire & (|(freeOrIssue & _freeMask1_T));
-  wire        cdbHit1_1 =
+  wire        cdbHit1_9 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq1_bits_src1_ready
     & io_enq1_bits_src1_phys == io_cdb_pdest;
-  wire        cdbHit2_1 =
+  wire        cdbHit2_9 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq1_bits_src2_ready
     & io_enq1_bits_src2_phys == io_cdb_pdest;
-  wire        cdb1Hit1_1 =
+  wire        cdb1Hit1_9 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq1_bits_src1_ready
     & io_enq1_bits_src1_phys == io_cdb1_pdest;
-  wire        cdb1Hit2_1 =
+  wire        cdb1Hit2_9 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq1_bits_src2_ready
     & io_enq1_bits_src2_phys == io_cdb1_pdest;
-  wire        e_1_src1_ready = cdb1Hit1_1 | cdbHit1_1 | io_enq1_bits_src1_ready;
-  wire        e_1_src2_ready = cdb1Hit2_1 | cdbHit2_1 | io_enq1_bits_src2_ready;
+  wire        e_9_src1_ready = cdb1Hit1_9 | cdbHit1_9 | io_enq1_bits_src1_ready;
+  wire        e_9_src2_ready = cdb1Hit2_9 | cdbHit2_9 | io_enq1_bits_src2_ready;
   wire        _GEN_124 = enq1Idx == 3'h0;
   wire        _GEN_125 = _GEN_124 | _GEN_115;
   wire        _GEN_126 = _GEN_123 & _GEN_124;
@@ -3319,14 +3633,14 @@ module RS(
   wire        _GEN_144 = _GEN_123 & _GEN_142;
   wire        _GEN_145 = (&enq1Idx) | _GEN_122;
   wire        _GEN_146 = _GEN_123 & (&enq1Idx);
-  wire [31:0] e_src1_val =
-    cdb1Hit1 ? io_cdb1_val : cdbHit1 ? io_cdb_val : io_enq_bits_src1_val;
-  wire [31:0] e_src2_val =
-    cdb1Hit2 ? io_cdb1_val : cdbHit2 ? io_cdb_val : io_enq_bits_src2_val;
-  wire [31:0] e_1_src1_val =
-    cdb1Hit1_1 ? io_cdb1_val : cdbHit1_1 ? io_cdb_val : io_enq1_bits_src1_val;
-  wire [31:0] e_1_src2_val =
-    cdb1Hit2_1 ? io_cdb1_val : cdbHit2_1 ? io_cdb_val : io_enq1_bits_src2_val;
+  wire [31:0] e_8_src1_val =
+    cdb1Hit1_8 ? io_cdb1_val : cdbHit1_8 ? io_cdb_val : io_enq_bits_src1_val;
+  wire [31:0] e_8_src2_val =
+    cdb1Hit2_8 ? io_cdb1_val : cdbHit2_8 ? io_cdb_val : io_enq_bits_src2_val;
+  wire [31:0] e_9_src1_val =
+    cdb1Hit1_9 ? io_cdb1_val : cdbHit1_9 ? io_cdb_val : io_enq1_bits_src1_val;
+  wire [31:0] e_9_src2_val =
+    cdb1Hit2_9 ? io_cdb1_val : cdbHit2_9 ? io_cdb_val : io_enq1_bits_src2_val;
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
@@ -3340,6 +3654,7 @@ module RS(
       entries_0_src1_val <= 32'h0;
       entries_0_src2_val <= 32'h0;
       entries_0_pdest <= 6'h0;
+      entries_0_do_rename <= 1'h0;
       entries_0_pc <= 32'h0;
       entries_0_inst <= 32'h0;
       entries_0_imm_ext <= 32'h0;
@@ -3376,6 +3691,7 @@ module RS(
       entries_1_src1_val <= 32'h0;
       entries_1_src2_val <= 32'h0;
       entries_1_pdest <= 6'h0;
+      entries_1_do_rename <= 1'h0;
       entries_1_pc <= 32'h0;
       entries_1_inst <= 32'h0;
       entries_1_imm_ext <= 32'h0;
@@ -3412,6 +3728,7 @@ module RS(
       entries_2_src1_val <= 32'h0;
       entries_2_src2_val <= 32'h0;
       entries_2_pdest <= 6'h0;
+      entries_2_do_rename <= 1'h0;
       entries_2_pc <= 32'h0;
       entries_2_inst <= 32'h0;
       entries_2_imm_ext <= 32'h0;
@@ -3448,6 +3765,7 @@ module RS(
       entries_3_src1_val <= 32'h0;
       entries_3_src2_val <= 32'h0;
       entries_3_pdest <= 6'h0;
+      entries_3_do_rename <= 1'h0;
       entries_3_pc <= 32'h0;
       entries_3_inst <= 32'h0;
       entries_3_imm_ext <= 32'h0;
@@ -3484,6 +3802,7 @@ module RS(
       entries_4_src1_val <= 32'h0;
       entries_4_src2_val <= 32'h0;
       entries_4_pdest <= 6'h0;
+      entries_4_do_rename <= 1'h0;
       entries_4_pc <= 32'h0;
       entries_4_inst <= 32'h0;
       entries_4_imm_ext <= 32'h0;
@@ -3520,6 +3839,7 @@ module RS(
       entries_5_src1_val <= 32'h0;
       entries_5_src2_val <= 32'h0;
       entries_5_pdest <= 6'h0;
+      entries_5_do_rename <= 1'h0;
       entries_5_pc <= 32'h0;
       entries_5_inst <= 32'h0;
       entries_5_imm_ext <= 32'h0;
@@ -3556,6 +3876,7 @@ module RS(
       entries_6_src1_val <= 32'h0;
       entries_6_src2_val <= 32'h0;
       entries_6_pdest <= 6'h0;
+      entries_6_do_rename <= 1'h0;
       entries_6_pc <= 32'h0;
       entries_6_inst <= 32'h0;
       entries_6_imm_ext <= 32'h0;
@@ -3592,6 +3913,7 @@ module RS(
       entries_7_src1_val <= 32'h0;
       entries_7_src2_val <= 32'h0;
       entries_7_pdest <= 6'h0;
+      entries_7_do_rename <= 1'h0;
       entries_7_pc <= 32'h0;
       entries_7_inst <= 32'h0;
       entries_7_imm_ext <= 32'h0;
@@ -3697,9 +4019,10 @@ module RS(
           entries_0_cp_idx <= io_enq1_bits_cp_idx;
           entries_0_src1_phys <= io_enq1_bits_src1_phys;
           entries_0_src2_phys <= io_enq1_bits_src2_phys;
-          entries_0_src1_val <= e_1_src1_val;
-          entries_0_src2_val <= e_1_src2_val;
+          entries_0_src1_val <= e_9_src1_val;
+          entries_0_src2_val <= e_9_src2_val;
           entries_0_pdest <= io_enq1_bits_pdest;
+          entries_0_do_rename <= io_enq1_bits_do_rename;
           entries_0_pc <= io_enq1_bits_pc;
           entries_0_inst <= io_enq1_bits_inst;
           entries_0_imm_ext <= io_enq1_bits_imm_ext;
@@ -3731,9 +4054,10 @@ module RS(
           entries_0_cp_idx <= io_enq_bits_cp_idx;
           entries_0_src1_phys <= io_enq_bits_src1_phys;
           entries_0_src2_phys <= io_enq_bits_src2_phys;
-          entries_0_src1_val <= e_src1_val;
-          entries_0_src2_val <= e_src2_val;
+          entries_0_src1_val <= e_8_src1_val;
+          entries_0_src2_val <= e_8_src2_val;
           entries_0_pdest <= io_enq_bits_pdest;
+          entries_0_do_rename <= io_enq_bits_do_rename;
           entries_0_pc <= io_enq_bits_pc;
           entries_0_inst <= io_enq_bits_inst;
           entries_0_imm_ext <= io_enq_bits_imm_ext;
@@ -3776,9 +4100,10 @@ module RS(
           entries_1_cp_idx <= io_enq1_bits_cp_idx;
           entries_1_src1_phys <= io_enq1_bits_src1_phys;
           entries_1_src2_phys <= io_enq1_bits_src2_phys;
-          entries_1_src1_val <= e_1_src1_val;
-          entries_1_src2_val <= e_1_src2_val;
+          entries_1_src1_val <= e_9_src1_val;
+          entries_1_src2_val <= e_9_src2_val;
           entries_1_pdest <= io_enq1_bits_pdest;
+          entries_1_do_rename <= io_enq1_bits_do_rename;
           entries_1_pc <= io_enq1_bits_pc;
           entries_1_inst <= io_enq1_bits_inst;
           entries_1_imm_ext <= io_enq1_bits_imm_ext;
@@ -3810,9 +4135,10 @@ module RS(
           entries_1_cp_idx <= io_enq_bits_cp_idx;
           entries_1_src1_phys <= io_enq_bits_src1_phys;
           entries_1_src2_phys <= io_enq_bits_src2_phys;
-          entries_1_src1_val <= e_src1_val;
-          entries_1_src2_val <= e_src2_val;
+          entries_1_src1_val <= e_8_src1_val;
+          entries_1_src2_val <= e_8_src2_val;
           entries_1_pdest <= io_enq_bits_pdest;
+          entries_1_do_rename <= io_enq_bits_do_rename;
           entries_1_pc <= io_enq_bits_pc;
           entries_1_inst <= io_enq_bits_inst;
           entries_1_imm_ext <= io_enq_bits_imm_ext;
@@ -3855,9 +4181,10 @@ module RS(
           entries_2_cp_idx <= io_enq1_bits_cp_idx;
           entries_2_src1_phys <= io_enq1_bits_src1_phys;
           entries_2_src2_phys <= io_enq1_bits_src2_phys;
-          entries_2_src1_val <= e_1_src1_val;
-          entries_2_src2_val <= e_1_src2_val;
+          entries_2_src1_val <= e_9_src1_val;
+          entries_2_src2_val <= e_9_src2_val;
           entries_2_pdest <= io_enq1_bits_pdest;
+          entries_2_do_rename <= io_enq1_bits_do_rename;
           entries_2_pc <= io_enq1_bits_pc;
           entries_2_inst <= io_enq1_bits_inst;
           entries_2_imm_ext <= io_enq1_bits_imm_ext;
@@ -3889,9 +4216,10 @@ module RS(
           entries_2_cp_idx <= io_enq_bits_cp_idx;
           entries_2_src1_phys <= io_enq_bits_src1_phys;
           entries_2_src2_phys <= io_enq_bits_src2_phys;
-          entries_2_src1_val <= e_src1_val;
-          entries_2_src2_val <= e_src2_val;
+          entries_2_src1_val <= e_8_src1_val;
+          entries_2_src2_val <= e_8_src2_val;
           entries_2_pdest <= io_enq_bits_pdest;
+          entries_2_do_rename <= io_enq_bits_do_rename;
           entries_2_pc <= io_enq_bits_pc;
           entries_2_inst <= io_enq_bits_inst;
           entries_2_imm_ext <= io_enq_bits_imm_ext;
@@ -3934,9 +4262,10 @@ module RS(
           entries_3_cp_idx <= io_enq1_bits_cp_idx;
           entries_3_src1_phys <= io_enq1_bits_src1_phys;
           entries_3_src2_phys <= io_enq1_bits_src2_phys;
-          entries_3_src1_val <= e_1_src1_val;
-          entries_3_src2_val <= e_1_src2_val;
+          entries_3_src1_val <= e_9_src1_val;
+          entries_3_src2_val <= e_9_src2_val;
           entries_3_pdest <= io_enq1_bits_pdest;
+          entries_3_do_rename <= io_enq1_bits_do_rename;
           entries_3_pc <= io_enq1_bits_pc;
           entries_3_inst <= io_enq1_bits_inst;
           entries_3_imm_ext <= io_enq1_bits_imm_ext;
@@ -3968,9 +4297,10 @@ module RS(
           entries_3_cp_idx <= io_enq_bits_cp_idx;
           entries_3_src1_phys <= io_enq_bits_src1_phys;
           entries_3_src2_phys <= io_enq_bits_src2_phys;
-          entries_3_src1_val <= e_src1_val;
-          entries_3_src2_val <= e_src2_val;
+          entries_3_src1_val <= e_8_src1_val;
+          entries_3_src2_val <= e_8_src2_val;
           entries_3_pdest <= io_enq_bits_pdest;
+          entries_3_do_rename <= io_enq_bits_do_rename;
           entries_3_pc <= io_enq_bits_pc;
           entries_3_inst <= io_enq_bits_inst;
           entries_3_imm_ext <= io_enq_bits_imm_ext;
@@ -4013,9 +4343,10 @@ module RS(
           entries_4_cp_idx <= io_enq1_bits_cp_idx;
           entries_4_src1_phys <= io_enq1_bits_src1_phys;
           entries_4_src2_phys <= io_enq1_bits_src2_phys;
-          entries_4_src1_val <= e_1_src1_val;
-          entries_4_src2_val <= e_1_src2_val;
+          entries_4_src1_val <= e_9_src1_val;
+          entries_4_src2_val <= e_9_src2_val;
           entries_4_pdest <= io_enq1_bits_pdest;
+          entries_4_do_rename <= io_enq1_bits_do_rename;
           entries_4_pc <= io_enq1_bits_pc;
           entries_4_inst <= io_enq1_bits_inst;
           entries_4_imm_ext <= io_enq1_bits_imm_ext;
@@ -4047,9 +4378,10 @@ module RS(
           entries_4_cp_idx <= io_enq_bits_cp_idx;
           entries_4_src1_phys <= io_enq_bits_src1_phys;
           entries_4_src2_phys <= io_enq_bits_src2_phys;
-          entries_4_src1_val <= e_src1_val;
-          entries_4_src2_val <= e_src2_val;
+          entries_4_src1_val <= e_8_src1_val;
+          entries_4_src2_val <= e_8_src2_val;
           entries_4_pdest <= io_enq_bits_pdest;
+          entries_4_do_rename <= io_enq_bits_do_rename;
           entries_4_pc <= io_enq_bits_pc;
           entries_4_inst <= io_enq_bits_inst;
           entries_4_imm_ext <= io_enq_bits_imm_ext;
@@ -4092,9 +4424,10 @@ module RS(
           entries_5_cp_idx <= io_enq1_bits_cp_idx;
           entries_5_src1_phys <= io_enq1_bits_src1_phys;
           entries_5_src2_phys <= io_enq1_bits_src2_phys;
-          entries_5_src1_val <= e_1_src1_val;
-          entries_5_src2_val <= e_1_src2_val;
+          entries_5_src1_val <= e_9_src1_val;
+          entries_5_src2_val <= e_9_src2_val;
           entries_5_pdest <= io_enq1_bits_pdest;
+          entries_5_do_rename <= io_enq1_bits_do_rename;
           entries_5_pc <= io_enq1_bits_pc;
           entries_5_inst <= io_enq1_bits_inst;
           entries_5_imm_ext <= io_enq1_bits_imm_ext;
@@ -4126,9 +4459,10 @@ module RS(
           entries_5_cp_idx <= io_enq_bits_cp_idx;
           entries_5_src1_phys <= io_enq_bits_src1_phys;
           entries_5_src2_phys <= io_enq_bits_src2_phys;
-          entries_5_src1_val <= e_src1_val;
-          entries_5_src2_val <= e_src2_val;
+          entries_5_src1_val <= e_8_src1_val;
+          entries_5_src2_val <= e_8_src2_val;
           entries_5_pdest <= io_enq_bits_pdest;
+          entries_5_do_rename <= io_enq_bits_do_rename;
           entries_5_pc <= io_enq_bits_pc;
           entries_5_inst <= io_enq_bits_inst;
           entries_5_imm_ext <= io_enq_bits_imm_ext;
@@ -4171,9 +4505,10 @@ module RS(
           entries_6_cp_idx <= io_enq1_bits_cp_idx;
           entries_6_src1_phys <= io_enq1_bits_src1_phys;
           entries_6_src2_phys <= io_enq1_bits_src2_phys;
-          entries_6_src1_val <= e_1_src1_val;
-          entries_6_src2_val <= e_1_src2_val;
+          entries_6_src1_val <= e_9_src1_val;
+          entries_6_src2_val <= e_9_src2_val;
           entries_6_pdest <= io_enq1_bits_pdest;
+          entries_6_do_rename <= io_enq1_bits_do_rename;
           entries_6_pc <= io_enq1_bits_pc;
           entries_6_inst <= io_enq1_bits_inst;
           entries_6_imm_ext <= io_enq1_bits_imm_ext;
@@ -4205,9 +4540,10 @@ module RS(
           entries_6_cp_idx <= io_enq_bits_cp_idx;
           entries_6_src1_phys <= io_enq_bits_src1_phys;
           entries_6_src2_phys <= io_enq_bits_src2_phys;
-          entries_6_src1_val <= e_src1_val;
-          entries_6_src2_val <= e_src2_val;
+          entries_6_src1_val <= e_8_src1_val;
+          entries_6_src2_val <= e_8_src2_val;
           entries_6_pdest <= io_enq_bits_pdest;
+          entries_6_do_rename <= io_enq_bits_do_rename;
           entries_6_pc <= io_enq_bits_pc;
           entries_6_inst <= io_enq_bits_inst;
           entries_6_imm_ext <= io_enq_bits_imm_ext;
@@ -4250,9 +4586,10 @@ module RS(
           entries_7_cp_idx <= io_enq1_bits_cp_idx;
           entries_7_src1_phys <= io_enq1_bits_src1_phys;
           entries_7_src2_phys <= io_enq1_bits_src2_phys;
-          entries_7_src1_val <= e_1_src1_val;
-          entries_7_src2_val <= e_1_src2_val;
+          entries_7_src1_val <= e_9_src1_val;
+          entries_7_src2_val <= e_9_src2_val;
           entries_7_pdest <= io_enq1_bits_pdest;
+          entries_7_do_rename <= io_enq1_bits_do_rename;
           entries_7_pc <= io_enq1_bits_pc;
           entries_7_inst <= io_enq1_bits_inst;
           entries_7_imm_ext <= io_enq1_bits_imm_ext;
@@ -4284,9 +4621,10 @@ module RS(
           entries_7_cp_idx <= io_enq_bits_cp_idx;
           entries_7_src1_phys <= io_enq_bits_src1_phys;
           entries_7_src2_phys <= io_enq_bits_src2_phys;
-          entries_7_src1_val <= e_src1_val;
-          entries_7_src2_val <= e_src2_val;
+          entries_7_src1_val <= e_8_src1_val;
+          entries_7_src2_val <= e_8_src2_val;
           entries_7_pdest <= io_enq_bits_pdest;
+          entries_7_do_rename <= io_enq_bits_do_rename;
           entries_7_pc <= io_enq_bits_pc;
           entries_7_inst <= io_enq_bits_inst;
           entries_7_imm_ext <= io_enq_bits_imm_ext;
@@ -4327,11 +4665,11 @@ module RS(
       entries_0_src1_ready <=
         io_flush
           ? _GEN_51
-          : _GEN_126 ? e_1_src1_ready : _GEN_115 ? e_src1_ready : _GEN_51;
+          : _GEN_126 ? e_9_src1_ready : _GEN_115 ? e_8_src1_ready : _GEN_51;
       entries_0_src2_ready <=
         io_flush
           ? _GEN_54
-          : _GEN_126 ? e_1_src2_ready : _GEN_115 ? e_src2_ready : _GEN_54;
+          : _GEN_126 ? e_9_src2_ready : _GEN_115 ? e_8_src2_ready : _GEN_54;
       entries_1_valid <=
         io_flush
           ? ~(io_flush_all | entries_1_valid
@@ -4340,11 +4678,11 @@ module RS(
       entries_1_src1_ready <=
         io_flush
           ? _GEN_58
-          : _GEN_129 ? e_1_src1_ready : _GEN_116 ? e_src1_ready : _GEN_58;
+          : _GEN_129 ? e_9_src1_ready : _GEN_116 ? e_8_src1_ready : _GEN_58;
       entries_1_src2_ready <=
         io_flush
           ? _GEN_61
-          : _GEN_129 ? e_1_src2_ready : _GEN_116 ? e_src2_ready : _GEN_61;
+          : _GEN_129 ? e_9_src2_ready : _GEN_116 ? e_8_src2_ready : _GEN_61;
       entries_2_valid <=
         io_flush
           ? ~(io_flush_all | entries_2_valid
@@ -4353,11 +4691,11 @@ module RS(
       entries_2_src1_ready <=
         io_flush
           ? _GEN_65
-          : _GEN_132 ? e_1_src1_ready : _GEN_117 ? e_src1_ready : _GEN_65;
+          : _GEN_132 ? e_9_src1_ready : _GEN_117 ? e_8_src1_ready : _GEN_65;
       entries_2_src2_ready <=
         io_flush
           ? _GEN_68
-          : _GEN_132 ? e_1_src2_ready : _GEN_117 ? e_src2_ready : _GEN_68;
+          : _GEN_132 ? e_9_src2_ready : _GEN_117 ? e_8_src2_ready : _GEN_68;
       entries_3_valid <=
         io_flush
           ? ~(io_flush_all | entries_3_valid
@@ -4366,11 +4704,11 @@ module RS(
       entries_3_src1_ready <=
         io_flush
           ? _GEN_72
-          : _GEN_135 ? e_1_src1_ready : _GEN_118 ? e_src1_ready : _GEN_72;
+          : _GEN_135 ? e_9_src1_ready : _GEN_118 ? e_8_src1_ready : _GEN_72;
       entries_3_src2_ready <=
         io_flush
           ? _GEN_75
-          : _GEN_135 ? e_1_src2_ready : _GEN_118 ? e_src2_ready : _GEN_75;
+          : _GEN_135 ? e_9_src2_ready : _GEN_118 ? e_8_src2_ready : _GEN_75;
       entries_4_valid <=
         io_flush
           ? ~(io_flush_all | entries_4_valid
@@ -4379,11 +4717,11 @@ module RS(
       entries_4_src1_ready <=
         io_flush
           ? _GEN_79
-          : _GEN_138 ? e_1_src1_ready : _GEN_119 ? e_src1_ready : _GEN_79;
+          : _GEN_138 ? e_9_src1_ready : _GEN_119 ? e_8_src1_ready : _GEN_79;
       entries_4_src2_ready <=
         io_flush
           ? _GEN_82
-          : _GEN_138 ? e_1_src2_ready : _GEN_119 ? e_src2_ready : _GEN_82;
+          : _GEN_138 ? e_9_src2_ready : _GEN_119 ? e_8_src2_ready : _GEN_82;
       entries_5_valid <=
         io_flush
           ? ~(io_flush_all | entries_5_valid
@@ -4392,11 +4730,11 @@ module RS(
       entries_5_src1_ready <=
         io_flush
           ? _GEN_86
-          : _GEN_141 ? e_1_src1_ready : _GEN_120 ? e_src1_ready : _GEN_86;
+          : _GEN_141 ? e_9_src1_ready : _GEN_120 ? e_8_src1_ready : _GEN_86;
       entries_5_src2_ready <=
         io_flush
           ? _GEN_89
-          : _GEN_141 ? e_1_src2_ready : _GEN_120 ? e_src2_ready : _GEN_89;
+          : _GEN_141 ? e_9_src2_ready : _GEN_120 ? e_8_src2_ready : _GEN_89;
       entries_6_valid <=
         io_flush
           ? ~(io_flush_all | entries_6_valid
@@ -4405,11 +4743,11 @@ module RS(
       entries_6_src1_ready <=
         io_flush
           ? _GEN_93
-          : _GEN_144 ? e_1_src1_ready : _GEN_121 ? e_src1_ready : _GEN_93;
+          : _GEN_144 ? e_9_src1_ready : _GEN_121 ? e_8_src1_ready : _GEN_93;
       entries_6_src2_ready <=
         io_flush
           ? _GEN_96
-          : _GEN_144 ? e_1_src2_ready : _GEN_121 ? e_src2_ready : _GEN_96;
+          : _GEN_144 ? e_9_src2_ready : _GEN_121 ? e_8_src2_ready : _GEN_96;
       entries_7_valid <=
         io_flush
           ? ~(io_flush_all | entries_7_valid
@@ -4418,11 +4756,11 @@ module RS(
       entries_7_src1_ready <=
         io_flush
           ? _GEN_100
-          : _GEN_146 ? e_1_src1_ready : _GEN_122 ? e_src1_ready : _GEN_100;
+          : _GEN_146 ? e_9_src1_ready : _GEN_122 ? e_8_src1_ready : _GEN_100;
       entries_7_src2_ready <=
         io_flush
           ? _GEN_103
-          : _GEN_146 ? e_1_src2_ready : _GEN_122 ? e_src2_ready : _GEN_103;
+          : _GEN_146 ? e_9_src2_ready : _GEN_122 ? e_8_src2_ready : _GEN_103;
     end
   end // always @(posedge)
   assign io_count = io_count_0;
@@ -4431,31 +4769,34 @@ module RS(
     & ~io_flush;
   assign io_issue_alu_bits_rob_idx = casez_tmp;
   assign io_issue_alu_bits_cp_idx = casez_tmp_0;
-  assign io_issue_alu_bits_src1_val = casez_tmp_1;
-  assign io_issue_alu_bits_src2_val = casez_tmp_2;
-  assign io_issue_alu_bits_pdest = casez_tmp_3;
-  assign io_issue_alu_bits_pc = casez_tmp_4;
-  assign io_issue_alu_bits_inst = casez_tmp_5;
-  assign io_issue_alu_bits_imm_ext = casez_tmp_6;
-  assign io_issue_alu_bits_waddr = casez_tmp_7;
-  assign io_issue_alu_bits_csr_rd1 = casez_tmp_8;
-  assign io_issue_alu_bits_state_state = casez_tmp_9;
-  assign io_issue_alu_bits_state_state_num = casez_tmp_10;
-  assign io_issue_alu_bits_bp_valid = casez_tmp_11;
-  assign io_issue_alu_bits_bp_taken = casez_tmp_12;
-  assign io_issue_alu_bits_bp_target = casez_tmp_13;
-  assign io_issue_alu_bits_bp_index = casez_tmp_14;
-  assign io_issue_alu_bits_ftq_idx = casez_tmp_15;
-  assign io_issue_alu_bits_ftq_generation = casez_tmp_16;
-  assign io_issue_alu_bits_exu_alu_srcA = casez_tmp_17;
-  assign io_issue_alu_bits_exu_alu_srcB = casez_tmp_18;
-  assign io_issue_alu_bits_exu_alu_control = casez_tmp_19;
-  assign io_issue_alu_bits_exu_jump = casez_tmp_20;
-  assign io_issue_alu_bits_lsu_mem_rd = casez_tmp_21;
-  assign io_issue_alu_bits_lsu_mem_write = casez_tmp_22;
-  assign io_issue_alu_bits_lsu_mem_valid = casez_tmp_23;
-  assign io_issue_alu_bits_wbu_reg_write = casez_tmp_24;
-  assign io_issue_alu_bits_wbu_reg_write_sel = casez_tmp_25;
+  assign io_issue_alu_bits_src1_phys = casez_tmp_1;
+  assign io_issue_alu_bits_src2_phys = casez_tmp_2;
+  assign io_issue_alu_bits_src1_val = casez_tmp_3;
+  assign io_issue_alu_bits_src2_val = casez_tmp_4;
+  assign io_issue_alu_bits_pdest = casez_tmp_5;
+  assign io_issue_alu_bits_do_rename = casez_tmp_6;
+  assign io_issue_alu_bits_pc = casez_tmp_7;
+  assign io_issue_alu_bits_inst = casez_tmp_8;
+  assign io_issue_alu_bits_imm_ext = casez_tmp_9;
+  assign io_issue_alu_bits_waddr = casez_tmp_10;
+  assign io_issue_alu_bits_csr_rd1 = casez_tmp_11;
+  assign io_issue_alu_bits_state_state = casez_tmp_12;
+  assign io_issue_alu_bits_state_state_num = casez_tmp_13;
+  assign io_issue_alu_bits_bp_valid = casez_tmp_14;
+  assign io_issue_alu_bits_bp_taken = casez_tmp_15;
+  assign io_issue_alu_bits_bp_target = casez_tmp_16;
+  assign io_issue_alu_bits_bp_index = casez_tmp_17;
+  assign io_issue_alu_bits_ftq_idx = casez_tmp_18;
+  assign io_issue_alu_bits_ftq_generation = casez_tmp_19;
+  assign io_issue_alu_bits_exu_alu_srcA = casez_tmp_20;
+  assign io_issue_alu_bits_exu_alu_srcB = casez_tmp_21;
+  assign io_issue_alu_bits_exu_alu_control = casez_tmp_22;
+  assign io_issue_alu_bits_exu_jump = casez_tmp_23;
+  assign io_issue_alu_bits_lsu_mem_rd = casez_tmp_24;
+  assign io_issue_alu_bits_lsu_mem_write = casez_tmp_25;
+  assign io_issue_alu_bits_lsu_mem_valid = casez_tmp_26;
+  assign io_issue_alu_bits_wbu_reg_write = casez_tmp_27;
+  assign io_issue_alu_bits_wbu_reg_write_sel = casez_tmp_28;
   assign io_issue_alu1_valid =
     (|{_alu1OH_oh_7_T
          & ~(_alu1OH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
@@ -4478,25 +4819,27 @@ module RS(
        alu1OH_2,
        alu1OH_1,
        alu1OH_0}) & ~io_flush;
-  assign io_issue_alu1_bits_rob_idx = casez_tmp_26;
-  assign io_issue_alu1_bits_src1_val = casez_tmp_27;
-  assign io_issue_alu1_bits_src2_val = casez_tmp_28;
-  assign io_issue_alu1_bits_pdest = casez_tmp_29;
-  assign io_issue_alu1_bits_pc = casez_tmp_30;
-  assign io_issue_alu1_bits_imm_ext = casez_tmp_31;
-  assign io_issue_alu1_bits_waddr = casez_tmp_32;
-  assign io_issue_alu1_bits_csr_rd1 = casez_tmp_33;
-  assign io_issue_alu1_bits_state_state = casez_tmp_34;
-  assign io_issue_alu1_bits_state_state_num = casez_tmp_35;
-  assign io_issue_alu1_bits_exu_alu_srcA = casez_tmp_36;
-  assign io_issue_alu1_bits_exu_alu_srcB = casez_tmp_37;
-  assign io_issue_alu1_bits_exu_alu_control = casez_tmp_38;
-  assign io_issue_alu1_bits_exu_jump = casez_tmp_39;
-  assign io_issue_alu1_bits_lsu_mem_rd = casez_tmp_40;
-  assign io_issue_alu1_bits_lsu_mem_write = casez_tmp_41;
-  assign io_issue_alu1_bits_lsu_mem_valid = casez_tmp_42;
-  assign io_issue_alu1_bits_wbu_reg_write = casez_tmp_43;
-  assign io_issue_alu1_bits_wbu_reg_write_sel = casez_tmp_44;
+  assign io_issue_alu1_bits_rob_idx = casez_tmp_29;
+  assign io_issue_alu1_bits_src1_phys = casez_tmp_30;
+  assign io_issue_alu1_bits_src2_phys = casez_tmp_31;
+  assign io_issue_alu1_bits_src1_val = casez_tmp_32;
+  assign io_issue_alu1_bits_src2_val = casez_tmp_33;
+  assign io_issue_alu1_bits_pdest = casez_tmp_34;
+  assign io_issue_alu1_bits_pc = casez_tmp_35;
+  assign io_issue_alu1_bits_imm_ext = casez_tmp_36;
+  assign io_issue_alu1_bits_waddr = casez_tmp_37;
+  assign io_issue_alu1_bits_csr_rd1 = casez_tmp_38;
+  assign io_issue_alu1_bits_state_state = casez_tmp_39;
+  assign io_issue_alu1_bits_state_state_num = casez_tmp_40;
+  assign io_issue_alu1_bits_exu_alu_srcA = casez_tmp_41;
+  assign io_issue_alu1_bits_exu_alu_srcB = casez_tmp_42;
+  assign io_issue_alu1_bits_exu_alu_control = casez_tmp_43;
+  assign io_issue_alu1_bits_exu_jump = casez_tmp_44;
+  assign io_issue_alu1_bits_lsu_mem_rd = casez_tmp_45;
+  assign io_issue_alu1_bits_lsu_mem_write = casez_tmp_46;
+  assign io_issue_alu1_bits_lsu_mem_valid = casez_tmp_47;
+  assign io_issue_alu1_bits_wbu_reg_write = casez_tmp_48;
+  assign io_issue_alu1_bits_wbu_reg_write_sel = casez_tmp_49;
   assign io_issue_div_valid =
     (|{_divOH_oh_7_T
          & ~(_divOH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
@@ -4514,25 +4857,27 @@ module RS(
        divOH_2,
        divOH_1,
        divOH_0}) & ~io_flush;
-  assign io_issue_div_bits_rob_idx = casez_tmp_45;
-  assign io_issue_div_bits_src1_val = casez_tmp_46;
-  assign io_issue_div_bits_src2_val = casez_tmp_47;
-  assign io_issue_div_bits_pdest = casez_tmp_48;
-  assign io_issue_div_bits_pc = casez_tmp_49;
-  assign io_issue_div_bits_imm_ext = casez_tmp_50;
-  assign io_issue_div_bits_waddr = casez_tmp_51;
-  assign io_issue_div_bits_csr_rd1 = casez_tmp_52;
-  assign io_issue_div_bits_state_state = casez_tmp_53;
-  assign io_issue_div_bits_state_state_num = casez_tmp_54;
-  assign io_issue_div_bits_exu_alu_srcA = casez_tmp_55;
-  assign io_issue_div_bits_exu_alu_srcB = casez_tmp_56;
-  assign io_issue_div_bits_exu_alu_control = casez_tmp_57;
-  assign io_issue_div_bits_exu_jump = casez_tmp_58;
-  assign io_issue_div_bits_lsu_mem_rd = casez_tmp_59;
-  assign io_issue_div_bits_lsu_mem_write = casez_tmp_60;
-  assign io_issue_div_bits_lsu_mem_valid = casez_tmp_61;
-  assign io_issue_div_bits_wbu_reg_write = casez_tmp_62;
-  assign io_issue_div_bits_wbu_reg_write_sel = casez_tmp_63;
+  assign io_issue_div_bits_rob_idx = casez_tmp_50;
+  assign io_issue_div_bits_src1_phys = casez_tmp_51;
+  assign io_issue_div_bits_src2_phys = casez_tmp_52;
+  assign io_issue_div_bits_src1_val = casez_tmp_53;
+  assign io_issue_div_bits_src2_val = casez_tmp_54;
+  assign io_issue_div_bits_pdest = casez_tmp_55;
+  assign io_issue_div_bits_pc = casez_tmp_56;
+  assign io_issue_div_bits_imm_ext = casez_tmp_57;
+  assign io_issue_div_bits_waddr = casez_tmp_58;
+  assign io_issue_div_bits_csr_rd1 = casez_tmp_59;
+  assign io_issue_div_bits_state_state = casez_tmp_60;
+  assign io_issue_div_bits_state_state_num = casez_tmp_61;
+  assign io_issue_div_bits_exu_alu_srcA = casez_tmp_62;
+  assign io_issue_div_bits_exu_alu_srcB = casez_tmp_63;
+  assign io_issue_div_bits_exu_alu_control = casez_tmp_64;
+  assign io_issue_div_bits_exu_jump = casez_tmp_65;
+  assign io_issue_div_bits_lsu_mem_rd = casez_tmp_66;
+  assign io_issue_div_bits_lsu_mem_write = casez_tmp_67;
+  assign io_issue_div_bits_lsu_mem_valid = casez_tmp_68;
+  assign io_issue_div_bits_wbu_reg_write = casez_tmp_69;
+  assign io_issue_div_bits_wbu_reg_write_sel = casez_tmp_70;
   assign io_issue_lsu_valid =
     (|{_lsuOH_oh_7_T
          & ~(_lsuOH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
@@ -4550,25 +4895,27 @@ module RS(
        lsuOH_2,
        lsuOH_1,
        lsuOH_0}) & ~io_flush;
-  assign io_issue_lsu_bits_rob_idx = casez_tmp_64;
-  assign io_issue_lsu_bits_src1_val = casez_tmp_65;
-  assign io_issue_lsu_bits_src2_val = casez_tmp_66;
-  assign io_issue_lsu_bits_pdest = casez_tmp_67;
-  assign io_issue_lsu_bits_pc = casez_tmp_68;
-  assign io_issue_lsu_bits_imm_ext = casez_tmp_69;
-  assign io_issue_lsu_bits_waddr = casez_tmp_70;
-  assign io_issue_lsu_bits_csr_rd1 = casez_tmp_71;
-  assign io_issue_lsu_bits_state_state = casez_tmp_72;
-  assign io_issue_lsu_bits_state_state_num = casez_tmp_73;
-  assign io_issue_lsu_bits_exu_alu_srcA = casez_tmp_74;
-  assign io_issue_lsu_bits_exu_alu_srcB = casez_tmp_75;
-  assign io_issue_lsu_bits_exu_alu_control = casez_tmp_76;
-  assign io_issue_lsu_bits_exu_jump = casez_tmp_77;
-  assign io_issue_lsu_bits_lsu_mem_rd = casez_tmp_78;
-  assign io_issue_lsu_bits_lsu_mem_write = casez_tmp_79;
-  assign io_issue_lsu_bits_lsu_mem_valid = casez_tmp_80;
-  assign io_issue_lsu_bits_wbu_reg_write = casez_tmp_81;
-  assign io_issue_lsu_bits_wbu_reg_write_sel = casez_tmp_82;
+  assign io_issue_lsu_bits_rob_idx = casez_tmp_71;
+  assign io_issue_lsu_bits_src1_phys = casez_tmp_72;
+  assign io_issue_lsu_bits_src2_phys = casez_tmp_73;
+  assign io_issue_lsu_bits_src1_val = casez_tmp_74;
+  assign io_issue_lsu_bits_src2_val = casez_tmp_75;
+  assign io_issue_lsu_bits_pdest = casez_tmp_76;
+  assign io_issue_lsu_bits_pc = casez_tmp_77;
+  assign io_issue_lsu_bits_imm_ext = casez_tmp_78;
+  assign io_issue_lsu_bits_waddr = casez_tmp_79;
+  assign io_issue_lsu_bits_csr_rd1 = casez_tmp_80;
+  assign io_issue_lsu_bits_state_state = casez_tmp_81;
+  assign io_issue_lsu_bits_state_state_num = casez_tmp_82;
+  assign io_issue_lsu_bits_exu_alu_srcA = casez_tmp_83;
+  assign io_issue_lsu_bits_exu_alu_srcB = casez_tmp_84;
+  assign io_issue_lsu_bits_exu_alu_control = casez_tmp_85;
+  assign io_issue_lsu_bits_exu_jump = casez_tmp_86;
+  assign io_issue_lsu_bits_lsu_mem_rd = casez_tmp_87;
+  assign io_issue_lsu_bits_lsu_mem_write = casez_tmp_88;
+  assign io_issue_lsu_bits_lsu_mem_valid = casez_tmp_89;
+  assign io_issue_lsu_bits_wbu_reg_write = casez_tmp_90;
+  assign io_issue_lsu_bits_wbu_reg_write_sel = casez_tmp_91;
   assign io_space = 4'h8 - io_count_0;
 endmodule
 

@@ -18,6 +18,7 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
   val bp_index = Output(UInt(log2Ceil(bhtSize).W))
   val bp_tagged_hit = Output(Bool())
   val bp_tage_use_alt = Output(Bool())
+  val bp_bimodal_selected = Output(Bool())
   val bp_indirect_hit = Output(Bool())
   val bp_itage_hit = Output(Bool())
 
@@ -27,6 +28,7 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
   val bp1_index = Output(UInt(log2Ceil(bhtSize).W))
   val bp1_tagged_hit = Output(Bool())
   val bp1_tage_use_alt = Output(Bool())
+  val bp1_bimodal_selected = Output(Bool())
   val bp1_indirect_hit = Output(Bool())
   val bp1_itage_hit = Output(Bool())
 
@@ -97,6 +99,13 @@ class BPU(
   val tage_ctr = Seq.fill(tageCount)(RegInit(VecInit(Seq.fill(tageTableSize)(3.U(3.W)))))
   val tage_useful = Seq.fill(tageCount)(RegInit(VecInit(Seq.fill(tageTableSize)(0.U(2.W)))))
 
+  // PC-only bimodal complements the history-indexed TAGE/gshare path.  The
+  // chooser learns per branch, so stable loop controls are not forced through
+  // global-history aliasing while correlated branches still use TAGE.
+  val bimodal = RegInit(VecInit(Seq.fill(bhtSize)(BHT_INIT.U(2.W))))
+  val bimodalValid = RegInit(VecInit(Seq.fill(bhtSize)(false.B)))
+  val tournamentChooser = RegInit(VecInit(Seq.fill(bhtSize)(1.U(2.W))))
+
   // A PC-only target table is the alternate provider for history-tagged ITAGE tables.
   val itt_valid = RegInit(VecInit(Seq.fill(indirectSize)(false.B)))
   val itt_tag = RegInit(VecInit(Seq.fill(indirectSize)(0.U(TAGGED_BHT_TAG_BITS.W))))
@@ -146,6 +155,9 @@ class BPU(
 
   class DirectionResult extends Bundle {
     val taken = Bool()
+    val tageTaken = Bool()
+    val bimodalPred = Bool()
+    val useBimodal = Bool()
     val taggedHit = Bool()
     val useAlternate = Bool()
     val providerRank = UInt(tageProviderW.W)
@@ -188,7 +200,14 @@ class BPU(
 
     val providerWeak = providerCtr === 3.U || providerCtr === 4.U
     val useAlternate = providerRank =/= 0.U && providerUseful === 0.U && providerWeak
-    res.taken := Mux(useAlternate, alternatePred, providerPred)
+    val tageTaken = Mux(useAlternate, alternatePred, providerPred)
+    val bimodalIndex = pc(bhtW + 1, 2)
+    val bimodalPred = Mux(bimodalValid(bimodalIndex), bimodal(bimodalIndex)(1), coldStaticTaken)
+    val useBimodal = bimodalValid(bimodalIndex) && tournamentChooser(bimodalIndex)(1)
+    res.taken := Mux(useBimodal, bimodalPred, tageTaken)
+    res.tageTaken := tageTaken
+    res.bimodalPred := bimodalPred
+    res.useBimodal := useBimodal
     res.taggedHit := providerRank =/= 0.U
     res.useAlternate := useAlternate
     res.providerRank := providerRank
@@ -226,8 +245,8 @@ class BPU(
       }
     }
 
-    val taggedReady = providerRank =/= 0.U && providerConf === 3.U
-    val baseReady = baseHit && itt_conf(baseIdx) === 3.U
+    val taggedReady = providerRank =/= 0.U && providerConf =/= 0.U
+    val baseReady = baseHit && itt_conf(baseIdx) =/= 0.U
     res.valid := taggedReady || baseReady
     res.target := Mux(taggedReady, providerTarget, itt_target(baseIdx))
     res.taggedHit := taggedReady
@@ -242,6 +261,7 @@ class BPU(
     val index = UInt(bhtW.W)
     val taggedHit = Bool()
     val tageUseAlternate = Bool()
+    val bimodalSelected = Bool()
     val indirectHit = Bool()
     val itageHit = Bool()
     val isBranch = Bool()
@@ -292,6 +312,7 @@ class BPU(
     res.index := bhtIndex
     res.taggedHit := isBranch && direction.taggedHit
     res.tageUseAlternate := isBranch && direction.useAlternate
+    res.bimodalSelected := isBranch && direction.useBimodal
     res.indirectHit := isIndirect && indirect.valid
     res.itageHit := isIndirect && indirect.taggedHit
     res.isBranch := isBranch
@@ -313,6 +334,7 @@ class BPU(
   io.bp_index := p0.index
   io.bp_tagged_hit := p0.taggedHit
   io.bp_tage_use_alt := p0.tageUseAlternate
+  io.bp_bimodal_selected := p0.bimodalSelected
   io.bp_indirect_hit := p0.indirectHit
   io.bp_itage_hit := p0.itageHit
 
@@ -322,6 +344,7 @@ class BPU(
   io.bp1_index := p1.index
   io.bp1_tagged_hit := p1.taggedHit
   io.bp1_tage_use_alt := p1.tageUseAlternate
+  io.bp1_bimodal_selected := p1.bimodalSelected
   io.bp1_indirect_hit := p1.indirectHit
   io.bp1_itage_hit := p1.itageHit
 
@@ -353,8 +376,18 @@ class BPU(
     val updateDirection = directionPredict(io.update_pc, updateHistory, io.update_index, false.B)
     val baseValue = bht(io.update_index)
     val baseWasTrained = bht_valid(io.update_index)
+    val bimodalWasTrained = bimodalValid(pcIndex)
     bht(io.update_index) := Mux(io.update_taken, satInc2(baseValue), satDec2(baseValue))
     bht_valid(io.update_index) := true.B
+    bimodal(pcIndex) := Mux(io.update_taken, satInc2(bimodal(pcIndex)), satDec2(bimodal(pcIndex)))
+    bimodalValid(pcIndex) := true.B
+    when(bimodalWasTrained && updateDirection.bimodalPred =/= updateDirection.tageTaken) {
+      when(updateDirection.bimodalPred === io.update_taken) {
+        tournamentChooser(pcIndex) := satInc2(tournamentChooser(pcIndex))
+      }.elsewhen(updateDirection.tageTaken === io.update_taken) {
+        tournamentChooser(pcIndex) := satDec2(tournamentChooser(pcIndex))
+      }
+    }
 
     val updateIndices = tageHistories.map(historyIndex(io.update_pc, updateHistory, _, tageW))
     val updateTags = tageHistories.map(historyTag(io.update_pc, updateHistory, _))
@@ -370,7 +403,7 @@ class BPU(
       }
     }
 
-    val needAllocate = !baseWasTrained || updateDirection.taken =/= io.update_taken
+    val needAllocate = !baseWasTrained || updateDirection.tageTaken =/= io.update_taken
     val candidates = Wire(Vec(tageCount, Bool()))
     for (i <- 0 until tageCount) {
       val longerThanProvider = (i + 1).U > updateDirection.providerRank

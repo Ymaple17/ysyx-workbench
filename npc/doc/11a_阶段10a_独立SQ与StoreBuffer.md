@@ -4,8 +4,8 @@
 
 - **理论目标**：理解 store/load 消歧和 store 提交解耦：load 不能读旧值，但 store 也不应该一直卡住 ROB head 等总线 B 响应。
 - **最小实现**：把 Stage8d 的 ROB-backed `StoreQueue` 改成独立状态表；普通 PMEM store 在 commit 时进入 4 项 `StoreBuffer`，之后由 buffer 后台按 FIFO 写总线。
-- **当前参考核**：Stage10a 的独立 `StoreQueue`、commit/load-forward/AXI StoreBuffer 均保留；到 10m StoreBuffer 已扩为 16 项，并能在 B response 同拍直接启动下一条 drain。正文中的 Stage10a 数字仍是本章历史快照。
-- **后续扩展**：10b/10i/10l 已补 DCache、1-entry MSHR、LQ/replay 与安全 MLP；10m 已把 StoreBuffer 扩为 16。仍可继续做 SQ commit 直出、store merge、write-combining 和多 MSHR。
+- **当前参考核**：Stage10a 的独立 `StoreQueue`、commit/load-forward/AXI StoreBuffer 均保留；阶段 11d 的 StoreBuffer 为 16 项，支持双提交同 word 合并、最多 8-beat 连续写 burst，并把每个 accepted W beat 精确更新到 DCache。正文中的 Stage10a 数字仍是本章历史快照。
+- **后续扩展**：10b/10i/10l 已补 DCache、active MSHR、LQ/replay 与安全 MLP；11b 已完成 StoreBuffer16 合并/写 burst 和 cache 精确更新。SQ commit 直出、write-back 或完整多 MSHR 需按新瓶颈另立实验。
 - **验收方式**：`./mill -i mychisel.compile`、`unit.OoOUnitTest`、cpu-tests smoke、`microbench mainargs=test`；重点比较 `Wait Store Commit`、`StoreBuffer Full/Enq/Drain/Fwd` 和 IPC。
 
 ---

@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：用单变量扫描验证参数收益，形成可复现 IPC 报告。
 - **最小实现**：以 FQ8/BHT1024 起点逐次只改一个参数，compile + microbench 后记录 correctness、IPC 与瓶颈计数，最终恢复并复验保留点。
-- **当前参考核**：正文 FQ/BHT 扫描属于 Stage9c 历史报告；阶段 10m 参数已明显变化，但仍沿用相同单变量和回归纪律。
+- **当前参考核**：正文 FQ/BHT 扫描属于 Stage9c 历史报告；阶段 11d 参数与结构已明显变化，但仍沿用相同单变量和回归纪律。
 - **后续扩展**：9d 固化脚本、日志和 CSV；阶段 10 的每个结构实验继续使用同一报告方法。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

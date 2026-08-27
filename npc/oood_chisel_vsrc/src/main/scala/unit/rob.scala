@@ -89,6 +89,11 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     val wb1_mem_wdata    = Input(UInt(32.W))
     val wb1_actual_taken = Input(Bool())
     val wb1_actual_target = Input(UInt(32.W))
+    val ctrl_wb_fire         = Input(Bool())
+    val ctrl_wb_idx          = Input(UInt(ptrW.W))
+    val ctrl_wb_state        = Input(new State)
+    val ctrl_wb_actual_taken = Input(Bool())
+    val ctrl_wb_actual_target = Input(UInt(32.W))
 
     val commit_valid = Output(Bool())
     val commit_idx   = Output(UInt(ptrW.W))
@@ -144,11 +149,14 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
   val wb1_is_head = io.wb1_fire && (io.wb1_idx === head) && entries(head).valid
   val wb_is_head1 = io.wb_fire && (io.wb_idx === head1) && entries(head1).valid
   val wb1_is_head1 = io.wb1_fire && (io.wb1_idx === head1) && entries(head1).valid
-  io.commit_valid := entries(head).valid && (entries(head).done || wb_is_head || wb1_is_head)
+  val ctrl_wb_is_head = io.ctrl_wb_fire && (io.ctrl_wb_idx === head) && entries(head).valid
+  val ctrl_wb_is_head1 = io.ctrl_wb_fire && (io.ctrl_wb_idx === head1) && entries(head1).valid
+  io.commit_valid := entries(head).valid &&
+    (entries(head).done || wb_is_head || wb1_is_head || ctrl_wb_is_head)
   io.commit_idx := head
   io.commit_bits := entries(head)
   io.commit1_valid := (count > 1.U) && entries(head1).valid &&
-    (entries(head1).done || wb_is_head1 || wb1_is_head1)
+    (entries(head1).done || wb_is_head1 || wb1_is_head1 || ctrl_wb_is_head1)
   io.commit1_idx := head1
   io.commit1_bits := entries(head1)
 
@@ -185,6 +193,12 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     entries(io.wb1_idx).addr_ready    := true.B
     entries(io.wb1_idx).actual_taken  := io.wb1_actual_taken
     entries(io.wb1_idx).actual_target := io.wb1_actual_target
+  }
+  when(io.ctrl_wb_fire && entries(io.ctrl_wb_idx).valid) {
+    entries(io.ctrl_wb_idx).done          := true.B
+    entries(io.ctrl_wb_idx).state         := io.ctrl_wb_state
+    entries(io.ctrl_wb_idx).actual_taken  := io.ctrl_wb_actual_taken
+    entries(io.ctrl_wb_idx).actual_target := io.ctrl_wb_actual_target
   }
 
   when(io.flush_all) {

@@ -96,6 +96,10 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Tagged Hits:       %lld\n", counters[EVENT_BPU_TAGGED_HIT]);
     printf("Indirect Hits:     %lld\n", counters[EVENT_BPU_INDIRECT_HIT]);
     printf("TAGE Alternate:    %lld\n", counters[EVENT_TAGE_USE_ALT]);
+    printf("Bimodal Selections: %lld\n", counters[EVENT_BIMODAL_SELECTED]);
+    printf("Control Direct Complete: %lld\n", counters[EVENT_CONTROL_DIRECT_COMPLETE]);
+    printf("DCache Secondary Alloc: %lld\n", counters[EVENT_DCACHE_SECONDARY_ALLOC]);
+    printf("DCache MSHR Merge: %lld\n", counters[EVENT_DCACHE_MSHR_MERGE]);
     printf("TAGE Allocations:  %lld\n", counters[EVENT_TAGE_ALLOC]);
     printf("ITAGE Hits:        %lld\n", counters[EVENT_ITAGE_HIT]);
     printf("ITAGE Allocations: %lld\n", counters[EVENT_ITAGE_ALLOC]);
@@ -117,6 +121,8 @@ void print_perf_stats(unsigned long long cycles) {
     printf("ALU1 Issues:         %lld\n", counters[EVENT_ALU1_ISSUE]);
     printf("Dual ALU Issues:     %lld\n", counters[EVENT_DUAL_ALU_ISSUE]);
     printf("FU Same-Cycle Refill: %lld\n", counters[EVENT_FU_REFILL]);
+    printf("RS CDB Wake-Issue:    %lld\n", counters[EVENT_RS_CDB_WAKE_ISSUE]);
+    printf("LSU Address Refill:   %lld\n", counters[EVENT_LSU_ADDR_REFILL]);
     printf("WB Age Reorders:     %lld\n", counters[EVENT_WB_AGE_REORDER]);
     printf("Commit Slot0:        %lld\n", counters[EVENT_COMMIT_SLOT0]);
     printf("Commit Slot1:        %lld\n", counters[EVENT_COMMIT_SLOT1]);
@@ -143,6 +149,10 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Wait BP Recovery:    %lld\n", counters[EVENT_COMMIT_WAIT_BP]);
     printf("Wait Flush/IRQ:      %lld\n", counters[EVENT_COMMIT_WAIT_FLUSH]);
     printf("StoreBuffer Full:    %lld\n", counters[EVENT_STORE_BUFFER_FULL]);
+    printf("Dispatch Slot1:      %lld\n", counters[EVENT_DISPATCH_SLOT1]);
+    printf("Dispatch Branch+Slot1: %lld\n", counters[EVENT_DISPATCH_BRANCH_SLOT1]);
+    printf("Dispatch Slot1 Ctrl Block: %lld\n", counters[EVENT_DISPATCH_SLOT1_CTRL_BLOCK]);
+    printf("Dispatch Slot1 Backend Block: %lld\n", counters[EVENT_DISPATCH_SLOT1_BACKEND_BLOCK]);
 
     printf("\n[LSU Statistics]\n");
     long long total_access = counters[EVENT_LSU_READ] + counters[EVENT_LSU_WRITE];
@@ -151,6 +161,9 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Writes: %lld\n", counters[EVENT_LSU_WRITE]);
     printf("StoreBuffer Enq:   %lld\n", counters[EVENT_STORE_BUFFER_ENQ]);
     printf("StoreBuffer Enq2:  %lld\n", counters[EVENT_STORE_BUFFER_ENQ2]);
+    printf("StoreBuffer Merge: %lld\n", counters[EVENT_STORE_BUFFER_MERGE]);
+    printf("StoreBuffer Write Bursts: %lld\n", counters[EVENT_STORE_BUFFER_WRITE_BURST]);
+    printf("StoreBuffer Write Beats: %lld\n", counters[EVENT_STORE_BUFFER_WRITE_BEAT]);
     printf("StoreBuffer Drain: %lld\n", counters[EVENT_STORE_BUFFER_DRAIN]);
     printf("StoreBuffer Fwd:   %lld\n", counters[EVENT_STORE_BUFFER_FORWARD]);
     printf("SQ Wait Cycles: %lld\n", counters[EVENT_LSU_SQ_WAIT]);
@@ -180,6 +193,7 @@ void print_perf_stats(unsigned long long cycles) {
     printf("DCache MSHR Alloc: %lld\n", counters[EVENT_DCACHE_MSHR_ALLOC]);
     printf("DCache Hit Under Miss: %lld\n", counters[EVENT_DCACHE_HIT_UNDER_MISS]);
     printf("DCache MSHR Refill: %lld\n", counters[EVENT_DCACHE_MSHR_REFILL]);
+    printf("DCache Store Hits: %lld\n", counters[EVENT_DCACHE_STORE_HIT]);
     if (dcache_access > 0) {
         printf("DCache Hit Rate: %.2f%%\n", 100.0 * dcache_hit / dcache_access);
     }

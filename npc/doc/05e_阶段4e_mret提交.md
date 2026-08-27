@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：MRET 可进 RS/EX 标 done，但 **不在 EX leave 当 mispred**；仅 head commit 时锁存 mepc，下一拍 PC←mepc 并冲后续。
 - **最小实现**：mret 可先在 EX 标 done，但只在 ROB head 锁存 `mepc`，下一拍 flush 年轻项并跳转；不能把它当普通分支 mispredict。
-- **当前参考核**：阶段 10m 仍与当前 NEMU 裸机口径对齐，只令 `dnpc=mepc`，未实现 U/S 模式和完整 mstatus 恢复。
+- **当前参考核**：阶段 11d 仍与当前 NEMU 裸机口径对齐，只令 `dnpc=mepc`，未实现 U/S 模式和完整 mstatus 恢复。
 - **后续扩展**：4f 把 `fence.i` 的 ICache 失效和前端重启也放到 ROB head。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

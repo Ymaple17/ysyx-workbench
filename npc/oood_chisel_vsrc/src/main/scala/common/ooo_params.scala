@@ -25,7 +25,7 @@ object OoOParams {
   val SQ_SIZE  = ROB_SIZE
   val STORE_BUFFER_SIZE = 16
   val DCACHE_SET = 64
-  val DCACHE_BLOCK_SIZE = 8
+  val DCACHE_BLOCK_SIZE = 32
   val LSU_MLP_ENABLE = true
   val LQ_SIZE = 4
   val LQ_SPECULATE_UNKNOWN_STORES = false

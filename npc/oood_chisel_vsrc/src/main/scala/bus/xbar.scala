@@ -57,7 +57,8 @@ class Xbar(coreConfig: CoreConfig) extends Module{
         )),
         s_IMEM -> Mux(io.soc.rvalid && io.soc.rready && io.soc.rlast, s_SELECT, s_IMEM),
         s_DMEM -> Mux(
-          Mux(dmem_is_write, io.soc.bvalid && io.soc.bready, io.soc.rvalid && io.soc.rready),
+          Mux(dmem_is_write, io.soc.bvalid && io.soc.bready,
+            io.soc.rvalid && io.soc.rready && io.soc.rlast),
           s_SELECT, s_DMEM),
         s_CLINT -> Mux(
           Mux(dmem_is_write, io.clint.bvalid && io.clint.bready, io.clint.rvalid && io.clint.rready),

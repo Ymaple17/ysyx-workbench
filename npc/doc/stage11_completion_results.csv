@@ -1,0 +1,10 @@
+point,ipc,total_cycles,commit_instructions,primary_change,decision
+stage10m_baseline,0.6381,818892,522548,stage10m strict closure,baseline
+stage11_lsu_selective_flush,0.8498,614791,522456,same-cycle wake and elastic LSU with selective flush,retain
+stage11_store_burst_branch_lane1,0.9195,568116,522376,StoreBuffer write burst and safe branch plus lane1,retain
+stage11_control_direct,0.9434,553609,522290,no-destination control completes through ROB RS sideband,retain
+stage11_dcache_secondary,0.9459,551943,522064,secondary miss slot and same-line refill merge,retain
+stage11_line32_store3,0.9585,544957,522326,32B line and precise drain-time cache update,retain
+stage11_dcache_hit_flow,1.0117,516339,522374,same-cycle DCache hit and LQ response match,preclosure_candidate
+stage11_final_run1,1.0117,516339,522374,full regression with 80 unit tests and 7 cpu-tests,final_retained
+stage11_final_run2,1.0117,516339,522374,same simulator and microbench binary repeat,final_retained

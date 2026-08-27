@@ -371,6 +371,10 @@ static void execute(uint64_t n) {
         unsigned long long fb = (unsigned long long)r->ysyx_25020039__DOT__core__DOT__rename__DOT__freeBits;
         printf("[HANG] last_commit_pc=0x%08x rob_count=%u head=%u tail=%u freeBits=0x%llx free_pop=%d\n",
                (unsigned)stuck_pc, rc, rh, rt, fb, __builtin_popcountll(fb));
+        printf("[HANG] lq_head_alloc_pc=0x%08x lq_remove=%u wb_reject=0x%x\n",
+               (unsigned)r->io_debug_lq_head_alloc_pc,
+               (unsigned)r->io_debug_lq_head_remove_reason,
+               (unsigned)r->io_debug_wb_head_reject_flags);
         // print all valid ROB entries
         CData *vv[] = {
           &r->ysyx_25020039__DOT__core__DOT__rob__DOT__entries_0_valid,
@@ -540,6 +544,16 @@ static void execute(uint64_t n) {
           &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_6_src2_ready,
           &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_7_src2_ready,
         };
+        CData *rsi[] = {
+          &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_0_issued,
+          &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_1_issued,
+          &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_2_issued,
+          &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_3_issued,
+          &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_4_issued,
+          &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_5_issued,
+          &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_6_issued,
+          &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_7_issued,
+        };
         CData *rsr[] = {
           &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_0_rob_idx,
           &r->ysyx_25020039__DOT__core__DOT__rs__DOT__entries_1_rob_idx,
@@ -562,8 +576,9 @@ static void execute(uint64_t n) {
         };
         for (int i = 0; i < 8; i++) {
           if (*rsv[i])
-            printf("[HANG] rs[%d] rob=%u rdy=%u/%u pc=0x%08x\n", i, (unsigned)*rsr[i],
-                   (unsigned)*rs1[i], (unsigned)*rs2[i], (unsigned)*rsp[i]);
+            printf("[HANG] rs[%d] rob=%u issued=%u rdy=%u/%u pc=0x%08x\n", i,
+                   (unsigned)*rsr[i], (unsigned)*rsi[i], (unsigned)*rs1[i],
+                   (unsigned)*rs2[i], (unsigned)*rsp[i]);
         }
       }
 #ifdef ENABLE_WAVEFORM

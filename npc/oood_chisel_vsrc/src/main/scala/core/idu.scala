@@ -29,7 +29,7 @@ class IDU_EXU_IO extends Bundle{
   val bp_valid = Output(Bool())
   val bp_taken = Output(Bool())
   val bp_target = Output(UInt(32.W))
-  val bp_index = Output(UInt(log2Ceil(BHT_SIZE).W))
+  val bp_index = Output(UInt(BP_META_WIDTH.W))
   val ftq_idx = Output(UInt(OoOParams.FTQ_PTR_W.W))
   val ftq_generation = Output(UInt(OoOParams.FTQ_GEN_W.W))
 

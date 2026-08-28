@@ -25,14 +25,15 @@
 | 10 | [10a](10a_阶段9a_性能计数器与baseline.md) → [10b](10b_阶段9b_前端FQ与BPU瓶颈分析.md) → [10c](10c_阶段9c_参数扫描与IPC报告.md) → [10d](10d_阶段9d_小步优化与回归方法.md) | **阶段 9 性能画像与调优**（从“能跑”到“知道为什么快/慢”） |
 | 11 | [11a](11a_阶段10a_独立SQ与StoreBuffer.md) → [11b](11b_阶段10b_访存层次与非阻塞缓存.md) → [11c](11c_阶段10c_宽提交与多CDB.md) → [11d](11d_阶段10d_宽取指与前端带宽.md) → [11e](11e_阶段10e_高级分支预测.md) → [11f](11f_阶段10f_真正双提交与退休.md) → [11g](11g_阶段10g_扩大乱序窗口与参数扫描.md) → [11h](11h_阶段10h_重新启用宽取指.md) → [11i](11i_阶段10i_非阻塞DCache与MSHR.md) → [11j](11j_阶段10j_完整TAGE与ITAGE.md) → [11k](11k_阶段10k_放宽双提交类型.md) → [11l](11l_阶段10l_LoadQueue与Replay.md) → [11m](11m_阶段10m_持续双取指与FTQ.md) | **阶段 10 IPC 上限扩展**（内存序 / cache / 写回 / 前端 / 预测 / 真双提交 / 窗口 / LQ/replay / FTQ） |
 | 12 | [阶段11路线](12_阶段11_IPC从0.6到1.md) → [12a](12a_阶段11a_依赖链与执行吞吐.md) → [12b](12b_阶段11b_访存吞吐与DCache重构.md) → [12c](12c_阶段11c_持续前端与有效宽度.md) → [12d](12d_阶段11d_IPC1验收与回归.md) | **阶段 11 IPC 0.6 → 1.0**（依赖链 / 访存吞吐 / 有效前端 / 严格收口） |
-| 13 | [13a](13a_阶段12a_MMU与虚拟内存.md) → [13b](13b_阶段12b_多核与一致性.md) | **阶段 12 系统扩展**（MMU/SV32、多核一致性，后置可选） |
+| 13 | [阶段12路线](13_阶段12_IPC从1到1.3.md) → [13a](13a_阶段12a_瓶颈归因与热点.md) → [13b](13b_阶段12b_分支预测与恢复.md) → [13c](13c_阶段12c_持续双取指.md) → [13d](13d_阶段12d_分布式分支执行.md) → [13e](13e_阶段12e_Load关键路径与瓶颈补强.md) → [13f](13f_阶段12f_IPC1.3验收与回归.md) | **阶段 12 IPC 1.0 → 1.3**（热点归因 / 预测 / 持续前端 / BRU / Load 关键路径 / 严格收口） |
+| 14 | [14a](14a_阶段13a_MMU与虚拟内存.md) → [14b](14b_阶段13b_多核与一致性.md) | **阶段 13 系统扩展**（MMU/SV32、多核一致性，后置可选） |
 
-**参考实现水位（≠ 你的学习勾选）**：源码已完成并严格验收 **阶段 11d 教学参考核**。它是真乱序双发核：fetch、rename/dispatch 和 commit 主干均为 2-wide；RS 向 `ALU0/ALU1/LSU/DIV` 四类分布式端口各选本地 oldest-ready，完成结果经 4→2 age arbiter 进入 2 CDB。阶段 11 在 10m 上加入 accepted-CDB 同拍 wake/select/value bypass、弹性 LSU、无目的控制流 ROB/RS 直接完成、predicted-not-taken branch+lane1、bimodal/TAGE tournament；访存侧加入 AXI read/write burst、16-entry StoreBuffer 合并/连续写、`64×32B=2KiB` direct-mapped DCache、同拍 hit response、1 active MSHR + 1 secondary slot/same-line merge，以及 LQ4 tagged replay。当前仍保留 `ROB_SIZE=32`、`N_PHYS=64`、`RS_SIZE=8`、`FQ_SIZE=8`、`FETCH_BUFFER_SIZE=2`、`FTQ_SIZE=16`、`WIDE_FETCH_MIN_SPACE=6`、`LQ_SPECULATE_UNKNOWN_STORES=false`；TAGE 为 3×256 项、历史 2/5/10，ITAGE 为 2×128 项、历史 4/10。最终 full regression 通过 `OoOUnitTest` **80/80**、7/7 cpu-tests+difftest、零 compile/chisel-gen warning；两轮 microbench 的 98 列摘要除 `tag` 外其余 97 个字段一致：IPC **`1.0117`**（`516339` cycles / `522374` commits）、DCache hit rate `97.29%`、`FTQ Stale Recover=0`、`Mem Order Violation=0`。结果与目录见 [阶段 11d](12d_阶段11d_IPC1验收与回归.md)。你的学习验收清单仍由你自己完成；MMU 与多核一致性继续后移到阶段 12。
+**参考实现水位（≠ 你的学习勾选）**：源码已推进到 **阶段 12f 真乱序双发参考核**。fetch、rename/dispatch、commit 主干均为 2-wide；`ALU0/ALU1/LSU/DIV` 与 BRQ/BRU 各自做 local oldest-ready，两个 data CDB 只承载有值结果，普通 control/store 走 identity-checked private completion。当前参数为 `ROB32/PRF64/RS8/BRQ4/FQ16/FetchBuffer4/FTQ16/LQ4/SQ32/StoreBuffer16`；BPU 为 4×256 TAGE、4×128 ITAGE、64-entry loop provider 和可恢复的 16-bit target path history。最终回归已通过 `OoOUnitTest 93/93`、7/7 cpu-tests+difftest、warning-free Chisel generation 和两次同二进制 microbench；两次均为 IPC **`1.3736`**（`380267` cycles / `522350` commits），平均 fetch width `1.8614`、commit slot1 util `74.33%`、DCache hit `97.03%`、`FTQ Stale Recover=0`、`Mem Order Violation=0`。完整口径见 [阶段 12f](13f_阶段12f_IPC1.3验收与回归.md) 与 `stage12_final.sh`；你的学习清单仍由你自己勾选，MMU/多核继续后移到阶段 13。
 
 ## 原则
 
 1. 本阶段 **cpu-tests + difftest 自测绿** 再往下。  
-2. **2d 不过 → 不做 3b**；**3a 不过 → 不做 3c**；**3c 绿 → 3d**；**3d 绿 → 4a/4b**；**4b 绿 → 4c**；**4c 绿 → 5a/5b**；**6 绿 → 7（先扫基线）→ 8a–8d（超标量）→ 9（性能画像）→ 10（双发主干）→ 11（IPC 1.0 收口）→ 12（系统扩展）**。  
+2. **2d 不过 → 不做 3b**；**3a 不过 → 不做 3c**；**3c 绿 → 3d**；**3d 绿 → 4a/4b**；**4b 绿 → 4c**；**4c 绿 → 5a/5b**；**6 绿 → 7（先扫基线）→ 8a–8d（超标量）→ 9（性能画像）→ 10（双发主干）→ 11（IPC 1.0）→ 12（IPC 1.3）→ 13（系统扩展）**。  
 3. freelist flush **禁止**重置成「32..N_PHYS-1 全空闲」。
 4. 文档与仓库字段冲突 → **先改文档**（以 `unit/`、`core/` 真实代码为准）。  
 5. 四件套在 **`unit/`**，流水级在 **`core/`**，参数在 **`common/ooo_params.scala`**。  
@@ -48,6 +49,8 @@ scripts/stage9_regress.sh --mode full --tag final_check
 scripts/stage10_final.sh
 # 阶段 11 最终收官：完整回归 + 同一二进制复跑 + IPC >= 1.0
 scripts/stage11_final.sh
+# 阶段 12 最终收官：全回归 + 同一二进制复跑 + IPC/结构门槛
+scripts/stage12_final.sh
 ```
 
 脚本默认覆盖本阶段验收口径：逐项单测、`cpu-tests`、`microbench(test)`。microbench 只有同时出现 `MicroBench PASS` 与 `HIT GOOD TRAP`、没有 HANG/ABORT/difftest mismatch、且 IPC/cycles/commits 三项非空时才算通过。

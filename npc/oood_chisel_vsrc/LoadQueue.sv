@@ -67,10 +67,6 @@ module LoadQueue(
   input  [4:0]  io_storeResolve0Rob,
   input  [31:0] io_storeResolve0Addr,
   input  [3:0]  io_storeResolve0Mask,
-  input         io_storeResolve1Valid,
-  input  [4:0]  io_storeResolve1Rob,
-  input  [31:0] io_storeResolve1Addr,
-  input  [3:0]  io_storeResolve1Mask,
   output        io_violationValid,
   output [4:0]  io_violationRob,
   output [31:0] io_violationPc,
@@ -387,6 +383,8 @@ module LoadQueue(
   wire        alive_3 =
     entries_3_valid & ~io_flushAll
     & ~(_alive_3_T_2 & _olderViolation_T_132 > _alive_3_T_6);
+  wire [1:0]  allocIdx =
+    entries_0_valid ? (entries_1_valid ? {1'h1, entries_2_valid} : 2'h1) : 2'h0;
   wire        io_alloc_ready_0 =
     (|{~entries_3_valid, ~entries_2_valid, ~entries_1_valid, ~entries_0_valid})
     & ~io_flush & ~io_flushAll;
@@ -420,14 +418,15 @@ module LoadQueue(
      schedEligible_2,
      schedEligible_1,
      schedEligible_0} >> retryPtr;
-  wire [1:0]  _schedIdx_T =
+  wire [1:0]  _entrySchedIdx_T =
     retryPtr
     + (_rotatedMask_T_1[0]
          ? 2'h0
          : _rotatedMask_T_1[1] ? 2'h1 : {1'h1, ~(_rotatedMask_T_1[2])});
+  wire        _freshSchedValid_T_1 = io_alloc_ready_0 & io_alloc_valid;
   reg  [1:0]  casez_tmp_1;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (allocIdx)
       2'b00:
         casez_tmp_1 = entries_0_generation;
       2'b01:
@@ -438,541 +437,571 @@ module LoadQueue(
         casez_tmp_1 = entries_3_generation;
     endcase
   end // always_comb
-  reg         casez_tmp_2;
+  wire        schedValid =
+    (|schedMask) | ~(|schedMask) & _freshSchedValid_T_1
+    & (io_alloc_bits_addr - 32'h80000000 < 32'h8000000
+       | io_alloc_bits_meta_rob_idx == io_robHead & io_mmioReady);
+  wire [1:0]  schedIdx = (|schedMask) ? _entrySchedIdx_T : allocIdx;
+  reg  [1:0]  casez_tmp_2;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_2 = entries_0_meta_signals_wbu_reg_write;
+        casez_tmp_2 = entries_0_generation;
       2'b01:
-        casez_tmp_2 = entries_1_meta_signals_wbu_reg_write;
+        casez_tmp_2 = entries_1_generation;
       2'b10:
-        casez_tmp_2 = entries_2_meta_signals_wbu_reg_write;
+        casez_tmp_2 = entries_2_generation;
       default:
-        casez_tmp_2 = entries_3_meta_signals_wbu_reg_write;
+        casez_tmp_2 = entries_3_generation;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_3;
+  reg         casez_tmp_3;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_3 = entries_0_meta_signals_wbu_reg_write_sel;
+        casez_tmp_3 = entries_0_meta_signals_wbu_reg_write;
       2'b01:
-        casez_tmp_3 = entries_1_meta_signals_wbu_reg_write_sel;
+        casez_tmp_3 = entries_1_meta_signals_wbu_reg_write;
       2'b10:
-        casez_tmp_3 = entries_2_meta_signals_wbu_reg_write_sel;
+        casez_tmp_3 = entries_2_meta_signals_wbu_reg_write;
       default:
-        casez_tmp_3 = entries_3_meta_signals_wbu_reg_write_sel;
+        casez_tmp_3 = entries_3_meta_signals_wbu_reg_write;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_4;
+  reg  [2:0]  casez_tmp_4;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_4 = entries_0_meta_alu_result;
+        casez_tmp_4 = entries_0_meta_signals_wbu_reg_write_sel;
       2'b01:
-        casez_tmp_4 = entries_1_meta_alu_result;
+        casez_tmp_4 = entries_1_meta_signals_wbu_reg_write_sel;
       2'b10:
-        casez_tmp_4 = entries_2_meta_alu_result;
+        casez_tmp_4 = entries_2_meta_signals_wbu_reg_write_sel;
       default:
-        casez_tmp_4 = entries_3_meta_alu_result;
+        casez_tmp_4 = entries_3_meta_signals_wbu_reg_write_sel;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_5;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_5 = entries_0_meta_pc;
+        casez_tmp_5 = entries_0_meta_alu_result;
       2'b01:
-        casez_tmp_5 = entries_1_meta_pc;
+        casez_tmp_5 = entries_1_meta_alu_result;
       2'b10:
-        casez_tmp_5 = entries_2_meta_pc;
+        casez_tmp_5 = entries_2_meta_alu_result;
       default:
-        casez_tmp_5 = entries_3_meta_pc;
+        casez_tmp_5 = entries_3_meta_alu_result;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_6;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_6 = entries_0_meta_next_pc;
+        casez_tmp_6 = entries_0_meta_pc;
       2'b01:
-        casez_tmp_6 = entries_1_meta_next_pc;
+        casez_tmp_6 = entries_1_meta_pc;
       2'b10:
-        casez_tmp_6 = entries_2_meta_next_pc;
+        casez_tmp_6 = entries_2_meta_pc;
       default:
-        casez_tmp_6 = entries_3_meta_next_pc;
+        casez_tmp_6 = entries_3_meta_pc;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_7;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_7 = entries_0_meta_imm_ext;
+        casez_tmp_7 = entries_0_meta_next_pc;
       2'b01:
-        casez_tmp_7 = entries_1_meta_imm_ext;
+        casez_tmp_7 = entries_1_meta_next_pc;
       2'b10:
-        casez_tmp_7 = entries_2_meta_imm_ext;
+        casez_tmp_7 = entries_2_meta_next_pc;
       default:
-        casez_tmp_7 = entries_3_meta_imm_ext;
+        casez_tmp_7 = entries_3_meta_next_pc;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_8;
+  reg  [31:0] casez_tmp_8;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_8 = entries_0_meta_waddr;
+        casez_tmp_8 = entries_0_meta_imm_ext;
       2'b01:
-        casez_tmp_8 = entries_1_meta_waddr;
+        casez_tmp_8 = entries_1_meta_imm_ext;
       2'b10:
-        casez_tmp_8 = entries_2_meta_waddr;
+        casez_tmp_8 = entries_2_meta_imm_ext;
       default:
-        casez_tmp_8 = entries_3_meta_waddr;
+        casez_tmp_8 = entries_3_meta_imm_ext;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_9;
+  reg  [4:0]  casez_tmp_9;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_9 = entries_0_meta_csr_rd1;
+        casez_tmp_9 = entries_0_meta_waddr;
       2'b01:
-        casez_tmp_9 = entries_1_meta_csr_rd1;
+        casez_tmp_9 = entries_1_meta_waddr;
       2'b10:
-        casez_tmp_9 = entries_2_meta_csr_rd1;
+        casez_tmp_9 = entries_2_meta_waddr;
       default:
-        casez_tmp_9 = entries_3_meta_csr_rd1;
+        casez_tmp_9 = entries_3_meta_waddr;
     endcase
   end // always_comb
-  reg         casez_tmp_10;
+  reg  [31:0] casez_tmp_10;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_10 = entries_0_meta_state_state;
+        casez_tmp_10 = entries_0_meta_csr_rd1;
       2'b01:
-        casez_tmp_10 = entries_1_meta_state_state;
+        casez_tmp_10 = entries_1_meta_csr_rd1;
       2'b10:
-        casez_tmp_10 = entries_2_meta_state_state;
+        casez_tmp_10 = entries_2_meta_csr_rd1;
       default:
-        casez_tmp_10 = entries_3_meta_state_state;
+        casez_tmp_10 = entries_3_meta_csr_rd1;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_11;
+  reg         casez_tmp_11;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_11 = entries_0_meta_state_state_num;
+        casez_tmp_11 = entries_0_meta_state_state;
       2'b01:
-        casez_tmp_11 = entries_1_meta_state_state_num;
+        casez_tmp_11 = entries_1_meta_state_state;
       2'b10:
-        casez_tmp_11 = entries_2_meta_state_state_num;
+        casez_tmp_11 = entries_2_meta_state_state;
       default:
-        casez_tmp_11 = entries_3_meta_state_state_num;
+        casez_tmp_11 = entries_3_meta_state_state;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_12;
+  reg  [7:0]  casez_tmp_12;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_12 = entries_0_meta_rob_idx;
+        casez_tmp_12 = entries_0_meta_state_state_num;
       2'b01:
-        casez_tmp_12 = entries_1_meta_rob_idx;
+        casez_tmp_12 = entries_1_meta_state_state_num;
       2'b10:
-        casez_tmp_12 = entries_2_meta_rob_idx;
+        casez_tmp_12 = entries_2_meta_state_state_num;
       default:
-        casez_tmp_12 = entries_3_meta_rob_idx;
+        casez_tmp_12 = entries_3_meta_state_state_num;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_13;
+  reg  [4:0]  casez_tmp_13;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_13 = entries_0_meta_pdest;
+        casez_tmp_13 = entries_0_meta_rob_idx;
       2'b01:
-        casez_tmp_13 = entries_1_meta_pdest;
+        casez_tmp_13 = entries_1_meta_rob_idx;
       2'b10:
-        casez_tmp_13 = entries_2_meta_pdest;
+        casez_tmp_13 = entries_2_meta_rob_idx;
       default:
-        casez_tmp_13 = entries_3_meta_pdest;
+        casez_tmp_13 = entries_3_meta_rob_idx;
     endcase
   end // always_comb
-  reg         casez_tmp_14;
+  reg  [5:0]  casez_tmp_14;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_14 = entries_0_meta_br_taken;
+        casez_tmp_14 = entries_0_meta_pdest;
       2'b01:
-        casez_tmp_14 = entries_1_meta_br_taken;
+        casez_tmp_14 = entries_1_meta_pdest;
       2'b10:
-        casez_tmp_14 = entries_2_meta_br_taken;
+        casez_tmp_14 = entries_2_meta_pdest;
       default:
-        casez_tmp_14 = entries_3_meta_br_taken;
+        casez_tmp_14 = entries_3_meta_pdest;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_15;
+  reg         casez_tmp_15;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_15 = entries_0_meta_store_data;
+        casez_tmp_15 = entries_0_meta_br_taken;
       2'b01:
-        casez_tmp_15 = entries_1_meta_store_data;
+        casez_tmp_15 = entries_1_meta_br_taken;
       2'b10:
-        casez_tmp_15 = entries_2_meta_store_data;
+        casez_tmp_15 = entries_2_meta_br_taken;
       default:
-        casez_tmp_15 = entries_3_meta_store_data;
+        casez_tmp_15 = entries_3_meta_br_taken;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_16;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_16 = entries_0_addr;
+        casez_tmp_16 = entries_0_meta_store_data;
       2'b01:
-        casez_tmp_16 = entries_1_addr;
+        casez_tmp_16 = entries_1_meta_store_data;
       2'b10:
-        casez_tmp_16 = entries_2_addr;
+        casez_tmp_16 = entries_2_meta_store_data;
       default:
-        casez_tmp_16 = entries_3_addr;
+        casez_tmp_16 = entries_3_meta_store_data;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_17;
+  reg  [31:0] casez_tmp_17;
   always_comb begin
-    casez (_schedIdx_T)
+    casez (_entrySchedIdx_T)
       2'b00:
-        casez_tmp_17 = entries_0_memRd;
+        casez_tmp_17 = entries_0_addr;
       2'b01:
-        casez_tmp_17 = entries_1_memRd;
+        casez_tmp_17 = entries_1_addr;
       2'b10:
-        casez_tmp_17 = entries_2_memRd;
+        casez_tmp_17 = entries_2_addr;
       default:
-        casez_tmp_17 = entries_3_memRd;
+        casez_tmp_17 = entries_3_addr;
     endcase
   end // always_comb
-  wire        _schedulerBus_T = (|schedMask) & ~io_fwdWait;
+  reg  [2:0]  casez_tmp_18;
+  always_comb begin
+    casez (_entrySchedIdx_T)
+      2'b00:
+        casez_tmp_18 = entries_0_memRd;
+      2'b01:
+        casez_tmp_18 = entries_1_memRd;
+      2'b10:
+        casez_tmp_18 = entries_2_memRd;
+      default:
+        casez_tmp_18 = entries_3_memRd;
+    endcase
+  end // always_comb
+  wire        forwardMeta_state_state =
+    (|schedMask) ? casez_tmp_11 : io_alloc_bits_meta_state_state;
+  wire [7:0]  forwardMeta_state_state_num =
+    (|schedMask) ? casez_tmp_12 : io_alloc_bits_meta_state_state_num;
+  wire [4:0]  io_queryRob_0 = (|schedMask) ? casez_tmp_13 : io_alloc_bits_meta_rob_idx;
+  wire [31:0] io_queryAddr_0 = (|schedMask) ? casez_tmp_17 : io_alloc_bits_addr;
+  wire [2:0]  io_queryMemRd_0 = (|schedMask) ? casez_tmp_18 : io_alloc_bits_memRd;
+  wire        _schedulerBus_T = schedValid & ~io_fwdWait;
+  wire        schedulerForward = _schedulerBus_T & io_fwdValid;
   wire        schedulerBus = _schedulerBus_T & ~io_fwdValid;
   wire        io_dmem_arvalid_0 = schedulerBus & ~io_flush & ~io_flushAll;
-  wire [3:0]  io_dmem_arid_0 = {casez_tmp_1, _schedIdx_T};
+  wire [3:0]  io_dmem_arid_0 = {(|schedMask) ? casez_tmp_2 : casez_tmp_1, schedIdx};
   wire        arFire = io_dmem_arvalid_0 & io_dmem_arready;
-  reg         casez_tmp_18;
+  reg         casez_tmp_19;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_18 = alive_0;
+        casez_tmp_19 = alive_0;
       2'b01:
-        casez_tmp_18 = alive_1;
+        casez_tmp_19 = alive_1;
       2'b10:
-        casez_tmp_18 = alive_2;
+        casez_tmp_19 = alive_2;
       default:
-        casez_tmp_18 = alive_3;
+        casez_tmp_19 = alive_3;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_19;
+  reg  [1:0]  casez_tmp_20;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_19 = entries_0_generation;
+        casez_tmp_20 = entries_0_generation;
       2'b01:
-        casez_tmp_19 = entries_1_generation;
+        casez_tmp_20 = entries_1_generation;
       2'b10:
-        casez_tmp_19 = entries_2_generation;
+        casez_tmp_20 = entries_2_generation;
       default:
-        casez_tmp_19 = entries_3_generation;
+        casez_tmp_20 = entries_3_generation;
     endcase
   end // always_comb
-  reg         casez_tmp_20;
+  reg         casez_tmp_21;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_20 = entries_0_meta_signals_wbu_reg_write;
+        casez_tmp_21 = entries_0_meta_signals_wbu_reg_write;
       2'b01:
-        casez_tmp_20 = entries_1_meta_signals_wbu_reg_write;
+        casez_tmp_21 = entries_1_meta_signals_wbu_reg_write;
       2'b10:
-        casez_tmp_20 = entries_2_meta_signals_wbu_reg_write;
+        casez_tmp_21 = entries_2_meta_signals_wbu_reg_write;
       default:
-        casez_tmp_20 = entries_3_meta_signals_wbu_reg_write;
+        casez_tmp_21 = entries_3_meta_signals_wbu_reg_write;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_21;
+  reg  [2:0]  casez_tmp_22;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_21 = entries_0_meta_signals_wbu_reg_write_sel;
+        casez_tmp_22 = entries_0_meta_signals_wbu_reg_write_sel;
       2'b01:
-        casez_tmp_21 = entries_1_meta_signals_wbu_reg_write_sel;
+        casez_tmp_22 = entries_1_meta_signals_wbu_reg_write_sel;
       2'b10:
-        casez_tmp_21 = entries_2_meta_signals_wbu_reg_write_sel;
+        casez_tmp_22 = entries_2_meta_signals_wbu_reg_write_sel;
       default:
-        casez_tmp_21 = entries_3_meta_signals_wbu_reg_write_sel;
-    endcase
-  end // always_comb
-  reg  [31:0] casez_tmp_22;
-  always_comb begin
-    casez (io_dmem_rid[1:0])
-      2'b00:
-        casez_tmp_22 = entries_0_meta_alu_result;
-      2'b01:
-        casez_tmp_22 = entries_1_meta_alu_result;
-      2'b10:
-        casez_tmp_22 = entries_2_meta_alu_result;
-      default:
-        casez_tmp_22 = entries_3_meta_alu_result;
+        casez_tmp_22 = entries_3_meta_signals_wbu_reg_write_sel;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_23;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_23 = entries_0_meta_pc;
+        casez_tmp_23 = entries_0_meta_alu_result;
       2'b01:
-        casez_tmp_23 = entries_1_meta_pc;
+        casez_tmp_23 = entries_1_meta_alu_result;
       2'b10:
-        casez_tmp_23 = entries_2_meta_pc;
+        casez_tmp_23 = entries_2_meta_alu_result;
       default:
-        casez_tmp_23 = entries_3_meta_pc;
+        casez_tmp_23 = entries_3_meta_alu_result;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_24;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_24 = entries_0_meta_next_pc;
+        casez_tmp_24 = entries_0_meta_pc;
       2'b01:
-        casez_tmp_24 = entries_1_meta_next_pc;
+        casez_tmp_24 = entries_1_meta_pc;
       2'b10:
-        casez_tmp_24 = entries_2_meta_next_pc;
+        casez_tmp_24 = entries_2_meta_pc;
       default:
-        casez_tmp_24 = entries_3_meta_next_pc;
+        casez_tmp_24 = entries_3_meta_pc;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_25;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_25 = entries_0_meta_imm_ext;
+        casez_tmp_25 = entries_0_meta_next_pc;
       2'b01:
-        casez_tmp_25 = entries_1_meta_imm_ext;
+        casez_tmp_25 = entries_1_meta_next_pc;
       2'b10:
-        casez_tmp_25 = entries_2_meta_imm_ext;
+        casez_tmp_25 = entries_2_meta_next_pc;
       default:
-        casez_tmp_25 = entries_3_meta_imm_ext;
+        casez_tmp_25 = entries_3_meta_next_pc;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_26;
+  reg  [31:0] casez_tmp_26;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_26 = entries_0_meta_waddr;
+        casez_tmp_26 = entries_0_meta_imm_ext;
       2'b01:
-        casez_tmp_26 = entries_1_meta_waddr;
+        casez_tmp_26 = entries_1_meta_imm_ext;
       2'b10:
-        casez_tmp_26 = entries_2_meta_waddr;
+        casez_tmp_26 = entries_2_meta_imm_ext;
       default:
-        casez_tmp_26 = entries_3_meta_waddr;
+        casez_tmp_26 = entries_3_meta_imm_ext;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_27;
+  reg  [4:0]  casez_tmp_27;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_27 = entries_0_meta_csr_rd1;
+        casez_tmp_27 = entries_0_meta_waddr;
       2'b01:
-        casez_tmp_27 = entries_1_meta_csr_rd1;
+        casez_tmp_27 = entries_1_meta_waddr;
       2'b10:
-        casez_tmp_27 = entries_2_meta_csr_rd1;
+        casez_tmp_27 = entries_2_meta_waddr;
       default:
-        casez_tmp_27 = entries_3_meta_csr_rd1;
+        casez_tmp_27 = entries_3_meta_waddr;
     endcase
   end // always_comb
-  reg         casez_tmp_28;
+  reg  [31:0] casez_tmp_28;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_28 = entries_0_meta_state_state;
+        casez_tmp_28 = entries_0_meta_csr_rd1;
       2'b01:
-        casez_tmp_28 = entries_1_meta_state_state;
+        casez_tmp_28 = entries_1_meta_csr_rd1;
       2'b10:
-        casez_tmp_28 = entries_2_meta_state_state;
+        casez_tmp_28 = entries_2_meta_csr_rd1;
       default:
-        casez_tmp_28 = entries_3_meta_state_state;
+        casez_tmp_28 = entries_3_meta_csr_rd1;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_29;
+  reg         casez_tmp_29;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_29 = entries_0_meta_state_state_num;
+        casez_tmp_29 = entries_0_meta_state_state;
       2'b01:
-        casez_tmp_29 = entries_1_meta_state_state_num;
+        casez_tmp_29 = entries_1_meta_state_state;
       2'b10:
-        casez_tmp_29 = entries_2_meta_state_state_num;
+        casez_tmp_29 = entries_2_meta_state_state;
       default:
-        casez_tmp_29 = entries_3_meta_state_state_num;
+        casez_tmp_29 = entries_3_meta_state_state;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_30;
+  reg  [7:0]  casez_tmp_30;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_30 = entries_0_meta_rob_idx;
+        casez_tmp_30 = entries_0_meta_state_state_num;
       2'b01:
-        casez_tmp_30 = entries_1_meta_rob_idx;
+        casez_tmp_30 = entries_1_meta_state_state_num;
       2'b10:
-        casez_tmp_30 = entries_2_meta_rob_idx;
+        casez_tmp_30 = entries_2_meta_state_state_num;
       default:
-        casez_tmp_30 = entries_3_meta_rob_idx;
+        casez_tmp_30 = entries_3_meta_state_state_num;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_31;
+  reg  [4:0]  casez_tmp_31;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_31 = entries_0_meta_pdest;
+        casez_tmp_31 = entries_0_meta_rob_idx;
       2'b01:
-        casez_tmp_31 = entries_1_meta_pdest;
+        casez_tmp_31 = entries_1_meta_rob_idx;
       2'b10:
-        casez_tmp_31 = entries_2_meta_pdest;
+        casez_tmp_31 = entries_2_meta_rob_idx;
       default:
-        casez_tmp_31 = entries_3_meta_pdest;
+        casez_tmp_31 = entries_3_meta_rob_idx;
     endcase
   end // always_comb
-  reg         casez_tmp_32;
+  reg  [5:0]  casez_tmp_32;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_32 = entries_0_meta_br_taken;
+        casez_tmp_32 = entries_0_meta_pdest;
       2'b01:
-        casez_tmp_32 = entries_1_meta_br_taken;
+        casez_tmp_32 = entries_1_meta_pdest;
       2'b10:
-        casez_tmp_32 = entries_2_meta_br_taken;
+        casez_tmp_32 = entries_2_meta_pdest;
       default:
-        casez_tmp_32 = entries_3_meta_br_taken;
+        casez_tmp_32 = entries_3_meta_pdest;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_33;
+  reg         casez_tmp_33;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_33 = entries_0_meta_store_data;
+        casez_tmp_33 = entries_0_meta_br_taken;
       2'b01:
-        casez_tmp_33 = entries_1_meta_store_data;
+        casez_tmp_33 = entries_1_meta_br_taken;
       2'b10:
-        casez_tmp_33 = entries_2_meta_store_data;
+        casez_tmp_33 = entries_2_meta_br_taken;
       default:
-        casez_tmp_33 = entries_3_meta_store_data;
+        casez_tmp_33 = entries_3_meta_br_taken;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_34;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_34 = entries_0_addr;
+        casez_tmp_34 = entries_0_meta_store_data;
       2'b01:
-        casez_tmp_34 = entries_1_addr;
+        casez_tmp_34 = entries_1_meta_store_data;
       2'b10:
-        casez_tmp_34 = entries_2_addr;
+        casez_tmp_34 = entries_2_meta_store_data;
       default:
-        casez_tmp_34 = entries_3_addr;
+        casez_tmp_34 = entries_3_meta_store_data;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_35;
+  reg  [31:0] casez_tmp_35;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_35 = entries_0_memRd;
+        casez_tmp_35 = entries_0_addr;
       2'b01:
-        casez_tmp_35 = entries_1_memRd;
+        casez_tmp_35 = entries_1_addr;
       2'b10:
-        casez_tmp_35 = entries_2_memRd;
+        casez_tmp_35 = entries_2_addr;
       default:
-        casez_tmp_35 = entries_3_memRd;
+        casez_tmp_35 = entries_3_addr;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_36;
+  reg  [2:0]  casez_tmp_36;
   always_comb begin
     casez (io_dmem_rid[1:0])
       2'b00:
-        casez_tmp_36 = entries_0_state;
+        casez_tmp_36 = entries_0_memRd;
       2'b01:
-        casez_tmp_36 = entries_1_state;
+        casez_tmp_36 = entries_1_memRd;
       2'b10:
-        casez_tmp_36 = entries_2_state;
+        casez_tmp_36 = entries_2_memRd;
       default:
-        casez_tmp_36 = entries_3_state;
+        casez_tmp_36 = entries_3_memRd;
+    endcase
+  end // always_comb
+  reg  [1:0]  casez_tmp_37;
+  always_comb begin
+    casez (io_dmem_rid[1:0])
+      2'b00:
+        casez_tmp_37 = entries_0_state;
+      2'b01:
+        casez_tmp_37 = entries_1_state;
+      2'b10:
+        casez_tmp_37 = entries_2_state;
+      default:
+        casez_tmp_37 = entries_3_state;
     endcase
   end // always_comb
   wire        respMatchesOutstanding =
-    io_dmem_rvalid & casez_tmp_18 & casez_tmp_36 == 2'h1
-    & casez_tmp_19 == io_dmem_rid[3:2];
+    io_dmem_rvalid & casez_tmp_19 & casez_tmp_37 == 2'h1
+    & casez_tmp_20 == io_dmem_rid[3:2];
   wire        respMatchesCurrent =
     io_dmem_rvalid & arFire & io_dmem_rid == io_dmem_arid_0 & ~respMatchesOutstanding;
-  reg  [31:0] casez_tmp_37;
+  wire        respMatches = respMatchesOutstanding | respMatchesCurrent;
+  reg  [31:0] casez_tmp_38;
   wire [31:0] outstandingResponseMeta_offset =
-    io_dmem_rdata >> {27'h0, casez_tmp_34[1:0], 3'h0};
+    io_dmem_rdata >> {27'h0, casez_tmp_35[1:0], 3'h0};
   always_comb begin
-    casez (casez_tmp_35)
+    casez (casez_tmp_36)
       3'b000:
-        casez_tmp_37 = outstandingResponseMeta_offset;
+        casez_tmp_38 = outstandingResponseMeta_offset;
       3'b001:
-        casez_tmp_37 =
+        casez_tmp_38 =
           {{24{outstandingResponseMeta_offset[7]}}, outstandingResponseMeta_offset[7:0]};
       3'b010:
-        casez_tmp_37 =
+        casez_tmp_38 =
           {{16{outstandingResponseMeta_offset[15]}},
            outstandingResponseMeta_offset[15:0]};
       3'b011:
-        casez_tmp_37 = outstandingResponseMeta_offset;
+        casez_tmp_38 = outstandingResponseMeta_offset;
       3'b100:
-        casez_tmp_37 = {24'h0, outstandingResponseMeta_offset[7:0]};
+        casez_tmp_38 = {24'h0, outstandingResponseMeta_offset[7:0]};
       3'b101:
-        casez_tmp_37 = {16'h0, outstandingResponseMeta_offset[15:0]};
+        casez_tmp_38 = {16'h0, outstandingResponseMeta_offset[15:0]};
       3'b110:
-        casez_tmp_37 = outstandingResponseMeta_offset;
+        casez_tmp_38 = outstandingResponseMeta_offset;
       default:
-        casez_tmp_37 = outstandingResponseMeta_offset;
+        casez_tmp_38 = outstandingResponseMeta_offset;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_38;
+  wire        outstandingResponseMeta_state_state = (|io_dmem_rresp) | casez_tmp_29;
+  reg  [31:0] casez_tmp_39;
   wire [31:0] currentResponseMeta_offset =
-    io_dmem_rdata >> {27'h0, casez_tmp_16[1:0], 3'h0};
+    io_dmem_rdata >> {27'h0, io_queryAddr_0[1:0], 3'h0};
   always_comb begin
-    casez (casez_tmp_17)
+    casez (io_queryMemRd_0)
       3'b000:
-        casez_tmp_38 = currentResponseMeta_offset;
+        casez_tmp_39 = currentResponseMeta_offset;
       3'b001:
-        casez_tmp_38 =
+        casez_tmp_39 =
           {{24{currentResponseMeta_offset[7]}}, currentResponseMeta_offset[7:0]};
       3'b010:
-        casez_tmp_38 =
+        casez_tmp_39 =
           {{16{currentResponseMeta_offset[15]}}, currentResponseMeta_offset[15:0]};
       3'b011:
-        casez_tmp_38 = currentResponseMeta_offset;
+        casez_tmp_39 = currentResponseMeta_offset;
       3'b100:
-        casez_tmp_38 = {24'h0, currentResponseMeta_offset[7:0]};
+        casez_tmp_39 = {24'h0, currentResponseMeta_offset[7:0]};
       3'b101:
-        casez_tmp_38 = {16'h0, currentResponseMeta_offset[15:0]};
+        casez_tmp_39 = {16'h0, currentResponseMeta_offset[15:0]};
       3'b110:
-        casez_tmp_38 = currentResponseMeta_offset;
+        casez_tmp_39 = currentResponseMeta_offset;
       default:
-        casez_tmp_38 = currentResponseMeta_offset;
+        casez_tmp_39 = currentResponseMeta_offset;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_39;
+  wire        currentResponseMeta_state_state =
+    (|io_dmem_rresp) | forwardMeta_state_state;
+  reg  [31:0] casez_tmp_40;
   always_comb begin
-    casez (casez_tmp_17)
+    casez (io_queryMemRd_0)
       3'b000:
-        casez_tmp_39 = io_fwdData;
+        casez_tmp_40 = io_fwdData;
       3'b001:
-        casez_tmp_39 = {{24{io_fwdData[7]}}, io_fwdData[7:0]};
+        casez_tmp_40 = {{24{io_fwdData[7]}}, io_fwdData[7:0]};
       3'b010:
-        casez_tmp_39 = {{16{io_fwdData[15]}}, io_fwdData[15:0]};
+        casez_tmp_40 = {{16{io_fwdData[15]}}, io_fwdData[15:0]};
       3'b011:
-        casez_tmp_39 = io_fwdData;
+        casez_tmp_40 = io_fwdData;
       3'b100:
-        casez_tmp_39 = {24'h0, io_fwdData[7:0]};
+        casez_tmp_40 = {24'h0, io_fwdData[7:0]};
       3'b101:
-        casez_tmp_39 = {16'h0, io_fwdData[15:0]};
+        casez_tmp_40 = {16'h0, io_fwdData[15:0]};
       3'b110:
-        casez_tmp_39 = io_fwdData;
+        casez_tmp_40 = io_fwdData;
       default:
-        casez_tmp_39 = io_fwdData;
+        casez_tmp_40 = io_fwdData;
     endcase
   end // always_comb
   wire        _violationCandidates_0_active_T_5 = entries_0_state == 2'h2;
@@ -993,410 +1022,311 @@ module LoadQueue(
     & ~(resultCandidates_0 & _olderViolation_T_105 < _olderViolation_T_132
         | resultCandidates_1 & _olderViolation_T_113 < _olderViolation_T_132
         | resultCandidates_2 & _olderViolation_T_121 < _olderViolation_T_132);
+  wire [3:0]  _wbValid_T =
+    {resultCandidates_3, resultCandidates_2, resultCandidates_1, resultCandidates_0};
   wire        _wbIdx_T_2 =
     wbGrant_3 | resultCandidates_1
     & ~(resultCandidates_0 & _olderViolation_T_105 < _olderViolation_T_113
         | resultCandidates_2 & _olderViolation_T_121 < _olderViolation_T_113
         | resultCandidates_3 & _olderViolation_T_132 < _olderViolation_T_113);
   wire [1:0]  wbIdx = {|{wbGrant_3, wbGrant_2}, _wbIdx_T_2};
-  wire        io_wb_valid_0 =
-    (|{resultCandidates_3, resultCandidates_2, resultCandidates_1, resultCandidates_0})
-    & ~io_flushAll;
-  reg  [1:0]  casez_tmp_40;
+  wire        responseIncoming = io_dmem_rvalid & respMatches;
+  wire        directResponse = ~(|_wbValid_T) & responseIncoming;
+  wire        directForward = ~(|_wbValid_T) & ~responseIncoming & schedulerForward;
+  wire        directValid = directResponse | directForward;
+  wire [1:0]  directIdx =
+    directResponse & respMatchesOutstanding ? io_dmem_rid[1:0] : schedIdx;
+  wire        _GEN = directResponse & respMatchesOutstanding;
+  wire [4:0]  directMeta_rob_idx = _GEN ? casez_tmp_31 : io_queryRob_0;
+  wire        io_wb_valid_0 = ((|_wbValid_T) | directValid) & ~io_flushAll;
+  reg  [1:0]  casez_tmp_41;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_40 = entries_0_generation;
+        casez_tmp_41 = entries_0_generation;
       2'b01:
-        casez_tmp_40 = entries_1_generation;
+        casez_tmp_41 = entries_1_generation;
       2'b10:
-        casez_tmp_40 = entries_2_generation;
+        casez_tmp_41 = entries_2_generation;
       default:
-        casez_tmp_40 = entries_3_generation;
+        casez_tmp_41 = entries_3_generation;
     endcase
   end // always_comb
-  reg         casez_tmp_41;
+  reg         casez_tmp_42;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_41 = entries_0_meta_signals_wbu_reg_write;
+        casez_tmp_42 = entries_0_meta_signals_wbu_reg_write;
       2'b01:
-        casez_tmp_41 = entries_1_meta_signals_wbu_reg_write;
+        casez_tmp_42 = entries_1_meta_signals_wbu_reg_write;
       2'b10:
-        casez_tmp_41 = entries_2_meta_signals_wbu_reg_write;
+        casez_tmp_42 = entries_2_meta_signals_wbu_reg_write;
       default:
-        casez_tmp_41 = entries_3_meta_signals_wbu_reg_write;
+        casez_tmp_42 = entries_3_meta_signals_wbu_reg_write;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_42;
+  reg  [2:0]  casez_tmp_43;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_42 = entries_0_meta_signals_wbu_reg_write_sel;
+        casez_tmp_43 = entries_0_meta_signals_wbu_reg_write_sel;
       2'b01:
-        casez_tmp_42 = entries_1_meta_signals_wbu_reg_write_sel;
+        casez_tmp_43 = entries_1_meta_signals_wbu_reg_write_sel;
       2'b10:
-        casez_tmp_42 = entries_2_meta_signals_wbu_reg_write_sel;
+        casez_tmp_43 = entries_2_meta_signals_wbu_reg_write_sel;
       default:
-        casez_tmp_42 = entries_3_meta_signals_wbu_reg_write_sel;
-    endcase
-  end // always_comb
-  reg  [31:0] casez_tmp_43;
-  always_comb begin
-    casez (wbIdx)
-      2'b00:
-        casez_tmp_43 = entries_0_meta_alu_result;
-      2'b01:
-        casez_tmp_43 = entries_1_meta_alu_result;
-      2'b10:
-        casez_tmp_43 = entries_2_meta_alu_result;
-      default:
-        casez_tmp_43 = entries_3_meta_alu_result;
+        casez_tmp_43 = entries_3_meta_signals_wbu_reg_write_sel;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_44;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_44 = entries_0_meta_pc;
+        casez_tmp_44 = entries_0_meta_alu_result;
       2'b01:
-        casez_tmp_44 = entries_1_meta_pc;
+        casez_tmp_44 = entries_1_meta_alu_result;
       2'b10:
-        casez_tmp_44 = entries_2_meta_pc;
+        casez_tmp_44 = entries_2_meta_alu_result;
       default:
-        casez_tmp_44 = entries_3_meta_pc;
+        casez_tmp_44 = entries_3_meta_alu_result;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_45;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_45 = entries_0_meta_next_pc;
+        casez_tmp_45 = entries_0_meta_pc;
       2'b01:
-        casez_tmp_45 = entries_1_meta_next_pc;
+        casez_tmp_45 = entries_1_meta_pc;
       2'b10:
-        casez_tmp_45 = entries_2_meta_next_pc;
+        casez_tmp_45 = entries_2_meta_pc;
       default:
-        casez_tmp_45 = entries_3_meta_next_pc;
+        casez_tmp_45 = entries_3_meta_pc;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_46;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_46 = entries_0_meta_imm_ext;
+        casez_tmp_46 = entries_0_meta_next_pc;
       2'b01:
-        casez_tmp_46 = entries_1_meta_imm_ext;
+        casez_tmp_46 = entries_1_meta_next_pc;
       2'b10:
-        casez_tmp_46 = entries_2_meta_imm_ext;
+        casez_tmp_46 = entries_2_meta_next_pc;
       default:
-        casez_tmp_46 = entries_3_meta_imm_ext;
+        casez_tmp_46 = entries_3_meta_next_pc;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_47;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_47 = entries_0_meta_mem_read;
+        casez_tmp_47 = entries_0_meta_imm_ext;
       2'b01:
-        casez_tmp_47 = entries_1_meta_mem_read;
+        casez_tmp_47 = entries_1_meta_imm_ext;
       2'b10:
-        casez_tmp_47 = entries_2_meta_mem_read;
+        casez_tmp_47 = entries_2_meta_imm_ext;
       default:
-        casez_tmp_47 = entries_3_meta_mem_read;
+        casez_tmp_47 = entries_3_meta_imm_ext;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_48;
+  reg  [31:0] casez_tmp_48;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_48 = entries_0_meta_waddr;
+        casez_tmp_48 = entries_0_meta_mem_read;
       2'b01:
-        casez_tmp_48 = entries_1_meta_waddr;
+        casez_tmp_48 = entries_1_meta_mem_read;
       2'b10:
-        casez_tmp_48 = entries_2_meta_waddr;
+        casez_tmp_48 = entries_2_meta_mem_read;
       default:
-        casez_tmp_48 = entries_3_meta_waddr;
+        casez_tmp_48 = entries_3_meta_mem_read;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_49;
+  reg  [4:0]  casez_tmp_49;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_49 = entries_0_meta_csr_rd1;
+        casez_tmp_49 = entries_0_meta_waddr;
       2'b01:
-        casez_tmp_49 = entries_1_meta_csr_rd1;
+        casez_tmp_49 = entries_1_meta_waddr;
       2'b10:
-        casez_tmp_49 = entries_2_meta_csr_rd1;
+        casez_tmp_49 = entries_2_meta_waddr;
       default:
-        casez_tmp_49 = entries_3_meta_csr_rd1;
+        casez_tmp_49 = entries_3_meta_waddr;
     endcase
   end // always_comb
-  reg         casez_tmp_50;
+  reg  [31:0] casez_tmp_50;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_50 = entries_0_meta_state_state;
+        casez_tmp_50 = entries_0_meta_csr_rd1;
       2'b01:
-        casez_tmp_50 = entries_1_meta_state_state;
+        casez_tmp_50 = entries_1_meta_csr_rd1;
       2'b10:
-        casez_tmp_50 = entries_2_meta_state_state;
+        casez_tmp_50 = entries_2_meta_csr_rd1;
       default:
-        casez_tmp_50 = entries_3_meta_state_state;
+        casez_tmp_50 = entries_3_meta_csr_rd1;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_51;
+  reg         casez_tmp_51;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_51 = entries_0_meta_state_state_num;
+        casez_tmp_51 = entries_0_meta_state_state;
       2'b01:
-        casez_tmp_51 = entries_1_meta_state_state_num;
+        casez_tmp_51 = entries_1_meta_state_state;
       2'b10:
-        casez_tmp_51 = entries_2_meta_state_state_num;
+        casez_tmp_51 = entries_2_meta_state_state;
       default:
-        casez_tmp_51 = entries_3_meta_state_state_num;
+        casez_tmp_51 = entries_3_meta_state_state;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_52;
+  reg  [7:0]  casez_tmp_52;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_52 = entries_0_meta_rob_idx;
+        casez_tmp_52 = entries_0_meta_state_state_num;
       2'b01:
-        casez_tmp_52 = entries_1_meta_rob_idx;
+        casez_tmp_52 = entries_1_meta_state_state_num;
       2'b10:
-        casez_tmp_52 = entries_2_meta_rob_idx;
+        casez_tmp_52 = entries_2_meta_state_state_num;
       default:
-        casez_tmp_52 = entries_3_meta_rob_idx;
+        casez_tmp_52 = entries_3_meta_state_state_num;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_53;
+  reg  [4:0]  casez_tmp_53;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_53 = entries_0_meta_pdest;
+        casez_tmp_53 = entries_0_meta_rob_idx;
       2'b01:
-        casez_tmp_53 = entries_1_meta_pdest;
+        casez_tmp_53 = entries_1_meta_rob_idx;
       2'b10:
-        casez_tmp_53 = entries_2_meta_pdest;
+        casez_tmp_53 = entries_2_meta_rob_idx;
       default:
-        casez_tmp_53 = entries_3_meta_pdest;
+        casez_tmp_53 = entries_3_meta_rob_idx;
     endcase
   end // always_comb
-  reg         casez_tmp_54;
+  reg  [5:0]  casez_tmp_54;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_54 = entries_0_meta_br_taken;
+        casez_tmp_54 = entries_0_meta_pdest;
       2'b01:
-        casez_tmp_54 = entries_1_meta_br_taken;
+        casez_tmp_54 = entries_1_meta_pdest;
       2'b10:
-        casez_tmp_54 = entries_2_meta_br_taken;
+        casez_tmp_54 = entries_2_meta_pdest;
       default:
-        casez_tmp_54 = entries_3_meta_br_taken;
+        casez_tmp_54 = entries_3_meta_pdest;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_55;
+  reg         casez_tmp_55;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_55 = entries_0_meta_store_data;
+        casez_tmp_55 = entries_0_meta_br_taken;
       2'b01:
-        casez_tmp_55 = entries_1_meta_store_data;
+        casez_tmp_55 = entries_1_meta_br_taken;
       2'b10:
-        casez_tmp_55 = entries_2_meta_store_data;
+        casez_tmp_55 = entries_2_meta_br_taken;
       default:
-        casez_tmp_55 = entries_3_meta_store_data;
+        casez_tmp_55 = entries_3_meta_br_taken;
     endcase
   end // always_comb
-  reg         casez_tmp_56;
+  reg  [31:0] casez_tmp_56;
   always_comb begin
     casez (wbIdx)
       2'b00:
-        casez_tmp_56 = entries_0_meta_fwd_valid;
+        casez_tmp_56 = entries_0_meta_store_data;
       2'b01:
-        casez_tmp_56 = entries_1_meta_fwd_valid;
+        casez_tmp_56 = entries_1_meta_store_data;
       2'b10:
-        casez_tmp_56 = entries_2_meta_fwd_valid;
+        casez_tmp_56 = entries_2_meta_store_data;
       default:
-        casez_tmp_56 = entries_3_meta_fwd_valid;
+        casez_tmp_56 = entries_3_meta_store_data;
     endcase
   end // always_comb
-  wire        _violationCandidates_0_active_T_4 = entries_0_state == 2'h1;
-  wire        _violationCandidates_0_overlap_base_T_11 = entries_0_memRd == 3'h2;
-  wire        _violationCandidates_0_overlap_base_T_13 = entries_0_memRd == 3'h3;
-  wire        _violationCandidates_0_overlap_base_T_15 = entries_0_memRd == 3'h4;
-  wire        _violationCandidates_0_overlap_base_T_17 = entries_0_memRd == 3'h5;
-  wire [6:0]  _GEN = {5'h0, entries_0_addr[1:0]};
+  reg         casez_tmp_57;
+  always_comb begin
+    casez (wbIdx)
+      2'b00:
+        casez_tmp_57 = entries_0_meta_fwd_valid;
+      2'b01:
+        casez_tmp_57 = entries_1_meta_fwd_valid;
+      2'b10:
+        casez_tmp_57 = entries_2_meta_fwd_valid;
+      default:
+        casez_tmp_57 = entries_3_meta_fwd_valid;
+    endcase
+  end // always_comb
   wire [6:0]  _violationCandidates_0_overlap_T_1 =
     {3'h0,
-     _violationCandidates_0_overlap_base_T_17
+     entries_0_memRd == 3'h5
        ? 4'h3
-       : _violationCandidates_0_overlap_base_T_15
+       : entries_0_memRd == 3'h4
            ? 4'h1
-           : _violationCandidates_0_overlap_base_T_13
-               ? 4'hF
-               : {2'h0, _violationCandidates_0_overlap_base_T_11, 1'h1}} << _GEN;
+           : entries_0_memRd == 3'h3 ? 4'hF : {2'h0, entries_0_memRd == 3'h2, 1'h1}}
+    << entries_0_addr[1:0];
   wire [6:0]  _GEN_0 = {3'h0, io_storeResolve0Mask};
   wire [6:0]  _GEN_1 = {5'h0, io_storeResolve0Addr[1:0]};
   wire [6:0]  _violationCandidates_0_overlap_T_4 = _GEN_0 << _GEN_1;
   wire [31:0] _GEN_2 = {27'h0, io_storeResolve0Rob};
   wire [31:0] _violationCandidates_0_T_2 = 32'h0 >> _GEN_2;
-  wire [6:0]  _violationCandidates_0_overlap_T_8 =
-    {3'h0,
-     _violationCandidates_0_overlap_base_T_17
-       ? 4'h3
-       : _violationCandidates_0_overlap_base_T_15
-           ? 4'h1
-           : _violationCandidates_0_overlap_base_T_13
-               ? 4'hF
-               : {2'h0, _violationCandidates_0_overlap_base_T_11, 1'h1}} << _GEN;
-  wire [6:0]  _GEN_3 = {3'h0, io_storeResolve1Mask};
-  wire [6:0]  _GEN_4 = {5'h0, io_storeResolve1Addr[1:0]};
-  wire [6:0]  _violationCandidates_0_overlap_T_11 = _GEN_3 << _GEN_4;
-  wire [31:0] _GEN_5 = {27'h0, io_storeResolve1Rob};
-  wire [31:0] _violationCandidates_0_T_9 = 32'h0 >> _GEN_5;
   wire        violationCandidates_0 =
-    entries_0_valid
-    & (io_storeResolve0Valid & entries_0_valid
-       & (_violationCandidates_0_active_T_4 | _violationCandidates_0_active_T_5
-          | (&entries_0_state)) & _violationCandidates_0_T_2[0]
-       & entries_0_addr[31:2] == io_storeResolve0Addr[31:2]
-       & (|(_violationCandidates_0_overlap_T_1[3:0]
-            & _violationCandidates_0_overlap_T_4[3:0])) | io_storeResolve1Valid
-       & entries_0_valid
-       & (_violationCandidates_0_active_T_4 | _violationCandidates_0_active_T_5
-          | (&entries_0_state)) & _violationCandidates_0_T_9[0]
-       & entries_0_addr[31:2] == io_storeResolve1Addr[31:2]
-       & (|(_violationCandidates_0_overlap_T_8[3:0]
-            & _violationCandidates_0_overlap_T_11[3:0])));
-  wire        _violationCandidates_1_active_T_4 = entries_1_state == 2'h1;
-  wire        _violationCandidates_1_overlap_base_T_11 = entries_1_memRd == 3'h2;
-  wire        _violationCandidates_1_overlap_base_T_13 = entries_1_memRd == 3'h3;
-  wire        _violationCandidates_1_overlap_base_T_15 = entries_1_memRd == 3'h4;
-  wire        _violationCandidates_1_overlap_base_T_17 = entries_1_memRd == 3'h5;
-  wire [6:0]  _GEN_6 = {5'h0, entries_1_addr[1:0]};
+    entries_0_valid & io_storeResolve0Valid
+    & (entries_0_state == 2'h1 | _violationCandidates_0_active_T_5 | (&entries_0_state))
+    & _violationCandidates_0_T_2[0] & entries_0_addr[31:2] == io_storeResolve0Addr[31:2]
+    & (|(_violationCandidates_0_overlap_T_1[3:0]
+         & _violationCandidates_0_overlap_T_4[3:0]));
   wire [6:0]  _violationCandidates_1_overlap_T_1 =
     {3'h0,
-     _violationCandidates_1_overlap_base_T_17
+     entries_1_memRd == 3'h5
        ? 4'h3
-       : _violationCandidates_1_overlap_base_T_15
+       : entries_1_memRd == 3'h4
            ? 4'h1
-           : _violationCandidates_1_overlap_base_T_13
-               ? 4'hF
-               : {2'h0, _violationCandidates_1_overlap_base_T_11, 1'h1}} << _GEN_6;
+           : entries_1_memRd == 3'h3 ? 4'hF : {2'h0, entries_1_memRd == 3'h2, 1'h1}}
+    << entries_1_addr[1:0];
   wire [6:0]  _violationCandidates_1_overlap_T_4 = _GEN_0 << _GEN_1;
   wire [31:0] _violationCandidates_1_T_2 = 32'h0 >> _GEN_2;
-  wire [6:0]  _violationCandidates_1_overlap_T_8 =
-    {3'h0,
-     _violationCandidates_1_overlap_base_T_17
-       ? 4'h3
-       : _violationCandidates_1_overlap_base_T_15
-           ? 4'h1
-           : _violationCandidates_1_overlap_base_T_13
-               ? 4'hF
-               : {2'h0, _violationCandidates_1_overlap_base_T_11, 1'h1}} << _GEN_6;
-  wire [6:0]  _violationCandidates_1_overlap_T_11 = _GEN_3 << _GEN_4;
-  wire [31:0] _violationCandidates_1_T_9 = 32'h0 >> _GEN_5;
   wire        violationCandidates_1 =
-    entries_1_valid
-    & (io_storeResolve0Valid & entries_1_valid
-       & (_violationCandidates_1_active_T_4 | _violationCandidates_1_active_T_5
-          | (&entries_1_state)) & _violationCandidates_1_T_2[0]
-       & entries_1_addr[31:2] == io_storeResolve0Addr[31:2]
-       & (|(_violationCandidates_1_overlap_T_1[3:0]
-            & _violationCandidates_1_overlap_T_4[3:0])) | io_storeResolve1Valid
-       & entries_1_valid
-       & (_violationCandidates_1_active_T_4 | _violationCandidates_1_active_T_5
-          | (&entries_1_state)) & _violationCandidates_1_T_9[0]
-       & entries_1_addr[31:2] == io_storeResolve1Addr[31:2]
-       & (|(_violationCandidates_1_overlap_T_8[3:0]
-            & _violationCandidates_1_overlap_T_11[3:0])));
-  wire        _violationCandidates_2_active_T_4 = entries_2_state == 2'h1;
-  wire        _violationCandidates_2_overlap_base_T_11 = entries_2_memRd == 3'h2;
-  wire        _violationCandidates_2_overlap_base_T_13 = entries_2_memRd == 3'h3;
-  wire        _violationCandidates_2_overlap_base_T_15 = entries_2_memRd == 3'h4;
-  wire        _violationCandidates_2_overlap_base_T_17 = entries_2_memRd == 3'h5;
-  wire [6:0]  _GEN_7 = {5'h0, entries_2_addr[1:0]};
+    entries_1_valid & io_storeResolve0Valid
+    & (entries_1_state == 2'h1 | _violationCandidates_1_active_T_5 | (&entries_1_state))
+    & _violationCandidates_1_T_2[0] & entries_1_addr[31:2] == io_storeResolve0Addr[31:2]
+    & (|(_violationCandidates_1_overlap_T_1[3:0]
+         & _violationCandidates_1_overlap_T_4[3:0]));
   wire [6:0]  _violationCandidates_2_overlap_T_1 =
     {3'h0,
-     _violationCandidates_2_overlap_base_T_17
+     entries_2_memRd == 3'h5
        ? 4'h3
-       : _violationCandidates_2_overlap_base_T_15
+       : entries_2_memRd == 3'h4
            ? 4'h1
-           : _violationCandidates_2_overlap_base_T_13
-               ? 4'hF
-               : {2'h0, _violationCandidates_2_overlap_base_T_11, 1'h1}} << _GEN_7;
+           : entries_2_memRd == 3'h3 ? 4'hF : {2'h0, entries_2_memRd == 3'h2, 1'h1}}
+    << entries_2_addr[1:0];
   wire [6:0]  _violationCandidates_2_overlap_T_4 = _GEN_0 << _GEN_1;
   wire [31:0] _violationCandidates_2_T_2 = 32'h0 >> _GEN_2;
-  wire [6:0]  _violationCandidates_2_overlap_T_8 =
-    {3'h0,
-     _violationCandidates_2_overlap_base_T_17
-       ? 4'h3
-       : _violationCandidates_2_overlap_base_T_15
-           ? 4'h1
-           : _violationCandidates_2_overlap_base_T_13
-               ? 4'hF
-               : {2'h0, _violationCandidates_2_overlap_base_T_11, 1'h1}} << _GEN_7;
-  wire [6:0]  _violationCandidates_2_overlap_T_11 = _GEN_3 << _GEN_4;
-  wire [31:0] _violationCandidates_2_T_9 = 32'h0 >> _GEN_5;
   wire        violationCandidates_2 =
-    entries_2_valid
-    & (io_storeResolve0Valid & entries_2_valid
-       & (_violationCandidates_2_active_T_4 | _violationCandidates_2_active_T_5
-          | (&entries_2_state)) & _violationCandidates_2_T_2[0]
-       & entries_2_addr[31:2] == io_storeResolve0Addr[31:2]
-       & (|(_violationCandidates_2_overlap_T_1[3:0]
-            & _violationCandidates_2_overlap_T_4[3:0])) | io_storeResolve1Valid
-       & entries_2_valid
-       & (_violationCandidates_2_active_T_4 | _violationCandidates_2_active_T_5
-          | (&entries_2_state)) & _violationCandidates_2_T_9[0]
-       & entries_2_addr[31:2] == io_storeResolve1Addr[31:2]
-       & (|(_violationCandidates_2_overlap_T_8[3:0]
-            & _violationCandidates_2_overlap_T_11[3:0])));
-  wire        _violationCandidates_3_active_T_4 = entries_3_state == 2'h1;
-  wire        _violationCandidates_3_overlap_base_T_11 = entries_3_memRd == 3'h2;
-  wire        _violationCandidates_3_overlap_base_T_13 = entries_3_memRd == 3'h3;
-  wire        _violationCandidates_3_overlap_base_T_15 = entries_3_memRd == 3'h4;
-  wire        _violationCandidates_3_overlap_base_T_17 = entries_3_memRd == 3'h5;
-  wire [6:0]  _GEN_8 = {5'h0, entries_3_addr[1:0]};
+    entries_2_valid & io_storeResolve0Valid
+    & (entries_2_state == 2'h1 | _violationCandidates_2_active_T_5 | (&entries_2_state))
+    & _violationCandidates_2_T_2[0] & entries_2_addr[31:2] == io_storeResolve0Addr[31:2]
+    & (|(_violationCandidates_2_overlap_T_1[3:0]
+         & _violationCandidates_2_overlap_T_4[3:0]));
   wire [6:0]  _violationCandidates_3_overlap_T_1 =
     {3'h0,
-     _violationCandidates_3_overlap_base_T_17
+     entries_3_memRd == 3'h5
        ? 4'h3
-       : _violationCandidates_3_overlap_base_T_15
+       : entries_3_memRd == 3'h4
            ? 4'h1
-           : _violationCandidates_3_overlap_base_T_13
-               ? 4'hF
-               : {2'h0, _violationCandidates_3_overlap_base_T_11, 1'h1}} << _GEN_8;
+           : entries_3_memRd == 3'h3 ? 4'hF : {2'h0, entries_3_memRd == 3'h2, 1'h1}}
+    << entries_3_addr[1:0];
   wire [6:0]  _violationCandidates_3_overlap_T_4 = _GEN_0 << _GEN_1;
   wire [31:0] _violationCandidates_3_T_2 = 32'h0 >> _GEN_2;
-  wire [6:0]  _violationCandidates_3_overlap_T_8 =
-    {3'h0,
-     _violationCandidates_3_overlap_base_T_17
-       ? 4'h3
-       : _violationCandidates_3_overlap_base_T_15
-           ? 4'h1
-           : _violationCandidates_3_overlap_base_T_13
-               ? 4'hF
-               : {2'h0, _violationCandidates_3_overlap_base_T_11, 1'h1}} << _GEN_8;
-  wire [6:0]  _violationCandidates_3_overlap_T_11 = _GEN_3 << _GEN_4;
-  wire [31:0] _violationCandidates_3_T_9 = 32'h0 >> _GEN_5;
   wire        violationCandidates_3 =
-    entries_3_valid
-    & (io_storeResolve0Valid & entries_3_valid
-       & (_violationCandidates_3_active_T_4 | _violationCandidates_3_active_T_5
-          | (&entries_3_state)) & _violationCandidates_3_T_2[0]
-       & entries_3_addr[31:2] == io_storeResolve0Addr[31:2]
-       & (|(_violationCandidates_3_overlap_T_1[3:0]
-            & _violationCandidates_3_overlap_T_4[3:0])) | io_storeResolve1Valid
-       & entries_3_valid
-       & (_violationCandidates_3_active_T_4 | _violationCandidates_3_active_T_5
-          | (&entries_3_state)) & _violationCandidates_3_T_9[0]
-       & entries_3_addr[31:2] == io_storeResolve1Addr[31:2]
-       & (|(_violationCandidates_3_overlap_T_8[3:0]
-            & _violationCandidates_3_overlap_T_11[3:0])));
+    entries_3_valid & io_storeResolve0Valid
+    & (entries_3_state == 2'h1 | _violationCandidates_3_active_T_5 | (&entries_3_state))
+    & _violationCandidates_3_T_2[0] & entries_3_addr[31:2] == io_storeResolve0Addr[31:2]
+    & (|(_violationCandidates_3_overlap_T_1[3:0]
+         & _violationCandidates_3_overlap_T_4[3:0]));
   wire        violationGrant_3 =
     violationCandidates_3
     & ~(violationCandidates_0 & _olderViolation_T_105 < _olderViolation_T_132
@@ -1417,537 +1347,560 @@ module LoadQueue(
      violationCandidates_2,
      violationCandidates_1,
      violationCandidates_0};
-  reg  [31:0] casez_tmp_57;
+  reg  [31:0] casez_tmp_58;
   always_comb begin
     casez (violationIdx)
       2'b00:
-        casez_tmp_57 = entries_0_meta_pc;
+        casez_tmp_58 = entries_0_meta_pc;
       2'b01:
-        casez_tmp_57 = entries_1_meta_pc;
+        casez_tmp_58 = entries_1_meta_pc;
       2'b10:
-        casez_tmp_57 = entries_2_meta_pc;
+        casez_tmp_58 = entries_2_meta_pc;
       default:
-        casez_tmp_57 = entries_3_meta_pc;
+        casez_tmp_58 = entries_3_meta_pc;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_58;
+  reg  [4:0]  casez_tmp_59;
   always_comb begin
     casez (violationIdx)
       2'b00:
-        casez_tmp_58 = entries_0_meta_rob_idx;
+        casez_tmp_59 = entries_0_meta_rob_idx;
       2'b01:
-        casez_tmp_58 = entries_1_meta_rob_idx;
+        casez_tmp_59 = entries_1_meta_rob_idx;
       2'b10:
-        casez_tmp_58 = entries_2_meta_rob_idx;
+        casez_tmp_59 = entries_2_meta_rob_idx;
       default:
-        casez_tmp_58 = entries_3_meta_rob_idx;
+        casez_tmp_59 = entries_3_meta_rob_idx;
     endcase
   end // always_comb
-  wire        _GEN_9 = io_alloc_ready_0 & io_alloc_valid;
+  reg  [1:0]  casez_tmp_60;
+  always_comb begin
+    casez (directIdx)
+      2'b00:
+        casez_tmp_60 = entries_0_generation;
+      2'b01:
+        casez_tmp_60 = entries_1_generation;
+      2'b10:
+        casez_tmp_60 = entries_2_generation;
+      default:
+        casez_tmp_60 = entries_3_generation;
+    endcase
+  end // always_comb
   reg  [2:0]  highWater;
-  wire        _GEN_10 = io_outstanding_0 > highWater;
-  wire        _GEN_11 = schedulerBus & ~io_dmem_arready;
-  wire        _GEN_12 = io_commit0Rob == 5'h0;
-  wire        _GEN_13 = io_commit1Rob == 5'h0;
-  wire        _GEN_14 = io_commit0Rob == 5'h1;
-  wire        _GEN_15 = io_commit1Rob == 5'h1;
-  wire        _GEN_16 = io_commit0Rob == 5'h2;
-  wire        _GEN_17 = io_commit1Rob == 5'h2;
-  wire        _GEN_18 = io_commit0Rob == 5'h3;
-  wire        _GEN_19 = io_commit1Rob == 5'h3;
-  wire        _GEN_20 = io_commit0Rob == 5'h4;
-  wire        _GEN_21 = io_commit1Rob == 5'h4;
-  wire        _GEN_22 = io_commit0Rob == 5'h5;
-  wire        _GEN_23 = io_commit1Rob == 5'h5;
-  wire        _GEN_24 = io_commit0Rob == 5'h6;
-  wire        _GEN_25 = io_commit1Rob == 5'h6;
-  wire        _GEN_26 = io_commit0Rob == 5'h7;
-  wire        _GEN_27 = io_commit1Rob == 5'h7;
-  wire        _GEN_28 = io_commit0Rob == 5'h8;
-  wire        _GEN_29 = io_commit1Rob == 5'h8;
-  wire        _GEN_30 = io_commit0Rob == 5'h9;
-  wire        _GEN_31 = io_commit1Rob == 5'h9;
-  wire        _GEN_32 = io_commit0Rob == 5'hA;
-  wire        _GEN_33 = io_commit1Rob == 5'hA;
-  wire        _GEN_34 = io_commit0Rob == 5'hB;
-  wire        _GEN_35 = io_commit1Rob == 5'hB;
-  wire        _GEN_36 = io_commit0Rob == 5'hC;
-  wire        _GEN_37 = io_commit1Rob == 5'hC;
-  wire        _GEN_38 = io_commit0Rob == 5'hD;
-  wire        _GEN_39 = io_commit1Rob == 5'hD;
-  wire        _GEN_40 = io_commit0Rob == 5'hE;
-  wire        _GEN_41 = io_commit1Rob == 5'hE;
-  wire        _GEN_42 = io_commit0Rob == 5'hF;
-  wire        _GEN_43 = io_commit1Rob == 5'hF;
-  wire        _GEN_44 = io_commit0Rob == 5'h10;
-  wire        _GEN_45 = io_commit1Rob == 5'h10;
-  wire        _GEN_46 = io_commit0Rob == 5'h11;
-  wire        _GEN_47 = io_commit1Rob == 5'h11;
-  wire        _GEN_48 = io_commit0Rob == 5'h12;
-  wire        _GEN_49 = io_commit1Rob == 5'h12;
-  wire        _GEN_50 = io_commit0Rob == 5'h13;
-  wire        _GEN_51 = io_commit1Rob == 5'h13;
-  wire        _GEN_52 = io_commit0Rob == 5'h14;
-  wire        _GEN_53 = io_commit1Rob == 5'h14;
-  wire        _GEN_54 = io_commit0Rob == 5'h15;
-  wire        _GEN_55 = io_commit1Rob == 5'h15;
-  wire        _GEN_56 = io_commit0Rob == 5'h16;
-  wire        _GEN_57 = io_commit1Rob == 5'h16;
-  wire        _GEN_58 = io_commit0Rob == 5'h17;
-  wire        _GEN_59 = io_commit1Rob == 5'h17;
-  wire        _GEN_60 = io_commit0Rob == 5'h18;
-  wire        _GEN_61 = io_commit1Rob == 5'h18;
-  wire        _GEN_62 = io_commit0Rob == 5'h19;
-  wire        _GEN_63 = io_commit1Rob == 5'h19;
-  wire        _GEN_64 = io_commit0Rob == 5'h1A;
-  wire        _GEN_65 = io_commit1Rob == 5'h1A;
-  wire        _GEN_66 = io_commit0Rob == 5'h1B;
-  wire        _GEN_67 = io_commit1Rob == 5'h1B;
-  wire        _GEN_68 = io_commit0Rob == 5'h1C;
-  wire        _GEN_69 = io_commit1Rob == 5'h1C;
-  wire        _GEN_70 = io_commit0Rob == 5'h1D;
-  wire        _GEN_71 = io_commit1Rob == 5'h1D;
-  wire        _GEN_72 = io_commit0Rob == 5'h1E;
-  wire        _GEN_73 = io_commit1Rob == 5'h1E;
-  wire [1:0]  allocIdx =
-    entries_0_valid ? (entries_1_valid ? {1'h1, entries_2_valid} : 2'h1) : 2'h0;
-  wire        schedulerForward = _schedulerBus_T & io_fwdValid;
-  wire        outstandingResponseMeta_state_state = (|io_dmem_rresp) | casez_tmp_28;
-  wire        currentResponseMeta_state_state = (|io_dmem_rresp) | casez_tmp_10;
-  wire        _GEN_74 = _GEN_9 & allocIdx == 2'h0;
-  wire        _GEN_75 = _GEN_74 | entries_0_valid;
-  wire        _GEN_76 = _GEN_9 & allocIdx == 2'h1;
-  wire        _GEN_77 = _GEN_76 | entries_1_valid;
-  wire        _GEN_78 = _GEN_9 & allocIdx == 2'h2;
-  wire        _GEN_79 = _GEN_78 | entries_2_valid;
-  wire        _GEN_80 = _GEN_9 & (&allocIdx);
-  wire        _GEN_81 = _GEN_80 | entries_3_valid;
-  wire        _GEN_82 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h0;
-  wire        _GEN_83 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h1;
-  wire        _GEN_84 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h2;
-  wire        _GEN_85 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h3;
-  wire        _GEN_86 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h4;
-  wire        _GEN_87 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h5;
-  wire        _GEN_88 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h6;
-  wire        _GEN_89 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h7;
-  wire        _GEN_90 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h8;
-  wire        _GEN_91 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h9;
-  wire        _GEN_92 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'hA;
-  wire        _GEN_93 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'hB;
-  wire        _GEN_94 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'hC;
-  wire        _GEN_95 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'hD;
-  wire        _GEN_96 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'hE;
-  wire        _GEN_97 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'hF;
-  wire        _GEN_98 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h10;
-  wire        _GEN_99 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h11;
-  wire        _GEN_100 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h12;
-  wire        _GEN_101 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h13;
-  wire        _GEN_102 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h14;
-  wire        _GEN_103 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h15;
-  wire        _GEN_104 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h16;
-  wire        _GEN_105 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h17;
-  wire        _GEN_106 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h18;
-  wire        _GEN_107 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h19;
-  wire        _GEN_108 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h1A;
-  wire        _GEN_109 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h1B;
-  wire        _GEN_110 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h1C;
-  wire        _GEN_111 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h1D;
-  wire        _GEN_112 = _GEN_9 & io_alloc_bits_meta_rob_idx == 5'h1E;
-  wire        _GEN_113 = _GEN_9 & (&io_alloc_bits_meta_rob_idx);
-  wire        _GEN_114 = _schedIdx_T == 2'h0;
-  wire        _GEN_115 = schedulerForward & _GEN_114;
-  wire        _GEN_116 = _GEN_115 | ~_GEN_74 & entries_0_meta_fwd_valid;
-  wire        _GEN_117 = _schedIdx_T == 2'h1;
-  wire        _GEN_118 = schedulerForward & _GEN_117;
-  wire        _GEN_119 = _GEN_118 | ~_GEN_76 & entries_1_meta_fwd_valid;
-  wire        _GEN_120 = _schedIdx_T == 2'h2;
-  wire        _GEN_121 = schedulerForward & _GEN_120;
-  wire        _GEN_122 = _GEN_121 | ~_GEN_78 & entries_2_meta_fwd_valid;
-  wire        _GEN_123 = schedulerForward & (&_schedIdx_T);
-  wire        _GEN_124 = _GEN_123 | ~_GEN_80 & entries_3_meta_fwd_valid;
-  wire        _GEN_125 = respMatchesOutstanding & io_dmem_rid[1:0] == 2'h0;
-  wire        _GEN_126 = respMatchesOutstanding & io_dmem_rid[1:0] == 2'h1;
-  wire        _GEN_127 = respMatchesOutstanding & io_dmem_rid[1:0] == 2'h2;
-  wire        _GEN_128 = respMatchesOutstanding & (&(io_dmem_rid[1:0]));
-  wire        _GEN_129 = io_wb_ready & io_wb_valid_0;
+  wire        _GEN_3 = io_outstanding_0 > highWater;
+  wire        _GEN_4 = schedulerBus & ~io_dmem_arready;
+  wire        _GEN_5 = io_commit0Rob == 5'h0;
+  wire        _GEN_6 = io_commit1Rob == 5'h0;
+  wire        _GEN_7 = io_commit0Rob == 5'h1;
+  wire        _GEN_8 = io_commit1Rob == 5'h1;
+  wire        _GEN_9 = io_commit0Rob == 5'h2;
+  wire        _GEN_10 = io_commit1Rob == 5'h2;
+  wire        _GEN_11 = io_commit0Rob == 5'h3;
+  wire        _GEN_12 = io_commit1Rob == 5'h3;
+  wire        _GEN_13 = io_commit0Rob == 5'h4;
+  wire        _GEN_14 = io_commit1Rob == 5'h4;
+  wire        _GEN_15 = io_commit0Rob == 5'h5;
+  wire        _GEN_16 = io_commit1Rob == 5'h5;
+  wire        _GEN_17 = io_commit0Rob == 5'h6;
+  wire        _GEN_18 = io_commit1Rob == 5'h6;
+  wire        _GEN_19 = io_commit0Rob == 5'h7;
+  wire        _GEN_20 = io_commit1Rob == 5'h7;
+  wire        _GEN_21 = io_commit0Rob == 5'h8;
+  wire        _GEN_22 = io_commit1Rob == 5'h8;
+  wire        _GEN_23 = io_commit0Rob == 5'h9;
+  wire        _GEN_24 = io_commit1Rob == 5'h9;
+  wire        _GEN_25 = io_commit0Rob == 5'hA;
+  wire        _GEN_26 = io_commit1Rob == 5'hA;
+  wire        _GEN_27 = io_commit0Rob == 5'hB;
+  wire        _GEN_28 = io_commit1Rob == 5'hB;
+  wire        _GEN_29 = io_commit0Rob == 5'hC;
+  wire        _GEN_30 = io_commit1Rob == 5'hC;
+  wire        _GEN_31 = io_commit0Rob == 5'hD;
+  wire        _GEN_32 = io_commit1Rob == 5'hD;
+  wire        _GEN_33 = io_commit0Rob == 5'hE;
+  wire        _GEN_34 = io_commit1Rob == 5'hE;
+  wire        _GEN_35 = io_commit0Rob == 5'hF;
+  wire        _GEN_36 = io_commit1Rob == 5'hF;
+  wire        _GEN_37 = io_commit0Rob == 5'h10;
+  wire        _GEN_38 = io_commit1Rob == 5'h10;
+  wire        _GEN_39 = io_commit0Rob == 5'h11;
+  wire        _GEN_40 = io_commit1Rob == 5'h11;
+  wire        _GEN_41 = io_commit0Rob == 5'h12;
+  wire        _GEN_42 = io_commit1Rob == 5'h12;
+  wire        _GEN_43 = io_commit0Rob == 5'h13;
+  wire        _GEN_44 = io_commit1Rob == 5'h13;
+  wire        _GEN_45 = io_commit0Rob == 5'h14;
+  wire        _GEN_46 = io_commit1Rob == 5'h14;
+  wire        _GEN_47 = io_commit0Rob == 5'h15;
+  wire        _GEN_48 = io_commit1Rob == 5'h15;
+  wire        _GEN_49 = io_commit0Rob == 5'h16;
+  wire        _GEN_50 = io_commit1Rob == 5'h16;
+  wire        _GEN_51 = io_commit0Rob == 5'h17;
+  wire        _GEN_52 = io_commit1Rob == 5'h17;
+  wire        _GEN_53 = io_commit0Rob == 5'h18;
+  wire        _GEN_54 = io_commit1Rob == 5'h18;
+  wire        _GEN_55 = io_commit0Rob == 5'h19;
+  wire        _GEN_56 = io_commit1Rob == 5'h19;
+  wire        _GEN_57 = io_commit0Rob == 5'h1A;
+  wire        _GEN_58 = io_commit1Rob == 5'h1A;
+  wire        _GEN_59 = io_commit0Rob == 5'h1B;
+  wire        _GEN_60 = io_commit1Rob == 5'h1B;
+  wire        _GEN_61 = io_commit0Rob == 5'h1C;
+  wire        _GEN_62 = io_commit1Rob == 5'h1C;
+  wire        _GEN_63 = io_commit0Rob == 5'h1D;
+  wire        _GEN_64 = io_commit1Rob == 5'h1D;
+  wire        _GEN_65 = io_commit0Rob == 5'h1E;
+  wire        _GEN_66 = io_commit1Rob == 5'h1E;
+  wire        _GEN_67 = _freshSchedValid_T_1 & allocIdx == 2'h0;
+  wire        _GEN_68 = _GEN_67 | entries_0_valid;
+  wire        _GEN_69 = _freshSchedValid_T_1 & allocIdx == 2'h1;
+  wire        _GEN_70 = _GEN_69 | entries_1_valid;
+  wire        _GEN_71 = _freshSchedValid_T_1 & allocIdx == 2'h2;
+  wire        _GEN_72 = _GEN_71 | entries_2_valid;
+  wire        _GEN_73 = _freshSchedValid_T_1 & (&allocIdx);
+  wire        _GEN_74 = _GEN_73 | entries_3_valid;
+  wire        _GEN_75 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h0;
+  wire        _GEN_76 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h1;
+  wire        _GEN_77 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h2;
+  wire        _GEN_78 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h3;
+  wire        _GEN_79 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h4;
+  wire        _GEN_80 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h5;
+  wire        _GEN_81 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h6;
+  wire        _GEN_82 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h7;
+  wire        _GEN_83 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h8;
+  wire        _GEN_84 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h9;
+  wire        _GEN_85 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'hA;
+  wire        _GEN_86 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'hB;
+  wire        _GEN_87 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'hC;
+  wire        _GEN_88 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'hD;
+  wire        _GEN_89 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'hE;
+  wire        _GEN_90 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'hF;
+  wire        _GEN_91 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h10;
+  wire        _GEN_92 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h11;
+  wire        _GEN_93 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h12;
+  wire        _GEN_94 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h13;
+  wire        _GEN_95 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h14;
+  wire        _GEN_96 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h15;
+  wire        _GEN_97 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h16;
+  wire        _GEN_98 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h17;
+  wire        _GEN_99 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h18;
+  wire        _GEN_100 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h19;
+  wire        _GEN_101 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h1A;
+  wire        _GEN_102 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h1B;
+  wire        _GEN_103 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h1C;
+  wire        _GEN_104 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h1D;
+  wire        _GEN_105 = _freshSchedValid_T_1 & io_alloc_bits_meta_rob_idx == 5'h1E;
+  wire        _GEN_106 = _freshSchedValid_T_1 & (&io_alloc_bits_meta_rob_idx);
+  wire        _GEN_107 = schedIdx == 2'h0;
+  wire        _GEN_108 = schedulerForward & _GEN_107;
+  wire        _GEN_109 = _GEN_108 | ~_GEN_67 & entries_0_meta_fwd_valid;
+  wire        _GEN_110 = schedIdx == 2'h1;
+  wire        _GEN_111 = schedulerForward & _GEN_110;
+  wire        _GEN_112 = _GEN_111 | ~_GEN_69 & entries_1_meta_fwd_valid;
+  wire        _GEN_113 = schedIdx == 2'h2;
+  wire        _GEN_114 = schedulerForward & _GEN_113;
+  wire        _GEN_115 = _GEN_114 | ~_GEN_71 & entries_2_meta_fwd_valid;
+  wire        _GEN_116 = schedulerForward & (&schedIdx);
+  wire        _GEN_117 = _GEN_116 | ~_GEN_73 & entries_3_meta_fwd_valid;
+  wire        _GEN_118 = directForward & io_wb_ready;
+  wire        _GEN_119 = io_dmem_rid[1:0] == 2'h0;
+  wire        _GEN_120 = respMatchesOutstanding & _GEN_119;
+  wire        _GEN_121 = io_dmem_rid[1:0] == 2'h1;
+  wire        _GEN_122 = respMatchesOutstanding & _GEN_121;
+  wire        _GEN_123 = io_dmem_rid[1:0] == 2'h2;
+  wire        _GEN_124 = respMatchesOutstanding & _GEN_123;
+  wire        _GEN_125 = respMatchesOutstanding & (&(io_dmem_rid[1:0]));
+  wire        _GEN_126 = directResponse & io_wb_ready;
+  wire        _GEN_127 = respMatchesCurrent & ~_GEN_126;
+  wire        _GEN_128 = io_wb_ready & io_wb_valid_0;
+  wire        _GEN_129 = _GEN_128 & (|_wbValid_T);
   wire        _GEN_130 = _GEN_129 & {wbGrant_3, wbGrant_2, _wbIdx_T_2} == 3'h0;
   wire        _GEN_131 = _GEN_129 & wbIdx == 2'h1;
   wire        _GEN_132 = _GEN_129 & wbIdx == 2'h2;
   wire        _GEN_133 = _GEN_129 & (&wbIdx);
-  wire [1:0]  _entries_generation_T = casez_tmp_40 + 2'h1;
-  wire        _GEN_134 = entries_0_valid & entries_0_meta_rob_idx == io_commit0Rob;
-  wire        _GEN_135 =
-    io_commit0Valid ? ~(_GEN_134 | _GEN_130) & _GEN_75 : ~_GEN_130 & _GEN_75;
-  wire [1:0]  _entries_0_generation_T = entries_0_generation + 2'h1;
-  wire        _GEN_136 = io_commit0Valid & _GEN_134;
-  wire        _GEN_137 = entries_1_valid & entries_1_meta_rob_idx == io_commit0Rob;
+  wire [1:0]  _entries_generation_T = casez_tmp_41 + 2'h1;
+  wire        _GEN_134 = _GEN_128 & directValid;
+  wire        _GEN_135 = directIdx == 2'h0;
+  wire        _GEN_136 =
+    _GEN_134 ? ~(_GEN_135 | _GEN_130) & _GEN_68 : ~_GEN_130 & _GEN_68;
+  wire        _GEN_137 = directIdx == 2'h1;
   wire        _GEN_138 =
-    io_commit0Valid ? ~(_GEN_137 | _GEN_131) & _GEN_77 : ~_GEN_131 & _GEN_77;
-  wire [1:0]  _entries_1_generation_T = entries_1_generation + 2'h1;
-  wire        _GEN_139 = io_commit0Valid & _GEN_137;
-  wire        _GEN_140 = entries_2_valid & entries_2_meta_rob_idx == io_commit0Rob;
+    _GEN_134 ? ~(_GEN_137 | _GEN_131) & _GEN_70 : ~_GEN_131 & _GEN_70;
+  wire        _GEN_139 = directIdx == 2'h2;
+  wire        _GEN_140 =
+    _GEN_134 ? ~(_GEN_139 | _GEN_132) & _GEN_72 : ~_GEN_132 & _GEN_72;
   wire        _GEN_141 =
-    io_commit0Valid ? ~(_GEN_140 | _GEN_132) & _GEN_79 : ~_GEN_132 & _GEN_79;
+    _GEN_134 ? ~((&directIdx) | _GEN_133) & _GEN_74 : ~_GEN_133 & _GEN_74;
+  wire [1:0]  _entries_generation_T_2 = casez_tmp_60 + 2'h1;
+  wire        _GEN_142 = _GEN_134 & _GEN_135;
+  wire        _GEN_143 = _GEN_134 & _GEN_137;
+  wire        _GEN_144 = _GEN_134 & _GEN_139;
+  wire        _GEN_145 = _GEN_134 & (&directIdx);
+  wire        _GEN_146 = entries_0_valid & entries_0_meta_rob_idx == io_commit0Rob;
+  wire        _GEN_147 = io_commit0Valid & _GEN_146;
+  wire [1:0]  _entries_0_generation_T = entries_0_generation + 2'h1;
+  wire        _GEN_148 = entries_1_valid & entries_1_meta_rob_idx == io_commit0Rob;
+  wire        _GEN_149 = io_commit0Valid & _GEN_148;
+  wire [1:0]  _entries_1_generation_T = entries_1_generation + 2'h1;
+  wire        _GEN_150 = entries_2_valid & entries_2_meta_rob_idx == io_commit0Rob;
+  wire        _GEN_151 = io_commit0Valid & _GEN_150;
   wire [1:0]  _entries_2_generation_T = entries_2_generation + 2'h1;
-  wire        _GEN_142 = io_commit0Valid & _GEN_140;
-  wire        _GEN_143 = entries_3_valid & entries_3_meta_rob_idx == io_commit0Rob;
-  wire        _GEN_144 =
-    io_commit0Valid ? ~(_GEN_143 | _GEN_133) & _GEN_81 : ~_GEN_133 & _GEN_81;
+  wire        _GEN_152 = entries_3_valid & entries_3_meta_rob_idx == io_commit0Rob;
+  wire        _GEN_153 = io_commit0Valid & _GEN_152;
   wire [1:0]  _entries_3_generation_T = entries_3_generation + 2'h1;
-  wire        _GEN_145 = io_commit0Valid & _GEN_143;
-  wire        _GEN_146 = entries_0_valid & entries_0_meta_rob_idx == io_commit1Rob;
-  wire        _GEN_147 = io_commit1Valid & _GEN_146;
+  wire        _GEN_154 = entries_0_valid & entries_0_meta_rob_idx == io_commit1Rob;
   wire [1:0]  _entries_0_generation_T_2 = entries_0_generation + 2'h1;
-  wire        _GEN_148 = entries_1_valid & entries_1_meta_rob_idx == io_commit1Rob;
-  wire        _GEN_149 = io_commit1Valid & _GEN_148;
+  wire        _GEN_155 = io_commit1Valid & _GEN_154;
+  wire        _GEN_156 = entries_1_valid & entries_1_meta_rob_idx == io_commit1Rob;
   wire [1:0]  _entries_1_generation_T_2 = entries_1_generation + 2'h1;
-  wire        _GEN_150 = entries_2_valid & entries_2_meta_rob_idx == io_commit1Rob;
-  wire        _GEN_151 = io_commit1Valid & _GEN_150;
+  wire        _GEN_157 = io_commit1Valid & _GEN_156;
+  wire        _GEN_158 = entries_2_valid & entries_2_meta_rob_idx == io_commit1Rob;
   wire [1:0]  _entries_2_generation_T_2 = entries_2_generation + 2'h1;
-  wire        _GEN_152 = entries_3_valid & entries_3_meta_rob_idx == io_commit1Rob;
-  wire        _GEN_153 = io_commit1Valid & _GEN_152;
+  wire        _GEN_159 = io_commit1Valid & _GEN_158;
+  wire        _GEN_160 = entries_3_valid & entries_3_meta_rob_idx == io_commit1Rob;
   wire [1:0]  _entries_3_generation_T_2 = entries_3_generation + 2'h1;
-  wire        _GEN_154 = _alive_0_T_2 & _olderViolation_T_105 > _alive_3_T_6;
-  wire        _GEN_155 = _alive_1_T_2 & _olderViolation_T_113 > _alive_3_T_6;
-  wire        _GEN_156 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h0 | _GEN_154 & entries_0_meta_rob_idx == 5'h0;
-  wire        _GEN_157 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h1 | _GEN_154 & entries_0_meta_rob_idx == 5'h1;
-  wire        _GEN_158 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h2 | _GEN_154 & entries_0_meta_rob_idx == 5'h2;
-  wire        _GEN_159 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h3 | _GEN_154 & entries_0_meta_rob_idx == 5'h3;
-  wire        _GEN_160 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h4 | _GEN_154 & entries_0_meta_rob_idx == 5'h4;
-  wire        _GEN_161 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h5 | _GEN_154 & entries_0_meta_rob_idx == 5'h5;
-  wire        _GEN_162 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h6 | _GEN_154 & entries_0_meta_rob_idx == 5'h6;
-  wire        _GEN_163 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h7 | _GEN_154 & entries_0_meta_rob_idx == 5'h7;
+  wire        _GEN_161 = io_commit1Valid & _GEN_160;
+  wire        _GEN_162 = _alive_0_T_2 & _olderViolation_T_105 > _alive_3_T_6;
+  wire        _GEN_163 = _alive_1_T_2 & _olderViolation_T_113 > _alive_3_T_6;
   wire        _GEN_164 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h8 | _GEN_154 & entries_0_meta_rob_idx == 5'h8;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h0 | _GEN_162 & entries_0_meta_rob_idx == 5'h0;
   wire        _GEN_165 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h9 | _GEN_154 & entries_0_meta_rob_idx == 5'h9;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h1 | _GEN_162 & entries_0_meta_rob_idx == 5'h1;
   wire        _GEN_166 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'hA | _GEN_154 & entries_0_meta_rob_idx == 5'hA;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h2 | _GEN_162 & entries_0_meta_rob_idx == 5'h2;
   wire        _GEN_167 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'hB | _GEN_154 & entries_0_meta_rob_idx == 5'hB;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h3 | _GEN_162 & entries_0_meta_rob_idx == 5'h3;
   wire        _GEN_168 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'hC | _GEN_154 & entries_0_meta_rob_idx == 5'hC;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h4 | _GEN_162 & entries_0_meta_rob_idx == 5'h4;
   wire        _GEN_169 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'hD | _GEN_154 & entries_0_meta_rob_idx == 5'hD;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h5 | _GEN_162 & entries_0_meta_rob_idx == 5'h5;
   wire        _GEN_170 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'hE | _GEN_154 & entries_0_meta_rob_idx == 5'hE;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h6 | _GEN_162 & entries_0_meta_rob_idx == 5'h6;
   wire        _GEN_171 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'hF | _GEN_154 & entries_0_meta_rob_idx == 5'hF;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h7 | _GEN_162 & entries_0_meta_rob_idx == 5'h7;
   wire        _GEN_172 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h10 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h10;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h8 | _GEN_162 & entries_0_meta_rob_idx == 5'h8;
   wire        _GEN_173 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h11 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h11;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h9 | _GEN_162 & entries_0_meta_rob_idx == 5'h9;
   wire        _GEN_174 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h12 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h12;
+    _GEN_163 & entries_1_meta_rob_idx == 5'hA | _GEN_162 & entries_0_meta_rob_idx == 5'hA;
   wire        _GEN_175 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h13 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h13;
+    _GEN_163 & entries_1_meta_rob_idx == 5'hB | _GEN_162 & entries_0_meta_rob_idx == 5'hB;
   wire        _GEN_176 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h14 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h14;
+    _GEN_163 & entries_1_meta_rob_idx == 5'hC | _GEN_162 & entries_0_meta_rob_idx == 5'hC;
   wire        _GEN_177 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h15 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h15;
+    _GEN_163 & entries_1_meta_rob_idx == 5'hD | _GEN_162 & entries_0_meta_rob_idx == 5'hD;
   wire        _GEN_178 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h16 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h16;
+    _GEN_163 & entries_1_meta_rob_idx == 5'hE | _GEN_162 & entries_0_meta_rob_idx == 5'hE;
   wire        _GEN_179 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h17 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h17;
+    _GEN_163 & entries_1_meta_rob_idx == 5'hF | _GEN_162 & entries_0_meta_rob_idx == 5'hF;
   wire        _GEN_180 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h18 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h18;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h10 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h10;
   wire        _GEN_181 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h19 | _GEN_154
-    & entries_0_meta_rob_idx == 5'h19;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h11 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h11;
   wire        _GEN_182 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h1A | _GEN_154
-    & entries_0_meta_rob_idx == 5'h1A;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h12 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h12;
   wire        _GEN_183 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h1B | _GEN_154
-    & entries_0_meta_rob_idx == 5'h1B;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h13 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h13;
   wire        _GEN_184 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h1C | _GEN_154
-    & entries_0_meta_rob_idx == 5'h1C;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h14 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h14;
   wire        _GEN_185 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h1D | _GEN_154
-    & entries_0_meta_rob_idx == 5'h1D;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h15 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h15;
   wire        _GEN_186 =
-    _GEN_155 & entries_1_meta_rob_idx == 5'h1E | _GEN_154
-    & entries_0_meta_rob_idx == 5'h1E;
+    _GEN_163 & entries_1_meta_rob_idx == 5'h16 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h16;
   wire        _GEN_187 =
-    _GEN_155 & (&entries_1_meta_rob_idx) | _GEN_154 & (&entries_0_meta_rob_idx);
-  wire        _GEN_188 = _alive_2_T_2 & _olderViolation_T_121 > _alive_3_T_6;
-  wire        _GEN_189 = _GEN_188 & entries_2_meta_rob_idx == 5'h0;
-  wire        _GEN_190 = _GEN_188 & entries_2_meta_rob_idx == 5'h1;
-  wire        _GEN_191 = _GEN_188 & entries_2_meta_rob_idx == 5'h2;
-  wire        _GEN_192 = _GEN_188 & entries_2_meta_rob_idx == 5'h3;
-  wire        _GEN_193 = _GEN_188 & entries_2_meta_rob_idx == 5'h4;
-  wire        _GEN_194 = _GEN_188 & entries_2_meta_rob_idx == 5'h5;
-  wire        _GEN_195 = _GEN_188 & entries_2_meta_rob_idx == 5'h6;
-  wire        _GEN_196 = _GEN_188 & entries_2_meta_rob_idx == 5'h7;
-  wire        _GEN_197 = _GEN_188 & entries_2_meta_rob_idx == 5'h8;
-  wire        _GEN_198 = _GEN_188 & entries_2_meta_rob_idx == 5'h9;
-  wire        _GEN_199 = _GEN_188 & entries_2_meta_rob_idx == 5'hA;
-  wire        _GEN_200 = _GEN_188 & entries_2_meta_rob_idx == 5'hB;
-  wire        _GEN_201 = _GEN_188 & entries_2_meta_rob_idx == 5'hC;
-  wire        _GEN_202 = _GEN_188 & entries_2_meta_rob_idx == 5'hD;
-  wire        _GEN_203 = _GEN_188 & entries_2_meta_rob_idx == 5'hE;
-  wire        _GEN_204 = _GEN_188 & entries_2_meta_rob_idx == 5'hF;
-  wire        _GEN_205 = _GEN_188 & entries_2_meta_rob_idx == 5'h10;
-  wire        _GEN_206 = _GEN_188 & entries_2_meta_rob_idx == 5'h11;
-  wire        _GEN_207 = _GEN_188 & entries_2_meta_rob_idx == 5'h12;
-  wire        _GEN_208 = _GEN_188 & entries_2_meta_rob_idx == 5'h13;
-  wire        _GEN_209 = _GEN_188 & entries_2_meta_rob_idx == 5'h14;
-  wire        _GEN_210 = _GEN_188 & entries_2_meta_rob_idx == 5'h15;
-  wire        _GEN_211 = _GEN_188 & entries_2_meta_rob_idx == 5'h16;
-  wire        _GEN_212 = _GEN_188 & entries_2_meta_rob_idx == 5'h17;
-  wire        _GEN_213 = _GEN_188 & entries_2_meta_rob_idx == 5'h18;
-  wire        _GEN_214 = _GEN_188 & entries_2_meta_rob_idx == 5'h19;
-  wire        _GEN_215 = _GEN_188 & entries_2_meta_rob_idx == 5'h1A;
-  wire        _GEN_216 = _GEN_188 & entries_2_meta_rob_idx == 5'h1B;
-  wire        _GEN_217 = _GEN_188 & entries_2_meta_rob_idx == 5'h1C;
-  wire        _GEN_218 = _GEN_188 & entries_2_meta_rob_idx == 5'h1D;
-  wire        _GEN_219 = _GEN_188 & entries_2_meta_rob_idx == 5'h1E;
-  wire        _GEN_220 = _GEN_188 & (&entries_2_meta_rob_idx);
-  wire        _GEN_221 = _alive_3_T_2 & _olderViolation_T_132 > _alive_3_T_6;
-  wire        _GEN_222 = _GEN_137 & _GEN_12 | _GEN_134 & _GEN_12;
-  wire        _GEN_223 = _GEN_140 & _GEN_12;
-  wire        _GEN_224 =
-    io_commit0Valid & (_GEN_143 ? _GEN_12 | _GEN_223 | _GEN_222 : _GEN_223 | _GEN_222);
-  wire        _GEN_225 = _GEN_146 & _GEN_13;
-  wire        _GEN_226 = _GEN_148 ? _GEN_13 | _GEN_225 | _GEN_224 : _GEN_225 | _GEN_224;
-  wire        _GEN_227 = _GEN_150 & _GEN_13;
-  wire        _GEN_228 = _GEN_137 & _GEN_14 | _GEN_134 & _GEN_14;
-  wire        _GEN_229 = _GEN_140 & _GEN_14;
-  wire        _GEN_230 =
-    io_commit0Valid & (_GEN_143 ? _GEN_14 | _GEN_229 | _GEN_228 : _GEN_229 | _GEN_228);
-  wire        _GEN_231 = _GEN_146 & _GEN_15;
-  wire        _GEN_232 = _GEN_148 ? _GEN_15 | _GEN_231 | _GEN_230 : _GEN_231 | _GEN_230;
-  wire        _GEN_233 = _GEN_150 & _GEN_15;
-  wire        _GEN_234 = _GEN_137 & _GEN_16 | _GEN_134 & _GEN_16;
-  wire        _GEN_235 = _GEN_140 & _GEN_16;
-  wire        _GEN_236 =
-    io_commit0Valid & (_GEN_143 ? _GEN_16 | _GEN_235 | _GEN_234 : _GEN_235 | _GEN_234);
-  wire        _GEN_237 = _GEN_146 & _GEN_17;
-  wire        _GEN_238 = _GEN_148 ? _GEN_17 | _GEN_237 | _GEN_236 : _GEN_237 | _GEN_236;
-  wire        _GEN_239 = _GEN_150 & _GEN_17;
-  wire        _GEN_240 = _GEN_137 & _GEN_18 | _GEN_134 & _GEN_18;
-  wire        _GEN_241 = _GEN_140 & _GEN_18;
-  wire        _GEN_242 =
-    io_commit0Valid & (_GEN_143 ? _GEN_18 | _GEN_241 | _GEN_240 : _GEN_241 | _GEN_240);
-  wire        _GEN_243 = _GEN_146 & _GEN_19;
-  wire        _GEN_244 = _GEN_148 ? _GEN_19 | _GEN_243 | _GEN_242 : _GEN_243 | _GEN_242;
-  wire        _GEN_245 = _GEN_150 & _GEN_19;
-  wire        _GEN_246 = _GEN_137 & _GEN_20 | _GEN_134 & _GEN_20;
-  wire        _GEN_247 = _GEN_140 & _GEN_20;
-  wire        _GEN_248 =
-    io_commit0Valid & (_GEN_143 ? _GEN_20 | _GEN_247 | _GEN_246 : _GEN_247 | _GEN_246);
-  wire        _GEN_249 = _GEN_146 & _GEN_21;
-  wire        _GEN_250 = _GEN_148 ? _GEN_21 | _GEN_249 | _GEN_248 : _GEN_249 | _GEN_248;
-  wire        _GEN_251 = _GEN_150 & _GEN_21;
-  wire        _GEN_252 = _GEN_137 & _GEN_22 | _GEN_134 & _GEN_22;
-  wire        _GEN_253 = _GEN_140 & _GEN_22;
-  wire        _GEN_254 =
-    io_commit0Valid & (_GEN_143 ? _GEN_22 | _GEN_253 | _GEN_252 : _GEN_253 | _GEN_252);
-  wire        _GEN_255 = _GEN_146 & _GEN_23;
-  wire        _GEN_256 = _GEN_148 ? _GEN_23 | _GEN_255 | _GEN_254 : _GEN_255 | _GEN_254;
-  wire        _GEN_257 = _GEN_150 & _GEN_23;
-  wire        _GEN_258 = _GEN_137 & _GEN_24 | _GEN_134 & _GEN_24;
-  wire        _GEN_259 = _GEN_140 & _GEN_24;
-  wire        _GEN_260 =
-    io_commit0Valid & (_GEN_143 ? _GEN_24 | _GEN_259 | _GEN_258 : _GEN_259 | _GEN_258);
-  wire        _GEN_261 = _GEN_146 & _GEN_25;
-  wire        _GEN_262 = _GEN_148 ? _GEN_25 | _GEN_261 | _GEN_260 : _GEN_261 | _GEN_260;
-  wire        _GEN_263 = _GEN_150 & _GEN_25;
-  wire        _GEN_264 = _GEN_137 & _GEN_26 | _GEN_134 & _GEN_26;
-  wire        _GEN_265 = _GEN_140 & _GEN_26;
-  wire        _GEN_266 =
-    io_commit0Valid & (_GEN_143 ? _GEN_26 | _GEN_265 | _GEN_264 : _GEN_265 | _GEN_264);
-  wire        _GEN_267 = _GEN_146 & _GEN_27;
-  wire        _GEN_268 = _GEN_148 ? _GEN_27 | _GEN_267 | _GEN_266 : _GEN_267 | _GEN_266;
-  wire        _GEN_269 = _GEN_150 & _GEN_27;
-  wire        _GEN_270 = _GEN_137 & _GEN_28 | _GEN_134 & _GEN_28;
-  wire        _GEN_271 = _GEN_140 & _GEN_28;
-  wire        _GEN_272 =
-    io_commit0Valid & (_GEN_143 ? _GEN_28 | _GEN_271 | _GEN_270 : _GEN_271 | _GEN_270);
-  wire        _GEN_273 = _GEN_146 & _GEN_29;
-  wire        _GEN_274 = _GEN_148 ? _GEN_29 | _GEN_273 | _GEN_272 : _GEN_273 | _GEN_272;
-  wire        _GEN_275 = _GEN_150 & _GEN_29;
-  wire        _GEN_276 = _GEN_137 & _GEN_30 | _GEN_134 & _GEN_30;
-  wire        _GEN_277 = _GEN_140 & _GEN_30;
-  wire        _GEN_278 =
-    io_commit0Valid & (_GEN_143 ? _GEN_30 | _GEN_277 | _GEN_276 : _GEN_277 | _GEN_276);
-  wire        _GEN_279 = _GEN_146 & _GEN_31;
-  wire        _GEN_280 = _GEN_148 ? _GEN_31 | _GEN_279 | _GEN_278 : _GEN_279 | _GEN_278;
-  wire        _GEN_281 = _GEN_150 & _GEN_31;
-  wire        _GEN_282 = _GEN_137 & _GEN_32 | _GEN_134 & _GEN_32;
-  wire        _GEN_283 = _GEN_140 & _GEN_32;
-  wire        _GEN_284 =
-    io_commit0Valid & (_GEN_143 ? _GEN_32 | _GEN_283 | _GEN_282 : _GEN_283 | _GEN_282);
-  wire        _GEN_285 = _GEN_146 & _GEN_33;
-  wire        _GEN_286 = _GEN_148 ? _GEN_33 | _GEN_285 | _GEN_284 : _GEN_285 | _GEN_284;
-  wire        _GEN_287 = _GEN_150 & _GEN_33;
-  wire        _GEN_288 = _GEN_137 & _GEN_34 | _GEN_134 & _GEN_34;
-  wire        _GEN_289 = _GEN_140 & _GEN_34;
-  wire        _GEN_290 =
-    io_commit0Valid & (_GEN_143 ? _GEN_34 | _GEN_289 | _GEN_288 : _GEN_289 | _GEN_288);
-  wire        _GEN_291 = _GEN_146 & _GEN_35;
-  wire        _GEN_292 = _GEN_148 ? _GEN_35 | _GEN_291 | _GEN_290 : _GEN_291 | _GEN_290;
-  wire        _GEN_293 = _GEN_150 & _GEN_35;
-  wire        _GEN_294 = _GEN_137 & _GEN_36 | _GEN_134 & _GEN_36;
-  wire        _GEN_295 = _GEN_140 & _GEN_36;
-  wire        _GEN_296 =
-    io_commit0Valid & (_GEN_143 ? _GEN_36 | _GEN_295 | _GEN_294 : _GEN_295 | _GEN_294);
-  wire        _GEN_297 = _GEN_146 & _GEN_37;
-  wire        _GEN_298 = _GEN_148 ? _GEN_37 | _GEN_297 | _GEN_296 : _GEN_297 | _GEN_296;
-  wire        _GEN_299 = _GEN_150 & _GEN_37;
-  wire        _GEN_300 = _GEN_137 & _GEN_38 | _GEN_134 & _GEN_38;
-  wire        _GEN_301 = _GEN_140 & _GEN_38;
-  wire        _GEN_302 =
-    io_commit0Valid & (_GEN_143 ? _GEN_38 | _GEN_301 | _GEN_300 : _GEN_301 | _GEN_300);
-  wire        _GEN_303 = _GEN_146 & _GEN_39;
-  wire        _GEN_304 = _GEN_148 ? _GEN_39 | _GEN_303 | _GEN_302 : _GEN_303 | _GEN_302;
-  wire        _GEN_305 = _GEN_150 & _GEN_39;
-  wire        _GEN_306 = _GEN_137 & _GEN_40 | _GEN_134 & _GEN_40;
-  wire        _GEN_307 = _GEN_140 & _GEN_40;
-  wire        _GEN_308 =
-    io_commit0Valid & (_GEN_143 ? _GEN_40 | _GEN_307 | _GEN_306 : _GEN_307 | _GEN_306);
-  wire        _GEN_309 = _GEN_146 & _GEN_41;
-  wire        _GEN_310 = _GEN_148 ? _GEN_41 | _GEN_309 | _GEN_308 : _GEN_309 | _GEN_308;
-  wire        _GEN_311 = _GEN_150 & _GEN_41;
-  wire        _GEN_312 = _GEN_137 & _GEN_42 | _GEN_134 & _GEN_42;
-  wire        _GEN_313 = _GEN_140 & _GEN_42;
-  wire        _GEN_314 =
-    io_commit0Valid & (_GEN_143 ? _GEN_42 | _GEN_313 | _GEN_312 : _GEN_313 | _GEN_312);
-  wire        _GEN_315 = _GEN_146 & _GEN_43;
-  wire        _GEN_316 = _GEN_148 ? _GEN_43 | _GEN_315 | _GEN_314 : _GEN_315 | _GEN_314;
-  wire        _GEN_317 = _GEN_150 & _GEN_43;
-  wire        _GEN_318 = _GEN_137 & _GEN_44 | _GEN_134 & _GEN_44;
-  wire        _GEN_319 = _GEN_140 & _GEN_44;
-  wire        _GEN_320 =
-    io_commit0Valid & (_GEN_143 ? _GEN_44 | _GEN_319 | _GEN_318 : _GEN_319 | _GEN_318);
-  wire        _GEN_321 = _GEN_146 & _GEN_45;
-  wire        _GEN_322 = _GEN_148 ? _GEN_45 | _GEN_321 | _GEN_320 : _GEN_321 | _GEN_320;
-  wire        _GEN_323 = _GEN_150 & _GEN_45;
-  wire        _GEN_324 = _GEN_137 & _GEN_46 | _GEN_134 & _GEN_46;
-  wire        _GEN_325 = _GEN_140 & _GEN_46;
-  wire        _GEN_326 =
-    io_commit0Valid & (_GEN_143 ? _GEN_46 | _GEN_325 | _GEN_324 : _GEN_325 | _GEN_324);
-  wire        _GEN_327 = _GEN_146 & _GEN_47;
-  wire        _GEN_328 = _GEN_148 ? _GEN_47 | _GEN_327 | _GEN_326 : _GEN_327 | _GEN_326;
-  wire        _GEN_329 = _GEN_150 & _GEN_47;
-  wire        _GEN_330 = _GEN_137 & _GEN_48 | _GEN_134 & _GEN_48;
-  wire        _GEN_331 = _GEN_140 & _GEN_48;
-  wire        _GEN_332 =
-    io_commit0Valid & (_GEN_143 ? _GEN_48 | _GEN_331 | _GEN_330 : _GEN_331 | _GEN_330);
-  wire        _GEN_333 = _GEN_146 & _GEN_49;
-  wire        _GEN_334 = _GEN_148 ? _GEN_49 | _GEN_333 | _GEN_332 : _GEN_333 | _GEN_332;
-  wire        _GEN_335 = _GEN_150 & _GEN_49;
-  wire        _GEN_336 = _GEN_137 & _GEN_50 | _GEN_134 & _GEN_50;
-  wire        _GEN_337 = _GEN_140 & _GEN_50;
-  wire        _GEN_338 =
-    io_commit0Valid & (_GEN_143 ? _GEN_50 | _GEN_337 | _GEN_336 : _GEN_337 | _GEN_336);
-  wire        _GEN_339 = _GEN_146 & _GEN_51;
-  wire        _GEN_340 = _GEN_148 ? _GEN_51 | _GEN_339 | _GEN_338 : _GEN_339 | _GEN_338;
-  wire        _GEN_341 = _GEN_150 & _GEN_51;
-  wire        _GEN_342 = _GEN_137 & _GEN_52 | _GEN_134 & _GEN_52;
-  wire        _GEN_343 = _GEN_140 & _GEN_52;
-  wire        _GEN_344 =
-    io_commit0Valid & (_GEN_143 ? _GEN_52 | _GEN_343 | _GEN_342 : _GEN_343 | _GEN_342);
-  wire        _GEN_345 = _GEN_146 & _GEN_53;
-  wire        _GEN_346 = _GEN_148 ? _GEN_53 | _GEN_345 | _GEN_344 : _GEN_345 | _GEN_344;
-  wire        _GEN_347 = _GEN_150 & _GEN_53;
-  wire        _GEN_348 = _GEN_137 & _GEN_54 | _GEN_134 & _GEN_54;
-  wire        _GEN_349 = _GEN_140 & _GEN_54;
-  wire        _GEN_350 =
-    io_commit0Valid & (_GEN_143 ? _GEN_54 | _GEN_349 | _GEN_348 : _GEN_349 | _GEN_348);
-  wire        _GEN_351 = _GEN_146 & _GEN_55;
-  wire        _GEN_352 = _GEN_148 ? _GEN_55 | _GEN_351 | _GEN_350 : _GEN_351 | _GEN_350;
-  wire        _GEN_353 = _GEN_150 & _GEN_55;
-  wire        _GEN_354 = _GEN_137 & _GEN_56 | _GEN_134 & _GEN_56;
-  wire        _GEN_355 = _GEN_140 & _GEN_56;
-  wire        _GEN_356 =
-    io_commit0Valid & (_GEN_143 ? _GEN_56 | _GEN_355 | _GEN_354 : _GEN_355 | _GEN_354);
-  wire        _GEN_357 = _GEN_146 & _GEN_57;
-  wire        _GEN_358 = _GEN_148 ? _GEN_57 | _GEN_357 | _GEN_356 : _GEN_357 | _GEN_356;
-  wire        _GEN_359 = _GEN_150 & _GEN_57;
-  wire        _GEN_360 = _GEN_137 & _GEN_58 | _GEN_134 & _GEN_58;
-  wire        _GEN_361 = _GEN_140 & _GEN_58;
-  wire        _GEN_362 =
-    io_commit0Valid & (_GEN_143 ? _GEN_58 | _GEN_361 | _GEN_360 : _GEN_361 | _GEN_360);
-  wire        _GEN_363 = _GEN_146 & _GEN_59;
-  wire        _GEN_364 = _GEN_148 ? _GEN_59 | _GEN_363 | _GEN_362 : _GEN_363 | _GEN_362;
-  wire        _GEN_365 = _GEN_150 & _GEN_59;
-  wire        _GEN_366 = _GEN_137 & _GEN_60 | _GEN_134 & _GEN_60;
-  wire        _GEN_367 = _GEN_140 & _GEN_60;
-  wire        _GEN_368 =
-    io_commit0Valid & (_GEN_143 ? _GEN_60 | _GEN_367 | _GEN_366 : _GEN_367 | _GEN_366);
-  wire        _GEN_369 = _GEN_146 & _GEN_61;
-  wire        _GEN_370 = _GEN_148 ? _GEN_61 | _GEN_369 | _GEN_368 : _GEN_369 | _GEN_368;
-  wire        _GEN_371 = _GEN_150 & _GEN_61;
-  wire        _GEN_372 = _GEN_137 & _GEN_62 | _GEN_134 & _GEN_62;
-  wire        _GEN_373 = _GEN_140 & _GEN_62;
-  wire        _GEN_374 =
-    io_commit0Valid & (_GEN_143 ? _GEN_62 | _GEN_373 | _GEN_372 : _GEN_373 | _GEN_372);
-  wire        _GEN_375 = _GEN_146 & _GEN_63;
-  wire        _GEN_376 = _GEN_148 ? _GEN_63 | _GEN_375 | _GEN_374 : _GEN_375 | _GEN_374;
-  wire        _GEN_377 = _GEN_150 & _GEN_63;
-  wire        _GEN_378 = _GEN_137 & _GEN_64 | _GEN_134 & _GEN_64;
-  wire        _GEN_379 = _GEN_140 & _GEN_64;
-  wire        _GEN_380 =
-    io_commit0Valid & (_GEN_143 ? _GEN_64 | _GEN_379 | _GEN_378 : _GEN_379 | _GEN_378);
-  wire        _GEN_381 = _GEN_146 & _GEN_65;
-  wire        _GEN_382 = _GEN_148 ? _GEN_65 | _GEN_381 | _GEN_380 : _GEN_381 | _GEN_380;
-  wire        _GEN_383 = _GEN_150 & _GEN_65;
-  wire        _GEN_384 = _GEN_137 & _GEN_66 | _GEN_134 & _GEN_66;
-  wire        _GEN_385 = _GEN_140 & _GEN_66;
-  wire        _GEN_386 =
-    io_commit0Valid & (_GEN_143 ? _GEN_66 | _GEN_385 | _GEN_384 : _GEN_385 | _GEN_384);
-  wire        _GEN_387 = _GEN_146 & _GEN_67;
-  wire        _GEN_388 = _GEN_148 ? _GEN_67 | _GEN_387 | _GEN_386 : _GEN_387 | _GEN_386;
-  wire        _GEN_389 = _GEN_150 & _GEN_67;
-  wire        _GEN_390 = _GEN_137 & _GEN_68 | _GEN_134 & _GEN_68;
-  wire        _GEN_391 = _GEN_140 & _GEN_68;
-  wire        _GEN_392 =
-    io_commit0Valid & (_GEN_143 ? _GEN_68 | _GEN_391 | _GEN_390 : _GEN_391 | _GEN_390);
-  wire        _GEN_393 = _GEN_146 & _GEN_69;
-  wire        _GEN_394 = _GEN_148 ? _GEN_69 | _GEN_393 | _GEN_392 : _GEN_393 | _GEN_392;
-  wire        _GEN_395 = _GEN_150 & _GEN_69;
-  wire        _GEN_396 = _GEN_137 & _GEN_70 | _GEN_134 & _GEN_70;
-  wire        _GEN_397 = _GEN_140 & _GEN_70;
-  wire        _GEN_398 =
-    io_commit0Valid & (_GEN_143 ? _GEN_70 | _GEN_397 | _GEN_396 : _GEN_397 | _GEN_396);
-  wire        _GEN_399 = _GEN_146 & _GEN_71;
-  wire        _GEN_400 = _GEN_148 ? _GEN_71 | _GEN_399 | _GEN_398 : _GEN_399 | _GEN_398;
-  wire        _GEN_401 = _GEN_150 & _GEN_71;
-  wire        _GEN_402 = _GEN_137 & _GEN_72 | _GEN_134 & _GEN_72;
-  wire        _GEN_403 = _GEN_140 & _GEN_72;
-  wire        _GEN_404 =
-    io_commit0Valid & (_GEN_143 ? _GEN_72 | _GEN_403 | _GEN_402 : _GEN_403 | _GEN_402);
-  wire        _GEN_405 = _GEN_146 & _GEN_73;
-  wire        _GEN_406 = _GEN_148 ? _GEN_73 | _GEN_405 | _GEN_404 : _GEN_405 | _GEN_404;
-  wire        _GEN_407 = _GEN_150 & _GEN_73;
-  wire        _GEN_408 = _GEN_137 & (&io_commit0Rob) | _GEN_134 & (&io_commit0Rob);
-  wire        _GEN_409 = _GEN_140 & (&io_commit0Rob);
-  wire        _GEN_410 =
-    io_commit0Valid
-    & (_GEN_143 ? (&io_commit0Rob) | _GEN_409 | _GEN_408 : _GEN_409 | _GEN_408);
-  wire        _GEN_411 = _GEN_146 & (&io_commit1Rob);
+    _GEN_163 & entries_1_meta_rob_idx == 5'h17 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h17;
+  wire        _GEN_188 =
+    _GEN_163 & entries_1_meta_rob_idx == 5'h18 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h18;
+  wire        _GEN_189 =
+    _GEN_163 & entries_1_meta_rob_idx == 5'h19 | _GEN_162
+    & entries_0_meta_rob_idx == 5'h19;
+  wire        _GEN_190 =
+    _GEN_163 & entries_1_meta_rob_idx == 5'h1A | _GEN_162
+    & entries_0_meta_rob_idx == 5'h1A;
+  wire        _GEN_191 =
+    _GEN_163 & entries_1_meta_rob_idx == 5'h1B | _GEN_162
+    & entries_0_meta_rob_idx == 5'h1B;
+  wire        _GEN_192 =
+    _GEN_163 & entries_1_meta_rob_idx == 5'h1C | _GEN_162
+    & entries_0_meta_rob_idx == 5'h1C;
+  wire        _GEN_193 =
+    _GEN_163 & entries_1_meta_rob_idx == 5'h1D | _GEN_162
+    & entries_0_meta_rob_idx == 5'h1D;
+  wire        _GEN_194 =
+    _GEN_163 & entries_1_meta_rob_idx == 5'h1E | _GEN_162
+    & entries_0_meta_rob_idx == 5'h1E;
+  wire        _GEN_195 =
+    _GEN_163 & (&entries_1_meta_rob_idx) | _GEN_162 & (&entries_0_meta_rob_idx);
+  wire        _GEN_196 = _alive_2_T_2 & _olderViolation_T_121 > _alive_3_T_6;
+  wire        _GEN_197 = _GEN_196 & entries_2_meta_rob_idx == 5'h0;
+  wire        _GEN_198 = _GEN_196 & entries_2_meta_rob_idx == 5'h1;
+  wire        _GEN_199 = _GEN_196 & entries_2_meta_rob_idx == 5'h2;
+  wire        _GEN_200 = _GEN_196 & entries_2_meta_rob_idx == 5'h3;
+  wire        _GEN_201 = _GEN_196 & entries_2_meta_rob_idx == 5'h4;
+  wire        _GEN_202 = _GEN_196 & entries_2_meta_rob_idx == 5'h5;
+  wire        _GEN_203 = _GEN_196 & entries_2_meta_rob_idx == 5'h6;
+  wire        _GEN_204 = _GEN_196 & entries_2_meta_rob_idx == 5'h7;
+  wire        _GEN_205 = _GEN_196 & entries_2_meta_rob_idx == 5'h8;
+  wire        _GEN_206 = _GEN_196 & entries_2_meta_rob_idx == 5'h9;
+  wire        _GEN_207 = _GEN_196 & entries_2_meta_rob_idx == 5'hA;
+  wire        _GEN_208 = _GEN_196 & entries_2_meta_rob_idx == 5'hB;
+  wire        _GEN_209 = _GEN_196 & entries_2_meta_rob_idx == 5'hC;
+  wire        _GEN_210 = _GEN_196 & entries_2_meta_rob_idx == 5'hD;
+  wire        _GEN_211 = _GEN_196 & entries_2_meta_rob_idx == 5'hE;
+  wire        _GEN_212 = _GEN_196 & entries_2_meta_rob_idx == 5'hF;
+  wire        _GEN_213 = _GEN_196 & entries_2_meta_rob_idx == 5'h10;
+  wire        _GEN_214 = _GEN_196 & entries_2_meta_rob_idx == 5'h11;
+  wire        _GEN_215 = _GEN_196 & entries_2_meta_rob_idx == 5'h12;
+  wire        _GEN_216 = _GEN_196 & entries_2_meta_rob_idx == 5'h13;
+  wire        _GEN_217 = _GEN_196 & entries_2_meta_rob_idx == 5'h14;
+  wire        _GEN_218 = _GEN_196 & entries_2_meta_rob_idx == 5'h15;
+  wire        _GEN_219 = _GEN_196 & entries_2_meta_rob_idx == 5'h16;
+  wire        _GEN_220 = _GEN_196 & entries_2_meta_rob_idx == 5'h17;
+  wire        _GEN_221 = _GEN_196 & entries_2_meta_rob_idx == 5'h18;
+  wire        _GEN_222 = _GEN_196 & entries_2_meta_rob_idx == 5'h19;
+  wire        _GEN_223 = _GEN_196 & entries_2_meta_rob_idx == 5'h1A;
+  wire        _GEN_224 = _GEN_196 & entries_2_meta_rob_idx == 5'h1B;
+  wire        _GEN_225 = _GEN_196 & entries_2_meta_rob_idx == 5'h1C;
+  wire        _GEN_226 = _GEN_196 & entries_2_meta_rob_idx == 5'h1D;
+  wire        _GEN_227 = _GEN_196 & entries_2_meta_rob_idx == 5'h1E;
+  wire        _GEN_228 = _GEN_196 & (&entries_2_meta_rob_idx);
+  wire        _GEN_229 = _alive_3_T_2 & _olderViolation_T_132 > _alive_3_T_6;
+  wire        _GEN_230 = _GEN_148 & _GEN_5 | _GEN_146 & _GEN_5;
+  wire        _GEN_231 = _GEN_150 & _GEN_5;
+  wire        _GEN_232 =
+    io_commit0Valid & (_GEN_152 ? _GEN_5 | _GEN_231 | _GEN_230 : _GEN_231 | _GEN_230);
+  wire        _GEN_233 = _GEN_154 & _GEN_6;
+  wire        _GEN_234 = _GEN_156 ? _GEN_6 | _GEN_233 | _GEN_232 : _GEN_233 | _GEN_232;
+  wire        _GEN_235 = _GEN_158 & _GEN_6;
+  wire        _GEN_236 = _GEN_148 & _GEN_7 | _GEN_146 & _GEN_7;
+  wire        _GEN_237 = _GEN_150 & _GEN_7;
+  wire        _GEN_238 =
+    io_commit0Valid & (_GEN_152 ? _GEN_7 | _GEN_237 | _GEN_236 : _GEN_237 | _GEN_236);
+  wire        _GEN_239 = _GEN_154 & _GEN_8;
+  wire        _GEN_240 = _GEN_156 ? _GEN_8 | _GEN_239 | _GEN_238 : _GEN_239 | _GEN_238;
+  wire        _GEN_241 = _GEN_158 & _GEN_8;
+  wire        _GEN_242 = _GEN_148 & _GEN_9 | _GEN_146 & _GEN_9;
+  wire        _GEN_243 = _GEN_150 & _GEN_9;
+  wire        _GEN_244 =
+    io_commit0Valid & (_GEN_152 ? _GEN_9 | _GEN_243 | _GEN_242 : _GEN_243 | _GEN_242);
+  wire        _GEN_245 = _GEN_154 & _GEN_10;
+  wire        _GEN_246 = _GEN_156 ? _GEN_10 | _GEN_245 | _GEN_244 : _GEN_245 | _GEN_244;
+  wire        _GEN_247 = _GEN_158 & _GEN_10;
+  wire        _GEN_248 = _GEN_148 & _GEN_11 | _GEN_146 & _GEN_11;
+  wire        _GEN_249 = _GEN_150 & _GEN_11;
+  wire        _GEN_250 =
+    io_commit0Valid & (_GEN_152 ? _GEN_11 | _GEN_249 | _GEN_248 : _GEN_249 | _GEN_248);
+  wire        _GEN_251 = _GEN_154 & _GEN_12;
+  wire        _GEN_252 = _GEN_156 ? _GEN_12 | _GEN_251 | _GEN_250 : _GEN_251 | _GEN_250;
+  wire        _GEN_253 = _GEN_158 & _GEN_12;
+  wire        _GEN_254 = _GEN_148 & _GEN_13 | _GEN_146 & _GEN_13;
+  wire        _GEN_255 = _GEN_150 & _GEN_13;
+  wire        _GEN_256 =
+    io_commit0Valid & (_GEN_152 ? _GEN_13 | _GEN_255 | _GEN_254 : _GEN_255 | _GEN_254);
+  wire        _GEN_257 = _GEN_154 & _GEN_14;
+  wire        _GEN_258 = _GEN_156 ? _GEN_14 | _GEN_257 | _GEN_256 : _GEN_257 | _GEN_256;
+  wire        _GEN_259 = _GEN_158 & _GEN_14;
+  wire        _GEN_260 = _GEN_148 & _GEN_15 | _GEN_146 & _GEN_15;
+  wire        _GEN_261 = _GEN_150 & _GEN_15;
+  wire        _GEN_262 =
+    io_commit0Valid & (_GEN_152 ? _GEN_15 | _GEN_261 | _GEN_260 : _GEN_261 | _GEN_260);
+  wire        _GEN_263 = _GEN_154 & _GEN_16;
+  wire        _GEN_264 = _GEN_156 ? _GEN_16 | _GEN_263 | _GEN_262 : _GEN_263 | _GEN_262;
+  wire        _GEN_265 = _GEN_158 & _GEN_16;
+  wire        _GEN_266 = _GEN_148 & _GEN_17 | _GEN_146 & _GEN_17;
+  wire        _GEN_267 = _GEN_150 & _GEN_17;
+  wire        _GEN_268 =
+    io_commit0Valid & (_GEN_152 ? _GEN_17 | _GEN_267 | _GEN_266 : _GEN_267 | _GEN_266);
+  wire        _GEN_269 = _GEN_154 & _GEN_18;
+  wire        _GEN_270 = _GEN_156 ? _GEN_18 | _GEN_269 | _GEN_268 : _GEN_269 | _GEN_268;
+  wire        _GEN_271 = _GEN_158 & _GEN_18;
+  wire        _GEN_272 = _GEN_148 & _GEN_19 | _GEN_146 & _GEN_19;
+  wire        _GEN_273 = _GEN_150 & _GEN_19;
+  wire        _GEN_274 =
+    io_commit0Valid & (_GEN_152 ? _GEN_19 | _GEN_273 | _GEN_272 : _GEN_273 | _GEN_272);
+  wire        _GEN_275 = _GEN_154 & _GEN_20;
+  wire        _GEN_276 = _GEN_156 ? _GEN_20 | _GEN_275 | _GEN_274 : _GEN_275 | _GEN_274;
+  wire        _GEN_277 = _GEN_158 & _GEN_20;
+  wire        _GEN_278 = _GEN_148 & _GEN_21 | _GEN_146 & _GEN_21;
+  wire        _GEN_279 = _GEN_150 & _GEN_21;
+  wire        _GEN_280 =
+    io_commit0Valid & (_GEN_152 ? _GEN_21 | _GEN_279 | _GEN_278 : _GEN_279 | _GEN_278);
+  wire        _GEN_281 = _GEN_154 & _GEN_22;
+  wire        _GEN_282 = _GEN_156 ? _GEN_22 | _GEN_281 | _GEN_280 : _GEN_281 | _GEN_280;
+  wire        _GEN_283 = _GEN_158 & _GEN_22;
+  wire        _GEN_284 = _GEN_148 & _GEN_23 | _GEN_146 & _GEN_23;
+  wire        _GEN_285 = _GEN_150 & _GEN_23;
+  wire        _GEN_286 =
+    io_commit0Valid & (_GEN_152 ? _GEN_23 | _GEN_285 | _GEN_284 : _GEN_285 | _GEN_284);
+  wire        _GEN_287 = _GEN_154 & _GEN_24;
+  wire        _GEN_288 = _GEN_156 ? _GEN_24 | _GEN_287 | _GEN_286 : _GEN_287 | _GEN_286;
+  wire        _GEN_289 = _GEN_158 & _GEN_24;
+  wire        _GEN_290 = _GEN_148 & _GEN_25 | _GEN_146 & _GEN_25;
+  wire        _GEN_291 = _GEN_150 & _GEN_25;
+  wire        _GEN_292 =
+    io_commit0Valid & (_GEN_152 ? _GEN_25 | _GEN_291 | _GEN_290 : _GEN_291 | _GEN_290);
+  wire        _GEN_293 = _GEN_154 & _GEN_26;
+  wire        _GEN_294 = _GEN_156 ? _GEN_26 | _GEN_293 | _GEN_292 : _GEN_293 | _GEN_292;
+  wire        _GEN_295 = _GEN_158 & _GEN_26;
+  wire        _GEN_296 = _GEN_148 & _GEN_27 | _GEN_146 & _GEN_27;
+  wire        _GEN_297 = _GEN_150 & _GEN_27;
+  wire        _GEN_298 =
+    io_commit0Valid & (_GEN_152 ? _GEN_27 | _GEN_297 | _GEN_296 : _GEN_297 | _GEN_296);
+  wire        _GEN_299 = _GEN_154 & _GEN_28;
+  wire        _GEN_300 = _GEN_156 ? _GEN_28 | _GEN_299 | _GEN_298 : _GEN_299 | _GEN_298;
+  wire        _GEN_301 = _GEN_158 & _GEN_28;
+  wire        _GEN_302 = _GEN_148 & _GEN_29 | _GEN_146 & _GEN_29;
+  wire        _GEN_303 = _GEN_150 & _GEN_29;
+  wire        _GEN_304 =
+    io_commit0Valid & (_GEN_152 ? _GEN_29 | _GEN_303 | _GEN_302 : _GEN_303 | _GEN_302);
+  wire        _GEN_305 = _GEN_154 & _GEN_30;
+  wire        _GEN_306 = _GEN_156 ? _GEN_30 | _GEN_305 | _GEN_304 : _GEN_305 | _GEN_304;
+  wire        _GEN_307 = _GEN_158 & _GEN_30;
+  wire        _GEN_308 = _GEN_148 & _GEN_31 | _GEN_146 & _GEN_31;
+  wire        _GEN_309 = _GEN_150 & _GEN_31;
+  wire        _GEN_310 =
+    io_commit0Valid & (_GEN_152 ? _GEN_31 | _GEN_309 | _GEN_308 : _GEN_309 | _GEN_308);
+  wire        _GEN_311 = _GEN_154 & _GEN_32;
+  wire        _GEN_312 = _GEN_156 ? _GEN_32 | _GEN_311 | _GEN_310 : _GEN_311 | _GEN_310;
+  wire        _GEN_313 = _GEN_158 & _GEN_32;
+  wire        _GEN_314 = _GEN_148 & _GEN_33 | _GEN_146 & _GEN_33;
+  wire        _GEN_315 = _GEN_150 & _GEN_33;
+  wire        _GEN_316 =
+    io_commit0Valid & (_GEN_152 ? _GEN_33 | _GEN_315 | _GEN_314 : _GEN_315 | _GEN_314);
+  wire        _GEN_317 = _GEN_154 & _GEN_34;
+  wire        _GEN_318 = _GEN_156 ? _GEN_34 | _GEN_317 | _GEN_316 : _GEN_317 | _GEN_316;
+  wire        _GEN_319 = _GEN_158 & _GEN_34;
+  wire        _GEN_320 = _GEN_148 & _GEN_35 | _GEN_146 & _GEN_35;
+  wire        _GEN_321 = _GEN_150 & _GEN_35;
+  wire        _GEN_322 =
+    io_commit0Valid & (_GEN_152 ? _GEN_35 | _GEN_321 | _GEN_320 : _GEN_321 | _GEN_320);
+  wire        _GEN_323 = _GEN_154 & _GEN_36;
+  wire        _GEN_324 = _GEN_156 ? _GEN_36 | _GEN_323 | _GEN_322 : _GEN_323 | _GEN_322;
+  wire        _GEN_325 = _GEN_158 & _GEN_36;
+  wire        _GEN_326 = _GEN_148 & _GEN_37 | _GEN_146 & _GEN_37;
+  wire        _GEN_327 = _GEN_150 & _GEN_37;
+  wire        _GEN_328 =
+    io_commit0Valid & (_GEN_152 ? _GEN_37 | _GEN_327 | _GEN_326 : _GEN_327 | _GEN_326);
+  wire        _GEN_329 = _GEN_154 & _GEN_38;
+  wire        _GEN_330 = _GEN_156 ? _GEN_38 | _GEN_329 | _GEN_328 : _GEN_329 | _GEN_328;
+  wire        _GEN_331 = _GEN_158 & _GEN_38;
+  wire        _GEN_332 = _GEN_148 & _GEN_39 | _GEN_146 & _GEN_39;
+  wire        _GEN_333 = _GEN_150 & _GEN_39;
+  wire        _GEN_334 =
+    io_commit0Valid & (_GEN_152 ? _GEN_39 | _GEN_333 | _GEN_332 : _GEN_333 | _GEN_332);
+  wire        _GEN_335 = _GEN_154 & _GEN_40;
+  wire        _GEN_336 = _GEN_156 ? _GEN_40 | _GEN_335 | _GEN_334 : _GEN_335 | _GEN_334;
+  wire        _GEN_337 = _GEN_158 & _GEN_40;
+  wire        _GEN_338 = _GEN_148 & _GEN_41 | _GEN_146 & _GEN_41;
+  wire        _GEN_339 = _GEN_150 & _GEN_41;
+  wire        _GEN_340 =
+    io_commit0Valid & (_GEN_152 ? _GEN_41 | _GEN_339 | _GEN_338 : _GEN_339 | _GEN_338);
+  wire        _GEN_341 = _GEN_154 & _GEN_42;
+  wire        _GEN_342 = _GEN_156 ? _GEN_42 | _GEN_341 | _GEN_340 : _GEN_341 | _GEN_340;
+  wire        _GEN_343 = _GEN_158 & _GEN_42;
+  wire        _GEN_344 = _GEN_148 & _GEN_43 | _GEN_146 & _GEN_43;
+  wire        _GEN_345 = _GEN_150 & _GEN_43;
+  wire        _GEN_346 =
+    io_commit0Valid & (_GEN_152 ? _GEN_43 | _GEN_345 | _GEN_344 : _GEN_345 | _GEN_344);
+  wire        _GEN_347 = _GEN_154 & _GEN_44;
+  wire        _GEN_348 = _GEN_156 ? _GEN_44 | _GEN_347 | _GEN_346 : _GEN_347 | _GEN_346;
+  wire        _GEN_349 = _GEN_158 & _GEN_44;
+  wire        _GEN_350 = _GEN_148 & _GEN_45 | _GEN_146 & _GEN_45;
+  wire        _GEN_351 = _GEN_150 & _GEN_45;
+  wire        _GEN_352 =
+    io_commit0Valid & (_GEN_152 ? _GEN_45 | _GEN_351 | _GEN_350 : _GEN_351 | _GEN_350);
+  wire        _GEN_353 = _GEN_154 & _GEN_46;
+  wire        _GEN_354 = _GEN_156 ? _GEN_46 | _GEN_353 | _GEN_352 : _GEN_353 | _GEN_352;
+  wire        _GEN_355 = _GEN_158 & _GEN_46;
+  wire        _GEN_356 = _GEN_148 & _GEN_47 | _GEN_146 & _GEN_47;
+  wire        _GEN_357 = _GEN_150 & _GEN_47;
+  wire        _GEN_358 =
+    io_commit0Valid & (_GEN_152 ? _GEN_47 | _GEN_357 | _GEN_356 : _GEN_357 | _GEN_356);
+  wire        _GEN_359 = _GEN_154 & _GEN_48;
+  wire        _GEN_360 = _GEN_156 ? _GEN_48 | _GEN_359 | _GEN_358 : _GEN_359 | _GEN_358;
+  wire        _GEN_361 = _GEN_158 & _GEN_48;
+  wire        _GEN_362 = _GEN_148 & _GEN_49 | _GEN_146 & _GEN_49;
+  wire        _GEN_363 = _GEN_150 & _GEN_49;
+  wire        _GEN_364 =
+    io_commit0Valid & (_GEN_152 ? _GEN_49 | _GEN_363 | _GEN_362 : _GEN_363 | _GEN_362);
+  wire        _GEN_365 = _GEN_154 & _GEN_50;
+  wire        _GEN_366 = _GEN_156 ? _GEN_50 | _GEN_365 | _GEN_364 : _GEN_365 | _GEN_364;
+  wire        _GEN_367 = _GEN_158 & _GEN_50;
+  wire        _GEN_368 = _GEN_148 & _GEN_51 | _GEN_146 & _GEN_51;
+  wire        _GEN_369 = _GEN_150 & _GEN_51;
+  wire        _GEN_370 =
+    io_commit0Valid & (_GEN_152 ? _GEN_51 | _GEN_369 | _GEN_368 : _GEN_369 | _GEN_368);
+  wire        _GEN_371 = _GEN_154 & _GEN_52;
+  wire        _GEN_372 = _GEN_156 ? _GEN_52 | _GEN_371 | _GEN_370 : _GEN_371 | _GEN_370;
+  wire        _GEN_373 = _GEN_158 & _GEN_52;
+  wire        _GEN_374 = _GEN_148 & _GEN_53 | _GEN_146 & _GEN_53;
+  wire        _GEN_375 = _GEN_150 & _GEN_53;
+  wire        _GEN_376 =
+    io_commit0Valid & (_GEN_152 ? _GEN_53 | _GEN_375 | _GEN_374 : _GEN_375 | _GEN_374);
+  wire        _GEN_377 = _GEN_154 & _GEN_54;
+  wire        _GEN_378 = _GEN_156 ? _GEN_54 | _GEN_377 | _GEN_376 : _GEN_377 | _GEN_376;
+  wire        _GEN_379 = _GEN_158 & _GEN_54;
+  wire        _GEN_380 = _GEN_148 & _GEN_55 | _GEN_146 & _GEN_55;
+  wire        _GEN_381 = _GEN_150 & _GEN_55;
+  wire        _GEN_382 =
+    io_commit0Valid & (_GEN_152 ? _GEN_55 | _GEN_381 | _GEN_380 : _GEN_381 | _GEN_380);
+  wire        _GEN_383 = _GEN_154 & _GEN_56;
+  wire        _GEN_384 = _GEN_156 ? _GEN_56 | _GEN_383 | _GEN_382 : _GEN_383 | _GEN_382;
+  wire        _GEN_385 = _GEN_158 & _GEN_56;
+  wire        _GEN_386 = _GEN_148 & _GEN_57 | _GEN_146 & _GEN_57;
+  wire        _GEN_387 = _GEN_150 & _GEN_57;
+  wire        _GEN_388 =
+    io_commit0Valid & (_GEN_152 ? _GEN_57 | _GEN_387 | _GEN_386 : _GEN_387 | _GEN_386);
+  wire        _GEN_389 = _GEN_154 & _GEN_58;
+  wire        _GEN_390 = _GEN_156 ? _GEN_58 | _GEN_389 | _GEN_388 : _GEN_389 | _GEN_388;
+  wire        _GEN_391 = _GEN_158 & _GEN_58;
+  wire        _GEN_392 = _GEN_148 & _GEN_59 | _GEN_146 & _GEN_59;
+  wire        _GEN_393 = _GEN_150 & _GEN_59;
+  wire        _GEN_394 =
+    io_commit0Valid & (_GEN_152 ? _GEN_59 | _GEN_393 | _GEN_392 : _GEN_393 | _GEN_392);
+  wire        _GEN_395 = _GEN_154 & _GEN_60;
+  wire        _GEN_396 = _GEN_156 ? _GEN_60 | _GEN_395 | _GEN_394 : _GEN_395 | _GEN_394;
+  wire        _GEN_397 = _GEN_158 & _GEN_60;
+  wire        _GEN_398 = _GEN_148 & _GEN_61 | _GEN_146 & _GEN_61;
+  wire        _GEN_399 = _GEN_150 & _GEN_61;
+  wire        _GEN_400 =
+    io_commit0Valid & (_GEN_152 ? _GEN_61 | _GEN_399 | _GEN_398 : _GEN_399 | _GEN_398);
+  wire        _GEN_401 = _GEN_154 & _GEN_62;
+  wire        _GEN_402 = _GEN_156 ? _GEN_62 | _GEN_401 | _GEN_400 : _GEN_401 | _GEN_400;
+  wire        _GEN_403 = _GEN_158 & _GEN_62;
+  wire        _GEN_404 = _GEN_148 & _GEN_63 | _GEN_146 & _GEN_63;
+  wire        _GEN_405 = _GEN_150 & _GEN_63;
+  wire        _GEN_406 =
+    io_commit0Valid & (_GEN_152 ? _GEN_63 | _GEN_405 | _GEN_404 : _GEN_405 | _GEN_404);
+  wire        _GEN_407 = _GEN_154 & _GEN_64;
+  wire        _GEN_408 = _GEN_156 ? _GEN_64 | _GEN_407 | _GEN_406 : _GEN_407 | _GEN_406;
+  wire        _GEN_409 = _GEN_158 & _GEN_64;
+  wire        _GEN_410 = _GEN_148 & _GEN_65 | _GEN_146 & _GEN_65;
+  wire        _GEN_411 = _GEN_150 & _GEN_65;
   wire        _GEN_412 =
-    _GEN_148 ? (&io_commit1Rob) | _GEN_411 | _GEN_410 : _GEN_411 | _GEN_410;
-  wire        _GEN_413 = _GEN_150 & (&io_commit1Rob);
+    io_commit0Valid & (_GEN_152 ? _GEN_65 | _GEN_411 | _GEN_410 : _GEN_411 | _GEN_410);
+  wire        _GEN_413 = _GEN_154 & _GEN_66;
+  wire        _GEN_414 = _GEN_156 ? _GEN_66 | _GEN_413 | _GEN_412 : _GEN_413 | _GEN_412;
+  wire        _GEN_415 = _GEN_158 & _GEN_66;
+  wire        _GEN_416 = _GEN_148 & (&io_commit0Rob) | _GEN_146 & (&io_commit0Rob);
+  wire        _GEN_417 = _GEN_150 & (&io_commit0Rob);
+  wire        _GEN_418 =
+    io_commit0Valid
+    & (_GEN_152 ? (&io_commit0Rob) | _GEN_417 | _GEN_416 : _GEN_417 | _GEN_416);
+  wire        _GEN_419 = _GEN_154 & (&io_commit1Rob);
+  wire        _GEN_420 =
+    _GEN_156 ? (&io_commit1Rob) | _GEN_419 | _GEN_418 : _GEN_419 | _GEN_418;
+  wire        _GEN_421 = _GEN_158 & (&io_commit1Rob);
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
@@ -2103,134 +2056,190 @@ module LoadQueue(
     end
     else begin
       entries_0_valid <=
-        ~io_flushAll
-        & (io_flush ? ~(_GEN_154 | _GEN_147) & _GEN_135 : ~_GEN_147 & _GEN_135);
+        ~(io_flushAll | _GEN_162)
+        & (io_commit1Valid ? ~(_GEN_154 | _GEN_147) & _GEN_136 : ~_GEN_147 & _GEN_136);
       if (io_flushAll) begin
         if (entries_0_valid)
           entries_0_generation <= entries_0_generation + 2'h1;
-        else if (_GEN_147)
+        else if (_GEN_155)
           entries_0_generation <= _entries_0_generation_T_2;
-        else if (_GEN_136)
+        else if (_GEN_147)
           entries_0_generation <= _entries_0_generation_T;
+        else if (_GEN_142)
+          entries_0_generation <= _entries_generation_T_2;
         else if (_GEN_130)
           entries_0_generation <= _entries_generation_T;
         if (entries_1_valid)
           entries_1_generation <= entries_1_generation + 2'h1;
-        else if (_GEN_149)
+        else if (_GEN_157)
           entries_1_generation <= _entries_1_generation_T_2;
-        else if (_GEN_139)
+        else if (_GEN_149)
           entries_1_generation <= _entries_1_generation_T;
+        else if (_GEN_143)
+          entries_1_generation <= _entries_generation_T_2;
         else if (_GEN_131)
           entries_1_generation <= _entries_generation_T;
         if (entries_2_valid)
           entries_2_generation <= entries_2_generation + 2'h1;
-        else if (_GEN_151)
+        else if (_GEN_159)
           entries_2_generation <= _entries_2_generation_T_2;
-        else if (_GEN_142)
+        else if (_GEN_151)
           entries_2_generation <= _entries_2_generation_T;
+        else if (_GEN_144)
+          entries_2_generation <= _entries_generation_T_2;
         else if (_GEN_132)
           entries_2_generation <= _entries_generation_T;
         if (entries_3_valid)
           entries_3_generation <= entries_3_generation + 2'h1;
-        else if (_GEN_153)
+        else if (_GEN_161)
           entries_3_generation <= _entries_3_generation_T_2;
-        else if (_GEN_145)
+        else if (_GEN_153)
           entries_3_generation <= _entries_3_generation_T;
+        else if (_GEN_145)
+          entries_3_generation <= _entries_generation_T_2;
         else if (_GEN_133)
           entries_3_generation <= _entries_generation_T;
       end
       else begin
-        if (_GEN_154)
+        if (_GEN_162)
           entries_0_generation <= entries_0_generation + 2'h1;
-        else if (_GEN_147)
+        else if (_GEN_155)
           entries_0_generation <= _entries_0_generation_T_2;
-        else if (_GEN_136)
+        else if (_GEN_147)
           entries_0_generation <= _entries_0_generation_T;
+        else if (_GEN_142)
+          entries_0_generation <= _entries_generation_T_2;
         else if (_GEN_130)
           entries_0_generation <= _entries_generation_T;
-        if (_GEN_155)
+        if (_GEN_163)
           entries_1_generation <= entries_1_generation + 2'h1;
-        else if (_GEN_149)
+        else if (_GEN_157)
           entries_1_generation <= _entries_1_generation_T_2;
-        else if (_GEN_139)
+        else if (_GEN_149)
           entries_1_generation <= _entries_1_generation_T;
+        else if (_GEN_143)
+          entries_1_generation <= _entries_generation_T_2;
         else if (_GEN_131)
           entries_1_generation <= _entries_generation_T;
-        if (_GEN_188)
+        if (_GEN_196)
           entries_2_generation <= entries_2_generation + 2'h1;
-        else if (_GEN_151)
+        else if (_GEN_159)
           entries_2_generation <= _entries_2_generation_T_2;
-        else if (_GEN_142)
+        else if (_GEN_151)
           entries_2_generation <= _entries_2_generation_T;
+        else if (_GEN_144)
+          entries_2_generation <= _entries_generation_T_2;
         else if (_GEN_132)
           entries_2_generation <= _entries_generation_T;
-        if (_GEN_221)
+        if (_GEN_229)
           entries_3_generation <= entries_3_generation + 2'h1;
-        else if (_GEN_153)
+        else if (_GEN_161)
           entries_3_generation <= _entries_3_generation_T_2;
-        else if (_GEN_145)
+        else if (_GEN_153)
           entries_3_generation <= _entries_3_generation_T;
+        else if (_GEN_145)
+          entries_3_generation <= _entries_generation_T_2;
         else if (_GEN_133)
           entries_3_generation <= _entries_generation_T;
       end
-      if (respMatchesCurrent & _GEN_114) begin
-        entries_0_meta_signals_wbu_reg_write <= casez_tmp_2;
-        entries_0_meta_signals_wbu_reg_write_sel <= casez_tmp_3;
-        entries_0_meta_alu_result <= casez_tmp_4;
-        entries_0_meta_pc <= casez_tmp_5;
-        entries_0_meta_next_pc <= casez_tmp_6;
-        entries_0_meta_imm_ext <= casez_tmp_7;
-        entries_0_meta_mem_read <= casez_tmp_38;
-        entries_0_meta_waddr <= casez_tmp_8;
-        entries_0_meta_csr_rd1 <= casez_tmp_9;
+      if (respMatchesCurrent & _GEN_107) begin
+        if (|schedMask) begin
+          entries_0_meta_signals_wbu_reg_write <= casez_tmp_3;
+          entries_0_meta_signals_wbu_reg_write_sel <= casez_tmp_4;
+          entries_0_meta_alu_result <= casez_tmp_5;
+          entries_0_meta_pc <= casez_tmp_6;
+          entries_0_meta_next_pc <= casez_tmp_7;
+          entries_0_meta_imm_ext <= casez_tmp_8;
+          entries_0_meta_waddr <= casez_tmp_9;
+          entries_0_meta_csr_rd1 <= casez_tmp_10;
+          entries_0_meta_rob_idx <= casez_tmp_13;
+          entries_0_meta_pdest <= casez_tmp_14;
+          entries_0_meta_br_taken <= casez_tmp_15;
+          entries_0_meta_store_data <= casez_tmp_16;
+        end
+        else begin
+          entries_0_meta_signals_wbu_reg_write <=
+            io_alloc_bits_meta_signals_wbu_reg_write;
+          entries_0_meta_signals_wbu_reg_write_sel <=
+            io_alloc_bits_meta_signals_wbu_reg_write_sel;
+          entries_0_meta_alu_result <= io_alloc_bits_meta_alu_result;
+          entries_0_meta_pc <= io_alloc_bits_meta_pc;
+          entries_0_meta_next_pc <= io_alloc_bits_meta_next_pc;
+          entries_0_meta_imm_ext <= io_alloc_bits_meta_imm_ext;
+          entries_0_meta_waddr <= io_alloc_bits_meta_waddr;
+          entries_0_meta_csr_rd1 <= io_alloc_bits_meta_csr_rd1;
+          entries_0_meta_rob_idx <= io_alloc_bits_meta_rob_idx;
+          entries_0_meta_pdest <= io_alloc_bits_meta_pdest;
+          entries_0_meta_br_taken <= io_alloc_bits_meta_br_taken;
+          entries_0_meta_store_data <= io_alloc_bits_meta_store_data;
+        end
+        entries_0_meta_mem_read <= casez_tmp_39;
         entries_0_meta_state_state <= currentResponseMeta_state_state;
         if (|io_dmem_rresp)
           entries_0_meta_state_state_num <= 8'h5;
+        else if (|schedMask)
+          entries_0_meta_state_state_num <= casez_tmp_12;
         else
-          entries_0_meta_state_state_num <= casez_tmp_11;
-        entries_0_meta_rob_idx <= casez_tmp_12;
-        entries_0_meta_pdest <= casez_tmp_13;
-        entries_0_meta_br_taken <= casez_tmp_14;
-        entries_0_meta_store_data <= casez_tmp_15;
+          entries_0_meta_state_state_num <= io_alloc_bits_meta_state_state_num;
       end
-      else if (_GEN_125) begin
-        entries_0_meta_signals_wbu_reg_write <= casez_tmp_20;
-        entries_0_meta_signals_wbu_reg_write_sel <= casez_tmp_21;
-        entries_0_meta_alu_result <= casez_tmp_22;
-        entries_0_meta_pc <= casez_tmp_23;
-        entries_0_meta_next_pc <= casez_tmp_24;
-        entries_0_meta_imm_ext <= casez_tmp_25;
-        entries_0_meta_mem_read <= casez_tmp_37;
-        entries_0_meta_waddr <= casez_tmp_26;
-        entries_0_meta_csr_rd1 <= casez_tmp_27;
+      else if (_GEN_120) begin
+        entries_0_meta_signals_wbu_reg_write <= casez_tmp_21;
+        entries_0_meta_signals_wbu_reg_write_sel <= casez_tmp_22;
+        entries_0_meta_alu_result <= casez_tmp_23;
+        entries_0_meta_pc <= casez_tmp_24;
+        entries_0_meta_next_pc <= casez_tmp_25;
+        entries_0_meta_imm_ext <= casez_tmp_26;
+        entries_0_meta_mem_read <= casez_tmp_38;
+        entries_0_meta_waddr <= casez_tmp_27;
+        entries_0_meta_csr_rd1 <= casez_tmp_28;
         entries_0_meta_state_state <= outstandingResponseMeta_state_state;
         if (|io_dmem_rresp)
           entries_0_meta_state_state_num <= 8'h5;
         else
-          entries_0_meta_state_state_num <= casez_tmp_29;
-        entries_0_meta_rob_idx <= casez_tmp_30;
-        entries_0_meta_pdest <= casez_tmp_31;
-        entries_0_meta_br_taken <= casez_tmp_32;
-        entries_0_meta_store_data <= casez_tmp_33;
+          entries_0_meta_state_state_num <= casez_tmp_30;
+        entries_0_meta_rob_idx <= casez_tmp_31;
+        entries_0_meta_pdest <= casez_tmp_32;
+        entries_0_meta_br_taken <= casez_tmp_33;
+        entries_0_meta_store_data <= casez_tmp_34;
       end
-      else if (_GEN_115) begin
-        entries_0_meta_signals_wbu_reg_write <= casez_tmp_2;
-        entries_0_meta_signals_wbu_reg_write_sel <= casez_tmp_3;
-        entries_0_meta_alu_result <= casez_tmp_4;
-        entries_0_meta_pc <= casez_tmp_5;
-        entries_0_meta_next_pc <= casez_tmp_6;
-        entries_0_meta_imm_ext <= casez_tmp_7;
-        entries_0_meta_mem_read <= casez_tmp_39;
-        entries_0_meta_waddr <= casez_tmp_8;
-        entries_0_meta_csr_rd1 <= casez_tmp_9;
-        entries_0_meta_state_state <= casez_tmp_10;
-        entries_0_meta_state_state_num <= casez_tmp_11;
-        entries_0_meta_rob_idx <= casez_tmp_12;
-        entries_0_meta_pdest <= casez_tmp_13;
-        entries_0_meta_br_taken <= casez_tmp_14;
-        entries_0_meta_store_data <= casez_tmp_15;
+      else if (_GEN_108) begin
+        if (|schedMask) begin
+          entries_0_meta_signals_wbu_reg_write <= casez_tmp_3;
+          entries_0_meta_signals_wbu_reg_write_sel <= casez_tmp_4;
+          entries_0_meta_alu_result <= casez_tmp_5;
+          entries_0_meta_pc <= casez_tmp_6;
+          entries_0_meta_next_pc <= casez_tmp_7;
+          entries_0_meta_imm_ext <= casez_tmp_8;
+          entries_0_meta_waddr <= casez_tmp_9;
+          entries_0_meta_csr_rd1 <= casez_tmp_10;
+          entries_0_meta_state_state <= casez_tmp_11;
+          entries_0_meta_state_state_num <= casez_tmp_12;
+          entries_0_meta_rob_idx <= casez_tmp_13;
+          entries_0_meta_pdest <= casez_tmp_14;
+          entries_0_meta_br_taken <= casez_tmp_15;
+          entries_0_meta_store_data <= casez_tmp_16;
+        end
+        else begin
+          entries_0_meta_signals_wbu_reg_write <=
+            io_alloc_bits_meta_signals_wbu_reg_write;
+          entries_0_meta_signals_wbu_reg_write_sel <=
+            io_alloc_bits_meta_signals_wbu_reg_write_sel;
+          entries_0_meta_alu_result <= io_alloc_bits_meta_alu_result;
+          entries_0_meta_pc <= io_alloc_bits_meta_pc;
+          entries_0_meta_next_pc <= io_alloc_bits_meta_next_pc;
+          entries_0_meta_imm_ext <= io_alloc_bits_meta_imm_ext;
+          entries_0_meta_waddr <= io_alloc_bits_meta_waddr;
+          entries_0_meta_csr_rd1 <= io_alloc_bits_meta_csr_rd1;
+          entries_0_meta_state_state <= io_alloc_bits_meta_state_state;
+          entries_0_meta_state_state_num <= io_alloc_bits_meta_state_state_num;
+          entries_0_meta_rob_idx <= io_alloc_bits_meta_rob_idx;
+          entries_0_meta_pdest <= io_alloc_bits_meta_pdest;
+          entries_0_meta_br_taken <= io_alloc_bits_meta_br_taken;
+          entries_0_meta_store_data <= io_alloc_bits_meta_store_data;
+        end
+        entries_0_meta_mem_read <= casez_tmp_40;
       end
-      else if (_GEN_74) begin
+      else if (_GEN_67) begin
         entries_0_meta_signals_wbu_reg_write <= io_alloc_bits_meta_signals_wbu_reg_write;
         entries_0_meta_signals_wbu_reg_write_sel <=
           io_alloc_bits_meta_signals_wbu_reg_write_sel;
@@ -2249,80 +2258,120 @@ module LoadQueue(
         entries_0_meta_store_data <= io_alloc_bits_meta_store_data;
       end
       entries_0_meta_fwd_valid <=
-        respMatchesCurrent ? ~(_GEN_114 | _GEN_125) & _GEN_116 : ~_GEN_125 & _GEN_116;
-      if (_GEN_74) begin
+        respMatchesCurrent ? ~(_GEN_107 | _GEN_120) & _GEN_109 : ~_GEN_120 & _GEN_109;
+      if (_GEN_67) begin
         entries_0_addr <= io_alloc_bits_addr;
         entries_0_memRd <= io_alloc_bits_memRd;
       end
-      if (respMatchesCurrent & _GEN_114 | _GEN_125)
+      if (_GEN_127 & _GEN_107 | respMatchesOutstanding & ~_GEN_126 & _GEN_119)
         entries_0_state <= 2'h2;
-      else if (arFire & _GEN_114)
+      else if (arFire & _GEN_107)
         entries_0_state <= 2'h1;
-      else if (_GEN_115)
+      else if (schedulerForward & ~_GEN_118 & _GEN_107)
         entries_0_state <= 2'h2;
-      else if (_GEN_74)
+      else if (_GEN_67)
         entries_0_state <= 2'h0;
       entries_1_valid <=
-        ~io_flushAll
-        & (io_flush ? ~(_GEN_155 | _GEN_149) & _GEN_138 : ~_GEN_149 & _GEN_138);
-      if (respMatchesCurrent & _GEN_117) begin
-        entries_1_meta_signals_wbu_reg_write <= casez_tmp_2;
-        entries_1_meta_signals_wbu_reg_write_sel <= casez_tmp_3;
-        entries_1_meta_alu_result <= casez_tmp_4;
-        entries_1_meta_pc <= casez_tmp_5;
-        entries_1_meta_next_pc <= casez_tmp_6;
-        entries_1_meta_imm_ext <= casez_tmp_7;
-        entries_1_meta_mem_read <= casez_tmp_38;
-        entries_1_meta_waddr <= casez_tmp_8;
-        entries_1_meta_csr_rd1 <= casez_tmp_9;
+        ~(io_flushAll | _GEN_163)
+        & (io_commit1Valid ? ~(_GEN_156 | _GEN_149) & _GEN_138 : ~_GEN_149 & _GEN_138);
+      if (respMatchesCurrent & _GEN_110) begin
+        if (|schedMask) begin
+          entries_1_meta_signals_wbu_reg_write <= casez_tmp_3;
+          entries_1_meta_signals_wbu_reg_write_sel <= casez_tmp_4;
+          entries_1_meta_alu_result <= casez_tmp_5;
+          entries_1_meta_pc <= casez_tmp_6;
+          entries_1_meta_next_pc <= casez_tmp_7;
+          entries_1_meta_imm_ext <= casez_tmp_8;
+          entries_1_meta_waddr <= casez_tmp_9;
+          entries_1_meta_csr_rd1 <= casez_tmp_10;
+          entries_1_meta_rob_idx <= casez_tmp_13;
+          entries_1_meta_pdest <= casez_tmp_14;
+          entries_1_meta_br_taken <= casez_tmp_15;
+          entries_1_meta_store_data <= casez_tmp_16;
+        end
+        else begin
+          entries_1_meta_signals_wbu_reg_write <=
+            io_alloc_bits_meta_signals_wbu_reg_write;
+          entries_1_meta_signals_wbu_reg_write_sel <=
+            io_alloc_bits_meta_signals_wbu_reg_write_sel;
+          entries_1_meta_alu_result <= io_alloc_bits_meta_alu_result;
+          entries_1_meta_pc <= io_alloc_bits_meta_pc;
+          entries_1_meta_next_pc <= io_alloc_bits_meta_next_pc;
+          entries_1_meta_imm_ext <= io_alloc_bits_meta_imm_ext;
+          entries_1_meta_waddr <= io_alloc_bits_meta_waddr;
+          entries_1_meta_csr_rd1 <= io_alloc_bits_meta_csr_rd1;
+          entries_1_meta_rob_idx <= io_alloc_bits_meta_rob_idx;
+          entries_1_meta_pdest <= io_alloc_bits_meta_pdest;
+          entries_1_meta_br_taken <= io_alloc_bits_meta_br_taken;
+          entries_1_meta_store_data <= io_alloc_bits_meta_store_data;
+        end
+        entries_1_meta_mem_read <= casez_tmp_39;
         entries_1_meta_state_state <= currentResponseMeta_state_state;
         if (|io_dmem_rresp)
           entries_1_meta_state_state_num <= 8'h5;
+        else if (|schedMask)
+          entries_1_meta_state_state_num <= casez_tmp_12;
         else
-          entries_1_meta_state_state_num <= casez_tmp_11;
-        entries_1_meta_rob_idx <= casez_tmp_12;
-        entries_1_meta_pdest <= casez_tmp_13;
-        entries_1_meta_br_taken <= casez_tmp_14;
-        entries_1_meta_store_data <= casez_tmp_15;
+          entries_1_meta_state_state_num <= io_alloc_bits_meta_state_state_num;
       end
-      else if (_GEN_126) begin
-        entries_1_meta_signals_wbu_reg_write <= casez_tmp_20;
-        entries_1_meta_signals_wbu_reg_write_sel <= casez_tmp_21;
-        entries_1_meta_alu_result <= casez_tmp_22;
-        entries_1_meta_pc <= casez_tmp_23;
-        entries_1_meta_next_pc <= casez_tmp_24;
-        entries_1_meta_imm_ext <= casez_tmp_25;
-        entries_1_meta_mem_read <= casez_tmp_37;
-        entries_1_meta_waddr <= casez_tmp_26;
-        entries_1_meta_csr_rd1 <= casez_tmp_27;
+      else if (_GEN_122) begin
+        entries_1_meta_signals_wbu_reg_write <= casez_tmp_21;
+        entries_1_meta_signals_wbu_reg_write_sel <= casez_tmp_22;
+        entries_1_meta_alu_result <= casez_tmp_23;
+        entries_1_meta_pc <= casez_tmp_24;
+        entries_1_meta_next_pc <= casez_tmp_25;
+        entries_1_meta_imm_ext <= casez_tmp_26;
+        entries_1_meta_mem_read <= casez_tmp_38;
+        entries_1_meta_waddr <= casez_tmp_27;
+        entries_1_meta_csr_rd1 <= casez_tmp_28;
         entries_1_meta_state_state <= outstandingResponseMeta_state_state;
         if (|io_dmem_rresp)
           entries_1_meta_state_state_num <= 8'h5;
         else
-          entries_1_meta_state_state_num <= casez_tmp_29;
-        entries_1_meta_rob_idx <= casez_tmp_30;
-        entries_1_meta_pdest <= casez_tmp_31;
-        entries_1_meta_br_taken <= casez_tmp_32;
-        entries_1_meta_store_data <= casez_tmp_33;
+          entries_1_meta_state_state_num <= casez_tmp_30;
+        entries_1_meta_rob_idx <= casez_tmp_31;
+        entries_1_meta_pdest <= casez_tmp_32;
+        entries_1_meta_br_taken <= casez_tmp_33;
+        entries_1_meta_store_data <= casez_tmp_34;
       end
-      else if (_GEN_118) begin
-        entries_1_meta_signals_wbu_reg_write <= casez_tmp_2;
-        entries_1_meta_signals_wbu_reg_write_sel <= casez_tmp_3;
-        entries_1_meta_alu_result <= casez_tmp_4;
-        entries_1_meta_pc <= casez_tmp_5;
-        entries_1_meta_next_pc <= casez_tmp_6;
-        entries_1_meta_imm_ext <= casez_tmp_7;
-        entries_1_meta_mem_read <= casez_tmp_39;
-        entries_1_meta_waddr <= casez_tmp_8;
-        entries_1_meta_csr_rd1 <= casez_tmp_9;
-        entries_1_meta_state_state <= casez_tmp_10;
-        entries_1_meta_state_state_num <= casez_tmp_11;
-        entries_1_meta_rob_idx <= casez_tmp_12;
-        entries_1_meta_pdest <= casez_tmp_13;
-        entries_1_meta_br_taken <= casez_tmp_14;
-        entries_1_meta_store_data <= casez_tmp_15;
+      else if (_GEN_111) begin
+        if (|schedMask) begin
+          entries_1_meta_signals_wbu_reg_write <= casez_tmp_3;
+          entries_1_meta_signals_wbu_reg_write_sel <= casez_tmp_4;
+          entries_1_meta_alu_result <= casez_tmp_5;
+          entries_1_meta_pc <= casez_tmp_6;
+          entries_1_meta_next_pc <= casez_tmp_7;
+          entries_1_meta_imm_ext <= casez_tmp_8;
+          entries_1_meta_waddr <= casez_tmp_9;
+          entries_1_meta_csr_rd1 <= casez_tmp_10;
+          entries_1_meta_state_state <= casez_tmp_11;
+          entries_1_meta_state_state_num <= casez_tmp_12;
+          entries_1_meta_rob_idx <= casez_tmp_13;
+          entries_1_meta_pdest <= casez_tmp_14;
+          entries_1_meta_br_taken <= casez_tmp_15;
+          entries_1_meta_store_data <= casez_tmp_16;
+        end
+        else begin
+          entries_1_meta_signals_wbu_reg_write <=
+            io_alloc_bits_meta_signals_wbu_reg_write;
+          entries_1_meta_signals_wbu_reg_write_sel <=
+            io_alloc_bits_meta_signals_wbu_reg_write_sel;
+          entries_1_meta_alu_result <= io_alloc_bits_meta_alu_result;
+          entries_1_meta_pc <= io_alloc_bits_meta_pc;
+          entries_1_meta_next_pc <= io_alloc_bits_meta_next_pc;
+          entries_1_meta_imm_ext <= io_alloc_bits_meta_imm_ext;
+          entries_1_meta_waddr <= io_alloc_bits_meta_waddr;
+          entries_1_meta_csr_rd1 <= io_alloc_bits_meta_csr_rd1;
+          entries_1_meta_state_state <= io_alloc_bits_meta_state_state;
+          entries_1_meta_state_state_num <= io_alloc_bits_meta_state_state_num;
+          entries_1_meta_rob_idx <= io_alloc_bits_meta_rob_idx;
+          entries_1_meta_pdest <= io_alloc_bits_meta_pdest;
+          entries_1_meta_br_taken <= io_alloc_bits_meta_br_taken;
+          entries_1_meta_store_data <= io_alloc_bits_meta_store_data;
+        end
+        entries_1_meta_mem_read <= casez_tmp_40;
       end
-      else if (_GEN_76) begin
+      else if (_GEN_69) begin
         entries_1_meta_signals_wbu_reg_write <= io_alloc_bits_meta_signals_wbu_reg_write;
         entries_1_meta_signals_wbu_reg_write_sel <=
           io_alloc_bits_meta_signals_wbu_reg_write_sel;
@@ -2341,80 +2390,120 @@ module LoadQueue(
         entries_1_meta_store_data <= io_alloc_bits_meta_store_data;
       end
       entries_1_meta_fwd_valid <=
-        respMatchesCurrent ? ~(_GEN_117 | _GEN_126) & _GEN_119 : ~_GEN_126 & _GEN_119;
-      if (_GEN_76) begin
+        respMatchesCurrent ? ~(_GEN_110 | _GEN_122) & _GEN_112 : ~_GEN_122 & _GEN_112;
+      if (_GEN_69) begin
         entries_1_addr <= io_alloc_bits_addr;
         entries_1_memRd <= io_alloc_bits_memRd;
       end
-      if (respMatchesCurrent & _GEN_117 | _GEN_126)
+      if (_GEN_127 & _GEN_110 | respMatchesOutstanding & ~_GEN_126 & _GEN_121)
         entries_1_state <= 2'h2;
-      else if (arFire & _GEN_117)
+      else if (arFire & _GEN_110)
         entries_1_state <= 2'h1;
-      else if (_GEN_118)
+      else if (schedulerForward & ~_GEN_118 & _GEN_110)
         entries_1_state <= 2'h2;
-      else if (_GEN_76)
+      else if (_GEN_69)
         entries_1_state <= 2'h0;
       entries_2_valid <=
-        ~io_flushAll
-        & (io_flush ? ~(_GEN_188 | _GEN_151) & _GEN_141 : ~_GEN_151 & _GEN_141);
-      if (respMatchesCurrent & _GEN_120) begin
-        entries_2_meta_signals_wbu_reg_write <= casez_tmp_2;
-        entries_2_meta_signals_wbu_reg_write_sel <= casez_tmp_3;
-        entries_2_meta_alu_result <= casez_tmp_4;
-        entries_2_meta_pc <= casez_tmp_5;
-        entries_2_meta_next_pc <= casez_tmp_6;
-        entries_2_meta_imm_ext <= casez_tmp_7;
-        entries_2_meta_mem_read <= casez_tmp_38;
-        entries_2_meta_waddr <= casez_tmp_8;
-        entries_2_meta_csr_rd1 <= casez_tmp_9;
+        ~(io_flushAll | _GEN_196)
+        & (io_commit1Valid ? ~(_GEN_158 | _GEN_151) & _GEN_140 : ~_GEN_151 & _GEN_140);
+      if (respMatchesCurrent & _GEN_113) begin
+        if (|schedMask) begin
+          entries_2_meta_signals_wbu_reg_write <= casez_tmp_3;
+          entries_2_meta_signals_wbu_reg_write_sel <= casez_tmp_4;
+          entries_2_meta_alu_result <= casez_tmp_5;
+          entries_2_meta_pc <= casez_tmp_6;
+          entries_2_meta_next_pc <= casez_tmp_7;
+          entries_2_meta_imm_ext <= casez_tmp_8;
+          entries_2_meta_waddr <= casez_tmp_9;
+          entries_2_meta_csr_rd1 <= casez_tmp_10;
+          entries_2_meta_rob_idx <= casez_tmp_13;
+          entries_2_meta_pdest <= casez_tmp_14;
+          entries_2_meta_br_taken <= casez_tmp_15;
+          entries_2_meta_store_data <= casez_tmp_16;
+        end
+        else begin
+          entries_2_meta_signals_wbu_reg_write <=
+            io_alloc_bits_meta_signals_wbu_reg_write;
+          entries_2_meta_signals_wbu_reg_write_sel <=
+            io_alloc_bits_meta_signals_wbu_reg_write_sel;
+          entries_2_meta_alu_result <= io_alloc_bits_meta_alu_result;
+          entries_2_meta_pc <= io_alloc_bits_meta_pc;
+          entries_2_meta_next_pc <= io_alloc_bits_meta_next_pc;
+          entries_2_meta_imm_ext <= io_alloc_bits_meta_imm_ext;
+          entries_2_meta_waddr <= io_alloc_bits_meta_waddr;
+          entries_2_meta_csr_rd1 <= io_alloc_bits_meta_csr_rd1;
+          entries_2_meta_rob_idx <= io_alloc_bits_meta_rob_idx;
+          entries_2_meta_pdest <= io_alloc_bits_meta_pdest;
+          entries_2_meta_br_taken <= io_alloc_bits_meta_br_taken;
+          entries_2_meta_store_data <= io_alloc_bits_meta_store_data;
+        end
+        entries_2_meta_mem_read <= casez_tmp_39;
         entries_2_meta_state_state <= currentResponseMeta_state_state;
         if (|io_dmem_rresp)
           entries_2_meta_state_state_num <= 8'h5;
+        else if (|schedMask)
+          entries_2_meta_state_state_num <= casez_tmp_12;
         else
-          entries_2_meta_state_state_num <= casez_tmp_11;
-        entries_2_meta_rob_idx <= casez_tmp_12;
-        entries_2_meta_pdest <= casez_tmp_13;
-        entries_2_meta_br_taken <= casez_tmp_14;
-        entries_2_meta_store_data <= casez_tmp_15;
+          entries_2_meta_state_state_num <= io_alloc_bits_meta_state_state_num;
       end
-      else if (_GEN_127) begin
-        entries_2_meta_signals_wbu_reg_write <= casez_tmp_20;
-        entries_2_meta_signals_wbu_reg_write_sel <= casez_tmp_21;
-        entries_2_meta_alu_result <= casez_tmp_22;
-        entries_2_meta_pc <= casez_tmp_23;
-        entries_2_meta_next_pc <= casez_tmp_24;
-        entries_2_meta_imm_ext <= casez_tmp_25;
-        entries_2_meta_mem_read <= casez_tmp_37;
-        entries_2_meta_waddr <= casez_tmp_26;
-        entries_2_meta_csr_rd1 <= casez_tmp_27;
+      else if (_GEN_124) begin
+        entries_2_meta_signals_wbu_reg_write <= casez_tmp_21;
+        entries_2_meta_signals_wbu_reg_write_sel <= casez_tmp_22;
+        entries_2_meta_alu_result <= casez_tmp_23;
+        entries_2_meta_pc <= casez_tmp_24;
+        entries_2_meta_next_pc <= casez_tmp_25;
+        entries_2_meta_imm_ext <= casez_tmp_26;
+        entries_2_meta_mem_read <= casez_tmp_38;
+        entries_2_meta_waddr <= casez_tmp_27;
+        entries_2_meta_csr_rd1 <= casez_tmp_28;
         entries_2_meta_state_state <= outstandingResponseMeta_state_state;
         if (|io_dmem_rresp)
           entries_2_meta_state_state_num <= 8'h5;
         else
-          entries_2_meta_state_state_num <= casez_tmp_29;
-        entries_2_meta_rob_idx <= casez_tmp_30;
-        entries_2_meta_pdest <= casez_tmp_31;
-        entries_2_meta_br_taken <= casez_tmp_32;
-        entries_2_meta_store_data <= casez_tmp_33;
+          entries_2_meta_state_state_num <= casez_tmp_30;
+        entries_2_meta_rob_idx <= casez_tmp_31;
+        entries_2_meta_pdest <= casez_tmp_32;
+        entries_2_meta_br_taken <= casez_tmp_33;
+        entries_2_meta_store_data <= casez_tmp_34;
       end
-      else if (_GEN_121) begin
-        entries_2_meta_signals_wbu_reg_write <= casez_tmp_2;
-        entries_2_meta_signals_wbu_reg_write_sel <= casez_tmp_3;
-        entries_2_meta_alu_result <= casez_tmp_4;
-        entries_2_meta_pc <= casez_tmp_5;
-        entries_2_meta_next_pc <= casez_tmp_6;
-        entries_2_meta_imm_ext <= casez_tmp_7;
-        entries_2_meta_mem_read <= casez_tmp_39;
-        entries_2_meta_waddr <= casez_tmp_8;
-        entries_2_meta_csr_rd1 <= casez_tmp_9;
-        entries_2_meta_state_state <= casez_tmp_10;
-        entries_2_meta_state_state_num <= casez_tmp_11;
-        entries_2_meta_rob_idx <= casez_tmp_12;
-        entries_2_meta_pdest <= casez_tmp_13;
-        entries_2_meta_br_taken <= casez_tmp_14;
-        entries_2_meta_store_data <= casez_tmp_15;
+      else if (_GEN_114) begin
+        if (|schedMask) begin
+          entries_2_meta_signals_wbu_reg_write <= casez_tmp_3;
+          entries_2_meta_signals_wbu_reg_write_sel <= casez_tmp_4;
+          entries_2_meta_alu_result <= casez_tmp_5;
+          entries_2_meta_pc <= casez_tmp_6;
+          entries_2_meta_next_pc <= casez_tmp_7;
+          entries_2_meta_imm_ext <= casez_tmp_8;
+          entries_2_meta_waddr <= casez_tmp_9;
+          entries_2_meta_csr_rd1 <= casez_tmp_10;
+          entries_2_meta_state_state <= casez_tmp_11;
+          entries_2_meta_state_state_num <= casez_tmp_12;
+          entries_2_meta_rob_idx <= casez_tmp_13;
+          entries_2_meta_pdest <= casez_tmp_14;
+          entries_2_meta_br_taken <= casez_tmp_15;
+          entries_2_meta_store_data <= casez_tmp_16;
+        end
+        else begin
+          entries_2_meta_signals_wbu_reg_write <=
+            io_alloc_bits_meta_signals_wbu_reg_write;
+          entries_2_meta_signals_wbu_reg_write_sel <=
+            io_alloc_bits_meta_signals_wbu_reg_write_sel;
+          entries_2_meta_alu_result <= io_alloc_bits_meta_alu_result;
+          entries_2_meta_pc <= io_alloc_bits_meta_pc;
+          entries_2_meta_next_pc <= io_alloc_bits_meta_next_pc;
+          entries_2_meta_imm_ext <= io_alloc_bits_meta_imm_ext;
+          entries_2_meta_waddr <= io_alloc_bits_meta_waddr;
+          entries_2_meta_csr_rd1 <= io_alloc_bits_meta_csr_rd1;
+          entries_2_meta_state_state <= io_alloc_bits_meta_state_state;
+          entries_2_meta_state_state_num <= io_alloc_bits_meta_state_state_num;
+          entries_2_meta_rob_idx <= io_alloc_bits_meta_rob_idx;
+          entries_2_meta_pdest <= io_alloc_bits_meta_pdest;
+          entries_2_meta_br_taken <= io_alloc_bits_meta_br_taken;
+          entries_2_meta_store_data <= io_alloc_bits_meta_store_data;
+        end
+        entries_2_meta_mem_read <= casez_tmp_40;
       end
-      else if (_GEN_78) begin
+      else if (_GEN_71) begin
         entries_2_meta_signals_wbu_reg_write <= io_alloc_bits_meta_signals_wbu_reg_write;
         entries_2_meta_signals_wbu_reg_write_sel <=
           io_alloc_bits_meta_signals_wbu_reg_write_sel;
@@ -2433,80 +2522,120 @@ module LoadQueue(
         entries_2_meta_store_data <= io_alloc_bits_meta_store_data;
       end
       entries_2_meta_fwd_valid <=
-        respMatchesCurrent ? ~(_GEN_120 | _GEN_127) & _GEN_122 : ~_GEN_127 & _GEN_122;
-      if (_GEN_78) begin
+        respMatchesCurrent ? ~(_GEN_113 | _GEN_124) & _GEN_115 : ~_GEN_124 & _GEN_115;
+      if (_GEN_71) begin
         entries_2_addr <= io_alloc_bits_addr;
         entries_2_memRd <= io_alloc_bits_memRd;
       end
-      if (respMatchesCurrent & _GEN_120 | _GEN_127)
+      if (_GEN_127 & _GEN_113 | respMatchesOutstanding & ~_GEN_126 & _GEN_123)
         entries_2_state <= 2'h2;
-      else if (arFire & _GEN_120)
+      else if (arFire & _GEN_113)
         entries_2_state <= 2'h1;
-      else if (_GEN_121)
+      else if (schedulerForward & ~_GEN_118 & _GEN_113)
         entries_2_state <= 2'h2;
-      else if (_GEN_78)
+      else if (_GEN_71)
         entries_2_state <= 2'h0;
       entries_3_valid <=
-        ~io_flushAll
-        & (io_flush ? ~(_GEN_221 | _GEN_153) & _GEN_144 : ~_GEN_153 & _GEN_144);
-      if (respMatchesCurrent & (&_schedIdx_T)) begin
-        entries_3_meta_signals_wbu_reg_write <= casez_tmp_2;
-        entries_3_meta_signals_wbu_reg_write_sel <= casez_tmp_3;
-        entries_3_meta_alu_result <= casez_tmp_4;
-        entries_3_meta_pc <= casez_tmp_5;
-        entries_3_meta_next_pc <= casez_tmp_6;
-        entries_3_meta_imm_ext <= casez_tmp_7;
-        entries_3_meta_mem_read <= casez_tmp_38;
-        entries_3_meta_waddr <= casez_tmp_8;
-        entries_3_meta_csr_rd1 <= casez_tmp_9;
+        ~(io_flushAll | _GEN_229)
+        & (io_commit1Valid ? ~(_GEN_160 | _GEN_153) & _GEN_141 : ~_GEN_153 & _GEN_141);
+      if (respMatchesCurrent & (&schedIdx)) begin
+        if (|schedMask) begin
+          entries_3_meta_signals_wbu_reg_write <= casez_tmp_3;
+          entries_3_meta_signals_wbu_reg_write_sel <= casez_tmp_4;
+          entries_3_meta_alu_result <= casez_tmp_5;
+          entries_3_meta_pc <= casez_tmp_6;
+          entries_3_meta_next_pc <= casez_tmp_7;
+          entries_3_meta_imm_ext <= casez_tmp_8;
+          entries_3_meta_waddr <= casez_tmp_9;
+          entries_3_meta_csr_rd1 <= casez_tmp_10;
+          entries_3_meta_rob_idx <= casez_tmp_13;
+          entries_3_meta_pdest <= casez_tmp_14;
+          entries_3_meta_br_taken <= casez_tmp_15;
+          entries_3_meta_store_data <= casez_tmp_16;
+        end
+        else begin
+          entries_3_meta_signals_wbu_reg_write <=
+            io_alloc_bits_meta_signals_wbu_reg_write;
+          entries_3_meta_signals_wbu_reg_write_sel <=
+            io_alloc_bits_meta_signals_wbu_reg_write_sel;
+          entries_3_meta_alu_result <= io_alloc_bits_meta_alu_result;
+          entries_3_meta_pc <= io_alloc_bits_meta_pc;
+          entries_3_meta_next_pc <= io_alloc_bits_meta_next_pc;
+          entries_3_meta_imm_ext <= io_alloc_bits_meta_imm_ext;
+          entries_3_meta_waddr <= io_alloc_bits_meta_waddr;
+          entries_3_meta_csr_rd1 <= io_alloc_bits_meta_csr_rd1;
+          entries_3_meta_rob_idx <= io_alloc_bits_meta_rob_idx;
+          entries_3_meta_pdest <= io_alloc_bits_meta_pdest;
+          entries_3_meta_br_taken <= io_alloc_bits_meta_br_taken;
+          entries_3_meta_store_data <= io_alloc_bits_meta_store_data;
+        end
+        entries_3_meta_mem_read <= casez_tmp_39;
         entries_3_meta_state_state <= currentResponseMeta_state_state;
         if (|io_dmem_rresp)
           entries_3_meta_state_state_num <= 8'h5;
+        else if (|schedMask)
+          entries_3_meta_state_state_num <= casez_tmp_12;
         else
-          entries_3_meta_state_state_num <= casez_tmp_11;
-        entries_3_meta_rob_idx <= casez_tmp_12;
-        entries_3_meta_pdest <= casez_tmp_13;
-        entries_3_meta_br_taken <= casez_tmp_14;
-        entries_3_meta_store_data <= casez_tmp_15;
+          entries_3_meta_state_state_num <= io_alloc_bits_meta_state_state_num;
       end
-      else if (_GEN_128) begin
-        entries_3_meta_signals_wbu_reg_write <= casez_tmp_20;
-        entries_3_meta_signals_wbu_reg_write_sel <= casez_tmp_21;
-        entries_3_meta_alu_result <= casez_tmp_22;
-        entries_3_meta_pc <= casez_tmp_23;
-        entries_3_meta_next_pc <= casez_tmp_24;
-        entries_3_meta_imm_ext <= casez_tmp_25;
-        entries_3_meta_mem_read <= casez_tmp_37;
-        entries_3_meta_waddr <= casez_tmp_26;
-        entries_3_meta_csr_rd1 <= casez_tmp_27;
+      else if (_GEN_125) begin
+        entries_3_meta_signals_wbu_reg_write <= casez_tmp_21;
+        entries_3_meta_signals_wbu_reg_write_sel <= casez_tmp_22;
+        entries_3_meta_alu_result <= casez_tmp_23;
+        entries_3_meta_pc <= casez_tmp_24;
+        entries_3_meta_next_pc <= casez_tmp_25;
+        entries_3_meta_imm_ext <= casez_tmp_26;
+        entries_3_meta_mem_read <= casez_tmp_38;
+        entries_3_meta_waddr <= casez_tmp_27;
+        entries_3_meta_csr_rd1 <= casez_tmp_28;
         entries_3_meta_state_state <= outstandingResponseMeta_state_state;
         if (|io_dmem_rresp)
           entries_3_meta_state_state_num <= 8'h5;
         else
-          entries_3_meta_state_state_num <= casez_tmp_29;
-        entries_3_meta_rob_idx <= casez_tmp_30;
-        entries_3_meta_pdest <= casez_tmp_31;
-        entries_3_meta_br_taken <= casez_tmp_32;
-        entries_3_meta_store_data <= casez_tmp_33;
+          entries_3_meta_state_state_num <= casez_tmp_30;
+        entries_3_meta_rob_idx <= casez_tmp_31;
+        entries_3_meta_pdest <= casez_tmp_32;
+        entries_3_meta_br_taken <= casez_tmp_33;
+        entries_3_meta_store_data <= casez_tmp_34;
       end
-      else if (_GEN_123) begin
-        entries_3_meta_signals_wbu_reg_write <= casez_tmp_2;
-        entries_3_meta_signals_wbu_reg_write_sel <= casez_tmp_3;
-        entries_3_meta_alu_result <= casez_tmp_4;
-        entries_3_meta_pc <= casez_tmp_5;
-        entries_3_meta_next_pc <= casez_tmp_6;
-        entries_3_meta_imm_ext <= casez_tmp_7;
-        entries_3_meta_mem_read <= casez_tmp_39;
-        entries_3_meta_waddr <= casez_tmp_8;
-        entries_3_meta_csr_rd1 <= casez_tmp_9;
-        entries_3_meta_state_state <= casez_tmp_10;
-        entries_3_meta_state_state_num <= casez_tmp_11;
-        entries_3_meta_rob_idx <= casez_tmp_12;
-        entries_3_meta_pdest <= casez_tmp_13;
-        entries_3_meta_br_taken <= casez_tmp_14;
-        entries_3_meta_store_data <= casez_tmp_15;
+      else if (_GEN_116) begin
+        if (|schedMask) begin
+          entries_3_meta_signals_wbu_reg_write <= casez_tmp_3;
+          entries_3_meta_signals_wbu_reg_write_sel <= casez_tmp_4;
+          entries_3_meta_alu_result <= casez_tmp_5;
+          entries_3_meta_pc <= casez_tmp_6;
+          entries_3_meta_next_pc <= casez_tmp_7;
+          entries_3_meta_imm_ext <= casez_tmp_8;
+          entries_3_meta_waddr <= casez_tmp_9;
+          entries_3_meta_csr_rd1 <= casez_tmp_10;
+          entries_3_meta_state_state <= casez_tmp_11;
+          entries_3_meta_state_state_num <= casez_tmp_12;
+          entries_3_meta_rob_idx <= casez_tmp_13;
+          entries_3_meta_pdest <= casez_tmp_14;
+          entries_3_meta_br_taken <= casez_tmp_15;
+          entries_3_meta_store_data <= casez_tmp_16;
+        end
+        else begin
+          entries_3_meta_signals_wbu_reg_write <=
+            io_alloc_bits_meta_signals_wbu_reg_write;
+          entries_3_meta_signals_wbu_reg_write_sel <=
+            io_alloc_bits_meta_signals_wbu_reg_write_sel;
+          entries_3_meta_alu_result <= io_alloc_bits_meta_alu_result;
+          entries_3_meta_pc <= io_alloc_bits_meta_pc;
+          entries_3_meta_next_pc <= io_alloc_bits_meta_next_pc;
+          entries_3_meta_imm_ext <= io_alloc_bits_meta_imm_ext;
+          entries_3_meta_waddr <= io_alloc_bits_meta_waddr;
+          entries_3_meta_csr_rd1 <= io_alloc_bits_meta_csr_rd1;
+          entries_3_meta_state_state <= io_alloc_bits_meta_state_state;
+          entries_3_meta_state_state_num <= io_alloc_bits_meta_state_state_num;
+          entries_3_meta_rob_idx <= io_alloc_bits_meta_rob_idx;
+          entries_3_meta_pdest <= io_alloc_bits_meta_pdest;
+          entries_3_meta_br_taken <= io_alloc_bits_meta_br_taken;
+          entries_3_meta_store_data <= io_alloc_bits_meta_store_data;
+        end
+        entries_3_meta_mem_read <= casez_tmp_40;
       end
-      else if (_GEN_80) begin
+      else if (_GEN_73) begin
         entries_3_meta_signals_wbu_reg_write <= io_alloc_bits_meta_signals_wbu_reg_write;
         entries_3_meta_signals_wbu_reg_write_sel <=
           io_alloc_bits_meta_signals_wbu_reg_write_sel;
@@ -2525,600 +2654,614 @@ module LoadQueue(
         entries_3_meta_store_data <= io_alloc_bits_meta_store_data;
       end
       entries_3_meta_fwd_valid <=
-        respMatchesCurrent
-          ? ~((&_schedIdx_T) | _GEN_128) & _GEN_124
-          : ~_GEN_128 & _GEN_124;
-      if (_GEN_80) begin
+        respMatchesCurrent ? ~((&schedIdx) | _GEN_125) & _GEN_117 : ~_GEN_125 & _GEN_117;
+      if (_GEN_73) begin
         entries_3_addr <= io_alloc_bits_addr;
         entries_3_memRd <= io_alloc_bits_memRd;
       end
-      if (respMatchesCurrent & (&_schedIdx_T) | _GEN_128)
+      if (_GEN_127 & (&schedIdx) | respMatchesOutstanding & ~_GEN_126
+          & (&(io_dmem_rid[1:0])))
         entries_3_state <= 2'h2;
-      else if (arFire & (&_schedIdx_T))
+      else if (arFire & (&schedIdx))
         entries_3_state <= 2'h1;
-      else if (_GEN_123)
+      else if (schedulerForward & ~_GEN_118 & (&schedIdx))
         entries_3_state <= 2'h2;
-      else if (_GEN_80)
+      else if (_GEN_73)
         entries_3_state <= 2'h0;
-      if ((|schedMask) & (io_fwdWait | schedulerForward | schedulerBus))
-        retryPtr <= _schedIdx_T + 2'h1;
-      if (_GEN_82)
+      if (schedValid & (io_fwdWait | schedulerForward | schedulerBus))
+        retryPtr <= schedIdx + 2'h1;
+      if (_GEN_75)
         debugAllocPc_0 <= io_alloc_bits_meta_pc;
-      if (_GEN_83)
+      if (_GEN_76)
         debugAllocPc_1 <= io_alloc_bits_meta_pc;
-      if (_GEN_84)
+      if (_GEN_77)
         debugAllocPc_2 <= io_alloc_bits_meta_pc;
-      if (_GEN_85)
+      if (_GEN_78)
         debugAllocPc_3 <= io_alloc_bits_meta_pc;
-      if (_GEN_86)
+      if (_GEN_79)
         debugAllocPc_4 <= io_alloc_bits_meta_pc;
-      if (_GEN_87)
+      if (_GEN_80)
         debugAllocPc_5 <= io_alloc_bits_meta_pc;
-      if (_GEN_88)
+      if (_GEN_81)
         debugAllocPc_6 <= io_alloc_bits_meta_pc;
-      if (_GEN_89)
+      if (_GEN_82)
         debugAllocPc_7 <= io_alloc_bits_meta_pc;
-      if (_GEN_90)
+      if (_GEN_83)
         debugAllocPc_8 <= io_alloc_bits_meta_pc;
-      if (_GEN_91)
+      if (_GEN_84)
         debugAllocPc_9 <= io_alloc_bits_meta_pc;
-      if (_GEN_92)
+      if (_GEN_85)
         debugAllocPc_10 <= io_alloc_bits_meta_pc;
-      if (_GEN_93)
+      if (_GEN_86)
         debugAllocPc_11 <= io_alloc_bits_meta_pc;
-      if (_GEN_94)
+      if (_GEN_87)
         debugAllocPc_12 <= io_alloc_bits_meta_pc;
-      if (_GEN_95)
+      if (_GEN_88)
         debugAllocPc_13 <= io_alloc_bits_meta_pc;
-      if (_GEN_96)
+      if (_GEN_89)
         debugAllocPc_14 <= io_alloc_bits_meta_pc;
-      if (_GEN_97)
+      if (_GEN_90)
         debugAllocPc_15 <= io_alloc_bits_meta_pc;
-      if (_GEN_98)
+      if (_GEN_91)
         debugAllocPc_16 <= io_alloc_bits_meta_pc;
-      if (_GEN_99)
+      if (_GEN_92)
         debugAllocPc_17 <= io_alloc_bits_meta_pc;
-      if (_GEN_100)
+      if (_GEN_93)
         debugAllocPc_18 <= io_alloc_bits_meta_pc;
-      if (_GEN_101)
+      if (_GEN_94)
         debugAllocPc_19 <= io_alloc_bits_meta_pc;
-      if (_GEN_102)
+      if (_GEN_95)
         debugAllocPc_20 <= io_alloc_bits_meta_pc;
-      if (_GEN_103)
+      if (_GEN_96)
         debugAllocPc_21 <= io_alloc_bits_meta_pc;
-      if (_GEN_104)
+      if (_GEN_97)
         debugAllocPc_22 <= io_alloc_bits_meta_pc;
-      if (_GEN_105)
+      if (_GEN_98)
         debugAllocPc_23 <= io_alloc_bits_meta_pc;
-      if (_GEN_106)
+      if (_GEN_99)
         debugAllocPc_24 <= io_alloc_bits_meta_pc;
-      if (_GEN_107)
+      if (_GEN_100)
         debugAllocPc_25 <= io_alloc_bits_meta_pc;
-      if (_GEN_108)
+      if (_GEN_101)
         debugAllocPc_26 <= io_alloc_bits_meta_pc;
-      if (_GEN_109)
+      if (_GEN_102)
         debugAllocPc_27 <= io_alloc_bits_meta_pc;
-      if (_GEN_110)
+      if (_GEN_103)
         debugAllocPc_28 <= io_alloc_bits_meta_pc;
-      if (_GEN_111)
+      if (_GEN_104)
         debugAllocPc_29 <= io_alloc_bits_meta_pc;
-      if (_GEN_112)
+      if (_GEN_105)
         debugAllocPc_30 <= io_alloc_bits_meta_pc;
-      if (_GEN_113)
+      if (_GEN_106)
         debugAllocPc_31 <= io_alloc_bits_meta_pc;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h0 | _GEN_189 | _GEN_156
-                   : _GEN_189 | _GEN_156))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h0 | _GEN_197 | _GEN_164
+                   : _GEN_197 | _GEN_164))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_13 | _GEN_227 | _GEN_226 : _GEN_227 | _GEN_226)
-              : _GEN_224)
+              ? (_GEN_160 ? _GEN_6 | _GEN_235 | _GEN_234 : _GEN_235 | _GEN_234)
+              : _GEN_232)
           debugRemoveReason_0 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h0)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h0 | _GEN_129 & casez_tmp_53 == 5'h0)
           debugRemoveReason_0 <= 2'h1;
-        else if (_GEN_82)
+        else if (_GEN_75)
           debugRemoveReason_0 <= 2'h0;
       end
       else
         debugRemoveReason_0 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h1 | _GEN_190 | _GEN_157
-                   : _GEN_190 | _GEN_157))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h1 | _GEN_198 | _GEN_165
+                   : _GEN_198 | _GEN_165))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_15 | _GEN_233 | _GEN_232 : _GEN_233 | _GEN_232)
-              : _GEN_230)
+              ? (_GEN_160 ? _GEN_8 | _GEN_241 | _GEN_240 : _GEN_241 | _GEN_240)
+              : _GEN_238)
           debugRemoveReason_1 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h1)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h1 | _GEN_129 & casez_tmp_53 == 5'h1)
           debugRemoveReason_1 <= 2'h1;
-        else if (_GEN_83)
+        else if (_GEN_76)
           debugRemoveReason_1 <= 2'h0;
       end
       else
         debugRemoveReason_1 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h2 | _GEN_191 | _GEN_158
-                   : _GEN_191 | _GEN_158))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h2 | _GEN_199 | _GEN_166
+                   : _GEN_199 | _GEN_166))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_17 | _GEN_239 | _GEN_238 : _GEN_239 | _GEN_238)
-              : _GEN_236)
+              ? (_GEN_160 ? _GEN_10 | _GEN_247 | _GEN_246 : _GEN_247 | _GEN_246)
+              : _GEN_244)
           debugRemoveReason_2 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h2)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h2 | _GEN_129 & casez_tmp_53 == 5'h2)
           debugRemoveReason_2 <= 2'h1;
-        else if (_GEN_84)
+        else if (_GEN_77)
           debugRemoveReason_2 <= 2'h0;
       end
       else
         debugRemoveReason_2 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h3 | _GEN_192 | _GEN_159
-                   : _GEN_192 | _GEN_159))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h3 | _GEN_200 | _GEN_167
+                   : _GEN_200 | _GEN_167))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_19 | _GEN_245 | _GEN_244 : _GEN_245 | _GEN_244)
-              : _GEN_242)
+              ? (_GEN_160 ? _GEN_12 | _GEN_253 | _GEN_252 : _GEN_253 | _GEN_252)
+              : _GEN_250)
           debugRemoveReason_3 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h3)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h3 | _GEN_129 & casez_tmp_53 == 5'h3)
           debugRemoveReason_3 <= 2'h1;
-        else if (_GEN_85)
+        else if (_GEN_78)
           debugRemoveReason_3 <= 2'h0;
       end
       else
         debugRemoveReason_3 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h4 | _GEN_193 | _GEN_160
-                   : _GEN_193 | _GEN_160))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h4 | _GEN_201 | _GEN_168
+                   : _GEN_201 | _GEN_168))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_21 | _GEN_251 | _GEN_250 : _GEN_251 | _GEN_250)
-              : _GEN_248)
+              ? (_GEN_160 ? _GEN_14 | _GEN_259 | _GEN_258 : _GEN_259 | _GEN_258)
+              : _GEN_256)
           debugRemoveReason_4 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h4)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h4 | _GEN_129 & casez_tmp_53 == 5'h4)
           debugRemoveReason_4 <= 2'h1;
-        else if (_GEN_86)
+        else if (_GEN_79)
           debugRemoveReason_4 <= 2'h0;
       end
       else
         debugRemoveReason_4 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h5 | _GEN_194 | _GEN_161
-                   : _GEN_194 | _GEN_161))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h5 | _GEN_202 | _GEN_169
+                   : _GEN_202 | _GEN_169))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_23 | _GEN_257 | _GEN_256 : _GEN_257 | _GEN_256)
-              : _GEN_254)
+              ? (_GEN_160 ? _GEN_16 | _GEN_265 | _GEN_264 : _GEN_265 | _GEN_264)
+              : _GEN_262)
           debugRemoveReason_5 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h5)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h5 | _GEN_129 & casez_tmp_53 == 5'h5)
           debugRemoveReason_5 <= 2'h1;
-        else if (_GEN_87)
+        else if (_GEN_80)
           debugRemoveReason_5 <= 2'h0;
       end
       else
         debugRemoveReason_5 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h6 | _GEN_195 | _GEN_162
-                   : _GEN_195 | _GEN_162))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h6 | _GEN_203 | _GEN_170
+                   : _GEN_203 | _GEN_170))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_25 | _GEN_263 | _GEN_262 : _GEN_263 | _GEN_262)
-              : _GEN_260)
+              ? (_GEN_160 ? _GEN_18 | _GEN_271 | _GEN_270 : _GEN_271 | _GEN_270)
+              : _GEN_268)
           debugRemoveReason_6 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h6)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h6 | _GEN_129 & casez_tmp_53 == 5'h6)
           debugRemoveReason_6 <= 2'h1;
-        else if (_GEN_88)
+        else if (_GEN_81)
           debugRemoveReason_6 <= 2'h0;
       end
       else
         debugRemoveReason_6 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h7 | _GEN_196 | _GEN_163
-                   : _GEN_196 | _GEN_163))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h7 | _GEN_204 | _GEN_171
+                   : _GEN_204 | _GEN_171))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_27 | _GEN_269 | _GEN_268 : _GEN_269 | _GEN_268)
-              : _GEN_266)
+              ? (_GEN_160 ? _GEN_20 | _GEN_277 | _GEN_276 : _GEN_277 | _GEN_276)
+              : _GEN_274)
           debugRemoveReason_7 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h7)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h7 | _GEN_129 & casez_tmp_53 == 5'h7)
           debugRemoveReason_7 <= 2'h1;
-        else if (_GEN_89)
+        else if (_GEN_82)
           debugRemoveReason_7 <= 2'h0;
       end
       else
         debugRemoveReason_7 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h8 | _GEN_197 | _GEN_164
-                   : _GEN_197 | _GEN_164))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h8 | _GEN_205 | _GEN_172
+                   : _GEN_205 | _GEN_172))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_29 | _GEN_275 | _GEN_274 : _GEN_275 | _GEN_274)
-              : _GEN_272)
+              ? (_GEN_160 ? _GEN_22 | _GEN_283 | _GEN_282 : _GEN_283 | _GEN_282)
+              : _GEN_280)
           debugRemoveReason_8 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h8)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h8 | _GEN_129 & casez_tmp_53 == 5'h8)
           debugRemoveReason_8 <= 2'h1;
-        else if (_GEN_90)
+        else if (_GEN_83)
           debugRemoveReason_8 <= 2'h0;
       end
       else
         debugRemoveReason_8 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h9 | _GEN_198 | _GEN_165
-                   : _GEN_198 | _GEN_165))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h9 | _GEN_206 | _GEN_173
+                   : _GEN_206 | _GEN_173))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_31 | _GEN_281 | _GEN_280 : _GEN_281 | _GEN_280)
-              : _GEN_278)
+              ? (_GEN_160 ? _GEN_24 | _GEN_289 | _GEN_288 : _GEN_289 | _GEN_288)
+              : _GEN_286)
           debugRemoveReason_9 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h9)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h9 | _GEN_129 & casez_tmp_53 == 5'h9)
           debugRemoveReason_9 <= 2'h1;
-        else if (_GEN_91)
+        else if (_GEN_84)
           debugRemoveReason_9 <= 2'h0;
       end
       else
         debugRemoveReason_9 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'hA | _GEN_199 | _GEN_166
-                   : _GEN_199 | _GEN_166))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'hA | _GEN_207 | _GEN_174
+                   : _GEN_207 | _GEN_174))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_33 | _GEN_287 | _GEN_286 : _GEN_287 | _GEN_286)
-              : _GEN_284)
+              ? (_GEN_160 ? _GEN_26 | _GEN_295 | _GEN_294 : _GEN_295 | _GEN_294)
+              : _GEN_292)
           debugRemoveReason_10 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'hA)
+        else if (_GEN_134 & directMeta_rob_idx == 5'hA | _GEN_129 & casez_tmp_53 == 5'hA)
           debugRemoveReason_10 <= 2'h1;
-        else if (_GEN_92)
+        else if (_GEN_85)
           debugRemoveReason_10 <= 2'h0;
       end
       else
         debugRemoveReason_10 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'hB | _GEN_200 | _GEN_167
-                   : _GEN_200 | _GEN_167))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'hB | _GEN_208 | _GEN_175
+                   : _GEN_208 | _GEN_175))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_35 | _GEN_293 | _GEN_292 : _GEN_293 | _GEN_292)
-              : _GEN_290)
+              ? (_GEN_160 ? _GEN_28 | _GEN_301 | _GEN_300 : _GEN_301 | _GEN_300)
+              : _GEN_298)
           debugRemoveReason_11 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'hB)
+        else if (_GEN_134 & directMeta_rob_idx == 5'hB | _GEN_129 & casez_tmp_53 == 5'hB)
           debugRemoveReason_11 <= 2'h1;
-        else if (_GEN_93)
+        else if (_GEN_86)
           debugRemoveReason_11 <= 2'h0;
       end
       else
         debugRemoveReason_11 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'hC | _GEN_201 | _GEN_168
-                   : _GEN_201 | _GEN_168))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'hC | _GEN_209 | _GEN_176
+                   : _GEN_209 | _GEN_176))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_37 | _GEN_299 | _GEN_298 : _GEN_299 | _GEN_298)
-              : _GEN_296)
+              ? (_GEN_160 ? _GEN_30 | _GEN_307 | _GEN_306 : _GEN_307 | _GEN_306)
+              : _GEN_304)
           debugRemoveReason_12 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'hC)
+        else if (_GEN_134 & directMeta_rob_idx == 5'hC | _GEN_129 & casez_tmp_53 == 5'hC)
           debugRemoveReason_12 <= 2'h1;
-        else if (_GEN_94)
+        else if (_GEN_87)
           debugRemoveReason_12 <= 2'h0;
       end
       else
         debugRemoveReason_12 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'hD | _GEN_202 | _GEN_169
-                   : _GEN_202 | _GEN_169))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'hD | _GEN_210 | _GEN_177
+                   : _GEN_210 | _GEN_177))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_39 | _GEN_305 | _GEN_304 : _GEN_305 | _GEN_304)
-              : _GEN_302)
+              ? (_GEN_160 ? _GEN_32 | _GEN_313 | _GEN_312 : _GEN_313 | _GEN_312)
+              : _GEN_310)
           debugRemoveReason_13 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'hD)
+        else if (_GEN_134 & directMeta_rob_idx == 5'hD | _GEN_129 & casez_tmp_53 == 5'hD)
           debugRemoveReason_13 <= 2'h1;
-        else if (_GEN_95)
+        else if (_GEN_88)
           debugRemoveReason_13 <= 2'h0;
       end
       else
         debugRemoveReason_13 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'hE | _GEN_203 | _GEN_170
-                   : _GEN_203 | _GEN_170))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'hE | _GEN_211 | _GEN_178
+                   : _GEN_211 | _GEN_178))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_41 | _GEN_311 | _GEN_310 : _GEN_311 | _GEN_310)
-              : _GEN_308)
+              ? (_GEN_160 ? _GEN_34 | _GEN_319 | _GEN_318 : _GEN_319 | _GEN_318)
+              : _GEN_316)
           debugRemoveReason_14 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'hE)
+        else if (_GEN_134 & directMeta_rob_idx == 5'hE | _GEN_129 & casez_tmp_53 == 5'hE)
           debugRemoveReason_14 <= 2'h1;
-        else if (_GEN_96)
+        else if (_GEN_89)
           debugRemoveReason_14 <= 2'h0;
       end
       else
         debugRemoveReason_14 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'hF | _GEN_204 | _GEN_171
-                   : _GEN_204 | _GEN_171))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'hF | _GEN_212 | _GEN_179
+                   : _GEN_212 | _GEN_179))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_43 | _GEN_317 | _GEN_316 : _GEN_317 | _GEN_316)
-              : _GEN_314)
+              ? (_GEN_160 ? _GEN_36 | _GEN_325 | _GEN_324 : _GEN_325 | _GEN_324)
+              : _GEN_322)
           debugRemoveReason_15 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'hF)
+        else if (_GEN_134 & directMeta_rob_idx == 5'hF | _GEN_129 & casez_tmp_53 == 5'hF)
           debugRemoveReason_15 <= 2'h1;
-        else if (_GEN_97)
+        else if (_GEN_90)
           debugRemoveReason_15 <= 2'h0;
       end
       else
         debugRemoveReason_15 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h10 | _GEN_205 | _GEN_172
-                   : _GEN_205 | _GEN_172))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h10 | _GEN_213 | _GEN_180
+                   : _GEN_213 | _GEN_180))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_45 | _GEN_323 | _GEN_322 : _GEN_323 | _GEN_322)
-              : _GEN_320)
+              ? (_GEN_160 ? _GEN_38 | _GEN_331 | _GEN_330 : _GEN_331 | _GEN_330)
+              : _GEN_328)
           debugRemoveReason_16 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h10)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h10 | _GEN_129
+                 & casez_tmp_53 == 5'h10)
           debugRemoveReason_16 <= 2'h1;
-        else if (_GEN_98)
+        else if (_GEN_91)
           debugRemoveReason_16 <= 2'h0;
       end
       else
         debugRemoveReason_16 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h11 | _GEN_206 | _GEN_173
-                   : _GEN_206 | _GEN_173))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h11 | _GEN_214 | _GEN_181
+                   : _GEN_214 | _GEN_181))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_47 | _GEN_329 | _GEN_328 : _GEN_329 | _GEN_328)
-              : _GEN_326)
+              ? (_GEN_160 ? _GEN_40 | _GEN_337 | _GEN_336 : _GEN_337 | _GEN_336)
+              : _GEN_334)
           debugRemoveReason_17 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h11)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h11 | _GEN_129
+                 & casez_tmp_53 == 5'h11)
           debugRemoveReason_17 <= 2'h1;
-        else if (_GEN_99)
+        else if (_GEN_92)
           debugRemoveReason_17 <= 2'h0;
       end
       else
         debugRemoveReason_17 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h12 | _GEN_207 | _GEN_174
-                   : _GEN_207 | _GEN_174))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h12 | _GEN_215 | _GEN_182
+                   : _GEN_215 | _GEN_182))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_49 | _GEN_335 | _GEN_334 : _GEN_335 | _GEN_334)
-              : _GEN_332)
+              ? (_GEN_160 ? _GEN_42 | _GEN_343 | _GEN_342 : _GEN_343 | _GEN_342)
+              : _GEN_340)
           debugRemoveReason_18 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h12)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h12 | _GEN_129
+                 & casez_tmp_53 == 5'h12)
           debugRemoveReason_18 <= 2'h1;
-        else if (_GEN_100)
+        else if (_GEN_93)
           debugRemoveReason_18 <= 2'h0;
       end
       else
         debugRemoveReason_18 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h13 | _GEN_208 | _GEN_175
-                   : _GEN_208 | _GEN_175))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h13 | _GEN_216 | _GEN_183
+                   : _GEN_216 | _GEN_183))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_51 | _GEN_341 | _GEN_340 : _GEN_341 | _GEN_340)
-              : _GEN_338)
+              ? (_GEN_160 ? _GEN_44 | _GEN_349 | _GEN_348 : _GEN_349 | _GEN_348)
+              : _GEN_346)
           debugRemoveReason_19 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h13)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h13 | _GEN_129
+                 & casez_tmp_53 == 5'h13)
           debugRemoveReason_19 <= 2'h1;
-        else if (_GEN_101)
+        else if (_GEN_94)
           debugRemoveReason_19 <= 2'h0;
       end
       else
         debugRemoveReason_19 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h14 | _GEN_209 | _GEN_176
-                   : _GEN_209 | _GEN_176))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h14 | _GEN_217 | _GEN_184
+                   : _GEN_217 | _GEN_184))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_53 | _GEN_347 | _GEN_346 : _GEN_347 | _GEN_346)
-              : _GEN_344)
+              ? (_GEN_160 ? _GEN_46 | _GEN_355 | _GEN_354 : _GEN_355 | _GEN_354)
+              : _GEN_352)
           debugRemoveReason_20 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h14)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h14 | _GEN_129
+                 & casez_tmp_53 == 5'h14)
           debugRemoveReason_20 <= 2'h1;
-        else if (_GEN_102)
+        else if (_GEN_95)
           debugRemoveReason_20 <= 2'h0;
       end
       else
         debugRemoveReason_20 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h15 | _GEN_210 | _GEN_177
-                   : _GEN_210 | _GEN_177))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h15 | _GEN_218 | _GEN_185
+                   : _GEN_218 | _GEN_185))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_55 | _GEN_353 | _GEN_352 : _GEN_353 | _GEN_352)
-              : _GEN_350)
+              ? (_GEN_160 ? _GEN_48 | _GEN_361 | _GEN_360 : _GEN_361 | _GEN_360)
+              : _GEN_358)
           debugRemoveReason_21 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h15)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h15 | _GEN_129
+                 & casez_tmp_53 == 5'h15)
           debugRemoveReason_21 <= 2'h1;
-        else if (_GEN_103)
+        else if (_GEN_96)
           debugRemoveReason_21 <= 2'h0;
       end
       else
         debugRemoveReason_21 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h16 | _GEN_211 | _GEN_178
-                   : _GEN_211 | _GEN_178))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h16 | _GEN_219 | _GEN_186
+                   : _GEN_219 | _GEN_186))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_57 | _GEN_359 | _GEN_358 : _GEN_359 | _GEN_358)
-              : _GEN_356)
+              ? (_GEN_160 ? _GEN_50 | _GEN_367 | _GEN_366 : _GEN_367 | _GEN_366)
+              : _GEN_364)
           debugRemoveReason_22 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h16)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h16 | _GEN_129
+                 & casez_tmp_53 == 5'h16)
           debugRemoveReason_22 <= 2'h1;
-        else if (_GEN_104)
+        else if (_GEN_97)
           debugRemoveReason_22 <= 2'h0;
       end
       else
         debugRemoveReason_22 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h17 | _GEN_212 | _GEN_179
-                   : _GEN_212 | _GEN_179))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h17 | _GEN_220 | _GEN_187
+                   : _GEN_220 | _GEN_187))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_59 | _GEN_365 | _GEN_364 : _GEN_365 | _GEN_364)
-              : _GEN_362)
+              ? (_GEN_160 ? _GEN_52 | _GEN_373 | _GEN_372 : _GEN_373 | _GEN_372)
+              : _GEN_370)
           debugRemoveReason_23 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h17)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h17 | _GEN_129
+                 & casez_tmp_53 == 5'h17)
           debugRemoveReason_23 <= 2'h1;
-        else if (_GEN_105)
+        else if (_GEN_98)
           debugRemoveReason_23 <= 2'h0;
       end
       else
         debugRemoveReason_23 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h18 | _GEN_213 | _GEN_180
-                   : _GEN_213 | _GEN_180))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h18 | _GEN_221 | _GEN_188
+                   : _GEN_221 | _GEN_188))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_61 | _GEN_371 | _GEN_370 : _GEN_371 | _GEN_370)
-              : _GEN_368)
+              ? (_GEN_160 ? _GEN_54 | _GEN_379 | _GEN_378 : _GEN_379 | _GEN_378)
+              : _GEN_376)
           debugRemoveReason_24 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h18)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h18 | _GEN_129
+                 & casez_tmp_53 == 5'h18)
           debugRemoveReason_24 <= 2'h1;
-        else if (_GEN_106)
+        else if (_GEN_99)
           debugRemoveReason_24 <= 2'h0;
       end
       else
         debugRemoveReason_24 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h19 | _GEN_214 | _GEN_181
-                   : _GEN_214 | _GEN_181))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h19 | _GEN_222 | _GEN_189
+                   : _GEN_222 | _GEN_189))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_63 | _GEN_377 | _GEN_376 : _GEN_377 | _GEN_376)
-              : _GEN_374)
+              ? (_GEN_160 ? _GEN_56 | _GEN_385 | _GEN_384 : _GEN_385 | _GEN_384)
+              : _GEN_382)
           debugRemoveReason_25 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h19)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h19 | _GEN_129
+                 & casez_tmp_53 == 5'h19)
           debugRemoveReason_25 <= 2'h1;
-        else if (_GEN_107)
+        else if (_GEN_100)
           debugRemoveReason_25 <= 2'h0;
       end
       else
         debugRemoveReason_25 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h1A | _GEN_215 | _GEN_182
-                   : _GEN_215 | _GEN_182))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h1A | _GEN_223 | _GEN_190
+                   : _GEN_223 | _GEN_190))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_65 | _GEN_383 | _GEN_382 : _GEN_383 | _GEN_382)
-              : _GEN_380)
+              ? (_GEN_160 ? _GEN_58 | _GEN_391 | _GEN_390 : _GEN_391 | _GEN_390)
+              : _GEN_388)
           debugRemoveReason_26 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h1A)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h1A | _GEN_129
+                 & casez_tmp_53 == 5'h1A)
           debugRemoveReason_26 <= 2'h1;
-        else if (_GEN_108)
+        else if (_GEN_101)
           debugRemoveReason_26 <= 2'h0;
       end
       else
         debugRemoveReason_26 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h1B | _GEN_216 | _GEN_183
-                   : _GEN_216 | _GEN_183))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h1B | _GEN_224 | _GEN_191
+                   : _GEN_224 | _GEN_191))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_67 | _GEN_389 | _GEN_388 : _GEN_389 | _GEN_388)
-              : _GEN_386)
+              ? (_GEN_160 ? _GEN_60 | _GEN_397 | _GEN_396 : _GEN_397 | _GEN_396)
+              : _GEN_394)
           debugRemoveReason_27 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h1B)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h1B | _GEN_129
+                 & casez_tmp_53 == 5'h1B)
           debugRemoveReason_27 <= 2'h1;
-        else if (_GEN_109)
+        else if (_GEN_102)
           debugRemoveReason_27 <= 2'h0;
       end
       else
         debugRemoveReason_27 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h1C | _GEN_217 | _GEN_184
-                   : _GEN_217 | _GEN_184))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h1C | _GEN_225 | _GEN_192
+                   : _GEN_225 | _GEN_192))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_69 | _GEN_395 | _GEN_394 : _GEN_395 | _GEN_394)
-              : _GEN_392)
+              ? (_GEN_160 ? _GEN_62 | _GEN_403 | _GEN_402 : _GEN_403 | _GEN_402)
+              : _GEN_400)
           debugRemoveReason_28 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h1C)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h1C | _GEN_129
+                 & casez_tmp_53 == 5'h1C)
           debugRemoveReason_28 <= 2'h1;
-        else if (_GEN_110)
+        else if (_GEN_103)
           debugRemoveReason_28 <= 2'h0;
       end
       else
         debugRemoveReason_28 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h1D | _GEN_218 | _GEN_185
-                   : _GEN_218 | _GEN_185))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h1D | _GEN_226 | _GEN_193
+                   : _GEN_226 | _GEN_193))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_71 | _GEN_401 | _GEN_400 : _GEN_401 | _GEN_400)
-              : _GEN_398)
+              ? (_GEN_160 ? _GEN_64 | _GEN_409 | _GEN_408 : _GEN_409 | _GEN_408)
+              : _GEN_406)
           debugRemoveReason_29 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h1D)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h1D | _GEN_129
+                 & casez_tmp_53 == 5'h1D)
           debugRemoveReason_29 <= 2'h1;
-        else if (_GEN_111)
+        else if (_GEN_104)
           debugRemoveReason_29 <= 2'h0;
       end
       else
         debugRemoveReason_29 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? entries_3_meta_rob_idx == 5'h1E | _GEN_219 | _GEN_186
-                   : _GEN_219 | _GEN_186))) begin
+              & (_GEN_229
+                   ? entries_3_meta_rob_idx == 5'h1E | _GEN_227 | _GEN_194
+                   : _GEN_227 | _GEN_194))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? _GEN_73 | _GEN_407 | _GEN_406 : _GEN_407 | _GEN_406)
-              : _GEN_404)
+              ? (_GEN_160 ? _GEN_66 | _GEN_415 | _GEN_414 : _GEN_415 | _GEN_414)
+              : _GEN_412)
           debugRemoveReason_30 <= 2'h2;
-        else if (_GEN_129 & casez_tmp_52 == 5'h1E)
+        else if (_GEN_134 & directMeta_rob_idx == 5'h1E | _GEN_129
+                 & casez_tmp_53 == 5'h1E)
           debugRemoveReason_30 <= 2'h1;
-        else if (_GEN_112)
+        else if (_GEN_105)
           debugRemoveReason_30 <= 2'h0;
       end
       else
         debugRemoveReason_30 <= 2'h3;
       if (io_flushAll
           | ~(io_flush
-              & (_GEN_221
-                   ? (&entries_3_meta_rob_idx) | _GEN_220 | _GEN_187
-                   : _GEN_220 | _GEN_187))) begin
+              & (_GEN_229
+                   ? (&entries_3_meta_rob_idx) | _GEN_228 | _GEN_195
+                   : _GEN_228 | _GEN_195))) begin
         if (io_commit1Valid
-              ? (_GEN_152 ? (&io_commit1Rob) | _GEN_413 | _GEN_412 : _GEN_413 | _GEN_412)
-              : _GEN_410)
+              ? (_GEN_160 ? (&io_commit1Rob) | _GEN_421 | _GEN_420 : _GEN_421 | _GEN_420)
+              : _GEN_418)
           debugRemoveReason_31 <= 2'h2;
-        else if (_GEN_129 & (&casez_tmp_52))
+        else if (_GEN_134 & (&directMeta_rob_idx) | _GEN_129 & (&casez_tmp_53))
           debugRemoveReason_31 <= 2'h1;
-        else if (_GEN_113)
+        else if (_GEN_106)
           debugRemoveReason_31 <= 2'h0;
       end
       else
         debugRemoveReason_31 <= 2'h3;
-      if (_GEN_10)
+      if (_GEN_3)
         highWater <= io_outstanding_0;
     end
   end // always @(posedge)
@@ -3126,7 +3269,7 @@ module LoadQueue(
     .clock    (clock),
     .event_id (32'h4E),
     .data     (64'h1),
-    .enable   (_GEN_9)
+    .enable   (_freshSchedValid_T_1)
   );
   PerfMonitor pm_1 (
     .clock    (clock),
@@ -3138,25 +3281,25 @@ module LoadQueue(
     .clock    (clock),
     .event_id (32'h50),
     .data     ({61'h0, io_outstanding_0 - highWater}),
-    .enable   (_GEN_10)
+    .enable   (_GEN_3)
   );
   PerfMonitor pm_3 (
     .clock    (clock),
     .event_id (32'h51),
     .data     (64'h1),
-    .enable   ((|schedMask) & (io_fwdWait | _GEN_11))
+    .enable   (schedValid & (io_fwdWait | _GEN_4))
   );
   PerfMonitor pm_4 (
     .clock    (clock),
     .event_id (32'h52),
     .data     (64'h1),
-    .enable   ((|schedMask) & io_fwdWait)
+    .enable   (schedValid & io_fwdWait)
   );
   PerfMonitor pm_5 (
     .clock    (clock),
     .event_id (32'h53),
     .data     (64'h1),
-    .enable   (_GEN_11)
+    .enable   (_GEN_4)
   );
   PerfMonitor pm_6 (
     .clock    (clock),
@@ -3168,7 +3311,7 @@ module LoadQueue(
     .clock    (clock),
     .event_id (32'h55),
     .data     (64'h1),
-    .enable   (io_dmem_rvalid & ~(respMatchesOutstanding | respMatchesCurrent))
+    .enable   (io_dmem_rvalid & ~respMatches)
   );
   PerfMonitor pm_8 (
     .clock    (clock),
@@ -3178,41 +3321,97 @@ module LoadQueue(
   );
   assign io_alloc_ready = io_alloc_ready_0;
   assign io_wb_valid = io_wb_valid_0;
-  assign io_wb_bits_signals_wbu_reg_write = casez_tmp_41;
-  assign io_wb_bits_signals_wbu_reg_write_sel = casez_tmp_42;
-  assign io_wb_bits_alu_result = casez_tmp_43;
-  assign io_wb_bits_pc = casez_tmp_44;
-  assign io_wb_bits_next_pc = casez_tmp_45;
-  assign io_wb_bits_imm_ext = casez_tmp_46;
-  assign io_wb_bits_mem_read = casez_tmp_47;
-  assign io_wb_bits_waddr = casez_tmp_48;
-  assign io_wb_bits_csr_rd1 = casez_tmp_49;
-  assign io_wb_bits_state_state = casez_tmp_50;
-  assign io_wb_bits_state_state_num = casez_tmp_51;
-  assign io_wb_bits_rob_idx = casez_tmp_52;
-  assign io_wb_bits_pdest = casez_tmp_53;
-  assign io_wb_bits_br_taken = casez_tmp_54;
-  assign io_wb_bits_store_data = casez_tmp_55;
-  assign io_wb_bits_fwd_valid = casez_tmp_56;
-  assign io_dmem_araddr = casez_tmp_16;
+  assign io_wb_bits_signals_wbu_reg_write =
+    (|_wbValid_T)
+      ? casez_tmp_42
+      : _GEN
+          ? casez_tmp_21
+          : (|schedMask) ? casez_tmp_3 : io_alloc_bits_meta_signals_wbu_reg_write;
+  assign io_wb_bits_signals_wbu_reg_write_sel =
+    (|_wbValid_T)
+      ? casez_tmp_43
+      : _GEN
+          ? casez_tmp_22
+          : (|schedMask) ? casez_tmp_4 : io_alloc_bits_meta_signals_wbu_reg_write_sel;
+  assign io_wb_bits_alu_result =
+    (|_wbValid_T)
+      ? casez_tmp_44
+      : _GEN ? casez_tmp_23 : (|schedMask) ? casez_tmp_5 : io_alloc_bits_meta_alu_result;
+  assign io_wb_bits_pc =
+    (|_wbValid_T)
+      ? casez_tmp_45
+      : _GEN ? casez_tmp_24 : (|schedMask) ? casez_tmp_6 : io_alloc_bits_meta_pc;
+  assign io_wb_bits_next_pc =
+    (|_wbValid_T)
+      ? casez_tmp_46
+      : _GEN ? casez_tmp_25 : (|schedMask) ? casez_tmp_7 : io_alloc_bits_meta_next_pc;
+  assign io_wb_bits_imm_ext =
+    (|_wbValid_T)
+      ? casez_tmp_47
+      : _GEN ? casez_tmp_26 : (|schedMask) ? casez_tmp_8 : io_alloc_bits_meta_imm_ext;
+  assign io_wb_bits_mem_read =
+    (|_wbValid_T)
+      ? casez_tmp_48
+      : directResponse
+          ? (respMatchesOutstanding ? casez_tmp_38 : casez_tmp_39)
+          : casez_tmp_40;
+  assign io_wb_bits_waddr =
+    (|_wbValid_T)
+      ? casez_tmp_49
+      : _GEN ? casez_tmp_27 : (|schedMask) ? casez_tmp_9 : io_alloc_bits_meta_waddr;
+  assign io_wb_bits_csr_rd1 =
+    (|_wbValid_T)
+      ? casez_tmp_50
+      : _GEN ? casez_tmp_28 : (|schedMask) ? casez_tmp_10 : io_alloc_bits_meta_csr_rd1;
+  assign io_wb_bits_state_state =
+    (|_wbValid_T)
+      ? casez_tmp_51
+      : directResponse
+          ? (respMatchesOutstanding
+               ? outstandingResponseMeta_state_state
+               : currentResponseMeta_state_state)
+          : forwardMeta_state_state;
+  assign io_wb_bits_state_state_num =
+    (|_wbValid_T)
+      ? casez_tmp_52
+      : directResponse
+          ? ((|io_dmem_rresp)
+               ? 8'h5
+               : respMatchesOutstanding ? casez_tmp_30 : forwardMeta_state_state_num)
+          : forwardMeta_state_state_num;
+  assign io_wb_bits_rob_idx = (|_wbValid_T) ? casez_tmp_53 : directMeta_rob_idx;
+  assign io_wb_bits_pdest =
+    (|_wbValid_T)
+      ? casez_tmp_54
+      : _GEN ? casez_tmp_32 : (|schedMask) ? casez_tmp_14 : io_alloc_bits_meta_pdest;
+  assign io_wb_bits_br_taken =
+    (|_wbValid_T)
+      ? casez_tmp_55
+      : _GEN ? casez_tmp_33 : (|schedMask) ? casez_tmp_15 : io_alloc_bits_meta_br_taken;
+  assign io_wb_bits_store_data =
+    (|_wbValid_T)
+      ? casez_tmp_56
+      : _GEN ? casez_tmp_34 : (|schedMask) ? casez_tmp_16 : io_alloc_bits_meta_store_data;
+  assign io_wb_bits_fwd_valid = (|_wbValid_T) ? casez_tmp_57 : ~directResponse;
+  assign io_dmem_araddr = io_queryAddr_0;
   assign io_dmem_arvalid = io_dmem_arvalid_0;
   assign io_dmem_arid = io_dmem_arid_0;
   assign io_dmem_arsize =
     {1'h0,
-     casez_tmp_17 == 3'h5
+     io_queryMemRd_0 == 3'h5
        ? 2'h1
-       : casez_tmp_17 == 3'h4
+       : io_queryMemRd_0 == 3'h4
            ? 2'h0
-           : casez_tmp_17 == 3'h3
+           : io_queryMemRd_0 == 3'h3
                ? 2'h2
-               : casez_tmp_17 == 3'h2 ? 2'h1 : {casez_tmp_17 != 3'h1, 1'h0}};
-  assign io_queryValid = |schedMask;
-  assign io_queryRob = casez_tmp_12;
-  assign io_queryAddr = casez_tmp_16;
-  assign io_queryMemRd = casez_tmp_17;
+               : io_queryMemRd_0 == 3'h2 ? 2'h1 : {io_queryMemRd_0 != 3'h1, 1'h0}};
+  assign io_queryValid = schedValid;
+  assign io_queryRob = io_queryRob_0;
+  assign io_queryAddr = io_queryAddr_0;
+  assign io_queryMemRd = io_queryMemRd_0;
   assign io_violationValid = |_io_violationValid_T;
-  assign io_violationRob = casez_tmp_58;
-  assign io_violationPc = casez_tmp_57;
+  assign io_violationRob = casez_tmp_59;
+  assign io_violationPc = casez_tmp_58;
   assign io_outstanding = io_outstanding_0;
   assign io_debugHeadAllocPc = casez_tmp;
   assign io_debugHeadRemoveReason = casez_tmp_0;

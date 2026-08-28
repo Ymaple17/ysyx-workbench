@@ -3,6 +3,8 @@ BPU.sv
 verification/assert/BPUUpdateQueue_Verification_Assert.sv
 verification/BPUUpdateQueue_Verification.sv
 BPUUpdateQueue.sv
+verification/assert/FetchBuffer_Verification_Assert.sv
+verification/FetchBuffer_Verification.sv
 FetchBuffer.sv
 verification/assert/FTQ_Verification_Assert.sv
 verification/FTQ_Verification.sv
@@ -31,6 +33,7 @@ BusyTable.sv
 Rename2.sv
 ROB.sv
 RS.sv
+BranchIssueQueue.sv
 FetchQueue.sv
 StoreQueue.sv
 verification/assert/StoreBuffer_Verification_Assert.sv

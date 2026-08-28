@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：固定一个可复现 baseline，把 IPC、stall、分支、访存、提交等指标记录下来，后续优化只和这个基线比较。
 - **最小实现**：固定 microbench(test) 和构建参数，接入 cycles/commits、前端、BPU、CDB、ROB head、访存等待计数并输出可机器解析摘要。
-- **当前参考核**：Stage9a 的 IPC `0.4119` 是阶段 8 参考核基线；同一 PerfMonitor 体系已扩展到阶段 11d，并用于 IPC 1.0 严格收口。
+- **当前参考核**：Stage9a 的 IPC `0.4119` 是阶段 8 参考核基线；同一 PerfMonitor 体系已扩展到阶段 12f，并用于 IPC 1.3 的 cause/PC 归因和严格收口。
 - **后续扩展**：9b 用计数器区分前端供给、预测错误和后端 head wait；不先凭感觉改结构。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：源操作数与写侧统一为 **物理寄存器模型**；这是顺序后端最后一档，之后才允许谈 RS。
 - **最小实现**：rename 输出 `psrc1/psrc2`，BusyTable 决定源就绪，PRF/前递都按 phys 索引；保持顺序发射并通过 difftest。
-- **当前参考核**：阶段 11d 仍遵守同一 phys 数据模型，但已由 RS/CDB 同拍唤醒和双发射取代这里的顺序 stall。
+- **当前参考核**：阶段 12f 仍遵守同一 phys 数据模型，但已由 RS/BRQ 的同拍唤醒、分布式多 FU issue 和双发射取代这里的顺序 stall。
 - **后续扩展**：阶段 3a 先拆开 writeback 与 commit，再接 RS；2d 未过不能直接跳到乱序发射。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

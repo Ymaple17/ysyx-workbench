@@ -120,7 +120,28 @@ enum {
     EVENT_CONTROL_DIRECT_COMPLETE,
     EVENT_DCACHE_SECONDARY_ALLOC,
     EVENT_DCACHE_MSHR_MERGE,
+    EVENT_HEAD_WAIT_ALU,
+    EVENT_HEAD_WAIT_LOAD,
+    EVENT_HEAD_WAIT_STORE,
+    EVENT_HEAD_WAIT_CTRL,
+    EVENT_HEAD_WAIT_OTHER,
+    EVENT_FETCH_WAIT_RESOURCE,
+    EVENT_FETCH_WAIT_PC,
+    EVENT_FETCH_SLOT1_CREDIT_BLOCK,
+    EVENT_BRANCH_ISSUE,
+    EVENT_BRANCH_READY_WAIT,
+    EVENT_STORE_DIRECT_COMPLETE,
+    EVENT_LOOP_PREDICT_HIT,
     EVENT_MAX
+};
+
+enum {
+    PC_EVENT_HEAD_WAIT = 0,
+    PC_EVENT_DIR_MISPRED,
+    PC_EVENT_TARGET_MISPRED,
+    PC_EVENT_UNPREDICTED,
+    PC_EVENT_BP_FLUSH,
+    PC_EVENT_MAX
 };
 
 #ifdef __cplusplus
@@ -128,6 +149,7 @@ extern "C" {
 #endif
 
 void npc_pm_event(int event_id, long long data);
+void npc_pm_pc_event(int event_id, int pc);
 void print_perf_stats(unsigned long long cycles);
 
 #ifdef __cplusplus

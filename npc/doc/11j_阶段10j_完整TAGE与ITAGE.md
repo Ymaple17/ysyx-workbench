@@ -4,7 +4,7 @@
 
 - **理论目标**：理解多历史 tagged predictor、provider/alternate、usefulness、受控分配，以及历史相关间接目标预测。
 - **最小实现**：base GShare + 3 张 TAGE 表；PC-only 间接目标表 + 2 张 ITAGE 表；只在 commit 训练。
-- **当前参考核**：TAGE 256 项/表、历史 2/5/10 与 ITAGE 128 项/表、历史 4/10 继续保留；10m 加入 speculative GHR/RAS + FTQ snapshot，阶段 11d 再用 PC-only bimodal/TAGE tournament 缓解全局历史 alias。
+- **当前参考核**：阶段 12b 已把 TAGE 扩为 4×256（历史 `3/8/16/32`），ITAGE 扩为 4×128（历史 `8/16/24/48`），并加入 64-entry loop provider、16-bit 两目标 path history 和对应 speculative recovery；本章正文保留 10j 的最小完整实现快照。
 - **后续扩展**：speculative history、FTQ snapshot 和 RAS 投机恢复已在 10m 完成；当前可继续做更完整的预测 meta 保存、TAGE-SC、loop predictor 和更长历史。
 - **验收方式**：编译、BPU 单测、完整 OoO 单测、cpu-tests+difftest、microbench；比较 direction/target miss、TAGE/ITAGE 命中和 IPC。
 

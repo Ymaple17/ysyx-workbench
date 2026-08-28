@@ -20,7 +20,7 @@ class IFU_IDU_IO extends Bundle{
   val bp_valid = Bool()
   val bp_taken = Bool()
   val bp_target = UInt(32.W)
-  val bp_index = UInt(log2Ceil(BHT_SIZE).W)
+  val bp_index = UInt(BP_META_WIDTH.W)
   val ftq_idx = UInt(OoOParams.FTQ_PTR_W.W)
   val ftq_generation = UInt(OoOParams.FTQ_GEN_W.W)
 }
@@ -56,6 +56,7 @@ class IFU_IO(xlen: Int) extends Bundle{
 
   val state = Input(new State)
   val slot1_enable = Input(Bool())
+  val fetch_buffer_replace_ready = Input(Bool())
 
   val bpu_update_valid = Input(Bool())
   val bpu_update_taken = Input(Bool())
@@ -63,7 +64,7 @@ class IFU_IO(xlen: Int) extends Bundle{
   val bpu_update_target = Input(UInt(32.W))
   val bpu_update_is_branch = Input(Bool())
   val bpu_update_is_jalr = Input(Bool())
-  val bpu_update_index = Input(UInt(log2Ceil(BHT_SIZE).W))
+  val bpu_update_index = Input(UInt(BP_META_WIDTH.W))
   val bpu_update_is_call = Input(Bool())
   val bpu_update_is_ret = Input(Bool())
   val bpu_update1_valid = Input(Bool())
@@ -72,7 +73,7 @@ class IFU_IO(xlen: Int) extends Bundle{
   val bpu_update1_target = Input(UInt(32.W))
   val bpu_update1_is_branch = Input(Bool())
   val bpu_update1_is_jalr = Input(Bool())
-  val bpu_update1_index = Input(UInt(log2Ceil(BHT_SIZE).W))
+  val bpu_update1_index = Input(UInt(BP_META_WIDTH.W))
   val bpu_update1_is_call = Input(Bool())
   val bpu_update1_is_ret = Input(Bool())
   val bpu_update_free = Output(UInt(log2Ceil(9).W))
@@ -88,7 +89,9 @@ class IFU_IO(xlen: Int) extends Bundle{
   val bp_recover_ftq_idx = Input(UInt(OoOParams.FTQ_PTR_W.W))
   val bp_recover_ftq_generation = Input(UInt(OoOParams.FTQ_GEN_W.W))
   val bp_recover_pc = Input(UInt(32.W))
-  val bp_recover_index = Input(UInt(log2Ceil(BHT_SIZE).W))
+  val bp_recover_index = Input(UInt(BP_META_WIDTH.W))
+  val bp_recover_target = Input(UInt(32.W))
+  val bp_recover_is_jalr = Input(Bool())
   val bp_recover_taken = Input(Bool())
   val bp_recover_is_branch = Input(Bool())
   val bp_recover_is_call = Input(Bool())
@@ -169,6 +172,7 @@ class IFU(val conf: CoreConfig) extends Module{
   bpu.io.update_is_ret := bpuUpdates.io.deq.bits.isRet
 
   fetchBuffer.io.flush := io.is_flush
+  fetchBuffer.io.replaceReady := io.fetch_buffer_replace_ready
   ftq.io.flush := io.is_flush && !io.bp_recover_valid
   ftq.io.recoverFlush := io.is_flush && io.bp_recover_valid
   ftq.io.recoverSlot1 := io.bp_recover_pc =/= ftq.io.recover.basePc
@@ -228,6 +232,7 @@ class IFU(val conf: CoreConfig) extends Module{
   ftq.io.alloc.bits.cfiSlot := Mux(slot0Taken, 0.U,
     Mux(slot1Taken, 1.U, 2.U))
   ftq.io.alloc.bits.ghr := bpu.io.spec_ghr
+  ftq.io.alloc.bits.pathHistory := bpu.io.spec_path_history
   ftq.io.alloc.bits.ras := bpu.io.spec_ras
   ftq.io.alloc.bits.rasPtr := bpu.io.spec_ras_ptr
   ftq.io.alloc.bits.rasCount := bpu.io.spec_ras_count
@@ -242,8 +247,10 @@ class IFU(val conf: CoreConfig) extends Module{
   bpu.io.recover_valid := io.bp_recover_valid && ftq.io.recoverValid
   bpu.io.recover_pc := io.bp_recover_pc
   bpu.io.recover_index := io.bp_recover_index
+  bpu.io.recover_target := io.bp_recover_target
   bpu.io.recover_taken := io.bp_recover_taken
   bpu.io.recover_is_branch := io.bp_recover_is_branch
+  bpu.io.recover_is_jalr := io.bp_recover_is_jalr
   bpu.io.recover_is_call := io.bp_recover_is_call
   bpu.io.recover_is_ret := io.bp_recover_is_ret
   bpu.io.recover_ras := ftq.io.recover.ras
@@ -301,6 +308,9 @@ class IFU(val conf: CoreConfig) extends Module{
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_itage_hit) ||
         (fetchPacket.valid(1) && bpu.io.bp1_itage_hit)))
     PM(conf, clock, EVENT_ITAGE_ALLOC, 1.U, bpu.io.itage_alloc)
+    PM(conf, clock, EVENT_LOOP_PREDICT_HIT, 1.U,
+      captureFire && ((fetchPacket.valid(0) && bpu.io.bp_loop_hit) ||
+        (fetchPacket.valid(1) && bpu.io.bp1_loop_hit)))
     PM(conf, clock, EVENT_FETCH_BLOCK, 1.U, captureFire)
     PM(conf, clock, EVENT_FETCH_VALID_INST, PopCount(fetchPacket.valid), captureFire)
     PM(conf, clock, EVENT_FETCH_BLOCK2, 1.U,
@@ -319,6 +329,12 @@ class IFU(val conf: CoreConfig) extends Module{
       ftq.io.count > ftqHighWater)
     PM(conf, clock, EVENT_FTQ_STALE_RECOVER, 1.U,
       io.bp_recover_valid && !ftq.io.recoverValid)
+    PM(conf, clock, EVENT_FETCH_WAIT_RESOURCE, 1.U,
+      state === s_IDLE && io.in.valid && !io.is_flush && !fetchResourcesReady)
+    PM(conf, clock, EVENT_FETCH_WAIT_PC, 1.U,
+      state === s_IDLE && !io.in.valid && !io.is_flush)
+    PM(conf, clock, EVENT_FETCH_SLOT1_CREDIT_BLOCK, 1.U,
+      captureFire && slot1RawUse && !io.slot1_enable)
     val redirectBubble = RegNext(io.is_flush, false.B) && !packetFire
     PM(conf, clock, EVENT_FETCH_REDIRECT_BUBBLE, 1.U, redirectBubble)
   }

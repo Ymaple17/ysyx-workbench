@@ -10,7 +10,7 @@ class BPUCommitUpdate extends Bundle {
   val taken = Bool()
   val isBranch = Bool()
   val isJalr = Bool()
-  val index = UInt(log2Ceil(BHT_SIZE).W)
+  val index = UInt(BP_META_WIDTH.W)
   val isCall = Bool()
   val isRet = Bool()
 }

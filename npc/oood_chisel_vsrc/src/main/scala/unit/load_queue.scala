@@ -150,10 +150,22 @@ class LoadQueue(
   }
   val schedMask = schedEligible.asUInt
   val rotatedMask = (Cat(schedMask, schedMask) >> retryPtr)(depth - 1, 0)
-  val schedValid = schedMask.orR
+  val entrySchedValid = schedMask.orR
   val schedOffset = PriorityEncoder(rotatedMask)
-  val schedIdx = (retryPtr + schedOffset)(indexWidth - 1, 0)
-  val schedEntry = entries(schedIdx)
+  val entrySchedIdx = (retryPtr + schedOffset)(indexWidth - 1, 0)
+  val freshMmioCanRun = cacheable(io.alloc.bits.addr) ||
+    ((io.alloc.bits.meta.rob_idx === io.robHead) && io.mmioReady)
+  val freshSchedValid = !entrySchedValid && io.alloc.fire && freshMmioCanRun
+  val freshEntry = WireDefault(entries(allocIdx))
+  freshEntry.valid := true.B
+  freshEntry.meta := io.alloc.bits.meta
+  freshEntry.addr := io.alloc.bits.addr
+  freshEntry.memRd := io.alloc.bits.memRd
+  freshEntry.state := sWait
+  freshEntry.bypassedStores := 0.U
+  val schedValid = entrySchedValid || freshSchedValid
+  val schedIdx = Mux(entrySchedValid, entrySchedIdx, allocIdx)
+  val schedEntry = Mux(entrySchedValid, entries(entrySchedIdx), freshEntry)
 
   io.queryValid := schedValid
   io.queryRob := schedEntry.meta.rob_idx
@@ -233,8 +245,17 @@ class LoadQueue(
   }
   val wbValid = resultCandidates.asUInt.orR
   val wbIdx = OHToUInt(wbGrant)
-  io.wb.valid := wbValid && !io.flushAll
-  io.wb.bits := entries(wbIdx).meta
+  val responseIncoming = io.dmem.rvalid && io.dmem.rready && respMatches
+  val responseIdx = Mux(respMatchesOutstanding, respIdx, schedIdx)
+  val responseMeta = Mux(respMatchesOutstanding, outstandingResponseMeta, currentResponseMeta)
+  val directResponse = !wbValid && responseIncoming
+  val directForward = !wbValid && !responseIncoming && schedulerForward
+  val directValid = directResponse || directForward
+  val directIdx = Mux(directResponse, responseIdx, schedIdx)
+  val directMeta = Mux(directResponse, responseMeta, forwardMeta)
+
+  io.wb.valid := (wbValid || directValid) && !io.flushAll
+  io.wb.bits := Mux(wbValid, entries(wbIdx).meta, directMeta)
 
   def violationForStore(
       entry: LoadQueueEntry,
@@ -291,7 +312,9 @@ class LoadQueue(
   }
   when(schedulerForward) {
     entries(schedIdx).meta := forwardMeta
-    entries(schedIdx).state := sResult
+    when(!(directForward && io.wb.ready)) {
+      entries(schedIdx).state := sResult
+    }
   }
   when(arFire) {
     entries(schedIdx).state := sWaitResp
@@ -299,13 +322,17 @@ class LoadQueue(
   }
   when(io.dmem.rvalid && io.dmem.rready && respMatchesOutstanding) {
     entries(respIdx).meta := outstandingResponseMeta
-    entries(respIdx).state := sResult
+    when(!(directResponse && io.wb.ready)) {
+      entries(respIdx).state := sResult
+    }
   }
   when(io.dmem.rvalid && io.dmem.rready && respMatchesCurrent) {
     entries(schedIdx).meta := currentResponseMeta
-    entries(schedIdx).state := sResult
+    when(!(directResponse && io.wb.ready)) {
+      entries(schedIdx).state := sResult
+    }
   }
-  when(io.wb.fire) {
+  when(io.wb.fire && wbValid) {
     debugRemoveReason(entries(wbIdx).meta.rob_idx) := 1.U
     if (speculateUnknownStores) {
       entries(wbIdx).state := sComplete
@@ -315,6 +342,15 @@ class LoadQueue(
       // remains in the LQ, so recycle the entry immediately.
       entries(wbIdx).valid := false.B
       entries(wbIdx).generation := entries(wbIdx).generation + 1.U
+    }
+  }
+  when(io.wb.fire && directValid) {
+    debugRemoveReason(directMeta.rob_idx) := 1.U
+    if (speculateUnknownStores) {
+      entries(directIdx).state := sComplete
+    } else {
+      entries(directIdx).valid := false.B
+      entries(directIdx).generation := entries(directIdx).generation + 1.U
     }
   }
 

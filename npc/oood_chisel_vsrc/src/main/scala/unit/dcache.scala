@@ -97,24 +97,16 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
     (io.invalidate3_valid && inv3Cacheable && inv3Index === cpuIndex && inv3Tag === cpuTag)
 
   val cpuHit = cpuCacheable && cpuLine.valid && (cpuLine.tag === cpuTag) && !cpuInvalidatedNow
-  val storeHitCpu = io.store_valid && cacheable(io.store_addr) &&
-    indexOf(io.store_addr) === cpuIndex && tagOf(io.store_addr) === cpuTag &&
-    wordOf(io.store_addr) === cpuWord
-  val store2HitCpu = io.store2_valid && cacheable(io.store2_addr) &&
-    indexOf(io.store2_addr) === cpuIndex && tagOf(io.store2_addr) === cpuTag &&
-    wordOf(io.store2_addr) === cpuWord
   val store3HitCpu = io.store3_valid && cacheable(io.store3_addr) &&
     indexOf(io.store3_addr) === cpuIndex && tagOf(io.store3_addr) === cpuTag &&
     wordOf(io.store3_addr) === cpuWord
-  val cpuHitAfterStore3 = Mux(store3HitCpu,
+  // Same-cycle retiring stores update the line at the clock edge.  Older
+  // stores are already handled by SQ/StoreBuffer forwarding; a younger store
+  // must not alter an older load's value.  Only the registered drain port may
+  // merge into the combinational hit response.
+  val cpuHitData = Mux(store3HitCpu,
     storeWord(cpuLine.data(cpuWord), io.store3_addr, io.store3_data, io.store3_mask),
     cpuLine.data(cpuWord))
-  val cpuHitAfterStore0 = Mux(storeHitCpu,
-    storeWord(cpuHitAfterStore3, io.store_addr, io.store_data, io.store_mask),
-    cpuHitAfterStore3)
-  val cpuHitData = Mux(store2HitCpu,
-    storeWord(cpuHitAfterStore0, io.store2_addr, io.store2_data, io.store2_mask),
-    cpuHitAfterStore0)
 
   val hitRespQ = Module(new Queue(new DCacheReadResp, 2, pipe = true, flow = true))
   val missRespValid = RegInit(false.B)
@@ -147,10 +139,6 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
       (io.invalidate_valid && invCacheable && invIndex === mshrIndex && invTag === mshrTag) ||
       (io.invalidate2_valid && inv2Cacheable && inv2Index === mshrIndex && inv2Tag === mshrTag) ||
       (io.invalidate3_valid && inv3Cacheable && inv3Index === mshrIndex && inv3Tag === mshrTag) ||
-      (io.store_valid && cacheable(io.store_addr) &&
-        indexOf(io.store_addr) === mshrIndex && tagOf(io.store_addr) === mshrTag) ||
-      (io.store2_valid && cacheable(io.store2_addr) &&
-        indexOf(io.store2_addr) === mshrIndex && tagOf(io.store2_addr) === mshrTag) ||
       (io.store3_valid && cacheable(io.store3_addr) &&
         indexOf(io.store3_addr) === mshrIndex && tagOf(io.store3_addr) === mshrTag)
     )

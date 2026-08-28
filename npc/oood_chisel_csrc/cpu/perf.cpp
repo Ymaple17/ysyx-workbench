@@ -1,12 +1,42 @@
 #include "../include/perf.h"
+#include <algorithm>
 #include <stdio.h>
+#include <unordered_map>
+#include <utility>
+#include <vector>
 
 static long long counters[EVENT_MAX] = {0};
+static std::unordered_map<uint32_t, long long> pc_counters[PC_EVENT_MAX];
 
 extern "C" void npc_pm_event(int event_id, long long data) {
     if (event_id >= 0 && event_id < EVENT_MAX) {
         counters[event_id] += data;
     }
+}
+
+extern "C" void npc_pm_pc_event(int event_id, int pc) {
+    if (event_id >= 0 && event_id < PC_EVENT_MAX) {
+        pc_counters[event_id][static_cast<uint32_t>(pc)]++;
+    }
+}
+
+static void print_top_pc(const char *label, int event_id) {
+    std::vector<std::pair<uint32_t, long long>> rows;
+    rows.reserve(pc_counters[event_id].size());
+    for (const auto &entry : pc_counters[event_id]) {
+        rows.push_back(entry);
+    }
+    std::sort(rows.begin(), rows.end(), [](
+        const std::pair<uint32_t, long long> &a,
+        const std::pair<uint32_t, long long> &b) {
+        return a.second > b.second || (a.second == b.second && a.first < b.first);
+    });
+    printf("%s", label);
+    const size_t limit = std::min<size_t>(12, rows.size());
+    for (size_t i = 0; i < limit; ++i) {
+        printf(" %08x:%lld", rows[i].first, rows[i].second);
+    }
+    printf("\n");
 }
 
 void print_perf_stats(unsigned long long cycles) {
@@ -98,11 +128,13 @@ void print_perf_stats(unsigned long long cycles) {
     printf("TAGE Alternate:    %lld\n", counters[EVENT_TAGE_USE_ALT]);
     printf("Bimodal Selections: %lld\n", counters[EVENT_BIMODAL_SELECTED]);
     printf("Control Direct Complete: %lld\n", counters[EVENT_CONTROL_DIRECT_COMPLETE]);
+    printf("Store Direct Complete: %lld\n", counters[EVENT_STORE_DIRECT_COMPLETE]);
     printf("DCache Secondary Alloc: %lld\n", counters[EVENT_DCACHE_SECONDARY_ALLOC]);
     printf("DCache MSHR Merge: %lld\n", counters[EVENT_DCACHE_MSHR_MERGE]);
     printf("TAGE Allocations:  %lld\n", counters[EVENT_TAGE_ALLOC]);
     printf("ITAGE Hits:        %lld\n", counters[EVENT_ITAGE_HIT]);
     printf("ITAGE Allocations: %lld\n", counters[EVENT_ITAGE_ALLOC]);
+    printf("Loop Predictor Hits: %lld\n", counters[EVENT_LOOP_PREDICT_HIT]);
     if (bpu_predict > 0) {
         printf("Hit Rate:     %.2f%%\n", 100.0 * (bpu_predict - bpu_mispred) / bpu_predict);
         printf("Mispredict Rate: %.2f%%\n", 100.0 * bpu_mispred / bpu_predict);
@@ -153,6 +185,23 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Dispatch Branch+Slot1: %lld\n", counters[EVENT_DISPATCH_BRANCH_SLOT1]);
     printf("Dispatch Slot1 Ctrl Block: %lld\n", counters[EVENT_DISPATCH_SLOT1_CTRL_BLOCK]);
     printf("Dispatch Slot1 Backend Block: %lld\n", counters[EVENT_DISPATCH_SLOT1_BACKEND_BLOCK]);
+    printf("Head Wait ALU:       %lld\n", counters[EVENT_HEAD_WAIT_ALU]);
+    printf("Head Wait Load:      %lld\n", counters[EVENT_HEAD_WAIT_LOAD]);
+    printf("Head Wait Store:     %lld\n", counters[EVENT_HEAD_WAIT_STORE]);
+    printf("Head Wait Control:   %lld\n", counters[EVENT_HEAD_WAIT_CTRL]);
+    printf("Head Wait Other:     %lld\n", counters[EVENT_HEAD_WAIT_OTHER]);
+    printf("Fetch Wait Resource: %lld\n", counters[EVENT_FETCH_WAIT_RESOURCE]);
+    printf("Fetch Wait PC:       %lld\n", counters[EVENT_FETCH_WAIT_PC]);
+    printf("Fetch Slot1 Credit Block: %lld\n", counters[EVENT_FETCH_SLOT1_CREDIT_BLOCK]);
+    printf("Branch Issues:       %lld\n", counters[EVENT_BRANCH_ISSUE]);
+    printf("Branch Ready Wait:   %lld\n", counters[EVENT_BRANCH_READY_WAIT]);
+
+    printf("\n[Stage12 PC Hotspots]\n");
+    print_top_pc("Head Wait PCs:", PC_EVENT_HEAD_WAIT);
+    print_top_pc("Direction Miss PCs:", PC_EVENT_DIR_MISPRED);
+    print_top_pc("Target Miss PCs:", PC_EVENT_TARGET_MISPRED);
+    print_top_pc("Unpredicted PCs:", PC_EVENT_UNPREDICTED);
+    print_top_pc("Flush PCs:", PC_EVENT_BP_FLUSH);
 
     printf("\n[LSU Statistics]\n");
     long long total_access = counters[EVENT_LSU_READ] + counters[EVENT_LSU_WRITE];

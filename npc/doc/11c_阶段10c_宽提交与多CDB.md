@@ -4,7 +4,7 @@
 
 - **理论目标**：理解提交带宽和写回带宽为什么会限制 IPC；知道 2-wide commit、双 CDB、双唤醒、双 PRF 写口之间的关系。
 - **最小实现**：在不破坏现有 difftest 单提交接口的前提下，先把结果总线从单 CDB 扩成 2 CDB，让一拍最多两个 FU 结果进入 PRF/ROB/RS。
-- **当前参考核**：`CDB_NUM=2` 和 `COMMIT_WIDTH=2` 均已保留；四类结果 `ALU0/LSU/ALU1/DIV` 由独立 4→2 `WritebackArbiter` 按 ROB age 选最老两项。阶段 11d 又让无目的普通控制流通过独立 ROB/RS sideband 完成，避免占数据 CDB；本章仍按 10c 历史顺序解释为什么先扩写回再扩退休。
+- **当前参考核**：`CDB_NUM=2` 和 `COMMIT_WIDTH=2` 均已保留；有值结果 `ALU0/ALU1/LSU/DIV/BRU-rd` 由 5→2 `WritebackArbiter` 按 ROB age 选最老两项。阶段 12f 的普通 control/store 通过独立 identity-checked sideband 完成；本章仍按 10c 历史顺序解释为什么先扩写回再扩退休。
 - **后续扩展**：10f/10g/10m 已完成双退休、ROB/PRF 扩容、持续双取指与双整数 ALU；当前可继续研究更多 CDB、分类型 issue queue 和 banked PRF。
 - **验收方式**：`mychisel.compile`、`OoOUnitTest`、cpu-tests + difftest、`microbench(test)` 全部通过；记录 before/after IPC 和 CDB 计数器。
 

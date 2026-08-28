@@ -16,7 +16,7 @@ module IFU(
   output        io_out_bits_bits_0_bp_valid,
                 io_out_bits_bits_0_bp_taken,
   output [31:0] io_out_bits_bits_0_bp_target,
-  output [9:0]  io_out_bits_bits_0_bp_index,
+  output [64:0] io_out_bits_bits_0_bp_index,
   output [3:0]  io_out_bits_bits_0_ftq_idx,
   output [7:0]  io_out_bits_bits_0_ftq_generation,
   output [31:0] io_out_bits_bits_1_inst,
@@ -26,7 +26,7 @@ module IFU(
   output        io_out_bits_bits_1_bp_valid,
                 io_out_bits_bits_1_bp_taken,
   output [31:0] io_out_bits_bits_1_bp_target,
-  output [9:0]  io_out_bits_bits_1_bp_index,
+  output [64:0] io_out_bits_bits_1_bp_index,
   output [3:0]  io_out_bits_bits_1_ftq_idx,
   output [7:0]  io_out_bits_bits_1_ftq_generation,
   input         io_pc_ready,
@@ -45,13 +45,14 @@ module IFU(
   input         io_is_flush,
   input  [31:0] io_correct_pc,
   input         io_slot1_enable,
+                io_fetch_buffer_replace_ready,
                 io_bpu_update_valid,
                 io_bpu_update_taken,
   input  [31:0] io_bpu_update_pc,
                 io_bpu_update_target,
   input         io_bpu_update_is_branch,
                 io_bpu_update_is_jalr,
-  input  [9:0]  io_bpu_update_index,
+  input  [64:0] io_bpu_update_index,
   input         io_bpu_update_is_call,
                 io_bpu_update_is_ret,
                 io_bpu_update1_valid,
@@ -60,7 +61,7 @@ module IFU(
                 io_bpu_update1_target,
   input         io_bpu_update1_is_branch,
                 io_bpu_update1_is_jalr,
-  input  [9:0]  io_bpu_update1_index,
+  input  [64:0] io_bpu_update1_index,
   input         io_bpu_update1_is_call,
                 io_bpu_update1_is_ret,
   output [3:0]  io_bpu_update_free,
@@ -74,8 +75,10 @@ module IFU(
   input  [3:0]  io_bp_recover_ftq_idx,
   input  [7:0]  io_bp_recover_ftq_generation,
   input  [31:0] io_bp_recover_pc,
-  input  [9:0]  io_bp_recover_index,
-  input         io_bp_recover_taken,
+  input  [64:0] io_bp_recover_index,
+  input  [31:0] io_bp_recover_target,
+  input         io_bp_recover_is_jalr,
+                io_bp_recover_taken,
                 io_bp_recover_is_branch,
                 io_bp_recover_is_call,
                 io_bp_recover_is_ret
@@ -116,27 +119,29 @@ module IFU(
   wire        _bpuUpdates_io_deq_bits_taken;
   wire        _bpuUpdates_io_deq_bits_isBranch;
   wire        _bpuUpdates_io_deq_bits_isJalr;
-  wire [9:0]  _bpuUpdates_io_deq_bits_index;
+  wire [64:0] _bpuUpdates_io_deq_bits_index;
   wire        _bpuUpdates_io_deq_bits_isCall;
   wire        _bpuUpdates_io_deq_bits_isRet;
   wire        _bpu_io_bp_valid;
   wire        _bpu_io_bp_taken;
   wire [31:0] _bpu_io_bp_target;
-  wire [9:0]  _bpu_io_bp_index;
+  wire [64:0] _bpu_io_bp_index;
   wire        _bpu_io_bp_tagged_hit;
   wire        _bpu_io_bp_tage_use_alt;
   wire        _bpu_io_bp_bimodal_selected;
   wire        _bpu_io_bp_indirect_hit;
   wire        _bpu_io_bp_itage_hit;
+  wire        _bpu_io_bp_loop_hit;
   wire        _bpu_io_bp1_valid;
   wire        _bpu_io_bp1_taken;
   wire [31:0] _bpu_io_bp1_target;
-  wire [9:0]  _bpu_io_bp1_index;
+  wire [64:0] _bpu_io_bp1_index;
   wire        _bpu_io_bp1_tagged_hit;
   wire        _bpu_io_bp1_tage_use_alt;
   wire        _bpu_io_bp1_bimodal_selected;
   wire        _bpu_io_bp1_indirect_hit;
   wire        _bpu_io_bp1_itage_hit;
+  wire        _bpu_io_bp1_loop_hit;
   wire [31:0] _bpu_io_spec_ras_0;
   wire [31:0] _bpu_io_spec_ras_1;
   wire [31:0] _bpu_io_spec_ras_2;
@@ -163,8 +168,8 @@ module IFU(
   wire        _io_imem_rready_T = state == 2'h2;
   wire [31:0] bpu_io_predict_pc1 = io_in_bits_next_pc + 32'h4;
   wire        slot0Taken = _bpu_io_bp_valid & _bpu_io_bp_taken;
-  wire        slot1CanUse =
-    io_slot1_enable & io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp);
+  wire        slot1RawUse = io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp);
+  wire        slot1CanUse = io_slot1_enable & slot1RawUse;
   wire        fetchPacket_valid_0 = io_imem_rvalid & _ready_T & io_in_valid;
   wire        fetchPacket_valid_1 = fetchPacket_valid_0 & slot1CanUse;
   wire        captureCandidate = fetchPacket_valid_0 & ~io_is_flush;
@@ -174,9 +179,9 @@ module IFU(
   wire        work = _fetchBuffer_io_in_ready & fetchBuffer_io_in_valid;
   wire        bpu_io_recover_valid = io_bp_recover_valid & _ftq_io_recoverValid;
   assign _ready_T = state != 2'h2;
+  wire        fetchResourcesReady = _fetchBuffer_io_in_ready & _ftq_io_alloc_ready;
   wire        io_imem_arvalid_0 =
-    io_in_valid & _io_imem_arvalid_T & ~io_is_flush & _fetchBuffer_io_in_ready
-    & _ftq_io_alloc_ready;
+    io_in_valid & _io_imem_arvalid_T & ~io_is_flush & fetchResourcesReady;
   wire        idle = io_imem_arvalid_0 & io_imem_arready;
   reg  [4:0]  ftqHighWater;
   wire        _GEN = _ftq_io_count > ftqHighWater;
@@ -218,6 +223,7 @@ module IFU(
     .io_bp_bimodal_selected  (_bpu_io_bp_bimodal_selected),
     .io_bp_indirect_hit      (_bpu_io_bp_indirect_hit),
     .io_bp_itage_hit         (_bpu_io_bp_itage_hit),
+    .io_bp_loop_hit          (_bpu_io_bp_loop_hit),
     .io_bp1_valid            (_bpu_io_bp1_valid),
     .io_bp1_taken            (_bpu_io_bp1_taken),
     .io_bp1_target           (_bpu_io_bp1_target),
@@ -227,6 +233,7 @@ module IFU(
     .io_bp1_bimodal_selected (_bpu_io_bp1_bimodal_selected),
     .io_bp1_indirect_hit     (_bpu_io_bp1_indirect_hit),
     .io_bp1_itage_hit        (_bpu_io_bp1_itage_hit),
+    .io_bp1_loop_hit         (_bpu_io_bp1_loop_hit),
     .io_update_pc            (_bpuUpdates_io_deq_bits_pc),
     .io_update_target        (_bpuUpdates_io_deq_bits_target),
     .io_update_valid         (_bpuUpdates_io_deq_valid),
@@ -241,8 +248,10 @@ module IFU(
     .io_recover_valid        (bpu_io_recover_valid),
     .io_recover_pc           (io_bp_recover_pc),
     .io_recover_index        (io_bp_recover_index),
+    .io_recover_target       (io_bp_recover_target),
     .io_recover_taken        (io_bp_recover_taken),
     .io_recover_is_branch    (io_bp_recover_is_branch),
+    .io_recover_is_jalr      (io_bp_recover_is_jalr),
     .io_recover_is_call      (io_bp_recover_is_call),
     .io_recover_is_ret       (io_bp_recover_is_ret),
     .io_recover_ras_0        (_ftq_io_recover_ras_0),
@@ -370,6 +379,7 @@ module IFU(
     .io_out_bits_bits_1_ftq_idx         (io_out_bits_bits_1_ftq_idx),
     .io_out_bits_bits_1_ftq_generation  (io_out_bits_bits_1_ftq_generation),
     .io_flush                           (io_is_flush),
+    .io_replaceReady                    (io_fetch_buffer_replace_ready),
     .io_full                            (_fetchBuffer_io_full)
   );
   FTQ ftq (
@@ -528,65 +538,92 @@ module IFU(
   );
   PerfMonitor pm_13 (
     .clock    (clock),
+    .event_id (32'h7E),
+    .data     (64'h1),
+    .enable
+      (work
+       & (fetchPacket_valid_0 & _bpu_io_bp_loop_hit | fetchPacket_valid_1
+          & _bpu_io_bp1_loop_hit))
+  );
+  PerfMonitor pm_14 (
+    .clock    (clock),
     .event_id (32'h57),
     .data     (64'h1),
     .enable   (work)
   );
-  PerfMonitor pm_14 (
+  PerfMonitor pm_15 (
     .clock    (clock),
     .event_id (32'h58),
     .data     ({62'h0, {1'h0, fetchPacket_valid_0} + {1'h0, fetchPacket_valid_1}}),
     .enable   (work)
   );
-  PerfMonitor pm_15 (
+  PerfMonitor pm_16 (
     .clock    (clock),
     .event_id (32'h59),
     .data     (64'h1),
     .enable   (_GEN_0)
   );
-  PerfMonitor pm_16 (
+  PerfMonitor pm_17 (
     .clock    (clock),
     .event_id (32'h5A),
     .data     (64'h1),
     .enable   (captureCandidate & _fetchBuffer_io_full)
   );
-  PerfMonitor pm_17 (
+  PerfMonitor pm_18 (
     .clock    (clock),
     .event_id (32'h5B),
     .data     (64'h1),
     .enable   (captureCandidate & _ftq_io_full)
   );
-  PerfMonitor pm_18 (
+  PerfMonitor pm_19 (
     .clock    (clock),
     .event_id (32'h5C),
     .data     (64'h1),
     .enable   (work & ~io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp))
   );
-  PerfMonitor pm_19 (
+  PerfMonitor pm_20 (
     .clock    (clock),
     .event_id (32'h5D),
     .data     (64'h1),
     .enable   (bpu_io_recover_valid)
   );
-  PerfMonitor pm_20 (
+  PerfMonitor pm_21 (
     .clock    (clock),
     .event_id (32'h5E),
     .data     (64'h1),
     .enable   (bpu_io_recover_valid & (io_bp_recover_is_call | io_bp_recover_is_ret))
   );
-  PerfMonitor pm_21 (
+  PerfMonitor pm_22 (
     .clock    (clock),
     .event_id (32'h5F),
     .data     ({59'h0, _ftq_io_count - ftqHighWater}),
     .enable   (_GEN)
   );
-  PerfMonitor pm_22 (
+  PerfMonitor pm_23 (
     .clock    (clock),
     .event_id (32'h60),
     .data     (64'h1),
     .enable   (io_bp_recover_valid & ~_ftq_io_recoverValid)
   );
-  PerfMonitor pm_23 (
+  PerfMonitor pm_24 (
+    .clock    (clock),
+    .event_id (32'h78),
+    .data     (64'h1),
+    .enable   (_io_imem_arvalid_T & io_in_valid & ~io_is_flush & ~fetchResourcesReady)
+  );
+  PerfMonitor pm_25 (
+    .clock    (clock),
+    .event_id (32'h79),
+    .data     (64'h1),
+    .enable   (_io_imem_arvalid_T & ~io_in_valid & ~io_is_flush)
+  );
+  PerfMonitor pm_26 (
+    .clock    (clock),
+    .event_id (32'h7A),
+    .data     (64'h1),
+    .enable   (work & slot1RawUse & ~io_slot1_enable)
+  );
+  PerfMonitor pm_27 (
     .clock    (clock),
     .event_id (32'h34),
     .data     (64'h1),

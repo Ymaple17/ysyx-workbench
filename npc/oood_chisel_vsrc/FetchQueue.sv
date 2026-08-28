@@ -13,7 +13,7 @@ module FetchQueue(
   input         io_enq_bits_bits_0_bp_valid,
                 io_enq_bits_bits_0_bp_taken,
   input  [31:0] io_enq_bits_bits_0_bp_target,
-  input  [9:0]  io_enq_bits_bits_0_bp_index,
+  input  [64:0] io_enq_bits_bits_0_bp_index,
   input  [3:0]  io_enq_bits_bits_0_ftq_idx,
   input  [7:0]  io_enq_bits_bits_0_ftq_generation,
   input  [31:0] io_enq_bits_bits_1_inst,
@@ -23,7 +23,7 @@ module FetchQueue(
   input         io_enq_bits_bits_1_bp_valid,
                 io_enq_bits_bits_1_bp_taken,
   input  [31:0] io_enq_bits_bits_1_bp_target,
-  input  [9:0]  io_enq_bits_bits_1_bp_index,
+  input  [64:0] io_enq_bits_bits_1_bp_index,
   input  [3:0]  io_enq_bits_bits_1_ftq_idx,
   input  [7:0]  io_enq_bits_bits_1_ftq_generation,
   input         io_deq_ready,
@@ -35,7 +35,7 @@ module FetchQueue(
   output        io_deq_bits_bp_valid,
                 io_deq_bits_bp_taken,
   output [31:0] io_deq_bits_bp_target,
-  output [9:0]  io_deq_bits_bp_index,
+  output [64:0] io_deq_bits_bp_index,
   output [3:0]  io_deq_bits_ftq_idx,
   output [7:0]  io_deq_bits_ftq_generation,
   input         io_deq1_ready,
@@ -47,12 +47,13 @@ module FetchQueue(
   output        io_deq1_bits_bp_valid,
                 io_deq1_bits_bp_taken,
   output [31:0] io_deq1_bits_bp_target,
-  output [9:0]  io_deq1_bits_bp_index,
+  output [64:0] io_deq1_bits_bp_index,
   output [3:0]  io_deq1_bits_ftq_idx,
   output [7:0]  io_deq1_bits_ftq_generation,
   input         io_flush,
-  output [3:0]  io_count,
-                io_space
+  output [4:0]  io_count,
+                io_space,
+                io_enqSpace
 );
 
   reg  [31:0] entries_0_inst;
@@ -62,7 +63,7 @@ module FetchQueue(
   reg         entries_0_bp_valid;
   reg         entries_0_bp_taken;
   reg  [31:0] entries_0_bp_target;
-  reg  [9:0]  entries_0_bp_index;
+  reg  [64:0] entries_0_bp_index;
   reg  [3:0]  entries_0_ftq_idx;
   reg  [7:0]  entries_0_ftq_generation;
   reg  [31:0] entries_1_inst;
@@ -72,7 +73,7 @@ module FetchQueue(
   reg         entries_1_bp_valid;
   reg         entries_1_bp_taken;
   reg  [31:0] entries_1_bp_target;
-  reg  [9:0]  entries_1_bp_index;
+  reg  [64:0] entries_1_bp_index;
   reg  [3:0]  entries_1_ftq_idx;
   reg  [7:0]  entries_1_ftq_generation;
   reg  [31:0] entries_2_inst;
@@ -82,7 +83,7 @@ module FetchQueue(
   reg         entries_2_bp_valid;
   reg         entries_2_bp_taken;
   reg  [31:0] entries_2_bp_target;
-  reg  [9:0]  entries_2_bp_index;
+  reg  [64:0] entries_2_bp_index;
   reg  [3:0]  entries_2_ftq_idx;
   reg  [7:0]  entries_2_ftq_generation;
   reg  [31:0] entries_3_inst;
@@ -92,7 +93,7 @@ module FetchQueue(
   reg         entries_3_bp_valid;
   reg         entries_3_bp_taken;
   reg  [31:0] entries_3_bp_target;
-  reg  [9:0]  entries_3_bp_index;
+  reg  [64:0] entries_3_bp_index;
   reg  [3:0]  entries_3_ftq_idx;
   reg  [7:0]  entries_3_ftq_generation;
   reg  [31:0] entries_4_inst;
@@ -102,7 +103,7 @@ module FetchQueue(
   reg         entries_4_bp_valid;
   reg         entries_4_bp_taken;
   reg  [31:0] entries_4_bp_target;
-  reg  [9:0]  entries_4_bp_index;
+  reg  [64:0] entries_4_bp_index;
   reg  [3:0]  entries_4_ftq_idx;
   reg  [7:0]  entries_4_ftq_generation;
   reg  [31:0] entries_5_inst;
@@ -112,7 +113,7 @@ module FetchQueue(
   reg         entries_5_bp_valid;
   reg         entries_5_bp_taken;
   reg  [31:0] entries_5_bp_target;
-  reg  [9:0]  entries_5_bp_index;
+  reg  [64:0] entries_5_bp_index;
   reg  [3:0]  entries_5_ftq_idx;
   reg  [7:0]  entries_5_ftq_generation;
   reg  [31:0] entries_6_inst;
@@ -122,7 +123,7 @@ module FetchQueue(
   reg         entries_6_bp_valid;
   reg         entries_6_bp_taken;
   reg  [31:0] entries_6_bp_target;
-  reg  [9:0]  entries_6_bp_index;
+  reg  [64:0] entries_6_bp_index;
   reg  [3:0]  entries_6_ftq_idx;
   reg  [7:0]  entries_6_ftq_generation;
   reg  [31:0] entries_7_inst;
@@ -132,445 +133,847 @@ module FetchQueue(
   reg         entries_7_bp_valid;
   reg         entries_7_bp_taken;
   reg  [31:0] entries_7_bp_target;
-  reg  [9:0]  entries_7_bp_index;
+  reg  [64:0] entries_7_bp_index;
   reg  [3:0]  entries_7_ftq_idx;
   reg  [7:0]  entries_7_ftq_generation;
-  reg  [2:0]  head;
-  reg  [2:0]  tail;
-  reg  [3:0]  count;
-  wire [3:0]  _space_T = 4'h8 - count;
-  wire [1:0]  enqCount = {1'h0, io_enq_bits_valid_0} + {1'h0, io_enq_bits_valid_1};
-  wire        io_enq_ready_0 =
-    ~io_flush & (enqCount == 2'h0 | _space_T >= {2'h0, enqCount});
+  reg  [31:0] entries_8_inst;
+  reg  [31:0] entries_8_pc;
+  reg         entries_8_state_state;
+  reg  [7:0]  entries_8_state_state_num;
+  reg         entries_8_bp_valid;
+  reg         entries_8_bp_taken;
+  reg  [31:0] entries_8_bp_target;
+  reg  [64:0] entries_8_bp_index;
+  reg  [3:0]  entries_8_ftq_idx;
+  reg  [7:0]  entries_8_ftq_generation;
+  reg  [31:0] entries_9_inst;
+  reg  [31:0] entries_9_pc;
+  reg         entries_9_state_state;
+  reg  [7:0]  entries_9_state_state_num;
+  reg         entries_9_bp_valid;
+  reg         entries_9_bp_taken;
+  reg  [31:0] entries_9_bp_target;
+  reg  [64:0] entries_9_bp_index;
+  reg  [3:0]  entries_9_ftq_idx;
+  reg  [7:0]  entries_9_ftq_generation;
+  reg  [31:0] entries_10_inst;
+  reg  [31:0] entries_10_pc;
+  reg         entries_10_state_state;
+  reg  [7:0]  entries_10_state_state_num;
+  reg         entries_10_bp_valid;
+  reg         entries_10_bp_taken;
+  reg  [31:0] entries_10_bp_target;
+  reg  [64:0] entries_10_bp_index;
+  reg  [3:0]  entries_10_ftq_idx;
+  reg  [7:0]  entries_10_ftq_generation;
+  reg  [31:0] entries_11_inst;
+  reg  [31:0] entries_11_pc;
+  reg         entries_11_state_state;
+  reg  [7:0]  entries_11_state_state_num;
+  reg         entries_11_bp_valid;
+  reg         entries_11_bp_taken;
+  reg  [31:0] entries_11_bp_target;
+  reg  [64:0] entries_11_bp_index;
+  reg  [3:0]  entries_11_ftq_idx;
+  reg  [7:0]  entries_11_ftq_generation;
+  reg  [31:0] entries_12_inst;
+  reg  [31:0] entries_12_pc;
+  reg         entries_12_state_state;
+  reg  [7:0]  entries_12_state_state_num;
+  reg         entries_12_bp_valid;
+  reg         entries_12_bp_taken;
+  reg  [31:0] entries_12_bp_target;
+  reg  [64:0] entries_12_bp_index;
+  reg  [3:0]  entries_12_ftq_idx;
+  reg  [7:0]  entries_12_ftq_generation;
+  reg  [31:0] entries_13_inst;
+  reg  [31:0] entries_13_pc;
+  reg         entries_13_state_state;
+  reg  [7:0]  entries_13_state_state_num;
+  reg         entries_13_bp_valid;
+  reg         entries_13_bp_taken;
+  reg  [31:0] entries_13_bp_target;
+  reg  [64:0] entries_13_bp_index;
+  reg  [3:0]  entries_13_ftq_idx;
+  reg  [7:0]  entries_13_ftq_generation;
+  reg  [31:0] entries_14_inst;
+  reg  [31:0] entries_14_pc;
+  reg         entries_14_state_state;
+  reg  [7:0]  entries_14_state_state_num;
+  reg         entries_14_bp_valid;
+  reg         entries_14_bp_taken;
+  reg  [31:0] entries_14_bp_target;
+  reg  [64:0] entries_14_bp_index;
+  reg  [3:0]  entries_14_ftq_idx;
+  reg  [7:0]  entries_14_ftq_generation;
+  reg  [31:0] entries_15_inst;
+  reg  [31:0] entries_15_pc;
+  reg         entries_15_state_state;
+  reg  [7:0]  entries_15_state_state_num;
+  reg         entries_15_bp_valid;
+  reg         entries_15_bp_taken;
+  reg  [31:0] entries_15_bp_target;
+  reg  [64:0] entries_15_bp_index;
+  reg  [3:0]  entries_15_ftq_idx;
+  reg  [7:0]  entries_15_ftq_generation;
+  reg  [3:0]  head;
+  reg  [3:0]  tail;
+  reg  [4:0]  count;
+  wire [4:0]  _space_T = 5'h10 - count;
   wire        io_deq_valid_0 = (|count) & ~io_flush;
   reg  [31:0] casez_tmp;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp = entries_0_inst;
-      3'b001:
+      4'b0001:
         casez_tmp = entries_1_inst;
-      3'b010:
+      4'b0010:
         casez_tmp = entries_2_inst;
-      3'b011:
+      4'b0011:
         casez_tmp = entries_3_inst;
-      3'b100:
+      4'b0100:
         casez_tmp = entries_4_inst;
-      3'b101:
+      4'b0101:
         casez_tmp = entries_5_inst;
-      3'b110:
+      4'b0110:
         casez_tmp = entries_6_inst;
-      default:
+      4'b0111:
         casez_tmp = entries_7_inst;
+      4'b1000:
+        casez_tmp = entries_8_inst;
+      4'b1001:
+        casez_tmp = entries_9_inst;
+      4'b1010:
+        casez_tmp = entries_10_inst;
+      4'b1011:
+        casez_tmp = entries_11_inst;
+      4'b1100:
+        casez_tmp = entries_12_inst;
+      4'b1101:
+        casez_tmp = entries_13_inst;
+      4'b1110:
+        casez_tmp = entries_14_inst;
+      default:
+        casez_tmp = entries_15_inst;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_0;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_0 = entries_0_pc;
-      3'b001:
+      4'b0001:
         casez_tmp_0 = entries_1_pc;
-      3'b010:
+      4'b0010:
         casez_tmp_0 = entries_2_pc;
-      3'b011:
+      4'b0011:
         casez_tmp_0 = entries_3_pc;
-      3'b100:
+      4'b0100:
         casez_tmp_0 = entries_4_pc;
-      3'b101:
+      4'b0101:
         casez_tmp_0 = entries_5_pc;
-      3'b110:
+      4'b0110:
         casez_tmp_0 = entries_6_pc;
-      default:
+      4'b0111:
         casez_tmp_0 = entries_7_pc;
+      4'b1000:
+        casez_tmp_0 = entries_8_pc;
+      4'b1001:
+        casez_tmp_0 = entries_9_pc;
+      4'b1010:
+        casez_tmp_0 = entries_10_pc;
+      4'b1011:
+        casez_tmp_0 = entries_11_pc;
+      4'b1100:
+        casez_tmp_0 = entries_12_pc;
+      4'b1101:
+        casez_tmp_0 = entries_13_pc;
+      4'b1110:
+        casez_tmp_0 = entries_14_pc;
+      default:
+        casez_tmp_0 = entries_15_pc;
     endcase
   end // always_comb
   reg         casez_tmp_1;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_1 = entries_0_state_state;
-      3'b001:
+      4'b0001:
         casez_tmp_1 = entries_1_state_state;
-      3'b010:
+      4'b0010:
         casez_tmp_1 = entries_2_state_state;
-      3'b011:
+      4'b0011:
         casez_tmp_1 = entries_3_state_state;
-      3'b100:
+      4'b0100:
         casez_tmp_1 = entries_4_state_state;
-      3'b101:
+      4'b0101:
         casez_tmp_1 = entries_5_state_state;
-      3'b110:
+      4'b0110:
         casez_tmp_1 = entries_6_state_state;
-      default:
+      4'b0111:
         casez_tmp_1 = entries_7_state_state;
+      4'b1000:
+        casez_tmp_1 = entries_8_state_state;
+      4'b1001:
+        casez_tmp_1 = entries_9_state_state;
+      4'b1010:
+        casez_tmp_1 = entries_10_state_state;
+      4'b1011:
+        casez_tmp_1 = entries_11_state_state;
+      4'b1100:
+        casez_tmp_1 = entries_12_state_state;
+      4'b1101:
+        casez_tmp_1 = entries_13_state_state;
+      4'b1110:
+        casez_tmp_1 = entries_14_state_state;
+      default:
+        casez_tmp_1 = entries_15_state_state;
     endcase
   end // always_comb
   reg  [7:0]  casez_tmp_2;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_2 = entries_0_state_state_num;
-      3'b001:
+      4'b0001:
         casez_tmp_2 = entries_1_state_state_num;
-      3'b010:
+      4'b0010:
         casez_tmp_2 = entries_2_state_state_num;
-      3'b011:
+      4'b0011:
         casez_tmp_2 = entries_3_state_state_num;
-      3'b100:
+      4'b0100:
         casez_tmp_2 = entries_4_state_state_num;
-      3'b101:
+      4'b0101:
         casez_tmp_2 = entries_5_state_state_num;
-      3'b110:
+      4'b0110:
         casez_tmp_2 = entries_6_state_state_num;
-      default:
+      4'b0111:
         casez_tmp_2 = entries_7_state_state_num;
+      4'b1000:
+        casez_tmp_2 = entries_8_state_state_num;
+      4'b1001:
+        casez_tmp_2 = entries_9_state_state_num;
+      4'b1010:
+        casez_tmp_2 = entries_10_state_state_num;
+      4'b1011:
+        casez_tmp_2 = entries_11_state_state_num;
+      4'b1100:
+        casez_tmp_2 = entries_12_state_state_num;
+      4'b1101:
+        casez_tmp_2 = entries_13_state_state_num;
+      4'b1110:
+        casez_tmp_2 = entries_14_state_state_num;
+      default:
+        casez_tmp_2 = entries_15_state_state_num;
     endcase
   end // always_comb
   reg         casez_tmp_3;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_3 = entries_0_bp_valid;
-      3'b001:
+      4'b0001:
         casez_tmp_3 = entries_1_bp_valid;
-      3'b010:
+      4'b0010:
         casez_tmp_3 = entries_2_bp_valid;
-      3'b011:
+      4'b0011:
         casez_tmp_3 = entries_3_bp_valid;
-      3'b100:
+      4'b0100:
         casez_tmp_3 = entries_4_bp_valid;
-      3'b101:
+      4'b0101:
         casez_tmp_3 = entries_5_bp_valid;
-      3'b110:
+      4'b0110:
         casez_tmp_3 = entries_6_bp_valid;
-      default:
+      4'b0111:
         casez_tmp_3 = entries_7_bp_valid;
+      4'b1000:
+        casez_tmp_3 = entries_8_bp_valid;
+      4'b1001:
+        casez_tmp_3 = entries_9_bp_valid;
+      4'b1010:
+        casez_tmp_3 = entries_10_bp_valid;
+      4'b1011:
+        casez_tmp_3 = entries_11_bp_valid;
+      4'b1100:
+        casez_tmp_3 = entries_12_bp_valid;
+      4'b1101:
+        casez_tmp_3 = entries_13_bp_valid;
+      4'b1110:
+        casez_tmp_3 = entries_14_bp_valid;
+      default:
+        casez_tmp_3 = entries_15_bp_valid;
     endcase
   end // always_comb
   reg         casez_tmp_4;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_4 = entries_0_bp_taken;
-      3'b001:
+      4'b0001:
         casez_tmp_4 = entries_1_bp_taken;
-      3'b010:
+      4'b0010:
         casez_tmp_4 = entries_2_bp_taken;
-      3'b011:
+      4'b0011:
         casez_tmp_4 = entries_3_bp_taken;
-      3'b100:
+      4'b0100:
         casez_tmp_4 = entries_4_bp_taken;
-      3'b101:
+      4'b0101:
         casez_tmp_4 = entries_5_bp_taken;
-      3'b110:
+      4'b0110:
         casez_tmp_4 = entries_6_bp_taken;
-      default:
+      4'b0111:
         casez_tmp_4 = entries_7_bp_taken;
+      4'b1000:
+        casez_tmp_4 = entries_8_bp_taken;
+      4'b1001:
+        casez_tmp_4 = entries_9_bp_taken;
+      4'b1010:
+        casez_tmp_4 = entries_10_bp_taken;
+      4'b1011:
+        casez_tmp_4 = entries_11_bp_taken;
+      4'b1100:
+        casez_tmp_4 = entries_12_bp_taken;
+      4'b1101:
+        casez_tmp_4 = entries_13_bp_taken;
+      4'b1110:
+        casez_tmp_4 = entries_14_bp_taken;
+      default:
+        casez_tmp_4 = entries_15_bp_taken;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_5;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_5 = entries_0_bp_target;
-      3'b001:
+      4'b0001:
         casez_tmp_5 = entries_1_bp_target;
-      3'b010:
+      4'b0010:
         casez_tmp_5 = entries_2_bp_target;
-      3'b011:
+      4'b0011:
         casez_tmp_5 = entries_3_bp_target;
-      3'b100:
+      4'b0100:
         casez_tmp_5 = entries_4_bp_target;
-      3'b101:
+      4'b0101:
         casez_tmp_5 = entries_5_bp_target;
-      3'b110:
+      4'b0110:
         casez_tmp_5 = entries_6_bp_target;
-      default:
+      4'b0111:
         casez_tmp_5 = entries_7_bp_target;
+      4'b1000:
+        casez_tmp_5 = entries_8_bp_target;
+      4'b1001:
+        casez_tmp_5 = entries_9_bp_target;
+      4'b1010:
+        casez_tmp_5 = entries_10_bp_target;
+      4'b1011:
+        casez_tmp_5 = entries_11_bp_target;
+      4'b1100:
+        casez_tmp_5 = entries_12_bp_target;
+      4'b1101:
+        casez_tmp_5 = entries_13_bp_target;
+      4'b1110:
+        casez_tmp_5 = entries_14_bp_target;
+      default:
+        casez_tmp_5 = entries_15_bp_target;
     endcase
   end // always_comb
-  reg  [9:0]  casez_tmp_6;
+  reg  [64:0] casez_tmp_6;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_6 = entries_0_bp_index;
-      3'b001:
+      4'b0001:
         casez_tmp_6 = entries_1_bp_index;
-      3'b010:
+      4'b0010:
         casez_tmp_6 = entries_2_bp_index;
-      3'b011:
+      4'b0011:
         casez_tmp_6 = entries_3_bp_index;
-      3'b100:
+      4'b0100:
         casez_tmp_6 = entries_4_bp_index;
-      3'b101:
+      4'b0101:
         casez_tmp_6 = entries_5_bp_index;
-      3'b110:
+      4'b0110:
         casez_tmp_6 = entries_6_bp_index;
-      default:
+      4'b0111:
         casez_tmp_6 = entries_7_bp_index;
+      4'b1000:
+        casez_tmp_6 = entries_8_bp_index;
+      4'b1001:
+        casez_tmp_6 = entries_9_bp_index;
+      4'b1010:
+        casez_tmp_6 = entries_10_bp_index;
+      4'b1011:
+        casez_tmp_6 = entries_11_bp_index;
+      4'b1100:
+        casez_tmp_6 = entries_12_bp_index;
+      4'b1101:
+        casez_tmp_6 = entries_13_bp_index;
+      4'b1110:
+        casez_tmp_6 = entries_14_bp_index;
+      default:
+        casez_tmp_6 = entries_15_bp_index;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_7;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_7 = entries_0_ftq_idx;
-      3'b001:
+      4'b0001:
         casez_tmp_7 = entries_1_ftq_idx;
-      3'b010:
+      4'b0010:
         casez_tmp_7 = entries_2_ftq_idx;
-      3'b011:
+      4'b0011:
         casez_tmp_7 = entries_3_ftq_idx;
-      3'b100:
+      4'b0100:
         casez_tmp_7 = entries_4_ftq_idx;
-      3'b101:
+      4'b0101:
         casez_tmp_7 = entries_5_ftq_idx;
-      3'b110:
+      4'b0110:
         casez_tmp_7 = entries_6_ftq_idx;
-      default:
+      4'b0111:
         casez_tmp_7 = entries_7_ftq_idx;
+      4'b1000:
+        casez_tmp_7 = entries_8_ftq_idx;
+      4'b1001:
+        casez_tmp_7 = entries_9_ftq_idx;
+      4'b1010:
+        casez_tmp_7 = entries_10_ftq_idx;
+      4'b1011:
+        casez_tmp_7 = entries_11_ftq_idx;
+      4'b1100:
+        casez_tmp_7 = entries_12_ftq_idx;
+      4'b1101:
+        casez_tmp_7 = entries_13_ftq_idx;
+      4'b1110:
+        casez_tmp_7 = entries_14_ftq_idx;
+      default:
+        casez_tmp_7 = entries_15_ftq_idx;
     endcase
   end // always_comb
   reg  [7:0]  casez_tmp_8;
   always_comb begin
     casez (head)
-      3'b000:
+      4'b0000:
         casez_tmp_8 = entries_0_ftq_generation;
-      3'b001:
+      4'b0001:
         casez_tmp_8 = entries_1_ftq_generation;
-      3'b010:
+      4'b0010:
         casez_tmp_8 = entries_2_ftq_generation;
-      3'b011:
+      4'b0011:
         casez_tmp_8 = entries_3_ftq_generation;
-      3'b100:
+      4'b0100:
         casez_tmp_8 = entries_4_ftq_generation;
-      3'b101:
+      4'b0101:
         casez_tmp_8 = entries_5_ftq_generation;
-      3'b110:
+      4'b0110:
         casez_tmp_8 = entries_6_ftq_generation;
-      default:
+      4'b0111:
         casez_tmp_8 = entries_7_ftq_generation;
+      4'b1000:
+        casez_tmp_8 = entries_8_ftq_generation;
+      4'b1001:
+        casez_tmp_8 = entries_9_ftq_generation;
+      4'b1010:
+        casez_tmp_8 = entries_10_ftq_generation;
+      4'b1011:
+        casez_tmp_8 = entries_11_ftq_generation;
+      4'b1100:
+        casez_tmp_8 = entries_12_ftq_generation;
+      4'b1101:
+        casez_tmp_8 = entries_13_ftq_generation;
+      4'b1110:
+        casez_tmp_8 = entries_14_ftq_generation;
+      default:
+        casez_tmp_8 = entries_15_ftq_generation;
     endcase
   end // always_comb
-  wire        io_deq1_valid_0 = (|(count[3:1])) & ~io_flush;
-  wire [2:0]  _io_deq1_bits_T = head + 3'h1;
+  wire        io_deq1_valid_0 = (|(count[4:1])) & ~io_flush;
+  wire [3:0]  _io_deq1_bits_T = head + 4'h1;
   reg  [31:0] casez_tmp_9;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_9 = entries_0_inst;
-      3'b001:
+      4'b0001:
         casez_tmp_9 = entries_1_inst;
-      3'b010:
+      4'b0010:
         casez_tmp_9 = entries_2_inst;
-      3'b011:
+      4'b0011:
         casez_tmp_9 = entries_3_inst;
-      3'b100:
+      4'b0100:
         casez_tmp_9 = entries_4_inst;
-      3'b101:
+      4'b0101:
         casez_tmp_9 = entries_5_inst;
-      3'b110:
+      4'b0110:
         casez_tmp_9 = entries_6_inst;
-      default:
+      4'b0111:
         casez_tmp_9 = entries_7_inst;
+      4'b1000:
+        casez_tmp_9 = entries_8_inst;
+      4'b1001:
+        casez_tmp_9 = entries_9_inst;
+      4'b1010:
+        casez_tmp_9 = entries_10_inst;
+      4'b1011:
+        casez_tmp_9 = entries_11_inst;
+      4'b1100:
+        casez_tmp_9 = entries_12_inst;
+      4'b1101:
+        casez_tmp_9 = entries_13_inst;
+      4'b1110:
+        casez_tmp_9 = entries_14_inst;
+      default:
+        casez_tmp_9 = entries_15_inst;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_10;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_10 = entries_0_pc;
-      3'b001:
+      4'b0001:
         casez_tmp_10 = entries_1_pc;
-      3'b010:
+      4'b0010:
         casez_tmp_10 = entries_2_pc;
-      3'b011:
+      4'b0011:
         casez_tmp_10 = entries_3_pc;
-      3'b100:
+      4'b0100:
         casez_tmp_10 = entries_4_pc;
-      3'b101:
+      4'b0101:
         casez_tmp_10 = entries_5_pc;
-      3'b110:
+      4'b0110:
         casez_tmp_10 = entries_6_pc;
-      default:
+      4'b0111:
         casez_tmp_10 = entries_7_pc;
+      4'b1000:
+        casez_tmp_10 = entries_8_pc;
+      4'b1001:
+        casez_tmp_10 = entries_9_pc;
+      4'b1010:
+        casez_tmp_10 = entries_10_pc;
+      4'b1011:
+        casez_tmp_10 = entries_11_pc;
+      4'b1100:
+        casez_tmp_10 = entries_12_pc;
+      4'b1101:
+        casez_tmp_10 = entries_13_pc;
+      4'b1110:
+        casez_tmp_10 = entries_14_pc;
+      default:
+        casez_tmp_10 = entries_15_pc;
     endcase
   end // always_comb
   reg         casez_tmp_11;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_11 = entries_0_state_state;
-      3'b001:
+      4'b0001:
         casez_tmp_11 = entries_1_state_state;
-      3'b010:
+      4'b0010:
         casez_tmp_11 = entries_2_state_state;
-      3'b011:
+      4'b0011:
         casez_tmp_11 = entries_3_state_state;
-      3'b100:
+      4'b0100:
         casez_tmp_11 = entries_4_state_state;
-      3'b101:
+      4'b0101:
         casez_tmp_11 = entries_5_state_state;
-      3'b110:
+      4'b0110:
         casez_tmp_11 = entries_6_state_state;
-      default:
+      4'b0111:
         casez_tmp_11 = entries_7_state_state;
+      4'b1000:
+        casez_tmp_11 = entries_8_state_state;
+      4'b1001:
+        casez_tmp_11 = entries_9_state_state;
+      4'b1010:
+        casez_tmp_11 = entries_10_state_state;
+      4'b1011:
+        casez_tmp_11 = entries_11_state_state;
+      4'b1100:
+        casez_tmp_11 = entries_12_state_state;
+      4'b1101:
+        casez_tmp_11 = entries_13_state_state;
+      4'b1110:
+        casez_tmp_11 = entries_14_state_state;
+      default:
+        casez_tmp_11 = entries_15_state_state;
     endcase
   end // always_comb
   reg  [7:0]  casez_tmp_12;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_12 = entries_0_state_state_num;
-      3'b001:
+      4'b0001:
         casez_tmp_12 = entries_1_state_state_num;
-      3'b010:
+      4'b0010:
         casez_tmp_12 = entries_2_state_state_num;
-      3'b011:
+      4'b0011:
         casez_tmp_12 = entries_3_state_state_num;
-      3'b100:
+      4'b0100:
         casez_tmp_12 = entries_4_state_state_num;
-      3'b101:
+      4'b0101:
         casez_tmp_12 = entries_5_state_state_num;
-      3'b110:
+      4'b0110:
         casez_tmp_12 = entries_6_state_state_num;
-      default:
+      4'b0111:
         casez_tmp_12 = entries_7_state_state_num;
+      4'b1000:
+        casez_tmp_12 = entries_8_state_state_num;
+      4'b1001:
+        casez_tmp_12 = entries_9_state_state_num;
+      4'b1010:
+        casez_tmp_12 = entries_10_state_state_num;
+      4'b1011:
+        casez_tmp_12 = entries_11_state_state_num;
+      4'b1100:
+        casez_tmp_12 = entries_12_state_state_num;
+      4'b1101:
+        casez_tmp_12 = entries_13_state_state_num;
+      4'b1110:
+        casez_tmp_12 = entries_14_state_state_num;
+      default:
+        casez_tmp_12 = entries_15_state_state_num;
     endcase
   end // always_comb
   reg         casez_tmp_13;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_13 = entries_0_bp_valid;
-      3'b001:
+      4'b0001:
         casez_tmp_13 = entries_1_bp_valid;
-      3'b010:
+      4'b0010:
         casez_tmp_13 = entries_2_bp_valid;
-      3'b011:
+      4'b0011:
         casez_tmp_13 = entries_3_bp_valid;
-      3'b100:
+      4'b0100:
         casez_tmp_13 = entries_4_bp_valid;
-      3'b101:
+      4'b0101:
         casez_tmp_13 = entries_5_bp_valid;
-      3'b110:
+      4'b0110:
         casez_tmp_13 = entries_6_bp_valid;
-      default:
+      4'b0111:
         casez_tmp_13 = entries_7_bp_valid;
+      4'b1000:
+        casez_tmp_13 = entries_8_bp_valid;
+      4'b1001:
+        casez_tmp_13 = entries_9_bp_valid;
+      4'b1010:
+        casez_tmp_13 = entries_10_bp_valid;
+      4'b1011:
+        casez_tmp_13 = entries_11_bp_valid;
+      4'b1100:
+        casez_tmp_13 = entries_12_bp_valid;
+      4'b1101:
+        casez_tmp_13 = entries_13_bp_valid;
+      4'b1110:
+        casez_tmp_13 = entries_14_bp_valid;
+      default:
+        casez_tmp_13 = entries_15_bp_valid;
     endcase
   end // always_comb
   reg         casez_tmp_14;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_14 = entries_0_bp_taken;
-      3'b001:
+      4'b0001:
         casez_tmp_14 = entries_1_bp_taken;
-      3'b010:
+      4'b0010:
         casez_tmp_14 = entries_2_bp_taken;
-      3'b011:
+      4'b0011:
         casez_tmp_14 = entries_3_bp_taken;
-      3'b100:
+      4'b0100:
         casez_tmp_14 = entries_4_bp_taken;
-      3'b101:
+      4'b0101:
         casez_tmp_14 = entries_5_bp_taken;
-      3'b110:
+      4'b0110:
         casez_tmp_14 = entries_6_bp_taken;
-      default:
+      4'b0111:
         casez_tmp_14 = entries_7_bp_taken;
+      4'b1000:
+        casez_tmp_14 = entries_8_bp_taken;
+      4'b1001:
+        casez_tmp_14 = entries_9_bp_taken;
+      4'b1010:
+        casez_tmp_14 = entries_10_bp_taken;
+      4'b1011:
+        casez_tmp_14 = entries_11_bp_taken;
+      4'b1100:
+        casez_tmp_14 = entries_12_bp_taken;
+      4'b1101:
+        casez_tmp_14 = entries_13_bp_taken;
+      4'b1110:
+        casez_tmp_14 = entries_14_bp_taken;
+      default:
+        casez_tmp_14 = entries_15_bp_taken;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_15;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_15 = entries_0_bp_target;
-      3'b001:
+      4'b0001:
         casez_tmp_15 = entries_1_bp_target;
-      3'b010:
+      4'b0010:
         casez_tmp_15 = entries_2_bp_target;
-      3'b011:
+      4'b0011:
         casez_tmp_15 = entries_3_bp_target;
-      3'b100:
+      4'b0100:
         casez_tmp_15 = entries_4_bp_target;
-      3'b101:
+      4'b0101:
         casez_tmp_15 = entries_5_bp_target;
-      3'b110:
+      4'b0110:
         casez_tmp_15 = entries_6_bp_target;
-      default:
+      4'b0111:
         casez_tmp_15 = entries_7_bp_target;
+      4'b1000:
+        casez_tmp_15 = entries_8_bp_target;
+      4'b1001:
+        casez_tmp_15 = entries_9_bp_target;
+      4'b1010:
+        casez_tmp_15 = entries_10_bp_target;
+      4'b1011:
+        casez_tmp_15 = entries_11_bp_target;
+      4'b1100:
+        casez_tmp_15 = entries_12_bp_target;
+      4'b1101:
+        casez_tmp_15 = entries_13_bp_target;
+      4'b1110:
+        casez_tmp_15 = entries_14_bp_target;
+      default:
+        casez_tmp_15 = entries_15_bp_target;
     endcase
   end // always_comb
-  reg  [9:0]  casez_tmp_16;
+  reg  [64:0] casez_tmp_16;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_16 = entries_0_bp_index;
-      3'b001:
+      4'b0001:
         casez_tmp_16 = entries_1_bp_index;
-      3'b010:
+      4'b0010:
         casez_tmp_16 = entries_2_bp_index;
-      3'b011:
+      4'b0011:
         casez_tmp_16 = entries_3_bp_index;
-      3'b100:
+      4'b0100:
         casez_tmp_16 = entries_4_bp_index;
-      3'b101:
+      4'b0101:
         casez_tmp_16 = entries_5_bp_index;
-      3'b110:
+      4'b0110:
         casez_tmp_16 = entries_6_bp_index;
-      default:
+      4'b0111:
         casez_tmp_16 = entries_7_bp_index;
+      4'b1000:
+        casez_tmp_16 = entries_8_bp_index;
+      4'b1001:
+        casez_tmp_16 = entries_9_bp_index;
+      4'b1010:
+        casez_tmp_16 = entries_10_bp_index;
+      4'b1011:
+        casez_tmp_16 = entries_11_bp_index;
+      4'b1100:
+        casez_tmp_16 = entries_12_bp_index;
+      4'b1101:
+        casez_tmp_16 = entries_13_bp_index;
+      4'b1110:
+        casez_tmp_16 = entries_14_bp_index;
+      default:
+        casez_tmp_16 = entries_15_bp_index;
     endcase
   end // always_comb
   reg  [3:0]  casez_tmp_17;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_17 = entries_0_ftq_idx;
-      3'b001:
+      4'b0001:
         casez_tmp_17 = entries_1_ftq_idx;
-      3'b010:
+      4'b0010:
         casez_tmp_17 = entries_2_ftq_idx;
-      3'b011:
+      4'b0011:
         casez_tmp_17 = entries_3_ftq_idx;
-      3'b100:
+      4'b0100:
         casez_tmp_17 = entries_4_ftq_idx;
-      3'b101:
+      4'b0101:
         casez_tmp_17 = entries_5_ftq_idx;
-      3'b110:
+      4'b0110:
         casez_tmp_17 = entries_6_ftq_idx;
-      default:
+      4'b0111:
         casez_tmp_17 = entries_7_ftq_idx;
+      4'b1000:
+        casez_tmp_17 = entries_8_ftq_idx;
+      4'b1001:
+        casez_tmp_17 = entries_9_ftq_idx;
+      4'b1010:
+        casez_tmp_17 = entries_10_ftq_idx;
+      4'b1011:
+        casez_tmp_17 = entries_11_ftq_idx;
+      4'b1100:
+        casez_tmp_17 = entries_12_ftq_idx;
+      4'b1101:
+        casez_tmp_17 = entries_13_ftq_idx;
+      4'b1110:
+        casez_tmp_17 = entries_14_ftq_idx;
+      default:
+        casez_tmp_17 = entries_15_ftq_idx;
     endcase
   end // always_comb
   reg  [7:0]  casez_tmp_18;
   always_comb begin
     casez (_io_deq1_bits_T)
-      3'b000:
+      4'b0000:
         casez_tmp_18 = entries_0_ftq_generation;
-      3'b001:
+      4'b0001:
         casez_tmp_18 = entries_1_ftq_generation;
-      3'b010:
+      4'b0010:
         casez_tmp_18 = entries_2_ftq_generation;
-      3'b011:
+      4'b0011:
         casez_tmp_18 = entries_3_ftq_generation;
-      3'b100:
+      4'b0100:
         casez_tmp_18 = entries_4_ftq_generation;
-      3'b101:
+      4'b0101:
         casez_tmp_18 = entries_5_ftq_generation;
-      3'b110:
+      4'b0110:
         casez_tmp_18 = entries_6_ftq_generation;
-      default:
+      4'b0111:
         casez_tmp_18 = entries_7_ftq_generation;
+      4'b1000:
+        casez_tmp_18 = entries_8_ftq_generation;
+      4'b1001:
+        casez_tmp_18 = entries_9_ftq_generation;
+      4'b1010:
+        casez_tmp_18 = entries_10_ftq_generation;
+      4'b1011:
+        casez_tmp_18 = entries_11_ftq_generation;
+      4'b1100:
+        casez_tmp_18 = entries_12_ftq_generation;
+      4'b1101:
+        casez_tmp_18 = entries_13_ftq_generation;
+      4'b1110:
+        casez_tmp_18 = entries_14_ftq_generation;
+      default:
+        casez_tmp_18 = entries_15_ftq_generation;
     endcase
   end // always_comb
-  wire [2:0]  _tail1_T = tail + 3'h1;
+  wire        deq0Fire = io_deq_valid_0 & io_deq_ready;
+  wire [1:0]  deqCount =
+    {1'h0, deq0Fire} + {1'h0, io_deq1_valid_0 & io_deq1_ready & deq0Fire};
+  wire [4:0]  _GEN = {3'h0, deqCount};
+  wire [4:0]  _enqSpace_T = _space_T + _GEN;
+  wire [1:0]  enqCount = {1'h0, io_enq_bits_valid_0} + {1'h0, io_enq_bits_valid_1};
+  wire        io_enq_ready_0 =
+    ~io_flush & (enqCount == 2'h0 | _enqSpace_T >= {3'h0, enqCount});
+  wire [3:0]  _tail1_T = tail + 4'h1;
   wire        doEnq0 = io_enq_ready_0 & io_enq_valid & io_enq_bits_valid_0;
   wire        doEnq1 = io_enq_bits_valid_1 & doEnq0;
-  wire        doDeq0 = io_deq_ready & io_deq_valid_0;
-  wire [1:0]  deqCount =
-    {1'h0, doDeq0} + {1'h0, io_deq1_ready & io_deq1_valid_0 & doDeq0};
   wire [1:0]  actualEnqCount = {1'h0, doEnq0} + {1'h0, doEnq1};
   always @(posedge clock) begin
     if (reset) begin
@@ -581,7 +984,7 @@ module FetchQueue(
       entries_0_bp_valid <= 1'h0;
       entries_0_bp_taken <= 1'h0;
       entries_0_bp_target <= 32'h0;
-      entries_0_bp_index <= 10'h0;
+      entries_0_bp_index <= 65'h0;
       entries_0_ftq_idx <= 4'h0;
       entries_0_ftq_generation <= 8'h0;
       entries_1_inst <= 32'h0;
@@ -591,7 +994,7 @@ module FetchQueue(
       entries_1_bp_valid <= 1'h0;
       entries_1_bp_taken <= 1'h0;
       entries_1_bp_target <= 32'h0;
-      entries_1_bp_index <= 10'h0;
+      entries_1_bp_index <= 65'h0;
       entries_1_ftq_idx <= 4'h0;
       entries_1_ftq_generation <= 8'h0;
       entries_2_inst <= 32'h0;
@@ -601,7 +1004,7 @@ module FetchQueue(
       entries_2_bp_valid <= 1'h0;
       entries_2_bp_taken <= 1'h0;
       entries_2_bp_target <= 32'h0;
-      entries_2_bp_index <= 10'h0;
+      entries_2_bp_index <= 65'h0;
       entries_2_ftq_idx <= 4'h0;
       entries_2_ftq_generation <= 8'h0;
       entries_3_inst <= 32'h0;
@@ -611,7 +1014,7 @@ module FetchQueue(
       entries_3_bp_valid <= 1'h0;
       entries_3_bp_taken <= 1'h0;
       entries_3_bp_target <= 32'h0;
-      entries_3_bp_index <= 10'h0;
+      entries_3_bp_index <= 65'h0;
       entries_3_ftq_idx <= 4'h0;
       entries_3_ftq_generation <= 8'h0;
       entries_4_inst <= 32'h0;
@@ -621,7 +1024,7 @@ module FetchQueue(
       entries_4_bp_valid <= 1'h0;
       entries_4_bp_taken <= 1'h0;
       entries_4_bp_target <= 32'h0;
-      entries_4_bp_index <= 10'h0;
+      entries_4_bp_index <= 65'h0;
       entries_4_ftq_idx <= 4'h0;
       entries_4_ftq_generation <= 8'h0;
       entries_5_inst <= 32'h0;
@@ -631,7 +1034,7 @@ module FetchQueue(
       entries_5_bp_valid <= 1'h0;
       entries_5_bp_taken <= 1'h0;
       entries_5_bp_target <= 32'h0;
-      entries_5_bp_index <= 10'h0;
+      entries_5_bp_index <= 65'h0;
       entries_5_ftq_idx <= 4'h0;
       entries_5_ftq_generation <= 8'h0;
       entries_6_inst <= 32'h0;
@@ -641,7 +1044,7 @@ module FetchQueue(
       entries_6_bp_valid <= 1'h0;
       entries_6_bp_taken <= 1'h0;
       entries_6_bp_target <= 32'h0;
-      entries_6_bp_index <= 10'h0;
+      entries_6_bp_index <= 65'h0;
       entries_6_ftq_idx <= 4'h0;
       entries_6_ftq_generation <= 8'h0;
       entries_7_inst <= 32'h0;
@@ -651,20 +1054,100 @@ module FetchQueue(
       entries_7_bp_valid <= 1'h0;
       entries_7_bp_taken <= 1'h0;
       entries_7_bp_target <= 32'h0;
-      entries_7_bp_index <= 10'h0;
+      entries_7_bp_index <= 65'h0;
       entries_7_ftq_idx <= 4'h0;
       entries_7_ftq_generation <= 8'h0;
-      head <= 3'h0;
-      tail <= 3'h0;
-      count <= 4'h0;
+      entries_8_inst <= 32'h0;
+      entries_8_pc <= 32'h0;
+      entries_8_state_state <= 1'h0;
+      entries_8_state_state_num <= 8'h0;
+      entries_8_bp_valid <= 1'h0;
+      entries_8_bp_taken <= 1'h0;
+      entries_8_bp_target <= 32'h0;
+      entries_8_bp_index <= 65'h0;
+      entries_8_ftq_idx <= 4'h0;
+      entries_8_ftq_generation <= 8'h0;
+      entries_9_inst <= 32'h0;
+      entries_9_pc <= 32'h0;
+      entries_9_state_state <= 1'h0;
+      entries_9_state_state_num <= 8'h0;
+      entries_9_bp_valid <= 1'h0;
+      entries_9_bp_taken <= 1'h0;
+      entries_9_bp_target <= 32'h0;
+      entries_9_bp_index <= 65'h0;
+      entries_9_ftq_idx <= 4'h0;
+      entries_9_ftq_generation <= 8'h0;
+      entries_10_inst <= 32'h0;
+      entries_10_pc <= 32'h0;
+      entries_10_state_state <= 1'h0;
+      entries_10_state_state_num <= 8'h0;
+      entries_10_bp_valid <= 1'h0;
+      entries_10_bp_taken <= 1'h0;
+      entries_10_bp_target <= 32'h0;
+      entries_10_bp_index <= 65'h0;
+      entries_10_ftq_idx <= 4'h0;
+      entries_10_ftq_generation <= 8'h0;
+      entries_11_inst <= 32'h0;
+      entries_11_pc <= 32'h0;
+      entries_11_state_state <= 1'h0;
+      entries_11_state_state_num <= 8'h0;
+      entries_11_bp_valid <= 1'h0;
+      entries_11_bp_taken <= 1'h0;
+      entries_11_bp_target <= 32'h0;
+      entries_11_bp_index <= 65'h0;
+      entries_11_ftq_idx <= 4'h0;
+      entries_11_ftq_generation <= 8'h0;
+      entries_12_inst <= 32'h0;
+      entries_12_pc <= 32'h0;
+      entries_12_state_state <= 1'h0;
+      entries_12_state_state_num <= 8'h0;
+      entries_12_bp_valid <= 1'h0;
+      entries_12_bp_taken <= 1'h0;
+      entries_12_bp_target <= 32'h0;
+      entries_12_bp_index <= 65'h0;
+      entries_12_ftq_idx <= 4'h0;
+      entries_12_ftq_generation <= 8'h0;
+      entries_13_inst <= 32'h0;
+      entries_13_pc <= 32'h0;
+      entries_13_state_state <= 1'h0;
+      entries_13_state_state_num <= 8'h0;
+      entries_13_bp_valid <= 1'h0;
+      entries_13_bp_taken <= 1'h0;
+      entries_13_bp_target <= 32'h0;
+      entries_13_bp_index <= 65'h0;
+      entries_13_ftq_idx <= 4'h0;
+      entries_13_ftq_generation <= 8'h0;
+      entries_14_inst <= 32'h0;
+      entries_14_pc <= 32'h0;
+      entries_14_state_state <= 1'h0;
+      entries_14_state_state_num <= 8'h0;
+      entries_14_bp_valid <= 1'h0;
+      entries_14_bp_taken <= 1'h0;
+      entries_14_bp_target <= 32'h0;
+      entries_14_bp_index <= 65'h0;
+      entries_14_ftq_idx <= 4'h0;
+      entries_14_ftq_generation <= 8'h0;
+      entries_15_inst <= 32'h0;
+      entries_15_pc <= 32'h0;
+      entries_15_state_state <= 1'h0;
+      entries_15_state_state_num <= 8'h0;
+      entries_15_bp_valid <= 1'h0;
+      entries_15_bp_taken <= 1'h0;
+      entries_15_bp_target <= 32'h0;
+      entries_15_bp_index <= 65'h0;
+      entries_15_ftq_idx <= 4'h0;
+      entries_15_ftq_generation <= 8'h0;
+      head <= 4'h0;
+      tail <= 4'h0;
+      count <= 5'h0;
     end
     else begin
       if (io_flush) begin
-        head <= 3'h0;
-        tail <= 3'h0;
+        head <= 4'h0;
+        tail <= 4'h0;
       end
       else begin
-        if (doEnq1 & _tail1_T == 3'h0) begin
+        if (doEnq1 & _tail1_T == 4'h0) begin
           entries_0_inst <= io_enq_bits_bits_1_inst;
           entries_0_pc <= io_enq_bits_bits_1_pc;
           entries_0_state_state <= io_enq_bits_bits_1_state_state;
@@ -676,7 +1159,7 @@ module FetchQueue(
           entries_0_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
           entries_0_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
         end
-        else if (doEnq0 & tail == 3'h0) begin
+        else if (doEnq0 & tail == 4'h0) begin
           entries_0_inst <= io_enq_bits_bits_0_inst;
           entries_0_pc <= io_enq_bits_bits_0_pc;
           entries_0_state_state <= io_enq_bits_bits_0_state_state;
@@ -688,7 +1171,7 @@ module FetchQueue(
           entries_0_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
           entries_0_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
         end
-        if (doEnq1 & _tail1_T == 3'h1) begin
+        if (doEnq1 & _tail1_T == 4'h1) begin
           entries_1_inst <= io_enq_bits_bits_1_inst;
           entries_1_pc <= io_enq_bits_bits_1_pc;
           entries_1_state_state <= io_enq_bits_bits_1_state_state;
@@ -700,7 +1183,7 @@ module FetchQueue(
           entries_1_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
           entries_1_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
         end
-        else if (doEnq0 & tail == 3'h1) begin
+        else if (doEnq0 & tail == 4'h1) begin
           entries_1_inst <= io_enq_bits_bits_0_inst;
           entries_1_pc <= io_enq_bits_bits_0_pc;
           entries_1_state_state <= io_enq_bits_bits_0_state_state;
@@ -712,7 +1195,7 @@ module FetchQueue(
           entries_1_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
           entries_1_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
         end
-        if (doEnq1 & _tail1_T == 3'h2) begin
+        if (doEnq1 & _tail1_T == 4'h2) begin
           entries_2_inst <= io_enq_bits_bits_1_inst;
           entries_2_pc <= io_enq_bits_bits_1_pc;
           entries_2_state_state <= io_enq_bits_bits_1_state_state;
@@ -724,7 +1207,7 @@ module FetchQueue(
           entries_2_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
           entries_2_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
         end
-        else if (doEnq0 & tail == 3'h2) begin
+        else if (doEnq0 & tail == 4'h2) begin
           entries_2_inst <= io_enq_bits_bits_0_inst;
           entries_2_pc <= io_enq_bits_bits_0_pc;
           entries_2_state_state <= io_enq_bits_bits_0_state_state;
@@ -736,7 +1219,7 @@ module FetchQueue(
           entries_2_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
           entries_2_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
         end
-        if (doEnq1 & _tail1_T == 3'h3) begin
+        if (doEnq1 & _tail1_T == 4'h3) begin
           entries_3_inst <= io_enq_bits_bits_1_inst;
           entries_3_pc <= io_enq_bits_bits_1_pc;
           entries_3_state_state <= io_enq_bits_bits_1_state_state;
@@ -748,7 +1231,7 @@ module FetchQueue(
           entries_3_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
           entries_3_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
         end
-        else if (doEnq0 & tail == 3'h3) begin
+        else if (doEnq0 & tail == 4'h3) begin
           entries_3_inst <= io_enq_bits_bits_0_inst;
           entries_3_pc <= io_enq_bits_bits_0_pc;
           entries_3_state_state <= io_enq_bits_bits_0_state_state;
@@ -760,7 +1243,7 @@ module FetchQueue(
           entries_3_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
           entries_3_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
         end
-        if (doEnq1 & _tail1_T == 3'h4) begin
+        if (doEnq1 & _tail1_T == 4'h4) begin
           entries_4_inst <= io_enq_bits_bits_1_inst;
           entries_4_pc <= io_enq_bits_bits_1_pc;
           entries_4_state_state <= io_enq_bits_bits_1_state_state;
@@ -772,7 +1255,7 @@ module FetchQueue(
           entries_4_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
           entries_4_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
         end
-        else if (doEnq0 & tail == 3'h4) begin
+        else if (doEnq0 & tail == 4'h4) begin
           entries_4_inst <= io_enq_bits_bits_0_inst;
           entries_4_pc <= io_enq_bits_bits_0_pc;
           entries_4_state_state <= io_enq_bits_bits_0_state_state;
@@ -784,7 +1267,7 @@ module FetchQueue(
           entries_4_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
           entries_4_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
         end
-        if (doEnq1 & _tail1_T == 3'h5) begin
+        if (doEnq1 & _tail1_T == 4'h5) begin
           entries_5_inst <= io_enq_bits_bits_1_inst;
           entries_5_pc <= io_enq_bits_bits_1_pc;
           entries_5_state_state <= io_enq_bits_bits_1_state_state;
@@ -796,7 +1279,7 @@ module FetchQueue(
           entries_5_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
           entries_5_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
         end
-        else if (doEnq0 & tail == 3'h5) begin
+        else if (doEnq0 & tail == 4'h5) begin
           entries_5_inst <= io_enq_bits_bits_0_inst;
           entries_5_pc <= io_enq_bits_bits_0_pc;
           entries_5_state_state <= io_enq_bits_bits_0_state_state;
@@ -808,7 +1291,7 @@ module FetchQueue(
           entries_5_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
           entries_5_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
         end
-        if (doEnq1 & _tail1_T == 3'h6) begin
+        if (doEnq1 & _tail1_T == 4'h6) begin
           entries_6_inst <= io_enq_bits_bits_1_inst;
           entries_6_pc <= io_enq_bits_bits_1_pc;
           entries_6_state_state <= io_enq_bits_bits_1_state_state;
@@ -820,7 +1303,7 @@ module FetchQueue(
           entries_6_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
           entries_6_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
         end
-        else if (doEnq0 & tail == 3'h6) begin
+        else if (doEnq0 & tail == 4'h6) begin
           entries_6_inst <= io_enq_bits_bits_0_inst;
           entries_6_pc <= io_enq_bits_bits_0_pc;
           entries_6_state_state <= io_enq_bits_bits_0_state_state;
@@ -832,7 +1315,7 @@ module FetchQueue(
           entries_6_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
           entries_6_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
         end
-        if (doEnq1 & (&_tail1_T)) begin
+        if (doEnq1 & _tail1_T == 4'h7) begin
           entries_7_inst <= io_enq_bits_bits_1_inst;
           entries_7_pc <= io_enq_bits_bits_1_pc;
           entries_7_state_state <= io_enq_bits_bits_1_state_state;
@@ -844,7 +1327,7 @@ module FetchQueue(
           entries_7_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
           entries_7_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
         end
-        else if (doEnq0 & (&tail)) begin
+        else if (doEnq0 & tail == 4'h7) begin
           entries_7_inst <= io_enq_bits_bits_0_inst;
           entries_7_pc <= io_enq_bits_bits_0_pc;
           entries_7_state_state <= io_enq_bits_bits_0_state_state;
@@ -856,12 +1339,204 @@ module FetchQueue(
           entries_7_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
           entries_7_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
         end
+        if (doEnq1 & _tail1_T == 4'h8) begin
+          entries_8_inst <= io_enq_bits_bits_1_inst;
+          entries_8_pc <= io_enq_bits_bits_1_pc;
+          entries_8_state_state <= io_enq_bits_bits_1_state_state;
+          entries_8_state_state_num <= io_enq_bits_bits_1_state_state_num;
+          entries_8_bp_valid <= io_enq_bits_bits_1_bp_valid;
+          entries_8_bp_taken <= io_enq_bits_bits_1_bp_taken;
+          entries_8_bp_target <= io_enq_bits_bits_1_bp_target;
+          entries_8_bp_index <= io_enq_bits_bits_1_bp_index;
+          entries_8_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
+          entries_8_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
+        end
+        else if (doEnq0 & tail == 4'h8) begin
+          entries_8_inst <= io_enq_bits_bits_0_inst;
+          entries_8_pc <= io_enq_bits_bits_0_pc;
+          entries_8_state_state <= io_enq_bits_bits_0_state_state;
+          entries_8_state_state_num <= io_enq_bits_bits_0_state_state_num;
+          entries_8_bp_valid <= io_enq_bits_bits_0_bp_valid;
+          entries_8_bp_taken <= io_enq_bits_bits_0_bp_taken;
+          entries_8_bp_target <= io_enq_bits_bits_0_bp_target;
+          entries_8_bp_index <= io_enq_bits_bits_0_bp_index;
+          entries_8_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
+          entries_8_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
+        end
+        if (doEnq1 & _tail1_T == 4'h9) begin
+          entries_9_inst <= io_enq_bits_bits_1_inst;
+          entries_9_pc <= io_enq_bits_bits_1_pc;
+          entries_9_state_state <= io_enq_bits_bits_1_state_state;
+          entries_9_state_state_num <= io_enq_bits_bits_1_state_state_num;
+          entries_9_bp_valid <= io_enq_bits_bits_1_bp_valid;
+          entries_9_bp_taken <= io_enq_bits_bits_1_bp_taken;
+          entries_9_bp_target <= io_enq_bits_bits_1_bp_target;
+          entries_9_bp_index <= io_enq_bits_bits_1_bp_index;
+          entries_9_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
+          entries_9_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
+        end
+        else if (doEnq0 & tail == 4'h9) begin
+          entries_9_inst <= io_enq_bits_bits_0_inst;
+          entries_9_pc <= io_enq_bits_bits_0_pc;
+          entries_9_state_state <= io_enq_bits_bits_0_state_state;
+          entries_9_state_state_num <= io_enq_bits_bits_0_state_state_num;
+          entries_9_bp_valid <= io_enq_bits_bits_0_bp_valid;
+          entries_9_bp_taken <= io_enq_bits_bits_0_bp_taken;
+          entries_9_bp_target <= io_enq_bits_bits_0_bp_target;
+          entries_9_bp_index <= io_enq_bits_bits_0_bp_index;
+          entries_9_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
+          entries_9_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
+        end
+        if (doEnq1 & _tail1_T == 4'hA) begin
+          entries_10_inst <= io_enq_bits_bits_1_inst;
+          entries_10_pc <= io_enq_bits_bits_1_pc;
+          entries_10_state_state <= io_enq_bits_bits_1_state_state;
+          entries_10_state_state_num <= io_enq_bits_bits_1_state_state_num;
+          entries_10_bp_valid <= io_enq_bits_bits_1_bp_valid;
+          entries_10_bp_taken <= io_enq_bits_bits_1_bp_taken;
+          entries_10_bp_target <= io_enq_bits_bits_1_bp_target;
+          entries_10_bp_index <= io_enq_bits_bits_1_bp_index;
+          entries_10_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
+          entries_10_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
+        end
+        else if (doEnq0 & tail == 4'hA) begin
+          entries_10_inst <= io_enq_bits_bits_0_inst;
+          entries_10_pc <= io_enq_bits_bits_0_pc;
+          entries_10_state_state <= io_enq_bits_bits_0_state_state;
+          entries_10_state_state_num <= io_enq_bits_bits_0_state_state_num;
+          entries_10_bp_valid <= io_enq_bits_bits_0_bp_valid;
+          entries_10_bp_taken <= io_enq_bits_bits_0_bp_taken;
+          entries_10_bp_target <= io_enq_bits_bits_0_bp_target;
+          entries_10_bp_index <= io_enq_bits_bits_0_bp_index;
+          entries_10_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
+          entries_10_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
+        end
+        if (doEnq1 & _tail1_T == 4'hB) begin
+          entries_11_inst <= io_enq_bits_bits_1_inst;
+          entries_11_pc <= io_enq_bits_bits_1_pc;
+          entries_11_state_state <= io_enq_bits_bits_1_state_state;
+          entries_11_state_state_num <= io_enq_bits_bits_1_state_state_num;
+          entries_11_bp_valid <= io_enq_bits_bits_1_bp_valid;
+          entries_11_bp_taken <= io_enq_bits_bits_1_bp_taken;
+          entries_11_bp_target <= io_enq_bits_bits_1_bp_target;
+          entries_11_bp_index <= io_enq_bits_bits_1_bp_index;
+          entries_11_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
+          entries_11_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
+        end
+        else if (doEnq0 & tail == 4'hB) begin
+          entries_11_inst <= io_enq_bits_bits_0_inst;
+          entries_11_pc <= io_enq_bits_bits_0_pc;
+          entries_11_state_state <= io_enq_bits_bits_0_state_state;
+          entries_11_state_state_num <= io_enq_bits_bits_0_state_state_num;
+          entries_11_bp_valid <= io_enq_bits_bits_0_bp_valid;
+          entries_11_bp_taken <= io_enq_bits_bits_0_bp_taken;
+          entries_11_bp_target <= io_enq_bits_bits_0_bp_target;
+          entries_11_bp_index <= io_enq_bits_bits_0_bp_index;
+          entries_11_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
+          entries_11_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
+        end
+        if (doEnq1 & _tail1_T == 4'hC) begin
+          entries_12_inst <= io_enq_bits_bits_1_inst;
+          entries_12_pc <= io_enq_bits_bits_1_pc;
+          entries_12_state_state <= io_enq_bits_bits_1_state_state;
+          entries_12_state_state_num <= io_enq_bits_bits_1_state_state_num;
+          entries_12_bp_valid <= io_enq_bits_bits_1_bp_valid;
+          entries_12_bp_taken <= io_enq_bits_bits_1_bp_taken;
+          entries_12_bp_target <= io_enq_bits_bits_1_bp_target;
+          entries_12_bp_index <= io_enq_bits_bits_1_bp_index;
+          entries_12_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
+          entries_12_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
+        end
+        else if (doEnq0 & tail == 4'hC) begin
+          entries_12_inst <= io_enq_bits_bits_0_inst;
+          entries_12_pc <= io_enq_bits_bits_0_pc;
+          entries_12_state_state <= io_enq_bits_bits_0_state_state;
+          entries_12_state_state_num <= io_enq_bits_bits_0_state_state_num;
+          entries_12_bp_valid <= io_enq_bits_bits_0_bp_valid;
+          entries_12_bp_taken <= io_enq_bits_bits_0_bp_taken;
+          entries_12_bp_target <= io_enq_bits_bits_0_bp_target;
+          entries_12_bp_index <= io_enq_bits_bits_0_bp_index;
+          entries_12_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
+          entries_12_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
+        end
+        if (doEnq1 & _tail1_T == 4'hD) begin
+          entries_13_inst <= io_enq_bits_bits_1_inst;
+          entries_13_pc <= io_enq_bits_bits_1_pc;
+          entries_13_state_state <= io_enq_bits_bits_1_state_state;
+          entries_13_state_state_num <= io_enq_bits_bits_1_state_state_num;
+          entries_13_bp_valid <= io_enq_bits_bits_1_bp_valid;
+          entries_13_bp_taken <= io_enq_bits_bits_1_bp_taken;
+          entries_13_bp_target <= io_enq_bits_bits_1_bp_target;
+          entries_13_bp_index <= io_enq_bits_bits_1_bp_index;
+          entries_13_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
+          entries_13_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
+        end
+        else if (doEnq0 & tail == 4'hD) begin
+          entries_13_inst <= io_enq_bits_bits_0_inst;
+          entries_13_pc <= io_enq_bits_bits_0_pc;
+          entries_13_state_state <= io_enq_bits_bits_0_state_state;
+          entries_13_state_state_num <= io_enq_bits_bits_0_state_state_num;
+          entries_13_bp_valid <= io_enq_bits_bits_0_bp_valid;
+          entries_13_bp_taken <= io_enq_bits_bits_0_bp_taken;
+          entries_13_bp_target <= io_enq_bits_bits_0_bp_target;
+          entries_13_bp_index <= io_enq_bits_bits_0_bp_index;
+          entries_13_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
+          entries_13_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
+        end
+        if (doEnq1 & _tail1_T == 4'hE) begin
+          entries_14_inst <= io_enq_bits_bits_1_inst;
+          entries_14_pc <= io_enq_bits_bits_1_pc;
+          entries_14_state_state <= io_enq_bits_bits_1_state_state;
+          entries_14_state_state_num <= io_enq_bits_bits_1_state_state_num;
+          entries_14_bp_valid <= io_enq_bits_bits_1_bp_valid;
+          entries_14_bp_taken <= io_enq_bits_bits_1_bp_taken;
+          entries_14_bp_target <= io_enq_bits_bits_1_bp_target;
+          entries_14_bp_index <= io_enq_bits_bits_1_bp_index;
+          entries_14_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
+          entries_14_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
+        end
+        else if (doEnq0 & tail == 4'hE) begin
+          entries_14_inst <= io_enq_bits_bits_0_inst;
+          entries_14_pc <= io_enq_bits_bits_0_pc;
+          entries_14_state_state <= io_enq_bits_bits_0_state_state;
+          entries_14_state_state_num <= io_enq_bits_bits_0_state_state_num;
+          entries_14_bp_valid <= io_enq_bits_bits_0_bp_valid;
+          entries_14_bp_taken <= io_enq_bits_bits_0_bp_taken;
+          entries_14_bp_target <= io_enq_bits_bits_0_bp_target;
+          entries_14_bp_index <= io_enq_bits_bits_0_bp_index;
+          entries_14_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
+          entries_14_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
+        end
+        if (doEnq1 & (&_tail1_T)) begin
+          entries_15_inst <= io_enq_bits_bits_1_inst;
+          entries_15_pc <= io_enq_bits_bits_1_pc;
+          entries_15_state_state <= io_enq_bits_bits_1_state_state;
+          entries_15_state_state_num <= io_enq_bits_bits_1_state_state_num;
+          entries_15_bp_valid <= io_enq_bits_bits_1_bp_valid;
+          entries_15_bp_taken <= io_enq_bits_bits_1_bp_taken;
+          entries_15_bp_target <= io_enq_bits_bits_1_bp_target;
+          entries_15_bp_index <= io_enq_bits_bits_1_bp_index;
+          entries_15_ftq_idx <= io_enq_bits_bits_1_ftq_idx;
+          entries_15_ftq_generation <= io_enq_bits_bits_1_ftq_generation;
+        end
+        else if (doEnq0 & (&tail)) begin
+          entries_15_inst <= io_enq_bits_bits_0_inst;
+          entries_15_pc <= io_enq_bits_bits_0_pc;
+          entries_15_state_state <= io_enq_bits_bits_0_state_state;
+          entries_15_state_state_num <= io_enq_bits_bits_0_state_state_num;
+          entries_15_bp_valid <= io_enq_bits_bits_0_bp_valid;
+          entries_15_bp_taken <= io_enq_bits_bits_0_bp_taken;
+          entries_15_bp_target <= io_enq_bits_bits_0_bp_target;
+          entries_15_bp_index <= io_enq_bits_bits_0_bp_index;
+          entries_15_ftq_idx <= io_enq_bits_bits_0_ftq_idx;
+          entries_15_ftq_generation <= io_enq_bits_bits_0_ftq_generation;
+        end
         if (|deqCount)
-          head <= head + {1'h0, deqCount};
+          head <= head + {2'h0, deqCount};
         if (|actualEnqCount)
-          tail <= doEnq1 ? tail + 3'h2 : _tail1_T;
+          tail <= doEnq1 ? tail + 4'h2 : _tail1_T;
       end
-      count <= io_flush ? 4'h0 : count + {2'h0, actualEnqCount} - {2'h0, deqCount};
+      count <= io_flush ? 5'h0 : count + {3'h0, actualEnqCount} - _GEN;
     end
   end // always @(posedge)
   assign io_enq_ready = io_enq_ready_0;
@@ -889,5 +1564,6 @@ module FetchQueue(
   assign io_deq1_bits_ftq_generation = casez_tmp_18;
   assign io_count = count;
   assign io_space = _space_T;
+  assign io_enqSpace = _enqSpace_T;
 endmodule
 

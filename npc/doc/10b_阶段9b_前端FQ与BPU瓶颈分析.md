@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：判断 IPC 低是因为后端算不动，还是前端喂不饱、分支错太多、FQ backpressure 太重。
 - **最小实现**：补 FQ full/empty、fetch stall、方向错/目标错/未预测 JALR、head/store wait 分类，并用同一 workload 计算各项占比。
-- **当前参考核**：正文 FQ Full、BPU miss、store wait 是 Stage9b 快照；10a-11d 已分别处理这些瓶颈，当前剩余指标见最终摘要。
+- **当前参考核**：正文 FQ Full、BPU miss、store wait 是 Stage9b 快照；10a-12f 已分别处理并重新画像这些瓶颈，当前 IPC `1.3736`、FQ Full `2582`、Target Miss `361`、Head Wait `27500`，完整指标见 Stage12f。
 - **后续扩展**：9c 对 FQ/BHT 等参数做单变量扫描；只有结构瓶颈被数据证明后才进入阶段 10。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

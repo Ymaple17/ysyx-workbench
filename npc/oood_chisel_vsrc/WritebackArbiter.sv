@@ -67,6 +67,22 @@ module WritebackArbiter(
   input  [5:0]  io_in_3_bits_pdest,
   input         io_in_3_bits_br_taken,
   input  [31:0] io_in_3_bits_store_data,
+  output        io_in_4_ready,
+  input         io_in_4_valid,
+                io_in_4_bits_signals_wbu_reg_write,
+  input  [2:0]  io_in_4_bits_signals_wbu_reg_write_sel,
+  input  [31:0] io_in_4_bits_alu_result,
+                io_in_4_bits_pc,
+                io_in_4_bits_next_pc,
+                io_in_4_bits_imm_ext,
+  input  [4:0]  io_in_4_bits_waddr,
+  input  [31:0] io_in_4_bits_csr_rd1,
+  input         io_in_4_bits_state_state,
+  input  [7:0]  io_in_4_bits_state_state_num,
+  input  [4:0]  io_in_4_bits_rob_idx,
+  input  [5:0]  io_in_4_bits_pdest,
+  input         io_in_4_bits_br_taken,
+  input  [31:0] io_in_4_bits_store_data,
   output        io_out_0_valid,
                 io_out_0_bits_signals_wbu_reg_write,
   output [2:0]  io_out_0_bits_signals_wbu_reg_write_sel,
@@ -100,86 +116,122 @@ module WritebackArbiter(
   output        io_out_1_bits_br_taken,
   output [31:0] io_out_1_bits_store_data,
   input  [4:0]  io_robHead,
-  output [1:0]  io_grantIdx_0
+  output [2:0]  io_grantIdx_0
 );
 
-  wire [4:0] _grant1_olderExists_ageJ_T_24 = io_in_0_bits_rob_idx - io_robHead;
-  wire [4:0] _grant1_olderExists_ageJ_T_26 = io_in_1_bits_rob_idx - io_robHead;
-  wire [4:0] _grant1_olderExists_ageJ_T_28 = io_in_2_bits_rob_idx - io_robHead;
-  wire [4:0] _grant1_olderExists_ageI_T_30 = io_in_3_bits_rob_idx - io_robHead;
+  wire [4:0] _grant1_olderExists_ageJ_T_40 = io_in_0_bits_rob_idx - io_robHead;
+  wire [4:0] _grant1_olderExists_ageJ_T_42 = io_in_1_bits_rob_idx - io_robHead;
+  wire [4:0] _grant1_olderExists_ageJ_T_44 = io_in_2_bits_rob_idx - io_robHead;
+  wire [4:0] _grant1_olderExists_ageJ_T_46 = io_in_3_bits_rob_idx - io_robHead;
+  wire [4:0] _grant1_olderExists_ageI_T_48 = io_in_4_bits_rob_idx - io_robHead;
   wire       grant0_0 =
     io_in_0_valid
-    & ~(io_in_1_valid & _grant1_olderExists_ageJ_T_26 < _grant1_olderExists_ageJ_T_24
-        | io_in_2_valid & _grant1_olderExists_ageJ_T_28 < _grant1_olderExists_ageJ_T_24
-        | io_in_3_valid & _grant1_olderExists_ageI_T_30 < _grant1_olderExists_ageJ_T_24);
+    & ~(io_in_1_valid & _grant1_olderExists_ageJ_T_42 < _grant1_olderExists_ageJ_T_40
+        | io_in_2_valid & _grant1_olderExists_ageJ_T_44 < _grant1_olderExists_ageJ_T_40
+        | io_in_3_valid & _grant1_olderExists_ageJ_T_46 < _grant1_olderExists_ageJ_T_40
+        | io_in_4_valid & _grant1_olderExists_ageI_T_48 < _grant1_olderExists_ageJ_T_40);
   wire       grant0_1 =
     io_in_1_valid
     & ~(io_in_0_valid
-        & (_grant1_olderExists_ageJ_T_24 < _grant1_olderExists_ageJ_T_26
-           | _grant1_olderExists_ageJ_T_24 == _grant1_olderExists_ageJ_T_26)
-        | io_in_2_valid & _grant1_olderExists_ageJ_T_28 < _grant1_olderExists_ageJ_T_26
-        | io_in_3_valid & _grant1_olderExists_ageI_T_30 < _grant1_olderExists_ageJ_T_26);
+        & (_grant1_olderExists_ageJ_T_40 < _grant1_olderExists_ageJ_T_42
+           | _grant1_olderExists_ageJ_T_40 == _grant1_olderExists_ageJ_T_42)
+        | io_in_2_valid & _grant1_olderExists_ageJ_T_44 < _grant1_olderExists_ageJ_T_42
+        | io_in_3_valid & _grant1_olderExists_ageJ_T_46 < _grant1_olderExists_ageJ_T_42
+        | io_in_4_valid & _grant1_olderExists_ageI_T_48 < _grant1_olderExists_ageJ_T_42);
   wire       grant0_2 =
     io_in_2_valid
     & ~(io_in_0_valid
-        & (_grant1_olderExists_ageJ_T_24 < _grant1_olderExists_ageJ_T_28
-           | _grant1_olderExists_ageJ_T_24 == _grant1_olderExists_ageJ_T_28)
+        & (_grant1_olderExists_ageJ_T_40 < _grant1_olderExists_ageJ_T_44
+           | _grant1_olderExists_ageJ_T_40 == _grant1_olderExists_ageJ_T_44)
         | io_in_1_valid
-        & (_grant1_olderExists_ageJ_T_26 < _grant1_olderExists_ageJ_T_28
-           | _grant1_olderExists_ageJ_T_26 == _grant1_olderExists_ageJ_T_28)
-        | io_in_3_valid & _grant1_olderExists_ageI_T_30 < _grant1_olderExists_ageJ_T_28);
+        & (_grant1_olderExists_ageJ_T_42 < _grant1_olderExists_ageJ_T_44
+           | _grant1_olderExists_ageJ_T_42 == _grant1_olderExists_ageJ_T_44)
+        | io_in_3_valid & _grant1_olderExists_ageJ_T_46 < _grant1_olderExists_ageJ_T_44
+        | io_in_4_valid & _grant1_olderExists_ageI_T_48 < _grant1_olderExists_ageJ_T_44);
   wire       grant0_3 =
     io_in_3_valid
     & ~(io_in_0_valid
-        & (_grant1_olderExists_ageJ_T_24 < _grant1_olderExists_ageI_T_30
-           | _grant1_olderExists_ageJ_T_24 == _grant1_olderExists_ageI_T_30)
+        & (_grant1_olderExists_ageJ_T_40 < _grant1_olderExists_ageJ_T_46
+           | _grant1_olderExists_ageJ_T_40 == _grant1_olderExists_ageJ_T_46)
         | io_in_1_valid
-        & (_grant1_olderExists_ageJ_T_26 < _grant1_olderExists_ageI_T_30
-           | _grant1_olderExists_ageJ_T_26 == _grant1_olderExists_ageI_T_30)
+        & (_grant1_olderExists_ageJ_T_42 < _grant1_olderExists_ageJ_T_46
+           | _grant1_olderExists_ageJ_T_42 == _grant1_olderExists_ageJ_T_46)
         | io_in_2_valid
-        & (_grant1_olderExists_ageJ_T_28 < _grant1_olderExists_ageI_T_30
-           | _grant1_olderExists_ageJ_T_28 == _grant1_olderExists_ageI_T_30));
+        & (_grant1_olderExists_ageJ_T_44 < _grant1_olderExists_ageJ_T_46
+           | _grant1_olderExists_ageJ_T_44 == _grant1_olderExists_ageJ_T_46)
+        | io_in_4_valid & _grant1_olderExists_ageI_T_48 < _grant1_olderExists_ageJ_T_46);
+  wire       grant0_4 =
+    io_in_4_valid
+    & ~(io_in_0_valid
+        & (_grant1_olderExists_ageJ_T_40 < _grant1_olderExists_ageI_T_48
+           | _grant1_olderExists_ageJ_T_40 == _grant1_olderExists_ageI_T_48)
+        | io_in_1_valid
+        & (_grant1_olderExists_ageJ_T_42 < _grant1_olderExists_ageI_T_48
+           | _grant1_olderExists_ageJ_T_42 == _grant1_olderExists_ageI_T_48)
+        | io_in_2_valid
+        & (_grant1_olderExists_ageJ_T_44 < _grant1_olderExists_ageI_T_48
+           | _grant1_olderExists_ageJ_T_44 == _grant1_olderExists_ageI_T_48)
+        | io_in_3_valid
+        & (_grant1_olderExists_ageJ_T_46 < _grant1_olderExists_ageI_T_48
+           | _grant1_olderExists_ageJ_T_46 == _grant1_olderExists_ageI_T_48));
   wire       valid1_0 = io_in_0_valid & ~grant0_0;
   wire       valid1_1 = io_in_1_valid & ~grant0_1;
   wire       valid1_2 = io_in_2_valid & ~grant0_2;
   wire       valid1_3 = io_in_3_valid & ~grant0_3;
+  wire       valid1_4 = io_in_4_valid & ~grant0_4;
   wire       grant1_0 =
     valid1_0
-    & ~(valid1_1 & _grant1_olderExists_ageJ_T_26 < _grant1_olderExists_ageJ_T_24
-        | valid1_2 & _grant1_olderExists_ageJ_T_28 < _grant1_olderExists_ageJ_T_24
-        | valid1_3 & _grant1_olderExists_ageI_T_30 < _grant1_olderExists_ageJ_T_24);
+    & ~(valid1_1 & _grant1_olderExists_ageJ_T_42 < _grant1_olderExists_ageJ_T_40
+        | valid1_2 & _grant1_olderExists_ageJ_T_44 < _grant1_olderExists_ageJ_T_40
+        | valid1_3 & _grant1_olderExists_ageJ_T_46 < _grant1_olderExists_ageJ_T_40
+        | valid1_4 & _grant1_olderExists_ageI_T_48 < _grant1_olderExists_ageJ_T_40);
   wire       grant1_1 =
     valid1_1
     & ~(valid1_0
-        & (_grant1_olderExists_ageJ_T_24 < _grant1_olderExists_ageJ_T_26
-           | _grant1_olderExists_ageJ_T_24 == _grant1_olderExists_ageJ_T_26) | valid1_2
-        & _grant1_olderExists_ageJ_T_28 < _grant1_olderExists_ageJ_T_26 | valid1_3
-        & _grant1_olderExists_ageI_T_30 < _grant1_olderExists_ageJ_T_26);
+        & (_grant1_olderExists_ageJ_T_40 < _grant1_olderExists_ageJ_T_42
+           | _grant1_olderExists_ageJ_T_40 == _grant1_olderExists_ageJ_T_42) | valid1_2
+        & _grant1_olderExists_ageJ_T_44 < _grant1_olderExists_ageJ_T_42 | valid1_3
+        & _grant1_olderExists_ageJ_T_46 < _grant1_olderExists_ageJ_T_42 | valid1_4
+        & _grant1_olderExists_ageI_T_48 < _grant1_olderExists_ageJ_T_42);
   wire       grant1_2 =
     valid1_2
     & ~(valid1_0
-        & (_grant1_olderExists_ageJ_T_24 < _grant1_olderExists_ageJ_T_28
-           | _grant1_olderExists_ageJ_T_24 == _grant1_olderExists_ageJ_T_28) | valid1_1
-        & (_grant1_olderExists_ageJ_T_26 < _grant1_olderExists_ageJ_T_28
-           | _grant1_olderExists_ageJ_T_26 == _grant1_olderExists_ageJ_T_28) | valid1_3
-        & _grant1_olderExists_ageI_T_30 < _grant1_olderExists_ageJ_T_28);
+        & (_grant1_olderExists_ageJ_T_40 < _grant1_olderExists_ageJ_T_44
+           | _grant1_olderExists_ageJ_T_40 == _grant1_olderExists_ageJ_T_44) | valid1_1
+        & (_grant1_olderExists_ageJ_T_42 < _grant1_olderExists_ageJ_T_44
+           | _grant1_olderExists_ageJ_T_42 == _grant1_olderExists_ageJ_T_44) | valid1_3
+        & _grant1_olderExists_ageJ_T_46 < _grant1_olderExists_ageJ_T_44 | valid1_4
+        & _grant1_olderExists_ageI_T_48 < _grant1_olderExists_ageJ_T_44);
   wire       grant1_3 =
     valid1_3
     & ~(valid1_0
-        & (_grant1_olderExists_ageJ_T_24 < _grant1_olderExists_ageI_T_30
-           | _grant1_olderExists_ageJ_T_24 == _grant1_olderExists_ageI_T_30) | valid1_1
-        & (_grant1_olderExists_ageJ_T_26 < _grant1_olderExists_ageI_T_30
-           | _grant1_olderExists_ageJ_T_26 == _grant1_olderExists_ageI_T_30) | valid1_2
-        & (_grant1_olderExists_ageJ_T_28 < _grant1_olderExists_ageI_T_30
-           | _grant1_olderExists_ageJ_T_28 == _grant1_olderExists_ageI_T_30));
-  wire [3:0] _io_out_0_valid_T = {grant0_3, grant0_2, grant0_1, grant0_0};
-  wire [3:0] _io_out_1_valid_T = {grant1_3, grant1_2, grant1_1, grant1_0};
+        & (_grant1_olderExists_ageJ_T_40 < _grant1_olderExists_ageJ_T_46
+           | _grant1_olderExists_ageJ_T_40 == _grant1_olderExists_ageJ_T_46) | valid1_1
+        & (_grant1_olderExists_ageJ_T_42 < _grant1_olderExists_ageJ_T_46
+           | _grant1_olderExists_ageJ_T_42 == _grant1_olderExists_ageJ_T_46) | valid1_2
+        & (_grant1_olderExists_ageJ_T_44 < _grant1_olderExists_ageJ_T_46
+           | _grant1_olderExists_ageJ_T_44 == _grant1_olderExists_ageJ_T_46) | valid1_4
+        & _grant1_olderExists_ageI_T_48 < _grant1_olderExists_ageJ_T_46);
+  wire       grant1_4 =
+    valid1_4
+    & ~(valid1_0
+        & (_grant1_olderExists_ageJ_T_40 < _grant1_olderExists_ageI_T_48
+           | _grant1_olderExists_ageJ_T_40 == _grant1_olderExists_ageI_T_48) | valid1_1
+        & (_grant1_olderExists_ageJ_T_42 < _grant1_olderExists_ageI_T_48
+           | _grant1_olderExists_ageJ_T_42 == _grant1_olderExists_ageI_T_48) | valid1_2
+        & (_grant1_olderExists_ageJ_T_44 < _grant1_olderExists_ageI_T_48
+           | _grant1_olderExists_ageJ_T_44 == _grant1_olderExists_ageI_T_48) | valid1_3
+        & (_grant1_olderExists_ageJ_T_46 < _grant1_olderExists_ageI_T_48
+           | _grant1_olderExists_ageJ_T_46 == _grant1_olderExists_ageI_T_48));
+  wire [4:0] _io_out_0_valid_T = {grant0_4, grant0_3, grant0_2, grant0_1, grant0_0};
+  wire [4:0] _io_out_1_valid_T = {grant1_4, grant1_3, grant1_2, grant1_1, grant1_0};
   wire [4:0] io_out_0_bits_rob_idx_0 =
     (|_io_out_0_valid_T)
       ? (grant0_0 ? io_in_0_bits_rob_idx : 5'h0)
         | (grant0_1 ? io_in_1_bits_rob_idx : 5'h0)
         | (grant0_2 ? io_in_2_bits_rob_idx : 5'h0)
         | (grant0_3 ? io_in_3_bits_rob_idx : 5'h0)
+        | (grant0_4 ? io_in_4_bits_rob_idx : 5'h0)
       : 5'h0;
   wire [4:0] io_out_1_bits_rob_idx_0 =
     (|_io_out_1_valid_T)
@@ -187,24 +239,28 @@ module WritebackArbiter(
         | (grant1_1 ? io_in_1_bits_rob_idx : 5'h0)
         | (grant1_2 ? io_in_2_bits_rob_idx : 5'h0)
         | (grant1_3 ? io_in_3_bits_rob_idx : 5'h0)
+        | (grant1_4 ? io_in_4_bits_rob_idx : 5'h0)
       : 5'h0;
   assign io_in_0_ready = grant0_0 | grant1_0;
   assign io_in_1_ready = grant0_1 | grant1_1;
   assign io_in_2_ready = grant0_2 | grant1_2;
   assign io_in_3_ready = grant0_3 | grant1_3;
+  assign io_in_4_ready = grant0_4 | grant1_4;
   assign io_out_0_valid = |_io_out_0_valid_T;
   assign io_out_0_bits_signals_wbu_reg_write =
     (|_io_out_0_valid_T)
     & (grant0_0 & io_in_0_bits_signals_wbu_reg_write | grant0_1
        & io_in_1_bits_signals_wbu_reg_write | grant0_2
        & io_in_2_bits_signals_wbu_reg_write | grant0_3
-       & io_in_3_bits_signals_wbu_reg_write);
+       & io_in_3_bits_signals_wbu_reg_write | grant0_4
+       & io_in_4_bits_signals_wbu_reg_write);
   assign io_out_0_bits_signals_wbu_reg_write_sel =
     (|_io_out_0_valid_T)
       ? (grant0_0 ? io_in_0_bits_signals_wbu_reg_write_sel : 3'h0)
         | (grant0_1 ? io_in_1_bits_signals_wbu_reg_write_sel : 3'h0)
         | (grant0_2 ? io_in_2_bits_signals_wbu_reg_write_sel : 3'h0)
         | (grant0_3 ? io_in_3_bits_signals_wbu_reg_write_sel : 3'h0)
+        | (grant0_4 ? io_in_4_bits_signals_wbu_reg_write_sel : 3'h0)
       : 3'h0;
   assign io_out_0_bits_alu_result =
     (|_io_out_0_valid_T)
@@ -212,11 +268,13 @@ module WritebackArbiter(
         | (grant0_1 ? io_in_1_bits_alu_result : 32'h0)
         | (grant0_2 ? io_in_2_bits_alu_result : 32'h0)
         | (grant0_3 ? io_in_3_bits_alu_result : 32'h0)
+        | (grant0_4 ? io_in_4_bits_alu_result : 32'h0)
       : 32'h0;
   assign io_out_0_bits_pc =
     (|_io_out_0_valid_T)
       ? (grant0_0 ? io_in_0_bits_pc : 32'h0) | (grant0_1 ? io_in_1_bits_pc : 32'h0)
         | (grant0_2 ? io_in_2_bits_pc : 32'h0) | (grant0_3 ? io_in_3_bits_pc : 32'h0)
+        | (grant0_4 ? io_in_4_bits_pc : 32'h0)
       : 32'h0;
   assign io_out_0_bits_next_pc =
     (|_io_out_0_valid_T)
@@ -224,6 +282,7 @@ module WritebackArbiter(
         | (grant0_1 ? io_in_1_bits_next_pc : 32'h0)
         | (grant0_2 ? io_in_2_bits_next_pc : 32'h0)
         | (grant0_3 ? io_in_3_bits_next_pc : 32'h0)
+        | (grant0_4 ? io_in_4_bits_next_pc : 32'h0)
       : 32'h0;
   assign io_out_0_bits_imm_ext =
     (|_io_out_0_valid_T)
@@ -231,6 +290,7 @@ module WritebackArbiter(
         | (grant0_1 ? io_in_1_bits_imm_ext : 32'h0)
         | (grant0_2 ? io_in_2_bits_imm_ext : 32'h0)
         | (grant0_3 ? io_in_3_bits_imm_ext : 32'h0)
+        | (grant0_4 ? io_in_4_bits_imm_ext : 32'h0)
       : 32'h0;
   assign io_out_0_bits_mem_read =
     (|_io_out_0_valid_T) & grant0_1 ? io_in_1_bits_mem_read : 32'h0;
@@ -238,6 +298,7 @@ module WritebackArbiter(
     (|_io_out_0_valid_T)
       ? (grant0_0 ? io_in_0_bits_waddr : 5'h0) | (grant0_1 ? io_in_1_bits_waddr : 5'h0)
         | (grant0_2 ? io_in_2_bits_waddr : 5'h0) | (grant0_3 ? io_in_3_bits_waddr : 5'h0)
+        | (grant0_4 ? io_in_4_bits_waddr : 5'h0)
       : 5'h0;
   assign io_out_0_bits_csr_rd1 =
     (|_io_out_0_valid_T)
@@ -245,34 +306,40 @@ module WritebackArbiter(
         | (grant0_1 ? io_in_1_bits_csr_rd1 : 32'h0)
         | (grant0_2 ? io_in_2_bits_csr_rd1 : 32'h0)
         | (grant0_3 ? io_in_3_bits_csr_rd1 : 32'h0)
+        | (grant0_4 ? io_in_4_bits_csr_rd1 : 32'h0)
       : 32'h0;
   assign io_out_0_bits_state_state =
     (|_io_out_0_valid_T)
     & (grant0_0 & io_in_0_bits_state_state | grant0_1 & io_in_1_bits_state_state
-       | grant0_2 & io_in_2_bits_state_state | grant0_3 & io_in_3_bits_state_state);
+       | grant0_2 & io_in_2_bits_state_state | grant0_3 & io_in_3_bits_state_state
+       | grant0_4 & io_in_4_bits_state_state);
   assign io_out_0_bits_state_state_num =
     (|_io_out_0_valid_T)
       ? (grant0_0 ? io_in_0_bits_state_state_num : 8'h0)
         | (grant0_1 ? io_in_1_bits_state_state_num : 8'h0)
         | (grant0_2 ? io_in_2_bits_state_state_num : 8'h0)
         | (grant0_3 ? io_in_3_bits_state_state_num : 8'h0)
+        | (grant0_4 ? io_in_4_bits_state_state_num : 8'h0)
       : 8'h0;
   assign io_out_0_bits_rob_idx = io_out_0_bits_rob_idx_0;
   assign io_out_0_bits_pdest =
     (|_io_out_0_valid_T)
       ? (grant0_0 ? io_in_0_bits_pdest : 6'h0) | (grant0_1 ? io_in_1_bits_pdest : 6'h0)
         | (grant0_2 ? io_in_2_bits_pdest : 6'h0) | (grant0_3 ? io_in_3_bits_pdest : 6'h0)
+        | (grant0_4 ? io_in_4_bits_pdest : 6'h0)
       : 6'h0;
   assign io_out_0_bits_br_taken =
     (|_io_out_0_valid_T)
     & (grant0_0 & io_in_0_bits_br_taken | grant0_1 & io_in_1_bits_br_taken | grant0_2
-       & io_in_2_bits_br_taken | grant0_3 & io_in_3_bits_br_taken);
+       & io_in_2_bits_br_taken | grant0_3 & io_in_3_bits_br_taken | grant0_4
+       & io_in_4_bits_br_taken);
   assign io_out_0_bits_store_data =
     (|_io_out_0_valid_T)
       ? (grant0_0 ? io_in_0_bits_store_data : 32'h0)
         | (grant0_1 ? io_in_1_bits_store_data : 32'h0)
         | (grant0_2 ? io_in_2_bits_store_data : 32'h0)
         | (grant0_3 ? io_in_3_bits_store_data : 32'h0)
+        | (grant0_4 ? io_in_4_bits_store_data : 32'h0)
       : 32'h0;
   assign io_out_1_valid = |_io_out_1_valid_T;
   assign io_out_1_bits_signals_wbu_reg_write =
@@ -280,13 +347,15 @@ module WritebackArbiter(
     & (grant1_0 & io_in_0_bits_signals_wbu_reg_write | grant1_1
        & io_in_1_bits_signals_wbu_reg_write | grant1_2
        & io_in_2_bits_signals_wbu_reg_write | grant1_3
-       & io_in_3_bits_signals_wbu_reg_write);
+       & io_in_3_bits_signals_wbu_reg_write | grant1_4
+       & io_in_4_bits_signals_wbu_reg_write);
   assign io_out_1_bits_signals_wbu_reg_write_sel =
     (|_io_out_1_valid_T)
       ? (grant1_0 ? io_in_0_bits_signals_wbu_reg_write_sel : 3'h0)
         | (grant1_1 ? io_in_1_bits_signals_wbu_reg_write_sel : 3'h0)
         | (grant1_2 ? io_in_2_bits_signals_wbu_reg_write_sel : 3'h0)
         | (grant1_3 ? io_in_3_bits_signals_wbu_reg_write_sel : 3'h0)
+        | (grant1_4 ? io_in_4_bits_signals_wbu_reg_write_sel : 3'h0)
       : 3'h0;
   assign io_out_1_bits_alu_result =
     (|_io_out_1_valid_T)
@@ -294,11 +363,13 @@ module WritebackArbiter(
         | (grant1_1 ? io_in_1_bits_alu_result : 32'h0)
         | (grant1_2 ? io_in_2_bits_alu_result : 32'h0)
         | (grant1_3 ? io_in_3_bits_alu_result : 32'h0)
+        | (grant1_4 ? io_in_4_bits_alu_result : 32'h0)
       : 32'h0;
   assign io_out_1_bits_pc =
     (|_io_out_1_valid_T)
       ? (grant1_0 ? io_in_0_bits_pc : 32'h0) | (grant1_1 ? io_in_1_bits_pc : 32'h0)
         | (grant1_2 ? io_in_2_bits_pc : 32'h0) | (grant1_3 ? io_in_3_bits_pc : 32'h0)
+        | (grant1_4 ? io_in_4_bits_pc : 32'h0)
       : 32'h0;
   assign io_out_1_bits_next_pc =
     (|_io_out_1_valid_T)
@@ -306,6 +377,7 @@ module WritebackArbiter(
         | (grant1_1 ? io_in_1_bits_next_pc : 32'h0)
         | (grant1_2 ? io_in_2_bits_next_pc : 32'h0)
         | (grant1_3 ? io_in_3_bits_next_pc : 32'h0)
+        | (grant1_4 ? io_in_4_bits_next_pc : 32'h0)
       : 32'h0;
   assign io_out_1_bits_imm_ext =
     (|_io_out_1_valid_T)
@@ -313,6 +385,7 @@ module WritebackArbiter(
         | (grant1_1 ? io_in_1_bits_imm_ext : 32'h0)
         | (grant1_2 ? io_in_2_bits_imm_ext : 32'h0)
         | (grant1_3 ? io_in_3_bits_imm_ext : 32'h0)
+        | (grant1_4 ? io_in_4_bits_imm_ext : 32'h0)
       : 32'h0;
   assign io_out_1_bits_mem_read =
     (|_io_out_1_valid_T) & grant1_1 ? io_in_1_bits_mem_read : 32'h0;
@@ -320,6 +393,7 @@ module WritebackArbiter(
     (|_io_out_1_valid_T)
       ? (grant1_0 ? io_in_0_bits_waddr : 5'h0) | (grant1_1 ? io_in_1_bits_waddr : 5'h0)
         | (grant1_2 ? io_in_2_bits_waddr : 5'h0) | (grant1_3 ? io_in_3_bits_waddr : 5'h0)
+        | (grant1_4 ? io_in_4_bits_waddr : 5'h0)
       : 5'h0;
   assign io_out_1_bits_csr_rd1 =
     (|_io_out_1_valid_T)
@@ -327,35 +401,41 @@ module WritebackArbiter(
         | (grant1_1 ? io_in_1_bits_csr_rd1 : 32'h0)
         | (grant1_2 ? io_in_2_bits_csr_rd1 : 32'h0)
         | (grant1_3 ? io_in_3_bits_csr_rd1 : 32'h0)
+        | (grant1_4 ? io_in_4_bits_csr_rd1 : 32'h0)
       : 32'h0;
   assign io_out_1_bits_state_state =
     (|_io_out_1_valid_T)
     & (grant1_0 & io_in_0_bits_state_state | grant1_1 & io_in_1_bits_state_state
-       | grant1_2 & io_in_2_bits_state_state | grant1_3 & io_in_3_bits_state_state);
+       | grant1_2 & io_in_2_bits_state_state | grant1_3 & io_in_3_bits_state_state
+       | grant1_4 & io_in_4_bits_state_state);
   assign io_out_1_bits_state_state_num =
     (|_io_out_1_valid_T)
       ? (grant1_0 ? io_in_0_bits_state_state_num : 8'h0)
         | (grant1_1 ? io_in_1_bits_state_state_num : 8'h0)
         | (grant1_2 ? io_in_2_bits_state_state_num : 8'h0)
         | (grant1_3 ? io_in_3_bits_state_state_num : 8'h0)
+        | (grant1_4 ? io_in_4_bits_state_state_num : 8'h0)
       : 8'h0;
   assign io_out_1_bits_rob_idx = io_out_1_bits_rob_idx_0;
   assign io_out_1_bits_pdest =
     (|_io_out_1_valid_T)
       ? (grant1_0 ? io_in_0_bits_pdest : 6'h0) | (grant1_1 ? io_in_1_bits_pdest : 6'h0)
         | (grant1_2 ? io_in_2_bits_pdest : 6'h0) | (grant1_3 ? io_in_3_bits_pdest : 6'h0)
+        | (grant1_4 ? io_in_4_bits_pdest : 6'h0)
       : 6'h0;
   assign io_out_1_bits_br_taken =
     (|_io_out_1_valid_T)
     & (grant1_0 & io_in_0_bits_br_taken | grant1_1 & io_in_1_bits_br_taken | grant1_2
-       & io_in_2_bits_br_taken | grant1_3 & io_in_3_bits_br_taken);
+       & io_in_2_bits_br_taken | grant1_3 & io_in_3_bits_br_taken | grant1_4
+       & io_in_4_bits_br_taken);
   assign io_out_1_bits_store_data =
     (|_io_out_1_valid_T)
       ? (grant1_0 ? io_in_0_bits_store_data : 32'h0)
         | (grant1_1 ? io_in_1_bits_store_data : 32'h0)
         | (grant1_2 ? io_in_2_bits_store_data : 32'h0)
         | (grant1_3 ? io_in_3_bits_store_data : 32'h0)
+        | (grant1_4 ? io_in_4_bits_store_data : 32'h0)
       : 32'h0;
-  assign io_grantIdx_0 = {|{grant0_3, grant0_2}, grant0_3 | grant0_1};
+  assign io_grantIdx_0 = {grant0_4, |{grant0_3, grant0_2}, grant0_3 | grant0_1};
 endmodule
 

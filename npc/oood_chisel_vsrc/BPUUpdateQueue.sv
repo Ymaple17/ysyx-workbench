@@ -8,7 +8,7 @@ module BPUUpdateQueue(
   input         io_enq_0_bits_taken,
                 io_enq_0_bits_isBranch,
                 io_enq_0_bits_isJalr,
-  input  [9:0]  io_enq_0_bits_index,
+  input  [64:0] io_enq_0_bits_index,
   input         io_enq_0_bits_isCall,
                 io_enq_0_bits_isRet,
                 io_enq_1_valid,
@@ -17,7 +17,7 @@ module BPUUpdateQueue(
   input         io_enq_1_bits_taken,
                 io_enq_1_bits_isBranch,
                 io_enq_1_bits_isJalr,
-  input  [9:0]  io_enq_1_bits_index,
+  input  [64:0] io_enq_1_bits_index,
   input         io_enq_1_bits_isCall,
                 io_enq_1_bits_isRet,
   output        io_deq_valid,
@@ -26,7 +26,7 @@ module BPUUpdateQueue(
   output        io_deq_bits_taken,
                 io_deq_bits_isBranch,
                 io_deq_bits_isJalr,
-  output [9:0]  io_deq_bits_index,
+  output [64:0] io_deq_bits_index,
   output        io_deq_bits_isCall,
                 io_deq_bits_isRet,
   output [3:0]  io_free
@@ -37,7 +37,7 @@ module BPUUpdateQueue(
   reg         entries_0_taken;
   reg         entries_0_isBranch;
   reg         entries_0_isJalr;
-  reg  [9:0]  entries_0_index;
+  reg  [64:0] entries_0_index;
   reg         entries_0_isCall;
   reg         entries_0_isRet;
   reg  [31:0] entries_1_pc;
@@ -45,7 +45,7 @@ module BPUUpdateQueue(
   reg         entries_1_taken;
   reg         entries_1_isBranch;
   reg         entries_1_isJalr;
-  reg  [9:0]  entries_1_index;
+  reg  [64:0] entries_1_index;
   reg         entries_1_isCall;
   reg         entries_1_isRet;
   reg  [31:0] entries_2_pc;
@@ -53,7 +53,7 @@ module BPUUpdateQueue(
   reg         entries_2_taken;
   reg         entries_2_isBranch;
   reg         entries_2_isJalr;
-  reg  [9:0]  entries_2_index;
+  reg  [64:0] entries_2_index;
   reg         entries_2_isCall;
   reg         entries_2_isRet;
   reg  [31:0] entries_3_pc;
@@ -61,7 +61,7 @@ module BPUUpdateQueue(
   reg         entries_3_taken;
   reg         entries_3_isBranch;
   reg         entries_3_isJalr;
-  reg  [9:0]  entries_3_index;
+  reg  [64:0] entries_3_index;
   reg         entries_3_isCall;
   reg         entries_3_isRet;
   reg  [31:0] entries_4_pc;
@@ -69,7 +69,7 @@ module BPUUpdateQueue(
   reg         entries_4_taken;
   reg         entries_4_isBranch;
   reg         entries_4_isJalr;
-  reg  [9:0]  entries_4_index;
+  reg  [64:0] entries_4_index;
   reg         entries_4_isCall;
   reg         entries_4_isRet;
   reg  [31:0] entries_5_pc;
@@ -77,7 +77,7 @@ module BPUUpdateQueue(
   reg         entries_5_taken;
   reg         entries_5_isBranch;
   reg         entries_5_isJalr;
-  reg  [9:0]  entries_5_index;
+  reg  [64:0] entries_5_index;
   reg         entries_5_isCall;
   reg         entries_5_isRet;
   reg  [31:0] entries_6_pc;
@@ -85,7 +85,7 @@ module BPUUpdateQueue(
   reg         entries_6_taken;
   reg         entries_6_isBranch;
   reg         entries_6_isJalr;
-  reg  [9:0]  entries_6_index;
+  reg  [64:0] entries_6_index;
   reg         entries_6_isCall;
   reg         entries_6_isRet;
   reg  [31:0] entries_7_pc;
@@ -93,7 +93,7 @@ module BPUUpdateQueue(
   reg         entries_7_taken;
   reg         entries_7_isBranch;
   reg         entries_7_isJalr;
-  reg  [9:0]  entries_7_index;
+  reg  [64:0] entries_7_index;
   reg         entries_7_isCall;
   reg         entries_7_isRet;
   reg  [2:0]  head;
@@ -207,7 +207,7 @@ module BPUUpdateQueue(
         casez_tmp_3 = entries_7_isJalr;
     endcase
   end // always_comb
-  reg  [9:0]  casez_tmp_4;
+  reg  [64:0] casez_tmp_4;
   always_comb begin
     casez (head)
       3'b000:

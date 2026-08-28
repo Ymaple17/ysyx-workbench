@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：分清 load queue 深度、cache 命中延迟、cache 服务率、miss-level parallelism 和 store 可见性，理解为何“非阻塞 cache”不能只加一个 MSHR 参数。
 - **最小实现**：让 DCache 命中请求/响应可在同拍流过；打通 AXI read/write burst；扩为 32B line；实现双提交 store-hit update、StoreBuffer 合并/连续写 burst、drain 精确更新；增加一个 secondary miss slot 和 same-line merge。
-- **当前参考核**：**已实现**。DCache 为 `64 sets * 32B = 2KiB` direct-mapped，命中 response 使用 2-entry `flow+pipe` 队列；miss 侧为 1 个 active MSHR 加 1 个 secondary slot，支持 same-line merge。LQ 保留 4 项，StoreBuffer 保留 16 项并可形成最多 8-beat 连续写 burst。
+- **当前参考核**：**已实现并由阶段 12f 继承**。DCache 为 `64 sets * 32B = 2KiB` direct-mapped，命中 response 使用 2-entry `flow+pipe` 队列；miss 侧为 1 个 active MSHR 加 1 个 secondary slot，支持 same-line merge。LQ4 已增加 fresh schedule/response bypass，StoreBuffer16 可形成最多 8-beat 连续写 burst。
 - **后续扩展**：当前 SRAM/xbar 一次只允许一个 read owner，所以多个可并行发 AR 的完整 MSHR 表不会增加底层服务率。待总线/slave 支持多 ID outstanding 后，再评估 2-4 个独立 MSHR、LQ8、2-way、write-back/write-allocate；未知 older store speculation 仍是独立高风险扩展。
 - **验收方式**：连续/同拍 hit、response backpressure、secondary miss、same-line merge、burst `last`、store-load forwarding、三路有序 cache 更新、flush stale response 和 MMIO 均有定向测试；整机以 hit rate、replay、SB full、总线 burst 及 IPC 做 A/B。
 

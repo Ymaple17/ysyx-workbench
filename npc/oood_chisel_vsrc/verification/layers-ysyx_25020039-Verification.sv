@@ -2,6 +2,7 @@
 `ifndef layers_ysyx_25020039_Verification
 `define layers_ysyx_25020039_Verification
 bind BPUUpdateQueue BPUUpdateQueue_Verification verification ();
+bind FetchBuffer FetchBuffer_Verification verification ();
 bind FTQ FTQ_Verification verification ();
 bind IFU IFU_Verification verification ();
 bind LoadQueue LoadQueue_Verification verification ();

@@ -20,16 +20,15 @@
 module Core_Verification_Assert(
   input reset,
         _GEN,
-        _GEN_0,
         clock,
-        _GEN_1
+        _GEN_0
 );
 
   `ifndef SYNTHESIS
     always @(posedge clock) begin
-      if (~reset & _GEN & _GEN_0 & ~_GEN_1) begin
+      if (~reset & _GEN & ~_GEN_0) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: a flushed LSU dispatch entry must not enter the address skid\n");
+          $error("Assertion failed: a flushed LSU dispatch entry must not enter LSU or its skid\n");
         if (`STOP_COND_)
           $fatal;
       end

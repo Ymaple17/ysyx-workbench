@@ -13,6 +13,7 @@ class FetchBuffer(n: Int = OoOParams.FETCH_BUFFER_SIZE) extends Module {
     val in = Flipped(Decoupled(new IFUPacket))
     val out = Decoupled(new IFUPacket)
     val flush = Input(Bool())
+    val replaceReady = Input(Bool())
     val count = Output(UInt(log2Ceil(n + 1).W))
     val full = Output(Bool())
     val empty = Output(Bool())
@@ -23,9 +24,13 @@ class FetchBuffer(n: Int = OoOParams.FETCH_BUFFER_SIZE) extends Module {
   val tail = RegInit(0.U(ptrW.W))
   val count = RegInit(0.U(log2Ceil(n + 1).W))
 
-  io.out.valid := count =/= 0.U && !io.flush
-  io.out.bits := entries(head)
-  io.in.ready := !io.flush && ((count =/= n.U) || io.out.fire)
+  val storedValid = count =/= 0.U
+  val flowThrough = !storedValid && io.in.valid && io.out.ready && !io.flush
+  io.out.valid := (storedValid || io.in.valid) && !io.flush
+  io.out.bits := Mux(storedValid, entries(head), io.in.bits)
+  // replaceReady is derived from registered downstream space. It allows a
+  // guaranteed full pop+push without feeding live backend ready into ICache.
+  io.in.ready := !io.flush && (count =/= n.U || io.replaceReady)
   io.count := count
   io.full := count === n.U
   io.empty := count === 0.U
@@ -35,13 +40,19 @@ class FetchBuffer(n: Int = OoOParams.FETCH_BUFFER_SIZE) extends Module {
     tail := 0.U
     count := 0.U
   }.otherwise {
-    when(io.in.fire) {
+    val storeInput = io.in.fire && !flowThrough
+    val removeStored = io.out.fire && storedValid
+    when(storeInput) {
       entries(tail) := io.in.bits
       tail := tail + 1.U
     }
-    when(io.out.fire) {
+    when(removeStored) {
       head := head + 1.U
     }
-    count := count + io.in.fire.asUInt - io.out.fire.asUInt
+    count := count + storeInput.asUInt - removeStored.asUInt
+  }
+
+  when(!reset.asBool && count === n.U && io.in.fire) {
+    assert(io.out.fire, "full FetchBuffer replacement requires a guaranteed pop")
   }
 }

@@ -20,8 +20,10 @@
 module WritebackArbiter_Verification_Assert(
   input       reset,
   input [1:0] _GEN,
-              _GEN_0,
-              _GEN_1,
+  input       grant0_2,
+  input [1:0] _GEN_0,
+  input       grant1_2,
+  input [1:0] _GEN_1,
               _GEN_2,
   input       io_out_0_valid,
               io_out_1_valid,
@@ -33,7 +35,7 @@ module WritebackArbiter_Verification_Assert(
 
   `ifndef SYNTHESIS
     always @(posedge clock) begin
-      if (~reset & (|({_GEN_1, _GEN_2} & {_GEN, _GEN_0}))) begin
+      if (~reset & (|({_GEN, grant0_2, _GEN_2} & {_GEN_0, grant1_2, _GEN_1}))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: writeback ports must not grant the same result\n");
         if (`STOP_COND_)

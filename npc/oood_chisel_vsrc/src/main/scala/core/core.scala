@@ -14,6 +14,7 @@ import sim._
 import bus._
 import unit._
 import core.PerfEvents._
+import core.PcPerfEvents._
 
 class Core_IO(conf: CoreConfig) extends Bundle {
   val interrupt = Input(Bool())
@@ -40,9 +41,10 @@ class State extends Bundle {
 }
 
 /**
- * 阶段 3d + 4a–4c + 5：
- * - 真乱序单发；CSR/异常 @ commit
- * - store 架构写仅 commit；load 查更老 store 转发/等待；无 mem@head
+ * Stage12 reference core: 2-wide rename/dispatch/commit with distributed
+ * ALU0/ALU1/LSU/DIV/BRU issue, two data CDBs, and precise ROB retirement.
+ * Stores become architectural only at commit; LQ/SQ/StoreBuffer preserve
+ * memory identity, forwarding, replay, and ordered visibility.
  */
 class Core(val conf: CoreConfig) extends Module {
   val io = IO(new Core_IO(conf))
@@ -52,6 +54,7 @@ class Core(val conf: CoreConfig) extends Module {
   val idu1   = Module(new IDU(conf))
   val exu    = Module(new EXU(conf))
   val exu_alu1 = Module(new EXU(conf))
+  val exu_bru = Module(new EXU(conf))
   val exu_div = Module(new EXU(conf))
   val exu_lsu = Module(new EXU(conf))
   val lsu    = Module(new LSU(conf))
@@ -68,16 +71,19 @@ class Core(val conf: CoreConfig) extends Module {
   val rename = Module(new Rename2())
   val rob    = Module(new ROB(conf.statistics))
   val rs     = Module(new RS())
+  val brq    = Module(new BranchIssueQueue())
   val fq     = Module(new FetchQueue())
   val sq     = Module(new StoreQueue())
   val stbuf  = Module(new StoreBuffer())
 
   val alu_wb = Wire(new LSU_WBU_IO)
   val alu1_wb = Wire(new LSU_WBU_IO)
+  val bru_wb = Wire(new LSU_WBU_IO)
   val div_wb = Wire(new LSU_WBU_IO)
   val lsu_wb = Wire(new LSU_WBU_IO)
   val alu_wb_valid = Wire(Bool())
   val alu1_wb_valid = Wire(Bool())
+  val bru_wb_valid = Wire(Bool())
   val div_wb_valid = Wire(Bool())
   val lsu_wb_valid = Wire(Bool())
   val d_valid = Wire(Bool())
@@ -135,7 +141,8 @@ class Core(val conf: CoreConfig) extends Module {
 
   ifu.io.pc.ready := ifu.io.in.ready
   ifu.io.slot1_enable := OoOParams.WIDE_FETCH_ENABLE.B &&
-    fq.io.space >= OoOParams.WIDE_FETCH_MIN_SPACE.U
+    fq.io.enqSpace >= OoOParams.FETCH_WIDTH.U
+  ifu.io.fetch_buffer_replace_ready := fq.io.space >= OoOParams.FETCH_WIDTH.U
   // flush 时必须装入 correct_pc（即使上一拍 in.valid=0），否则 irq/mispred 后取指饿死
   val ifu_in_en = ifu.io.is_flush || (ifu.io.in.valid && ifu.io.pc.ready)
   ifu.io.in.bits  := RegEnable(ifu.io.pc.bits, reset_pc.asTypeOf(new IFU_PC_IO), ifu_in_en)
@@ -327,25 +334,34 @@ class Core(val conf: CoreConfig) extends Module {
   val lane0_csr_stall = id_is_csr && csr_inflight
   val lane0_free_ok = !id_doren || (rename.io.free_cnt =/= 0.U)
   val lane0_cp_ok = !id0_is_ctrl || !rename.io.cp_full
-  val lane0_space_ok = (rob.io.space =/= 0.U) && (rs.io.space =/= 0.U)
+  val lane0_issue_space = Mux(id0_is_ctrl, brq.io.enq.ready, rs.io.space =/= 0.U)
+  val lane0_space_ok = (rob.io.space =/= 0.U) && lane0_issue_space
   val lane0_block = stop_issue || lane0_csr_stall || !lane0_free_ok || !lane0_cp_ok || !lane0_space_ok
 
-  val branchSlot1Sequential = idu1.io.out.bits.pc === (idu.io.out.bits.pc + 4.U)
-  val allowBranchSlot1 = id0_is_cond_branch && idu.io.out.bits.bp_valid &&
-    !idu.io.out.bits.bp_taken && branchSlot1Sequential && !id1_is_ctrl
+  // FQ order already follows the predicted path. Rename2 checkpoints lane0
+  // before lane1, so one non-control successor may dispatch behind any
+  // ordinary lane0 control and is removed as younger work on recovery.
+  val allowBranchSlot1 = id0_is_ctrl && !id1_is_ctrl
   val lane1_try = fq.io.deq1.valid && !id0_special &&
     (!id0_is_ctrl || allowBranchSlot1) && !id1_special
   val lane1_need_free = id_doren.asUInt +& id1_doren.asUInt
   val lane1_free_ok = !id1_doren || (rename.io.free_cnt >= lane1_need_free)
   val lane1_cp_ok = !id1_is_ctrl || !rename.io.cp_full
-  val lane1_space_ok = (rob.io.space >= 2.U) && (rs.io.space >= 2.U)
+  // A dual-dispatch packet contains at most one ordinary control-flow
+  // instruction: lane0 control flow only admits a non-control lane1. Account
+  // for the integer RS and BRQ credits independently so a
+  // lane1 branch does not consume or enter an integer-RS slot.
+  val lane1_rs_need = (!id0_is_ctrl).asUInt +& (!id1_is_ctrl).asUInt
+  val lane1_needs_brq = id0_is_ctrl || id1_is_ctrl
+  val lane1_space_ok = (rob.io.space >= 2.U) && (rs.io.space >= lane1_rs_need) &&
+    (!lane1_needs_brq || brq.io.enq.ready)
   val lane1_csr_stall = id1_is_csr && (csr_inflight || !id1_s1_rdy)
   val lane1_block = lane0_block || !lane1_try || stop_issue || lane1_csr_stall || !lane1_free_ok ||
     !lane1_cp_ok || !lane1_space_ok
 
   rob_full_stall := idu.io.out.valid && !lane0_space_ok
   fl_stall := idu.io.out.valid && !lane0_free_ok
-  rs_full_stall := idu.io.out.valid && (rs.io.space === 0.U)
+  rs_full_stall := idu.io.out.valid && !lane0_issue_space
 
   idu.io.is_stall := lane0_block
   idu.io.out.ready := !lane0_block
@@ -441,7 +457,7 @@ class Core(val conf: CoreConfig) extends Module {
   // ---------- RS 入队 ----------
   rs.io.rob_head := rob.io.head
   rs.io.rob_st_pending := sq.io.unresolved_mask
-  rs.io.enq_fire := en_ren
+  rs.io.enq_fire := en_ren && !id0_is_ctrl
   rs.io.enq_bits := 0.U.asTypeOf(new RSEntry)
   rs.io.enq_bits.rob_idx    := rob.io.enq_idx
   rs.io.enq_bits.src1_ready := id_s1_rdy
@@ -481,7 +497,11 @@ class Core(val conf: CoreConfig) extends Module {
   rs.io.enq_bits.wbu_csr_write     := idu.io.out.bits.signals.wbu.csr_write
   rs.io.enq_bits.wbu_csr_sel       := idu.io.out.bits.signals.wbu.csr_sel
   rs.io.enq_bits.cp_idx     := rename.io.cp_idx0
-  rs.io.enq1_fire := en_ren1
+  val brqEnqLane0 = en_ren && id0_is_ctrl
+  val brqEnqLane1 = en_ren1 && id1_is_ctrl
+  brq.io.enq.valid := brqEnqLane0 || brqEnqLane1
+  brq.io.enq.bits := Mux(brqEnqLane0, rs.io.enq_bits, rs.io.enq1_bits)
+  rs.io.enq1_fire := en_ren1 && !id1_is_ctrl
   rs.io.enq1_bits := 0.U.asTypeOf(new RSEntry)
   rs.io.enq1_bits.rob_idx    := rob.io.enq1_idx
   rs.io.enq1_bits.src1_ready := id1_s1_rdy
@@ -529,24 +549,35 @@ class Core(val conf: CoreConfig) extends Module {
   rs.io.cdb1_valid := can_wb1 && (wb1_pdest =/= 0.U)
   rs.io.cdb1_pdest := wb1_pdest
   rs.io.cdb1_val   := wb1_val
+  brq.io.robHead := rob.io.head
+  brq.io.cdb0Valid := rs.io.cdb_valid
+  brq.io.cdb0Pdest := rs.io.cdb_pdest
+  brq.io.cdb0Value := rs.io.cdb_val
+  brq.io.cdb1Valid := rs.io.cdb1_valid
+  brq.io.cdb1Pdest := rs.io.cdb1_pdest
+  brq.io.cdb1Value := rs.io.cdb1_val
 
   // ---------- 派遣寄存器 RS → EX（可 selective flush，无 StageConnect 组合环）----------
   // ---------- Dispatch registers RS -> EX / LSU ----------
   val d_alu_valid = RegInit(false.B)
   val d_alu_bits  = RegInit(0.U.asTypeOf(new IDU_EXU_IO))
-  val d_alu_ctrl_resolved = RegInit(false.B)
   val d_alu1_valid = RegInit(false.B)
   val d_alu1_bits  = RegInit(0.U.asTypeOf(new IDU_EXU_IO))
+  val d_bru_valid = RegInit(false.B)
+  val d_bru_bits  = RegInit(0.U.asTypeOf(new IDU_EXU_IO))
+  val d_bru_ctrl_resolved = RegInit(false.B)
   val d_div_valid = RegInit(false.B)
   val d_div_bits  = RegInit(0.U.asTypeOf(new IDU_EXU_IO))
   val d_lsu_valid = RegInit(false.B)
   val d_lsu_bits  = RegInit(0.U.asTypeOf(new IDU_EXU_IO))
-  d_valid := d_alu_valid || d_alu1_valid || d_div_valid || d_lsu_valid
+  d_valid := d_alu_valid || d_alu1_valid || d_bru_valid || d_div_valid || d_lsu_valid
   d_bits.pc      := MuxCase(d_alu_bits.pc, Seq(
+    d_bru_valid -> d_bru_bits.pc,
     d_div_valid -> d_div_bits.pc,
     d_lsu_valid -> d_lsu_bits.pc
   ))
   d_bits.rob_idx := MuxCase(d_alu_bits.rob_idx, Seq(
+    d_bru_valid -> d_bru_bits.rob_idx,
     d_div_valid -> d_div_bits.rob_idx,
     d_lsu_valid -> d_lsu_bits.rob_idx
   ))
@@ -601,12 +632,14 @@ class Core(val conf: CoreConfig) extends Module {
 
   val flush_alu = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_alu_valid, d_alu_bits))
   val flush_alu1 = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_alu1_valid, d_alu1_bits))
+  val flush_bru = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_bru_valid, d_bru_bits))
   val flush_div = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_div_valid, d_div_bits))
   val flush_lsu_d = is_irq_w ||
     ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_lsu_valid, d_lsu_bits))
 
   val hold_alu = d_alu_valid && !flush_alu
   val hold_alu1 = d_alu1_valid && !flush_alu1
+  val hold_bru = d_bru_valid && !flush_bru
   val hold_div = d_div_valid && !flush_div
   val hold_lsu = d_lsu_valid && !flush_lsu_d
 
@@ -616,6 +649,9 @@ class Core(val conf: CoreConfig) extends Module {
   exu_alu1.io.in.valid := hold_alu1
   exu_alu1.io.in.bits := d_alu1_bits
   exu_alu1.io.is_flush := is_irq_w || flush_alu1
+  exu_bru.io.in.valid := hold_bru
+  exu_bru.io.in.bits := d_bru_bits
+  exu_bru.io.is_flush := is_irq_w || flush_bru
   exu_div.io.in.valid := hold_div
   exu_div.io.in.bits  := d_div_bits
   exu_div.io.is_flush := is_irq_w || flush_div
@@ -623,47 +659,49 @@ class Core(val conf: CoreConfig) extends Module {
   exu_lsu.io.in.bits  := d_lsu_bits
   exu_lsu.io.is_flush := flush_lsu_d
 
-  lsu.io.in.valid := lsu_stage_valid && !flush_lsu_stage
-  lsu.io.in.bits  := lsu_stage_bits
-  val lsu_req_accept = lsu.io.in.valid && lsu.io.in.ready
-  val lsu_out_fire = lsu.io.out.valid && lsu.io.out.ready
   val lsuStageRob = rob.io.entries(lsu_stage_bits.rob_idx)
   val lsu_stage_stale = lsu_stage_valid &&
     (!lsuStageRob.valid || (lsuStageRob.pc =/= lsu_stage_bits.pc))
-  val lsu_stage_pop = lsu_req_accept || lsu_stage_stale
-  exu_lsu.io.out.ready := !lsu_stage_valid || lsu_stage_pop || flush_lsu_stage
-  val lsu_stage_push = exu_lsu.io.out.valid && exu_lsu.io.out.ready
-  when(flush_lsu_stage) {
-    // A younger resident entry may be flushed while the address EXU presents
-    // an older surviving load.  ready advertises that the slot can be reused,
-    // so preserve that push instead of dropping an already-issued RS entry.
-    lsu_stage_valid := lsu_stage_push
-    when(lsu_stage_push) {
-      lsu_stage_bits := exu_lsu.io.out.bits
-    }
-  }.elsewhen(lsu_stage_push) {
+  val lsu_stage_drop = flush_lsu_stage || lsu_stage_stale
+  val lsu_stage_usable = lsu_stage_valid && !lsu_stage_drop
+  val lsu_addr_usable = exu_lsu.io.out.valid && !flush_lsu_d
+
+  // Empty skid slots flow directly into LSU. Backpressure captures the
+  // address, and a consumed resident address may be replaced in the same
+  // cycle. d_lsu is registered, so this does not feed LSU ready into RS select.
+  lsu.io.in.valid := lsu_stage_usable || (!lsu_stage_usable && lsu_addr_usable)
+  lsu.io.in.bits := Mux(lsu_stage_usable, lsu_stage_bits, exu_lsu.io.out.bits)
+  val lsu_req_accept = lsu.io.in.fire
+  val lsu_out_fire = lsu.io.out.valid && lsu.io.out.ready
+  exu_lsu.io.out.ready := !flush_lsu_d &&
+    (!lsu_stage_usable || (lsu_stage_usable && lsu.io.in.ready))
+  val lsu_addr_accept = lsu_addr_usable && exu_lsu.io.out.ready
+  val lsu_addr_flow = !lsu_stage_usable && lsu_addr_accept && lsu.io.in.ready
+  val lsu_stage_push = lsu_addr_accept && !lsu_addr_flow
+  val lsu_stage_pop = lsu_stage_usable && lsu_req_accept
+
+  when(lsu_stage_push) {
     lsu_stage_valid := true.B
     lsu_stage_bits := exu_lsu.io.out.bits
-  }.elsewhen(lsu_stage_pop) {
+  }.elsewhen(lsu_stage_pop || lsu_stage_drop) {
     lsu_stage_valid := false.B
   }
 
-  when(!reset.asBool && flush_lsu_stage && lsu_stage_push) {
-    assert(!flush_lsu_d, "a flushed LSU dispatch entry must not enter the address skid")
+  when(!reset.asBool && lsu_addr_accept) {
+    assert(!flush_lsu_d, "a flushed LSU dispatch entry must not enter LSU or its skid")
   }
 
   alu_wb := exuToWbu(exu.io.out.bits)
-  // Control instructions without a renamed destination only need to complete
-  // their ROB/RS state; they do not consume a data CDB or PRF write port.
-  val alu_ctrl_no_dest = d_alu_valid &&
-    (d_alu_bits.signals.exu.jump =/= JUMP_NONE) &&
-    (d_alu_bits.signals.exu.jump =/= JUMP_MERT) &&
-    !d_alu_bits.do_rename && !d_alu_bits.state.state
-  val ctrl_wb_entry = rob.io.entries(d_alu_bits.rob_idx)
-  val ctrl_direct_fire = exu.io.out.valid && alu_ctrl_no_dest && !flush_alu &&
+  alu_wb_valid := exu.io.out.valid
+  bru_wb := exuToWbu(exu_bru.io.out.bits)
+  // Branches without a renamed destination complete through a private ROB
+  // sideband, leaving both data CDB lanes available to value-producing FUs.
+  val bru_ctrl_no_dest = d_bru_valid && !d_bru_bits.do_rename && !d_bru_bits.state.state
+  val ctrl_wb_entry = rob.io.entries(d_bru_bits.rob_idx)
+  val ctrl_direct_fire = exu_bru.io.out.valid && bru_ctrl_no_dest && !flush_bru &&
     ctrl_wb_entry.valid && !ctrl_wb_entry.done &&
-    (ctrl_wb_entry.pc === d_alu_bits.pc)
-  alu_wb_valid := exu.io.out.valid && !alu_ctrl_no_dest
+    (ctrl_wb_entry.pc === d_bru_bits.pc)
+  bru_wb_valid := exu_bru.io.out.valid && !bru_ctrl_no_dest
   alu1_wb := exuToWbu(exu_alu1.io.out.bits)
   alu1_wb_valid := exu_alu1.io.out.valid
   div_wb := exuToWbu(exu_div.io.out.bits)
@@ -673,24 +711,33 @@ class Core(val conf: CoreConfig) extends Module {
 
   val alu_leave = hold_alu && exu.io.out.valid && exu.io.out.ready
   val alu1_leave = hold_alu1 && exu_alu1.io.out.valid && exu_alu1.io.out.ready
+  val bru_leave = hold_bru && exu_bru.io.out.valid && exu_bru.io.out.ready
   val div_leave = hold_div && exu_div.io.out.valid && exu_div.io.out.ready
-  val lsu_addr_leave = hold_lsu && lsu_stage_push
+  val lsu_addr_leave = hold_lsu && lsu_addr_accept
   rs.io.issue_fire    := false.B
   rs.io.free_rob_fire := can_wb
   rs.io.free_rob_idx  := wb_idx
   rs.io.free_rob1_fire := can_wb1
   rs.io.free_rob1_idx  := wb1_idx
   rs.io.free_ctrl_fire := ctrl_direct_fire
-  rs.io.free_ctrl_idx  := d_alu_bits.rob_idx
+  rs.io.free_ctrl_idx  := d_bru_bits.rob_idx
+  brq.io.free0Valid := can_wb
+  brq.io.free0Rob := wb_idx
+  brq.io.free1Valid := can_wb1
+  brq.io.free1Rob := wb1_idx
+  brq.io.freeDirectValid := ctrl_direct_fire
+  brq.io.freeDirectRob := d_bru_bits.rob_idx
 
   val can_load_alu = !stop_issue && ((!d_alu_valid) || alu_leave || flush_alu)
   val can_load_alu1 = !stop_issue && ((!d_alu1_valid) || alu1_leave || flush_alu1)
+  val can_load_bru = !stop_issue && ((!d_bru_valid) || bru_leave || flush_bru)
   val can_load_div = !stop_issue && ((!d_div_valid) || div_leave || flush_div)
   val lsuCanOverlap = if (OoOParams.LSU_MLP_ENABLE) true.B else (!lsu_stage_valid && !lsu.io.bus_busy)
   val can_load_lsu = !stop_issue &&
     ((!d_lsu_valid) || lsu_addr_leave || flush_lsu_d) && lsuCanOverlap
   val take_alu_issue = can_load_alu && rs.io.issue_alu_valid
   val take_alu1_issue = can_load_alu1 && rs.io.issue_alu1_valid
+  val take_bru_issue = can_load_bru && brq.io.issue.valid
   val take_div_issue = can_load_div && rs.io.issue_div_valid
   val take_lsu_issue = can_load_lsu && rs.io.issue_lsu_valid
 
@@ -698,9 +745,9 @@ class Core(val conf: CoreConfig) extends Module {
   rs.io.issue_alu1_fire := take_alu1_issue
   rs.io.issue_div_fire := take_div_issue
   rs.io.issue_lsu_fire := take_lsu_issue
+  brq.io.issue.ready := can_load_bru
 
   when(flush_alu) {
-    d_alu_ctrl_resolved := false.B
     when(can_load_alu && rs.io.issue_alu_valid) {
       d_alu_valid := true.B
       d_alu_bits  := packIssue(rs.io.issue_alu_bits)
@@ -708,10 +755,20 @@ class Core(val conf: CoreConfig) extends Module {
       d_alu_valid := false.B
     }
   }.elsewhen(alu_leave || !d_alu_valid) {
-    d_alu_ctrl_resolved := false.B
     d_alu_valid := take_alu_issue
     when(take_alu_issue) {
       d_alu_bits := packIssue(rs.io.issue_alu_bits)
+    }
+  }
+
+  when(flush_bru) {
+    d_bru_ctrl_resolved := false.B
+    d_bru_valid := false.B
+  }.elsewhen(bru_leave || !d_bru_valid) {
+    d_bru_ctrl_resolved := false.B
+    d_bru_valid := take_bru_issue
+    when(take_bru_issue) {
+      d_bru_bits := packIssue(brq.io.issue.bits)
     }
   }
 
@@ -820,20 +877,25 @@ class Core(val conf: CoreConfig) extends Module {
   fq.io.deq1.ready := idu1.io.in.ready
 
   // ---------- WBU winner selection + ROB writeback ----------
-  val wb_cand_valid = VecInit(Seq(alu_wb_valid, lsu_wb_valid, alu1_wb_valid, div_wb_valid))
+  // Stores carry completion metadata but no PRF value.  Keep them off the two
+  // data CDBs and complete them through a private ROB/SQ sideband below.
+  val lsu_data_wb_valid = lsu_wb_valid && lsu_is_load
+  val wb_cand_valid = VecInit(Seq(alu_wb_valid, lsu_data_wb_valid, alu1_wb_valid, div_wb_valid, bru_wb_valid))
   val wb_cand_mask = wb_cand_valid.asUInt
   val wb_cand_count = PopCount(wb_cand_mask)
   val wb_conflict = wb_cand_count > OoOParams.CDB_NUM.U
-  val wbArb = Module(new WritebackArbiter(inputCount = 4, outputCount = OoOParams.CDB_NUM))
+  val wbArb = Module(new WritebackArbiter(inputCount = 5, outputCount = OoOParams.CDB_NUM))
   wbArb.io.robHead := rob.io.head
   wbArb.io.in(0).valid := alu_wb_valid
   wbArb.io.in(0).bits := alu_wb
-  wbArb.io.in(1).valid := lsu_wb_valid
+  wbArb.io.in(1).valid := lsu_data_wb_valid
   wbArb.io.in(1).bits := lsu_wb
   wbArb.io.in(2).valid := alu1_wb_valid
   wbArb.io.in(2).bits := alu1_wb
   wbArb.io.in(3).valid := div_wb_valid
   wbArb.io.in(3).bits := div_wb
+  wbArb.io.in(4).valid := bru_wb_valid
+  wbArb.io.in(4).bits := bru_wb
   wbArb.io.out(0).ready := true.B
   wbArb.io.out(1).ready := true.B
   val wb_fixed_first = PriorityEncoder(wb_cand_mask)
@@ -845,13 +907,15 @@ class Core(val conf: CoreConfig) extends Module {
   wbu1.io.in.valid := wbArb.io.out(1).valid
   wbu1.io.in.bits  := wbArb.io.out(1).bits
   wbu1.io.is_flush := false.B
-  exu.io.out.ready := Mux(alu_ctrl_no_dest, true.B, wbArb.io.in(0).ready)
-  lsu.io.out.ready := wbArb.io.in(1).ready
+  exu.io.out.ready := wbArb.io.in(0).ready
+  lsu.io.out.ready := Mux(lsu_is_load, wbArb.io.in(1).ready, true.B)
   exu_alu1.io.out.ready := wbArb.io.in(2).ready
   exu_div.io.out.ready := wbArb.io.in(3).ready
+  exu_bru.io.out.ready := Mux(bru_ctrl_no_dest, true.B, wbArb.io.in(4).ready)
   exu.io.pc.ready := true.B
   exu_alu1.io.pc.ready := true.B
   exu_div.io.pc.ready := true.B
+  exu_bru.io.pc.ready := true.B
   exu_lsu.io.pc.ready := true.B
   lsu.io.is_flush := flush_lsu_stage
   mem_violation_w := lsu.io.mem_violation_valid
@@ -872,6 +936,7 @@ class Core(val conf: CoreConfig) extends Module {
   val head_e = rob.io.entries(rob.io.head)
   val wb_entry = rob.io.entries(wb_idx)
   val wb1_entry = rob.io.entries(wb1_idx)
+  val store_entry = rob.io.entries(lsu_wb.rob_idx)
   val wb_matches_entry = wb_entry.valid &&
     (wb_entry.pc === wbu.io.in.bits.pc) &&
     (wb_entry.arch_rd === wbu.io.in.bits.waddr) &&
@@ -880,13 +945,21 @@ class Core(val conf: CoreConfig) extends Module {
     (wb1_entry.pc === wbu1.io.in.bits.pc) &&
     (wb1_entry.arch_rd === wbu1.io.in.bits.waddr) &&
     (wb1_entry.new_phys === wbu1.io.in.bits.pdest)
+  val store_result_valid = lsu_wb_valid && !lsu_is_load
+  val store_matches_entry = store_entry.valid && store_entry.mem_valid && store_entry.mem_write &&
+    (store_entry.pc === lsu_wb.pc) &&
+    (store_entry.arch_rd === lsu_wb.waddr) &&
+    (store_entry.new_phys === lsu_wb.pdest)
+  val store_direct_raw = store_result_valid && store_matches_entry
   val head_wb0_raw = wb_fire && wb_matches_entry && (wb_idx === rob.io.head)
   val head_wb1_raw = wb1_fire && wb1_matches_entry && (wb1_idx === rob.io.head)
   val head_wb_raw_valid = head_wb0_raw || head_wb1_raw
   val head_wb_raw_bits = Wire(new LSU_WBU_IO)
   head_wb_raw_bits := Mux(head_wb0_raw, wbu.io.in.bits, wbu1.io.in.bits)
+  val head_store_raw = store_direct_raw && (lsu_wb.rob_idx === rob.io.head)
   val head_is_exc = head_e.valid && Mux(head_e.done, head_e.state.state,
-    head_wb_raw_valid && head_wb_raw_bits.state.state)
+    (head_wb_raw_valid && head_wb_raw_bits.state.state) ||
+      (head_store_raw && lsu_wb.state.state))
   def wbKilled(idx: UInt): Bool = {
     val youngerMis = mis_predict_w &&
       (robAge(idx, rob.io.head) > robAge(mis_rob_w, rob.io.head))
@@ -903,6 +976,11 @@ class Core(val conf: CoreConfig) extends Module {
     !wbKilled(wb_idx)
   can_wb1  := wb1_fire && wb1_matches_entry && !wb1_entry.done &&
     !(can_wb && (wb1_idx === wb_idx)) && !wbKilled(wb1_idx)
+  val store_direct_fire = store_direct_raw && !store_entry.done &&
+    !wbKilled(lsu_wb.rob_idx)
+
+  rs.io.free_store_fire := store_direct_fire
+  rs.io.free_store_idx := lsu_wb.rob_idx
 
   val wbRejectFlags = RegInit(VecInit(Seq.fill(OoOParams.ROB_SIZE)(0.U(4.W))))
   when(rob.io.enq_fire) {
@@ -977,10 +1055,15 @@ class Core(val conf: CoreConfig) extends Module {
   rob.io.wb1_actual_taken := wbu1.io.in.bits.br_taken
   rob.io.wb1_actual_target := wbu1.io.in.bits.next_pc
   rob.io.ctrl_wb_fire := ctrl_direct_fire
-  rob.io.ctrl_wb_idx := d_alu_bits.rob_idx
-  rob.io.ctrl_wb_state := alu_wb.state
-  rob.io.ctrl_wb_actual_taken := alu_wb.br_taken
-  rob.io.ctrl_wb_actual_target := alu_wb.next_pc
+  rob.io.ctrl_wb_idx := d_bru_bits.rob_idx
+  rob.io.ctrl_wb_state := bru_wb.state
+  rob.io.ctrl_wb_actual_taken := bru_wb.br_taken
+  rob.io.ctrl_wb_actual_target := bru_wb.next_pc
+  rob.io.store_wb_fire := store_direct_fire
+  rob.io.store_wb_idx := lsu_wb.rob_idx
+  rob.io.store_wb_state := lsu_wb.state
+  rob.io.store_wb_mem_addr := lsu_wb.alu_result
+  rob.io.store_wb_mem_wdata := lsu_wb.store_data
 
   val cm_bits = rob.io.commit_bits
   val cm1_bits = rob.io.commit1_bits
@@ -990,8 +1073,10 @@ class Core(val conf: CoreConfig) extends Module {
   val cm1_wb_bits = Wire(new LSU_WBU_IO)
   cm1_wb_bits := Mux(cm1_wb0, wbu.io.in.bits, wbu1.io.in.bits)
   val cm1_wb_val = Mux(cm1_wb0, wb_val, wb1_val)
-  val head_ctrl_wb = ctrl_direct_fire && (d_alu_bits.rob_idx === rob.io.head)
-  val cm1_ctrl_wb = ctrl_direct_fire && (d_alu_bits.rob_idx === rob.io.commit1_idx)
+  val head_ctrl_wb = ctrl_direct_fire && (d_bru_bits.rob_idx === rob.io.head)
+  val cm1_ctrl_wb = ctrl_direct_fire && (d_bru_bits.rob_idx === rob.io.commit1_idx)
+  val head_store_wb = store_direct_fire && (lsu_wb.rob_idx === rob.io.head)
+  val cm1_store_wb = store_direct_fire && (lsu_wb.rob_idx === rob.io.commit1_idx)
 
   def isPmem(addr: UInt): Bool =
     (addr - "h8000_0000".U(32.W)) < "h0800_0000".U(32.W)
@@ -1006,27 +1091,31 @@ class Core(val conf: CoreConfig) extends Module {
   val cm_is_load = cm_bits.mem_valid && !cm_bits.mem_write
   val cm_is_fencei = cm_bits.is_fencei
   val cm_is_mret = cm_bits.jump === JUMP_MERT
-  val cm_state = Mux(head_ctrl_wb, alu_wb.state,
-    Mux(head_wb_valid, head_wb_bits.state, cm_bits.state))
+  val cm_state = Mux(head_ctrl_wb, bru_wb.state,
+    Mux(head_store_wb, lsu_wb.state,
+      Mux(head_wb_valid, head_wb_bits.state, cm_bits.state)))
   val cm_needs_store_drain = cm_bits.is_ebreak || cm_is_mret || cm_state.state
   val cm_is_ctrl = cm_bits.jump =/= JUMP_NONE
   val cm1_is_store = cm1_bits.mem_valid && cm1_bits.mem_write
   val cm1_is_load = cm1_bits.mem_valid && !cm1_bits.mem_write
   val cm1_is_fencei = cm1_bits.is_fencei
   val cm1_is_mret = cm1_bits.jump === JUMP_MERT
-  val cm1_state = Mux(cm1_ctrl_wb, alu_wb.state,
-    Mux(cm1_wb_valid, cm1_wb_bits.state, cm1_bits.state))
+  val cm1_state = Mux(cm1_ctrl_wb, bru_wb.state,
+    Mux(cm1_store_wb, lsu_wb.state,
+      Mux(cm1_wb_valid, cm1_wb_bits.state, cm1_bits.state)))
   val cm1_is_ctrl = cm1_bits.jump =/= JUMP_NONE
   val cm1_is_ctrl_not_mret = cm1_is_ctrl && !cm1_is_mret
-  val cm_mem_addr = Mux(head_wb_valid, head_wb_bits.alu_result, cm_bits.mem_addr)
-  val cm1_mem_addr = Mux(cm1_wb_valid, cm1_wb_bits.alu_result, cm1_bits.mem_addr)
-  val cm_actual_taken = Mux(head_ctrl_wb, alu_wb.br_taken,
+  val cm_mem_addr = Mux(head_store_wb, lsu_wb.alu_result,
+    Mux(head_wb_valid, head_wb_bits.alu_result, cm_bits.mem_addr))
+  val cm1_mem_addr = Mux(cm1_store_wb, lsu_wb.alu_result,
+    Mux(cm1_wb_valid, cm1_wb_bits.alu_result, cm1_bits.mem_addr))
+  val cm_actual_taken = Mux(head_ctrl_wb, bru_wb.br_taken,
     Mux(head_wb_valid, head_wb_bits.br_taken, cm_bits.actual_taken))
-  val cm_actual_target = Mux(head_ctrl_wb, alu_wb.next_pc,
+  val cm_actual_target = Mux(head_ctrl_wb, bru_wb.next_pc,
     Mux(head_wb_valid, head_wb_bits.next_pc, cm_bits.actual_target))
-  val cm1_actual_taken = Mux(cm1_ctrl_wb, alu_wb.br_taken,
+  val cm1_actual_taken = Mux(cm1_ctrl_wb, bru_wb.br_taken,
     Mux(cm1_wb_valid, cm1_wb_bits.br_taken, cm1_bits.actual_taken))
-  val cm1_actual_target = Mux(cm1_ctrl_wb, alu_wb.next_pc,
+  val cm1_actual_target = Mux(cm1_ctrl_wb, bru_wb.next_pc,
     Mux(cm1_wb_valid, cm1_wb_bits.next_pc, cm1_bits.actual_target))
   val cm_mmio_mem = cm_bits.mem_valid && !isPmem(cm_mem_addr)
   val cm1_mmio_mem = cm1_bits.mem_valid && !isPmem(cm1_mem_addr)
@@ -1043,7 +1132,8 @@ class Core(val conf: CoreConfig) extends Module {
   val pair_bpu_ready = ifu.io.bpu_update_free >= pair_bpu_count
   val pair_store_count = PopCount(Seq(cm_is_store && !cm_mmio_mem,
     cm1_is_store && !cm1_mmio_mem))
-  val cm1_store_addr_ready = cm1_bits.addr_ready || (cm1_wb_valid && cm1_is_store)
+  val cm1_store_addr_ready = cm1_bits.addr_ready || cm1_store_wb ||
+    (cm1_wb_valid && cm1_is_store)
   val pair_store_ready = (stbuf.io.free >= pair_store_count) &&
     (!cm1_is_store || cm1_store_addr_ready)
   val cm_arch_next_pc = Mux(cm_actual_taken, cm_actual_target, cm_bits.pc + 4.U)
@@ -1083,20 +1173,16 @@ class Core(val conf: CoreConfig) extends Module {
   val cm1_block_bp = cm1_slot_blocked && !cm_exclusive && !cm1_exclusive &&
     (bp_commit1_block || !pair_bpu_ready)
 
-  val wb_store = can_wb && rob.io.entries(wb_idx).valid &&
-    rob.io.entries(wb_idx).mem_valid && rob.io.entries(wb_idx).mem_write
-  val wb1_store = can_wb1 && rob.io.entries(wb1_idx).valid &&
-    rob.io.entries(wb1_idx).mem_valid && rob.io.entries(wb1_idx).mem_write
-  sq.io.wb_valid := wb_store
-  sq.io.wb_rob  := wb_idx
-  sq.io.wb_addr := wbu.io.in.bits.alu_result
-  sq.io.wb_data := wbu.io.in.bits.store_data
-  sq.io.wb_mask := rob.io.entries(wb_idx).mem_wmask(3, 0)
-  sq.io.wb1_valid := wb1_store
-  sq.io.wb1_rob  := wb1_idx
-  sq.io.wb1_addr := wbu1.io.in.bits.alu_result
-  sq.io.wb1_data := wbu1.io.in.bits.store_data
-  sq.io.wb1_mask := rob.io.entries(wb1_idx).mem_wmask(3, 0)
+  sq.io.wb_valid := store_direct_fire
+  sq.io.wb_rob  := lsu_wb.rob_idx
+  sq.io.wb_addr := lsu_wb.alu_result
+  sq.io.wb_data := lsu_wb.store_data
+  sq.io.wb_mask := store_entry.mem_wmask(3, 0)
+  sq.io.wb1_valid := false.B
+  sq.io.wb1_rob  := 0.U
+  sq.io.wb1_addr := 0.U
+  sq.io.wb1_data := 0.U
+  sq.io.wb1_mask := 0.U
   sq.io.commit_valid := cm_fire && cm_is_store
   sq.io.commit_rob   := rob.io.head
   sq.io.commit1_valid := cm1_fire && cm1_is_store
@@ -1105,14 +1191,14 @@ class Core(val conf: CoreConfig) extends Module {
   lsu.io.commit0_rob := rob.io.head
   lsu.io.commit1_valid := cm1_fire && cm1_is_load
   lsu.io.commit1_rob := rob.io.commit1_idx
-  val lq_store_resolve0_valid = RegNext(wb_store, false.B)
-  val lq_store_resolve0_rob = RegEnable(wb_idx, 0.U, wb_store)
-  val lq_store_resolve0_addr = RegEnable(wbu.io.in.bits.alu_result, 0.U, wb_store)
-  val lq_store_resolve0_mask = RegEnable(rob.io.entries(wb_idx).mem_wmask(3, 0), 0.U, wb_store)
-  val lq_store_resolve1_valid = RegNext(wb1_store, false.B)
-  val lq_store_resolve1_rob = RegEnable(wb1_idx, 0.U, wb1_store)
-  val lq_store_resolve1_addr = RegEnable(wbu1.io.in.bits.alu_result, 0.U, wb1_store)
-  val lq_store_resolve1_mask = RegEnable(rob.io.entries(wb1_idx).mem_wmask(3, 0), 0.U, wb1_store)
+  val lq_store_resolve0_valid = RegNext(store_direct_fire, false.B)
+  val lq_store_resolve0_rob = RegEnable(lsu_wb.rob_idx, 0.U, store_direct_fire)
+  val lq_store_resolve0_addr = RegEnable(lsu_wb.alu_result, 0.U, store_direct_fire)
+  val lq_store_resolve0_mask = RegEnable(store_entry.mem_wmask(3, 0), 0.U, store_direct_fire)
+  val lq_store_resolve1_valid = false.B
+  val lq_store_resolve1_rob = 0.U(OoOParams.ROB_PTR_W.W)
+  val lq_store_resolve1_addr = 0.U(32.W)
+  val lq_store_resolve1_mask = 0.U(4.W)
   lsu.io.store_resolve0_valid := lq_store_resolve0_valid
   lsu.io.store_resolve0_rob := lq_store_resolve0_rob
   lsu.io.store_resolve0_addr := lq_store_resolve0_addr
@@ -1148,6 +1234,7 @@ class Core(val conf: CoreConfig) extends Module {
     val wakeIssueCount = PopCount(Seq(
       take_alu_issue && cdbWakes(rs.io.issue_alu_bits),
       take_alu1_issue && cdbWakes(rs.io.issue_alu1_bits),
+      take_bru_issue && cdbWakes(brq.io.issue.bits),
       take_div_issue && cdbWakes(rs.io.issue_div_bits),
       take_lsu_issue && cdbWakes(rs.io.issue_lsu_bits)))
     PM(conf, clock, EVENT_RS_CDB_WAKE_ISSUE, wakeIssueCount, wakeIssueCount =/= 0.U)
@@ -1158,6 +1245,22 @@ class Core(val conf: CoreConfig) extends Module {
     PM(conf, clock, EVENT_DISPATCH_SLOT1_BACKEND_BLOCK, 1.U, lane1BackendBlocked)
     PM(conf, clock, EVENT_WB_AGE_REORDER, 1.U, wb_age_reorder)
     PM(conf, clock, EVENT_COMMIT_HEAD_WAIT, 1.U, head_e.valid && !rob.io.commit_valid)
+    val headWait = head_e.valid && !rob.io.commit_valid
+    val headWaitLoad = headWait && head_e.mem_valid && !head_e.mem_write
+    val headWaitStore = headWait && head_e.mem_valid && head_e.mem_write
+    val headWaitCtrl = headWait && !head_e.mem_valid && head_e.jump =/= JUMP_NONE
+    val headWaitAlu = headWait && !head_e.mem_valid && head_e.jump === JUMP_NONE &&
+      !head_e.csr_write && !head_e.is_fencei && !head_e.is_ebreak && !head_e.state.state
+    val headWaitOther = headWait && !(headWaitLoad || headWaitStore || headWaitCtrl || headWaitAlu)
+    PM(conf, clock, EVENT_HEAD_WAIT_ALU, 1.U, headWaitAlu)
+    PM(conf, clock, EVENT_HEAD_WAIT_LOAD, 1.U, headWaitLoad)
+    PM(conf, clock, EVENT_HEAD_WAIT_STORE, 1.U, headWaitStore)
+    PM(conf, clock, EVENT_HEAD_WAIT_CTRL, 1.U, headWaitCtrl)
+    PM(conf, clock, EVENT_HEAD_WAIT_OTHER, 1.U, headWaitOther)
+    PMPC(conf, clock, PC_EVENT_HEAD_WAIT, head_e.pc, headWait)
+    val branchIssue = take_bru_issue
+    PM(conf, clock, EVENT_BRANCH_ISSUE, 1.U, branchIssue)
+    PM(conf, clock, EVENT_BRANCH_READY_WAIT, 1.U, brq.io.issue.valid && !branchIssue)
     PM(conf, clock, EVENT_COMMIT_WAIT_STORE, 1.U, rob.io.commit_valid && cm_is_store && !store_commit_ready)
     PM(conf, clock, EVENT_COMMIT_WAIT_FENCE, 1.U, rob.io.commit_valid && cm_is_fencei && !fencei_commit_ready)
     PM(conf, clock, EVENT_COMMIT_WAIT_BP, 1.U, rob.io.commit_valid && bp_commit_block)
@@ -1185,6 +1288,7 @@ class Core(val conf: CoreConfig) extends Module {
     PM(conf, clock, EVENT_FQ_SPACE_ONE, 1.U,
       ifu.io.out.valid && ifu.io.out.bits.valid(0) && fq.io.space === 1.U)
     PM(conf, clock, EVENT_CONTROL_DIRECT_COMPLETE, 1.U, ctrl_direct_fire)
+    PM(conf, clock, EVENT_STORE_DIRECT_COMPLETE, 1.U, store_direct_fire)
   }
 
   rename.io.commit_fire := cm_fire
@@ -1240,55 +1344,56 @@ class Core(val conf: CoreConfig) extends Module {
   idu.io.state := state_reg
   idu1.io.state := state_reg
 
-  // mispred 检测：用 d_reg 内容 + EX 组合 pc_src，不依赖 flush_d / in.valid（断环）
-  val pc_src = exu.io.pc.bits.pc_src
-  val correct_pc = MuxLookup(pc_src, exu.io.pc.bits.pc4)(Seq(
-    PC_PLUS4 -> exu.io.pc.bits.pc4,
-    PC_IMM   -> exu.io.pc.bits.pc4_imm,
-    PC_RS2   -> exu.io.pc.bits.pc4_rs2,
+  // Mispredict detection is owned by the independent BRU path.
+  val pc_src = exu_bru.io.pc.bits.pc_src
+  val correct_pc = MuxLookup(pc_src, exu_bru.io.pc.bits.pc4)(Seq(
+    PC_PLUS4 -> exu_bru.io.pc.bits.pc4,
+    PC_IMM   -> exu_bru.io.pc.bits.pc4_imm,
+    PC_RS2   -> exu_bru.io.pc.bits.pc4_rs2,
     MEPC     -> csr.io.read.mepc
   ))
   // 直接根据 EXU 当前结果判定 mispred；避免等 leave 一拍后再冲刷年轻指令
-  val br_done = d_alu_valid && (d_alu_bits.signals.exu.jump =/= JUMP_NONE) &&
-    (d_alu_bits.signals.exu.jump =/= JUMP_MERT)
-  val br_resolve = br_done && !d_alu_ctrl_resolved
-  when(br_resolve && !alu_leave && !flush_alu) {
-    d_alu_ctrl_resolved := true.B
+  val br_done = d_bru_valid
+  val br_resolve = br_done && !d_bru_ctrl_resolved
+  when(br_resolve && !bru_leave && !flush_bru) {
+    d_bru_ctrl_resolved := true.B
   }
   val is_ch    = br_done && (pc_src =/= PC_PLUS4)
-  val predict_taken = d_alu_bits.bp_taken
-  val target_mispredict = is_ch && predict_taken && (d_alu_bits.bp_target =/= correct_pc)
+  val predict_taken = d_bru_bits.bp_taken
+  val target_mispredict = is_ch && predict_taken && (d_bru_bits.bp_target =/= correct_pc)
   val mis_predict = br_resolve && ((is_ch =/= predict_taken) || target_mispredict)
   val mis_predict_dbg = Wire(Bool())
   mis_predict_dbg := mis_predict
   dontTouch(mis_predict_dbg)
   val mis_predict_r = RegNext(mis_predict, false.B)
-  val mis_rob_r     = RegEnable(d_alu_bits.rob_idx, 0.U, mis_predict)
-  val mis_cp_r      = RegEnable(d_alu_bits.cp_idx, 0.U, mis_predict)
+  val mis_rob_r     = RegEnable(d_bru_bits.rob_idx, 0.U, mis_predict)
+  val mis_cp_r      = RegEnable(d_bru_bits.cp_idx, 0.U, mis_predict)
   val correct_pc_r  = RegNext(correct_pc, 0.U)
   val mis_next_rob_r = Mux(mis_rob_r === (OoOParams.ROB_SIZE - 1).U, 0.U, mis_rob_r + 1.U)
   mis_predict_w := mis_predict
-  mis_rob_w     := d_alu_bits.rob_idx
+  mis_rob_w     := d_bru_bits.rob_idx
 
   val branchRecoveryWins = mis_predict_dbg &&
-    (!mem_violation_w || (robAge(d_alu_bits.rob_idx, rob.io.head) < robAge(mem_violation_rob_w, rob.io.head)))
+    (!mem_violation_w || (robAge(d_bru_bits.rob_idx, rob.io.head) < robAge(mem_violation_rob_w, rob.io.head)))
   val memoryRecoveryWins = mem_violation_w &&
-    (!mis_predict_dbg || (robAge(mem_violation_rob_w, rob.io.head) <= robAge(d_alu_bits.rob_idx, rob.io.head)))
+    (!mis_predict_dbg || (robAge(mem_violation_rob_w, rob.io.head) <= robAge(d_bru_bits.rob_idx, rob.io.head)))
   is_bp_flush := branchRecoveryWins
   is_mem_flush := memoryRecoveryWins
-  val recoverJump = d_alu_bits.signals.exu.jump
+  val recoverJump = d_bru_bits.signals.exu.jump
   val recoverIsBranch = recoverJump === JUMP_BEQ || recoverJump === JUMP_BNE ||
     recoverJump === JUMP_BLT || recoverJump === JUMP_BGE ||
     recoverJump === JUMP_BLTU || recoverJump === JUMP_BGEU
-  val recoverRdRa = d_alu_bits.inst(11, 7) === 1.U
-  val recoverRs1Ra = d_alu_bits.inst(19, 15) === 1.U
+  val recoverRdRa = d_bru_bits.inst(11, 7) === 1.U
+  val recoverRs1Ra = d_bru_bits.inst(19, 15) === 1.U
   ifu.io.bp_recover_valid := is_bp_flush
-  ifu.io.bp_recover_ftq_idx := d_alu_bits.ftq_idx
-  ifu.io.bp_recover_ftq_generation := d_alu_bits.ftq_generation
-  ifu.io.bp_recover_pc := d_alu_bits.pc
-  ifu.io.bp_recover_index := d_alu_bits.bp_index
+  ifu.io.bp_recover_ftq_idx := d_bru_bits.ftq_idx
+  ifu.io.bp_recover_ftq_generation := d_bru_bits.ftq_generation
+  ifu.io.bp_recover_pc := d_bru_bits.pc
+  ifu.io.bp_recover_index := d_bru_bits.bp_index
+  ifu.io.bp_recover_target := correct_pc
   ifu.io.bp_recover_taken := is_ch
   ifu.io.bp_recover_is_branch := recoverIsBranch
+  ifu.io.bp_recover_is_jalr := recoverJump === JUMP_JALR
   ifu.io.bp_recover_is_call := recoverRdRa &&
     ((recoverJump === JUMP_JAL) || (recoverJump === JUMP_JALR && !recoverRs1Ra))
   ifu.io.bp_recover_is_ret := (recoverJump === JUMP_JALR) && recoverRs1Ra
@@ -1312,8 +1417,7 @@ class Core(val conf: CoreConfig) extends Module {
     (!cm_is_store || store_commit_ready) &&
     (!cm_is_fencei || fencei_commit_ready) &&
     (!cm_needs_store_drain || store_side_empty)
-  val head_is_exc_gap = head_e.valid && Mux(head_e.done, head_e.state.state,
-    head_wb_raw_valid && head_wb_raw_bits.state.state)
+  val head_is_exc_gap = head_e.valid && cm_state.state
   val commit_gap = !head_would_cm && !head_is_exc_gap &&
     !mis_predict && !mis_predict_r && !mem_violation_w && !fencei_flush && !mret_flush && !cm_writing_gap &&
     !irq_commit_r && !ext_irq_flush
@@ -1347,7 +1451,7 @@ class Core(val conf: CoreConfig) extends Module {
   val mem_violation_keep_idx = (mem_violation_rob_w - 1.U)(OoOParams.ROB_PTR_W - 1, 0)
   flush_idx := Mux(is_irq, irq_rob_r,
     Mux(is_mem_flush, mem_violation_keep_idx,
-      Mux(is_bp_flush, d_alu_bits.rob_idx, mis_rob_r)))
+      Mux(is_bp_flush, d_bru_bits.rob_idx, mis_rob_r)))
 
   ifu.io.is_flush := is_irq || fencei_flush || mret_flush || is_bp_flush || is_mem_flush
   idu.io.is_flush := is_irq || fencei_flush || mret_flush || is_bp_flush || is_mem_flush || mis_predict ||
@@ -1363,6 +1467,9 @@ class Core(val conf: CoreConfig) extends Module {
   rs.io.flush      := flush_now && !fencei_flush && !mret_flush
   rs.io.flush_idx  := flush_idx
   rs.io.flush_all  := is_irq || fencei_flush || mret_flush
+  brq.io.flush := flush_now && !fencei_flush && !mret_flush
+  brq.io.flushIdx := flush_idx
+  brq.io.flushAll := is_irq || fencei_flush || mret_flush
   sq.io.flush      := selective_flush
   sq.io.flush_idx  := flush_idx
   sq.io.flush_all  := is_irq || fencei_flush || mret_flush
@@ -1424,7 +1531,7 @@ class Core(val conf: CoreConfig) extends Module {
   rename.io.rebuild_rat  := rb_rat
   rename.io.rebuild_free := rb_free
   rename.io.restore_cp   := is_bp_flush
-  rename.io.restore_cp_idx := Mux(is_bp_flush, d_alu_bits.cp_idx, mis_cp_r)
+  rename.io.restore_cp_idx := Mux(is_bp_flush, d_bru_bits.cp_idx, mis_cp_r)
   rename.io.restore_arch  := false.B
   rename.io.restore_rob_idx := mis_rob_r
 
@@ -1502,12 +1609,19 @@ class Core(val conf: CoreConfig) extends Module {
   ifu.io.bpu_update1_is_ret := cm1_is_jump && (cm1_jump === JUMP_JALR) && cm1_rs1_ra
 
   if (conf.statistics) {
-    PM(conf, clock, EVENT_BPU_PREDICT, 1.U, br_resolve && d_alu_bits.bp_valid)
-    PM(conf, clock, EVENT_BPU_MISPRED, 1.U, mis_predict && d_alu_bits.bp_valid)
+    PM(conf, clock, EVENT_BPU_PREDICT, 1.U, br_resolve && d_bru_bits.bp_valid)
+    PM(conf, clock, EVENT_BPU_MISPRED, 1.U, mis_predict && d_bru_bits.bp_valid)
     PM(conf, clock, EVENT_BP_FLUSH, 1.U, mis_predict)
-    PM(conf, clock, EVENT_BPU_DIR_MISPRED, 1.U, mis_predict && d_alu_bits.bp_valid && (is_ch =/= predict_taken))
-    PM(conf, clock, EVENT_BPU_TARGET_MISPRED, 1.U, mis_predict && d_alu_bits.bp_valid && target_mispredict)
-    PM(conf, clock, EVENT_BPU_UNPREDICTED, 1.U, mis_predict && !d_alu_bits.bp_valid)
+    PM(conf, clock, EVENT_BPU_DIR_MISPRED, 1.U, mis_predict && d_bru_bits.bp_valid && (is_ch =/= predict_taken))
+    PM(conf, clock, EVENT_BPU_TARGET_MISPRED, 1.U, mis_predict && d_bru_bits.bp_valid && target_mispredict)
+    PM(conf, clock, EVENT_BPU_UNPREDICTED, 1.U, mis_predict && !d_bru_bits.bp_valid)
+    PMPC(conf, clock, PC_EVENT_BP_FLUSH, d_bru_bits.pc, mis_predict)
+    PMPC(conf, clock, PC_EVENT_DIR_MISPRED, d_bru_bits.pc,
+      mis_predict && d_bru_bits.bp_valid && (is_ch =/= predict_taken))
+    PMPC(conf, clock, PC_EVENT_TARGET_MISPRED, d_bru_bits.pc,
+      mis_predict && d_bru_bits.bp_valid && target_mispredict)
+    PMPC(conf, clock, PC_EVENT_UNPREDICTED, d_bru_bits.pc,
+      mis_predict && !d_bru_bits.bp_valid)
   }
 
   ifu.io.imem <> icache.io.in
@@ -1530,13 +1644,17 @@ class Core(val conf: CoreConfig) extends Module {
   val cm_st_w_done  = RegInit(false.B)
 
   val head_wb_store = head_wb_valid && cm_bits.mem_valid && cm_bits.mem_write
-  val head_addr_rdy = cm_bits.addr_ready || head_wb_store
-  val head_st_addr  = Mux(head_wb_store, head_wb_bits.alu_result, cm_bits.mem_addr)
-  val head_st_data  = Mux(head_wb_store, head_wb_bits.store_data, cm_bits.mem_wdata)
+  val head_addr_rdy = cm_bits.addr_ready || head_store_wb || head_wb_store
+  val head_st_addr  = Mux(head_store_wb, lsu_wb.alu_result,
+    Mux(head_wb_store, head_wb_bits.alu_result, cm_bits.mem_addr))
+  val head_st_data  = Mux(head_store_wb, lsu_wb.store_data,
+    Mux(head_wb_store, head_wb_bits.store_data, cm_bits.mem_wdata))
   val cm1_wb_store = cm1_wb_valid && cm1_bits.mem_valid && cm1_bits.mem_write
   val cm1_addr_rdy = cm1_store_addr_ready
-  val cm1_st_addr = Mux(cm1_wb_store, cm1_wb_bits.alu_result, cm1_bits.mem_addr)
-  val cm1_st_data = Mux(cm1_wb_store, cm1_wb_bits.store_data, cm1_bits.mem_wdata)
+  val cm1_st_addr = Mux(cm1_store_wb, lsu_wb.alu_result,
+    Mux(cm1_wb_store, cm1_wb_bits.alu_result, cm1_bits.mem_addr))
+  val cm1_st_data = Mux(cm1_store_wb, lsu_wb.store_data,
+    Mux(cm1_wb_store, cm1_wb_bits.store_data, cm1_bits.mem_wdata))
   val cm1_st_mask4 = cm1_bits.mem_wmask(3, 0)
   val cm1_st_is_pmem = isPmem(cm1_st_addr)
   // Normal memory stores enter StoreBuffer at commit. MMIO stays direct and waits B.
@@ -1717,7 +1835,7 @@ class Core(val conf: CoreConfig) extends Module {
   io.commit_is_load  := cm_bits.reg_write_sel === MEM_SEL
   io.commit_valid1    := cm1_fire
   io.commit_pc1       := cm1_bits.pc
-  io.commit_mem_addr1 := Mux(cm1_wb_same, cm1_wb_bits.alu_result, cm1_bits.mem_addr)
+  io.commit_mem_addr1 := cm1_mem_addr
   io.commit_is_load1  := cm1_bits.reg_write_sel === MEM_SEL
   for (i <- 0 until 32) {
     io.arch_rdata(i) := Mux(i.U === 0.U, 0.U, arch_rf(i.U))

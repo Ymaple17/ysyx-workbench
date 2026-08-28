@@ -1,0 +1,10 @@
+point,role,ipc,cycles,commits,bp_flushes,target_misses,unpredicted_jalr,average_fetch_width,fq_full,head_wait,result
+stage11d,baseline,1.0117,516339,522374,17450,1402,3771,1.5436,7538,120998,retained_stage11
+stage12e_direct_lq,single_change,1.0740,486437,522454,16808,1402,3773,1.5969,3866,90676,retained
+stage12cde_flow_occ,combined_frontend_bru_lq,1.2073,432391,522012,17419,NA,NA,1.8352,20228,57455,retained_counter_split_invalid
+stage12e_store_direct,single_change,1.2080,432486,522454,17442,1402,3772,1.8343,20266,55035,provisional
+stage12d_brq_fresh,single_change,1.2092,431987,522364,17431,1403,3771,1.8339,20324,54165,retained
+stage12b_compact_predictor,combined_predictor,1.2218,427539,522364,16472,1376,3270,1.8293,21504,53036,retained
+stage12f_convergence,combined_convergence,1.3736,380267,522350,12913,361,643,1.8614,2582,27500,retained
+stage12f_final_run1,final_full,1.3736,380267,522350,12913,361,643,1.8614,2582,27500,final_pass
+stage12f_final_run2,final_same_binary_repeat,1.3736,380267,522350,12913,361,643,1.8614,2582,27500,final_pass

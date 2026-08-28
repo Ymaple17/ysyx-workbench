@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：分清 Load Queue、MSHR 与 replay 的职责，建立多条 load 在飞、精确内存依赖和错误路径回收的完整模型。
 - **最小实现**：先加入带 generation 的 LQ 和保守 store 依赖；再加入可重放的瞬时失败；最后选做“越过未知地址 store”与违例恢复。
-- **当前参考核**：**已实现并保留 4-entry LQ/replay**。`LSU_MLP_ENABLE=true`，AXI response ID 为 `generation + lqIdx`；阶段 11d 又加入新请求同拍 cache response 匹配。`LQ_SPECULATE_UNKNOWN_STORES=false`，因此默认不越过未知 older store。10l 的 IPC `0.4743` 仍是阶段快照。
+- **当前参考核**：**已实现并保留 4-entry LQ/replay**。`LSU_MLP_ENABLE=true`，AXI response ID 为 `generation + lqIdx`；阶段 12f 又加入 fresh scheduling、同拍 response/forward writeback 和 elastic address flow。`LQ_SPECULATE_UNKNOWN_STORES=false`，因此默认不越过未知 older store。10l 的 IPC `0.4743` 仍是阶段快照。
 - **后续扩展**：多 MSHR、同 line miss merge、选择性 replay、store-set 预测、总线多 outstanding。
 - **验收方式**：先证明 stale response、flush、转发和违例恢复正确，再看 outstanding load 数、replay 原因、hit-under-miss 和 IPC。
 

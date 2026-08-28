@@ -8,6 +8,15 @@ bind BPUUpdateQueue BPUUpdateQueue_Verification_Assert verification_assert (
   ._GEN_0 (_available_T_2),
   .clock  (clock)
 );
+bind FetchBuffer FetchBuffer_Verification_Assert verification_assert (
+  .reset        (reset),
+  .io_in_ready  (io_in_ready_0),
+  .io_in_valid  (io_in_valid),
+  ._GEN         (io_full_0),
+  .io_out_ready (io_out_ready),
+  .io_out_valid (io_out_valid_0),
+  .clock        (clock)
+);
 bind FTQ FTQ_Verification_Assert verification_assert (
   .reset            (reset),
   .entries_2_valid  (entries_2_valid),
@@ -80,7 +89,7 @@ bind LoadQueue LoadQueue_Verification_Assert verification_assert (
   .entries_3_meta_pc          (entries_3_meta_pc),
   .entries_3_valid            (entries_3_valid),
   .entries_3_meta_pdest       (entries_3_meta_pdest),
-  ._GEN                       (_GEN_9),
+  ._GEN                       (_freshSchedValid_T_1),
   .clock                      (clock)
 );
 bind StoreBuffer StoreBuffer_Verification_Assert verification_assert (
@@ -92,9 +101,11 @@ bind StoreBuffer StoreBuffer_Verification_Assert verification_assert (
 );
 bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (
   .reset                 (reset),
-  ._GEN                  ({grant1_3, grant1_2}),
-  ._GEN_0                ({grant1_1, grant1_0}),
-  ._GEN_1                ({grant0_3, grant0_2}),
+  ._GEN                  ({grant0_4, grant0_3}),
+  .grant0_2              (grant0_2),
+  ._GEN_0                ({grant1_4, grant1_3}),
+  .grant1_2              (grant1_2),
+  ._GEN_1                ({grant1_1, grant1_0}),
   ._GEN_2                ({grant0_1, grant0_0}),
   .io_out_0_valid        (|_io_out_0_valid_T),
   .io_out_1_valid        (|_io_out_1_valid_T),
@@ -105,10 +116,9 @@ bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (
 );
 bind Core Core_Verification_Assert verification_assert (
   .reset  (reset),
-  ._GEN   (lsu_io_is_flush),
-  ._GEN_0 (lsu_stage_push),
+  ._GEN   (lsu_addr_accept),
   .clock  (clock),
-  ._GEN_1 (~flush_lsu_d)
+  ._GEN_0 (~flush_lsu_d)
 );
 bind SRAM SRAM_Verification_Assert verification_assert (
   .reset         (reset),

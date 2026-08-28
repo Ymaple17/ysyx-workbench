@@ -336,6 +336,12 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.ctrl_wb_state.state_num.poke(0.U)
     dut.io.ctrl_wb_actual_taken.poke(false.B)
     dut.io.ctrl_wb_actual_target.poke(0.U)
+    dut.io.store_wb_fire.poke(false.B)
+    dut.io.store_wb_idx.poke(0.U)
+    dut.io.store_wb_state.state.poke(false.B)
+    dut.io.store_wb_state.state_num.poke(0.U)
+    dut.io.store_wb_mem_addr.poke(0.U)
+    dut.io.store_wb_mem_wdata.poke(0.U)
     // zero critical enq fields
     dut.io.enq_bits.valid.poke(false.B)
     dut.io.enq_bits.done.poke(false.B)
@@ -522,6 +528,30 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "retire a direct store completion with same-cycle address bypass" in {
+    simulate(new ROB()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleRob(dut)
+      dut.io.enq_fire.poke(true.B)
+      dut.io.enq_bits.pc.poke("h80000140".U)
+      dut.io.enq_bits.mem_valid.poke(true.B)
+      dut.io.enq_bits.mem_write.poke(true.B)
+      dut.io.enq_bits.mem_wmask.poke("b1111".U)
+      dut.clock.step()
+      idleRob(dut)
+
+      dut.io.store_wb_fire.poke(true.B)
+      dut.io.store_wb_idx.poke(0.U)
+      dut.io.store_wb_mem_addr.poke("h80001000".U)
+      dut.io.store_wb_mem_wdata.poke("h12345678".U)
+      dut.io.commit_valid.expect(true.B)
+      dut.io.commit_fire.poke(true.B)
+      dut.clock.step()
+      idleRob(dut)
+      dut.io.count.expect(0.U)
+    }
+  }
+
   it should "commit two completed entries in one cycle" in {
     simulate(new ROB()) { dut =>
       resetDut(dut.clock, dut.reset)
@@ -621,6 +651,8 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.free_rob1_idx.poke(0.U)
     dut.io.free_ctrl_fire.poke(false.B)
     dut.io.free_ctrl_idx.poke(0.U)
+    dut.io.free_store_fire.poke(false.B)
+    dut.io.free_store_idx.poke(0.U)
     dut.io.flush.poke(false.B)
     dut.io.flush_all.poke(false.B)
     dut.io.flush_idx.poke(0.U)
@@ -943,6 +975,28 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "free an issued store entry through the completion sideband" in {
+    simulate(new RS()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleRs(dut)
+      dut.io.enq_fire.poke(true.B)
+      dut.io.enq_bits.rob_idx.poke(9.U)
+      dut.io.enq_bits.lsu_mem_valid.poke(true.B)
+      dut.io.enq_bits.lsu_mem_write.poke(true.B)
+      dut.clock.step()
+      dut.io.enq_fire.poke(false.B)
+      dut.io.issue_lsu_fire.poke(true.B)
+      dut.clock.step()
+      dut.io.issue_lsu_fire.poke(false.B)
+      dut.io.count.expect(1.U)
+      dut.io.free_store_fire.poke(true.B)
+      dut.io.free_store_idx.poke(9.U)
+      dut.clock.step()
+      idleRs(dut)
+      dut.io.count.expect(0.U)
+    }
+  }
+
   it should "prefer oldest among multiple ready" in {
     simulate(new RS()) { dut =>
       resetDut(dut.clock, dut.reset)
@@ -1038,6 +1092,199 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.count.expect(1.U)
       dut.io.issue_valid.expect(true.B)
       dut.io.issue_bits.rob_idx.expect(0.U)
+    }
+  }
+
+  it should "accept a lane1-only enqueue into the final free slot" in {
+    simulate(new RS()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleRs(dut)
+      dut.io.enq_fire.poke(true.B)
+      for (i <- 0 until OoOParams.RS_SIZE - 1) {
+        dut.io.enq_bits.rob_idx.poke(i.U)
+        dut.io.enq_bits.pc.poke((0x80000000L + i * 4).U)
+        dut.clock.step()
+      }
+      dut.io.enq_fire.poke(false.B)
+      dut.io.count.expect((OoOParams.RS_SIZE - 1).U)
+      dut.io.enq1_fire.poke(true.B)
+      dut.io.enq1_bits.rob_idx.poke((OoOParams.RS_SIZE - 1).U)
+      dut.io.enq1_bits.pc.poke((0x80000000L + (OoOParams.RS_SIZE - 1) * 4).U)
+      dut.io.enq1_idx.expect((OoOParams.RS_SIZE - 1).U)
+      dut.clock.step()
+      dut.io.enq1_fire.poke(false.B)
+      dut.io.count.expect(OoOParams.RS_SIZE.U)
+    }
+  }
+
+  behavior of "BranchIssueQueue"
+
+  def idleBranchQueue(dut: BranchIssueQueue): Unit = {
+    dut.io.enq.valid.poke(false.B)
+    dut.io.issue.ready.poke(false.B)
+    dut.io.robHead.poke(0.U)
+    dut.io.cdb0Valid.poke(false.B)
+    dut.io.cdb0Pdest.poke(0.U)
+    dut.io.cdb0Value.poke(0.U)
+    dut.io.cdb1Valid.poke(false.B)
+    dut.io.cdb1Pdest.poke(0.U)
+    dut.io.cdb1Value.poke(0.U)
+    dut.io.free0Valid.poke(false.B)
+    dut.io.free0Rob.poke(0.U)
+    dut.io.free1Valid.poke(false.B)
+    dut.io.free1Rob.poke(0.U)
+    dut.io.freeDirectValid.poke(false.B)
+    dut.io.freeDirectRob.poke(0.U)
+    dut.io.flush.poke(false.B)
+    dut.io.flushIdx.poke(0.U)
+    dut.io.flushAll.poke(false.B)
+    dut.io.enq.bits.valid.poke(false.B)
+    dut.io.enq.bits.issued.poke(false.B)
+    dut.io.enq.bits.rob_idx.poke(0.U)
+    dut.io.enq.bits.cp_idx.poke(0.U)
+    dut.io.enq.bits.src1_ready.poke(true.B)
+    dut.io.enq.bits.src2_ready.poke(true.B)
+    dut.io.enq.bits.src1_phys.poke(0.U)
+    dut.io.enq.bits.src2_phys.poke(0.U)
+    dut.io.enq.bits.src1_val.poke(0.U)
+    dut.io.enq.bits.src2_val.poke(0.U)
+    dut.io.enq.bits.pdest.poke(0.U)
+    dut.io.enq.bits.old_phys.poke(0.U)
+    dut.io.enq.bits.do_rename.poke(false.B)
+    dut.io.enq.bits.pc.poke(0.U)
+    dut.io.enq.bits.inst.poke(0.U)
+    dut.io.enq.bits.imm_ext.poke(0.U)
+    dut.io.enq.bits.waddr.poke(0.U)
+    dut.io.enq.bits.is_ebreak.poke(false.B)
+    dut.io.enq.bits.is_fencei.poke(false.B)
+    dut.io.enq.bits.csr_rd1.poke(0.U)
+    dut.io.enq.bits.csr_waddr.poke(0.U)
+    dut.io.enq.bits.state.state.poke(false.B)
+    dut.io.enq.bits.state.state_num.poke(0.U)
+    dut.io.enq.bits.bp_valid.poke(false.B)
+    dut.io.enq.bits.bp_taken.poke(false.B)
+    dut.io.enq.bits.bp_target.poke(0.U)
+    dut.io.enq.bits.bp_index.poke(0.U)
+    dut.io.enq.bits.ftq_idx.poke(0.U)
+    dut.io.enq.bits.ftq_generation.poke(0.U)
+    dut.io.enq.bits.exu_alu_srcA.poke(0.U)
+    dut.io.enq.bits.exu_alu_srcB.poke(0.U)
+    dut.io.enq.bits.exu_alu_control.poke(0.U)
+    dut.io.enq.bits.exu_jump.poke(0.U)
+    dut.io.enq.bits.lsu_mem_wmask.poke(0.U)
+    dut.io.enq.bits.lsu_mem_rd.poke(0.U)
+    dut.io.enq.bits.lsu_mem_write.poke(false.B)
+    dut.io.enq.bits.lsu_mem_valid.poke(false.B)
+    dut.io.enq.bits.wbu_reg_write.poke(false.B)
+    dut.io.enq.bits.wbu_reg_write_sel.poke(0.U)
+    dut.io.enq.bits.wbu_csr_write.poke(false.B)
+    dut.io.enq.bits.wbu_csr_sel.poke(0.U)
+  }
+
+  it should "issue a younger ready branch while an older branch waits" in {
+    simulate(new BranchIssueQueue()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleBranchQueue(dut)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.rob_idx.poke(4.U)
+      dut.io.enq.bits.src1_ready.poke(false.B)
+      dut.io.enq.bits.src1_phys.poke(9.U)
+      dut.clock.step()
+      dut.io.enq.bits.rob_idx.poke(5.U)
+      dut.io.enq.bits.src1_ready.poke(true.B)
+      dut.io.enq.bits.src1_phys.poke(0.U)
+      dut.clock.step()
+      dut.io.enq.valid.poke(false.B)
+      dut.io.issue.valid.expect(true.B)
+      dut.io.issue.bits.rob_idx.expect(5.U)
+      dut.io.issue.ready.poke(true.B)
+      dut.clock.step()
+
+      dut.io.issue.ready.poke(false.B)
+      dut.io.cdb0Valid.poke(true.B)
+      dut.io.cdb0Pdest.poke(9.U)
+      dut.io.cdb0Value.poke("h12345678".U)
+      dut.io.issue.valid.expect(true.B)
+      dut.io.issue.bits.rob_idx.expect(4.U)
+      dut.io.issue.bits.src1_val.expect("h12345678".U)
+    }
+  }
+
+  it should "issue a fresh ready branch on its enqueue cycle" in {
+    simulate(new BranchIssueQueue()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleBranchQueue(dut)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.rob_idx.poke(3.U)
+      dut.io.enq.bits.pc.poke("h80000180".U)
+      dut.io.issue.ready.poke(true.B)
+      dut.io.enq.ready.expect(true.B)
+      dut.io.issue.valid.expect(true.B)
+      dut.io.issue.bits.rob_idx.expect(3.U)
+      dut.io.issue.bits.pc.expect("h80000180".U)
+      dut.clock.step()
+
+      idleBranchQueue(dut)
+      dut.io.count.expect(1.U)
+      dut.io.issue.valid.expect(false.B)
+      dut.io.freeDirectValid.poke(true.B)
+      dut.io.freeDirectRob.poke(3.U)
+      dut.clock.step()
+      idleBranchQueue(dut)
+      dut.io.count.expect(0.U)
+    }
+  }
+
+  it should "free completed entries and selectively flush younger branches" in {
+    simulate(new BranchIssueQueue()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleBranchQueue(dut)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.rob_idx.poke(6.U)
+      dut.clock.step()
+      dut.io.enq.bits.rob_idx.poke(7.U)
+      dut.clock.step()
+      dut.io.enq.valid.poke(false.B)
+      dut.io.count.expect(2.U)
+
+      dut.io.flush.poke(true.B)
+      dut.io.flushIdx.poke(6.U)
+      dut.io.freeDirectValid.poke(true.B)
+      dut.io.freeDirectRob.poke(6.U)
+      dut.clock.step()
+      dut.io.flush.poke(false.B)
+      idleBranchQueue(dut)
+      dut.io.count.expect(0.U)
+    }
+  }
+
+  it should "retain a CDB wakeup for an older branch during a younger flush" in {
+    simulate(new BranchIssueQueue()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleBranchQueue(dut)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.rob_idx.poke(4.U)
+      dut.io.enq.bits.src1_ready.poke(false.B)
+      dut.io.enq.bits.src1_phys.poke(9.U)
+      dut.clock.step()
+      dut.io.enq.bits.rob_idx.poke(7.U)
+      dut.io.enq.bits.src1_ready.poke(true.B)
+      dut.io.enq.bits.src1_phys.poke(0.U)
+      dut.clock.step()
+      idleBranchQueue(dut)
+
+      dut.io.flush.poke(true.B)
+      dut.io.flushIdx.poke(6.U)
+      dut.io.cdb0Valid.poke(true.B)
+      dut.io.cdb0Pdest.poke(9.U)
+      dut.io.cdb0Value.poke("h12345678".U)
+      dut.clock.step()
+
+      idleBranchQueue(dut)
+      dut.io.count.expect(1.U)
+      dut.io.issue.valid.expect(true.B)
+      dut.io.issue.bits.rob_idx.expect(4.U)
+      dut.io.issue.bits.src1_val.expect("h12345678".U)
     }
   }
 
@@ -1482,9 +1729,6 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.dmem.rdata.poke("haabbccdd".U)
       dut.io.dmem.rlast.poke(true.B)
       dut.io.dmem.rready.expect(true.B)
-      dut.clock.step()
-      idleLoadQueue(dut)
-      dut.io.wb.ready.poke(true.B)
       dut.io.wb.valid.expect(true.B)
       dut.io.wb.bits.rob_idx.expect(1.U)
       dut.io.wb.bits.mem_read.expect("haabbccdd".U)
@@ -1514,13 +1758,73 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.dmem.arvalid.expect(true.B)
       dut.io.dmem.arid.expect(0.U)
       dut.io.staleResp.expect(false.B)
+      dut.io.wb.valid.expect(true.B)
+      dut.io.wb.bits.rob_idx.expect(3.U)
+      dut.io.wb.bits.mem_read.expect("ha1b2c3d4".U)
+      dut.clock.step()
+      idleLoadQueue(dut)
+      dut.io.wb.ready.poke(true.B)
+      dut.io.wb.valid.expect(false.B)
+      dut.io.outstanding.expect(0.U)
+    }
+  }
+
+  it should "schedule a fresh allocation without an sWait bubble" in {
+    simulate(new LoadQueue(new core.CoreConfig(32))) { dut =>
+      idleLoadQueue(dut)
+      resetDut(dut.clock, dut.reset)
+      idleLoadQueue(dut)
+      allocLoad(dut, 5, BigInt("80000074", 16), BigInt("80001400", 16))
+      dut.io.wb.ready.poke(true.B)
+      dut.io.dmem.arready.poke(true.B)
+      dut.io.dmem.rvalid.poke(true.B)
+      dut.io.dmem.rid.poke(0.U)
+      dut.io.dmem.rdata.poke("h12345678".U)
+      dut.io.queryValid.expect(true.B)
+      dut.io.queryRob.expect(5.U)
+      dut.io.dmem.arvalid.expect(true.B)
+      dut.io.wb.valid.expect(true.B)
+      dut.io.wb.bits.rob_idx.expect(5.U)
+      dut.io.wb.bits.mem_read.expect("h12345678".U)
       dut.clock.step()
 
       idleLoadQueue(dut)
       dut.io.wb.ready.poke(true.B)
+      dut.io.wb.valid.expect(false.B)
+      dut.io.outstanding.expect(0.U)
+    }
+  }
+
+  it should "buffer a direct response when writeback is backpressured" in {
+    simulate(new LoadQueue(new core.CoreConfig(32))) { dut =>
+      idleLoadQueue(dut)
+      resetDut(dut.clock, dut.reset)
+      idleLoadQueue(dut)
+      allocLoad(dut, 4, BigInt("80000070", 16), BigInt("80001300", 16))
+      dut.clock.step()
+
+      idleLoadQueue(dut)
+      dut.io.dmem.arready.poke(true.B)
+      dut.io.dmem.rvalid.poke(true.B)
+      dut.io.dmem.rid.poke(0.U)
+      dut.io.dmem.rdata.poke("h55667788".U)
+      dut.io.wb.ready.poke(false.B)
       dut.io.wb.valid.expect(true.B)
-      dut.io.wb.bits.rob_idx.expect(3.U)
-      dut.io.wb.bits.mem_read.expect("ha1b2c3d4".U)
+      dut.io.wb.bits.rob_idx.expect(4.U)
+      dut.clock.step()
+
+      idleLoadQueue(dut)
+      dut.io.wb.ready.poke(false.B)
+      dut.io.wb.valid.expect(true.B)
+      dut.io.wb.bits.rob_idx.expect(4.U)
+      dut.io.wb.bits.mem_read.expect("h55667788".U)
+      dut.clock.step()
+      idleLoadQueue(dut)
+      dut.io.wb.ready.poke(true.B)
+      dut.io.wb.valid.expect(true.B)
+      dut.clock.step()
+      idleLoadQueue(dut)
+      dut.io.wb.valid.expect(false.B)
     }
   }
 
@@ -2526,6 +2830,7 @@ class OoOUnitTest extends AnyFlatSpec {
     }
     dut.io.out.ready.poke(false.B)
     dut.io.flush.poke(false.B)
+    dut.io.replaceReady.poke(false.B)
   }
 
   it should "hold a fetch packet stable under backpressure" in {
@@ -2545,6 +2850,24 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.out.ready.poke(true.B)
       dut.clock.step()
       dut.io.empty.expect(true.B)
+    }
+  }
+
+  it should "flow an empty-buffer packet directly to a ready consumer" in {
+    simulate(new FetchBuffer()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleFetchBuffer(dut)
+      dut.io.out.ready.poke(true.B)
+      dut.io.in.valid.poke(true.B)
+      dut.io.in.bits.valid(0).poke(true.B)
+      dut.io.in.bits.bits(0).pc.poke("h80000040".U)
+      dut.io.in.ready.expect(true.B)
+      dut.io.out.valid.expect(true.B)
+      dut.io.out.bits.bits(0).pc.expect("h80000040".U)
+      dut.clock.step()
+      idleFetchBuffer(dut)
+      dut.io.empty.expect(true.B)
+      dut.io.count.expect(0.U)
     }
   }
 
@@ -2568,6 +2891,28 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "replace a full buffer using registered downstream credit" in {
+    simulate(new FetchBuffer(n = 2)) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleFetchBuffer(dut)
+      for (pc <- Seq(BigInt("80000000", 16), BigInt("80000008", 16))) {
+        dut.io.in.valid.poke(true.B)
+        dut.io.in.bits.valid(0).poke(true.B)
+        dut.io.in.bits.bits(0).pc.poke(pc.U)
+        dut.clock.step()
+      }
+      dut.io.full.expect(true.B)
+      dut.io.in.bits.bits(0).pc.poke("h80000010".U)
+      dut.io.out.ready.poke(true.B)
+      dut.io.replaceReady.poke(true.B)
+      dut.io.in.ready.expect(true.B)
+      dut.io.out.bits.bits(0).pc.expect("h80000000".U)
+      dut.clock.step()
+      dut.io.count.expect(2.U)
+      dut.io.out.bits.bits(0).pc.expect("h80000008".U)
+    }
+  }
+
   behavior of "FTQ"
 
   def idleFtq(dut: FTQ): Unit = {
@@ -2577,6 +2922,7 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.alloc.bits.predictedNextPc.poke(0.U)
     dut.io.alloc.bits.cfiSlot.poke(2.U)
     dut.io.alloc.bits.ghr.poke(0.U)
+    dut.io.alloc.bits.pathHistory.poke(0.U)
     for (i <- 0 until common.BPU_Config.RAS_SIZE) {
       dut.io.alloc.bits.ras(i).poke(0.U)
     }
@@ -2853,6 +3199,39 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "use same-cycle dequeue credit for a full pop and push" in {
+    simulate(new FetchQueue()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleFq(dut)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.valid(0).poke(true.B)
+      dut.io.enq.bits.valid(1).poke(true.B)
+      for (i <- 0 until (OoOParams.FQ_SIZE / 2)) {
+        dut.io.enq.bits.bits(0).pc.poke((0x80000000L + i * 8).U)
+        dut.io.enq.bits.bits(1).pc.poke((0x80000004L + i * 8).U)
+        dut.clock.step()
+      }
+      dut.io.full.expect(true.B)
+      dut.io.enqSpace.expect(0.U)
+
+      dut.io.deq.ready.poke(true.B)
+      dut.io.deq1.ready.poke(true.B)
+      dut.io.enq.bits.bits(0).pc.poke("h80000100".U)
+      dut.io.enq.bits.bits(1).pc.poke("h80000104".U)
+      dut.io.enqSpace.expect(2.U)
+      dut.io.enq.ready.expect(true.B)
+      dut.clock.step()
+
+      dut.io.count.expect(OoOParams.FQ_SIZE.U)
+      dut.io.enq.valid.poke(false.B)
+      for (_ <- 0 until ((OoOParams.FQ_SIZE - 2) / 2)) {
+        dut.clock.step()
+      }
+      dut.io.deq.bits.pc.expect("h80000100".U)
+      dut.io.deq1.bits.pc.expect("h80000104".U)
+    }
+  }
+
   behavior of "BPUUpdateQueue"
 
   it should "serialize two same-cycle commit updates in lane order" in {
@@ -2913,8 +3292,10 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.recover_valid.poke(false.B)
     dut.io.recover_pc.poke(0.U)
     dut.io.recover_index.poke(0.U)
+    dut.io.recover_target.poke(0.U)
     dut.io.recover_taken.poke(false.B)
     dut.io.recover_is_branch.poke(false.B)
+    dut.io.recover_is_jalr.poke(false.B)
     dut.io.recover_is_call.poke(false.B)
     dut.io.recover_is_ret.poke(false.B)
     for (i <- 0 until common.BPU_Config.RAS_SIZE) {
@@ -3085,7 +3466,9 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.update_is_branch.poke(true.B)
       dut.io.update_taken.poke(false.B)
       dut.io.update_pc.poke("h80000004".U)
-      dut.io.update_index.poke(indexA.U)
+      // bp_index now carries raw fetch history; GHR=1 aliases PC+4 onto
+      // the same gshare base entry used by PC with GHR=0.
+      dut.io.update_index.poke(1.U)
       dut.clock.step()
 
       idleBpu(dut)
@@ -3099,6 +3482,76 @@ class OoOUnitTest extends AnyFlatSpec {
       idleBpu(dut)
       dut.io.predict_inst.poke(backwardBeq)
       dut.io.bp_bimodal_selected.expect(true.B)
+      dut.io.bp_taken.expect(true.B)
+    }
+  }
+
+  it should "learn a stable loop trip count and recover its speculative iteration" in {
+    simulate(new BPU(conf, bhtSize = 16, indirectSize = 16,
+      tageTableSize = 16, itageTableSize = 16)) { dut =>
+      resetDut(dut.clock, dut.reset)
+      val pc = BigInt("80000100", 16)
+      val target = pc - 4
+      val backwardBeq = "hfe000ee3".U
+
+      def commitOutcome(taken: Boolean): Unit = {
+        idleBpu(dut)
+        dut.io.update_valid.poke(true.B)
+        dut.io.update_is_branch.poke(true.B)
+        dut.io.update_taken.poke(taken.B)
+        dut.io.update_pc.poke(pc.U)
+        dut.io.update_target.poke((if (taken) target else pc + 4).U)
+        dut.clock.step()
+        idleBpu(dut)
+        dut.io.reset_spec.poke(true.B)
+        dut.clock.step()
+      }
+
+      for (_ <- 0 until 3) {
+        commitOutcome(taken = true)
+        commitOutcome(taken = true)
+        commitOutcome(taken = false)
+      }
+
+      idleBpu(dut)
+      dut.io.predict_pc.poke(pc.U)
+      dut.io.predict_inst.poke(backwardBeq)
+      dut.io.bp_loop_hit.expect(true.B)
+      dut.io.bp_taken.expect(true.B)
+      dut.io.spec_advance_valid.poke(true.B)
+      dut.io.spec_advance_mask.poke(1.U)
+      dut.clock.step()
+
+      idleBpu(dut)
+      dut.io.predict_pc.poke(pc.U)
+      dut.io.predict_inst.poke(backwardBeq)
+      dut.io.bp_taken.expect(true.B)
+      dut.io.spec_advance_valid.poke(true.B)
+      dut.io.spec_advance_mask.poke(1.U)
+      dut.clock.step()
+
+      idleBpu(dut)
+      dut.io.predict_pc.poke(pc.U)
+      dut.io.predict_inst.poke(backwardBeq)
+      val exitMeta = dut.io.bp_index.peek().litValue
+      dut.io.bp_loop_hit.expect(true.B)
+      dut.io.bp_taken.expect(false.B)
+      dut.io.spec_advance_valid.poke(true.B)
+      dut.io.spec_advance_mask.poke(1.U)
+      dut.clock.step()
+
+      idleBpu(dut)
+      dut.io.recover_valid.poke(true.B)
+      dut.io.recover_pc.poke(pc.U)
+      dut.io.recover_target.poke(target.U)
+      dut.io.recover_index.poke(exitMeta.U)
+      dut.io.recover_taken.poke(true.B)
+      dut.io.recover_is_branch.poke(true.B)
+      dut.clock.step()
+
+      idleBpu(dut)
+      dut.io.predict_pc.poke(pc.U)
+      dut.io.predict_inst.poke(backwardBeq)
       dut.io.bp_taken.expect(true.B)
     }
   }

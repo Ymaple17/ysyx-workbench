@@ -119,6 +119,26 @@ object PerfEvents {
   val EVENT_CONTROL_DIRECT_COMPLETE = 112.U(32.W)
   val EVENT_DCACHE_SECONDARY_ALLOC = 113.U(32.W)
   val EVENT_DCACHE_MSHR_MERGE = 114.U(32.W)
+  val EVENT_HEAD_WAIT_ALU = 115.U(32.W)
+  val EVENT_HEAD_WAIT_LOAD = 116.U(32.W)
+  val EVENT_HEAD_WAIT_STORE = 117.U(32.W)
+  val EVENT_HEAD_WAIT_CTRL = 118.U(32.W)
+  val EVENT_HEAD_WAIT_OTHER = 119.U(32.W)
+  val EVENT_FETCH_WAIT_RESOURCE = 120.U(32.W)
+  val EVENT_FETCH_WAIT_PC = 121.U(32.W)
+  val EVENT_FETCH_SLOT1_CREDIT_BLOCK = 122.U(32.W)
+  val EVENT_BRANCH_ISSUE = 123.U(32.W)
+  val EVENT_BRANCH_READY_WAIT = 124.U(32.W)
+  val EVENT_STORE_DIRECT_COMPLETE = 125.U(32.W)
+  val EVENT_LOOP_PREDICT_HIT = 126.U(32.W)
+}
+
+object PcPerfEvents {
+  val PC_EVENT_HEAD_WAIT = 0.U(32.W)
+  val PC_EVENT_DIR_MISPRED = 1.U(32.W)
+  val PC_EVENT_TARGET_MISPRED = 2.U(32.W)
+  val PC_EVENT_UNPREDICTED = 3.U(32.W)
+  val PC_EVENT_BP_FLUSH = 4.U(32.W)
 }
 
 class PerfMonitor extends BlackBox with HasBlackBoxInline {
@@ -156,6 +176,45 @@ object PM {
        pm.io.event_id := event
        pm.io.data := data
        pm.io.enable := enable
+    }
+  }
+}
+
+class PcPerfMonitor extends BlackBox with HasBlackBoxInline {
+  val io = IO(new Bundle {
+    val clock = Input(Clock())
+    val event_id = Input(UInt(32.W))
+    val pc = Input(UInt(32.W))
+    val enable = Input(Bool())
+  })
+  setInline("PcPerfMonitor.v",
+    """
+      |module PcPerfMonitor(
+      |    input clock,
+      |    input [31:0] event_id,
+      |    input [31:0] pc,
+      |    input enable
+      |);
+      |`ifndef __ICARUS__
+      |`ifndef YOSYS
+      |  import "DPI-C" function void npc_pm_pc_event(input int event_id, input int pc);
+      |  always @(posedge clock) begin
+      |     if(enable) npc_pm_pc_event(event_id, pc);
+      |  end
+      |`endif
+      |`endif
+      |endmodule
+    """.stripMargin)
+}
+
+object PMPC {
+  def apply(config: CoreConfig, clock: Clock, event: UInt, pc: UInt, enable: Bool): Unit = {
+    if (config.statistics) {
+      val pm = Module(new PcPerfMonitor)
+      pm.io.clock := clock
+      pm.io.event_id := event
+      pm.io.pc := pc
+      pm.io.enable := enable
     }
   }
 }

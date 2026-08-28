@@ -151,14 +151,24 @@ object FENCEI_CTRL{
 }
 
 object BPU_Config{
-    val BHT_SIZE = 1024 //BHT 条目数（BPU/IFU/IDU 的索引宽度共用）
+    val BHT_SIZE = 1024 // base gshare/bimodal entries; independent of history length
+    val GHR_LENGTH = 32
+    val PATH_HISTORY_LENGTH = 16
+    val LOOP_ITER_BITS = 10
+    val TAGE_PROVIDER_BITS = 3
+    val ITAGE_PROVIDER_BITS = 3
+    val BP_META_WIDTH = GHR_LENGTH + PATH_HISTORY_LENGTH + LOOP_ITER_BITS + 1 +
+      TAGE_PROVIDER_BITS + ITAGE_PROVIDER_BITS
     val RAS_SIZE = 16 //返回地址栈深度
     val BHT_INIT = 1 // weak not-taken; a taken branch becomes predicted-taken after one update
     val BHT_COLD_STATIC = true // cold entries use backward-taken / forward-not-taken
     val TAGGED_BHT_TAG_BITS = 8
     val TAGE_TABLE_SIZE = 256
-    val TAGE_HISTORY_LENGTHS = Seq(2, 5, 10)
+    val TAGE_HISTORY_LENGTHS = Seq(3, 8, 16, 32)
+    val LOOP_TABLE_SIZE = 64
+    val LOOP_TAG_BITS = 10
+    val LOOP_CONFIDENCE_THRESHOLD = 2
     val INDIRECT_TARGET_SIZE = 256
     val ITAGE_TABLE_SIZE = 128
-    val ITAGE_HISTORY_LENGTHS = Seq(4, 10)
+    val ITAGE_HISTORY_LENGTHS = Seq(8, 16, 24, 48)
 }

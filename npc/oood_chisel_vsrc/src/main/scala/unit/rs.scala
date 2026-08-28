@@ -34,7 +34,7 @@ class RSEntry extends Bundle {
   val bp_valid   = Bool()
   val bp_taken   = Bool()
   val bp_target  = UInt(32.W)
-  val bp_index   = UInt(log2Ceil(BHT_SIZE).W)
+  val bp_index   = UInt(BP_META_WIDTH.W)
   val ftq_idx    = UInt(OoOParams.FTQ_PTR_W.W)
   val ftq_generation = UInt(OoOParams.FTQ_GEN_W.W)
   val exu_alu_srcA    = UInt(2.W)
@@ -82,6 +82,7 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     val issue_lsu_bits  = Output(new RSEntry)
     val issue_lsu_idx   = Output(UInt(log2Ceil(n).W))
     val issue_lsu_fire  = Input(Bool())
+    val control_ready = Output(Bool())
     val issue_valid = Output(Bool())
     val issue_bits  = Output(new RSEntry)
     val issue_idx   = Output(UInt(log2Ceil(n).W))
@@ -97,6 +98,8 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     val free_rob1_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
     val free_ctrl_fire = Input(Bool())
     val free_ctrl_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
+    val free_store_fire = Input(Bool())
+    val free_store_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
 
     val cdb_valid = Input(Bool())
     val cdb_pdest = Input(UInt(OoOParams.PHYS_W.W))
@@ -122,7 +125,8 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     freeByRob(i) := entries(i).valid && (
       (io.free_rob_fire && entries(i).rob_idx === io.free_rob_idx) ||
       (io.free_rob1_fire && entries(i).rob_idx === io.free_rob1_idx) ||
-      (io.free_ctrl_fire && entries(i).rob_idx === io.free_ctrl_idx)
+      (io.free_ctrl_fire && entries(i).rob_idx === io.free_ctrl_idx) ||
+      (io.free_store_fire && entries(i).rob_idx === io.free_store_idx)
     )
   }
 
@@ -226,6 +230,9 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
   io.issue_lsu_valid := lsuOH.asUInt.orR && !io.flush
   io.issue_lsu_bits := issueEntries(lsuIdx)
   io.issue_lsu_idx   := lsuIdx
+  io.control_ready := VecInit((0 until n).map(i =>
+    canIssue(i) && entries(i).exu_jump =/= JUMP_NONE &&
+      entries(i).exu_jump =/= JUMP_MERT)).asUInt.orR && !io.flush
   io.issue_valid := legacyOH.asUInt.orR && !io.flush
   io.issue_bits := issueEntries(legacyIdx)
   io.issue_idx   := legacyIdx
@@ -236,7 +243,9 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
   val freeOrIssue = freeMask | Mux(willFreeRob, freeByRob.asUInt, 0.U)
   val enqIdx = PriorityEncoder(freeOrIssue)
   val enqOH = PriorityEncoderOH(freeOrIssue)
-  val freeMask1 = freeOrIssue & ~enqOH.asUInt
+  // Lane1 may be the only RS enqueue when lane0 is routed to the branch queue.
+  // Reserve enqIdx for lane0 only when lane0 actually fires.
+  val freeMask1 = Mux(io.enq_fire, freeOrIssue & ~enqOH.asUInt, freeOrIssue)
   val enq1Idx = PriorityEncoder(freeMask1)
   io.enq1_idx := enq1Idx
 

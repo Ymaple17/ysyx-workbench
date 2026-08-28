@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：引入保留站 **结构** 与 enq/issue/flush 时序；发射策略暂时与顺序核相同——**只发程序序最老且源就绪** 的指令。
 - **最小实现**：实现 RS enq/ready/issue/free/flush，但只允许程序序最老且源就绪项发射，先验证结构时序而不改变执行顺序。
-- **当前参考核**：阶段 11d 的 RS 已支持多 FU、双普通 ALU、同拍 CDB wake/select 和局部 oldest-ready 选择；本章是同一 entry 生命周期的保守起点。
+- **当前参考核**：阶段 12f 的 RS 已支持多 FU、双普通 ALU、同拍 CDB wake/select 和局部 oldest-ready 选择，控制流另由 BRQ/BRU 调度；本章是同一 entry 生命周期的保守起点。
 - **后续扩展**：3c 把 RS 输出真正接到派遣寄存器、EX 和 CDB，3d 再允许越过未就绪最老项。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

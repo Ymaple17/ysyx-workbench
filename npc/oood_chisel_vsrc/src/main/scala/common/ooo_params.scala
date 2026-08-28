@@ -9,14 +9,14 @@ object OoOParams {
   val PHYS_W    = log2Ceil(N_PHYS)
   val ROB_PTR_W = log2Ceil(ROB_SIZE)
   val RS_SIZE   = 8
-  val FQ_SIZE   = 8
+  val BRQ_SIZE  = 4
+  val FQ_SIZE   = 16
   val FETCH_WIDTH = 2
-  val FETCH_BUFFER_SIZE = 2
+  val FETCH_BUFFER_SIZE = 4
   val FTQ_SIZE = 16
   val FTQ_PTR_W = log2Ceil(FTQ_SIZE)
   val FTQ_GEN_W = 8
   val WIDE_FETCH_ENABLE = true
-  val WIDE_FETCH_MIN_SPACE = 6
   val ISSUE_WIDTH = 2
   val DISPATCH_WIDTH = ISSUE_WIDTH
   val COMMIT_WIDTH = 2

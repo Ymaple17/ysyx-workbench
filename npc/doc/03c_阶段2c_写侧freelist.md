@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：本章先理解：打开 **真分配** `pdest=dest_phys`；commit 回收 `old_phys`；flush **重建** free/RAT。
 - **最小实现**：仅对 `reg_write && rd!=0` 分配新 phys，ROB 保存 `old_phys`，提交回收旧映射，flush 从已提交映射重建 RAT/FreeList。
-- **当前参考核**：阶段 11d 使用 2-wide `Rename2`、PRF64 和 checkpoint；本章单宽规则仍是所有宽化版本必须保持的不变量。
+- **当前参考核**：阶段 12f 使用 2-wide `Rename2`、PRF64 和 checkpoint；本章单宽规则仍是所有宽化版本必须保持的不变量。
 - **后续扩展**：2d 把源寄存器、Busy stall 和前递键也统一到 phys 域，完成顺序后端迁移。
 - **验收方式**：涉及 RTL 时至少跑 `./mill -i mychisel.compile`、相关单测和 cpu-tests；涉及性能时再跑 `microbench mainargs=test` 并记录 before/after。
 

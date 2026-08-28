@@ -15,22 +15,24 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
   val bp_valid = Output(Bool())
   val bp_taken = Output(Bool())
   val bp_target = Output(UInt(32.W))
-  val bp_index = Output(UInt(log2Ceil(bhtSize).W))
+  val bp_index = Output(UInt(BP_META_WIDTH.W))
   val bp_tagged_hit = Output(Bool())
   val bp_tage_use_alt = Output(Bool())
   val bp_bimodal_selected = Output(Bool())
   val bp_indirect_hit = Output(Bool())
   val bp_itage_hit = Output(Bool())
+  val bp_loop_hit = Output(Bool())
 
   val bp1_valid = Output(Bool())
   val bp1_taken = Output(Bool())
   val bp1_target = Output(UInt(32.W))
-  val bp1_index = Output(UInt(log2Ceil(bhtSize).W))
+  val bp1_index = Output(UInt(BP_META_WIDTH.W))
   val bp1_tagged_hit = Output(Bool())
   val bp1_tage_use_alt = Output(Bool())
   val bp1_bimodal_selected = Output(Bool())
   val bp1_indirect_hit = Output(Bool())
   val bp1_itage_hit = Output(Bool())
+  val bp1_loop_hit = Output(Bool())
 
   val update_pc = Input(UInt(32.W))
   val update_target = Input(UInt(32.W))
@@ -38,7 +40,7 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
   val update_taken = Input(Bool())
   val update_is_branch = Input(Bool())
   val update_is_jalr = Input(Bool())
-  val update_index = Input(UInt(log2Ceil(bhtSize).W))
+  val update_index = Input(UInt(BP_META_WIDTH.W))
 
   val update_is_call = Input(Bool())
   val update_is_ret = Input(Bool())
@@ -47,9 +49,11 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
   val spec_advance_mask = Input(UInt(2.W))
   val recover_valid = Input(Bool())
   val recover_pc = Input(UInt(32.W))
-  val recover_index = Input(UInt(log2Ceil(bhtSize).W))
+  val recover_index = Input(UInt(BP_META_WIDTH.W))
+  val recover_target = Input(UInt(32.W))
   val recover_taken = Input(Bool())
   val recover_is_branch = Input(Bool())
+  val recover_is_jalr = Input(Bool())
   val recover_is_call = Input(Bool())
   val recover_is_ret = Input(Bool())
   val recover_ras = Input(Vec(RAS_SIZE, UInt(32.W)))
@@ -57,7 +61,8 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
   val recover_ras_count = Input(UInt(log2Ceil(RAS_SIZE + 1).W))
   val reset_spec = Input(Bool())
 
-  val spec_ghr = Output(UInt(log2Ceil(bhtSize).W))
+  val spec_ghr = Output(UInt(GHR_LENGTH.W))
+  val spec_path_history = Output(UInt(PATH_HISTORY_LENGTH.W))
   val spec_ras = Output(Vec(RAS_SIZE, UInt(32.W)))
   val spec_ras_ptr = Output(UInt(log2Ceil(RAS_SIZE).W))
   val spec_ras_count = Output(UInt(log2Ceil(RAS_SIZE + 1).W))
@@ -82,8 +87,10 @@ class BPU(
   private val tageW = log2Ceil(tageTableSize)
   private val itageW = log2Ceil(itageTableSize)
   private val rasW = log2Ceil(RAS_SIZE)
-  private val tageHistories = TAGE_HISTORY_LENGTHS.map(math.min(_, bhtW)).distinct
-  private val itageHistories = ITAGE_HISTORY_LENGTHS.map(math.min(_, bhtW)).distinct
+  private val loopW = log2Ceil(LOOP_TABLE_SIZE)
+  private val tageHistories = TAGE_HISTORY_LENGTHS.map(math.min(_, GHR_LENGTH)).distinct
+  private val itageHistoryWidth = GHR_LENGTH + PATH_HISTORY_LENGTH
+  private val itageHistories = ITAGE_HISTORY_LENGTHS.map(math.min(_, itageHistoryWidth)).distinct
   private val tageCount = tageHistories.length
   private val itageCount = itageHistories.length
   private val tageProviderW = log2Ceil(tageCount + 1)
@@ -91,8 +98,10 @@ class BPU(
 
   val bht = RegInit(VecInit(Seq.fill(bhtSize)(BHT_INIT.U(2.W))))
   val bht_valid = RegInit(VecInit(Seq.fill(bhtSize)(false.B)))
-  val commitGhr = RegInit(0.U(bhtW.W))
-  val specGhr = RegInit(0.U(bhtW.W))
+  val commitGhr = RegInit(0.U(GHR_LENGTH.W))
+  val specGhr = RegInit(0.U(GHR_LENGTH.W))
+  val commitPathHistory = RegInit(0.U(PATH_HISTORY_LENGTH.W))
+  val specPathHistory = RegInit(0.U(PATH_HISTORY_LENGTH.W))
 
   val tage_valid = Seq.fill(tageCount)(RegInit(VecInit(Seq.fill(tageTableSize)(false.B))))
   val tage_tag = Seq.fill(tageCount)(RegInit(VecInit(Seq.fill(tageTableSize)(0.U(TAGGED_BHT_TAG_BITS.W)))))
@@ -105,6 +114,13 @@ class BPU(
   val bimodal = RegInit(VecInit(Seq.fill(bhtSize)(BHT_INIT.U(2.W))))
   val bimodalValid = RegInit(VecInit(Seq.fill(bhtSize)(false.B)))
   val tournamentChooser = RegInit(VecInit(Seq.fill(bhtSize)(1.U(2.W))))
+
+  val loop_valid = RegInit(VecInit(Seq.fill(LOOP_TABLE_SIZE)(false.B)))
+  val loop_tag = RegInit(VecInit(Seq.fill(LOOP_TABLE_SIZE)(0.U(LOOP_TAG_BITS.W))))
+  val loop_trip = RegInit(VecInit(Seq.fill(LOOP_TABLE_SIZE)(0.U(LOOP_ITER_BITS.W))))
+  val loop_conf = RegInit(VecInit(Seq.fill(LOOP_TABLE_SIZE)(0.U(2.W))))
+  val loop_commit_iter = RegInit(VecInit(Seq.fill(LOOP_TABLE_SIZE)(0.U(LOOP_ITER_BITS.W))))
+  val loop_spec_iter = RegInit(VecInit(Seq.fill(LOOP_TABLE_SIZE)(0.U(LOOP_ITER_BITS.W))))
 
   // A PC-only target table is the alternate provider for history-tagged ITAGE tables.
   val itt_valid = RegInit(VecInit(Seq.fill(indirectSize)(false.B)))
@@ -124,6 +140,7 @@ class BPU(
   val specRasCount = RegInit(0.U(log2Ceil(RAS_SIZE + 1).W))
 
   io.spec_ghr := specGhr
+  io.spec_path_history := specPathHistory
   io.spec_ras := specRas
   io.spec_ras_ptr := specRasPtr
   io.spec_ras_count := specRasCount
@@ -132,6 +149,34 @@ class BPU(
   def satDec2(v: UInt): UInt = Mux(v === 0.U, 0.U, v - 1.U)
   def satInc3(v: UInt): UInt = Mux(v === 7.U, 7.U, v + 1.U)
   def satDec3(v: UInt): UInt = Mux(v === 0.U, 0.U, v - 1.U)
+
+  private val pathLo = GHR_LENGTH
+  private val loopIterLo = pathLo + PATH_HISTORY_LENGTH
+  private val loopHitBit = loopIterLo + LOOP_ITER_BITS
+  private val tageProviderLo = loopHitBit + 1
+  private val itageProviderLo = tageProviderLo + TAGE_PROVIDER_BITS
+
+  def packMetadata(ghr: UInt, pathHistory: UInt, loopHit: Bool, loopIter: UInt,
+                   tageProvider: UInt, itageProvider: UInt): UInt =
+    Cat(itageProvider, tageProvider, loopHit, loopIter, pathHistory, ghr)
+
+  def metadataGhr(meta: UInt): UInt = meta(GHR_LENGTH - 1, 0)
+  def metadataPath(meta: UInt): UInt = meta(loopIterLo - 1, pathLo)
+  def metadataLoopIter(meta: UInt): UInt = meta(loopHitBit - 1, loopIterLo)
+  def metadataLoopHit(meta: UInt): Bool = meta(loopHitBit)
+  def metadataTageProvider(meta: UInt): UInt =
+    meta(itageProviderLo - 1, tageProviderLo)
+  def metadataItageProvider(meta: UInt): UInt =
+    meta(BP_META_WIDTH - 1, itageProviderLo)
+
+  def pathStep(history: UInt, target: UInt): UInt = {
+    val targetHash = target(17, 2) ^ target(31, 16)
+    Cat(history(7, 0), targetHash(7, 0))
+  }
+
+  def loopIndex(pc: UInt): UInt = pc(loopW + 1, 2)
+  def loopTag(pc: UInt): UInt = pc(LOOP_TAG_BITS + loopW + 1, loopW + 2)
+  def satIncLoop(v: UInt): UInt = Mux(v.andR, v, v + 1.U)
 
   def foldHistory(history: UInt, historyLength: Int, width: Int): UInt = {
     VecInit((0 until width).map { bit =>
@@ -144,10 +189,12 @@ class BPU(
     pc(width + 1, 2) ^ foldHistory(history, historyLength, width)
 
   def historyTag(pc: UInt, history: UInt, historyLength: Int): UInt = {
+    val historyWidth = history.getWidth
     val pcFold = pc(TAGGED_BHT_TAG_BITS + 1, 2) ^
       pc(2 * TAGGED_BHT_TAG_BITS + 1, TAGGED_BHT_TAG_BITS + 2)
     pcFold ^ foldHistory(history, historyLength, TAGGED_BHT_TAG_BITS) ^
-      foldHistory(Cat(history(bhtW - 2, 0), history(bhtW - 1)), historyLength, TAGGED_BHT_TAG_BITS)
+      foldHistory(Cat(history(historyWidth - 2, 0), history(historyWidth - 1)),
+        historyLength, TAGGED_BHT_TAG_BITS)
   }
 
   def ittIndex(pc: UInt): UInt = pc(ittW + 1, 2)
@@ -163,9 +210,12 @@ class BPU(
     val providerRank = UInt(tageProviderW.W)
     val providerPred = Bool()
     val alternatePred = Bool()
+    val loopHit = Bool()
+    val loopIter = UInt(LOOP_ITER_BITS.W)
   }
 
-  def directionPredict(pc: UInt, history: UInt, baseIndex: UInt, coldStaticTaken: Bool): DirectionResult = {
+  def directionPredict(pc: UInt, history: UInt, baseIndex: UInt,
+                       coldStaticTaken: Bool, speculativeLoopIter: UInt): DirectionResult = {
     val res = Wire(new DirectionResult)
     val baseValue = bht(baseIndex)
     val basePredict = if (BHT_COLD_STATIC) Mux(bht_valid(baseIndex), baseValue(1), coldStaticTaken) else baseValue(1)
@@ -204,7 +254,12 @@ class BPU(
     val bimodalIndex = pc(bhtW + 1, 2)
     val bimodalPred = Mux(bimodalValid(bimodalIndex), bimodal(bimodalIndex)(1), coldStaticTaken)
     val useBimodal = bimodalValid(bimodalIndex) && tournamentChooser(bimodalIndex)(1)
-    res.taken := Mux(useBimodal, bimodalPred, tageTaken)
+    val lpIdx = loopIndex(pc)
+    val loopHit = coldStaticTaken && loop_valid(lpIdx) &&
+      loop_tag(lpIdx) === loopTag(pc) && loop_trip(lpIdx) =/= 0.U &&
+      loop_conf(lpIdx) >= LOOP_CONFIDENCE_THRESHOLD.U
+    val loopTaken = speculativeLoopIter < loop_trip(lpIdx)
+    res.taken := Mux(loopHit, loopTaken, Mux(useBimodal, bimodalPred, tageTaken))
     res.tageTaken := tageTaken
     res.bimodalPred := bimodalPred
     res.useBimodal := useBimodal
@@ -213,6 +268,8 @@ class BPU(
     res.providerRank := providerRank
     res.providerPred := providerPred
     res.alternatePred := alternatePred
+    res.loopHit := loopHit
+    res.loopIter := speculativeLoopIter
     res
   }
 
@@ -258,7 +315,7 @@ class BPU(
     val valid = Bool()
     val taken = Bool()
     val target = UInt(32.W)
-    val index = UInt(bhtW.W)
+    val index = UInt(BP_META_WIDTH.W)
     val taggedHit = Bool()
     val tageUseAlternate = Bool()
     val bimodalSelected = Bool()
@@ -267,9 +324,13 @@ class BPU(
     val isBranch = Bool()
     val isCall = Bool()
     val isRet = Bool()
+    val isIndirect = Bool()
+    val loopHit = Bool()
+    val loopIndex = UInt(loopW.W)
+    val loopIter = UInt(LOOP_ITER_BITS.W)
   }
 
-  def predict(pc: UInt, inst: UInt, history: UInt,
+  def predict(pc: UInt, inst: UInt, history: UInt, pathHistory: UInt,
               rasStack: Vec[UInt], rasPtr: UInt, rasCount: UInt): PredResult = {
     val res = Wire(new PredResult)
     val opcode = inst(6, 0)
@@ -286,9 +347,11 @@ class BPU(
     val isRet = isJalr && rs1IsRa
     val isCall = rdIsRa && (isJal || (isJalr && !rs1IsRa))
     val isIndirect = isJalr && !isRet
-    val bhtIndex = pc(bhtW + 1, 2) ^ history
-    val direction = directionPredict(pc, history, bhtIndex, imm.io.imm_ext(31))
-    val indirect = indirectPredict(pc, history)
+    val bhtIndex = pc(bhtW + 1, 2) ^ history(bhtW - 1, 0)
+    val lpIdx = loopIndex(pc)
+    val direction = directionPredict(pc, history, bhtIndex,
+      imm.io.imm_ext(31), loop_spec_iter(lpIdx))
+    val indirect = indirectPredict(pc, Cat(history, pathHistory))
     val rasEmpty = rasCount === 0.U
     val rasTopIdx = Mux(rasPtr === 0.U, (RAS_SIZE - 1).U(rasW.W),
       (rasPtr - 1.U)(rasW - 1, 0))
@@ -309,7 +372,8 @@ class BPU(
     res.valid := predValid
     res.taken := predTaken
     res.target := target
-    res.index := bhtIndex
+    res.index := packMetadata(history, pathHistory, direction.loopHit,
+      direction.loopIter, direction.providerRank, indirect.providerRank)
     res.taggedHit := isBranch && direction.taggedHit
     res.tageUseAlternate := isBranch && direction.useAlternate
     res.bimodalSelected := isBranch && direction.useBimodal
@@ -318,14 +382,20 @@ class BPU(
     res.isBranch := isBranch
     res.isCall := isCall
     res.isRet := isRet
+    res.isIndirect := isIndirect
+    res.loopHit := isBranch && direction.loopHit
+    res.loopIndex := lpIdx
+    res.loopIter := direction.loopIter
     res
   }
 
-  val p0 = predict(io.predict_pc, io.predict_inst, specGhr,
+  val p0 = predict(io.predict_pc, io.predict_inst, specGhr, specPathHistory,
     specRas, specRasPtr, specRasCount)
   val historyAfterP0 = Mux(p0.isBranch,
-    Cat(specGhr(bhtW - 2, 0), p0.taken), specGhr)
-  val p1 = predict(io.predict_pc1, io.predict_inst1, historyAfterP0,
+    Cat(specGhr(GHR_LENGTH - 2, 0), p0.taken), specGhr)
+  val pathAfterP0 = Mux(p0.isIndirect && p0.taken,
+    pathStep(specPathHistory, p0.target), specPathHistory)
+  val p1 = predict(io.predict_pc1, io.predict_inst1, historyAfterP0, pathAfterP0,
     specRas, specRasPtr, specRasCount)
 
   io.bp_valid := p0.valid
@@ -337,6 +407,7 @@ class BPU(
   io.bp_bimodal_selected := p0.bimodalSelected
   io.bp_indirect_hit := p0.indirectHit
   io.bp_itage_hit := p0.itageHit
+  io.bp_loop_hit := p0.loopHit
 
   io.bp1_valid := p1.valid
   io.bp1_taken := p1.valid && p1.taken
@@ -347,6 +418,7 @@ class BPU(
   io.bp1_bimodal_selected := p1.bimodalSelected
   io.bp1_indirect_hit := p1.indirectHit
   io.bp1_itage_hit := p1.itageHit
+  io.bp1_loop_hit := p1.loopHit
 
   io.tage_alloc := false.B
   io.itage_alloc := false.B
@@ -372,13 +444,16 @@ class BPU(
 
   when(io.update_valid && io.update_is_branch) {
     val pcIndex = io.update_pc(bhtW + 1, 2)
-    val updateHistory = io.update_index ^ pcIndex
-    val updateDirection = directionPredict(io.update_pc, updateHistory, io.update_index, false.B)
-    val baseValue = bht(io.update_index)
-    val baseWasTrained = bht_valid(io.update_index)
+    val updateHistory = metadataGhr(io.update_index)
+    val updateBaseIndex = pcIndex ^ updateHistory(bhtW - 1, 0)
+    val updateDirection = directionPredict(io.update_pc, updateHistory,
+      updateBaseIndex, false.B, metadataLoopIter(io.update_index))
+    val providerAtFetch = metadataTageProvider(io.update_index)
+    val baseValue = bht(updateBaseIndex)
+    val baseWasTrained = bht_valid(updateBaseIndex)
     val bimodalWasTrained = bimodalValid(pcIndex)
-    bht(io.update_index) := Mux(io.update_taken, satInc2(baseValue), satDec2(baseValue))
-    bht_valid(io.update_index) := true.B
+    bht(updateBaseIndex) := Mux(io.update_taken, satInc2(baseValue), satDec2(baseValue))
+    bht_valid(updateBaseIndex) := true.B
     bimodal(pcIndex) := Mux(io.update_taken, satInc2(bimodal(pcIndex)), satDec2(bimodal(pcIndex)))
     bimodalValid(pcIndex) := true.B
     when(bimodalWasTrained && updateDirection.bimodalPred =/= updateDirection.tageTaken) {
@@ -392,7 +467,8 @@ class BPU(
     val updateIndices = tageHistories.map(historyIndex(io.update_pc, updateHistory, _, tageW))
     val updateTags = tageHistories.map(historyTag(io.update_pc, updateHistory, _))
     for (i <- 0 until tageCount) {
-      when(updateDirection.providerRank === (i + 1).U) {
+      when(providerAtFetch === (i + 1).U && tage_valid(i)(updateIndices(i)) &&
+           tage_tag(i)(updateIndices(i)) === updateTags(i)) {
         val ctr = tage_ctr(i)(updateIndices(i))
         tage_ctr(i)(updateIndices(i)) := Mux(io.update_taken, satInc3(ctr), satDec3(ctr))
         when(updateDirection.providerPred =/= updateDirection.alternatePred) {
@@ -406,7 +482,7 @@ class BPU(
     val needAllocate = !baseWasTrained || updateDirection.tageTaken =/= io.update_taken
     val candidates = Wire(Vec(tageCount, Bool()))
     for (i <- 0 until tageCount) {
-      val longerThanProvider = (i + 1).U > updateDirection.providerRank
+      val longerThanProvider = (i + 1).U > providerAtFetch
       candidates(i) := longerThanProvider &&
         (!tage_valid(i)(updateIndices(i)) || tage_useful(i)(updateIndices(i)) === 0.U)
     }
@@ -424,14 +500,40 @@ class BPU(
         }
       }.otherwise {
         for (i <- 0 until tageCount) {
-          when((i + 1).U > updateDirection.providerRank) {
+          when((i + 1).U > providerAtFetch) {
             tage_useful(i)(updateIndices(i)) := satDec2(tage_useful(i)(updateIndices(i)))
           }
         }
       }
     }
 
-    commitGhr := Cat(commitGhr(bhtW - 2, 0), io.update_taken)
+    val lpIdx = loopIndex(io.update_pc)
+    val lpTagHit = loop_valid(lpIdx) && loop_tag(lpIdx) === loopTag(io.update_pc)
+    when(lpTagHit) {
+      when(io.update_taken) {
+        loop_commit_iter(lpIdx) := satIncLoop(loop_commit_iter(lpIdx))
+      }.otherwise {
+        val observedTrip = loop_commit_iter(lpIdx)
+        when(observedTrip =/= 0.U) {
+          when(loop_trip(lpIdx) === observedTrip) {
+            loop_conf(lpIdx) := satInc2(loop_conf(lpIdx))
+          }.otherwise {
+            loop_trip(lpIdx) := observedTrip
+            loop_conf(lpIdx) := 0.U
+          }
+        }
+        loop_commit_iter(lpIdx) := 0.U
+      }
+    }.elsewhen(io.update_taken && io.update_target < io.update_pc) {
+      loop_valid(lpIdx) := true.B
+      loop_tag(lpIdx) := loopTag(io.update_pc)
+      loop_trip(lpIdx) := 0.U
+      loop_conf(lpIdx) := 0.U
+      loop_commit_iter(lpIdx) := 1.U
+      loop_spec_iter(lpIdx) := 1.U
+    }
+
+    commitGhr := Cat(commitGhr(GHR_LENGTH - 2, 0), io.update_taken)
   }
 
   when(io.update_valid && io.update_is_jalr && !io.update_is_ret) {
@@ -450,13 +552,14 @@ class BPU(
       itt_conf(baseIdx) := 1.U
     }
 
-    val pcIndex = io.update_pc(bhtW + 1, 2)
-    val updateHistory = io.update_index ^ pcIndex
+    val updateHistory = Cat(metadataGhr(io.update_index), metadataPath(io.update_index))
     val updateIndirect = indirectPredict(io.update_pc, updateHistory)
+    val providerAtFetch = metadataItageProvider(io.update_index)
     val updateIndices = itageHistories.map(historyIndex(io.update_pc, updateHistory, _, itageW))
     val updateTags = itageHistories.map(historyTag(io.update_pc, updateHistory, _))
     for (i <- 0 until itageCount) {
-      when(updateIndirect.providerRank === (i + 1).U) {
+      when(providerAtFetch === (i + 1).U && itage_valid(i)(updateIndices(i)) &&
+           itage_tag(i)(updateIndices(i)) === updateTags(i)) {
         when(itage_target(i)(updateIndices(i)) === io.update_target) {
           itage_conf(i)(updateIndices(i)) := satInc2(itage_conf(i)(updateIndices(i)))
         }.otherwise {
@@ -469,7 +572,7 @@ class BPU(
     val needAllocate = !updateIndirect.valid || updateIndirect.target =/= io.update_target
     val candidates = Wire(Vec(itageCount, Bool()))
     for (i <- 0 until itageCount) {
-      candidates(i) := (i + 1).U > updateIndirect.providerRank &&
+      candidates(i) := (i + 1).U > providerAtFetch &&
         (!itage_valid(i)(updateIndices(i)) || itage_conf(i)(updateIndices(i)) === 0.U)
     }
     val allocOH = PriorityEncoderOH(candidates.asUInt)
@@ -484,6 +587,7 @@ class BPU(
         }
       }
     }
+    commitPathHistory := pathStep(commitPathHistory, io.update_target)
   }
 
   val commitCall = io.update_valid && io.update_is_call
@@ -498,11 +602,17 @@ class BPU(
   }
 
   val commitGhrAfter = Mux(io.update_valid && io.update_is_branch,
-    Cat(commitGhr(bhtW - 2, 0), io.update_taken), commitGhr)
+    Cat(commitGhr(GHR_LENGTH - 2, 0), io.update_taken), commitGhr)
+  val commitPathAfter = Mux(io.update_valid && io.update_is_jalr && !io.update_is_ret,
+    pathStep(commitPathHistory, io.update_target), commitPathHistory)
   val specHistory0 = Mux(io.spec_advance_mask(0) && p0.isBranch,
-    Cat(specGhr(bhtW - 2, 0), p0.taken), specGhr)
+    Cat(specGhr(GHR_LENGTH - 2, 0), p0.taken), specGhr)
   val specHistory1 = Mux(io.spec_advance_mask(1) && p1.isBranch,
-    Cat(specHistory0(bhtW - 2, 0), p1.taken), specHistory0)
+    Cat(specHistory0(GHR_LENGTH - 2, 0), p1.taken), specHistory0)
+  val specPath0 = Mux(io.spec_advance_mask(0) && p0.isIndirect && p0.taken,
+    pathStep(specPathHistory, p0.target), specPathHistory)
+  val specPath1 = Mux(io.spec_advance_mask(1) && p1.isIndirect && p1.taken,
+    pathStep(specPath0, p1.target), specPath0)
   val (specRasAfter0, specRasPtrAfter0, specRasCountAfter0) =
     rasStep(specRas, specRasPtr, specRasCount, io.predict_pc,
       io.spec_advance_mask(0) && p0.isCall,
@@ -512,27 +622,58 @@ class BPU(
       io.spec_advance_mask(1) && p1.isCall,
       io.spec_advance_mask(1) && p1.isRet)
 
-  val recoverHistory = io.recover_index ^ io.recover_pc(bhtW + 1, 2)
+  val recoverHistory = metadataGhr(io.recover_index)
   val recoverGhr = Mux(io.recover_is_branch,
-    Cat(recoverHistory(bhtW - 2, 0), io.recover_taken), recoverHistory)
+    Cat(recoverHistory(GHR_LENGTH - 2, 0), io.recover_taken), recoverHistory)
+  val recoverPathBase = metadataPath(io.recover_index)
+  val recoverPath = Mux(io.recover_is_jalr && !io.recover_is_ret,
+    pathStep(recoverPathBase, io.recover_target), recoverPathBase)
   val (recoverRasAfter, recoverRasPtrAfter, recoverRasCountAfter) =
     rasStep(io.recover_ras, io.recover_ras_ptr, io.recover_ras_count,
       io.recover_pc, io.recover_is_call, io.recover_is_ret)
 
   when(io.recover_valid) {
     specGhr := recoverGhr
+    specPathHistory := recoverPath
     specRas := recoverRasAfter
     specRasPtr := recoverRasPtrAfter
     specRasCount := recoverRasCountAfter
   }.elsewhen(io.reset_spec) {
     specGhr := commitGhrAfter
+    specPathHistory := commitPathAfter
     specRas := commitRasAfter
     specRasPtr := commitRasPtrAfter
     specRasCount := commitRasCountAfter
   }.elsewhen(io.spec_advance_valid) {
     specGhr := specHistory1
+    specPathHistory := specPath1
     specRas := specRasAfter1
     specRasPtr := specRasPtrAfter1
     specRasCount := specRasCountAfter1
+  }
+
+  val recoverLpIdx = loopIndex(io.recover_pc)
+  val recoverLpMispredictedExit = metadataLoopIter(io.recover_index) >=
+    loop_trip(recoverLpIdx)
+  val recoverLpNext = Mux(io.recover_taken,
+    Mux(recoverLpMispredictedExit, 0.U,
+      satIncLoop(metadataLoopIter(io.recover_index))), 0.U)
+  for (i <- 0 until LOOP_TABLE_SIZE) {
+    when(io.recover_valid) {
+      loop_spec_iter(i) := loop_commit_iter(i)
+      when(io.recover_is_branch && metadataLoopHit(io.recover_index) &&
+           recoverLpIdx === i.U) {
+        loop_spec_iter(i) := recoverLpNext
+      }
+    }.elsewhen(io.reset_spec) {
+      loop_spec_iter(i) := loop_commit_iter(i)
+    }.elsewhen(io.spec_advance_valid) {
+      when(io.spec_advance_mask(0) && p0.loopHit && p0.loopIndex === i.U) {
+        loop_spec_iter(i) := Mux(p0.taken, satIncLoop(p0.loopIter), 0.U)
+      }
+      when(io.spec_advance_mask(1) && p1.loopHit && p1.loopIndex === i.U) {
+        loop_spec_iter(i) := Mux(p1.taken, satIncLoop(p1.loopIter), 0.U)
+      }
+    }
   }
 }

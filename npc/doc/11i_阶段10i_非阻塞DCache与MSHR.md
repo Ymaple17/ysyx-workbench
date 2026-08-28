@@ -3,7 +3,7 @@
 ## 学习导航
 - **理论目标**：理解 blocking DCache 为什么会让 load miss 拖住后端；理解 MSHR、hit-under-miss、多 outstanding load、load replay 分别解决哪一层问题。
 - **最小实现**：实现 1-entry MSHR，让 DCache 在一个 cacheable miss/refill 未完成时仍可服务已命中的 cache line；LSU 侧加入返回 tag 和 stale 身份保护。
-- **当前参考核**：10i 的 active MSHR 与 hit-under-miss 保留；阶段 11d 增加 1 个 secondary miss slot、same-line merge、同拍 hit response，并继续使用 LQ4 generation identity/replay。这里仍不是多个可并行 refill 的完整 MSHR 表；本章 MLP-on 退化的是“有 MSHR、无完整 LQ”的历史实验。
+- **当前参考核**：10i 的 active MSHR 与 hit-under-miss 保留；阶段 12f 包含 1 个 secondary miss slot、same-line merge、同拍 hit response，并使用 LQ4 generation identity/replay/bypass。这里仍不是多个可并行 refill 的完整 MSHR 表；本章 MLP-on 退化的是“有 MSHR、无完整 LQ”的历史实验。
 - **后续扩展**：load queue / replay 与更精确的响应身份已在 10l 完成；当前仍可继续做 miss merge、多 MSHR、store-set/选择性 replay 和总线 burst/多 outstanding。
 - **验收方式**：`./mill -i mychisel.compile`、`OoOUnitTest`、cpu-tests smoke、`microbench(test)` 全绿；比较 `DCache Hit Under Miss`、`Head Not Ready`、`Bus Wait Cycles`、IPC，而不是只看“有没有 MSHR 结构”。
 

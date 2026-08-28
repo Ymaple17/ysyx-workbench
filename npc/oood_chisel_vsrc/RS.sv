@@ -155,6 +155,8 @@ module RS(
   input  [4:0]  io_free_rob_idx,
   input         io_free_rob1_fire,
   input  [4:0]  io_free_rob1_idx,
+  input         io_free_rob2_fire,
+  input  [4:0]  io_free_rob2_idx,
   input         io_free_ctrl_fire,
   input  [4:0]  io_free_ctrl_idx,
   input         io_free_store_fire,
@@ -165,10 +167,14 @@ module RS(
   input         io_cdb1_valid,
   input  [5:0]  io_cdb1_pdest,
   input  [31:0] io_cdb1_val,
+  input         io_cdb2_valid,
+  input  [5:0]  io_cdb2_pdest,
+  input  [31:0] io_cdb2_val,
   input         io_flush,
   input  [4:0]  io_flush_idx,
   input         io_flush_all,
-  output [3:0]  io_space
+  output [3:0]  io_space,
+  output [2:0]  io_fresh_issue_count
 );
 
   reg         entries_0_valid;
@@ -405,51 +411,101 @@ module RS(
   wire        freeByRob_0 =
     entries_0_valid
     & (io_free_rob_fire & entries_0_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_0_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_0_rob_idx == io_free_rob1_idx | io_free_rob2_fire
+       & entries_0_rob_idx == io_free_rob2_idx | io_free_ctrl_fire
        & entries_0_rob_idx == io_free_ctrl_idx | io_free_store_fire
        & entries_0_rob_idx == io_free_store_idx);
   wire        freeByRob_1 =
     entries_1_valid
     & (io_free_rob_fire & entries_1_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_1_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_1_rob_idx == io_free_rob1_idx | io_free_rob2_fire
+       & entries_1_rob_idx == io_free_rob2_idx | io_free_ctrl_fire
        & entries_1_rob_idx == io_free_ctrl_idx | io_free_store_fire
        & entries_1_rob_idx == io_free_store_idx);
   wire        freeByRob_2 =
     entries_2_valid
     & (io_free_rob_fire & entries_2_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_2_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_2_rob_idx == io_free_rob1_idx | io_free_rob2_fire
+       & entries_2_rob_idx == io_free_rob2_idx | io_free_ctrl_fire
        & entries_2_rob_idx == io_free_ctrl_idx | io_free_store_fire
        & entries_2_rob_idx == io_free_store_idx);
   wire        freeByRob_3 =
     entries_3_valid
     & (io_free_rob_fire & entries_3_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_3_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_3_rob_idx == io_free_rob1_idx | io_free_rob2_fire
+       & entries_3_rob_idx == io_free_rob2_idx | io_free_ctrl_fire
        & entries_3_rob_idx == io_free_ctrl_idx | io_free_store_fire
        & entries_3_rob_idx == io_free_store_idx);
   wire        freeByRob_4 =
     entries_4_valid
     & (io_free_rob_fire & entries_4_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_4_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_4_rob_idx == io_free_rob1_idx | io_free_rob2_fire
+       & entries_4_rob_idx == io_free_rob2_idx | io_free_ctrl_fire
        & entries_4_rob_idx == io_free_ctrl_idx | io_free_store_fire
        & entries_4_rob_idx == io_free_store_idx);
   wire        freeByRob_5 =
     entries_5_valid
     & (io_free_rob_fire & entries_5_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_5_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_5_rob_idx == io_free_rob1_idx | io_free_rob2_fire
+       & entries_5_rob_idx == io_free_rob2_idx | io_free_ctrl_fire
        & entries_5_rob_idx == io_free_ctrl_idx | io_free_store_fire
        & entries_5_rob_idx == io_free_store_idx);
   wire        freeByRob_6 =
     entries_6_valid
     & (io_free_rob_fire & entries_6_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_6_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_6_rob_idx == io_free_rob1_idx | io_free_rob2_fire
+       & entries_6_rob_idx == io_free_rob2_idx | io_free_ctrl_fire
        & entries_6_rob_idx == io_free_ctrl_idx | io_free_store_fire
        & entries_6_rob_idx == io_free_store_idx);
   wire        freeByRob_7 =
     entries_7_valid
     & (io_free_rob_fire & entries_7_rob_idx == io_free_rob_idx | io_free_rob1_fire
-       & entries_7_rob_idx == io_free_rob1_idx | io_free_ctrl_fire
+       & entries_7_rob_idx == io_free_rob1_idx | io_free_rob2_fire
+       & entries_7_rob_idx == io_free_rob2_idx | io_free_ctrl_fire
        & entries_7_rob_idx == io_free_ctrl_idx | io_free_store_fire
        & entries_7_rob_idx == io_free_store_idx);
+  wire [7:0]  freeOrIssue =
+    {~entries_7_valid,
+     ~entries_6_valid,
+     ~entries_5_valid,
+     ~entries_4_valid,
+     ~entries_3_valid,
+     ~entries_2_valid,
+     ~entries_1_valid,
+     ~entries_0_valid}
+    | ((|{freeByRob_7,
+          freeByRob_6,
+          freeByRob_5,
+          freeByRob_4,
+          freeByRob_3,
+          freeByRob_2,
+          freeByRob_1,
+          freeByRob_0})
+         ? {freeByRob_7,
+            freeByRob_6,
+            freeByRob_5,
+            freeByRob_4,
+            freeByRob_3,
+            freeByRob_2,
+            freeByRob_1,
+            freeByRob_0}
+         : 8'h0);
+  wire [7:0]  freeMask1 =
+    ({8{~io_enq_fire}}
+     | ~(freeOrIssue[0]
+           ? 8'h1
+           : freeOrIssue[1]
+               ? 8'h2
+               : freeOrIssue[2]
+                   ? 8'h4
+                   : freeOrIssue[3]
+                       ? 8'h8
+                       : freeOrIssue[4]
+                           ? 8'h10
+                           : freeOrIssue[5]
+                               ? 8'h20
+                               : freeOrIssue[6] ? 8'h40 : {freeOrIssue[7], 7'h0}))
+    & freeOrIssue;
   wire        _cdbHit1_T_4 = entries_0_src1_phys == io_cdb_pdest;
   wire        cdbHit1 =
     io_cdb_valid & (|io_cdb_pdest) & ~entries_0_src1_ready & _cdbHit1_T_4;
@@ -462,10 +518,20 @@ module RS(
   wire        _cdb1Hit2_T_4 = entries_0_src2_phys == io_cdb1_pdest;
   wire        cdb1Hit2 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~entries_0_src2_ready & _cdb1Hit2_T_4;
+  wire        _cdb2Hit1_T_4 = entries_0_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit1 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_0_src1_ready & _cdb2Hit1_T_4;
+  wire        _cdb2Hit2_T_4 = entries_0_src2_phys == io_cdb2_pdest;
+  wire        cdb2Hit2 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_0_src2_ready & _cdb2Hit2_T_4;
   wire [31:0] e_src1_val =
-    cdb1Hit1 ? io_cdb1_val : cdbHit1 ? io_cdb_val : entries_0_src1_val;
+    cdb2Hit1
+      ? io_cdb2_val
+      : cdb1Hit1 ? io_cdb1_val : cdbHit1 ? io_cdb_val : entries_0_src1_val;
   wire [31:0] e_src2_val =
-    cdb1Hit2 ? io_cdb1_val : cdbHit2 ? io_cdb_val : entries_0_src2_val;
+    cdb2Hit2
+      ? io_cdb2_val
+      : cdb1Hit2 ? io_cdb1_val : cdbHit2 ? io_cdb_val : entries_0_src2_val;
   wire        _cdbHit1_T_9 = entries_1_src1_phys == io_cdb_pdest;
   wire        cdbHit1_1 =
     io_cdb_valid & (|io_cdb_pdest) & ~entries_1_src1_ready & _cdbHit1_T_9;
@@ -478,10 +544,20 @@ module RS(
   wire        _cdb1Hit2_T_9 = entries_1_src2_phys == io_cdb1_pdest;
   wire        cdb1Hit2_1 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~entries_1_src2_ready & _cdb1Hit2_T_9;
+  wire        _cdb2Hit1_T_9 = entries_1_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit1_1 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_1_src1_ready & _cdb2Hit1_T_9;
+  wire        _cdb2Hit2_T_9 = entries_1_src2_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_1 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_1_src2_ready & _cdb2Hit2_T_9;
   wire [31:0] e_1_src1_val =
-    cdb1Hit1_1 ? io_cdb1_val : cdbHit1_1 ? io_cdb_val : entries_1_src1_val;
+    cdb2Hit1_1
+      ? io_cdb2_val
+      : cdb1Hit1_1 ? io_cdb1_val : cdbHit1_1 ? io_cdb_val : entries_1_src1_val;
   wire [31:0] e_1_src2_val =
-    cdb1Hit2_1 ? io_cdb1_val : cdbHit2_1 ? io_cdb_val : entries_1_src2_val;
+    cdb2Hit2_1
+      ? io_cdb2_val
+      : cdb1Hit2_1 ? io_cdb1_val : cdbHit2_1 ? io_cdb_val : entries_1_src2_val;
   wire        _cdbHit1_T_14 = entries_2_src1_phys == io_cdb_pdest;
   wire        cdbHit1_2 =
     io_cdb_valid & (|io_cdb_pdest) & ~entries_2_src1_ready & _cdbHit1_T_14;
@@ -494,10 +570,20 @@ module RS(
   wire        _cdb1Hit2_T_14 = entries_2_src2_phys == io_cdb1_pdest;
   wire        cdb1Hit2_2 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~entries_2_src2_ready & _cdb1Hit2_T_14;
+  wire        _cdb2Hit1_T_14 = entries_2_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit1_2 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_2_src1_ready & _cdb2Hit1_T_14;
+  wire        _cdb2Hit2_T_14 = entries_2_src2_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_2 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_2_src2_ready & _cdb2Hit2_T_14;
   wire [31:0] e_2_src1_val =
-    cdb1Hit1_2 ? io_cdb1_val : cdbHit1_2 ? io_cdb_val : entries_2_src1_val;
+    cdb2Hit1_2
+      ? io_cdb2_val
+      : cdb1Hit1_2 ? io_cdb1_val : cdbHit1_2 ? io_cdb_val : entries_2_src1_val;
   wire [31:0] e_2_src2_val =
-    cdb1Hit2_2 ? io_cdb1_val : cdbHit2_2 ? io_cdb_val : entries_2_src2_val;
+    cdb2Hit2_2
+      ? io_cdb2_val
+      : cdb1Hit2_2 ? io_cdb1_val : cdbHit2_2 ? io_cdb_val : entries_2_src2_val;
   wire        _cdbHit1_T_19 = entries_3_src1_phys == io_cdb_pdest;
   wire        cdbHit1_3 =
     io_cdb_valid & (|io_cdb_pdest) & ~entries_3_src1_ready & _cdbHit1_T_19;
@@ -510,10 +596,20 @@ module RS(
   wire        _cdb1Hit2_T_19 = entries_3_src2_phys == io_cdb1_pdest;
   wire        cdb1Hit2_3 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~entries_3_src2_ready & _cdb1Hit2_T_19;
+  wire        _cdb2Hit1_T_19 = entries_3_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit1_3 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_3_src1_ready & _cdb2Hit1_T_19;
+  wire        _cdb2Hit2_T_19 = entries_3_src2_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_3 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_3_src2_ready & _cdb2Hit2_T_19;
   wire [31:0] e_3_src1_val =
-    cdb1Hit1_3 ? io_cdb1_val : cdbHit1_3 ? io_cdb_val : entries_3_src1_val;
+    cdb2Hit1_3
+      ? io_cdb2_val
+      : cdb1Hit1_3 ? io_cdb1_val : cdbHit1_3 ? io_cdb_val : entries_3_src1_val;
   wire [31:0] e_3_src2_val =
-    cdb1Hit2_3 ? io_cdb1_val : cdbHit2_3 ? io_cdb_val : entries_3_src2_val;
+    cdb2Hit2_3
+      ? io_cdb2_val
+      : cdb1Hit2_3 ? io_cdb1_val : cdbHit2_3 ? io_cdb_val : entries_3_src2_val;
   wire        _cdbHit1_T_24 = entries_4_src1_phys == io_cdb_pdest;
   wire        cdbHit1_4 =
     io_cdb_valid & (|io_cdb_pdest) & ~entries_4_src1_ready & _cdbHit1_T_24;
@@ -526,10 +622,20 @@ module RS(
   wire        _cdb1Hit2_T_24 = entries_4_src2_phys == io_cdb1_pdest;
   wire        cdb1Hit2_4 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~entries_4_src2_ready & _cdb1Hit2_T_24;
+  wire        _cdb2Hit1_T_24 = entries_4_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit1_4 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_4_src1_ready & _cdb2Hit1_T_24;
+  wire        _cdb2Hit2_T_24 = entries_4_src2_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_4 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_4_src2_ready & _cdb2Hit2_T_24;
   wire [31:0] e_4_src1_val =
-    cdb1Hit1_4 ? io_cdb1_val : cdbHit1_4 ? io_cdb_val : entries_4_src1_val;
+    cdb2Hit1_4
+      ? io_cdb2_val
+      : cdb1Hit1_4 ? io_cdb1_val : cdbHit1_4 ? io_cdb_val : entries_4_src1_val;
   wire [31:0] e_4_src2_val =
-    cdb1Hit2_4 ? io_cdb1_val : cdbHit2_4 ? io_cdb_val : entries_4_src2_val;
+    cdb2Hit2_4
+      ? io_cdb2_val
+      : cdb1Hit2_4 ? io_cdb1_val : cdbHit2_4 ? io_cdb_val : entries_4_src2_val;
   wire        _cdbHit1_T_29 = entries_5_src1_phys == io_cdb_pdest;
   wire        cdbHit1_5 =
     io_cdb_valid & (|io_cdb_pdest) & ~entries_5_src1_ready & _cdbHit1_T_29;
@@ -542,10 +648,20 @@ module RS(
   wire        _cdb1Hit2_T_29 = entries_5_src2_phys == io_cdb1_pdest;
   wire        cdb1Hit2_5 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~entries_5_src2_ready & _cdb1Hit2_T_29;
+  wire        _cdb2Hit1_T_29 = entries_5_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit1_5 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_5_src1_ready & _cdb2Hit1_T_29;
+  wire        _cdb2Hit2_T_29 = entries_5_src2_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_5 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_5_src2_ready & _cdb2Hit2_T_29;
   wire [31:0] e_5_src1_val =
-    cdb1Hit1_5 ? io_cdb1_val : cdbHit1_5 ? io_cdb_val : entries_5_src1_val;
+    cdb2Hit1_5
+      ? io_cdb2_val
+      : cdb1Hit1_5 ? io_cdb1_val : cdbHit1_5 ? io_cdb_val : entries_5_src1_val;
   wire [31:0] e_5_src2_val =
-    cdb1Hit2_5 ? io_cdb1_val : cdbHit2_5 ? io_cdb_val : entries_5_src2_val;
+    cdb2Hit2_5
+      ? io_cdb2_val
+      : cdb1Hit2_5 ? io_cdb1_val : cdbHit2_5 ? io_cdb_val : entries_5_src2_val;
   wire        _cdbHit1_T_34 = entries_6_src1_phys == io_cdb_pdest;
   wire        cdbHit1_6 =
     io_cdb_valid & (|io_cdb_pdest) & ~entries_6_src1_ready & _cdbHit1_T_34;
@@ -558,10 +674,20 @@ module RS(
   wire        _cdb1Hit2_T_34 = entries_6_src2_phys == io_cdb1_pdest;
   wire        cdb1Hit2_6 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~entries_6_src2_ready & _cdb1Hit2_T_34;
+  wire        _cdb2Hit1_T_34 = entries_6_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit1_6 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_6_src1_ready & _cdb2Hit1_T_34;
+  wire        _cdb2Hit2_T_34 = entries_6_src2_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_6 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_6_src2_ready & _cdb2Hit2_T_34;
   wire [31:0] e_6_src1_val =
-    cdb1Hit1_6 ? io_cdb1_val : cdbHit1_6 ? io_cdb_val : entries_6_src1_val;
+    cdb2Hit1_6
+      ? io_cdb2_val
+      : cdb1Hit1_6 ? io_cdb1_val : cdbHit1_6 ? io_cdb_val : entries_6_src1_val;
   wire [31:0] e_6_src2_val =
-    cdb1Hit2_6 ? io_cdb1_val : cdbHit2_6 ? io_cdb_val : entries_6_src2_val;
+    cdb2Hit2_6
+      ? io_cdb2_val
+      : cdb1Hit2_6 ? io_cdb1_val : cdbHit2_6 ? io_cdb_val : entries_6_src2_val;
   wire        _cdbHit1_T_39 = entries_7_src1_phys == io_cdb_pdest;
   wire        cdbHit1_7 =
     io_cdb_valid & (|io_cdb_pdest) & ~entries_7_src1_ready & _cdbHit1_T_39;
@@ -574,10 +700,20 @@ module RS(
   wire        _cdb1Hit2_T_39 = entries_7_src2_phys == io_cdb1_pdest;
   wire        cdb1Hit2_7 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~entries_7_src2_ready & _cdb1Hit2_T_39;
+  wire        _cdb2Hit1_T_39 = entries_7_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit1_7 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_7_src1_ready & _cdb2Hit1_T_39;
+  wire        _cdb2Hit2_T_39 = entries_7_src2_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_7 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~entries_7_src2_ready & _cdb2Hit2_T_39;
   wire [31:0] e_7_src1_val =
-    cdb1Hit1_7 ? io_cdb1_val : cdbHit1_7 ? io_cdb_val : entries_7_src1_val;
+    cdb2Hit1_7
+      ? io_cdb2_val
+      : cdb1Hit1_7 ? io_cdb1_val : cdbHit1_7 ? io_cdb_val : entries_7_src1_val;
   wire [31:0] e_7_src2_val =
-    cdb1Hit2_7 ? io_cdb1_val : cdbHit2_7 ? io_cdb_val : entries_7_src2_val;
+    cdb2Hit2_7
+      ? io_cdb2_val
+      : cdb1Hit2_7 ? io_cdb1_val : cdbHit2_7 ? io_cdb_val : entries_7_src2_val;
   wire        isMulDiv_0 =
     entries_0_valid
     & (entries_0_exu_alu_control == 5'hA | entries_0_exu_alu_control == 5'hB
@@ -586,73 +722,74 @@ module RS(
        | entries_0_exu_alu_control == 5'h10 | entries_0_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_386 = entries_0_rob_idx - io_rob_head;
   wire [4:0]  _waitOlderStore_T_6 = 5'h0 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1599 = 5'h1 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1605 = 5'h2 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1611 = 5'h3 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1617 = 5'h4 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1623 = 5'h5 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1629 = 5'h6 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1635 = 5'h7 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1641 = 5'h8 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1647 = 5'h9 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1653 = 5'hA - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1659 = 5'hB - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1665 = 5'hC - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1671 = 5'hD - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1677 = 5'hE - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1683 = 5'hF - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1689 = 5'h10 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1695 = 5'h11 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1701 = 5'h12 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1707 = 5'h13 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1713 = 5'h14 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1719 = 5'h15 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1725 = 5'h16 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1731 = 5'h17 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1737 = 5'h18 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1743 = 5'h19 - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1749 = 5'h1A - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1755 = 5'h1B - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1761 = 5'h1C - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1767 = 5'h1D - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1773 = 5'h1E - io_rob_head;
-  wire [4:0]  _waitOlderStore_T_1779 = 5'h1F - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2052 = 5'h1 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2058 = 5'h2 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2064 = 5'h3 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2070 = 5'h4 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2076 = 5'h5 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2082 = 5'h6 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2088 = 5'h7 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2094 = 5'h8 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2100 = 5'h9 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2106 = 5'hA - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2112 = 5'hB - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2118 = 5'hC - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2124 = 5'hD - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2130 = 5'hE - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2136 = 5'hF - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2142 = 5'h10 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2148 = 5'h11 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2154 = 5'h12 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2160 = 5'h13 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2166 = 5'h14 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2172 = 5'h15 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2178 = 5'h16 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2184 = 5'h17 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2190 = 5'h18 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2196 = 5'h19 - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2202 = 5'h1A - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2208 = 5'h1B - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2214 = 5'h1C - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2220 = 5'h1D - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2226 = 5'h1E - io_rob_head;
+  wire [4:0]  _waitOlderStore_T_2232 = 5'h1F - io_rob_head;
   wire        canIssue_0 =
-    entries_0_valid & ~entries_0_issued & (cdb1Hit1 | cdbHit1 | entries_0_src1_ready)
-    & (cdb1Hit2 | cdbHit2 | entries_0_src2_ready) & ~freeByRob_0
+    entries_0_valid & ~entries_0_issued
+    & (cdb2Hit1 | cdb1Hit1 | cdbHit1 | entries_0_src1_ready)
+    & (cdb2Hit2 | cdb1Hit2 | cdbHit2 | entries_0_src2_ready) & ~freeByRob_0
     & ~(entries_0_valid & entries_0_lsu_mem_valid & ~entries_0_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_386
-           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_386));
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _legacyOH_hasOlder_T_386
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _legacyOH_hasOlder_T_386));
   wire        isMulDiv_1 =
     entries_1_valid
     & (entries_1_exu_alu_control == 5'hA | entries_1_exu_alu_control == 5'hB
@@ -661,41 +798,42 @@ module RS(
        | entries_1_exu_alu_control == 5'h10 | entries_1_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_392 = entries_1_rob_idx - io_rob_head;
   wire        canIssue_1 =
-    entries_1_valid & ~entries_1_issued & (cdb1Hit1_1 | cdbHit1_1 | entries_1_src1_ready)
-    & (cdb1Hit2_1 | cdbHit2_1 | entries_1_src2_ready) & ~freeByRob_1
+    entries_1_valid & ~entries_1_issued
+    & (cdb2Hit1_1 | cdb1Hit1_1 | cdbHit1_1 | entries_1_src1_ready)
+    & (cdb2Hit2_1 | cdb1Hit2_1 | cdbHit2_1 | entries_1_src2_ready) & ~freeByRob_1
     & ~(entries_1_valid & entries_1_lsu_mem_valid & ~entries_1_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_392
-           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_392));
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _legacyOH_hasOlder_T_392
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _legacyOH_hasOlder_T_392));
   wire        isMulDiv_2 =
     entries_2_valid
     & (entries_2_exu_alu_control == 5'hA | entries_2_exu_alu_control == 5'hB
@@ -704,41 +842,42 @@ module RS(
        | entries_2_exu_alu_control == 5'h10 | entries_2_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_398 = entries_2_rob_idx - io_rob_head;
   wire        canIssue_2 =
-    entries_2_valid & ~entries_2_issued & (cdb1Hit1_2 | cdbHit1_2 | entries_2_src1_ready)
-    & (cdb1Hit2_2 | cdbHit2_2 | entries_2_src2_ready) & ~freeByRob_2
+    entries_2_valid & ~entries_2_issued
+    & (cdb2Hit1_2 | cdb1Hit1_2 | cdbHit1_2 | entries_2_src1_ready)
+    & (cdb2Hit2_2 | cdb1Hit2_2 | cdbHit2_2 | entries_2_src2_ready) & ~freeByRob_2
     & ~(entries_2_valid & entries_2_lsu_mem_valid & ~entries_2_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_398
-           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_398));
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _legacyOH_hasOlder_T_398
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _legacyOH_hasOlder_T_398));
   wire        isMulDiv_3 =
     entries_3_valid
     & (entries_3_exu_alu_control == 5'hA | entries_3_exu_alu_control == 5'hB
@@ -747,41 +886,42 @@ module RS(
        | entries_3_exu_alu_control == 5'h10 | entries_3_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_404 = entries_3_rob_idx - io_rob_head;
   wire        canIssue_3 =
-    entries_3_valid & ~entries_3_issued & (cdb1Hit1_3 | cdbHit1_3 | entries_3_src1_ready)
-    & (cdb1Hit2_3 | cdbHit2_3 | entries_3_src2_ready) & ~freeByRob_3
+    entries_3_valid & ~entries_3_issued
+    & (cdb2Hit1_3 | cdb1Hit1_3 | cdbHit1_3 | entries_3_src1_ready)
+    & (cdb2Hit2_3 | cdb1Hit2_3 | cdbHit2_3 | entries_3_src2_ready) & ~freeByRob_3
     & ~(entries_3_valid & entries_3_lsu_mem_valid & ~entries_3_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_404
-           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_404));
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _legacyOH_hasOlder_T_404
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _legacyOH_hasOlder_T_404));
   wire        isMulDiv_4 =
     entries_4_valid
     & (entries_4_exu_alu_control == 5'hA | entries_4_exu_alu_control == 5'hB
@@ -790,41 +930,42 @@ module RS(
        | entries_4_exu_alu_control == 5'h10 | entries_4_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_410 = entries_4_rob_idx - io_rob_head;
   wire        canIssue_4 =
-    entries_4_valid & ~entries_4_issued & (cdb1Hit1_4 | cdbHit1_4 | entries_4_src1_ready)
-    & (cdb1Hit2_4 | cdbHit2_4 | entries_4_src2_ready) & ~freeByRob_4
+    entries_4_valid & ~entries_4_issued
+    & (cdb2Hit1_4 | cdb1Hit1_4 | cdbHit1_4 | entries_4_src1_ready)
+    & (cdb2Hit2_4 | cdb1Hit2_4 | cdbHit2_4 | entries_4_src2_ready) & ~freeByRob_4
     & ~(entries_4_valid & entries_4_lsu_mem_valid & ~entries_4_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_410
-           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_410));
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _legacyOH_hasOlder_T_410
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _legacyOH_hasOlder_T_410));
   wire        isMulDiv_5 =
     entries_5_valid
     & (entries_5_exu_alu_control == 5'hA | entries_5_exu_alu_control == 5'hB
@@ -833,41 +974,42 @@ module RS(
        | entries_5_exu_alu_control == 5'h10 | entries_5_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_416 = entries_5_rob_idx - io_rob_head;
   wire        canIssue_5 =
-    entries_5_valid & ~entries_5_issued & (cdb1Hit1_5 | cdbHit1_5 | entries_5_src1_ready)
-    & (cdb1Hit2_5 | cdbHit2_5 | entries_5_src2_ready) & ~freeByRob_5
+    entries_5_valid & ~entries_5_issued
+    & (cdb2Hit1_5 | cdb1Hit1_5 | cdbHit1_5 | entries_5_src1_ready)
+    & (cdb2Hit2_5 | cdb1Hit2_5 | cdbHit2_5 | entries_5_src2_ready) & ~freeByRob_5
     & ~(entries_5_valid & entries_5_lsu_mem_valid & ~entries_5_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_416
-           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_416));
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _legacyOH_hasOlder_T_416
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _legacyOH_hasOlder_T_416));
   wire        isMulDiv_6 =
     entries_6_valid
     & (entries_6_exu_alu_control == 5'hA | entries_6_exu_alu_control == 5'hB
@@ -876,41 +1018,42 @@ module RS(
        | entries_6_exu_alu_control == 5'h10 | entries_6_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_422 = entries_6_rob_idx - io_rob_head;
   wire        canIssue_6 =
-    entries_6_valid & ~entries_6_issued & (cdb1Hit1_6 | cdbHit1_6 | entries_6_src1_ready)
-    & (cdb1Hit2_6 | cdbHit2_6 | entries_6_src2_ready) & ~freeByRob_6
+    entries_6_valid & ~entries_6_issued
+    & (cdb2Hit1_6 | cdb1Hit1_6 | cdbHit1_6 | entries_6_src1_ready)
+    & (cdb2Hit2_6 | cdb1Hit2_6 | cdbHit2_6 | entries_6_src2_ready) & ~freeByRob_6
     & ~(entries_6_valid & entries_6_lsu_mem_valid & ~entries_6_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_422
-           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_422));
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _legacyOH_hasOlder_T_422
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _legacyOH_hasOlder_T_422));
   wire        isMulDiv_7 =
     entries_7_valid
     & (entries_7_exu_alu_control == 5'hA | entries_7_exu_alu_control == 5'hB
@@ -919,41 +1062,189 @@ module RS(
        | entries_7_exu_alu_control == 5'h10 | entries_7_exu_alu_control == 5'h11);
   wire [4:0]  _legacyOH_hasOlder_T_428 = entries_7_rob_idx - io_rob_head;
   wire        canIssue_7 =
-    entries_7_valid & ~entries_7_issued & (cdb1Hit1_7 | cdbHit1_7 | entries_7_src1_ready)
-    & (cdb1Hit2_7 | cdbHit2_7 | entries_7_src2_ready) & ~freeByRob_7
+    entries_7_valid & ~entries_7_issued
+    & (cdb2Hit1_7 | cdb1Hit1_7 | cdbHit1_7 | entries_7_src1_ready)
+    & (cdb2Hit2_7 | cdb1Hit2_7 | cdbHit2_7 | entries_7_src2_ready) & ~freeByRob_7
     & ~(entries_7_valid & entries_7_lsu_mem_valid & ~entries_7_lsu_mem_write
         & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[1] & _waitOlderStore_T_1599 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[2] & _waitOlderStore_T_1605 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[3] & _waitOlderStore_T_1611 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[4] & _waitOlderStore_T_1617 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[5] & _waitOlderStore_T_1623 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[6] & _waitOlderStore_T_1629 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[7] & _waitOlderStore_T_1635 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[8] & _waitOlderStore_T_1641 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[9] & _waitOlderStore_T_1647 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[10] & _waitOlderStore_T_1653 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[11] & _waitOlderStore_T_1659 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[12] & _waitOlderStore_T_1665 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[13] & _waitOlderStore_T_1671 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[14] & _waitOlderStore_T_1677 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[15] & _waitOlderStore_T_1683 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[16] & _waitOlderStore_T_1689 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[17] & _waitOlderStore_T_1695 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[18] & _waitOlderStore_T_1701 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[19] & _waitOlderStore_T_1707 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[20] & _waitOlderStore_T_1713 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[21] & _waitOlderStore_T_1719 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[22] & _waitOlderStore_T_1725 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[23] & _waitOlderStore_T_1731 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[24] & _waitOlderStore_T_1737 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[25] & _waitOlderStore_T_1743 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[26] & _waitOlderStore_T_1749 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[27] & _waitOlderStore_T_1755 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[28] & _waitOlderStore_T_1761 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[29] & _waitOlderStore_T_1767 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[30] & _waitOlderStore_T_1773 < _legacyOH_hasOlder_T_428
-           | io_rob_st_pending[31] & _waitOlderStore_T_1779 < _legacyOH_hasOlder_T_428));
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _legacyOH_hasOlder_T_428
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _legacyOH_hasOlder_T_428));
+  wire        _fresh_0_T_4 =
+    io_cdb_valid & (|io_cdb_pdest) & io_enq_bits_src1_phys == io_cdb_pdest;
+  wire        _fresh_0_T_8 =
+    io_cdb1_valid & (|io_cdb1_pdest) & io_enq_bits_src1_phys == io_cdb1_pdest;
+  wire        _fresh_0_T_12 =
+    io_cdb2_valid & (|io_cdb2_pdest) & io_enq_bits_src1_phys == io_cdb2_pdest;
+  wire [31:0] fresh_0_e_src1_val =
+    io_enq_bits_src1_ready
+      ? io_enq_bits_src1_val
+      : _fresh_0_T_12
+          ? io_cdb2_val
+          : _fresh_0_T_8 ? io_cdb1_val : _fresh_0_T_4 ? io_cdb_val : io_enq_bits_src1_val;
+  wire        _fresh_0_T_17 =
+    io_cdb_valid & (|io_cdb_pdest) & io_enq_bits_src2_phys == io_cdb_pdest;
+  wire        _fresh_0_T_21 =
+    io_cdb1_valid & (|io_cdb1_pdest) & io_enq_bits_src2_phys == io_cdb1_pdest;
+  wire        _fresh_0_T_25 =
+    io_cdb2_valid & (|io_cdb2_pdest) & io_enq_bits_src2_phys == io_cdb2_pdest;
+  wire [31:0] fresh_0_e_src2_val =
+    io_enq_bits_src2_ready
+      ? io_enq_bits_src2_val
+      : _fresh_0_T_25
+          ? io_cdb2_val
+          : _fresh_0_T_21
+              ? io_cdb1_val
+              : _fresh_0_T_17 ? io_cdb_val : io_enq_bits_src2_val;
+  wire        _fresh_1_T_4 =
+    io_cdb_valid & (|io_cdb_pdest) & io_enq1_bits_src1_phys == io_cdb_pdest;
+  wire        _fresh_1_T_8 =
+    io_cdb1_valid & (|io_cdb1_pdest) & io_enq1_bits_src1_phys == io_cdb1_pdest;
+  wire        _fresh_1_T_12 =
+    io_cdb2_valid & (|io_cdb2_pdest) & io_enq1_bits_src1_phys == io_cdb2_pdest;
+  wire [31:0] fresh_1_e_src1_val =
+    io_enq1_bits_src1_ready
+      ? io_enq1_bits_src1_val
+      : _fresh_1_T_12
+          ? io_cdb2_val
+          : _fresh_1_T_8
+              ? io_cdb1_val
+              : _fresh_1_T_4 ? io_cdb_val : io_enq1_bits_src1_val;
+  wire        _fresh_1_T_17 =
+    io_cdb_valid & (|io_cdb_pdest) & io_enq1_bits_src2_phys == io_cdb_pdest;
+  wire        _fresh_1_T_21 =
+    io_cdb1_valid & (|io_cdb1_pdest) & io_enq1_bits_src2_phys == io_cdb1_pdest;
+  wire        _fresh_1_T_25 =
+    io_cdb2_valid & (|io_cdb2_pdest) & io_enq1_bits_src2_phys == io_cdb2_pdest;
+  wire [31:0] fresh_1_e_src2_val =
+    io_enq1_bits_src2_ready
+      ? io_enq1_bits_src2_val
+      : _fresh_1_T_25
+          ? io_cdb2_val
+          : _fresh_1_T_21
+              ? io_cdb1_val
+              : _fresh_1_T_17 ? io_cdb_val : io_enq1_bits_src2_val;
+  wire        freshAccept_0 = io_enq_fire & (|freeOrIssue);
+  wire        freshMulDiv_0 =
+    io_enq_bits_exu_alu_control == 5'hA | io_enq_bits_exu_alu_control == 5'hB
+    | io_enq_bits_exu_alu_control == 5'hC | io_enq_bits_exu_alu_control == 5'hD
+    | io_enq_bits_exu_alu_control == 5'hE | io_enq_bits_exu_alu_control == 5'hF
+    | io_enq_bits_exu_alu_control == 5'h10 | io_enq_bits_exu_alu_control == 5'h11;
+  wire [4:0]  _waitOlderStore_myAge_T_16 = io_enq_bits_rob_idx - io_rob_head;
+  wire        freshCanIssue_0 =
+    freshAccept_0
+    & (~io_enq_bits_src1_ready & (_fresh_0_T_12 | _fresh_0_T_8 | _fresh_0_T_4)
+       | io_enq_bits_src1_ready)
+    & (~io_enq_bits_src2_ready & (_fresh_0_T_25 | _fresh_0_T_21 | _fresh_0_T_17)
+       | io_enq_bits_src2_ready)
+    & ~(io_enq_bits_lsu_mem_valid & ~io_enq_bits_lsu_mem_write
+        & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _waitOlderStore_myAge_T_16
+           | io_rob_st_pending[31]
+           & _waitOlderStore_T_2232 < _waitOlderStore_myAge_T_16));
+  wire        freshMulDiv_1 =
+    io_enq1_bits_exu_alu_control == 5'hA | io_enq1_bits_exu_alu_control == 5'hB
+    | io_enq1_bits_exu_alu_control == 5'hC | io_enq1_bits_exu_alu_control == 5'hD
+    | io_enq1_bits_exu_alu_control == 5'hE | io_enq1_bits_exu_alu_control == 5'hF
+    | io_enq1_bits_exu_alu_control == 5'h10 | io_enq1_bits_exu_alu_control == 5'h11;
+  wire [4:0]  _waitOlderStore_myAge_T_18 = io_enq1_bits_rob_idx - io_rob_head;
+  wire        freshCanIssue_1 =
+    io_enq1_fire & (|freeMask1)
+    & (~io_enq1_bits_src1_ready & (_fresh_1_T_12 | _fresh_1_T_8 | _fresh_1_T_4)
+       | io_enq1_bits_src1_ready)
+    & (~io_enq1_bits_src2_ready & (_fresh_1_T_25 | _fresh_1_T_21 | _fresh_1_T_17)
+       | io_enq1_bits_src2_ready)
+    & ~(io_enq1_bits_lsu_mem_valid & ~io_enq1_bits_lsu_mem_write
+        & (io_rob_st_pending[0] & _waitOlderStore_T_6 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[1] & _waitOlderStore_T_2052 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[2] & _waitOlderStore_T_2058 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[3] & _waitOlderStore_T_2064 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[4] & _waitOlderStore_T_2070 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[5] & _waitOlderStore_T_2076 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[6] & _waitOlderStore_T_2082 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[7] & _waitOlderStore_T_2088 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[8] & _waitOlderStore_T_2094 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[9] & _waitOlderStore_T_2100 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[10] & _waitOlderStore_T_2106 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[11] & _waitOlderStore_T_2112 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[12] & _waitOlderStore_T_2118 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[13] & _waitOlderStore_T_2124 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[14] & _waitOlderStore_T_2130 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[15] & _waitOlderStore_T_2136 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[16] & _waitOlderStore_T_2142 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[17] & _waitOlderStore_T_2148 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[18] & _waitOlderStore_T_2154 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[19] & _waitOlderStore_T_2160 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[20] & _waitOlderStore_T_2166 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[21] & _waitOlderStore_T_2172 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[22] & _waitOlderStore_T_2178 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[23] & _waitOlderStore_T_2184 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[24] & _waitOlderStore_T_2190 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[25] & _waitOlderStore_T_2196 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[26] & _waitOlderStore_T_2202 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[27] & _waitOlderStore_T_2208 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[28] & _waitOlderStore_T_2214 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[29] & _waitOlderStore_T_2220 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[30] & _waitOlderStore_T_2226 < _waitOlderStore_myAge_T_18
+           | io_rob_st_pending[31] & _waitOlderStore_T_2232 < _waitOlderStore_myAge_T_18
+           | freshAccept_0 & io_enq_bits_lsu_mem_valid & io_enq_bits_lsu_mem_write));
   wire        _aluOH_hasOlder_T_385 = canIssue_0 & ~entries_0_lsu_mem_valid & ~isMulDiv_0;
   wire        _aluOH_hasOlder_T_391 = canIssue_1 & ~entries_1_lsu_mem_valid & ~isMulDiv_1;
   wire        _aluOH_hasOlder_T_397 = canIssue_2 & ~entries_2_lsu_mem_valid & ~isMulDiv_2;
@@ -1303,6 +1594,80 @@ module RS(
           : lsuOH_2
               ? 3'h2
               : lsuOH_3 ? 3'h3 : lsuOH_4 ? 3'h4 : lsuOH_5 ? 3'h5 : {2'h3, ~lsuOH_6};
+  wire [7:0]  _aluResident_T =
+    {aluOH_7, aluOH_6, aluOH_5, aluOH_4, aluOH_3, aluOH_2, aluOH_1, aluOH_0};
+  wire [7:0]  _alu1Resident_T =
+    {_alu1OH_oh_7_T
+       & ~(_alu1OH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
+           | _alu1OH_hasOlder_T_391 & _legacyOH_hasOlder_T_392 < _legacyOH_hasOlder_T_428
+           | _alu1OH_hasOlder_T_397 & _legacyOH_hasOlder_T_398 < _legacyOH_hasOlder_T_428
+           | _alu1OH_hasOlder_T_403 & _legacyOH_hasOlder_T_404 < _legacyOH_hasOlder_T_428
+           | _alu1OH_hasOlder_T_409 & _legacyOH_hasOlder_T_410 < _legacyOH_hasOlder_T_428
+           | _alu1OH_hasOlder_T_415 & _legacyOH_hasOlder_T_416 < _legacyOH_hasOlder_T_428
+           | _alu1OH_hasOlder_T_421
+           & _legacyOH_hasOlder_T_422 < _legacyOH_hasOlder_T_428),
+     alu1OH_6,
+     alu1OH_5,
+     alu1OH_4,
+     alu1OH_3,
+     alu1OH_2,
+     alu1OH_1,
+     alu1OH_0};
+  wire [7:0]  _divResident_T =
+    {_divOH_oh_7_T
+       & ~(_divOH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
+           | _divOH_hasOlder_T_391 & _legacyOH_hasOlder_T_392 < _legacyOH_hasOlder_T_428
+           | _divOH_hasOlder_T_397 & _legacyOH_hasOlder_T_398 < _legacyOH_hasOlder_T_428
+           | _divOH_hasOlder_T_403 & _legacyOH_hasOlder_T_404 < _legacyOH_hasOlder_T_428
+           | _divOH_hasOlder_T_409 & _legacyOH_hasOlder_T_410 < _legacyOH_hasOlder_T_428
+           | _divOH_hasOlder_T_415 & _legacyOH_hasOlder_T_416 < _legacyOH_hasOlder_T_428
+           | _divOH_hasOlder_T_421 & _legacyOH_hasOlder_T_422 < _legacyOH_hasOlder_T_428),
+     divOH_6,
+     divOH_5,
+     divOH_4,
+     divOH_3,
+     divOH_2,
+     divOH_1,
+     divOH_0};
+  wire [7:0]  _lsuResident_T =
+    {_lsuOH_oh_7_T
+       & ~(_lsuOH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
+           | _lsuOH_hasOlder_T_391 & _legacyOH_hasOlder_T_392 < _legacyOH_hasOlder_T_428
+           | _lsuOH_hasOlder_T_397 & _legacyOH_hasOlder_T_398 < _legacyOH_hasOlder_T_428
+           | _lsuOH_hasOlder_T_403 & _legacyOH_hasOlder_T_404 < _legacyOH_hasOlder_T_428
+           | _lsuOH_hasOlder_T_409 & _legacyOH_hasOlder_T_410 < _legacyOH_hasOlder_T_428
+           | _lsuOH_hasOlder_T_415 & _legacyOH_hasOlder_T_416 < _legacyOH_hasOlder_T_428
+           | _lsuOH_hasOlder_T_421 & _legacyOH_hasOlder_T_422 < _legacyOH_hasOlder_T_428),
+     lsuOH_6,
+     lsuOH_5,
+     lsuOH_4,
+     lsuOH_3,
+     lsuOH_2,
+     lsuOH_1,
+     lsuOH_0};
+  wire        freshAlu0 = freshCanIssue_0 & ~io_enq_bits_lsu_mem_valid & ~freshMulDiv_0;
+  wire        freshAlu1 = freshCanIssue_1 & ~io_enq1_bits_lsu_mem_valid & ~freshMulDiv_1;
+  wire        aluFresh0 = ~(|_aluResident_T) & freshAlu0;
+  wire        aluFresh1 = ~(|_aluResident_T) & ~aluFresh0 & freshAlu1;
+  wire        alu1Fresh0 =
+    ~(|_alu1Resident_T) & ~aluFresh0 & freshAlu0 & (&io_enq_bits_exu_jump)
+    & ~io_enq_bits_wbu_csr_write & ~io_enq_bits_is_ebreak & ~io_enq_bits_is_fencei
+    & ~io_enq_bits_state_state;
+  wire        alu1Fresh1 =
+    ~(|_alu1Resident_T) & ~aluFresh1 & ~alu1Fresh0 & freshAlu1 & (&io_enq1_bits_exu_jump)
+    & ~io_enq1_bits_wbu_csr_write & ~io_enq1_bits_is_ebreak & ~io_enq1_bits_is_fencei
+    & ~io_enq1_bits_state_state;
+  wire        divFresh0 = ~(|_divResident_T) & freshCanIssue_0 & freshMulDiv_0;
+  wire        divFresh1 =
+    ~(|_divResident_T) & ~divFresh0 & freshCanIssue_1 & freshMulDiv_1;
+  wire        lsuFresh0 =
+    ~(|_lsuResident_T) & freshCanIssue_0 & io_enq_bits_lsu_mem_valid;
+  wire        lsuFresh1 =
+    ~(|_lsuResident_T) & ~lsuFresh0 & freshCanIssue_1 & io_enq1_bits_lsu_mem_valid;
+  wire        aluFresh = aluFresh0 | aluFresh1;
+  wire        alu1Fresh = alu1Fresh0 | alu1Fresh1;
+  wire        divFresh = divFresh0 | divFresh1;
+  wire        lsuFresh = lsuFresh0 | lsuFresh1;
   reg  [4:0]  casez_tmp;
   always_comb begin
     casez (aluIdx)
@@ -3067,94 +3432,48 @@ module RS(
         casez_tmp_82 = entries_7_wbu_reg_write_sel;
     endcase
   end // always_comb
-  wire        _GEN = io_issue_lsu_fire & lsuIdx == 3'h0;
-  wire        _GEN_0 = io_issue_lsu_fire & lsuIdx == 3'h1;
-  wire        _GEN_1 = io_issue_lsu_fire & lsuIdx == 3'h2;
-  wire        _GEN_2 = io_issue_lsu_fire & lsuIdx == 3'h3;
-  wire        _GEN_3 = io_issue_lsu_fire & lsuIdx == 3'h4;
-  wire        _GEN_4 = io_issue_lsu_fire & lsuIdx == 3'h5;
-  wire        _GEN_5 = io_issue_lsu_fire & lsuIdx == 3'h6;
-  wire        _GEN_6 = io_issue_lsu_fire & (&lsuIdx);
-  wire        _GEN_7 =
-    io_issue_alu_fire
-      ? aluIdx == 3'h0 | _GEN | entries_0_issued
-      : _GEN | entries_0_issued;
-  wire        _GEN_8 =
-    io_issue_alu_fire
-      ? aluIdx == 3'h1 | _GEN_0 | entries_1_issued
-      : _GEN_0 | entries_1_issued;
+  wire        _GEN = io_issue_lsu_fire & ~lsuFresh;
+  wire        _GEN_0 = _GEN & lsuIdx == 3'h0;
+  wire        _GEN_1 = _GEN & lsuIdx == 3'h1;
+  wire        _GEN_2 = _GEN & lsuIdx == 3'h2;
+  wire        _GEN_3 = _GEN & lsuIdx == 3'h3;
+  wire        _GEN_4 = _GEN & lsuIdx == 3'h4;
+  wire        _GEN_5 = _GEN & lsuIdx == 3'h5;
+  wire        _GEN_6 = _GEN & lsuIdx == 3'h6;
+  wire        _GEN_7 = _GEN & (&lsuIdx);
+  wire        _GEN_8 = io_issue_alu_fire & ~aluFresh;
   wire        _GEN_9 =
-    io_issue_alu_fire
-      ? aluIdx == 3'h2 | _GEN_1 | entries_2_issued
-      : _GEN_1 | entries_2_issued;
+    _GEN_8 ? aluIdx == 3'h0 | _GEN_0 | entries_0_issued : _GEN_0 | entries_0_issued;
   wire        _GEN_10 =
-    io_issue_alu_fire
-      ? aluIdx == 3'h3 | _GEN_2 | entries_3_issued
-      : _GEN_2 | entries_3_issued;
+    _GEN_8 ? aluIdx == 3'h1 | _GEN_1 | entries_1_issued : _GEN_1 | entries_1_issued;
   wire        _GEN_11 =
-    io_issue_alu_fire
-      ? aluIdx == 3'h4 | _GEN_3 | entries_4_issued
-      : _GEN_3 | entries_4_issued;
+    _GEN_8 ? aluIdx == 3'h2 | _GEN_2 | entries_2_issued : _GEN_2 | entries_2_issued;
   wire        _GEN_12 =
-    io_issue_alu_fire
-      ? aluIdx == 3'h5 | _GEN_4 | entries_5_issued
-      : _GEN_4 | entries_5_issued;
+    _GEN_8 ? aluIdx == 3'h3 | _GEN_3 | entries_3_issued : _GEN_3 | entries_3_issued;
   wire        _GEN_13 =
-    io_issue_alu_fire
-      ? aluIdx == 3'h6 | _GEN_5 | entries_6_issued
-      : _GEN_5 | entries_6_issued;
+    _GEN_8 ? aluIdx == 3'h4 | _GEN_4 | entries_4_issued : _GEN_4 | entries_4_issued;
   wire        _GEN_14 =
-    io_issue_alu_fire ? (&aluIdx) | _GEN_6 | entries_7_issued : _GEN_6 | entries_7_issued;
-  wire        _GEN_15 = io_issue_alu1_fire & alu1Idx == 3'h0;
-  wire        _GEN_16 = io_issue_alu1_fire & alu1Idx == 3'h1;
-  wire        _GEN_17 = io_issue_alu1_fire & alu1Idx == 3'h2;
-  wire        _GEN_18 = io_issue_alu1_fire & alu1Idx == 3'h3;
-  wire        _GEN_19 = io_issue_alu1_fire & alu1Idx == 3'h4;
-  wire        _GEN_20 = io_issue_alu1_fire & alu1Idx == 3'h5;
-  wire        _GEN_21 = io_issue_alu1_fire & alu1Idx == 3'h6;
-  wire        _GEN_22 = io_issue_alu1_fire & (&alu1Idx);
-  wire        _GEN_23 =
-    io_issue_div_fire ? divIdx == 3'h0 | _GEN_15 | _GEN_7 : _GEN_15 | _GEN_7;
-  wire        _GEN_24 =
-    io_issue_div_fire ? divIdx == 3'h1 | _GEN_16 | _GEN_8 : _GEN_16 | _GEN_8;
-  wire        _GEN_25 =
-    io_issue_div_fire ? divIdx == 3'h2 | _GEN_17 | _GEN_9 : _GEN_17 | _GEN_9;
-  wire        _GEN_26 =
-    io_issue_div_fire ? divIdx == 3'h3 | _GEN_18 | _GEN_10 : _GEN_18 | _GEN_10;
-  wire        _GEN_27 =
-    io_issue_div_fire ? divIdx == 3'h4 | _GEN_19 | _GEN_11 : _GEN_19 | _GEN_11;
-  wire        _GEN_28 =
-    io_issue_div_fire ? divIdx == 3'h5 | _GEN_20 | _GEN_12 : _GEN_20 | _GEN_12;
-  wire        _GEN_29 =
-    io_issue_div_fire ? divIdx == 3'h6 | _GEN_21 | _GEN_13 : _GEN_21 | _GEN_13;
-  wire        _GEN_30 =
-    io_issue_div_fire ? (&divIdx) | _GEN_22 | _GEN_14 : _GEN_22 | _GEN_14;
-  wire [7:0]  freeOrIssue =
-    {~entries_7_valid,
-     ~entries_6_valid,
-     ~entries_5_valid,
-     ~entries_4_valid,
-     ~entries_3_valid,
-     ~entries_2_valid,
-     ~entries_1_valid,
-     ~entries_0_valid}
-    | ((|{freeByRob_7,
-          freeByRob_6,
-          freeByRob_5,
-          freeByRob_4,
-          freeByRob_3,
-          freeByRob_2,
-          freeByRob_1,
-          freeByRob_0})
-         ? {freeByRob_7,
-            freeByRob_6,
-            freeByRob_5,
-            freeByRob_4,
-            freeByRob_3,
-            freeByRob_2,
-            freeByRob_1,
-            freeByRob_0}
-         : 8'h0);
+    _GEN_8 ? aluIdx == 3'h5 | _GEN_5 | entries_5_issued : _GEN_5 | entries_5_issued;
+  wire        _GEN_15 =
+    _GEN_8 ? aluIdx == 3'h6 | _GEN_6 | entries_6_issued : _GEN_6 | entries_6_issued;
+  wire        _GEN_16 =
+    _GEN_8 ? (&aluIdx) | _GEN_7 | entries_7_issued : _GEN_7 | entries_7_issued;
+  wire        _GEN_17 = io_issue_alu1_fire & ~alu1Fresh;
+  wire        _GEN_18 = _GEN_17 & alu1Idx == 3'h0;
+  wire        _GEN_19 = _GEN_17 & alu1Idx == 3'h1;
+  wire        _GEN_20 = _GEN_17 & alu1Idx == 3'h2;
+  wire        _GEN_21 = _GEN_17 & alu1Idx == 3'h3;
+  wire        _GEN_22 = _GEN_17 & alu1Idx == 3'h4;
+  wire        _GEN_23 = _GEN_17 & alu1Idx == 3'h5;
+  wire        _GEN_24 = _GEN_17 & alu1Idx == 3'h6;
+  wire        _GEN_25 = _GEN_17 & (&alu1Idx);
+  wire        _GEN_26 = io_issue_div_fire & ~divFresh;
+  wire        e_8_issued =
+    io_issue_alu_fire & aluFresh0 | io_issue_alu1_fire & alu1Fresh0 | io_issue_div_fire
+    & divFresh0 | io_issue_lsu_fire & lsuFresh0;
+  wire        e_9_issued =
+    io_issue_alu_fire & aluFresh1 | io_issue_alu1_fire & alu1Fresh1 | io_issue_div_fire
+    & divFresh1 | io_issue_lsu_fire & lsuFresh1;
   wire [2:0]  enqIdx =
     freeOrIssue[0]
       ? 3'h0
@@ -3167,22 +3486,6 @@ module RS(
                   : freeOrIssue[4]
                       ? 3'h4
                       : freeOrIssue[5] ? 3'h5 : {2'h3, ~(freeOrIssue[6])};
-  wire [7:0]  freeMask1 =
-    ({8{~io_enq_fire}}
-     | ~(freeOrIssue[0]
-           ? 8'h1
-           : freeOrIssue[1]
-               ? 8'h2
-               : freeOrIssue[2]
-                   ? 8'h4
-                   : freeOrIssue[3]
-                       ? 8'h8
-                       : freeOrIssue[4]
-                           ? 8'h10
-                           : freeOrIssue[5]
-                               ? 8'h20
-                               : freeOrIssue[6] ? 8'h40 : {freeOrIssue[7], 7'h0}))
-    & freeOrIssue;
   wire [2:0]  enq1Idx =
     freeMask1[0]
       ? 3'h0
@@ -3193,106 +3496,183 @@ module RS(
               : freeMask1[3]
                   ? 3'h3
                   : freeMask1[4] ? 3'h4 : freeMask1[5] ? 3'h5 : {2'h3, ~(freeMask1[6])};
-  wire        _GEN_31 = io_cdb_valid & (|io_cdb_pdest);
-  wire        _GEN_32 = _GEN_31 & entries_0_valid & ~entries_0_src1_ready & _cdbHit1_T_4;
-  wire        _GEN_33 = _GEN_31 & entries_0_valid & ~entries_0_src2_ready & _cdbHit2_T_4;
-  wire        _GEN_34 = _GEN_31 & entries_1_valid & ~entries_1_src1_ready & _cdbHit1_T_9;
-  wire        _GEN_35 = _GEN_31 & entries_1_valid & ~entries_1_src2_ready & _cdbHit2_T_9;
-  wire        _GEN_36 = _GEN_31 & entries_2_valid & ~entries_2_src1_ready & _cdbHit1_T_14;
-  wire        _GEN_37 = _GEN_31 & entries_2_valid & ~entries_2_src2_ready & _cdbHit2_T_14;
-  wire        _GEN_38 = _GEN_31 & entries_3_valid & ~entries_3_src1_ready & _cdbHit1_T_19;
-  wire        _GEN_39 = _GEN_31 & entries_3_valid & ~entries_3_src2_ready & _cdbHit2_T_19;
-  wire        _GEN_40 = _GEN_31 & entries_4_valid & ~entries_4_src1_ready & _cdbHit1_T_24;
-  wire        _GEN_41 = _GEN_31 & entries_4_valid & ~entries_4_src2_ready & _cdbHit2_T_24;
-  wire        _GEN_42 = _GEN_31 & entries_5_valid & ~entries_5_src1_ready & _cdbHit1_T_29;
-  wire        _GEN_43 = _GEN_31 & entries_5_valid & ~entries_5_src2_ready & _cdbHit2_T_29;
-  wire        _GEN_44 = _GEN_31 & entries_6_valid & ~entries_6_src1_ready & _cdbHit1_T_34;
-  wire        _GEN_45 = _GEN_31 & entries_6_valid & ~entries_6_src2_ready & _cdbHit2_T_34;
-  wire        _GEN_46 = _GEN_31 & entries_7_valid & ~entries_7_src1_ready & _cdbHit1_T_39;
-  wire        _GEN_47 = _GEN_31 & entries_7_valid & ~entries_7_src2_ready & _cdbHit2_T_39;
-  wire        _GEN_48 = io_cdb1_valid & (|io_cdb1_pdest);
-  wire        _GEN_49 = ~entries_0_src1_ready & _cdb1Hit1_T_4;
-  wire        _GEN_50 = _GEN_48 & entries_0_valid;
-  wire        _GEN_51 =
-    _GEN_50 ? _GEN_49 | _GEN_32 | entries_0_src1_ready : _GEN_32 | entries_0_src1_ready;
-  wire        _GEN_52 = _GEN_48 & entries_0_valid & _GEN_49;
-  wire        _GEN_53 = ~entries_0_src2_ready & _cdb1Hit2_T_4;
-  wire        _GEN_54 =
-    _GEN_50 ? _GEN_53 | _GEN_33 | entries_0_src2_ready : _GEN_33 | entries_0_src2_ready;
-  wire        _GEN_55 = _GEN_48 & entries_0_valid & _GEN_53;
-  wire        _GEN_56 = ~entries_1_src1_ready & _cdb1Hit1_T_9;
-  wire        _GEN_57 = _GEN_48 & entries_1_valid;
-  wire        _GEN_58 =
-    _GEN_57 ? _GEN_56 | _GEN_34 | entries_1_src1_ready : _GEN_34 | entries_1_src1_ready;
-  wire        _GEN_59 = _GEN_48 & entries_1_valid & _GEN_56;
-  wire        _GEN_60 = ~entries_1_src2_ready & _cdb1Hit2_T_9;
-  wire        _GEN_61 =
-    _GEN_57 ? _GEN_60 | _GEN_35 | entries_1_src2_ready : _GEN_35 | entries_1_src2_ready;
-  wire        _GEN_62 = _GEN_48 & entries_1_valid & _GEN_60;
-  wire        _GEN_63 = ~entries_2_src1_ready & _cdb1Hit1_T_14;
-  wire        _GEN_64 = _GEN_48 & entries_2_valid;
-  wire        _GEN_65 =
-    _GEN_64 ? _GEN_63 | _GEN_36 | entries_2_src1_ready : _GEN_36 | entries_2_src1_ready;
-  wire        _GEN_66 = _GEN_48 & entries_2_valid & _GEN_63;
-  wire        _GEN_67 = ~entries_2_src2_ready & _cdb1Hit2_T_14;
-  wire        _GEN_68 =
-    _GEN_64 ? _GEN_67 | _GEN_37 | entries_2_src2_ready : _GEN_37 | entries_2_src2_ready;
-  wire        _GEN_69 = _GEN_48 & entries_2_valid & _GEN_67;
-  wire        _GEN_70 = ~entries_3_src1_ready & _cdb1Hit1_T_19;
-  wire        _GEN_71 = _GEN_48 & entries_3_valid;
-  wire        _GEN_72 =
-    _GEN_71 ? _GEN_70 | _GEN_38 | entries_3_src1_ready : _GEN_38 | entries_3_src1_ready;
-  wire        _GEN_73 = _GEN_48 & entries_3_valid & _GEN_70;
-  wire        _GEN_74 = ~entries_3_src2_ready & _cdb1Hit2_T_19;
-  wire        _GEN_75 =
-    _GEN_71 ? _GEN_74 | _GEN_39 | entries_3_src2_ready : _GEN_39 | entries_3_src2_ready;
-  wire        _GEN_76 = _GEN_48 & entries_3_valid & _GEN_74;
-  wire        _GEN_77 = ~entries_4_src1_ready & _cdb1Hit1_T_24;
-  wire        _GEN_78 = _GEN_48 & entries_4_valid;
-  wire        _GEN_79 =
-    _GEN_78 ? _GEN_77 | _GEN_40 | entries_4_src1_ready : _GEN_40 | entries_4_src1_ready;
-  wire        _GEN_80 = _GEN_48 & entries_4_valid & _GEN_77;
-  wire        _GEN_81 = ~entries_4_src2_ready & _cdb1Hit2_T_24;
-  wire        _GEN_82 =
-    _GEN_78 ? _GEN_81 | _GEN_41 | entries_4_src2_ready : _GEN_41 | entries_4_src2_ready;
-  wire        _GEN_83 = _GEN_48 & entries_4_valid & _GEN_81;
-  wire        _GEN_84 = ~entries_5_src1_ready & _cdb1Hit1_T_29;
-  wire        _GEN_85 = _GEN_48 & entries_5_valid;
-  wire        _GEN_86 =
-    _GEN_85 ? _GEN_84 | _GEN_42 | entries_5_src1_ready : _GEN_42 | entries_5_src1_ready;
-  wire        _GEN_87 = _GEN_48 & entries_5_valid & _GEN_84;
-  wire        _GEN_88 = ~entries_5_src2_ready & _cdb1Hit2_T_29;
+  wire        _GEN_27 = io_cdb_valid & (|io_cdb_pdest);
+  wire        _GEN_28 = _GEN_27 & entries_0_valid & ~entries_0_src1_ready & _cdbHit1_T_4;
+  wire        _GEN_29 = _GEN_27 & entries_0_valid & ~entries_0_src2_ready & _cdbHit2_T_4;
+  wire        _GEN_30 = _GEN_27 & entries_1_valid & ~entries_1_src1_ready & _cdbHit1_T_9;
+  wire        _GEN_31 = _GEN_27 & entries_1_valid & ~entries_1_src2_ready & _cdbHit2_T_9;
+  wire        _GEN_32 = _GEN_27 & entries_2_valid & ~entries_2_src1_ready & _cdbHit1_T_14;
+  wire        _GEN_33 = _GEN_27 & entries_2_valid & ~entries_2_src2_ready & _cdbHit2_T_14;
+  wire        _GEN_34 = _GEN_27 & entries_3_valid & ~entries_3_src1_ready & _cdbHit1_T_19;
+  wire        _GEN_35 = _GEN_27 & entries_3_valid & ~entries_3_src2_ready & _cdbHit2_T_19;
+  wire        _GEN_36 = _GEN_27 & entries_4_valid & ~entries_4_src1_ready & _cdbHit1_T_24;
+  wire        _GEN_37 = _GEN_27 & entries_4_valid & ~entries_4_src2_ready & _cdbHit2_T_24;
+  wire        _GEN_38 = _GEN_27 & entries_5_valid & ~entries_5_src1_ready & _cdbHit1_T_29;
+  wire        _GEN_39 = _GEN_27 & entries_5_valid & ~entries_5_src2_ready & _cdbHit2_T_29;
+  wire        _GEN_40 = _GEN_27 & entries_6_valid & ~entries_6_src1_ready & _cdbHit1_T_34;
+  wire        _GEN_41 = _GEN_27 & entries_6_valid & ~entries_6_src2_ready & _cdbHit2_T_34;
+  wire        _GEN_42 = _GEN_27 & entries_7_valid & ~entries_7_src1_ready & _cdbHit1_T_39;
+  wire        _GEN_43 = _GEN_27 & entries_7_valid & ~entries_7_src2_ready & _cdbHit2_T_39;
+  wire        _GEN_44 = io_cdb1_valid & (|io_cdb1_pdest);
+  wire        _GEN_45 = ~entries_0_src1_ready & _cdb1Hit1_T_4;
+  wire        _GEN_46 = _GEN_44 & entries_0_valid;
+  wire        _GEN_47 = _GEN_44 & entries_0_valid & _GEN_45;
+  wire        _GEN_48 = ~entries_0_src2_ready & _cdb1Hit2_T_4;
+  wire        _GEN_49 = _GEN_44 & entries_0_valid & _GEN_48;
+  wire        _GEN_50 = ~entries_1_src1_ready & _cdb1Hit1_T_9;
+  wire        _GEN_51 = _GEN_44 & entries_1_valid;
+  wire        _GEN_52 = _GEN_44 & entries_1_valid & _GEN_50;
+  wire        _GEN_53 = ~entries_1_src2_ready & _cdb1Hit2_T_9;
+  wire        _GEN_54 = _GEN_44 & entries_1_valid & _GEN_53;
+  wire        _GEN_55 = ~entries_2_src1_ready & _cdb1Hit1_T_14;
+  wire        _GEN_56 = _GEN_44 & entries_2_valid;
+  wire        _GEN_57 = _GEN_44 & entries_2_valid & _GEN_55;
+  wire        _GEN_58 = ~entries_2_src2_ready & _cdb1Hit2_T_14;
+  wire        _GEN_59 = _GEN_44 & entries_2_valid & _GEN_58;
+  wire        _GEN_60 = ~entries_3_src1_ready & _cdb1Hit1_T_19;
+  wire        _GEN_61 = _GEN_44 & entries_3_valid;
+  wire        _GEN_62 = _GEN_44 & entries_3_valid & _GEN_60;
+  wire        _GEN_63 = ~entries_3_src2_ready & _cdb1Hit2_T_19;
+  wire        _GEN_64 = _GEN_44 & entries_3_valid & _GEN_63;
+  wire        _GEN_65 = ~entries_4_src1_ready & _cdb1Hit1_T_24;
+  wire        _GEN_66 = _GEN_44 & entries_4_valid;
+  wire        _GEN_67 = _GEN_44 & entries_4_valid & _GEN_65;
+  wire        _GEN_68 = ~entries_4_src2_ready & _cdb1Hit2_T_24;
+  wire        _GEN_69 = _GEN_44 & entries_4_valid & _GEN_68;
+  wire        _GEN_70 = ~entries_5_src1_ready & _cdb1Hit1_T_29;
+  wire        _GEN_71 = _GEN_44 & entries_5_valid;
+  wire        _GEN_72 = _GEN_44 & entries_5_valid & _GEN_70;
+  wire        _GEN_73 = ~entries_5_src2_ready & _cdb1Hit2_T_29;
+  wire        _GEN_74 = _GEN_44 & entries_5_valid & _GEN_73;
+  wire        _GEN_75 = ~entries_6_src1_ready & _cdb1Hit1_T_34;
+  wire        _GEN_76 = _GEN_44 & entries_6_valid;
+  wire        _GEN_77 = _GEN_44 & entries_6_valid & _GEN_75;
+  wire        _GEN_78 = ~entries_6_src2_ready & _cdb1Hit2_T_34;
+  wire        _GEN_79 = _GEN_44 & entries_6_valid & _GEN_78;
+  wire        _GEN_80 = ~entries_7_src1_ready & _cdb1Hit1_T_39;
+  wire        _GEN_81 = _GEN_44 & entries_7_valid;
+  wire        _GEN_82 = _GEN_44 & entries_7_valid & _GEN_80;
+  wire        _GEN_83 = ~entries_7_src2_ready & _cdb1Hit2_T_39;
+  wire        _GEN_84 = _GEN_44 & entries_7_valid & _GEN_83;
+  wire        _GEN_85 = io_cdb2_valid & (|io_cdb2_pdest);
+  wire        _GEN_86 = _GEN_85 & entries_0_valid & ~entries_0_src1_ready & _cdb2Hit1_T_4;
+  wire        _GEN_87 =
+    _GEN_86
+    | (_GEN_46
+         ? _GEN_45 | _GEN_28 | entries_0_src1_ready
+         : _GEN_28 | entries_0_src1_ready);
+  wire        _GEN_88 = _GEN_85 & entries_0_valid & ~entries_0_src2_ready & _cdb2Hit2_T_4;
   wire        _GEN_89 =
-    _GEN_85 ? _GEN_88 | _GEN_43 | entries_5_src2_ready : _GEN_43 | entries_5_src2_ready;
-  wire        _GEN_90 = _GEN_48 & entries_5_valid & _GEN_88;
-  wire        _GEN_91 = ~entries_6_src1_ready & _cdb1Hit1_T_34;
-  wire        _GEN_92 = _GEN_48 & entries_6_valid;
+    _GEN_88
+    | (_GEN_46
+         ? _GEN_48 | _GEN_29 | entries_0_src2_ready
+         : _GEN_29 | entries_0_src2_ready);
+  wire        _GEN_90 = _GEN_85 & entries_1_valid & ~entries_1_src1_ready & _cdb2Hit1_T_9;
+  wire        _GEN_91 =
+    _GEN_90
+    | (_GEN_51
+         ? _GEN_50 | _GEN_30 | entries_1_src1_ready
+         : _GEN_30 | entries_1_src1_ready);
+  wire        _GEN_92 = _GEN_85 & entries_1_valid & ~entries_1_src2_ready & _cdb2Hit2_T_9;
   wire        _GEN_93 =
-    _GEN_92 ? _GEN_91 | _GEN_44 | entries_6_src1_ready : _GEN_44 | entries_6_src1_ready;
-  wire        _GEN_94 = _GEN_48 & entries_6_valid & _GEN_91;
-  wire        _GEN_95 = ~entries_6_src2_ready & _cdb1Hit2_T_34;
+    _GEN_92
+    | (_GEN_51
+         ? _GEN_53 | _GEN_31 | entries_1_src2_ready
+         : _GEN_31 | entries_1_src2_ready);
+  wire        _GEN_94 =
+    _GEN_85 & entries_2_valid & ~entries_2_src1_ready & _cdb2Hit1_T_14;
+  wire        _GEN_95 =
+    _GEN_94
+    | (_GEN_56
+         ? _GEN_55 | _GEN_32 | entries_2_src1_ready
+         : _GEN_32 | entries_2_src1_ready);
   wire        _GEN_96 =
-    _GEN_92 ? _GEN_95 | _GEN_45 | entries_6_src2_ready : _GEN_45 | entries_6_src2_ready;
-  wire        _GEN_97 = _GEN_48 & entries_6_valid & _GEN_95;
-  wire        _GEN_98 = ~entries_7_src1_ready & _cdb1Hit1_T_39;
-  wire        _GEN_99 = _GEN_48 & entries_7_valid;
+    _GEN_85 & entries_2_valid & ~entries_2_src2_ready & _cdb2Hit2_T_14;
+  wire        _GEN_97 =
+    _GEN_96
+    | (_GEN_56
+         ? _GEN_58 | _GEN_33 | entries_2_src2_ready
+         : _GEN_33 | entries_2_src2_ready);
+  wire        _GEN_98 =
+    _GEN_85 & entries_3_valid & ~entries_3_src1_ready & _cdb2Hit1_T_19;
+  wire        _GEN_99 =
+    _GEN_98
+    | (_GEN_61
+         ? _GEN_60 | _GEN_34 | entries_3_src1_ready
+         : _GEN_34 | entries_3_src1_ready);
   wire        _GEN_100 =
-    _GEN_99 ? _GEN_98 | _GEN_46 | entries_7_src1_ready : _GEN_46 | entries_7_src1_ready;
-  wire        _GEN_101 = _GEN_48 & entries_7_valid & _GEN_98;
-  wire        _GEN_102 = ~entries_7_src2_ready & _cdb1Hit2_T_39;
+    _GEN_85 & entries_3_valid & ~entries_3_src2_ready & _cdb2Hit2_T_19;
+  wire        _GEN_101 =
+    _GEN_100
+    | (_GEN_61
+         ? _GEN_63 | _GEN_35 | entries_3_src2_ready
+         : _GEN_35 | entries_3_src2_ready);
+  wire        _GEN_102 =
+    _GEN_85 & entries_4_valid & ~entries_4_src1_ready & _cdb2Hit1_T_24;
   wire        _GEN_103 =
-    _GEN_99 ? _GEN_102 | _GEN_47 | entries_7_src2_ready : _GEN_47 | entries_7_src2_ready;
-  wire        _GEN_104 = _GEN_48 & entries_7_valid & _GEN_102;
-  wire [4:0]  _GEN_105 = io_flush_idx - io_rob_head;
-  wire        _GEN_106 = ~freeByRob_0 & entries_0_valid;
-  wire        _GEN_107 = ~freeByRob_1 & entries_1_valid;
-  wire        _GEN_108 = ~freeByRob_2 & entries_2_valid;
-  wire        _GEN_109 = ~freeByRob_3 & entries_3_valid;
-  wire        _GEN_110 = ~freeByRob_4 & entries_4_valid;
-  wire        _GEN_111 = ~freeByRob_5 & entries_5_valid;
-  wire        _GEN_112 = ~freeByRob_6 & entries_6_valid;
-  wire        _GEN_113 = ~freeByRob_7 & entries_7_valid;
-  wire        _GEN_114 = io_enq_fire & (|freeOrIssue);
+    _GEN_102
+    | (_GEN_66
+         ? _GEN_65 | _GEN_36 | entries_4_src1_ready
+         : _GEN_36 | entries_4_src1_ready);
+  wire        _GEN_104 =
+    _GEN_85 & entries_4_valid & ~entries_4_src2_ready & _cdb2Hit2_T_24;
+  wire        _GEN_105 =
+    _GEN_104
+    | (_GEN_66
+         ? _GEN_68 | _GEN_37 | entries_4_src2_ready
+         : _GEN_37 | entries_4_src2_ready);
+  wire        _GEN_106 =
+    _GEN_85 & entries_5_valid & ~entries_5_src1_ready & _cdb2Hit1_T_29;
+  wire        _GEN_107 =
+    _GEN_106
+    | (_GEN_71
+         ? _GEN_70 | _GEN_38 | entries_5_src1_ready
+         : _GEN_38 | entries_5_src1_ready);
+  wire        _GEN_108 =
+    _GEN_85 & entries_5_valid & ~entries_5_src2_ready & _cdb2Hit2_T_29;
+  wire        _GEN_109 =
+    _GEN_108
+    | (_GEN_71
+         ? _GEN_73 | _GEN_39 | entries_5_src2_ready
+         : _GEN_39 | entries_5_src2_ready);
+  wire        _GEN_110 =
+    _GEN_85 & entries_6_valid & ~entries_6_src1_ready & _cdb2Hit1_T_34;
+  wire        _GEN_111 =
+    _GEN_110
+    | (_GEN_76
+         ? _GEN_75 | _GEN_40 | entries_6_src1_ready
+         : _GEN_40 | entries_6_src1_ready);
+  wire        _GEN_112 =
+    _GEN_85 & entries_6_valid & ~entries_6_src2_ready & _cdb2Hit2_T_34;
+  wire        _GEN_113 =
+    _GEN_112
+    | (_GEN_76
+         ? _GEN_78 | _GEN_41 | entries_6_src2_ready
+         : _GEN_41 | entries_6_src2_ready);
+  wire        _GEN_114 =
+    _GEN_85 & entries_7_valid & ~entries_7_src1_ready & _cdb2Hit1_T_39;
+  wire        _GEN_115 =
+    _GEN_114
+    | (_GEN_81
+         ? _GEN_80 | _GEN_42 | entries_7_src1_ready
+         : _GEN_42 | entries_7_src1_ready);
+  wire        _GEN_116 =
+    _GEN_85 & entries_7_valid & ~entries_7_src2_ready & _cdb2Hit2_T_39;
+  wire        _GEN_117 =
+    _GEN_116
+    | (_GEN_81
+         ? _GEN_83 | _GEN_43 | entries_7_src2_ready
+         : _GEN_43 | entries_7_src2_ready);
+  wire [4:0]  _GEN_118 = io_flush_idx - io_rob_head;
+  wire        _GEN_119 = ~freeByRob_0 & entries_0_valid;
+  wire        _GEN_120 = ~freeByRob_1 & entries_1_valid;
+  wire        _GEN_121 = ~freeByRob_2 & entries_2_valid;
+  wire        _GEN_122 = ~freeByRob_3 & entries_3_valid;
+  wire        _GEN_123 = ~freeByRob_4 & entries_4_valid;
+  wire        _GEN_124 = ~freeByRob_5 & entries_5_valid;
+  wire        _GEN_125 = ~freeByRob_6 & entries_6_valid;
+  wire        _GEN_126 = ~freeByRob_7 & entries_7_valid;
+  wire        _GEN_127 = io_enq_fire & (|freeOrIssue);
   wire        cdbHit1_8 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq_bits_src1_ready
     & io_enq_bits_src1_phys == io_cdb_pdest;
@@ -3305,17 +3685,25 @@ module RS(
   wire        cdb1Hit2_8 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq_bits_src2_ready
     & io_enq_bits_src2_phys == io_cdb1_pdest;
-  wire        e_8_src1_ready = cdb1Hit1_8 | cdbHit1_8 | io_enq_bits_src1_ready;
-  wire        e_8_src2_ready = cdb1Hit2_8 | cdbHit2_8 | io_enq_bits_src2_ready;
-  wire        _GEN_115 = _GEN_114 & enqIdx == 3'h0;
-  wire        _GEN_116 = _GEN_114 & enqIdx == 3'h1;
-  wire        _GEN_117 = _GEN_114 & enqIdx == 3'h2;
-  wire        _GEN_118 = _GEN_114 & enqIdx == 3'h3;
-  wire        _GEN_119 = _GEN_114 & enqIdx == 3'h4;
-  wire        _GEN_120 = _GEN_114 & enqIdx == 3'h5;
-  wire        _GEN_121 = _GEN_114 & enqIdx == 3'h6;
-  wire        _GEN_122 = _GEN_114 & (&enqIdx);
-  wire        _GEN_123 = io_enq1_fire & (|freeMask1);
+  wire        cdb2Hit1_8 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~io_enq_bits_src1_ready
+    & io_enq_bits_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_8 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~io_enq_bits_src2_ready
+    & io_enq_bits_src2_phys == io_cdb2_pdest;
+  wire        e_8_src1_ready =
+    cdb2Hit1_8 | cdb1Hit1_8 | cdbHit1_8 | io_enq_bits_src1_ready;
+  wire        e_8_src2_ready =
+    cdb2Hit2_8 | cdb1Hit2_8 | cdbHit2_8 | io_enq_bits_src2_ready;
+  wire        _GEN_128 = _GEN_127 & enqIdx == 3'h0;
+  wire        _GEN_129 = _GEN_127 & enqIdx == 3'h1;
+  wire        _GEN_130 = _GEN_127 & enqIdx == 3'h2;
+  wire        _GEN_131 = _GEN_127 & enqIdx == 3'h3;
+  wire        _GEN_132 = _GEN_127 & enqIdx == 3'h4;
+  wire        _GEN_133 = _GEN_127 & enqIdx == 3'h5;
+  wire        _GEN_134 = _GEN_127 & enqIdx == 3'h6;
+  wire        _GEN_135 = _GEN_127 & (&enqIdx);
+  wire        _GEN_136 = io_enq1_fire & (|freeMask1);
   wire        cdbHit1_9 =
     io_cdb_valid & (|io_cdb_pdest) & ~io_enq1_bits_src1_ready
     & io_enq1_bits_src1_phys == io_cdb_pdest;
@@ -3328,39 +3716,47 @@ module RS(
   wire        cdb1Hit2_9 =
     io_cdb1_valid & (|io_cdb1_pdest) & ~io_enq1_bits_src2_ready
     & io_enq1_bits_src2_phys == io_cdb1_pdest;
-  wire        e_9_src1_ready = cdb1Hit1_9 | cdbHit1_9 | io_enq1_bits_src1_ready;
-  wire        e_9_src2_ready = cdb1Hit2_9 | cdbHit2_9 | io_enq1_bits_src2_ready;
-  wire        _GEN_124 = enq1Idx == 3'h0;
-  wire        _GEN_125 = _GEN_124 | _GEN_115;
-  wire        _GEN_126 = _GEN_123 & _GEN_124;
-  wire        _GEN_127 = enq1Idx == 3'h1;
-  wire        _GEN_128 = _GEN_127 | _GEN_116;
-  wire        _GEN_129 = _GEN_123 & _GEN_127;
-  wire        _GEN_130 = enq1Idx == 3'h2;
-  wire        _GEN_131 = _GEN_130 | _GEN_117;
-  wire        _GEN_132 = _GEN_123 & _GEN_130;
-  wire        _GEN_133 = enq1Idx == 3'h3;
-  wire        _GEN_134 = _GEN_133 | _GEN_118;
-  wire        _GEN_135 = _GEN_123 & _GEN_133;
-  wire        _GEN_136 = enq1Idx == 3'h4;
-  wire        _GEN_137 = _GEN_136 | _GEN_119;
-  wire        _GEN_138 = _GEN_123 & _GEN_136;
-  wire        _GEN_139 = enq1Idx == 3'h5;
-  wire        _GEN_140 = _GEN_139 | _GEN_120;
-  wire        _GEN_141 = _GEN_123 & _GEN_139;
-  wire        _GEN_142 = enq1Idx == 3'h6;
-  wire        _GEN_143 = _GEN_142 | _GEN_121;
-  wire        _GEN_144 = _GEN_123 & _GEN_142;
-  wire        _GEN_145 = (&enq1Idx) | _GEN_122;
-  wire        _GEN_146 = _GEN_123 & (&enq1Idx);
+  wire        cdb2Hit1_9 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~io_enq1_bits_src1_ready
+    & io_enq1_bits_src1_phys == io_cdb2_pdest;
+  wire        cdb2Hit2_9 =
+    io_cdb2_valid & (|io_cdb2_pdest) & ~io_enq1_bits_src2_ready
+    & io_enq1_bits_src2_phys == io_cdb2_pdest;
+  wire        e_9_src1_ready =
+    cdb2Hit1_9 | cdb1Hit1_9 | cdbHit1_9 | io_enq1_bits_src1_ready;
+  wire        e_9_src2_ready =
+    cdb2Hit2_9 | cdb1Hit2_9 | cdbHit2_9 | io_enq1_bits_src2_ready;
+  wire        _GEN_137 = enq1Idx == 3'h0;
+  wire        _GEN_138 = _GEN_136 & _GEN_137;
+  wire        _GEN_139 = enq1Idx == 3'h1;
+  wire        _GEN_140 = _GEN_136 & _GEN_139;
+  wire        _GEN_141 = enq1Idx == 3'h2;
+  wire        _GEN_142 = _GEN_136 & _GEN_141;
+  wire        _GEN_143 = enq1Idx == 3'h3;
+  wire        _GEN_144 = _GEN_136 & _GEN_143;
+  wire        _GEN_145 = enq1Idx == 3'h4;
+  wire        _GEN_146 = _GEN_136 & _GEN_145;
+  wire        _GEN_147 = enq1Idx == 3'h5;
+  wire        _GEN_148 = _GEN_136 & _GEN_147;
+  wire        _GEN_149 = enq1Idx == 3'h6;
+  wire        _GEN_150 = _GEN_136 & _GEN_149;
+  wire        _GEN_151 = _GEN_136 & (&enq1Idx);
   wire [31:0] e_8_src1_val =
-    cdb1Hit1_8 ? io_cdb1_val : cdbHit1_8 ? io_cdb_val : io_enq_bits_src1_val;
+    cdb2Hit1_8
+      ? io_cdb2_val
+      : cdb1Hit1_8 ? io_cdb1_val : cdbHit1_8 ? io_cdb_val : io_enq_bits_src1_val;
   wire [31:0] e_8_src2_val =
-    cdb1Hit2_8 ? io_cdb1_val : cdbHit2_8 ? io_cdb_val : io_enq_bits_src2_val;
+    cdb2Hit2_8
+      ? io_cdb2_val
+      : cdb1Hit2_8 ? io_cdb1_val : cdbHit2_8 ? io_cdb_val : io_enq_bits_src2_val;
   wire [31:0] e_9_src1_val =
-    cdb1Hit1_9 ? io_cdb1_val : cdbHit1_9 ? io_cdb_val : io_enq1_bits_src1_val;
+    cdb2Hit1_9
+      ? io_cdb2_val
+      : cdb1Hit1_9 ? io_cdb1_val : cdbHit1_9 ? io_cdb_val : io_enq1_bits_src1_val;
   wire [31:0] e_9_src2_val =
-    cdb1Hit2_9 ? io_cdb1_val : cdbHit2_9 ? io_cdb_val : io_enq1_bits_src2_val;
+    cdb2Hit2_9
+      ? io_cdb2_val
+      : cdb1Hit2_9 ? io_cdb1_val : cdbHit2_9 ? io_cdb_val : io_enq1_bits_src2_val;
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
@@ -3592,77 +3988,114 @@ module RS(
       entries_0_valid <=
         io_flush
           ? ~(io_flush_all | entries_0_valid
-              & (freeByRob_0 | _legacyOH_hasOlder_T_386 > _GEN_105)) & entries_0_valid
-          : _GEN_123 ? _GEN_125 | _GEN_106 : _GEN_115 | _GEN_106;
+              & (freeByRob_0 | _legacyOH_hasOlder_T_386 > _GEN_118)) & entries_0_valid
+          : _GEN_136 ? _GEN_137 | _GEN_128 | _GEN_119 : _GEN_128 | _GEN_119;
       if (io_flush) begin
-        if (_GEN_52)
-          entries_0_src1_val <= io_cdb1_val;
-        else if (_GEN_32)
-          entries_0_src1_val <= io_cdb_val;
-        if (_GEN_55)
-          entries_0_src2_val <= io_cdb1_val;
-        else if (_GEN_33)
-          entries_0_src2_val <= io_cdb_val;
-        if (_GEN_59)
-          entries_1_src1_val <= io_cdb1_val;
-        else if (_GEN_34)
-          entries_1_src1_val <= io_cdb_val;
-        if (_GEN_62)
-          entries_1_src2_val <= io_cdb1_val;
-        else if (_GEN_35)
-          entries_1_src2_val <= io_cdb_val;
-        if (_GEN_66)
-          entries_2_src1_val <= io_cdb1_val;
-        else if (_GEN_36)
-          entries_2_src1_val <= io_cdb_val;
-        if (_GEN_69)
-          entries_2_src2_val <= io_cdb1_val;
-        else if (_GEN_37)
-          entries_2_src2_val <= io_cdb_val;
-        if (_GEN_73)
-          entries_3_src1_val <= io_cdb1_val;
-        else if (_GEN_38)
-          entries_3_src1_val <= io_cdb_val;
-        if (_GEN_76)
-          entries_3_src2_val <= io_cdb1_val;
-        else if (_GEN_39)
-          entries_3_src2_val <= io_cdb_val;
-        if (_GEN_80)
-          entries_4_src1_val <= io_cdb1_val;
-        else if (_GEN_40)
-          entries_4_src1_val <= io_cdb_val;
-        if (_GEN_83)
-          entries_4_src2_val <= io_cdb1_val;
-        else if (_GEN_41)
-          entries_4_src2_val <= io_cdb_val;
-        if (_GEN_87)
-          entries_5_src1_val <= io_cdb1_val;
-        else if (_GEN_42)
-          entries_5_src1_val <= io_cdb_val;
-        if (_GEN_90)
-          entries_5_src2_val <= io_cdb1_val;
-        else if (_GEN_43)
-          entries_5_src2_val <= io_cdb_val;
-        if (_GEN_94)
-          entries_6_src1_val <= io_cdb1_val;
-        else if (_GEN_44)
-          entries_6_src1_val <= io_cdb_val;
-        if (_GEN_97)
-          entries_6_src2_val <= io_cdb1_val;
-        else if (_GEN_45)
-          entries_6_src2_val <= io_cdb_val;
-        if (_GEN_101)
-          entries_7_src1_val <= io_cdb1_val;
-        else if (_GEN_46)
-          entries_7_src1_val <= io_cdb_val;
-        if (_GEN_104)
-          entries_7_src2_val <= io_cdb1_val;
+        if (_GEN_86)
+          entries_0_src1_val <= io_cdb2_val;
         else if (_GEN_47)
+          entries_0_src1_val <= io_cdb1_val;
+        else if (_GEN_28)
+          entries_0_src1_val <= io_cdb_val;
+        if (_GEN_88)
+          entries_0_src2_val <= io_cdb2_val;
+        else if (_GEN_49)
+          entries_0_src2_val <= io_cdb1_val;
+        else if (_GEN_29)
+          entries_0_src2_val <= io_cdb_val;
+        if (_GEN_90)
+          entries_1_src1_val <= io_cdb2_val;
+        else if (_GEN_52)
+          entries_1_src1_val <= io_cdb1_val;
+        else if (_GEN_30)
+          entries_1_src1_val <= io_cdb_val;
+        if (_GEN_92)
+          entries_1_src2_val <= io_cdb2_val;
+        else if (_GEN_54)
+          entries_1_src2_val <= io_cdb1_val;
+        else if (_GEN_31)
+          entries_1_src2_val <= io_cdb_val;
+        if (_GEN_94)
+          entries_2_src1_val <= io_cdb2_val;
+        else if (_GEN_57)
+          entries_2_src1_val <= io_cdb1_val;
+        else if (_GEN_32)
+          entries_2_src1_val <= io_cdb_val;
+        if (_GEN_96)
+          entries_2_src2_val <= io_cdb2_val;
+        else if (_GEN_59)
+          entries_2_src2_val <= io_cdb1_val;
+        else if (_GEN_33)
+          entries_2_src2_val <= io_cdb_val;
+        if (_GEN_98)
+          entries_3_src1_val <= io_cdb2_val;
+        else if (_GEN_62)
+          entries_3_src1_val <= io_cdb1_val;
+        else if (_GEN_34)
+          entries_3_src1_val <= io_cdb_val;
+        if (_GEN_100)
+          entries_3_src2_val <= io_cdb2_val;
+        else if (_GEN_64)
+          entries_3_src2_val <= io_cdb1_val;
+        else if (_GEN_35)
+          entries_3_src2_val <= io_cdb_val;
+        if (_GEN_102)
+          entries_4_src1_val <= io_cdb2_val;
+        else if (_GEN_67)
+          entries_4_src1_val <= io_cdb1_val;
+        else if (_GEN_36)
+          entries_4_src1_val <= io_cdb_val;
+        if (_GEN_104)
+          entries_4_src2_val <= io_cdb2_val;
+        else if (_GEN_69)
+          entries_4_src2_val <= io_cdb1_val;
+        else if (_GEN_37)
+          entries_4_src2_val <= io_cdb_val;
+        if (_GEN_106)
+          entries_5_src1_val <= io_cdb2_val;
+        else if (_GEN_72)
+          entries_5_src1_val <= io_cdb1_val;
+        else if (_GEN_38)
+          entries_5_src1_val <= io_cdb_val;
+        if (_GEN_108)
+          entries_5_src2_val <= io_cdb2_val;
+        else if (_GEN_74)
+          entries_5_src2_val <= io_cdb1_val;
+        else if (_GEN_39)
+          entries_5_src2_val <= io_cdb_val;
+        if (_GEN_110)
+          entries_6_src1_val <= io_cdb2_val;
+        else if (_GEN_77)
+          entries_6_src1_val <= io_cdb1_val;
+        else if (_GEN_40)
+          entries_6_src1_val <= io_cdb_val;
+        if (_GEN_112)
+          entries_6_src2_val <= io_cdb2_val;
+        else if (_GEN_79)
+          entries_6_src2_val <= io_cdb1_val;
+        else if (_GEN_41)
+          entries_6_src2_val <= io_cdb_val;
+        if (_GEN_114)
+          entries_7_src1_val <= io_cdb2_val;
+        else if (_GEN_82)
+          entries_7_src1_val <= io_cdb1_val;
+        else if (_GEN_42)
+          entries_7_src1_val <= io_cdb_val;
+        if (_GEN_116)
+          entries_7_src2_val <= io_cdb2_val;
+        else if (_GEN_84)
+          entries_7_src2_val <= io_cdb1_val;
+        else if (_GEN_43)
           entries_7_src2_val <= io_cdb_val;
       end
       else begin
-        entries_0_issued <= _GEN_123 ? ~_GEN_125 & _GEN_23 : ~_GEN_115 & _GEN_23;
-        if (_GEN_126) begin
+        entries_0_issued <=
+          _GEN_138
+            ? e_9_issued
+            : _GEN_128
+                ? e_8_issued
+                : _GEN_26 ? divIdx == 3'h0 | _GEN_18 | _GEN_9 : _GEN_18 | _GEN_9;
+        if (_GEN_138) begin
           entries_0_rob_idx <= io_enq1_bits_rob_idx;
           entries_0_src1_phys <= io_enq1_bits_src1_phys;
           entries_0_src2_phys <= io_enq1_bits_src2_phys;
@@ -3688,7 +4121,7 @@ module RS(
           entries_0_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
           entries_0_wbu_csr_write <= io_enq1_bits_wbu_csr_write;
         end
-        else if (_GEN_115) begin
+        else if (_GEN_128) begin
           entries_0_rob_idx <= io_enq_bits_rob_idx;
           entries_0_src1_phys <= io_enq_bits_src1_phys;
           entries_0_src2_phys <= io_enq_bits_src2_phys;
@@ -3715,17 +4148,26 @@ module RS(
           entries_0_wbu_csr_write <= io_enq_bits_wbu_csr_write;
         end
         else begin
-          if (_GEN_52)
+          if (_GEN_86)
+            entries_0_src1_val <= io_cdb2_val;
+          else if (_GEN_47)
             entries_0_src1_val <= io_cdb1_val;
-          else if (_GEN_32)
+          else if (_GEN_28)
             entries_0_src1_val <= io_cdb_val;
-          if (_GEN_55)
+          if (_GEN_88)
+            entries_0_src2_val <= io_cdb2_val;
+          else if (_GEN_49)
             entries_0_src2_val <= io_cdb1_val;
-          else if (_GEN_33)
+          else if (_GEN_29)
             entries_0_src2_val <= io_cdb_val;
         end
-        entries_1_issued <= _GEN_123 ? ~_GEN_128 & _GEN_24 : ~_GEN_116 & _GEN_24;
-        if (_GEN_129) begin
+        entries_1_issued <=
+          _GEN_140
+            ? e_9_issued
+            : _GEN_129
+                ? e_8_issued
+                : _GEN_26 ? divIdx == 3'h1 | _GEN_19 | _GEN_10 : _GEN_19 | _GEN_10;
+        if (_GEN_140) begin
           entries_1_rob_idx <= io_enq1_bits_rob_idx;
           entries_1_src1_phys <= io_enq1_bits_src1_phys;
           entries_1_src2_phys <= io_enq1_bits_src2_phys;
@@ -3751,7 +4193,7 @@ module RS(
           entries_1_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
           entries_1_wbu_csr_write <= io_enq1_bits_wbu_csr_write;
         end
-        else if (_GEN_116) begin
+        else if (_GEN_129) begin
           entries_1_rob_idx <= io_enq_bits_rob_idx;
           entries_1_src1_phys <= io_enq_bits_src1_phys;
           entries_1_src2_phys <= io_enq_bits_src2_phys;
@@ -3778,17 +4220,26 @@ module RS(
           entries_1_wbu_csr_write <= io_enq_bits_wbu_csr_write;
         end
         else begin
-          if (_GEN_59)
+          if (_GEN_90)
+            entries_1_src1_val <= io_cdb2_val;
+          else if (_GEN_52)
             entries_1_src1_val <= io_cdb1_val;
-          else if (_GEN_34)
+          else if (_GEN_30)
             entries_1_src1_val <= io_cdb_val;
-          if (_GEN_62)
+          if (_GEN_92)
+            entries_1_src2_val <= io_cdb2_val;
+          else if (_GEN_54)
             entries_1_src2_val <= io_cdb1_val;
-          else if (_GEN_35)
+          else if (_GEN_31)
             entries_1_src2_val <= io_cdb_val;
         end
-        entries_2_issued <= _GEN_123 ? ~_GEN_131 & _GEN_25 : ~_GEN_117 & _GEN_25;
-        if (_GEN_132) begin
+        entries_2_issued <=
+          _GEN_142
+            ? e_9_issued
+            : _GEN_130
+                ? e_8_issued
+                : _GEN_26 ? divIdx == 3'h2 | _GEN_20 | _GEN_11 : _GEN_20 | _GEN_11;
+        if (_GEN_142) begin
           entries_2_rob_idx <= io_enq1_bits_rob_idx;
           entries_2_src1_phys <= io_enq1_bits_src1_phys;
           entries_2_src2_phys <= io_enq1_bits_src2_phys;
@@ -3814,7 +4265,7 @@ module RS(
           entries_2_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
           entries_2_wbu_csr_write <= io_enq1_bits_wbu_csr_write;
         end
-        else if (_GEN_117) begin
+        else if (_GEN_130) begin
           entries_2_rob_idx <= io_enq_bits_rob_idx;
           entries_2_src1_phys <= io_enq_bits_src1_phys;
           entries_2_src2_phys <= io_enq_bits_src2_phys;
@@ -3841,17 +4292,26 @@ module RS(
           entries_2_wbu_csr_write <= io_enq_bits_wbu_csr_write;
         end
         else begin
-          if (_GEN_66)
+          if (_GEN_94)
+            entries_2_src1_val <= io_cdb2_val;
+          else if (_GEN_57)
             entries_2_src1_val <= io_cdb1_val;
-          else if (_GEN_36)
+          else if (_GEN_32)
             entries_2_src1_val <= io_cdb_val;
-          if (_GEN_69)
+          if (_GEN_96)
+            entries_2_src2_val <= io_cdb2_val;
+          else if (_GEN_59)
             entries_2_src2_val <= io_cdb1_val;
-          else if (_GEN_37)
+          else if (_GEN_33)
             entries_2_src2_val <= io_cdb_val;
         end
-        entries_3_issued <= _GEN_123 ? ~_GEN_134 & _GEN_26 : ~_GEN_118 & _GEN_26;
-        if (_GEN_135) begin
+        entries_3_issued <=
+          _GEN_144
+            ? e_9_issued
+            : _GEN_131
+                ? e_8_issued
+                : _GEN_26 ? divIdx == 3'h3 | _GEN_21 | _GEN_12 : _GEN_21 | _GEN_12;
+        if (_GEN_144) begin
           entries_3_rob_idx <= io_enq1_bits_rob_idx;
           entries_3_src1_phys <= io_enq1_bits_src1_phys;
           entries_3_src2_phys <= io_enq1_bits_src2_phys;
@@ -3877,7 +4337,7 @@ module RS(
           entries_3_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
           entries_3_wbu_csr_write <= io_enq1_bits_wbu_csr_write;
         end
-        else if (_GEN_118) begin
+        else if (_GEN_131) begin
           entries_3_rob_idx <= io_enq_bits_rob_idx;
           entries_3_src1_phys <= io_enq_bits_src1_phys;
           entries_3_src2_phys <= io_enq_bits_src2_phys;
@@ -3904,17 +4364,26 @@ module RS(
           entries_3_wbu_csr_write <= io_enq_bits_wbu_csr_write;
         end
         else begin
-          if (_GEN_73)
+          if (_GEN_98)
+            entries_3_src1_val <= io_cdb2_val;
+          else if (_GEN_62)
             entries_3_src1_val <= io_cdb1_val;
-          else if (_GEN_38)
+          else if (_GEN_34)
             entries_3_src1_val <= io_cdb_val;
-          if (_GEN_76)
+          if (_GEN_100)
+            entries_3_src2_val <= io_cdb2_val;
+          else if (_GEN_64)
             entries_3_src2_val <= io_cdb1_val;
-          else if (_GEN_39)
+          else if (_GEN_35)
             entries_3_src2_val <= io_cdb_val;
         end
-        entries_4_issued <= _GEN_123 ? ~_GEN_137 & _GEN_27 : ~_GEN_119 & _GEN_27;
-        if (_GEN_138) begin
+        entries_4_issued <=
+          _GEN_146
+            ? e_9_issued
+            : _GEN_132
+                ? e_8_issued
+                : _GEN_26 ? divIdx == 3'h4 | _GEN_22 | _GEN_13 : _GEN_22 | _GEN_13;
+        if (_GEN_146) begin
           entries_4_rob_idx <= io_enq1_bits_rob_idx;
           entries_4_src1_phys <= io_enq1_bits_src1_phys;
           entries_4_src2_phys <= io_enq1_bits_src2_phys;
@@ -3940,7 +4409,7 @@ module RS(
           entries_4_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
           entries_4_wbu_csr_write <= io_enq1_bits_wbu_csr_write;
         end
-        else if (_GEN_119) begin
+        else if (_GEN_132) begin
           entries_4_rob_idx <= io_enq_bits_rob_idx;
           entries_4_src1_phys <= io_enq_bits_src1_phys;
           entries_4_src2_phys <= io_enq_bits_src2_phys;
@@ -3967,17 +4436,26 @@ module RS(
           entries_4_wbu_csr_write <= io_enq_bits_wbu_csr_write;
         end
         else begin
-          if (_GEN_80)
+          if (_GEN_102)
+            entries_4_src1_val <= io_cdb2_val;
+          else if (_GEN_67)
             entries_4_src1_val <= io_cdb1_val;
-          else if (_GEN_40)
+          else if (_GEN_36)
             entries_4_src1_val <= io_cdb_val;
-          if (_GEN_83)
+          if (_GEN_104)
+            entries_4_src2_val <= io_cdb2_val;
+          else if (_GEN_69)
             entries_4_src2_val <= io_cdb1_val;
-          else if (_GEN_41)
+          else if (_GEN_37)
             entries_4_src2_val <= io_cdb_val;
         end
-        entries_5_issued <= _GEN_123 ? ~_GEN_140 & _GEN_28 : ~_GEN_120 & _GEN_28;
-        if (_GEN_141) begin
+        entries_5_issued <=
+          _GEN_148
+            ? e_9_issued
+            : _GEN_133
+                ? e_8_issued
+                : _GEN_26 ? divIdx == 3'h5 | _GEN_23 | _GEN_14 : _GEN_23 | _GEN_14;
+        if (_GEN_148) begin
           entries_5_rob_idx <= io_enq1_bits_rob_idx;
           entries_5_src1_phys <= io_enq1_bits_src1_phys;
           entries_5_src2_phys <= io_enq1_bits_src2_phys;
@@ -4003,7 +4481,7 @@ module RS(
           entries_5_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
           entries_5_wbu_csr_write <= io_enq1_bits_wbu_csr_write;
         end
-        else if (_GEN_120) begin
+        else if (_GEN_133) begin
           entries_5_rob_idx <= io_enq_bits_rob_idx;
           entries_5_src1_phys <= io_enq_bits_src1_phys;
           entries_5_src2_phys <= io_enq_bits_src2_phys;
@@ -4030,17 +4508,26 @@ module RS(
           entries_5_wbu_csr_write <= io_enq_bits_wbu_csr_write;
         end
         else begin
-          if (_GEN_87)
+          if (_GEN_106)
+            entries_5_src1_val <= io_cdb2_val;
+          else if (_GEN_72)
             entries_5_src1_val <= io_cdb1_val;
-          else if (_GEN_42)
+          else if (_GEN_38)
             entries_5_src1_val <= io_cdb_val;
-          if (_GEN_90)
+          if (_GEN_108)
+            entries_5_src2_val <= io_cdb2_val;
+          else if (_GEN_74)
             entries_5_src2_val <= io_cdb1_val;
-          else if (_GEN_43)
+          else if (_GEN_39)
             entries_5_src2_val <= io_cdb_val;
         end
-        entries_6_issued <= _GEN_123 ? ~_GEN_143 & _GEN_29 : ~_GEN_121 & _GEN_29;
-        if (_GEN_144) begin
+        entries_6_issued <=
+          _GEN_150
+            ? e_9_issued
+            : _GEN_134
+                ? e_8_issued
+                : _GEN_26 ? divIdx == 3'h6 | _GEN_24 | _GEN_15 : _GEN_24 | _GEN_15;
+        if (_GEN_150) begin
           entries_6_rob_idx <= io_enq1_bits_rob_idx;
           entries_6_src1_phys <= io_enq1_bits_src1_phys;
           entries_6_src2_phys <= io_enq1_bits_src2_phys;
@@ -4066,7 +4553,7 @@ module RS(
           entries_6_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
           entries_6_wbu_csr_write <= io_enq1_bits_wbu_csr_write;
         end
-        else if (_GEN_121) begin
+        else if (_GEN_134) begin
           entries_6_rob_idx <= io_enq_bits_rob_idx;
           entries_6_src1_phys <= io_enq_bits_src1_phys;
           entries_6_src2_phys <= io_enq_bits_src2_phys;
@@ -4093,17 +4580,26 @@ module RS(
           entries_6_wbu_csr_write <= io_enq_bits_wbu_csr_write;
         end
         else begin
-          if (_GEN_94)
+          if (_GEN_110)
+            entries_6_src1_val <= io_cdb2_val;
+          else if (_GEN_77)
             entries_6_src1_val <= io_cdb1_val;
-          else if (_GEN_44)
+          else if (_GEN_40)
             entries_6_src1_val <= io_cdb_val;
-          if (_GEN_97)
+          if (_GEN_112)
+            entries_6_src2_val <= io_cdb2_val;
+          else if (_GEN_79)
             entries_6_src2_val <= io_cdb1_val;
-          else if (_GEN_45)
+          else if (_GEN_41)
             entries_6_src2_val <= io_cdb_val;
         end
-        entries_7_issued <= _GEN_123 ? ~_GEN_145 & _GEN_30 : ~_GEN_122 & _GEN_30;
-        if (_GEN_146) begin
+        entries_7_issued <=
+          _GEN_151
+            ? e_9_issued
+            : _GEN_135
+                ? e_8_issued
+                : _GEN_26 ? (&divIdx) | _GEN_25 | _GEN_16 : _GEN_25 | _GEN_16;
+        if (_GEN_151) begin
           entries_7_rob_idx <= io_enq1_bits_rob_idx;
           entries_7_src1_phys <= io_enq1_bits_src1_phys;
           entries_7_src2_phys <= io_enq1_bits_src2_phys;
@@ -4129,7 +4625,7 @@ module RS(
           entries_7_wbu_reg_write_sel <= io_enq1_bits_wbu_reg_write_sel;
           entries_7_wbu_csr_write <= io_enq1_bits_wbu_csr_write;
         end
-        else if (_GEN_122) begin
+        else if (_GEN_135) begin
           entries_7_rob_idx <= io_enq_bits_rob_idx;
           entries_7_src1_phys <= io_enq_bits_src1_phys;
           entries_7_src2_phys <= io_enq_bits_src2_phys;
@@ -4156,261 +4652,441 @@ module RS(
           entries_7_wbu_csr_write <= io_enq_bits_wbu_csr_write;
         end
         else begin
-          if (_GEN_101)
+          if (_GEN_114)
+            entries_7_src1_val <= io_cdb2_val;
+          else if (_GEN_82)
             entries_7_src1_val <= io_cdb1_val;
-          else if (_GEN_46)
+          else if (_GEN_42)
             entries_7_src1_val <= io_cdb_val;
-          if (_GEN_104)
+          if (_GEN_116)
+            entries_7_src2_val <= io_cdb2_val;
+          else if (_GEN_84)
             entries_7_src2_val <= io_cdb1_val;
-          else if (_GEN_47)
+          else if (_GEN_43)
             entries_7_src2_val <= io_cdb_val;
         end
       end
       entries_0_src1_ready <=
         io_flush
-          ? _GEN_51
-          : _GEN_126 ? e_9_src1_ready : _GEN_115 ? e_8_src1_ready : _GEN_51;
+          ? _GEN_87
+          : _GEN_138 ? e_9_src1_ready : _GEN_128 ? e_8_src1_ready : _GEN_87;
       entries_0_src2_ready <=
         io_flush
-          ? _GEN_54
-          : _GEN_126 ? e_9_src2_ready : _GEN_115 ? e_8_src2_ready : _GEN_54;
+          ? _GEN_89
+          : _GEN_138 ? e_9_src2_ready : _GEN_128 ? e_8_src2_ready : _GEN_89;
       entries_1_valid <=
         io_flush
           ? ~(io_flush_all | entries_1_valid
-              & (freeByRob_1 | _legacyOH_hasOlder_T_392 > _GEN_105)) & entries_1_valid
-          : _GEN_123 ? _GEN_128 | _GEN_107 : _GEN_116 | _GEN_107;
+              & (freeByRob_1 | _legacyOH_hasOlder_T_392 > _GEN_118)) & entries_1_valid
+          : _GEN_136 ? _GEN_139 | _GEN_129 | _GEN_120 : _GEN_129 | _GEN_120;
       entries_1_src1_ready <=
         io_flush
-          ? _GEN_58
-          : _GEN_129 ? e_9_src1_ready : _GEN_116 ? e_8_src1_ready : _GEN_58;
+          ? _GEN_91
+          : _GEN_140 ? e_9_src1_ready : _GEN_129 ? e_8_src1_ready : _GEN_91;
       entries_1_src2_ready <=
         io_flush
-          ? _GEN_61
-          : _GEN_129 ? e_9_src2_ready : _GEN_116 ? e_8_src2_ready : _GEN_61;
+          ? _GEN_93
+          : _GEN_140 ? e_9_src2_ready : _GEN_129 ? e_8_src2_ready : _GEN_93;
       entries_2_valid <=
         io_flush
           ? ~(io_flush_all | entries_2_valid
-              & (freeByRob_2 | _legacyOH_hasOlder_T_398 > _GEN_105)) & entries_2_valid
-          : _GEN_123 ? _GEN_131 | _GEN_108 : _GEN_117 | _GEN_108;
+              & (freeByRob_2 | _legacyOH_hasOlder_T_398 > _GEN_118)) & entries_2_valid
+          : _GEN_136 ? _GEN_141 | _GEN_130 | _GEN_121 : _GEN_130 | _GEN_121;
       entries_2_src1_ready <=
         io_flush
-          ? _GEN_65
-          : _GEN_132 ? e_9_src1_ready : _GEN_117 ? e_8_src1_ready : _GEN_65;
+          ? _GEN_95
+          : _GEN_142 ? e_9_src1_ready : _GEN_130 ? e_8_src1_ready : _GEN_95;
       entries_2_src2_ready <=
         io_flush
-          ? _GEN_68
-          : _GEN_132 ? e_9_src2_ready : _GEN_117 ? e_8_src2_ready : _GEN_68;
+          ? _GEN_97
+          : _GEN_142 ? e_9_src2_ready : _GEN_130 ? e_8_src2_ready : _GEN_97;
       entries_3_valid <=
         io_flush
           ? ~(io_flush_all | entries_3_valid
-              & (freeByRob_3 | _legacyOH_hasOlder_T_404 > _GEN_105)) & entries_3_valid
-          : _GEN_123 ? _GEN_134 | _GEN_109 : _GEN_118 | _GEN_109;
+              & (freeByRob_3 | _legacyOH_hasOlder_T_404 > _GEN_118)) & entries_3_valid
+          : _GEN_136 ? _GEN_143 | _GEN_131 | _GEN_122 : _GEN_131 | _GEN_122;
       entries_3_src1_ready <=
         io_flush
-          ? _GEN_72
-          : _GEN_135 ? e_9_src1_ready : _GEN_118 ? e_8_src1_ready : _GEN_72;
+          ? _GEN_99
+          : _GEN_144 ? e_9_src1_ready : _GEN_131 ? e_8_src1_ready : _GEN_99;
       entries_3_src2_ready <=
         io_flush
-          ? _GEN_75
-          : _GEN_135 ? e_9_src2_ready : _GEN_118 ? e_8_src2_ready : _GEN_75;
+          ? _GEN_101
+          : _GEN_144 ? e_9_src2_ready : _GEN_131 ? e_8_src2_ready : _GEN_101;
       entries_4_valid <=
         io_flush
           ? ~(io_flush_all | entries_4_valid
-              & (freeByRob_4 | _legacyOH_hasOlder_T_410 > _GEN_105)) & entries_4_valid
-          : _GEN_123 ? _GEN_137 | _GEN_110 : _GEN_119 | _GEN_110;
+              & (freeByRob_4 | _legacyOH_hasOlder_T_410 > _GEN_118)) & entries_4_valid
+          : _GEN_136 ? _GEN_145 | _GEN_132 | _GEN_123 : _GEN_132 | _GEN_123;
       entries_4_src1_ready <=
         io_flush
-          ? _GEN_79
-          : _GEN_138 ? e_9_src1_ready : _GEN_119 ? e_8_src1_ready : _GEN_79;
+          ? _GEN_103
+          : _GEN_146 ? e_9_src1_ready : _GEN_132 ? e_8_src1_ready : _GEN_103;
       entries_4_src2_ready <=
         io_flush
-          ? _GEN_82
-          : _GEN_138 ? e_9_src2_ready : _GEN_119 ? e_8_src2_ready : _GEN_82;
+          ? _GEN_105
+          : _GEN_146 ? e_9_src2_ready : _GEN_132 ? e_8_src2_ready : _GEN_105;
       entries_5_valid <=
         io_flush
           ? ~(io_flush_all | entries_5_valid
-              & (freeByRob_5 | _legacyOH_hasOlder_T_416 > _GEN_105)) & entries_5_valid
-          : _GEN_123 ? _GEN_140 | _GEN_111 : _GEN_120 | _GEN_111;
+              & (freeByRob_5 | _legacyOH_hasOlder_T_416 > _GEN_118)) & entries_5_valid
+          : _GEN_136 ? _GEN_147 | _GEN_133 | _GEN_124 : _GEN_133 | _GEN_124;
       entries_5_src1_ready <=
         io_flush
-          ? _GEN_86
-          : _GEN_141 ? e_9_src1_ready : _GEN_120 ? e_8_src1_ready : _GEN_86;
+          ? _GEN_107
+          : _GEN_148 ? e_9_src1_ready : _GEN_133 ? e_8_src1_ready : _GEN_107;
       entries_5_src2_ready <=
         io_flush
-          ? _GEN_89
-          : _GEN_141 ? e_9_src2_ready : _GEN_120 ? e_8_src2_ready : _GEN_89;
+          ? _GEN_109
+          : _GEN_148 ? e_9_src2_ready : _GEN_133 ? e_8_src2_ready : _GEN_109;
       entries_6_valid <=
         io_flush
           ? ~(io_flush_all | entries_6_valid
-              & (freeByRob_6 | _legacyOH_hasOlder_T_422 > _GEN_105)) & entries_6_valid
-          : _GEN_123 ? _GEN_143 | _GEN_112 : _GEN_121 | _GEN_112;
+              & (freeByRob_6 | _legacyOH_hasOlder_T_422 > _GEN_118)) & entries_6_valid
+          : _GEN_136 ? _GEN_149 | _GEN_134 | _GEN_125 : _GEN_134 | _GEN_125;
       entries_6_src1_ready <=
         io_flush
-          ? _GEN_93
-          : _GEN_144 ? e_9_src1_ready : _GEN_121 ? e_8_src1_ready : _GEN_93;
+          ? _GEN_111
+          : _GEN_150 ? e_9_src1_ready : _GEN_134 ? e_8_src1_ready : _GEN_111;
       entries_6_src2_ready <=
         io_flush
-          ? _GEN_96
-          : _GEN_144 ? e_9_src2_ready : _GEN_121 ? e_8_src2_ready : _GEN_96;
+          ? _GEN_113
+          : _GEN_150 ? e_9_src2_ready : _GEN_134 ? e_8_src2_ready : _GEN_113;
       entries_7_valid <=
         io_flush
           ? ~(io_flush_all | entries_7_valid
-              & (freeByRob_7 | _legacyOH_hasOlder_T_428 > _GEN_105)) & entries_7_valid
-          : _GEN_123 ? _GEN_145 | _GEN_113 : _GEN_122 | _GEN_113;
+              & (freeByRob_7 | _legacyOH_hasOlder_T_428 > _GEN_118)) & entries_7_valid
+          : _GEN_136 ? (&enq1Idx) | _GEN_135 | _GEN_126 : _GEN_135 | _GEN_126;
       entries_7_src1_ready <=
         io_flush
-          ? _GEN_100
-          : _GEN_146 ? e_9_src1_ready : _GEN_122 ? e_8_src1_ready : _GEN_100;
+          ? _GEN_115
+          : _GEN_151 ? e_9_src1_ready : _GEN_135 ? e_8_src1_ready : _GEN_115;
       entries_7_src2_ready <=
         io_flush
-          ? _GEN_103
-          : _GEN_146 ? e_9_src2_ready : _GEN_122 ? e_8_src2_ready : _GEN_103;
+          ? _GEN_117
+          : _GEN_151 ? e_9_src2_ready : _GEN_135 ? e_8_src2_ready : _GEN_117;
     end
   end // always @(posedge)
   assign io_count = io_count_0;
-  assign io_issue_alu_valid =
-    (|{aluOH_7, aluOH_6, aluOH_5, aluOH_4, aluOH_3, aluOH_2, aluOH_1, aluOH_0})
-    & ~io_flush;
-  assign io_issue_alu_bits_rob_idx = casez_tmp;
-  assign io_issue_alu_bits_src1_phys = casez_tmp_0;
-  assign io_issue_alu_bits_src2_phys = casez_tmp_1;
-  assign io_issue_alu_bits_src1_val = casez_tmp_2;
-  assign io_issue_alu_bits_src2_val = casez_tmp_3;
-  assign io_issue_alu_bits_pdest = casez_tmp_4;
-  assign io_issue_alu_bits_pc = casez_tmp_5;
-  assign io_issue_alu_bits_imm_ext = casez_tmp_6;
-  assign io_issue_alu_bits_waddr = casez_tmp_7;
-  assign io_issue_alu_bits_csr_rd1 = casez_tmp_8;
-  assign io_issue_alu_bits_state_state = casez_tmp_9;
-  assign io_issue_alu_bits_state_state_num = casez_tmp_10;
-  assign io_issue_alu_bits_exu_alu_srcA = casez_tmp_11;
-  assign io_issue_alu_bits_exu_alu_srcB = casez_tmp_12;
-  assign io_issue_alu_bits_exu_alu_control = casez_tmp_13;
-  assign io_issue_alu_bits_exu_jump = casez_tmp_14;
-  assign io_issue_alu_bits_lsu_mem_rd = casez_tmp_15;
-  assign io_issue_alu_bits_lsu_mem_write = casez_tmp_16;
-  assign io_issue_alu_bits_lsu_mem_valid = casez_tmp_17;
-  assign io_issue_alu_bits_wbu_reg_write = casez_tmp_18;
-  assign io_issue_alu_bits_wbu_reg_write_sel = casez_tmp_19;
-  assign io_issue_alu1_valid =
-    (|{_alu1OH_oh_7_T
-         & ~(_alu1OH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
-             | _alu1OH_hasOlder_T_391
-             & _legacyOH_hasOlder_T_392 < _legacyOH_hasOlder_T_428
-             | _alu1OH_hasOlder_T_397
-             & _legacyOH_hasOlder_T_398 < _legacyOH_hasOlder_T_428
-             | _alu1OH_hasOlder_T_403
-             & _legacyOH_hasOlder_T_404 < _legacyOH_hasOlder_T_428
-             | _alu1OH_hasOlder_T_409
-             & _legacyOH_hasOlder_T_410 < _legacyOH_hasOlder_T_428
-             | _alu1OH_hasOlder_T_415
-             & _legacyOH_hasOlder_T_416 < _legacyOH_hasOlder_T_428
-             | _alu1OH_hasOlder_T_421
-             & _legacyOH_hasOlder_T_422 < _legacyOH_hasOlder_T_428),
-       alu1OH_6,
-       alu1OH_5,
-       alu1OH_4,
-       alu1OH_3,
-       alu1OH_2,
-       alu1OH_1,
-       alu1OH_0}) & ~io_flush;
-  assign io_issue_alu1_bits_rob_idx = casez_tmp_20;
-  assign io_issue_alu1_bits_src1_phys = casez_tmp_21;
-  assign io_issue_alu1_bits_src2_phys = casez_tmp_22;
-  assign io_issue_alu1_bits_src1_val = casez_tmp_23;
-  assign io_issue_alu1_bits_src2_val = casez_tmp_24;
-  assign io_issue_alu1_bits_pdest = casez_tmp_25;
-  assign io_issue_alu1_bits_pc = casez_tmp_26;
-  assign io_issue_alu1_bits_imm_ext = casez_tmp_27;
-  assign io_issue_alu1_bits_waddr = casez_tmp_28;
-  assign io_issue_alu1_bits_csr_rd1 = casez_tmp_29;
-  assign io_issue_alu1_bits_state_state = casez_tmp_30;
-  assign io_issue_alu1_bits_state_state_num = casez_tmp_31;
-  assign io_issue_alu1_bits_exu_alu_srcA = casez_tmp_32;
-  assign io_issue_alu1_bits_exu_alu_srcB = casez_tmp_33;
-  assign io_issue_alu1_bits_exu_alu_control = casez_tmp_34;
-  assign io_issue_alu1_bits_exu_jump = casez_tmp_35;
-  assign io_issue_alu1_bits_lsu_mem_rd = casez_tmp_36;
-  assign io_issue_alu1_bits_lsu_mem_write = casez_tmp_37;
-  assign io_issue_alu1_bits_lsu_mem_valid = casez_tmp_38;
-  assign io_issue_alu1_bits_wbu_reg_write = casez_tmp_39;
-  assign io_issue_alu1_bits_wbu_reg_write_sel = casez_tmp_40;
-  assign io_issue_div_valid =
-    (|{_divOH_oh_7_T
-         & ~(_divOH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
-             | _divOH_hasOlder_T_391 & _legacyOH_hasOlder_T_392 < _legacyOH_hasOlder_T_428
-             | _divOH_hasOlder_T_397 & _legacyOH_hasOlder_T_398 < _legacyOH_hasOlder_T_428
-             | _divOH_hasOlder_T_403 & _legacyOH_hasOlder_T_404 < _legacyOH_hasOlder_T_428
-             | _divOH_hasOlder_T_409 & _legacyOH_hasOlder_T_410 < _legacyOH_hasOlder_T_428
-             | _divOH_hasOlder_T_415 & _legacyOH_hasOlder_T_416 < _legacyOH_hasOlder_T_428
-             | _divOH_hasOlder_T_421
-             & _legacyOH_hasOlder_T_422 < _legacyOH_hasOlder_T_428),
-       divOH_6,
-       divOH_5,
-       divOH_4,
-       divOH_3,
-       divOH_2,
-       divOH_1,
-       divOH_0}) & ~io_flush;
-  assign io_issue_div_bits_rob_idx = casez_tmp_41;
-  assign io_issue_div_bits_src1_phys = casez_tmp_42;
-  assign io_issue_div_bits_src2_phys = casez_tmp_43;
-  assign io_issue_div_bits_src1_val = casez_tmp_44;
-  assign io_issue_div_bits_src2_val = casez_tmp_45;
-  assign io_issue_div_bits_pdest = casez_tmp_46;
-  assign io_issue_div_bits_pc = casez_tmp_47;
-  assign io_issue_div_bits_imm_ext = casez_tmp_48;
-  assign io_issue_div_bits_waddr = casez_tmp_49;
-  assign io_issue_div_bits_csr_rd1 = casez_tmp_50;
-  assign io_issue_div_bits_state_state = casez_tmp_51;
-  assign io_issue_div_bits_state_state_num = casez_tmp_52;
-  assign io_issue_div_bits_exu_alu_srcA = casez_tmp_53;
-  assign io_issue_div_bits_exu_alu_srcB = casez_tmp_54;
-  assign io_issue_div_bits_exu_alu_control = casez_tmp_55;
-  assign io_issue_div_bits_exu_jump = casez_tmp_56;
-  assign io_issue_div_bits_lsu_mem_rd = casez_tmp_57;
-  assign io_issue_div_bits_lsu_mem_write = casez_tmp_58;
-  assign io_issue_div_bits_lsu_mem_valid = casez_tmp_59;
-  assign io_issue_div_bits_wbu_reg_write = casez_tmp_60;
-  assign io_issue_div_bits_wbu_reg_write_sel = casez_tmp_61;
-  assign io_issue_lsu_valid =
-    (|{_lsuOH_oh_7_T
-         & ~(_lsuOH_hasOlder_T_385 & _legacyOH_hasOlder_T_386 < _legacyOH_hasOlder_T_428
-             | _lsuOH_hasOlder_T_391 & _legacyOH_hasOlder_T_392 < _legacyOH_hasOlder_T_428
-             | _lsuOH_hasOlder_T_397 & _legacyOH_hasOlder_T_398 < _legacyOH_hasOlder_T_428
-             | _lsuOH_hasOlder_T_403 & _legacyOH_hasOlder_T_404 < _legacyOH_hasOlder_T_428
-             | _lsuOH_hasOlder_T_409 & _legacyOH_hasOlder_T_410 < _legacyOH_hasOlder_T_428
-             | _lsuOH_hasOlder_T_415 & _legacyOH_hasOlder_T_416 < _legacyOH_hasOlder_T_428
-             | _lsuOH_hasOlder_T_421
-             & _legacyOH_hasOlder_T_422 < _legacyOH_hasOlder_T_428),
-       lsuOH_6,
-       lsuOH_5,
-       lsuOH_4,
-       lsuOH_3,
-       lsuOH_2,
-       lsuOH_1,
-       lsuOH_0}) & ~io_flush;
-  assign io_issue_lsu_bits_rob_idx = casez_tmp_62;
-  assign io_issue_lsu_bits_src1_phys = casez_tmp_63;
-  assign io_issue_lsu_bits_src2_phys = casez_tmp_64;
-  assign io_issue_lsu_bits_src1_val = casez_tmp_65;
-  assign io_issue_lsu_bits_src2_val = casez_tmp_66;
-  assign io_issue_lsu_bits_pdest = casez_tmp_67;
-  assign io_issue_lsu_bits_pc = casez_tmp_68;
-  assign io_issue_lsu_bits_imm_ext = casez_tmp_69;
-  assign io_issue_lsu_bits_waddr = casez_tmp_70;
-  assign io_issue_lsu_bits_csr_rd1 = casez_tmp_71;
-  assign io_issue_lsu_bits_state_state = casez_tmp_72;
-  assign io_issue_lsu_bits_state_state_num = casez_tmp_73;
-  assign io_issue_lsu_bits_exu_alu_srcA = casez_tmp_74;
-  assign io_issue_lsu_bits_exu_alu_srcB = casez_tmp_75;
-  assign io_issue_lsu_bits_exu_alu_control = casez_tmp_76;
-  assign io_issue_lsu_bits_exu_jump = casez_tmp_77;
-  assign io_issue_lsu_bits_lsu_mem_rd = casez_tmp_78;
-  assign io_issue_lsu_bits_lsu_mem_write = casez_tmp_79;
-  assign io_issue_lsu_bits_lsu_mem_valid = casez_tmp_80;
-  assign io_issue_lsu_bits_wbu_reg_write = casez_tmp_81;
-  assign io_issue_lsu_bits_wbu_reg_write_sel = casez_tmp_82;
+  assign io_issue_alu_valid = ((|_aluResident_T) | aluFresh) & ~io_flush;
+  assign io_issue_alu_bits_rob_idx =
+    (|_aluResident_T)
+      ? casez_tmp
+      : aluFresh0 ? io_enq_bits_rob_idx : io_enq1_bits_rob_idx;
+  assign io_issue_alu_bits_src1_phys =
+    (|_aluResident_T)
+      ? casez_tmp_0
+      : aluFresh0 ? io_enq_bits_src1_phys : io_enq1_bits_src1_phys;
+  assign io_issue_alu_bits_src2_phys =
+    (|_aluResident_T)
+      ? casez_tmp_1
+      : aluFresh0 ? io_enq_bits_src2_phys : io_enq1_bits_src2_phys;
+  assign io_issue_alu_bits_src1_val =
+    (|_aluResident_T) ? casez_tmp_2 : aluFresh0 ? fresh_0_e_src1_val : fresh_1_e_src1_val;
+  assign io_issue_alu_bits_src2_val =
+    (|_aluResident_T) ? casez_tmp_3 : aluFresh0 ? fresh_0_e_src2_val : fresh_1_e_src2_val;
+  assign io_issue_alu_bits_pdest =
+    (|_aluResident_T) ? casez_tmp_4 : aluFresh0 ? io_enq_bits_pdest : io_enq1_bits_pdest;
+  assign io_issue_alu_bits_pc =
+    (|_aluResident_T) ? casez_tmp_5 : aluFresh0 ? io_enq_bits_pc : io_enq1_bits_pc;
+  assign io_issue_alu_bits_imm_ext =
+    (|_aluResident_T)
+      ? casez_tmp_6
+      : aluFresh0 ? io_enq_bits_imm_ext : io_enq1_bits_imm_ext;
+  assign io_issue_alu_bits_waddr =
+    (|_aluResident_T) ? casez_tmp_7 : aluFresh0 ? io_enq_bits_waddr : io_enq1_bits_waddr;
+  assign io_issue_alu_bits_csr_rd1 =
+    (|_aluResident_T)
+      ? casez_tmp_8
+      : aluFresh0 ? io_enq_bits_csr_rd1 : io_enq1_bits_csr_rd1;
+  assign io_issue_alu_bits_state_state =
+    (|_aluResident_T)
+      ? casez_tmp_9
+      : aluFresh0 ? io_enq_bits_state_state : io_enq1_bits_state_state;
+  assign io_issue_alu_bits_state_state_num =
+    (|_aluResident_T)
+      ? casez_tmp_10
+      : aluFresh0 ? io_enq_bits_state_state_num : io_enq1_bits_state_state_num;
+  assign io_issue_alu_bits_exu_alu_srcA =
+    (|_aluResident_T)
+      ? casez_tmp_11
+      : aluFresh0 ? io_enq_bits_exu_alu_srcA : io_enq1_bits_exu_alu_srcA;
+  assign io_issue_alu_bits_exu_alu_srcB =
+    (|_aluResident_T)
+      ? casez_tmp_12
+      : aluFresh0 ? io_enq_bits_exu_alu_srcB : io_enq1_bits_exu_alu_srcB;
+  assign io_issue_alu_bits_exu_alu_control =
+    (|_aluResident_T)
+      ? casez_tmp_13
+      : aluFresh0 ? io_enq_bits_exu_alu_control : io_enq1_bits_exu_alu_control;
+  assign io_issue_alu_bits_exu_jump =
+    (|_aluResident_T)
+      ? casez_tmp_14
+      : aluFresh0 ? io_enq_bits_exu_jump : io_enq1_bits_exu_jump;
+  assign io_issue_alu_bits_lsu_mem_rd =
+    (|_aluResident_T)
+      ? casez_tmp_15
+      : aluFresh0 ? io_enq_bits_lsu_mem_rd : io_enq1_bits_lsu_mem_rd;
+  assign io_issue_alu_bits_lsu_mem_write =
+    (|_aluResident_T)
+      ? casez_tmp_16
+      : aluFresh0 ? io_enq_bits_lsu_mem_write : io_enq1_bits_lsu_mem_write;
+  assign io_issue_alu_bits_lsu_mem_valid =
+    (|_aluResident_T)
+      ? casez_tmp_17
+      : aluFresh0 ? io_enq_bits_lsu_mem_valid : io_enq1_bits_lsu_mem_valid;
+  assign io_issue_alu_bits_wbu_reg_write =
+    (|_aluResident_T)
+      ? casez_tmp_18
+      : aluFresh0 ? io_enq_bits_wbu_reg_write : io_enq1_bits_wbu_reg_write;
+  assign io_issue_alu_bits_wbu_reg_write_sel =
+    (|_aluResident_T)
+      ? casez_tmp_19
+      : aluFresh0 ? io_enq_bits_wbu_reg_write_sel : io_enq1_bits_wbu_reg_write_sel;
+  assign io_issue_alu1_valid = ((|_alu1Resident_T) | alu1Fresh) & ~io_flush;
+  assign io_issue_alu1_bits_rob_idx =
+    (|_alu1Resident_T)
+      ? casez_tmp_20
+      : alu1Fresh0 ? io_enq_bits_rob_idx : io_enq1_bits_rob_idx;
+  assign io_issue_alu1_bits_src1_phys =
+    (|_alu1Resident_T)
+      ? casez_tmp_21
+      : alu1Fresh0 ? io_enq_bits_src1_phys : io_enq1_bits_src1_phys;
+  assign io_issue_alu1_bits_src2_phys =
+    (|_alu1Resident_T)
+      ? casez_tmp_22
+      : alu1Fresh0 ? io_enq_bits_src2_phys : io_enq1_bits_src2_phys;
+  assign io_issue_alu1_bits_src1_val =
+    (|_alu1Resident_T)
+      ? casez_tmp_23
+      : alu1Fresh0 ? fresh_0_e_src1_val : fresh_1_e_src1_val;
+  assign io_issue_alu1_bits_src2_val =
+    (|_alu1Resident_T)
+      ? casez_tmp_24
+      : alu1Fresh0 ? fresh_0_e_src2_val : fresh_1_e_src2_val;
+  assign io_issue_alu1_bits_pdest =
+    (|_alu1Resident_T)
+      ? casez_tmp_25
+      : alu1Fresh0 ? io_enq_bits_pdest : io_enq1_bits_pdest;
+  assign io_issue_alu1_bits_pc =
+    (|_alu1Resident_T) ? casez_tmp_26 : alu1Fresh0 ? io_enq_bits_pc : io_enq1_bits_pc;
+  assign io_issue_alu1_bits_imm_ext =
+    (|_alu1Resident_T)
+      ? casez_tmp_27
+      : alu1Fresh0 ? io_enq_bits_imm_ext : io_enq1_bits_imm_ext;
+  assign io_issue_alu1_bits_waddr =
+    (|_alu1Resident_T)
+      ? casez_tmp_28
+      : alu1Fresh0 ? io_enq_bits_waddr : io_enq1_bits_waddr;
+  assign io_issue_alu1_bits_csr_rd1 =
+    (|_alu1Resident_T)
+      ? casez_tmp_29
+      : alu1Fresh0 ? io_enq_bits_csr_rd1 : io_enq1_bits_csr_rd1;
+  assign io_issue_alu1_bits_state_state =
+    (|_alu1Resident_T)
+      ? casez_tmp_30
+      : alu1Fresh0 ? io_enq_bits_state_state : io_enq1_bits_state_state;
+  assign io_issue_alu1_bits_state_state_num =
+    (|_alu1Resident_T)
+      ? casez_tmp_31
+      : alu1Fresh0 ? io_enq_bits_state_state_num : io_enq1_bits_state_state_num;
+  assign io_issue_alu1_bits_exu_alu_srcA =
+    (|_alu1Resident_T)
+      ? casez_tmp_32
+      : alu1Fresh0 ? io_enq_bits_exu_alu_srcA : io_enq1_bits_exu_alu_srcA;
+  assign io_issue_alu1_bits_exu_alu_srcB =
+    (|_alu1Resident_T)
+      ? casez_tmp_33
+      : alu1Fresh0 ? io_enq_bits_exu_alu_srcB : io_enq1_bits_exu_alu_srcB;
+  assign io_issue_alu1_bits_exu_alu_control =
+    (|_alu1Resident_T)
+      ? casez_tmp_34
+      : alu1Fresh0 ? io_enq_bits_exu_alu_control : io_enq1_bits_exu_alu_control;
+  assign io_issue_alu1_bits_exu_jump =
+    (|_alu1Resident_T)
+      ? casez_tmp_35
+      : alu1Fresh0 ? io_enq_bits_exu_jump : io_enq1_bits_exu_jump;
+  assign io_issue_alu1_bits_lsu_mem_rd =
+    (|_alu1Resident_T)
+      ? casez_tmp_36
+      : alu1Fresh0 ? io_enq_bits_lsu_mem_rd : io_enq1_bits_lsu_mem_rd;
+  assign io_issue_alu1_bits_lsu_mem_write =
+    (|_alu1Resident_T)
+      ? casez_tmp_37
+      : alu1Fresh0 ? io_enq_bits_lsu_mem_write : io_enq1_bits_lsu_mem_write;
+  assign io_issue_alu1_bits_lsu_mem_valid =
+    (|_alu1Resident_T)
+      ? casez_tmp_38
+      : alu1Fresh0 ? io_enq_bits_lsu_mem_valid : io_enq1_bits_lsu_mem_valid;
+  assign io_issue_alu1_bits_wbu_reg_write =
+    (|_alu1Resident_T)
+      ? casez_tmp_39
+      : alu1Fresh0 ? io_enq_bits_wbu_reg_write : io_enq1_bits_wbu_reg_write;
+  assign io_issue_alu1_bits_wbu_reg_write_sel =
+    (|_alu1Resident_T)
+      ? casez_tmp_40
+      : alu1Fresh0 ? io_enq_bits_wbu_reg_write_sel : io_enq1_bits_wbu_reg_write_sel;
+  assign io_issue_div_valid = ((|_divResident_T) | divFresh) & ~io_flush;
+  assign io_issue_div_bits_rob_idx =
+    (|_divResident_T)
+      ? casez_tmp_41
+      : divFresh0 ? io_enq_bits_rob_idx : io_enq1_bits_rob_idx;
+  assign io_issue_div_bits_src1_phys =
+    (|_divResident_T)
+      ? casez_tmp_42
+      : divFresh0 ? io_enq_bits_src1_phys : io_enq1_bits_src1_phys;
+  assign io_issue_div_bits_src2_phys =
+    (|_divResident_T)
+      ? casez_tmp_43
+      : divFresh0 ? io_enq_bits_src2_phys : io_enq1_bits_src2_phys;
+  assign io_issue_div_bits_src1_val =
+    (|_divResident_T)
+      ? casez_tmp_44
+      : divFresh0 ? fresh_0_e_src1_val : fresh_1_e_src1_val;
+  assign io_issue_div_bits_src2_val =
+    (|_divResident_T)
+      ? casez_tmp_45
+      : divFresh0 ? fresh_0_e_src2_val : fresh_1_e_src2_val;
+  assign io_issue_div_bits_pdest =
+    (|_divResident_T) ? casez_tmp_46 : divFresh0 ? io_enq_bits_pdest : io_enq1_bits_pdest;
+  assign io_issue_div_bits_pc =
+    (|_divResident_T) ? casez_tmp_47 : divFresh0 ? io_enq_bits_pc : io_enq1_bits_pc;
+  assign io_issue_div_bits_imm_ext =
+    (|_divResident_T)
+      ? casez_tmp_48
+      : divFresh0 ? io_enq_bits_imm_ext : io_enq1_bits_imm_ext;
+  assign io_issue_div_bits_waddr =
+    (|_divResident_T) ? casez_tmp_49 : divFresh0 ? io_enq_bits_waddr : io_enq1_bits_waddr;
+  assign io_issue_div_bits_csr_rd1 =
+    (|_divResident_T)
+      ? casez_tmp_50
+      : divFresh0 ? io_enq_bits_csr_rd1 : io_enq1_bits_csr_rd1;
+  assign io_issue_div_bits_state_state =
+    (|_divResident_T)
+      ? casez_tmp_51
+      : divFresh0 ? io_enq_bits_state_state : io_enq1_bits_state_state;
+  assign io_issue_div_bits_state_state_num =
+    (|_divResident_T)
+      ? casez_tmp_52
+      : divFresh0 ? io_enq_bits_state_state_num : io_enq1_bits_state_state_num;
+  assign io_issue_div_bits_exu_alu_srcA =
+    (|_divResident_T)
+      ? casez_tmp_53
+      : divFresh0 ? io_enq_bits_exu_alu_srcA : io_enq1_bits_exu_alu_srcA;
+  assign io_issue_div_bits_exu_alu_srcB =
+    (|_divResident_T)
+      ? casez_tmp_54
+      : divFresh0 ? io_enq_bits_exu_alu_srcB : io_enq1_bits_exu_alu_srcB;
+  assign io_issue_div_bits_exu_alu_control =
+    (|_divResident_T)
+      ? casez_tmp_55
+      : divFresh0 ? io_enq_bits_exu_alu_control : io_enq1_bits_exu_alu_control;
+  assign io_issue_div_bits_exu_jump =
+    (|_divResident_T)
+      ? casez_tmp_56
+      : divFresh0 ? io_enq_bits_exu_jump : io_enq1_bits_exu_jump;
+  assign io_issue_div_bits_lsu_mem_rd =
+    (|_divResident_T)
+      ? casez_tmp_57
+      : divFresh0 ? io_enq_bits_lsu_mem_rd : io_enq1_bits_lsu_mem_rd;
+  assign io_issue_div_bits_lsu_mem_write =
+    (|_divResident_T)
+      ? casez_tmp_58
+      : divFresh0 ? io_enq_bits_lsu_mem_write : io_enq1_bits_lsu_mem_write;
+  assign io_issue_div_bits_lsu_mem_valid =
+    (|_divResident_T)
+      ? casez_tmp_59
+      : divFresh0 ? io_enq_bits_lsu_mem_valid : io_enq1_bits_lsu_mem_valid;
+  assign io_issue_div_bits_wbu_reg_write =
+    (|_divResident_T)
+      ? casez_tmp_60
+      : divFresh0 ? io_enq_bits_wbu_reg_write : io_enq1_bits_wbu_reg_write;
+  assign io_issue_div_bits_wbu_reg_write_sel =
+    (|_divResident_T)
+      ? casez_tmp_61
+      : divFresh0 ? io_enq_bits_wbu_reg_write_sel : io_enq1_bits_wbu_reg_write_sel;
+  assign io_issue_lsu_valid = ((|_lsuResident_T) | lsuFresh) & ~io_flush;
+  assign io_issue_lsu_bits_rob_idx =
+    (|_lsuResident_T)
+      ? casez_tmp_62
+      : lsuFresh0 ? io_enq_bits_rob_idx : io_enq1_bits_rob_idx;
+  assign io_issue_lsu_bits_src1_phys =
+    (|_lsuResident_T)
+      ? casez_tmp_63
+      : lsuFresh0 ? io_enq_bits_src1_phys : io_enq1_bits_src1_phys;
+  assign io_issue_lsu_bits_src2_phys =
+    (|_lsuResident_T)
+      ? casez_tmp_64
+      : lsuFresh0 ? io_enq_bits_src2_phys : io_enq1_bits_src2_phys;
+  assign io_issue_lsu_bits_src1_val =
+    (|_lsuResident_T)
+      ? casez_tmp_65
+      : lsuFresh0 ? fresh_0_e_src1_val : fresh_1_e_src1_val;
+  assign io_issue_lsu_bits_src2_val =
+    (|_lsuResident_T)
+      ? casez_tmp_66
+      : lsuFresh0 ? fresh_0_e_src2_val : fresh_1_e_src2_val;
+  assign io_issue_lsu_bits_pdest =
+    (|_lsuResident_T) ? casez_tmp_67 : lsuFresh0 ? io_enq_bits_pdest : io_enq1_bits_pdest;
+  assign io_issue_lsu_bits_pc =
+    (|_lsuResident_T) ? casez_tmp_68 : lsuFresh0 ? io_enq_bits_pc : io_enq1_bits_pc;
+  assign io_issue_lsu_bits_imm_ext =
+    (|_lsuResident_T)
+      ? casez_tmp_69
+      : lsuFresh0 ? io_enq_bits_imm_ext : io_enq1_bits_imm_ext;
+  assign io_issue_lsu_bits_waddr =
+    (|_lsuResident_T) ? casez_tmp_70 : lsuFresh0 ? io_enq_bits_waddr : io_enq1_bits_waddr;
+  assign io_issue_lsu_bits_csr_rd1 =
+    (|_lsuResident_T)
+      ? casez_tmp_71
+      : lsuFresh0 ? io_enq_bits_csr_rd1 : io_enq1_bits_csr_rd1;
+  assign io_issue_lsu_bits_state_state =
+    (|_lsuResident_T)
+      ? casez_tmp_72
+      : lsuFresh0 ? io_enq_bits_state_state : io_enq1_bits_state_state;
+  assign io_issue_lsu_bits_state_state_num =
+    (|_lsuResident_T)
+      ? casez_tmp_73
+      : lsuFresh0 ? io_enq_bits_state_state_num : io_enq1_bits_state_state_num;
+  assign io_issue_lsu_bits_exu_alu_srcA =
+    (|_lsuResident_T)
+      ? casez_tmp_74
+      : lsuFresh0 ? io_enq_bits_exu_alu_srcA : io_enq1_bits_exu_alu_srcA;
+  assign io_issue_lsu_bits_exu_alu_srcB =
+    (|_lsuResident_T)
+      ? casez_tmp_75
+      : lsuFresh0 ? io_enq_bits_exu_alu_srcB : io_enq1_bits_exu_alu_srcB;
+  assign io_issue_lsu_bits_exu_alu_control =
+    (|_lsuResident_T)
+      ? casez_tmp_76
+      : lsuFresh0 ? io_enq_bits_exu_alu_control : io_enq1_bits_exu_alu_control;
+  assign io_issue_lsu_bits_exu_jump =
+    (|_lsuResident_T)
+      ? casez_tmp_77
+      : lsuFresh0 ? io_enq_bits_exu_jump : io_enq1_bits_exu_jump;
+  assign io_issue_lsu_bits_lsu_mem_rd =
+    (|_lsuResident_T)
+      ? casez_tmp_78
+      : lsuFresh0 ? io_enq_bits_lsu_mem_rd : io_enq1_bits_lsu_mem_rd;
+  assign io_issue_lsu_bits_lsu_mem_write =
+    (|_lsuResident_T)
+      ? casez_tmp_79
+      : lsuFresh0 ? io_enq_bits_lsu_mem_write : io_enq1_bits_lsu_mem_write;
+  assign io_issue_lsu_bits_lsu_mem_valid =
+    (|_lsuResident_T)
+      ? casez_tmp_80
+      : lsuFresh0 ? io_enq_bits_lsu_mem_valid : io_enq1_bits_lsu_mem_valid;
+  assign io_issue_lsu_bits_wbu_reg_write =
+    (|_lsuResident_T)
+      ? casez_tmp_81
+      : lsuFresh0 ? io_enq_bits_wbu_reg_write : io_enq1_bits_wbu_reg_write;
+  assign io_issue_lsu_bits_wbu_reg_write_sel =
+    (|_lsuResident_T)
+      ? casez_tmp_82
+      : lsuFresh0 ? io_enq_bits_wbu_reg_write_sel : io_enq1_bits_wbu_reg_write_sel;
   assign io_space = 4'h8 - io_count_0;
+  assign io_fresh_issue_count =
+    {1'h0, {1'h0, io_issue_alu_fire & aluFresh} + {1'h0, io_issue_alu1_fire & alu1Fresh}}
+    + {1'h0, {1'h0, io_issue_div_fire & divFresh} + {1'h0, io_issue_lsu_fire & lsuFresh}};
 endmodule
 

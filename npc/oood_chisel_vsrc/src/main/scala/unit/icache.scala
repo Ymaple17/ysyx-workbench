@@ -61,8 +61,6 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
 
     val in_addr = RegEnable(io.in.araddr, 0.U(32.W), io.in.arvalid && io.in.arready)
 
-    val is_sdram = RegEnable(io.in.araddr >= "ha000_0000".U(32.W) && io.in.araddr <= "hbfff_ffff".U(32.W), false.B, io.in.arready & io.in.arvalid)
-
     val s_IFU_AR :: s_AXI_AR :: s_AXI_R :: s_IFU_DATA :: s_FENCEI :: Nil = Enum(5)
 
     val hit_next_state = Mux(io.in.rready, s_IFU_AR, s_IFU_DATA)
@@ -77,7 +75,7 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
                 Seq((io.in.arvalid && io.in.arready) -> Mux(hit, hit_next_state, miss_next_state),
                       (io.fencei.valid && io.fencei.bits.is_fencei) -> s_FENCEI)),
         s_AXI_AR -> Mux(io.out.arready, s_AXI_R, s_AXI_AR),
-        s_AXI_R -> Mux(io.out.rvalid, Mux(count === 0.U, hit_next_state, Mux(is_sdram, s_AXI_R, s_AXI_AR)), s_AXI_R),
+        s_AXI_R -> Mux(io.out.rvalid && count === 0.U, hit_next_state, s_AXI_R),
         s_IFU_DATA -> Mux(io.in.rready, s_IFU_AR, s_IFU_DATA),
         s_FENCEI -> Mux(fencei_cnt === (set-1).U, s_IFU_AR, s_FENCEI)
     ))
@@ -170,7 +168,7 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
     io.out.wlast   := false.B
     io.out.bready  := false.B
 
-    val addr = Mux(is_sdram, base_addr, ((c.U - 1.U - count) << 2) + base_addr)
+    val addr = base_addr
     io.in.rdata := Mux(hit & state =/= s_AXI_R, hit_data, Mux(count === 0.U, miss_data, 0.U))
     io.in.rdata1 := Mux(hit & state =/= s_AXI_R, secondHitData,
         Mux(count === 0.U, Mux(hasNextWord, miss_data1, crossLineData), 0.U))
@@ -192,7 +190,7 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
             io.out.araddr := addr
             io.out.arvalid := true.B
             io.out.arburst := "b01".U
-            io.out.arlen := Mux(is_sdram, (c - 1).U, 0.U)
+            io.out.arlen := (c - 1).U
             io.out.arsize := "b10".U
             io.out.rready := false.B
 

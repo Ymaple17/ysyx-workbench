@@ -20,29 +20,57 @@
 module WritebackArbiter_Verification_Assert(
   input       reset,
   input [1:0] _GEN,
-  input       grant0_2,
+  input       grants_0_2,
   input [1:0] _GEN_0,
-  input       grant1_2,
+  input       grants_1_2,
   input [1:0] _GEN_1,
               _GEN_2,
+              _GEN_3,
+  input       grants_2_2,
+  input [1:0] _GEN_4,
   input       io_out_0_valid,
               io_out_1_valid,
   input [4:0] io_out_0_bits_rob_idx,
               io_robHead,
               io_out_1_bits_rob_idx,
+  input       io_out_2_valid,
+  input [4:0] io_out_2_bits_rob_idx,
   input       clock
 );
 
   `ifndef SYNTHESIS
+    wire [4:0] _GEN_5 = {_GEN_0, grants_1_2, _GEN_1};
+    wire [4:0] _GEN_6 = {_GEN, grants_0_2, _GEN_2};
+    wire [4:0] _GEN_7 = {_GEN_3, grants_2_2, _GEN_4};
+    wire [4:0] _GEN_8 = io_out_1_bits_rob_idx - io_robHead;
     always @(posedge clock) begin
-      if (~reset & (|({_GEN, grant0_2, _GEN_2} & {_GEN_0, grant1_2, _GEN_1}))) begin
+      if (~reset & (|(_GEN_6 & _GEN_5))) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: writeback ports must not grant the same result\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & (|(_GEN_6 & _GEN_7))) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: writeback ports must not grant the same result\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & (|(_GEN_5 & _GEN_7))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: writeback ports must not grant the same result\n");
         if (`STOP_COND_)
           $fatal;
       end
       if (~reset & io_out_0_valid & io_out_1_valid & io_out_0_bits_rob_idx
-          - io_robHead > io_out_1_bits_rob_idx - io_robHead) begin
+          - io_robHead > _GEN_8) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: writeback grants must be ordered by ROB age\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & io_out_1_valid & io_out_2_valid & _GEN_8 > io_out_2_bits_rob_idx
+          - io_robHead) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: writeback grants must be ordered by ROB age\n");
         if (`STOP_COND_)

@@ -18,6 +18,8 @@ module BusyTable(
   input  [5:0]  io_clr_addr,
   input         io_clr_en2,
   input  [5:0]  io_clr_addr2,
+  input         io_clr_en3,
+  input  [5:0]  io_clr_addr3,
   input  [63:0] io_clr_mask,
   input         io_rebuild,
   input  [63:0] io_rebuild_mask
@@ -815,6 +817,7 @@ module BusyTable(
   wire _GEN_192 = _GEN_129 & io_clr_addr == 6'h3E;
   wire _GEN_193 = _GEN_129 & (&io_clr_addr);
   wire _GEN_194 = io_clr_en2 & (|io_clr_addr2);
+  wire _GEN_195 = io_clr_en3 & (|io_clr_addr3);
   always @(posedge clock) begin
     if (reset) begin
       busy_0 <= 1'h0;
@@ -884,446 +887,446 @@ module BusyTable(
     end
     else begin
       busy_0 <=
-        ~io_rebuild
+        ~(io_rebuild | _GEN_195 & ~(|io_clr_addr3))
         & (_GEN_194 ? ~(~(|io_clr_addr2) | _GEN_130) & _GEN_65 : ~_GEN_130 & _GEN_65);
       busy_1 <=
         io_rebuild
           ? io_rebuild_mask[1]
-          : ~(io_clr_mask[1])
+          : ~(io_clr_mask[1] | _GEN_195 & io_clr_addr3 == 6'h1)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h1 | _GEN_131) & _GEN_66
                  : ~_GEN_131 & _GEN_66);
       busy_2 <=
         io_rebuild
           ? io_rebuild_mask[2]
-          : ~(io_clr_mask[2])
+          : ~(io_clr_mask[2] | _GEN_195 & io_clr_addr3 == 6'h2)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h2 | _GEN_132) & _GEN_67
                  : ~_GEN_132 & _GEN_67);
       busy_3 <=
         io_rebuild
           ? io_rebuild_mask[3]
-          : ~(io_clr_mask[3])
+          : ~(io_clr_mask[3] | _GEN_195 & io_clr_addr3 == 6'h3)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h3 | _GEN_133) & _GEN_68
                  : ~_GEN_133 & _GEN_68);
       busy_4 <=
         io_rebuild
           ? io_rebuild_mask[4]
-          : ~(io_clr_mask[4])
+          : ~(io_clr_mask[4] | _GEN_195 & io_clr_addr3 == 6'h4)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h4 | _GEN_134) & _GEN_69
                  : ~_GEN_134 & _GEN_69);
       busy_5 <=
         io_rebuild
           ? io_rebuild_mask[5]
-          : ~(io_clr_mask[5])
+          : ~(io_clr_mask[5] | _GEN_195 & io_clr_addr3 == 6'h5)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h5 | _GEN_135) & _GEN_70
                  : ~_GEN_135 & _GEN_70);
       busy_6 <=
         io_rebuild
           ? io_rebuild_mask[6]
-          : ~(io_clr_mask[6])
+          : ~(io_clr_mask[6] | _GEN_195 & io_clr_addr3 == 6'h6)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h6 | _GEN_136) & _GEN_71
                  : ~_GEN_136 & _GEN_71);
       busy_7 <=
         io_rebuild
           ? io_rebuild_mask[7]
-          : ~(io_clr_mask[7])
+          : ~(io_clr_mask[7] | _GEN_195 & io_clr_addr3 == 6'h7)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h7 | _GEN_137) & _GEN_72
                  : ~_GEN_137 & _GEN_72);
       busy_8 <=
         io_rebuild
           ? io_rebuild_mask[8]
-          : ~(io_clr_mask[8])
+          : ~(io_clr_mask[8] | _GEN_195 & io_clr_addr3 == 6'h8)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h8 | _GEN_138) & _GEN_73
                  : ~_GEN_138 & _GEN_73);
       busy_9 <=
         io_rebuild
           ? io_rebuild_mask[9]
-          : ~(io_clr_mask[9])
+          : ~(io_clr_mask[9] | _GEN_195 & io_clr_addr3 == 6'h9)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h9 | _GEN_139) & _GEN_74
                  : ~_GEN_139 & _GEN_74);
       busy_10 <=
         io_rebuild
           ? io_rebuild_mask[10]
-          : ~(io_clr_mask[10])
+          : ~(io_clr_mask[10] | _GEN_195 & io_clr_addr3 == 6'hA)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'hA | _GEN_140) & _GEN_75
                  : ~_GEN_140 & _GEN_75);
       busy_11 <=
         io_rebuild
           ? io_rebuild_mask[11]
-          : ~(io_clr_mask[11])
+          : ~(io_clr_mask[11] | _GEN_195 & io_clr_addr3 == 6'hB)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'hB | _GEN_141) & _GEN_76
                  : ~_GEN_141 & _GEN_76);
       busy_12 <=
         io_rebuild
           ? io_rebuild_mask[12]
-          : ~(io_clr_mask[12])
+          : ~(io_clr_mask[12] | _GEN_195 & io_clr_addr3 == 6'hC)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'hC | _GEN_142) & _GEN_77
                  : ~_GEN_142 & _GEN_77);
       busy_13 <=
         io_rebuild
           ? io_rebuild_mask[13]
-          : ~(io_clr_mask[13])
+          : ~(io_clr_mask[13] | _GEN_195 & io_clr_addr3 == 6'hD)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'hD | _GEN_143) & _GEN_78
                  : ~_GEN_143 & _GEN_78);
       busy_14 <=
         io_rebuild
           ? io_rebuild_mask[14]
-          : ~(io_clr_mask[14])
+          : ~(io_clr_mask[14] | _GEN_195 & io_clr_addr3 == 6'hE)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'hE | _GEN_144) & _GEN_79
                  : ~_GEN_144 & _GEN_79);
       busy_15 <=
         io_rebuild
           ? io_rebuild_mask[15]
-          : ~(io_clr_mask[15])
+          : ~(io_clr_mask[15] | _GEN_195 & io_clr_addr3 == 6'hF)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'hF | _GEN_145) & _GEN_80
                  : ~_GEN_145 & _GEN_80);
       busy_16 <=
         io_rebuild
           ? io_rebuild_mask[16]
-          : ~(io_clr_mask[16])
+          : ~(io_clr_mask[16] | _GEN_195 & io_clr_addr3 == 6'h10)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h10 | _GEN_146) & _GEN_81
                  : ~_GEN_146 & _GEN_81);
       busy_17 <=
         io_rebuild
           ? io_rebuild_mask[17]
-          : ~(io_clr_mask[17])
+          : ~(io_clr_mask[17] | _GEN_195 & io_clr_addr3 == 6'h11)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h11 | _GEN_147) & _GEN_82
                  : ~_GEN_147 & _GEN_82);
       busy_18 <=
         io_rebuild
           ? io_rebuild_mask[18]
-          : ~(io_clr_mask[18])
+          : ~(io_clr_mask[18] | _GEN_195 & io_clr_addr3 == 6'h12)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h12 | _GEN_148) & _GEN_83
                  : ~_GEN_148 & _GEN_83);
       busy_19 <=
         io_rebuild
           ? io_rebuild_mask[19]
-          : ~(io_clr_mask[19])
+          : ~(io_clr_mask[19] | _GEN_195 & io_clr_addr3 == 6'h13)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h13 | _GEN_149) & _GEN_84
                  : ~_GEN_149 & _GEN_84);
       busy_20 <=
         io_rebuild
           ? io_rebuild_mask[20]
-          : ~(io_clr_mask[20])
+          : ~(io_clr_mask[20] | _GEN_195 & io_clr_addr3 == 6'h14)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h14 | _GEN_150) & _GEN_85
                  : ~_GEN_150 & _GEN_85);
       busy_21 <=
         io_rebuild
           ? io_rebuild_mask[21]
-          : ~(io_clr_mask[21])
+          : ~(io_clr_mask[21] | _GEN_195 & io_clr_addr3 == 6'h15)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h15 | _GEN_151) & _GEN_86
                  : ~_GEN_151 & _GEN_86);
       busy_22 <=
         io_rebuild
           ? io_rebuild_mask[22]
-          : ~(io_clr_mask[22])
+          : ~(io_clr_mask[22] | _GEN_195 & io_clr_addr3 == 6'h16)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h16 | _GEN_152) & _GEN_87
                  : ~_GEN_152 & _GEN_87);
       busy_23 <=
         io_rebuild
           ? io_rebuild_mask[23]
-          : ~(io_clr_mask[23])
+          : ~(io_clr_mask[23] | _GEN_195 & io_clr_addr3 == 6'h17)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h17 | _GEN_153) & _GEN_88
                  : ~_GEN_153 & _GEN_88);
       busy_24 <=
         io_rebuild
           ? io_rebuild_mask[24]
-          : ~(io_clr_mask[24])
+          : ~(io_clr_mask[24] | _GEN_195 & io_clr_addr3 == 6'h18)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h18 | _GEN_154) & _GEN_89
                  : ~_GEN_154 & _GEN_89);
       busy_25 <=
         io_rebuild
           ? io_rebuild_mask[25]
-          : ~(io_clr_mask[25])
+          : ~(io_clr_mask[25] | _GEN_195 & io_clr_addr3 == 6'h19)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h19 | _GEN_155) & _GEN_90
                  : ~_GEN_155 & _GEN_90);
       busy_26 <=
         io_rebuild
           ? io_rebuild_mask[26]
-          : ~(io_clr_mask[26])
+          : ~(io_clr_mask[26] | _GEN_195 & io_clr_addr3 == 6'h1A)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h1A | _GEN_156) & _GEN_91
                  : ~_GEN_156 & _GEN_91);
       busy_27 <=
         io_rebuild
           ? io_rebuild_mask[27]
-          : ~(io_clr_mask[27])
+          : ~(io_clr_mask[27] | _GEN_195 & io_clr_addr3 == 6'h1B)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h1B | _GEN_157) & _GEN_92
                  : ~_GEN_157 & _GEN_92);
       busy_28 <=
         io_rebuild
           ? io_rebuild_mask[28]
-          : ~(io_clr_mask[28])
+          : ~(io_clr_mask[28] | _GEN_195 & io_clr_addr3 == 6'h1C)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h1C | _GEN_158) & _GEN_93
                  : ~_GEN_158 & _GEN_93);
       busy_29 <=
         io_rebuild
           ? io_rebuild_mask[29]
-          : ~(io_clr_mask[29])
+          : ~(io_clr_mask[29] | _GEN_195 & io_clr_addr3 == 6'h1D)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h1D | _GEN_159) & _GEN_94
                  : ~_GEN_159 & _GEN_94);
       busy_30 <=
         io_rebuild
           ? io_rebuild_mask[30]
-          : ~(io_clr_mask[30])
+          : ~(io_clr_mask[30] | _GEN_195 & io_clr_addr3 == 6'h1E)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h1E | _GEN_160) & _GEN_95
                  : ~_GEN_160 & _GEN_95);
       busy_31 <=
         io_rebuild
           ? io_rebuild_mask[31]
-          : ~(io_clr_mask[31])
+          : ~(io_clr_mask[31] | _GEN_195 & io_clr_addr3 == 6'h1F)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h1F | _GEN_161) & _GEN_96
                  : ~_GEN_161 & _GEN_96);
       busy_32 <=
         io_rebuild
           ? io_rebuild_mask[32]
-          : ~(io_clr_mask[32])
+          : ~(io_clr_mask[32] | _GEN_195 & io_clr_addr3 == 6'h20)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h20 | _GEN_162) & _GEN_97
                  : ~_GEN_162 & _GEN_97);
       busy_33 <=
         io_rebuild
           ? io_rebuild_mask[33]
-          : ~(io_clr_mask[33])
+          : ~(io_clr_mask[33] | _GEN_195 & io_clr_addr3 == 6'h21)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h21 | _GEN_163) & _GEN_98
                  : ~_GEN_163 & _GEN_98);
       busy_34 <=
         io_rebuild
           ? io_rebuild_mask[34]
-          : ~(io_clr_mask[34])
+          : ~(io_clr_mask[34] | _GEN_195 & io_clr_addr3 == 6'h22)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h22 | _GEN_164) & _GEN_99
                  : ~_GEN_164 & _GEN_99);
       busy_35 <=
         io_rebuild
           ? io_rebuild_mask[35]
-          : ~(io_clr_mask[35])
+          : ~(io_clr_mask[35] | _GEN_195 & io_clr_addr3 == 6'h23)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h23 | _GEN_165) & _GEN_100
                  : ~_GEN_165 & _GEN_100);
       busy_36 <=
         io_rebuild
           ? io_rebuild_mask[36]
-          : ~(io_clr_mask[36])
+          : ~(io_clr_mask[36] | _GEN_195 & io_clr_addr3 == 6'h24)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h24 | _GEN_166) & _GEN_101
                  : ~_GEN_166 & _GEN_101);
       busy_37 <=
         io_rebuild
           ? io_rebuild_mask[37]
-          : ~(io_clr_mask[37])
+          : ~(io_clr_mask[37] | _GEN_195 & io_clr_addr3 == 6'h25)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h25 | _GEN_167) & _GEN_102
                  : ~_GEN_167 & _GEN_102);
       busy_38 <=
         io_rebuild
           ? io_rebuild_mask[38]
-          : ~(io_clr_mask[38])
+          : ~(io_clr_mask[38] | _GEN_195 & io_clr_addr3 == 6'h26)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h26 | _GEN_168) & _GEN_103
                  : ~_GEN_168 & _GEN_103);
       busy_39 <=
         io_rebuild
           ? io_rebuild_mask[39]
-          : ~(io_clr_mask[39])
+          : ~(io_clr_mask[39] | _GEN_195 & io_clr_addr3 == 6'h27)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h27 | _GEN_169) & _GEN_104
                  : ~_GEN_169 & _GEN_104);
       busy_40 <=
         io_rebuild
           ? io_rebuild_mask[40]
-          : ~(io_clr_mask[40])
+          : ~(io_clr_mask[40] | _GEN_195 & io_clr_addr3 == 6'h28)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h28 | _GEN_170) & _GEN_105
                  : ~_GEN_170 & _GEN_105);
       busy_41 <=
         io_rebuild
           ? io_rebuild_mask[41]
-          : ~(io_clr_mask[41])
+          : ~(io_clr_mask[41] | _GEN_195 & io_clr_addr3 == 6'h29)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h29 | _GEN_171) & _GEN_106
                  : ~_GEN_171 & _GEN_106);
       busy_42 <=
         io_rebuild
           ? io_rebuild_mask[42]
-          : ~(io_clr_mask[42])
+          : ~(io_clr_mask[42] | _GEN_195 & io_clr_addr3 == 6'h2A)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h2A | _GEN_172) & _GEN_107
                  : ~_GEN_172 & _GEN_107);
       busy_43 <=
         io_rebuild
           ? io_rebuild_mask[43]
-          : ~(io_clr_mask[43])
+          : ~(io_clr_mask[43] | _GEN_195 & io_clr_addr3 == 6'h2B)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h2B | _GEN_173) & _GEN_108
                  : ~_GEN_173 & _GEN_108);
       busy_44 <=
         io_rebuild
           ? io_rebuild_mask[44]
-          : ~(io_clr_mask[44])
+          : ~(io_clr_mask[44] | _GEN_195 & io_clr_addr3 == 6'h2C)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h2C | _GEN_174) & _GEN_109
                  : ~_GEN_174 & _GEN_109);
       busy_45 <=
         io_rebuild
           ? io_rebuild_mask[45]
-          : ~(io_clr_mask[45])
+          : ~(io_clr_mask[45] | _GEN_195 & io_clr_addr3 == 6'h2D)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h2D | _GEN_175) & _GEN_110
                  : ~_GEN_175 & _GEN_110);
       busy_46 <=
         io_rebuild
           ? io_rebuild_mask[46]
-          : ~(io_clr_mask[46])
+          : ~(io_clr_mask[46] | _GEN_195 & io_clr_addr3 == 6'h2E)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h2E | _GEN_176) & _GEN_111
                  : ~_GEN_176 & _GEN_111);
       busy_47 <=
         io_rebuild
           ? io_rebuild_mask[47]
-          : ~(io_clr_mask[47])
+          : ~(io_clr_mask[47] | _GEN_195 & io_clr_addr3 == 6'h2F)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h2F | _GEN_177) & _GEN_112
                  : ~_GEN_177 & _GEN_112);
       busy_48 <=
         io_rebuild
           ? io_rebuild_mask[48]
-          : ~(io_clr_mask[48])
+          : ~(io_clr_mask[48] | _GEN_195 & io_clr_addr3 == 6'h30)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h30 | _GEN_178) & _GEN_113
                  : ~_GEN_178 & _GEN_113);
       busy_49 <=
         io_rebuild
           ? io_rebuild_mask[49]
-          : ~(io_clr_mask[49])
+          : ~(io_clr_mask[49] | _GEN_195 & io_clr_addr3 == 6'h31)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h31 | _GEN_179) & _GEN_114
                  : ~_GEN_179 & _GEN_114);
       busy_50 <=
         io_rebuild
           ? io_rebuild_mask[50]
-          : ~(io_clr_mask[50])
+          : ~(io_clr_mask[50] | _GEN_195 & io_clr_addr3 == 6'h32)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h32 | _GEN_180) & _GEN_115
                  : ~_GEN_180 & _GEN_115);
       busy_51 <=
         io_rebuild
           ? io_rebuild_mask[51]
-          : ~(io_clr_mask[51])
+          : ~(io_clr_mask[51] | _GEN_195 & io_clr_addr3 == 6'h33)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h33 | _GEN_181) & _GEN_116
                  : ~_GEN_181 & _GEN_116);
       busy_52 <=
         io_rebuild
           ? io_rebuild_mask[52]
-          : ~(io_clr_mask[52])
+          : ~(io_clr_mask[52] | _GEN_195 & io_clr_addr3 == 6'h34)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h34 | _GEN_182) & _GEN_117
                  : ~_GEN_182 & _GEN_117);
       busy_53 <=
         io_rebuild
           ? io_rebuild_mask[53]
-          : ~(io_clr_mask[53])
+          : ~(io_clr_mask[53] | _GEN_195 & io_clr_addr3 == 6'h35)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h35 | _GEN_183) & _GEN_118
                  : ~_GEN_183 & _GEN_118);
       busy_54 <=
         io_rebuild
           ? io_rebuild_mask[54]
-          : ~(io_clr_mask[54])
+          : ~(io_clr_mask[54] | _GEN_195 & io_clr_addr3 == 6'h36)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h36 | _GEN_184) & _GEN_119
                  : ~_GEN_184 & _GEN_119);
       busy_55 <=
         io_rebuild
           ? io_rebuild_mask[55]
-          : ~(io_clr_mask[55])
+          : ~(io_clr_mask[55] | _GEN_195 & io_clr_addr3 == 6'h37)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h37 | _GEN_185) & _GEN_120
                  : ~_GEN_185 & _GEN_120);
       busy_56 <=
         io_rebuild
           ? io_rebuild_mask[56]
-          : ~(io_clr_mask[56])
+          : ~(io_clr_mask[56] | _GEN_195 & io_clr_addr3 == 6'h38)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h38 | _GEN_186) & _GEN_121
                  : ~_GEN_186 & _GEN_121);
       busy_57 <=
         io_rebuild
           ? io_rebuild_mask[57]
-          : ~(io_clr_mask[57])
+          : ~(io_clr_mask[57] | _GEN_195 & io_clr_addr3 == 6'h39)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h39 | _GEN_187) & _GEN_122
                  : ~_GEN_187 & _GEN_122);
       busy_58 <=
         io_rebuild
           ? io_rebuild_mask[58]
-          : ~(io_clr_mask[58])
+          : ~(io_clr_mask[58] | _GEN_195 & io_clr_addr3 == 6'h3A)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h3A | _GEN_188) & _GEN_123
                  : ~_GEN_188 & _GEN_123);
       busy_59 <=
         io_rebuild
           ? io_rebuild_mask[59]
-          : ~(io_clr_mask[59])
+          : ~(io_clr_mask[59] | _GEN_195 & io_clr_addr3 == 6'h3B)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h3B | _GEN_189) & _GEN_124
                  : ~_GEN_189 & _GEN_124);
       busy_60 <=
         io_rebuild
           ? io_rebuild_mask[60]
-          : ~(io_clr_mask[60])
+          : ~(io_clr_mask[60] | _GEN_195 & io_clr_addr3 == 6'h3C)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h3C | _GEN_190) & _GEN_125
                  : ~_GEN_190 & _GEN_125);
       busy_61 <=
         io_rebuild
           ? io_rebuild_mask[61]
-          : ~(io_clr_mask[61])
+          : ~(io_clr_mask[61] | _GEN_195 & io_clr_addr3 == 6'h3D)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h3D | _GEN_191) & _GEN_126
                  : ~_GEN_191 & _GEN_126);
       busy_62 <=
         io_rebuild
           ? io_rebuild_mask[62]
-          : ~(io_clr_mask[62])
+          : ~(io_clr_mask[62] | _GEN_195 & io_clr_addr3 == 6'h3E)
             & (_GEN_194
                  ? ~(io_clr_addr2 == 6'h3E | _GEN_192) & _GEN_127
                  : ~_GEN_192 & _GEN_127);
       busy_63 <=
         io_rebuild
           ? io_rebuild_mask[63]
-          : ~(io_clr_mask[63])
+          : ~(io_clr_mask[63] | _GEN_195 & (&io_clr_addr3))
             & (_GEN_194
                  ? ~((&io_clr_addr2) | _GEN_193) & _GEN_128
                  : ~_GEN_193 & _GEN_128);

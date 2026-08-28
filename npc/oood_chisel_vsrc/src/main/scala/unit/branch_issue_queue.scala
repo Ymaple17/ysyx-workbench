@@ -25,11 +25,16 @@ class BranchIssueQueue(depth: Int = OoOParams.BRQ_SIZE) extends Module {
     val cdb1Valid = Input(Bool())
     val cdb1Pdest = Input(UInt(OoOParams.PHYS_W.W))
     val cdb1Value = Input(UInt(32.W))
+    val cdb2Valid = Input(Bool())
+    val cdb2Pdest = Input(UInt(OoOParams.PHYS_W.W))
+    val cdb2Value = Input(UInt(32.W))
 
     val free0Valid = Input(Bool())
     val free0Rob = Input(UInt(OoOParams.ROB_PTR_W.W))
     val free1Valid = Input(Bool())
     val free1Rob = Input(UInt(OoOParams.ROB_PTR_W.W))
+    val free2Valid = Input(Bool())
+    val free2Rob = Input(UInt(OoOParams.ROB_PTR_W.W))
     val freeDirectValid = Input(Bool())
     val freeDirectRob = Input(UInt(OoOParams.ROB_PTR_W.W))
 
@@ -52,6 +57,7 @@ class BranchIssueQueue(depth: Int = OoOParams.BRQ_SIZE) extends Module {
     freeByCompletion(i) := entries(i).valid && (
       (io.free0Valid && entries(i).rob_idx === io.free0Rob) ||
       (io.free1Valid && entries(i).rob_idx === io.free1Rob) ||
+      (io.free2Valid && entries(i).rob_idx === io.free2Rob) ||
       (io.freeDirectValid && entries(i).rob_idx === io.freeDirectRob))
   }
 
@@ -67,6 +73,10 @@ class BranchIssueQueue(depth: Int = OoOParams.BRQ_SIZE) extends Module {
       !entries(i).src1_ready && entries(i).src1_phys === io.cdb1Pdest
     val cdb1Hit2 = io.cdb1Valid && io.cdb1Pdest =/= 0.U &&
       !entries(i).src2_ready && entries(i).src2_phys === io.cdb1Pdest
+    val cdb2Hit1 = io.cdb2Valid && io.cdb2Pdest =/= 0.U &&
+      !entries(i).src1_ready && entries(i).src1_phys === io.cdb2Pdest
+    val cdb2Hit2 = io.cdb2Valid && io.cdb2Pdest =/= 0.U &&
+      !entries(i).src2_ready && entries(i).src2_phys === io.cdb2Pdest
     when(cdb0Hit1) {
       e.src1_ready := true.B
       e.src1_val := io.cdb0Value
@@ -82,6 +92,14 @@ class BranchIssueQueue(depth: Int = OoOParams.BRQ_SIZE) extends Module {
     when(cdb1Hit2) {
       e.src2_ready := true.B
       e.src2_val := io.cdb1Value
+    }
+    when(cdb2Hit1) {
+      e.src1_ready := true.B
+      e.src1_val := io.cdb2Value
+    }
+    when(cdb2Hit2) {
+      e.src2_ready := true.B
+      e.src2_val := io.cdb2Value
     }
     issueView(i) := e
     readyMask(i) := entries(i).valid && !entries(i).issued &&
@@ -128,6 +146,16 @@ class BranchIssueQueue(depth: Int = OoOParams.BRQ_SIZE) extends Module {
     enqView.src2_ready := true.B
     enqView.src2_val := io.cdb1Value
   }
+  when(io.cdb2Valid && io.cdb2Pdest =/= 0.U &&
+      !io.enq.bits.src1_ready && io.enq.bits.src1_phys === io.cdb2Pdest) {
+    enqView.src1_ready := true.B
+    enqView.src1_val := io.cdb2Value
+  }
+  when(io.cdb2Valid && io.cdb2Pdest =/= 0.U &&
+      !io.enq.bits.src2_ready && io.enq.bits.src2_phys === io.cdb2Pdest) {
+    enqView.src2_ready := true.B
+    enqView.src2_val := io.cdb2Value
+  }
   val freshIssueValid = io.enq.valid && io.enq.ready &&
     enqView.src1_ready && enqView.src2_ready && !residentIssueValid
   io.issue.valid := (residentIssueValid || freshIssueValid) && !io.flush
@@ -157,6 +185,16 @@ class BranchIssueQueue(depth: Int = OoOParams.BRQ_SIZE) extends Module {
         entries(i).src2_val := io.cdb1Value
       }
     }
+    when(io.cdb2Valid && io.cdb2Pdest =/= 0.U && entries(i).valid) {
+      when(!entries(i).src1_ready && entries(i).src1_phys === io.cdb2Pdest) {
+        entries(i).src1_ready := true.B
+        entries(i).src1_val := io.cdb2Value
+      }
+      when(!entries(i).src2_ready && entries(i).src2_phys === io.cdb2Pdest) {
+        entries(i).src2_ready := true.B
+        entries(i).src2_val := io.cdb2Value
+      }
+    }
   }
 
   when(io.flush) {
@@ -176,7 +214,6 @@ class BranchIssueQueue(depth: Int = OoOParams.BRQ_SIZE) extends Module {
     when(io.issue.fire && residentIssueValid) {
       entries(issueIdx).issued := true.B
     }
-
     when(io.enq.fire) {
       val e = WireDefault(enqView)
       e.valid := true.B

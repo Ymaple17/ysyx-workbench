@@ -131,6 +131,7 @@ object PerfEvents {
   val EVENT_BRANCH_READY_WAIT = 124.U(32.W)
   val EVENT_STORE_DIRECT_COMPLETE = 125.U(32.W)
   val EVENT_LOOP_PREDICT_HIT = 126.U(32.W)
+  val EVENT_RS_FRESH_ISSUE = 127.U(32.W)
 }
 
 object PcPerfEvents {

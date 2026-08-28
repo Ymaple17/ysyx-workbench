@@ -154,11 +154,14 @@ object BPU_Config{
     val BHT_SIZE = 1024 // base gshare/bimodal entries; independent of history length
     val GHR_LENGTH = 32
     val PATH_HISTORY_LENGTH = 16
+    val LOCAL_HISTORY_BITS = 12
+    val LOCAL_HISTORY_TABLE_SIZE = 256
+    val LOCAL_PHT_SIZE = 1024
     val LOOP_ITER_BITS = 10
     val TAGE_PROVIDER_BITS = 3
     val ITAGE_PROVIDER_BITS = 3
     val BP_META_WIDTH = GHR_LENGTH + PATH_HISTORY_LENGTH + LOOP_ITER_BITS + 1 +
-      TAGE_PROVIDER_BITS + ITAGE_PROVIDER_BITS
+      TAGE_PROVIDER_BITS + ITAGE_PROVIDER_BITS + LOCAL_HISTORY_BITS + 2
     val RAS_SIZE = 16 //返回地址栈深度
     val BHT_INIT = 1 // weak not-taken; a taken branch becomes predicted-taken after one update
     val BHT_COLD_STATIC = true // cold entries use backward-taken / forward-not-taken

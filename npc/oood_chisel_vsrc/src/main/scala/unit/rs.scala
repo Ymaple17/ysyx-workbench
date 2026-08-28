@@ -96,6 +96,8 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     val free_rob_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
     val free_rob1_fire = Input(Bool())
     val free_rob1_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
+    val free_rob2_fire = Input(Bool())
+    val free_rob2_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
     val free_ctrl_fire = Input(Bool())
     val free_ctrl_idx  = Input(UInt(OoOParams.ROB_PTR_W.W))
     val free_store_fire = Input(Bool())
@@ -107,11 +109,15 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     val cdb1_valid = Input(Bool())
     val cdb1_pdest = Input(UInt(OoOParams.PHYS_W.W))
     val cdb1_val   = Input(UInt(32.W))
+    val cdb2_valid = Input(Bool())
+    val cdb2_pdest = Input(UInt(OoOParams.PHYS_W.W))
+    val cdb2_val   = Input(UInt(32.W))
 
     val flush     = Input(Bool())
     val flush_idx = Input(UInt(OoOParams.ROB_PTR_W.W))
     val flush_all = Input(Bool())
     val space     = Output(UInt(log2Ceil(n + 1).W))
+    val fresh_issue_count = Output(UInt(3.W))
   })
 
   val entries = RegInit(VecInit(Seq.fill(n)(0.U.asTypeOf(new RSEntry))))
@@ -125,10 +131,23 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     freeByRob(i) := entries(i).valid && (
       (io.free_rob_fire && entries(i).rob_idx === io.free_rob_idx) ||
       (io.free_rob1_fire && entries(i).rob_idx === io.free_rob1_idx) ||
+      (io.free_rob2_fire && entries(i).rob_idx === io.free_rob2_idx) ||
       (io.free_ctrl_fire && entries(i).rob_idx === io.free_ctrl_idx) ||
       (io.free_store_fire && entries(i).rob_idx === io.free_store_idx)
     )
   }
+
+  val willFreeRob = freeByRob.asUInt.orR
+  val freeMask = VecInit(entries.map(e => !e.valid)).asUInt
+  io.full := !freeMask.orR && !willFreeRob
+  val freeOrIssue = freeMask | Mux(willFreeRob, freeByRob.asUInt, 0.U)
+  val enqIdx = PriorityEncoder(freeOrIssue)
+  val enqOH = PriorityEncoderOH(freeOrIssue)
+  // Lane1 may be the only RS enqueue when lane0 is routed to the branch queue.
+  // Reserve enqIdx for lane0 only when lane0 actually fires.
+  val freeMask1 = Mux(io.enq_fire, freeOrIssue & ~enqOH.asUInt, freeOrIssue)
+  val enq1Idx = PriorityEncoder(freeMask1)
+  io.enq1_idx := enq1Idx
 
   val canIssue = Wire(Vec(n, Bool()))
   val isMulDiv = Wire(Vec(n, Bool()))
@@ -144,6 +163,10 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
       !entries(i).src1_ready && (entries(i).src1_phys === io.cdb1_pdest)
     val cdb1Hit2 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
       !entries(i).src2_ready && (entries(i).src2_phys === io.cdb1_pdest)
+    val cdb2Hit1 = io.cdb2_valid && (io.cdb2_pdest =/= 0.U) &&
+      !entries(i).src1_ready && (entries(i).src1_phys === io.cdb2_pdest)
+    val cdb2Hit2 = io.cdb2_valid && (io.cdb2_pdest =/= 0.U) &&
+      !entries(i).src2_ready && (entries(i).src2_phys === io.cdb2_pdest)
     when(cdbHit1) {
       e.src1_ready := true.B
       e.src1_val := io.cdb_val
@@ -159,6 +182,14 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     when(cdb1Hit2) {
       e.src2_ready := true.B
       e.src2_val := io.cdb1_val
+    }
+    when(cdb2Hit1) {
+      e.src1_ready := true.B
+      e.src1_val := io.cdb2_val
+    }
+    when(cdb2Hit2) {
+      e.src2_ready := true.B
+      e.src2_val := io.cdb2_val
     }
     issueEntries(i) := e
   }
@@ -187,6 +218,69 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     val ready = entries(i).valid && !entries(i).issued && issueEntries(i).src1_ready &&
       issueEntries(i).src2_ready && !freeByRob(i)
     canIssue(i) := ready && !waitOlderStore
+  }
+
+  def wakeEntry(in: RSEntry): RSEntry = {
+    val e = WireDefault(in)
+    when(!in.src1_ready) {
+      when(io.cdb_valid && io.cdb_pdest =/= 0.U && in.src1_phys === io.cdb_pdest) {
+        e.src1_ready := true.B
+        e.src1_val := io.cdb_val
+      }
+      when(io.cdb1_valid && io.cdb1_pdest =/= 0.U && in.src1_phys === io.cdb1_pdest) {
+        e.src1_ready := true.B
+        e.src1_val := io.cdb1_val
+      }
+      when(io.cdb2_valid && io.cdb2_pdest =/= 0.U && in.src1_phys === io.cdb2_pdest) {
+        e.src1_ready := true.B
+        e.src1_val := io.cdb2_val
+      }
+    }
+    when(!in.src2_ready) {
+      when(io.cdb_valid && io.cdb_pdest =/= 0.U && in.src2_phys === io.cdb_pdest) {
+        e.src2_ready := true.B
+        e.src2_val := io.cdb_val
+      }
+      when(io.cdb1_valid && io.cdb1_pdest =/= 0.U && in.src2_phys === io.cdb1_pdest) {
+        e.src2_ready := true.B
+        e.src2_val := io.cdb1_val
+      }
+      when(io.cdb2_valid && io.cdb2_pdest =/= 0.U && in.src2_phys === io.cdb2_pdest) {
+        e.src2_ready := true.B
+        e.src2_val := io.cdb2_val
+      }
+    }
+    e
+  }
+
+  val fresh = Wire(Vec(2, new RSEntry))
+  fresh(0) := wakeEntry(io.enq_bits)
+  fresh(1) := wakeEntry(io.enq1_bits)
+  val freshAccept = Wire(Vec(2, Bool()))
+  freshAccept(0) := io.enq_fire && freeOrIssue.orR
+  freshAccept(1) := io.enq1_fire && freeMask1.orR
+  val freshMulDiv = Wire(Vec(2, Bool()))
+  val freshMem = Wire(Vec(2, Bool()))
+  val freshCanIssue = Wire(Vec(2, Bool()))
+  for (i <- 0 until 2) {
+    freshMulDiv(i) := (fresh(i).exu_alu_control === ALU_MUL) ||
+      (fresh(i).exu_alu_control === ALU_MULH) ||
+      (fresh(i).exu_alu_control === ALU_MULHSU) ||
+      (fresh(i).exu_alu_control === ALU_MULHU) ||
+      (fresh(i).exu_alu_control === ALU_DIV) ||
+      (fresh(i).exu_alu_control === ALU_DIVU) ||
+      (fresh(i).exu_alu_control === ALU_REM) ||
+      (fresh(i).exu_alu_control === ALU_REMU)
+    freshMem(i) := fresh(i).lsu_mem_valid
+    val olderFreshStore = if (i == 1) {
+      freshAccept(0) && fresh(0).lsu_mem_valid && fresh(0).lsu_mem_write
+    } else {
+      false.B
+    }
+    val waitOlderStore = fresh(i).lsu_mem_valid && !fresh(i).lsu_mem_write &&
+      (hasOlderPendingStore(fresh(i).rob_idx) || olderFreshStore)
+    freshCanIssue(i) := freshAccept(i) && fresh(i).src1_ready &&
+      fresh(i).src2_ready && !waitOlderStore
   }
 
   def oldestOH(mask: Vec[Bool]): Vec[Bool] = {
@@ -218,17 +312,45 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
   val legacyOH = oldestOH(VecInit((0 until n).map(i => canIssue(i))))
   val legacyIdx = PriorityEncoder(legacyOH.asUInt)
 
-  io.issue_alu_valid := aluOH.asUInt.orR && !io.flush
-  io.issue_alu_bits := issueEntries(aluIdx)
+  val aluResident = aluOH.asUInt.orR
+  val alu1Resident = alu1OH.asUInt.orR
+  val divResident = divOH.asUInt.orR
+  val lsuResident = lsuOH.asUInt.orR
+  val freshAlu0 = freshCanIssue(0) && !freshMem(0) && !freshMulDiv(0)
+  val freshAlu1 = freshCanIssue(1) && !freshMem(1) && !freshMulDiv(1)
+  val aluFresh0 = !aluResident && freshAlu0
+  val aluFresh1 = !aluResident && !aluFresh0 && freshAlu1
+  def alu1Capable(e: RSEntry): Bool =
+    e.exu_jump === JUMP_NONE && !e.wbu_csr_write && !e.is_ebreak &&
+      !e.is_fencei && !e.state.state
+  val alu1Fresh0 = !alu1Resident && !aluFresh0 && freshAlu0 && alu1Capable(fresh(0))
+  val alu1Fresh1 = !alu1Resident && !aluFresh1 && !alu1Fresh0 &&
+    freshAlu1 && alu1Capable(fresh(1))
+  val divFresh0 = !divResident && freshCanIssue(0) && freshMulDiv(0)
+  val divFresh1 = !divResident && !divFresh0 && freshCanIssue(1) && freshMulDiv(1)
+  val lsuFresh0 = !lsuResident && freshCanIssue(0) && freshMem(0)
+  val lsuFresh1 = !lsuResident && !lsuFresh0 && freshCanIssue(1) && freshMem(1)
+  val aluFresh = aluFresh0 || aluFresh1
+  val alu1Fresh = alu1Fresh0 || alu1Fresh1
+  val divFresh = divFresh0 || divFresh1
+  val lsuFresh = lsuFresh0 || lsuFresh1
+  io.fresh_issue_count := PopCount(Seq(
+    io.issue_alu_fire && aluFresh,
+    io.issue_alu1_fire && alu1Fresh,
+    io.issue_div_fire && divFresh,
+    io.issue_lsu_fire && lsuFresh))
+
+  io.issue_alu_valid := (aluResident || aluFresh) && !io.flush
+  io.issue_alu_bits := Mux(aluResident, issueEntries(aluIdx), Mux(aluFresh0, fresh(0), fresh(1)))
   io.issue_alu_idx   := aluIdx
-  io.issue_alu1_valid := alu1OH.asUInt.orR && !io.flush
-  io.issue_alu1_bits := issueEntries(alu1Idx)
+  io.issue_alu1_valid := (alu1Resident || alu1Fresh) && !io.flush
+  io.issue_alu1_bits := Mux(alu1Resident, issueEntries(alu1Idx), Mux(alu1Fresh0, fresh(0), fresh(1)))
   io.issue_alu1_idx   := alu1Idx
-  io.issue_div_valid := divOH.asUInt.orR && !io.flush
-  io.issue_div_bits := issueEntries(divIdx)
+  io.issue_div_valid := (divResident || divFresh) && !io.flush
+  io.issue_div_bits := Mux(divResident, issueEntries(divIdx), Mux(divFresh0, fresh(0), fresh(1)))
   io.issue_div_idx   := divIdx
-  io.issue_lsu_valid := lsuOH.asUInt.orR && !io.flush
-  io.issue_lsu_bits := issueEntries(lsuIdx)
+  io.issue_lsu_valid := (lsuResident || lsuFresh) && !io.flush
+  io.issue_lsu_bits := Mux(lsuResident, issueEntries(lsuIdx), Mux(lsuFresh0, fresh(0), fresh(1)))
   io.issue_lsu_idx   := lsuIdx
   io.control_ready := VecInit((0 until n).map(i =>
     canIssue(i) && entries(i).exu_jump =/= JUMP_NONE &&
@@ -236,18 +358,6 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
   io.issue_valid := legacyOH.asUInt.orR && !io.flush
   io.issue_bits := issueEntries(legacyIdx)
   io.issue_idx   := legacyIdx
-
-  val willFreeRob = freeByRob.asUInt.orR
-  val freeMask = VecInit(entries.map(e => !e.valid)).asUInt
-  io.full := !freeMask.orR && !willFreeRob
-  val freeOrIssue = freeMask | Mux(willFreeRob, freeByRob.asUInt, 0.U)
-  val enqIdx = PriorityEncoder(freeOrIssue)
-  val enqOH = PriorityEncoderOH(freeOrIssue)
-  // Lane1 may be the only RS enqueue when lane0 is routed to the branch queue.
-  // Reserve enqIdx for lane0 only when lane0 actually fires.
-  val freeMask1 = Mux(io.enq_fire, freeOrIssue & ~enqOH.asUInt, freeOrIssue)
-  val enq1Idx = PriorityEncoder(freeMask1)
-  io.enq1_idx := enq1Idx
 
   when(io.cdb_valid && (io.cdb_pdest =/= 0.U)) {
     for (i <- 0 until n) {
@@ -277,6 +387,20 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
       }
     }
   }
+  when(io.cdb2_valid && (io.cdb2_pdest =/= 0.U)) {
+    for (i <- 0 until n) {
+      when(entries(i).valid) {
+        when(!entries(i).src1_ready && entries(i).src1_phys === io.cdb2_pdest) {
+          entries(i).src1_ready := true.B
+          entries(i).src1_val   := io.cdb2_val
+        }
+        when(!entries(i).src2_ready && entries(i).src2_phys === io.cdb2_pdest) {
+          entries(i).src2_ready := true.B
+          entries(i).src2_val   := io.cdb2_val
+        }
+      }
+    }
+  }
 
   when(io.flush) {
     when(io.flush_all) {
@@ -294,16 +418,16 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
         entries(i).valid := false.B
       }
     }
-    when(io.issue_lsu_fire) {
+    when(io.issue_lsu_fire && !lsuFresh) {
       entries(io.issue_lsu_idx).issued := true.B
     }
-    when(io.issue_alu_fire) {
+    when(io.issue_alu_fire && !aluFresh) {
       entries(io.issue_alu_idx).issued := true.B
     }
-    when(io.issue_alu1_fire) {
+    when(io.issue_alu1_fire && !alu1Fresh) {
       entries(io.issue_alu1_idx).issued := true.B
     }
-    when(io.issue_div_fire) {
+    when(io.issue_div_fire && !divFresh) {
       entries(io.issue_div_idx).issued := true.B
     }
     when(io.issue_fire) {
@@ -312,7 +436,10 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     when(io.enq_fire && freeOrIssue.orR) {
       val e = WireDefault(io.enq_bits)
       e.valid := true.B
-      e.issued := false.B
+      e.issued := (io.issue_alu_fire && aluFresh0) ||
+        (io.issue_alu1_fire && alu1Fresh0) ||
+        (io.issue_div_fire && divFresh0) ||
+        (io.issue_lsu_fire && lsuFresh0)
       val cdbHit1 = io.cdb_valid && (io.cdb_pdest =/= 0.U) &&
         !io.enq_bits.src1_ready && (io.enq_bits.src1_phys === io.cdb_pdest)
       val cdbHit2 = io.cdb_valid && (io.cdb_pdest =/= 0.U) &&
@@ -321,6 +448,10 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
         !io.enq_bits.src1_ready && (io.enq_bits.src1_phys === io.cdb1_pdest)
       val cdb1Hit2 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
         !io.enq_bits.src2_ready && (io.enq_bits.src2_phys === io.cdb1_pdest)
+      val cdb2Hit1 = io.cdb2_valid && (io.cdb2_pdest =/= 0.U) &&
+        !io.enq_bits.src1_ready && (io.enq_bits.src1_phys === io.cdb2_pdest)
+      val cdb2Hit2 = io.cdb2_valid && (io.cdb2_pdest =/= 0.U) &&
+        !io.enq_bits.src2_ready && (io.enq_bits.src2_phys === io.cdb2_pdest)
       when(cdbHit1) {
         e.src1_ready := true.B
         e.src1_val   := io.cdb_val
@@ -337,12 +468,23 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
         e.src2_ready := true.B
         e.src2_val   := io.cdb1_val
       }
+      when(cdb2Hit1) {
+        e.src1_ready := true.B
+        e.src1_val   := io.cdb2_val
+      }
+      when(cdb2Hit2) {
+        e.src2_ready := true.B
+        e.src2_val   := io.cdb2_val
+      }
       entries(enqIdx) := e
     }
     when(io.enq1_fire && freeMask1.orR) {
       val e = WireDefault(io.enq1_bits)
       e.valid := true.B
-      e.issued := false.B
+      e.issued := (io.issue_alu_fire && aluFresh1) ||
+        (io.issue_alu1_fire && alu1Fresh1) ||
+        (io.issue_div_fire && divFresh1) ||
+        (io.issue_lsu_fire && lsuFresh1)
       val cdbHit1 = io.cdb_valid && (io.cdb_pdest =/= 0.U) &&
         !io.enq1_bits.src1_ready && (io.enq1_bits.src1_phys === io.cdb_pdest)
       val cdbHit2 = io.cdb_valid && (io.cdb_pdest =/= 0.U) &&
@@ -351,6 +493,10 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
         !io.enq1_bits.src1_ready && (io.enq1_bits.src1_phys === io.cdb1_pdest)
       val cdb1Hit2 = io.cdb1_valid && (io.cdb1_pdest =/= 0.U) &&
         !io.enq1_bits.src2_ready && (io.enq1_bits.src2_phys === io.cdb1_pdest)
+      val cdb2Hit1 = io.cdb2_valid && (io.cdb2_pdest =/= 0.U) &&
+        !io.enq1_bits.src1_ready && (io.enq1_bits.src1_phys === io.cdb2_pdest)
+      val cdb2Hit2 = io.cdb2_valid && (io.cdb2_pdest =/= 0.U) &&
+        !io.enq1_bits.src2_ready && (io.enq1_bits.src2_phys === io.cdb2_pdest)
       when(cdbHit1) {
         e.src1_ready := true.B
         e.src1_val   := io.cdb_val
@@ -366,6 +512,14 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
       when(cdb1Hit2) {
         e.src2_ready := true.B
         e.src2_val   := io.cdb1_val
+      }
+      when(cdb2Hit1) {
+        e.src1_ready := true.B
+        e.src1_val   := io.cdb2_val
+      }
+      when(cdb2Hit2) {
+        e.src2_ready := true.B
+        e.src2_val   := io.cdb2_val
       }
       entries(enq1Idx) := e
     }

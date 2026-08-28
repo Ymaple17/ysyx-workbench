@@ -154,6 +154,7 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Dual ALU Issues:     %lld\n", counters[EVENT_DUAL_ALU_ISSUE]);
     printf("FU Same-Cycle Refill: %lld\n", counters[EVENT_FU_REFILL]);
     printf("RS CDB Wake-Issue:    %lld\n", counters[EVENT_RS_CDB_WAKE_ISSUE]);
+    printf("RS Fresh Issue:        %lld\n", counters[EVENT_RS_FRESH_ISSUE]);
     printf("LSU Address Refill:   %lld\n", counters[EVENT_LSU_ADDR_REFILL]);
     printf("WB Age Reorders:     %lld\n", counters[EVENT_WB_AGE_REORDER]);
     printf("Commit Slot0:        %lld\n", counters[EVENT_COMMIT_SLOT0]);

@@ -22,6 +22,7 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
   val bp_indirect_hit = Output(Bool())
   val bp_itage_hit = Output(Bool())
   val bp_loop_hit = Output(Bool())
+  val bp_local_selected = Output(Bool())
 
   val bp1_valid = Output(Bool())
   val bp1_taken = Output(Bool())
@@ -33,6 +34,7 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
   val bp1_indirect_hit = Output(Bool())
   val bp1_itage_hit = Output(Bool())
   val bp1_loop_hit = Output(Bool())
+  val bp1_local_selected = Output(Bool())
 
   val update_pc = Input(UInt(32.W))
   val update_target = Input(UInt(32.W))
@@ -88,6 +90,8 @@ class BPU(
   private val itageW = log2Ceil(itageTableSize)
   private val rasW = log2Ceil(RAS_SIZE)
   private val loopW = log2Ceil(LOOP_TABLE_SIZE)
+  private val localHistoryW = log2Ceil(LOCAL_HISTORY_TABLE_SIZE)
+  private val localPhtW = log2Ceil(LOCAL_PHT_SIZE)
   private val tageHistories = TAGE_HISTORY_LENGTHS.map(math.min(_, GHR_LENGTH)).distinct
   private val itageHistoryWidth = GHR_LENGTH + PATH_HISTORY_LENGTH
   private val itageHistories = ITAGE_HISTORY_LENGTHS.map(math.min(_, itageHistoryWidth)).distinct
@@ -114,6 +118,11 @@ class BPU(
   val bimodal = RegInit(VecInit(Seq.fill(bhtSize)(BHT_INIT.U(2.W))))
   val bimodalValid = RegInit(VecInit(Seq.fill(bhtSize)(false.B)))
   val tournamentChooser = RegInit(VecInit(Seq.fill(bhtSize)(1.U(2.W))))
+
+  val localHistoryTable = RegInit(VecInit(Seq.fill(LOCAL_HISTORY_TABLE_SIZE)(0.U(LOCAL_HISTORY_BITS.W))))
+  val localPht = RegInit(VecInit(Seq.fill(LOCAL_PHT_SIZE)(3.U(3.W))))
+  val localPhtValid = RegInit(VecInit(Seq.fill(LOCAL_PHT_SIZE)(false.B)))
+  val localChooser = RegInit(VecInit(Seq.fill(bhtSize)(1.U(2.W))))
 
   val loop_valid = RegInit(VecInit(Seq.fill(LOOP_TABLE_SIZE)(false.B)))
   val loop_tag = RegInit(VecInit(Seq.fill(LOOP_TABLE_SIZE)(0.U(LOOP_TAG_BITS.W))))
@@ -155,10 +164,15 @@ class BPU(
   private val loopHitBit = loopIterLo + LOOP_ITER_BITS
   private val tageProviderLo = loopHitBit + 1
   private val itageProviderLo = tageProviderLo + TAGE_PROVIDER_BITS
+  private val localHistoryLo = itageProviderLo + ITAGE_PROVIDER_BITS
+  private val localPredBit = localHistoryLo + LOCAL_HISTORY_BITS
+  private val primaryPredBit = localPredBit + 1
 
   def packMetadata(ghr: UInt, pathHistory: UInt, loopHit: Bool, loopIter: UInt,
-                   tageProvider: UInt, itageProvider: UInt): UInt =
-    Cat(itageProvider, tageProvider, loopHit, loopIter, pathHistory, ghr)
+                   tageProvider: UInt, itageProvider: UInt, localHistory: UInt,
+                   localPred: Bool, primaryPred: Bool): UInt =
+    Cat(primaryPred, localPred, localHistory, itageProvider, tageProvider,
+      loopHit, loopIter, pathHistory, ghr)
 
   def metadataGhr(meta: UInt): UInt = meta(GHR_LENGTH - 1, 0)
   def metadataPath(meta: UInt): UInt = meta(loopIterLo - 1, pathLo)
@@ -167,7 +181,11 @@ class BPU(
   def metadataTageProvider(meta: UInt): UInt =
     meta(itageProviderLo - 1, tageProviderLo)
   def metadataItageProvider(meta: UInt): UInt =
-    meta(BP_META_WIDTH - 1, itageProviderLo)
+    meta(localHistoryLo - 1, itageProviderLo)
+  def metadataLocalHistory(meta: UInt): UInt =
+    meta(localPredBit - 1, localHistoryLo)
+  def metadataLocalPred(meta: UInt): Bool = meta(localPredBit)
+  def metadataPrimaryPred(meta: UInt): Bool = meta(primaryPredBit)
 
   def pathStep(history: UInt, target: UInt): UInt = {
     val targetHash = target(17, 2) ^ target(31, 16)
@@ -177,6 +195,11 @@ class BPU(
   def loopIndex(pc: UInt): UInt = pc(loopW + 1, 2)
   def loopTag(pc: UInt): UInt = pc(LOOP_TAG_BITS + loopW + 1, loopW + 2)
   def satIncLoop(v: UInt): UInt = Mux(v.andR, v, v + 1.U)
+
+  def localHistoryIndex(pc: UInt): UInt = pc(localHistoryW + 1, 2)
+
+  def localPhtIndex(pc: UInt, localHistory: UInt): UInt =
+    pc(localPhtW + 1, 2) ^ foldHistory(localHistory, LOCAL_HISTORY_BITS, localPhtW)
 
   def foldHistory(history: UInt, historyLength: Int, width: Int): UInt = {
     VecInit((0 until width).map { bit =>
@@ -212,6 +235,10 @@ class BPU(
     val alternatePred = Bool()
     val loopHit = Bool()
     val loopIter = UInt(LOOP_ITER_BITS.W)
+    val localHistory = UInt(LOCAL_HISTORY_BITS.W)
+    val localPred = Bool()
+    val primaryPred = Bool()
+    val localSelected = Bool()
   }
 
   def directionPredict(pc: UInt, history: UInt, baseIndex: UInt,
@@ -259,7 +286,12 @@ class BPU(
       loop_tag(lpIdx) === loopTag(pc) && loop_trip(lpIdx) =/= 0.U &&
       loop_conf(lpIdx) >= LOOP_CONFIDENCE_THRESHOLD.U
     val loopTaken = speculativeLoopIter < loop_trip(lpIdx)
-    res.taken := Mux(loopHit, loopTaken, Mux(useBimodal, bimodalPred, tageTaken))
+    val primaryPred = Mux(loopHit, loopTaken, Mux(useBimodal, bimodalPred, tageTaken))
+    val localHistory = localHistoryTable(localHistoryIndex(pc))
+    val localIndex = localPhtIndex(pc, localHistory)
+    val localPred = Mux(localPhtValid(localIndex), localPht(localIndex)(2), coldStaticTaken)
+    val localSelected = !loopHit && localPhtValid(localIndex) && localChooser(bimodalIndex)(1)
+    res.taken := Mux(localSelected, localPred, primaryPred)
     res.tageTaken := tageTaken
     res.bimodalPred := bimodalPred
     res.useBimodal := useBimodal
@@ -270,6 +302,10 @@ class BPU(
     res.alternatePred := alternatePred
     res.loopHit := loopHit
     res.loopIter := speculativeLoopIter
+    res.localHistory := localHistory
+    res.localPred := localPred
+    res.primaryPred := primaryPred
+    res.localSelected := localSelected
     res
   }
 
@@ -328,6 +364,7 @@ class BPU(
     val loopHit = Bool()
     val loopIndex = UInt(loopW.W)
     val loopIter = UInt(LOOP_ITER_BITS.W)
+    val localSelected = Bool()
   }
 
   def predict(pc: UInt, inst: UInt, history: UInt, pathHistory: UInt,
@@ -373,7 +410,8 @@ class BPU(
     res.taken := predTaken
     res.target := target
     res.index := packMetadata(history, pathHistory, direction.loopHit,
-      direction.loopIter, direction.providerRank, indirect.providerRank)
+      direction.loopIter, direction.providerRank, indirect.providerRank,
+      direction.localHistory, direction.localPred, direction.primaryPred)
     res.taggedHit := isBranch && direction.taggedHit
     res.tageUseAlternate := isBranch && direction.useAlternate
     res.bimodalSelected := isBranch && direction.useBimodal
@@ -386,6 +424,7 @@ class BPU(
     res.loopHit := isBranch && direction.loopHit
     res.loopIndex := lpIdx
     res.loopIter := direction.loopIter
+    res.localSelected := isBranch && direction.localSelected
     res
   }
 
@@ -408,6 +447,7 @@ class BPU(
   io.bp_indirect_hit := p0.indirectHit
   io.bp_itage_hit := p0.itageHit
   io.bp_loop_hit := p0.loopHit
+  io.bp_local_selected := p0.localSelected
 
   io.bp1_valid := p1.valid
   io.bp1_taken := p1.valid && p1.taken
@@ -419,6 +459,7 @@ class BPU(
   io.bp1_indirect_hit := p1.indirectHit
   io.bp1_itage_hit := p1.itageHit
   io.bp1_loop_hit := p1.loopHit
+  io.bp1_local_selected := p1.localSelected
 
   io.tage_alloc := false.B
   io.itage_alloc := false.B
@@ -463,6 +504,23 @@ class BPU(
         tournamentChooser(pcIndex) := satDec2(tournamentChooser(pcIndex))
       }
     }
+
+    val fetchLocalHistory = metadataLocalHistory(io.update_index)
+    val fetchLocalPred = metadataLocalPred(io.update_index)
+    val fetchPrimaryPred = metadataPrimaryPred(io.update_index)
+    val updateLocalIndex = localPhtIndex(io.update_pc, fetchLocalHistory)
+    val localValue = localPht(updateLocalIndex)
+    localPht(updateLocalIndex) := Mux(io.update_taken, satInc3(localValue), satDec3(localValue))
+    localPhtValid(updateLocalIndex) := true.B
+    when(fetchLocalPred =/= fetchPrimaryPred) {
+      when(fetchLocalPred === io.update_taken) {
+        localChooser(pcIndex) := satInc2(localChooser(pcIndex))
+      }.elsewhen(fetchPrimaryPred === io.update_taken) {
+        localChooser(pcIndex) := satDec2(localChooser(pcIndex))
+      }
+    }
+    localHistoryTable(localHistoryIndex(io.update_pc)) :=
+      Cat(localHistoryTable(localHistoryIndex(io.update_pc))(LOCAL_HISTORY_BITS - 2, 0), io.update_taken)
 
     val updateIndices = tageHistories.map(historyIndex(io.update_pc, updateHistory, _, tageW))
     val updateTags = tageHistories.map(historyTag(io.update_pc, updateHistory, _))

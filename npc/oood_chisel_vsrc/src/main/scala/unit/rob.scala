@@ -89,6 +89,14 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     val wb1_mem_wdata    = Input(UInt(32.W))
     val wb1_actual_taken = Input(Bool())
     val wb1_actual_target = Input(UInt(32.W))
+    val wb2_fire         = Input(Bool())
+    val wb2_idx          = Input(UInt(ptrW.W))
+    val wb2_val          = Input(UInt(32.W))
+    val wb2_state        = Input(new State)
+    val wb2_mem_addr     = Input(UInt(32.W))
+    val wb2_mem_wdata    = Input(UInt(32.W))
+    val wb2_actual_taken = Input(Bool())
+    val wb2_actual_target = Input(UInt(32.W))
     val ctrl_wb_fire         = Input(Bool())
     val ctrl_wb_idx          = Input(UInt(ptrW.W))
     val ctrl_wb_state        = Input(new State)
@@ -152,18 +160,20 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
   val head1 = Mux(head === (n - 1).U, 0.U, head + 1.U)
   val wb_is_head = io.wb_fire && (io.wb_idx === head) && entries(head).valid
   val wb1_is_head = io.wb1_fire && (io.wb1_idx === head) && entries(head).valid
+  val wb2_is_head = io.wb2_fire && (io.wb2_idx === head) && entries(head).valid
   val wb_is_head1 = io.wb_fire && (io.wb_idx === head1) && entries(head1).valid
   val wb1_is_head1 = io.wb1_fire && (io.wb1_idx === head1) && entries(head1).valid
+  val wb2_is_head1 = io.wb2_fire && (io.wb2_idx === head1) && entries(head1).valid
   val ctrl_wb_is_head = io.ctrl_wb_fire && (io.ctrl_wb_idx === head) && entries(head).valid
   val ctrl_wb_is_head1 = io.ctrl_wb_fire && (io.ctrl_wb_idx === head1) && entries(head1).valid
   val store_wb_is_head = io.store_wb_fire && (io.store_wb_idx === head) && entries(head).valid
   val store_wb_is_head1 = io.store_wb_fire && (io.store_wb_idx === head1) && entries(head1).valid
   io.commit_valid := entries(head).valid &&
-    (entries(head).done || wb_is_head || wb1_is_head || ctrl_wb_is_head || store_wb_is_head)
+    (entries(head).done || wb_is_head || wb1_is_head || wb2_is_head || ctrl_wb_is_head || store_wb_is_head)
   io.commit_idx := head
   io.commit_bits := entries(head)
   io.commit1_valid := (count > 1.U) && entries(head1).valid &&
-    (entries(head1).done || wb_is_head1 || wb1_is_head1 || ctrl_wb_is_head1 || store_wb_is_head1)
+    (entries(head1).done || wb_is_head1 || wb1_is_head1 || wb2_is_head1 || ctrl_wb_is_head1 || store_wb_is_head1)
   io.commit1_idx := head1
   io.commit1_bits := entries(head1)
 
@@ -200,6 +210,16 @@ class ROB(statistics: Boolean = false, n: Int = OoOParams.ROB_SIZE) extends Modu
     entries(io.wb1_idx).addr_ready    := true.B
     entries(io.wb1_idx).actual_taken  := io.wb1_actual_taken
     entries(io.wb1_idx).actual_target := io.wb1_actual_target
+  }
+  when(io.wb2_fire && entries(io.wb2_idx).valid) {
+    entries(io.wb2_idx).done          := true.B
+    entries(io.wb2_idx).dest_val      := io.wb2_val
+    entries(io.wb2_idx).state         := io.wb2_state
+    entries(io.wb2_idx).mem_addr      := io.wb2_mem_addr
+    entries(io.wb2_idx).mem_wdata     := io.wb2_mem_wdata
+    entries(io.wb2_idx).addr_ready    := true.B
+    entries(io.wb2_idx).actual_taken  := io.wb2_actual_taken
+    entries(io.wb2_idx).actual_target := io.wb2_actual_target
   }
   when(io.ctrl_wb_fire && entries(io.ctrl_wb_idx).valid) {
     entries(io.ctrl_wb_idx).done          := true.B

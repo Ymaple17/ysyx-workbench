@@ -16,7 +16,7 @@ module IFU(
   output        io_out_bits_bits_0_bp_valid,
                 io_out_bits_bits_0_bp_taken,
   output [31:0] io_out_bits_bits_0_bp_target,
-  output [64:0] io_out_bits_bits_0_bp_index,
+  output [78:0] io_out_bits_bits_0_bp_index,
   output [3:0]  io_out_bits_bits_0_ftq_idx,
   output [7:0]  io_out_bits_bits_0_ftq_generation,
   output [31:0] io_out_bits_bits_1_inst,
@@ -26,7 +26,7 @@ module IFU(
   output        io_out_bits_bits_1_bp_valid,
                 io_out_bits_bits_1_bp_taken,
   output [31:0] io_out_bits_bits_1_bp_target,
-  output [64:0] io_out_bits_bits_1_bp_index,
+  output [78:0] io_out_bits_bits_1_bp_index,
   output [3:0]  io_out_bits_bits_1_ftq_idx,
   output [7:0]  io_out_bits_bits_1_ftq_generation,
   input         io_pc_ready,
@@ -52,7 +52,7 @@ module IFU(
                 io_bpu_update_target,
   input         io_bpu_update_is_branch,
                 io_bpu_update_is_jalr,
-  input  [64:0] io_bpu_update_index,
+  input  [78:0] io_bpu_update_index,
   input         io_bpu_update_is_call,
                 io_bpu_update_is_ret,
                 io_bpu_update1_valid,
@@ -61,7 +61,7 @@ module IFU(
                 io_bpu_update1_target,
   input         io_bpu_update1_is_branch,
                 io_bpu_update1_is_jalr,
-  input  [64:0] io_bpu_update1_index,
+  input  [78:0] io_bpu_update1_index,
   input         io_bpu_update1_is_call,
                 io_bpu_update1_is_ret,
   output [3:0]  io_bpu_update_free,
@@ -75,7 +75,7 @@ module IFU(
   input  [3:0]  io_bp_recover_ftq_idx,
   input  [7:0]  io_bp_recover_ftq_generation,
   input  [31:0] io_bp_recover_pc,
-  input  [64:0] io_bp_recover_index,
+  input  [78:0] io_bp_recover_index,
   input  [31:0] io_bp_recover_target,
   input         io_bp_recover_is_jalr,
                 io_bp_recover_taken,
@@ -119,13 +119,13 @@ module IFU(
   wire        _bpuUpdates_io_deq_bits_taken;
   wire        _bpuUpdates_io_deq_bits_isBranch;
   wire        _bpuUpdates_io_deq_bits_isJalr;
-  wire [64:0] _bpuUpdates_io_deq_bits_index;
+  wire [78:0] _bpuUpdates_io_deq_bits_index;
   wire        _bpuUpdates_io_deq_bits_isCall;
   wire        _bpuUpdates_io_deq_bits_isRet;
   wire        _bpu_io_bp_valid;
   wire        _bpu_io_bp_taken;
   wire [31:0] _bpu_io_bp_target;
-  wire [64:0] _bpu_io_bp_index;
+  wire [78:0] _bpu_io_bp_index;
   wire        _bpu_io_bp_tagged_hit;
   wire        _bpu_io_bp_tage_use_alt;
   wire        _bpu_io_bp_bimodal_selected;
@@ -135,7 +135,7 @@ module IFU(
   wire        _bpu_io_bp1_valid;
   wire        _bpu_io_bp1_taken;
   wire [31:0] _bpu_io_bp1_target;
-  wire [64:0] _bpu_io_bp1_index;
+  wire [78:0] _bpu_io_bp1_index;
   wire        _bpu_io_bp1_tagged_hit;
   wire        _bpu_io_bp1_tage_use_alt;
   wire        _bpu_io_bp1_bimodal_selected;

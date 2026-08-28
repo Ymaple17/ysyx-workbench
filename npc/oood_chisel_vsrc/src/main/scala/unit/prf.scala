@@ -22,6 +22,9 @@ class PRF(conf: CoreConfig, nPhys: Int = OoOParams.N_PHYS) extends Module {
     val wen2   = Input(Bool())
     val waddr2 = Input(UInt(physW.W))
     val wdata2 = Input(UInt(conf.xlen.W))
+    val wen3   = Input(Bool())
+    val waddr3 = Input(UInt(physW.W))
+    val wdata3 = Input(UInt(conf.xlen.W))
     // 架构寄存器读：arch_raddr(i) = rat(i)
     val arch_raddr = Input(Vec(32, UInt(physW.W)))
     val arch_rdata = Output(Vec(32, UInt(conf.xlen.W)))
@@ -36,6 +39,7 @@ class PRF(conf: CoreConfig, nPhys: Int = OoOParams.N_PHYS) extends Module {
 
   when(io.wen1 && io.waddr1 =/= 0.U) { rf(io.waddr1) := io.wdata1 }
   when(io.wen2 && io.waddr2 =/= 0.U) { rf(io.waddr2) := io.wdata2 }
+  when(io.wen3 && io.waddr3 =/= 0.U) { rf(io.waddr3) := io.wdata3 }
 
   for (i <- 0 until 32) {
     io.arch_rdata(i) := Mux(i.U === 0.U, 0.U, rf(io.arch_raddr(i)))

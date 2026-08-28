@@ -24,7 +24,7 @@ module BranchIssueQueue(
   input         io_enq_bits_bp_valid,
                 io_enq_bits_bp_taken,
   input  [31:0] io_enq_bits_bp_target,
-  input  [64:0] io_enq_bits_bp_index,
+  input  [78:0] io_enq_bits_bp_index,
   input  [3:0]  io_enq_bits_ftq_idx,
   input  [7:0]  io_enq_bits_ftq_generation,
   input  [1:0]  io_enq_bits_exu_alu_srcA,
@@ -56,7 +56,7 @@ module BranchIssueQueue(
   output        io_issue_bits_bp_valid,
                 io_issue_bits_bp_taken,
   output [31:0] io_issue_bits_bp_target,
-  output [64:0] io_issue_bits_bp_index,
+  output [78:0] io_issue_bits_bp_index,
   output [3:0]  io_issue_bits_ftq_idx,
   output [7:0]  io_issue_bits_ftq_generation,
   output [1:0]  io_issue_bits_exu_alu_srcA,
@@ -75,10 +75,15 @@ module BranchIssueQueue(
   input         io_cdb1Valid,
   input  [5:0]  io_cdb1Pdest,
   input  [31:0] io_cdb1Value,
+  input         io_cdb2Valid,
+  input  [5:0]  io_cdb2Pdest,
+  input  [31:0] io_cdb2Value,
   input         io_free0Valid,
   input  [4:0]  io_free0Rob,
   input         io_free1Valid,
   input  [4:0]  io_free1Rob,
+  input         io_free2Valid,
+  input  [4:0]  io_free2Rob,
   input         io_freeDirectValid,
   input  [4:0]  io_freeDirectRob,
   input         io_flush,
@@ -108,7 +113,7 @@ module BranchIssueQueue(
   reg         entries_0_bp_valid;
   reg         entries_0_bp_taken;
   reg  [31:0] entries_0_bp_target;
-  reg  [64:0] entries_0_bp_index;
+  reg  [78:0] entries_0_bp_index;
   reg  [3:0]  entries_0_ftq_idx;
   reg  [7:0]  entries_0_ftq_generation;
   reg  [1:0]  entries_0_exu_alu_srcA;
@@ -142,7 +147,7 @@ module BranchIssueQueue(
   reg         entries_1_bp_valid;
   reg         entries_1_bp_taken;
   reg  [31:0] entries_1_bp_target;
-  reg  [64:0] entries_1_bp_index;
+  reg  [78:0] entries_1_bp_index;
   reg  [3:0]  entries_1_ftq_idx;
   reg  [7:0]  entries_1_ftq_generation;
   reg  [1:0]  entries_1_exu_alu_srcA;
@@ -176,7 +181,7 @@ module BranchIssueQueue(
   reg         entries_2_bp_valid;
   reg         entries_2_bp_taken;
   reg  [31:0] entries_2_bp_target;
-  reg  [64:0] entries_2_bp_index;
+  reg  [78:0] entries_2_bp_index;
   reg  [3:0]  entries_2_ftq_idx;
   reg  [7:0]  entries_2_ftq_generation;
   reg  [1:0]  entries_2_exu_alu_srcA;
@@ -210,7 +215,7 @@ module BranchIssueQueue(
   reg         entries_3_bp_valid;
   reg         entries_3_bp_taken;
   reg  [31:0] entries_3_bp_target;
-  reg  [64:0] entries_3_bp_index;
+  reg  [78:0] entries_3_bp_index;
   reg  [3:0]  entries_3_ftq_idx;
   reg  [7:0]  entries_3_ftq_generation;
   reg  [1:0]  entries_3_exu_alu_srcA;
@@ -225,22 +230,26 @@ module BranchIssueQueue(
   wire        freeByCompletion_0 =
     entries_0_valid
     & (io_free0Valid & entries_0_rob_idx == io_free0Rob | io_free1Valid
-       & entries_0_rob_idx == io_free1Rob | io_freeDirectValid
+       & entries_0_rob_idx == io_free1Rob | io_free2Valid
+       & entries_0_rob_idx == io_free2Rob | io_freeDirectValid
        & entries_0_rob_idx == io_freeDirectRob);
   wire        freeByCompletion_1 =
     entries_1_valid
     & (io_free0Valid & entries_1_rob_idx == io_free0Rob | io_free1Valid
-       & entries_1_rob_idx == io_free1Rob | io_freeDirectValid
+       & entries_1_rob_idx == io_free1Rob | io_free2Valid
+       & entries_1_rob_idx == io_free2Rob | io_freeDirectValid
        & entries_1_rob_idx == io_freeDirectRob);
   wire        freeByCompletion_2 =
     entries_2_valid
     & (io_free0Valid & entries_2_rob_idx == io_free0Rob | io_free1Valid
-       & entries_2_rob_idx == io_free1Rob | io_freeDirectValid
+       & entries_2_rob_idx == io_free1Rob | io_free2Valid
+       & entries_2_rob_idx == io_free2Rob | io_freeDirectValid
        & entries_2_rob_idx == io_freeDirectRob);
   wire        freeByCompletion_3 =
     entries_3_valid
     & (io_free0Valid & entries_3_rob_idx == io_free0Rob | io_free1Valid
-       & entries_3_rob_idx == io_free1Rob | io_freeDirectValid
+       & entries_3_rob_idx == io_free1Rob | io_free2Valid
+       & entries_3_rob_idx == io_free2Rob | io_freeDirectValid
        & entries_3_rob_idx == io_freeDirectRob);
   wire        _cdb0Hit1_T_4 = entries_0_src1_phys == io_cdb0Pdest;
   wire        cdb0Hit1 =
@@ -254,9 +263,16 @@ module BranchIssueQueue(
   wire        _cdb1Hit2_T_4 = entries_0_src2_phys == io_cdb1Pdest;
   wire        cdb1Hit2 =
     io_cdb1Valid & (|io_cdb1Pdest) & ~entries_0_src2_ready & _cdb1Hit2_T_4;
+  wire        _cdb2Hit1_T_4 = entries_0_src1_phys == io_cdb2Pdest;
+  wire        cdb2Hit1 =
+    io_cdb2Valid & (|io_cdb2Pdest) & ~entries_0_src1_ready & _cdb2Hit1_T_4;
+  wire        _cdb2Hit2_T_4 = entries_0_src2_phys == io_cdb2Pdest;
+  wire        cdb2Hit2 =
+    io_cdb2Valid & (|io_cdb2Pdest) & ~entries_0_src2_ready & _cdb2Hit2_T_4;
   wire        readyMask_0 =
-    entries_0_valid & ~entries_0_issued & (cdb1Hit1 | cdb0Hit1 | entries_0_src1_ready)
-    & (cdb1Hit2 | cdb0Hit2 | entries_0_src2_ready) & ~freeByCompletion_0;
+    entries_0_valid & ~entries_0_issued
+    & (cdb2Hit1 | cdb1Hit1 | cdb0Hit1 | entries_0_src1_ready)
+    & (cdb2Hit2 | cdb1Hit2 | cdb0Hit2 | entries_0_src2_ready) & ~freeByCompletion_0;
   wire        _cdb0Hit1_T_9 = entries_1_src1_phys == io_cdb0Pdest;
   wire        cdb0Hit1_1 =
     io_cdb0Valid & (|io_cdb0Pdest) & ~entries_1_src1_ready & _cdb0Hit1_T_9;
@@ -269,9 +285,16 @@ module BranchIssueQueue(
   wire        _cdb1Hit2_T_9 = entries_1_src2_phys == io_cdb1Pdest;
   wire        cdb1Hit2_1 =
     io_cdb1Valid & (|io_cdb1Pdest) & ~entries_1_src2_ready & _cdb1Hit2_T_9;
+  wire        _cdb2Hit1_T_9 = entries_1_src1_phys == io_cdb2Pdest;
+  wire        cdb2Hit1_1 =
+    io_cdb2Valid & (|io_cdb2Pdest) & ~entries_1_src1_ready & _cdb2Hit1_T_9;
+  wire        _cdb2Hit2_T_9 = entries_1_src2_phys == io_cdb2Pdest;
+  wire        cdb2Hit2_1 =
+    io_cdb2Valid & (|io_cdb2Pdest) & ~entries_1_src2_ready & _cdb2Hit2_T_9;
   wire        readyMask_1 =
-    entries_1_valid & ~entries_1_issued & (cdb1Hit1_1 | cdb0Hit1_1 | entries_1_src1_ready)
-    & (cdb1Hit2_1 | cdb0Hit2_1 | entries_1_src2_ready) & ~freeByCompletion_1;
+    entries_1_valid & ~entries_1_issued
+    & (cdb2Hit1_1 | cdb1Hit1_1 | cdb0Hit1_1 | entries_1_src1_ready)
+    & (cdb2Hit2_1 | cdb1Hit2_1 | cdb0Hit2_1 | entries_1_src2_ready) & ~freeByCompletion_1;
   wire        _cdb0Hit1_T_14 = entries_2_src1_phys == io_cdb0Pdest;
   wire        cdb0Hit1_2 =
     io_cdb0Valid & (|io_cdb0Pdest) & ~entries_2_src1_ready & _cdb0Hit1_T_14;
@@ -284,9 +307,16 @@ module BranchIssueQueue(
   wire        _cdb1Hit2_T_14 = entries_2_src2_phys == io_cdb1Pdest;
   wire        cdb1Hit2_2 =
     io_cdb1Valid & (|io_cdb1Pdest) & ~entries_2_src2_ready & _cdb1Hit2_T_14;
+  wire        _cdb2Hit1_T_14 = entries_2_src1_phys == io_cdb2Pdest;
+  wire        cdb2Hit1_2 =
+    io_cdb2Valid & (|io_cdb2Pdest) & ~entries_2_src1_ready & _cdb2Hit1_T_14;
+  wire        _cdb2Hit2_T_14 = entries_2_src2_phys == io_cdb2Pdest;
+  wire        cdb2Hit2_2 =
+    io_cdb2Valid & (|io_cdb2Pdest) & ~entries_2_src2_ready & _cdb2Hit2_T_14;
   wire        readyMask_2 =
-    entries_2_valid & ~entries_2_issued & (cdb1Hit1_2 | cdb0Hit1_2 | entries_2_src1_ready)
-    & (cdb1Hit2_2 | cdb0Hit2_2 | entries_2_src2_ready) & ~freeByCompletion_2;
+    entries_2_valid & ~entries_2_issued
+    & (cdb2Hit1_2 | cdb1Hit1_2 | cdb0Hit1_2 | entries_2_src1_ready)
+    & (cdb2Hit2_2 | cdb1Hit2_2 | cdb0Hit2_2 | entries_2_src2_ready) & ~freeByCompletion_2;
   wire        _cdb0Hit1_T_19 = entries_3_src1_phys == io_cdb0Pdest;
   wire        cdb0Hit1_3 =
     io_cdb0Valid & (|io_cdb0Pdest) & ~entries_3_src1_ready & _cdb0Hit1_T_19;
@@ -299,9 +329,16 @@ module BranchIssueQueue(
   wire        _cdb1Hit2_T_19 = entries_3_src2_phys == io_cdb1Pdest;
   wire        cdb1Hit2_3 =
     io_cdb1Valid & (|io_cdb1Pdest) & ~entries_3_src2_ready & _cdb1Hit2_T_19;
+  wire        _cdb2Hit1_T_19 = entries_3_src1_phys == io_cdb2Pdest;
+  wire        cdb2Hit1_3 =
+    io_cdb2Valid & (|io_cdb2Pdest) & ~entries_3_src1_ready & _cdb2Hit1_T_19;
+  wire        _cdb2Hit2_T_19 = entries_3_src2_phys == io_cdb2Pdest;
+  wire        cdb2Hit2_3 =
+    io_cdb2Valid & (|io_cdb2Pdest) & ~entries_3_src2_ready & _cdb2Hit2_T_19;
   wire        readyMask_3 =
-    entries_3_valid & ~entries_3_issued & (cdb1Hit1_3 | cdb0Hit1_3 | entries_3_src1_ready)
-    & (cdb1Hit2_3 | cdb0Hit2_3 | entries_3_src2_ready) & ~freeByCompletion_3;
+    entries_3_valid & ~entries_3_issued
+    & (cdb2Hit1_3 | cdb1Hit1_3 | cdb0Hit1_3 | entries_3_src1_ready)
+    & (cdb2Hit2_3 | cdb1Hit2_3 | cdb0Hit2_3 | entries_3_src2_ready) & ~freeByCompletion_3;
   wire [4:0]  _hasOlder_T_105 = entries_0_rob_idx - io_robHead;
   wire [4:0]  _hasOlder_T_113 = entries_1_rob_idx - io_robHead;
   wire [4:0]  _hasOlder_T_121 = entries_2_rob_idx - io_robHead;
@@ -343,14 +380,23 @@ module BranchIssueQueue(
   wire        _GEN_2 = io_cdb1Valid & (|io_cdb1Pdest);
   wire        _GEN_3 =
     _GEN_2 & ~io_enq_bits_src1_ready & io_enq_bits_src1_phys == io_cdb1Pdest;
-  wire        enqView_src1_ready = _GEN_3 | _GEN_0 | io_enq_bits_src1_ready;
-  wire [31:0] enqView_src1_val =
-    _GEN_3 ? io_cdb1Value : _GEN_0 ? io_cdb0Value : io_enq_bits_src1_val;
   wire        _GEN_4 =
     _GEN_2 & ~io_enq_bits_src2_ready & io_enq_bits_src2_phys == io_cdb1Pdest;
-  wire        enqView_src2_ready = _GEN_4 | _GEN_1 | io_enq_bits_src2_ready;
+  wire        _GEN_5 = io_cdb2Valid & (|io_cdb2Pdest);
+  wire        _GEN_6 =
+    _GEN_5 & ~io_enq_bits_src1_ready & io_enq_bits_src1_phys == io_cdb2Pdest;
+  wire        enqView_src1_ready = _GEN_6 | _GEN_3 | _GEN_0 | io_enq_bits_src1_ready;
+  wire [31:0] enqView_src1_val =
+    _GEN_6
+      ? io_cdb2Value
+      : _GEN_3 ? io_cdb1Value : _GEN_0 ? io_cdb0Value : io_enq_bits_src1_val;
+  wire        _GEN_7 =
+    _GEN_5 & ~io_enq_bits_src2_ready & io_enq_bits_src2_phys == io_cdb2Pdest;
+  wire        enqView_src2_ready = _GEN_7 | _GEN_4 | _GEN_1 | io_enq_bits_src2_ready;
   wire [31:0] enqView_src2_val =
-    _GEN_4 ? io_cdb1Value : _GEN_1 ? io_cdb0Value : io_enq_bits_src2_val;
+    _GEN_7
+      ? io_cdb2Value
+      : _GEN_4 ? io_cdb1Value : _GEN_1 ? io_cdb0Value : io_enq_bits_src2_val;
   wire        _freshIssueValid_T = io_enq_valid & io_enq_ready_0;
   wire        freshIssueValid =
     _freshIssueValid_T & enqView_src1_ready & enqView_src2_ready
@@ -413,16 +459,24 @@ module BranchIssueQueue(
     casez (issueIdx)
       2'b00:
         casez_tmp_3 =
-          cdb1Hit1 ? io_cdb1Value : cdb0Hit1 ? io_cdb0Value : entries_0_src1_val;
+          cdb2Hit1
+            ? io_cdb2Value
+            : cdb1Hit1 ? io_cdb1Value : cdb0Hit1 ? io_cdb0Value : entries_0_src1_val;
       2'b01:
         casez_tmp_3 =
-          cdb1Hit1_1 ? io_cdb1Value : cdb0Hit1_1 ? io_cdb0Value : entries_1_src1_val;
+          cdb2Hit1_1
+            ? io_cdb2Value
+            : cdb1Hit1_1 ? io_cdb1Value : cdb0Hit1_1 ? io_cdb0Value : entries_1_src1_val;
       2'b10:
         casez_tmp_3 =
-          cdb1Hit1_2 ? io_cdb1Value : cdb0Hit1_2 ? io_cdb0Value : entries_2_src1_val;
+          cdb2Hit1_2
+            ? io_cdb2Value
+            : cdb1Hit1_2 ? io_cdb1Value : cdb0Hit1_2 ? io_cdb0Value : entries_2_src1_val;
       default:
         casez_tmp_3 =
-          cdb1Hit1_3 ? io_cdb1Value : cdb0Hit1_3 ? io_cdb0Value : entries_3_src1_val;
+          cdb2Hit1_3
+            ? io_cdb2Value
+            : cdb1Hit1_3 ? io_cdb1Value : cdb0Hit1_3 ? io_cdb0Value : entries_3_src1_val;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_4;
@@ -430,16 +484,24 @@ module BranchIssueQueue(
     casez (issueIdx)
       2'b00:
         casez_tmp_4 =
-          cdb1Hit2 ? io_cdb1Value : cdb0Hit2 ? io_cdb0Value : entries_0_src2_val;
+          cdb2Hit2
+            ? io_cdb2Value
+            : cdb1Hit2 ? io_cdb1Value : cdb0Hit2 ? io_cdb0Value : entries_0_src2_val;
       2'b01:
         casez_tmp_4 =
-          cdb1Hit2_1 ? io_cdb1Value : cdb0Hit2_1 ? io_cdb0Value : entries_1_src2_val;
+          cdb2Hit2_1
+            ? io_cdb2Value
+            : cdb1Hit2_1 ? io_cdb1Value : cdb0Hit2_1 ? io_cdb0Value : entries_1_src2_val;
       2'b10:
         casez_tmp_4 =
-          cdb1Hit2_2 ? io_cdb1Value : cdb0Hit2_2 ? io_cdb0Value : entries_2_src2_val;
+          cdb2Hit2_2
+            ? io_cdb2Value
+            : cdb1Hit2_2 ? io_cdb1Value : cdb0Hit2_2 ? io_cdb0Value : entries_2_src2_val;
       default:
         casez_tmp_4 =
-          cdb1Hit2_3 ? io_cdb1Value : cdb0Hit2_3 ? io_cdb0Value : entries_3_src2_val;
+          cdb2Hit2_3
+            ? io_cdb2Value
+            : cdb1Hit2_3 ? io_cdb1Value : cdb0Hit2_3 ? io_cdb0Value : entries_3_src2_val;
     endcase
   end // always_comb
   reg  [5:0]  casez_tmp_5;
@@ -598,7 +660,7 @@ module BranchIssueQueue(
         casez_tmp_16 = entries_3_bp_target;
     endcase
   end // always_comb
-  reg  [64:0] casez_tmp_17;
+  reg  [78:0] casez_tmp_17;
   always_comb begin
     casez (issueIdx)
       2'b00:
@@ -754,43 +816,55 @@ module BranchIssueQueue(
         casez_tmp_28 = entries_3_wbu_reg_write_sel;
     endcase
   end // always_comb
-  wire        _GEN_5 = io_issue_ready & io_issue_valid_0 & (|_residentIssueValid_T);
+  wire        _GEN_8 = io_issue_ready & io_issue_valid_0 & (|_residentIssueValid_T);
   wire        e_4_issued = freshIssueValid & io_issue_ready;
   wire [1:0]  enqIdx =
     reusableMask[0] ? 2'h0 : reusableMask[1] ? 2'h1 : {1'h1, ~(reusableMask[2])};
-  wire        _GEN_6 = _GEN & entries_0_valid;
-  wire        _GEN_7 = _GEN_6 & ~entries_0_src1_ready & _cdb0Hit1_T_4;
-  wire        _GEN_8 = _GEN_6 & ~entries_0_src2_ready & _cdb0Hit2_T_4;
-  wire        _GEN_9 = _GEN_2 & entries_0_valid;
-  wire        _GEN_10 = ~entries_0_src1_ready & _cdb1Hit1_T_4;
-  wire        _GEN_11 = ~entries_0_src2_ready & _cdb1Hit2_T_4;
-  wire        _GEN_12 = _GEN & entries_1_valid;
-  wire        _GEN_13 = _GEN_12 & ~entries_1_src1_ready & _cdb0Hit1_T_9;
-  wire        _GEN_14 = _GEN_12 & ~entries_1_src2_ready & _cdb0Hit2_T_9;
-  wire        _GEN_15 = _GEN_2 & entries_1_valid;
-  wire        _GEN_16 = ~entries_1_src1_ready & _cdb1Hit1_T_9;
-  wire        _GEN_17 = ~entries_1_src2_ready & _cdb1Hit2_T_9;
-  wire        _GEN_18 = _GEN & entries_2_valid;
-  wire        _GEN_19 = _GEN_18 & ~entries_2_src1_ready & _cdb0Hit1_T_14;
-  wire        _GEN_20 = _GEN_18 & ~entries_2_src2_ready & _cdb0Hit2_T_14;
-  wire        _GEN_21 = _GEN_2 & entries_2_valid;
-  wire        _GEN_22 = ~entries_2_src1_ready & _cdb1Hit1_T_14;
-  wire        _GEN_23 = ~entries_2_src2_ready & _cdb1Hit2_T_14;
-  wire        _GEN_24 = _GEN & entries_3_valid;
-  wire        _GEN_25 = _GEN_24 & ~entries_3_src1_ready & _cdb0Hit1_T_19;
-  wire        _GEN_26 = _GEN_24 & ~entries_3_src2_ready & _cdb0Hit2_T_19;
-  wire        _GEN_27 = _GEN_2 & entries_3_valid;
-  wire        _GEN_28 = ~entries_3_src1_ready & _cdb1Hit1_T_19;
-  wire        _GEN_29 = ~entries_3_src2_ready & _cdb1Hit2_T_19;
-  wire [4:0]  _GEN_30 = io_flushIdx - io_robHead;
-  wire        _GEN_31 = _freshIssueValid_T & enqIdx == 2'h0;
-  wire        _GEN_32 = io_flush | ~_GEN_31;
-  wire        _GEN_33 = _freshIssueValid_T & enqIdx == 2'h1;
-  wire        _GEN_34 = io_flush | ~_GEN_33;
-  wire        _GEN_35 = _freshIssueValid_T & enqIdx == 2'h2;
-  wire        _GEN_36 = io_flush | ~_GEN_35;
-  wire        _GEN_37 = _freshIssueValid_T & (&enqIdx);
-  wire        _GEN_38 = io_flush | ~_GEN_37;
+  wire        _GEN_9 = _GEN & entries_0_valid;
+  wire        _GEN_10 = _GEN_9 & ~entries_0_src1_ready & _cdb0Hit1_T_4;
+  wire        _GEN_11 = _GEN_9 & ~entries_0_src2_ready & _cdb0Hit2_T_4;
+  wire        _GEN_12 = _GEN_2 & entries_0_valid;
+  wire        _GEN_13 = ~entries_0_src1_ready & _cdb1Hit1_T_4;
+  wire        _GEN_14 = ~entries_0_src2_ready & _cdb1Hit2_T_4;
+  wire        _GEN_15 = _GEN_5 & entries_0_valid;
+  wire        _GEN_16 = _GEN_15 & ~entries_0_src1_ready & _cdb2Hit1_T_4;
+  wire        _GEN_17 = _GEN_15 & ~entries_0_src2_ready & _cdb2Hit2_T_4;
+  wire        _GEN_18 = _GEN & entries_1_valid;
+  wire        _GEN_19 = _GEN_18 & ~entries_1_src1_ready & _cdb0Hit1_T_9;
+  wire        _GEN_20 = _GEN_18 & ~entries_1_src2_ready & _cdb0Hit2_T_9;
+  wire        _GEN_21 = _GEN_2 & entries_1_valid;
+  wire        _GEN_22 = ~entries_1_src1_ready & _cdb1Hit1_T_9;
+  wire        _GEN_23 = ~entries_1_src2_ready & _cdb1Hit2_T_9;
+  wire        _GEN_24 = _GEN_5 & entries_1_valid;
+  wire        _GEN_25 = _GEN_24 & ~entries_1_src1_ready & _cdb2Hit1_T_9;
+  wire        _GEN_26 = _GEN_24 & ~entries_1_src2_ready & _cdb2Hit2_T_9;
+  wire        _GEN_27 = _GEN & entries_2_valid;
+  wire        _GEN_28 = _GEN_27 & ~entries_2_src1_ready & _cdb0Hit1_T_14;
+  wire        _GEN_29 = _GEN_27 & ~entries_2_src2_ready & _cdb0Hit2_T_14;
+  wire        _GEN_30 = _GEN_2 & entries_2_valid;
+  wire        _GEN_31 = ~entries_2_src1_ready & _cdb1Hit1_T_14;
+  wire        _GEN_32 = ~entries_2_src2_ready & _cdb1Hit2_T_14;
+  wire        _GEN_33 = _GEN_5 & entries_2_valid;
+  wire        _GEN_34 = _GEN_33 & ~entries_2_src1_ready & _cdb2Hit1_T_14;
+  wire        _GEN_35 = _GEN_33 & ~entries_2_src2_ready & _cdb2Hit2_T_14;
+  wire        _GEN_36 = _GEN & entries_3_valid;
+  wire        _GEN_37 = _GEN_36 & ~entries_3_src1_ready & _cdb0Hit1_T_19;
+  wire        _GEN_38 = _GEN_36 & ~entries_3_src2_ready & _cdb0Hit2_T_19;
+  wire        _GEN_39 = _GEN_2 & entries_3_valid;
+  wire        _GEN_40 = ~entries_3_src1_ready & _cdb1Hit1_T_19;
+  wire        _GEN_41 = ~entries_3_src2_ready & _cdb1Hit2_T_19;
+  wire        _GEN_42 = _GEN_5 & entries_3_valid;
+  wire        _GEN_43 = _GEN_42 & ~entries_3_src1_ready & _cdb2Hit1_T_19;
+  wire        _GEN_44 = _GEN_42 & ~entries_3_src2_ready & _cdb2Hit2_T_19;
+  wire [4:0]  _GEN_45 = io_flushIdx - io_robHead;
+  wire        _GEN_46 = _freshIssueValid_T & enqIdx == 2'h0;
+  wire        _GEN_47 = io_flush | ~_GEN_46;
+  wire        _GEN_48 = _freshIssueValid_T & enqIdx == 2'h1;
+  wire        _GEN_49 = io_flush | ~_GEN_48;
+  wire        _GEN_50 = _freshIssueValid_T & enqIdx == 2'h2;
+  wire        _GEN_51 = io_flush | ~_GEN_50;
+  wire        _GEN_52 = _freshIssueValid_T & (&enqIdx);
+  wire        _GEN_53 = io_flush | ~_GEN_52;
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
@@ -815,7 +889,7 @@ module BranchIssueQueue(
       entries_0_bp_valid <= 1'h0;
       entries_0_bp_taken <= 1'h0;
       entries_0_bp_target <= 32'h0;
-      entries_0_bp_index <= 65'h0;
+      entries_0_bp_index <= 79'h0;
       entries_0_ftq_idx <= 4'h0;
       entries_0_ftq_generation <= 8'h0;
       entries_0_exu_alu_srcA <= 2'h0;
@@ -849,7 +923,7 @@ module BranchIssueQueue(
       entries_1_bp_valid <= 1'h0;
       entries_1_bp_taken <= 1'h0;
       entries_1_bp_target <= 32'h0;
-      entries_1_bp_index <= 65'h0;
+      entries_1_bp_index <= 79'h0;
       entries_1_ftq_idx <= 4'h0;
       entries_1_ftq_generation <= 8'h0;
       entries_1_exu_alu_srcA <= 2'h0;
@@ -883,7 +957,7 @@ module BranchIssueQueue(
       entries_2_bp_valid <= 1'h0;
       entries_2_bp_taken <= 1'h0;
       entries_2_bp_target <= 32'h0;
-      entries_2_bp_index <= 65'h0;
+      entries_2_bp_index <= 79'h0;
       entries_2_ftq_idx <= 4'h0;
       entries_2_ftq_generation <= 8'h0;
       entries_2_exu_alu_srcA <= 2'h0;
@@ -917,7 +991,7 @@ module BranchIssueQueue(
       entries_3_bp_valid <= 1'h0;
       entries_3_bp_taken <= 1'h0;
       entries_3_bp_target <= 32'h0;
-      entries_3_bp_index <= 65'h0;
+      entries_3_bp_index <= 79'h0;
       entries_3_ftq_idx <= 4'h0;
       entries_3_ftq_generation <= 8'h0;
       entries_3_exu_alu_srcA <= 2'h0;
@@ -934,46 +1008,52 @@ module BranchIssueQueue(
       entries_0_valid <=
         io_flush
           ? ~(freeByCompletion_0 | io_flushAll | entries_0_valid
-              & _hasOlder_T_105 > _GEN_30) & entries_0_valid
-          : _GEN_31 | ~freeByCompletion_0 & entries_0_valid;
+              & _hasOlder_T_105 > _GEN_45) & entries_0_valid
+          : _GEN_46 | ~freeByCompletion_0 & entries_0_valid;
       if (io_flush) begin
       end
       else begin
         entries_0_issued <=
-          _GEN_31 ? e_4_issued : _GEN_5 & issueIdx == 2'h0 | entries_0_issued;
+          _GEN_46 ? e_4_issued : _GEN_8 & issueIdx == 2'h0 | entries_0_issued;
         entries_1_issued <=
-          _GEN_33 ? e_4_issued : _GEN_5 & issueIdx == 2'h1 | entries_1_issued;
+          _GEN_48 ? e_4_issued : _GEN_8 & issueIdx == 2'h1 | entries_1_issued;
         entries_2_issued <=
-          _GEN_35 ? e_4_issued : _GEN_5 & issueIdx == 2'h2 | entries_2_issued;
+          _GEN_50 ? e_4_issued : _GEN_8 & issueIdx == 2'h2 | entries_2_issued;
         entries_3_issued <=
-          _GEN_37 ? e_4_issued : _GEN_5 & (&issueIdx) | entries_3_issued;
+          _GEN_52 ? e_4_issued : _GEN_8 & (&issueIdx) | entries_3_issued;
       end
-      if (_GEN_32) begin
+      if (_GEN_47) begin
       end
       else begin
         entries_0_rob_idx <= io_enq_bits_rob_idx;
         entries_0_cp_idx <= io_enq_bits_cp_idx;
       end
       entries_0_src1_ready <=
-        _GEN_32
-          ? (_GEN_9
-               ? _GEN_10 | _GEN_7 | entries_0_src1_ready
-               : _GEN_7 | entries_0_src1_ready)
+        _GEN_47
+          ? _GEN_16
+            | (_GEN_12
+                 ? _GEN_13 | _GEN_10 | entries_0_src1_ready
+                 : _GEN_10 | entries_0_src1_ready)
           : enqView_src1_ready;
       entries_0_src2_ready <=
-        _GEN_32
-          ? (_GEN_9
-               ? _GEN_11 | _GEN_8 | entries_0_src2_ready
-               : _GEN_8 | entries_0_src2_ready)
+        _GEN_47
+          ? _GEN_17
+            | (_GEN_12
+                 ? _GEN_14 | _GEN_11 | entries_0_src2_ready
+                 : _GEN_11 | entries_0_src2_ready)
           : enqView_src2_ready;
-      if (_GEN_32) begin
-        if (_GEN_9 & _GEN_10)
+      if (_GEN_47) begin
+        if (_GEN_16)
+          entries_0_src1_val <= io_cdb2Value;
+        else if (_GEN_12 & _GEN_13)
           entries_0_src1_val <= io_cdb1Value;
-        else if (_GEN_7)
+        else if (_GEN_10)
           entries_0_src1_val <= io_cdb0Value;
-        if (_GEN_9 & _GEN_11)
+        if (_GEN_17)
+          entries_0_src2_val <= io_cdb2Value;
+        else if (_GEN_12 & _GEN_14)
           entries_0_src2_val <= io_cdb1Value;
-        else if (_GEN_8)
+        else if (_GEN_11)
           entries_0_src2_val <= io_cdb0Value;
       end
       else begin
@@ -1009,34 +1089,40 @@ module BranchIssueQueue(
       entries_1_valid <=
         io_flush
           ? ~(freeByCompletion_1 | io_flushAll | entries_1_valid
-              & _hasOlder_T_113 > _GEN_30) & entries_1_valid
-          : _GEN_33 | ~freeByCompletion_1 & entries_1_valid;
-      if (_GEN_34) begin
+              & _hasOlder_T_113 > _GEN_45) & entries_1_valid
+          : _GEN_48 | ~freeByCompletion_1 & entries_1_valid;
+      if (_GEN_49) begin
       end
       else begin
         entries_1_rob_idx <= io_enq_bits_rob_idx;
         entries_1_cp_idx <= io_enq_bits_cp_idx;
       end
       entries_1_src1_ready <=
-        _GEN_34
-          ? (_GEN_15
-               ? _GEN_16 | _GEN_13 | entries_1_src1_ready
-               : _GEN_13 | entries_1_src1_ready)
+        _GEN_49
+          ? _GEN_25
+            | (_GEN_21
+                 ? _GEN_22 | _GEN_19 | entries_1_src1_ready
+                 : _GEN_19 | entries_1_src1_ready)
           : enqView_src1_ready;
       entries_1_src2_ready <=
-        _GEN_34
-          ? (_GEN_15
-               ? _GEN_17 | _GEN_14 | entries_1_src2_ready
-               : _GEN_14 | entries_1_src2_ready)
+        _GEN_49
+          ? _GEN_26
+            | (_GEN_21
+                 ? _GEN_23 | _GEN_20 | entries_1_src2_ready
+                 : _GEN_20 | entries_1_src2_ready)
           : enqView_src2_ready;
-      if (_GEN_34) begin
-        if (_GEN_15 & _GEN_16)
+      if (_GEN_49) begin
+        if (_GEN_25)
+          entries_1_src1_val <= io_cdb2Value;
+        else if (_GEN_21 & _GEN_22)
           entries_1_src1_val <= io_cdb1Value;
-        else if (_GEN_13)
+        else if (_GEN_19)
           entries_1_src1_val <= io_cdb0Value;
-        if (_GEN_15 & _GEN_17)
+        if (_GEN_26)
+          entries_1_src2_val <= io_cdb2Value;
+        else if (_GEN_21 & _GEN_23)
           entries_1_src2_val <= io_cdb1Value;
-        else if (_GEN_14)
+        else if (_GEN_20)
           entries_1_src2_val <= io_cdb0Value;
       end
       else begin
@@ -1072,34 +1158,40 @@ module BranchIssueQueue(
       entries_2_valid <=
         io_flush
           ? ~(freeByCompletion_2 | io_flushAll | entries_2_valid
-              & _hasOlder_T_121 > _GEN_30) & entries_2_valid
-          : _GEN_35 | ~freeByCompletion_2 & entries_2_valid;
-      if (_GEN_36) begin
+              & _hasOlder_T_121 > _GEN_45) & entries_2_valid
+          : _GEN_50 | ~freeByCompletion_2 & entries_2_valid;
+      if (_GEN_51) begin
       end
       else begin
         entries_2_rob_idx <= io_enq_bits_rob_idx;
         entries_2_cp_idx <= io_enq_bits_cp_idx;
       end
       entries_2_src1_ready <=
-        _GEN_36
-          ? (_GEN_21
-               ? _GEN_22 | _GEN_19 | entries_2_src1_ready
-               : _GEN_19 | entries_2_src1_ready)
+        _GEN_51
+          ? _GEN_34
+            | (_GEN_30
+                 ? _GEN_31 | _GEN_28 | entries_2_src1_ready
+                 : _GEN_28 | entries_2_src1_ready)
           : enqView_src1_ready;
       entries_2_src2_ready <=
-        _GEN_36
-          ? (_GEN_21
-               ? _GEN_23 | _GEN_20 | entries_2_src2_ready
-               : _GEN_20 | entries_2_src2_ready)
+        _GEN_51
+          ? _GEN_35
+            | (_GEN_30
+                 ? _GEN_32 | _GEN_29 | entries_2_src2_ready
+                 : _GEN_29 | entries_2_src2_ready)
           : enqView_src2_ready;
-      if (_GEN_36) begin
-        if (_GEN_21 & _GEN_22)
+      if (_GEN_51) begin
+        if (_GEN_34)
+          entries_2_src1_val <= io_cdb2Value;
+        else if (_GEN_30 & _GEN_31)
           entries_2_src1_val <= io_cdb1Value;
-        else if (_GEN_19)
+        else if (_GEN_28)
           entries_2_src1_val <= io_cdb0Value;
-        if (_GEN_21 & _GEN_23)
+        if (_GEN_35)
+          entries_2_src2_val <= io_cdb2Value;
+        else if (_GEN_30 & _GEN_32)
           entries_2_src2_val <= io_cdb1Value;
-        else if (_GEN_20)
+        else if (_GEN_29)
           entries_2_src2_val <= io_cdb0Value;
       end
       else begin
@@ -1135,34 +1227,40 @@ module BranchIssueQueue(
       entries_3_valid <=
         io_flush
           ? ~(freeByCompletion_3 | io_flushAll | entries_3_valid
-              & _hasOlder_T_132 > _GEN_30) & entries_3_valid
-          : _GEN_37 | ~freeByCompletion_3 & entries_3_valid;
-      if (_GEN_38) begin
+              & _hasOlder_T_132 > _GEN_45) & entries_3_valid
+          : _GEN_52 | ~freeByCompletion_3 & entries_3_valid;
+      if (_GEN_53) begin
       end
       else begin
         entries_3_rob_idx <= io_enq_bits_rob_idx;
         entries_3_cp_idx <= io_enq_bits_cp_idx;
       end
       entries_3_src1_ready <=
-        _GEN_38
-          ? (_GEN_27
-               ? _GEN_28 | _GEN_25 | entries_3_src1_ready
-               : _GEN_25 | entries_3_src1_ready)
+        _GEN_53
+          ? _GEN_43
+            | (_GEN_39
+                 ? _GEN_40 | _GEN_37 | entries_3_src1_ready
+                 : _GEN_37 | entries_3_src1_ready)
           : enqView_src1_ready;
       entries_3_src2_ready <=
-        _GEN_38
-          ? (_GEN_27
-               ? _GEN_29 | _GEN_26 | entries_3_src2_ready
-               : _GEN_26 | entries_3_src2_ready)
+        _GEN_53
+          ? _GEN_44
+            | (_GEN_39
+                 ? _GEN_41 | _GEN_38 | entries_3_src2_ready
+                 : _GEN_38 | entries_3_src2_ready)
           : enqView_src2_ready;
-      if (_GEN_38) begin
-        if (_GEN_27 & _GEN_28)
+      if (_GEN_53) begin
+        if (_GEN_43)
+          entries_3_src1_val <= io_cdb2Value;
+        else if (_GEN_39 & _GEN_40)
           entries_3_src1_val <= io_cdb1Value;
-        else if (_GEN_25)
+        else if (_GEN_37)
           entries_3_src1_val <= io_cdb0Value;
-        if (_GEN_27 & _GEN_29)
+        if (_GEN_44)
+          entries_3_src2_val <= io_cdb2Value;
+        else if (_GEN_39 & _GEN_41)
           entries_3_src2_val <= io_cdb1Value;
-        else if (_GEN_26)
+        else if (_GEN_38)
           entries_3_src2_val <= io_cdb0Value;
       end
       else begin

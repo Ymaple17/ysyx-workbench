@@ -101,17 +101,22 @@ bind StoreBuffer StoreBuffer_Verification_Assert verification_assert (
 );
 bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (
   .reset                 (reset),
-  ._GEN                  ({grant0_4, grant0_3}),
-  .grant0_2              (grant0_2),
-  ._GEN_0                ({grant1_4, grant1_3}),
-  .grant1_2              (grant1_2),
-  ._GEN_1                ({grant1_1, grant1_0}),
-  ._GEN_2                ({grant0_1, grant0_0}),
+  ._GEN                  ({grant_4, grant_3}),
+  .grants_0_2            (grant_2),
+  ._GEN_0                ({grant_1_4, grant_1_3}),
+  .grants_1_2            (grant_1_2),
+  ._GEN_1                ({grant_1_1, grant_1_0}),
+  ._GEN_2                ({grant_1, grant_0}),
+  ._GEN_3                ({grant_2_4, grant_2_3}),
+  .grants_2_2            (grant_2_2),
+  ._GEN_4                ({grant_2_1, grant_2_0}),
   .io_out_0_valid        (|_io_out_0_valid_T),
   .io_out_1_valid        (|_io_out_1_valid_T),
   .io_out_0_bits_rob_idx (io_out_0_bits_rob_idx_0),
   .io_robHead            (io_robHead),
   .io_out_1_bits_rob_idx (io_out_1_bits_rob_idx_0),
+  .io_out_2_valid        (|_io_out_2_valid_T),
+  .io_out_2_bits_rob_idx (io_out_2_bits_rob_idx_0),
   .clock                 (clock)
 );
 bind Core Core_Verification_Assert verification_assert (

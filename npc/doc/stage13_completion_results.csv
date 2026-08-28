@@ -1,0 +1,10 @@
+point,role,ipc,cycles,commits,direction_miss,fq_empty,head_wait,cdb_conflict,rs_fresh_issue,average_fetch_width,commit_slot1_util,dcache_hit_rate,result
+stage12f,baseline,1.3736,380267,522350,11909,39214,27500,8997,0,1.8614,74.33,97.03,frozen
+stage13_local_history,retained,1.3798,378367,522060,11547,,,,,,,PASS
+stage13_early_bru,rejected,1.3798,378367,522060,11547,,,,,,,NO_CYCLE_GAIN
+stage13_ftq32,rejected,1.3794,,,,,,,,,,,IPC_REGRESSION
+stage13_cdb3,retained,1.3824,377584,521982,,,,104,,,,PASS
+stage13_icache_burst,retained,1.4387,363021,522280,,22518,,107,,,,PASS
+stage13_rs_fresh_issue,retained,1.4895,350653,522312,,22802,14583,128,241299,,,,PASS
+stage13_icache_16k,retained,1.4943,349467,522222,,21709,14559,,241172,,,99.78,PASS
+stage13f_final,final,1.5134,345032,522164,11586,21550,10880,128,241331,1.8650,76.83,98.02,PASS_REPEAT_IDENTICAL

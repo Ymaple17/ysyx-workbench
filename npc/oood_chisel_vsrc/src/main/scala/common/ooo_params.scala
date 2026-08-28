@@ -20,11 +20,12 @@ object OoOParams {
   val ISSUE_WIDTH = 2
   val DISPATCH_WIDTH = ISSUE_WIDTH
   val COMMIT_WIDTH = 2
-  val CDB_NUM = 2
+  val CDB_NUM = 3
   val CP_DEPTH = 4
   val SQ_SIZE  = ROB_SIZE
   val STORE_BUFFER_SIZE = 16
-  val DCACHE_SET = 64
+  val ICACHE_SET = 128
+  val DCACHE_SET = 128
   val DCACHE_BLOCK_SIZE = 32
   val LSU_MLP_ENABLE = true
   val LQ_SIZE = 4

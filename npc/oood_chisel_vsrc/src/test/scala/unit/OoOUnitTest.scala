@@ -6,6 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import core.NPC_Config
 import common.MEM_READ._
 import common.MEM_WMASK._
+import common.ALU_OP._
 import common.OoOParams
 
 /** 四件套模块级仿真 —— 必须全绿才能接线进 core */
@@ -18,6 +19,41 @@ class OoOUnitTest extends AnyFlatSpec {
     clock.step()
     reset.poke(false.B)
     clock.step()
+  }
+
+  behavior of "DIV"
+
+  it should "produce RV32M quotient and remainder results without an iterative stall" in {
+    simulate(new DIV()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      dut.io.kill.poke(false.B)
+      dut.io.req_valid.poke(true.B)
+      dut.io.req_ready.expect(true.B)
+      dut.io.busy.expect(false.B)
+
+      dut.io.a.poke((-7).S(32.W).asUInt)
+      dut.io.b.poke(3.U)
+      dut.io.op.poke(ALU_DIV)
+      dut.io.result_valid.expect(true.B)
+      dut.io.result.expect("hffff_fffe".U)
+      dut.io.op.poke(ALU_REM)
+      dut.io.result.expect("hffff_ffff".U)
+
+      dut.io.a.poke("hffff_ffff".U)
+      dut.io.b.poke(16.U)
+      dut.io.op.poke(ALU_DIVU)
+      dut.io.result.expect("h0fff_ffff".U)
+      dut.io.op.poke(ALU_REMU)
+      dut.io.result.expect(15.U)
+
+      dut.io.b.poke(0.U)
+      dut.io.op.poke(ALU_DIV)
+      dut.io.result.expect("hffff_ffff".U)
+      dut.io.op.poke(ALU_REM)
+      dut.io.result.expect("hffff_ffff".U)
+      dut.io.kill.poke(true.B)
+      dut.io.result_valid.expect(false.B)
+    }
   }
 
   // ---------- PRF ----------
@@ -1111,7 +1147,7 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
-  it should "block load until older store address resolves (8d)" in {
+  it should "issue a load past a registered unresolved store for LQ replay" in {
     simulate(new RS()) { dut =>
       resetDut(dut.clock, dut.reset)
       idleRs(dut)
@@ -1126,12 +1162,6 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.enq_bits.exu_jump.poke("b1111".U)
       dut.clock.step()
       dut.io.enq_fire.poke(false.B)
-      dut.io.issue_valid.expect(false.B)
-      dut.io.issue_lsu_valid.expect(false.B)
-
-      // Once the older store address is resolved, StoreQueue can decide
-      // forward/wait/pass and RS may issue the load.
-      dut.io.rob_st_pending.poke(0.U)
       dut.io.issue_valid.expect(true.B)
       dut.io.issue_lsu_valid.expect(true.B)
       dut.io.issue_bits.rob_idx.expect(1.U)
@@ -1520,6 +1550,39 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "not classify an unknown wait as bypass-only when a store can forward" in {
+    simulate(new StoreQueue()) { dut =>
+      idleStoreQueue(dut)
+      resetDut(dut.clock, dut.reset)
+      idleStoreQueue(dut)
+      dut.io.alloc0_valid.poke(true.B)
+      dut.io.alloc0_rob.poke(0.U)
+      dut.io.alloc0_mask.poke(15.U)
+      dut.io.alloc1_valid.poke(true.B)
+      dut.io.alloc1_rob.poke(1.U)
+      dut.io.alloc1_mask.poke(15.U)
+      dut.clock.step()
+
+      idleStoreQueue(dut)
+      dut.io.wb_valid.poke(true.B)
+      dut.io.wb_rob.poke(1.U)
+      dut.io.wb_addr.poke("h1000".U)
+      dut.io.wb_data.poke("h12345678".U)
+      dut.io.wb_mask.poke(15.U)
+      dut.clock.step()
+
+      idleStoreQueue(dut)
+      dut.io.ld_valid.poke(true.B)
+      dut.io.ld_rob.poke(2.U)
+      dut.io.ld_addr.poke("h1000".U)
+      dut.io.ld_mem_rd.poke(RWORD)
+      dut.io.wait_unknown.expect(true.B)
+      dut.io.has_fwd_candidate.expect(true.B)
+      dut.io.wait_load.expect(true.B)
+      dut.io.fwd_valid.expect(false.B)
+    }
+  }
+
   it should "forward from older matching store" in {
     simulate(new StoreQueue()) { dut =>
       idleStoreQueue(dut)
@@ -1785,6 +1848,10 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.commit0Rob.poke(0.U)
     dut.io.commit1Valid.poke(false.B)
     dut.io.commit1Rob.poke(0.U)
+    dut.io.commit2Valid.poke(false.B)
+    dut.io.commit2Rob.poke(0.U)
+    dut.io.commit3Valid.poke(false.B)
+    dut.io.commit3Rob.poke(0.U)
     dut.io.flush.poke(false.B)
     dut.io.flushIdx.poke(0.U)
     dut.io.flushAll.poke(false.B)
@@ -1793,6 +1860,7 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.fwdData.poke(0.U)
     dut.io.fwdUnknownOnly.poke(false.B)
     dut.io.fwdUnknownMask.poke(0.U)
+    dut.io.unresolvedStores.poke(0.U)
     dut.io.mmioReady.poke(true.B)
     dut.io.storeResolve0Valid.poke(false.B)
     dut.io.storeResolve0Rob.poke(0.U)
@@ -1860,6 +1928,34 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "release four committed loads in one cycle" in {
+    simulate(new LoadQueue(new core.CoreConfig(32))) { dut =>
+      idleLoadQueue(dut)
+      resetDut(dut.clock, dut.reset)
+      for (rob <- 1 to 4) {
+        idleLoadQueue(dut)
+        allocLoad(dut, rob, BigInt("80000000", 16) + rob * 4,
+          BigInt("80001000", 16) + rob * 4)
+        dut.io.alloc.ready.expect(true.B)
+        dut.clock.step()
+      }
+
+      idleLoadQueue(dut)
+      dut.io.outstanding.expect(4.U)
+      dut.io.commit0Valid.poke(true.B)
+      dut.io.commit0Rob.poke(1.U)
+      dut.io.commit1Valid.poke(true.B)
+      dut.io.commit1Rob.poke(2.U)
+      dut.io.commit2Valid.poke(true.B)
+      dut.io.commit2Rob.poke(3.U)
+      dut.io.commit3Valid.poke(true.B)
+      dut.io.commit3Rob.poke(4.U)
+      dut.clock.step()
+      idleLoadQueue(dut)
+      dut.io.outstanding.expect(0.U)
+    }
+  }
+
   it should "accept a same-cycle cache response for a new request" in {
     simulate(new LoadQueue(new core.CoreConfig(32))) { dut =>
       idleLoadQueue(dut)
@@ -1885,6 +1981,44 @@ class OoOUnitTest extends AnyFlatSpec {
       idleLoadQueue(dut)
       dut.io.wb.ready.poke(true.B)
       dut.io.wb.valid.expect(false.B)
+      dut.io.outstanding.expect(0.U)
+    }
+  }
+
+  it should "retain same-cycle speculative responses for replay" in {
+    simulate(new LoadQueue(new core.CoreConfig(32), speculateUnknownStores = true)) { dut =>
+      idleLoadQueue(dut)
+      resetDut(dut.clock, dut.reset)
+      idleLoadQueue(dut)
+      allocLoad(dut, 2, BigInt("80000068", 16), BigInt("80001208", 16))
+      dut.clock.step()
+
+      idleLoadQueue(dut)
+      dut.io.wb.ready.poke(true.B)
+      dut.io.fwdWait.poke(true.B)
+      dut.io.fwdUnknownOnly.poke(true.B)
+      dut.io.fwdUnknownMask.poke(2.U)
+      dut.io.unresolvedStores.poke(2.U)
+      dut.io.dmem.arready.poke(true.B)
+      dut.io.dmem.rvalid.poke(true.B)
+      dut.io.dmem.rid.poke(0.U)
+      dut.io.dmem.rdata.poke("hdeadbeef".U)
+      dut.io.dmem.rlast.poke(true.B)
+      dut.io.dmem.arvalid.expect(true.B)
+      dut.io.wb.valid.expect(true.B)
+      dut.io.wb.bits.rob_idx.expect(2.U)
+      dut.clock.step()
+
+      idleLoadQueue(dut)
+      dut.io.unresolvedStores.poke(2.U)
+      dut.io.commit0Rob.poke(2.U)
+      dut.io.outstanding.expect(1.U)
+      dut.io.commitWait0.expect(true.B)
+      dut.io.unresolvedStores.poke(0.U)
+      dut.io.commitWait0.expect(false.B)
+      dut.io.commit0Valid.poke(true.B)
+      dut.clock.step()
+      idleLoadQueue(dut)
       dut.io.outstanding.expect(0.U)
     }
   }
@@ -1996,6 +2130,31 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "hold a bypassed load at commit until its older store resolves" in {
+    simulate(new LoadQueue(new core.CoreConfig(32), speculateUnknownStores = true)) { dut =>
+      idleLoadQueue(dut)
+      resetDut(dut.clock, dut.reset)
+      idleLoadQueue(dut)
+      allocLoad(dut, 2, BigInt("80000090", 16), BigInt("80003100", 16))
+      dut.clock.step()
+      idleLoadQueue(dut)
+      dut.io.fwdWait.poke(true.B)
+      dut.io.fwdUnknownOnly.poke(true.B)
+      dut.io.fwdUnknownMask.poke(2.U)
+      dut.io.unresolvedStores.poke(2.U)
+      dut.io.dmem.arready.poke(true.B)
+      dut.io.dmem.arvalid.expect(true.B)
+      dut.clock.step()
+
+      idleLoadQueue(dut)
+      dut.io.unresolvedStores.poke(2.U)
+      dut.io.commit0Rob.poke(2.U)
+      dut.io.commitWait0.expect(true.B)
+      dut.io.unresolvedStores.poke(0.U)
+      dut.io.commitWait0.expect(false.B)
+    }
+  }
+
   it should "match reversed responses and write back loads in ROB age order" in {
     simulate(new LoadQueue(new core.CoreConfig(32))) { dut =>
       idleLoadQueue(dut)
@@ -2043,6 +2202,155 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.clock.step()
       idleLoadQueue(dut)
       dut.io.outstanding.expect(0.U)
+    }
+  }
+
+  behavior of "Xbar"
+
+  def idleXbarUp(up: bus.AXI4Slave): Unit = {
+    up.araddr.poke(0.U)
+    up.arvalid.poke(false.B)
+    up.arid.poke(0.U)
+    up.arlen.poke(0.U)
+    up.arsize.poke(2.U)
+    up.arburst.poke(1.U)
+    up.rready.poke(false.B)
+    up.awaddr.poke(0.U)
+    up.awvalid.poke(false.B)
+    up.awid.poke(0.U)
+    up.awlen.poke(0.U)
+    up.awsize.poke(2.U)
+    up.awburst.poke(1.U)
+    up.wdata.poke(0.U)
+    up.wstrb.poke(0.U)
+    up.wvalid.poke(false.B)
+    up.wlast.poke(false.B)
+    up.bready.poke(false.B)
+  }
+
+  def idleXbarDown(down: bus.AXI4Master): Unit = {
+    down.arready.poke(false.B)
+    down.rdata.poke(0.U)
+    down.rresp.poke(0.U)
+    down.rvalid.poke(false.B)
+    down.rlast.poke(false.B)
+    down.rid.poke(0.U)
+    down.awready.poke(false.B)
+    down.wready.poke(false.B)
+    down.bresp.poke(0.U)
+    down.bvalid.poke(false.B)
+    down.bid.poke(0.U)
+  }
+
+  it should "route read and write channels independently" in {
+    simulate(new bus.Xbar(conf)) { dut =>
+      idleXbarUp(dut.io.imem)
+      idleXbarUp(dut.io.dmem)
+      idleXbarDown(dut.io.soc)
+      idleXbarDown(dut.io.clint)
+      idleXbarDown(dut.io.uart.get)
+      resetDut(dut.clock, dut.reset)
+      idleXbarUp(dut.io.imem)
+      idleXbarUp(dut.io.dmem)
+      idleXbarDown(dut.io.soc)
+      idleXbarDown(dut.io.clint)
+      idleXbarDown(dut.io.uart.get)
+
+      dut.io.dmem.araddr.poke("h80001000".U)
+      dut.io.dmem.arvalid.poke(true.B)
+      dut.io.dmem.arid.poke(2.U)
+      dut.io.dmem.awaddr.poke("h80002000".U)
+      dut.io.dmem.awvalid.poke(true.B)
+      dut.io.dmem.awid.poke(3.U)
+      dut.io.dmem.wdata.poke("h12345678".U)
+      dut.io.dmem.wstrb.poke("hf".U)
+      dut.io.dmem.wvalid.poke(true.B)
+      dut.io.dmem.wlast.poke(true.B)
+      dut.io.soc.arready.poke(true.B)
+      dut.io.soc.awready.poke(true.B)
+      dut.io.soc.wready.poke(true.B)
+      dut.io.dmem.arready.expect(true.B)
+      dut.io.dmem.awready.expect(true.B)
+      dut.io.dmem.wready.expect(true.B)
+      dut.io.soc.arvalid.expect(true.B)
+      dut.io.soc.awvalid.expect(true.B)
+      dut.io.soc.wvalid.expect(true.B)
+      dut.clock.step()
+
+      dut.io.dmem.arvalid.poke(false.B)
+      dut.io.dmem.awvalid.poke(false.B)
+      dut.io.dmem.wvalid.poke(false.B)
+      dut.io.dmem.rready.poke(true.B)
+      dut.io.dmem.bready.poke(true.B)
+      dut.io.soc.rdata.poke("h89abcdef".U)
+      dut.io.soc.rresp.poke(0.U)
+      dut.io.soc.rvalid.poke(true.B)
+      dut.io.soc.rlast.poke(true.B)
+      dut.io.soc.rid.poke(2.U)
+      dut.io.soc.bresp.poke(0.U)
+      dut.io.soc.bvalid.poke(true.B)
+      dut.io.soc.bid.poke(3.U)
+      dut.io.dmem.rvalid.expect(true.B)
+      dut.io.dmem.rdata.expect("h89abcdef".U)
+      dut.io.dmem.bvalid.expect(true.B)
+      dut.clock.step()
+
+      dut.io.soc.rvalid.poke(false.B)
+      dut.io.soc.rlast.poke(false.B)
+      dut.io.soc.bvalid.poke(false.B)
+      dut.io.dmem.rready.poke(false.B)
+      dut.io.dmem.bready.poke(false.B)
+      dut.io.dmem.awaddr.poke("h80003000".U)
+      dut.io.dmem.awvalid.poke(true.B)
+      dut.io.soc.awready.poke(true.B)
+      dut.clock.step()
+
+      dut.io.dmem.awvalid.poke(false.B)
+      dut.io.soc.awready.poke(false.B)
+      dut.io.imem.araddr.poke("h80004000".U)
+      dut.io.imem.arvalid.poke(true.B)
+      dut.io.imem.arid.poke(4.U)
+      dut.io.soc.arready.poke(true.B)
+      dut.io.imem.arready.expect(true.B)
+      dut.io.soc.arvalid.expect(true.B)
+      dut.io.soc.araddr.expect("h80004000".U)
+    }
+  }
+
+  it should "release single-beat peripheral reads without rlast" in {
+    simulate(new bus.Xbar(conf)) { dut =>
+      idleXbarUp(dut.io.imem)
+      idleXbarUp(dut.io.dmem)
+      idleXbarDown(dut.io.soc)
+      idleXbarDown(dut.io.clint)
+      idleXbarDown(dut.io.uart.get)
+      resetDut(dut.clock, dut.reset)
+      idleXbarUp(dut.io.imem)
+      idleXbarUp(dut.io.dmem)
+      idleXbarDown(dut.io.soc)
+      idleXbarDown(dut.io.clint)
+      idleXbarDown(dut.io.uart.get)
+
+      dut.io.dmem.araddr.poke("ha0000048".U)
+      dut.io.dmem.arvalid.poke(true.B)
+      dut.io.clint.arready.poke(true.B)
+      dut.io.dmem.arready.expect(true.B)
+      dut.clock.step()
+
+      dut.io.dmem.arvalid.poke(false.B)
+      dut.io.dmem.rready.poke(true.B)
+      dut.io.clint.arready.poke(false.B)
+      dut.io.clint.rvalid.poke(true.B)
+      dut.io.clint.rlast.poke(false.B)
+      dut.io.dmem.rvalid.expect(true.B)
+      dut.clock.step()
+
+      dut.io.clint.rvalid.poke(false.B)
+      dut.io.dmem.rready.poke(false.B)
+      dut.io.imem.araddr.poke("h80000000".U)
+      dut.io.imem.arvalid.poke(true.B)
+      dut.io.soc.arready.poke(true.B)
+      dut.io.imem.arready.expect(true.B)
     }
   }
 
@@ -2116,6 +2424,68 @@ class OoOUnitTest extends AnyFlatSpec {
     }
     dut.io.mem.rvalid.poke(false.B)
     dut.io.mem.rlast.poke(false.B)
+  }
+
+  it should "return the critical word before the refill completes" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val base = BigInt("80009000", 16)
+      val values = (0 until 8).map(i => BigInt("71000000", 16) + i)
+
+      dut.io.cpu.araddr.poke((base + 8).U)
+      dut.io.cpu.arid.poke(5.U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arvalid.expect(true.B)
+      dut.io.mem.araddr.expect(base.U)
+      dut.io.mem.arready.poke(true.B)
+      dut.clock.step()
+      dut.io.mem.arready.poke(false.B)
+
+      for (i <- 0 to 1) {
+        dut.io.mem.rready.expect(true.B)
+        dut.io.mem.rvalid.poke(true.B)
+        dut.io.mem.rdata.poke(values(i).U)
+        dut.io.mem.rlast.poke(false.B)
+        dut.clock.step()
+        dut.io.cpu.rvalid.expect(false.B)
+      }
+
+      dut.io.mem.rready.expect(true.B)
+      dut.io.mem.rdata.poke(values(2).U)
+      dut.clock.step()
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rid.expect(5.U)
+      dut.io.cpu.rdata.expect(values(2).U)
+      dut.io.busy.expect(true.B)
+
+      for (i <- 3 until values.length) {
+        dut.io.mem.rready.expect(true.B)
+        dut.io.mem.rvalid.poke(true.B)
+        dut.io.mem.rdata.poke(values(i).U)
+        dut.io.mem.rlast.poke((i == values.length - 1).B)
+        dut.clock.step()
+      }
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.mem.rlast.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+
+      dut.io.cpu.araddr.poke((base + 12).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rdata.expect(values(3).U)
+    }
   }
 
   it should "fill a line on miss and hit within the same line" in {
@@ -2598,6 +2968,108 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "not install stale refill data after a committed store" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val base = BigInt("8000a000", 16)
+      val values = (0 until 8).map(i => BigInt("72000000", 16) + i)
+
+      dut.io.cpu.araddr.poke((base + 24).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arready.poke(true.B)
+      dut.clock.step()
+      dut.io.mem.arready.poke(false.B)
+
+      for (i <- values.indices) {
+        dut.io.mem.rvalid.poke(true.B)
+        dut.io.mem.rdata.poke(values(i).U)
+        dut.io.mem.rlast.poke((i == values.length - 1).B)
+        if (i == 2) {
+          dut.io.store_valid.poke(true.B)
+          dut.io.store_addr.poke((base + 24).U)
+          dut.io.store_data.poke("hff".U)
+          dut.io.store_mask.poke(WWORD)
+        }
+        dut.clock.step()
+        dut.io.store_valid.poke(false.B)
+      }
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.mem.rlast.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rdata.expect(values(6).U)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+
+      dut.io.cpu.araddr.poke((base + 24).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arvalid.expect(true.B)
+      dut.io.mem.araddr.expect(base.U)
+    }
+  }
+
+  it should "not mix an old-tag store hit into a same-set refill" in {
+    simulate(new DCache(conf = new core.CoreConfig(32))) { dut =>
+      idleDCache(dut)
+      resetDut(dut.clock, dut.reset)
+      idleDCache(dut)
+      val oldBase = BigInt("8000a000", 16)
+      val newBase = oldBase + BigInt("800", 16)
+      val oldValues = (0 until 8).map(i => BigInt("73000000", 16) + i)
+      val newValues = (0 until 8).map(i => BigInt("74000000", 16) + i)
+
+      dut.io.cpu.araddr.poke((oldBase + 24).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      fillDCacheLine(dut, oldBase, oldValues)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+
+      dut.io.cpu.araddr.poke((newBase + 24).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.arvalid.poke(false.B)
+      dut.io.mem.arready.poke(true.B)
+      dut.clock.step()
+      dut.io.mem.arready.poke(false.B)
+      for (i <- newValues.indices) {
+        dut.io.mem.rvalid.poke(true.B)
+        dut.io.mem.rdata.poke(newValues(i).U)
+        dut.io.mem.rlast.poke((i == newValues.length - 1).B)
+        if (i == newValues.length - 1) {
+          dut.io.store_valid.poke(true.B)
+          dut.io.store_addr.poke((oldBase + 24).U)
+          dut.io.store_data.poke("h118".U)
+          dut.io.store_mask.poke(WWORD)
+        }
+        dut.clock.step()
+      }
+      dut.io.mem.rvalid.poke(false.B)
+      dut.io.mem.rlast.poke(false.B)
+      dut.io.store_valid.poke(false.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rdata.expect(newValues(6).U)
+      dut.io.cpu.rready.poke(true.B)
+      dut.clock.step()
+      dut.io.cpu.rready.poke(false.B)
+
+      dut.io.cpu.araddr.poke((newBase + 24).U)
+      dut.io.cpu.arvalid.poke(true.B)
+      dut.io.cpu.rready.poke(true.B)
+      dut.io.cpu.arready.expect(true.B)
+      dut.io.cpu.rvalid.expect(true.B)
+      dut.io.cpu.rdata.expect(newValues(6).U)
+    }
+  }
+
   behavior of "ICache"
 
   def idleICache(dut: ICache): Unit = {
@@ -2620,7 +3092,6 @@ class OoOUnitTest extends AnyFlatSpec {
   }
 
   def fillICacheLine(dut: ICache, base: BigInt, words: Seq[BigInt]): Unit = {
-    require(words.length == 2)
     dut.io.in.araddr.poke(base.U)
     dut.io.in.arvalid.poke(true.B)
     dut.io.in.arready.expect(true.B)
@@ -2646,34 +3117,44 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
-  it should "return a cached next-line word and hold both slots under backpressure" in {
-    simulate(new ICache(set = 4, way = 1, block_size = 8,
+  it should "return four cached words across a line and hold them under backpressure" in {
+    simulate(new ICache(set = 4, way = 1, block_size = 16,
       conf = new core.CoreConfig(32))) { dut =>
       idleICache(dut)
       resetDut(dut.clock, dut.reset)
       idleICache(dut)
       val base = BigInt("80000000", 16)
-      val line0 = Seq(BigInt("11111111", 16), BigInt("22222222", 16))
-      val line1 = Seq(BigInt("33333333", 16), BigInt("44444444", 16))
+      val line0 = Seq(BigInt("11111111", 16), BigInt("22222222", 16),
+        BigInt("33333333", 16), BigInt("44444444", 16))
+      val line1 = Seq(BigInt("55555555", 16), BigInt("66666666", 16),
+        BigInt("77777777", 16), BigInt("88888888", 16))
       fillICacheLine(dut, base, line0)
-      fillICacheLine(dut, base + 8, line1)
+      fillICacheLine(dut, base + 16, line1)
 
       dut.io.in.rready.poke(false.B)
-      dut.io.in.araddr.poke((base + 4).U)
+      dut.io.in.araddr.poke((base + 12).U)
       dut.io.in.arvalid.poke(true.B)
       dut.io.in.arready.expect(true.B)
       dut.io.in.rvalid.expect(true.B)
       dut.io.in.rvalid1.expect(true.B)
-      dut.io.in.rdata.expect(line0(1).U)
+      dut.io.in.rvalid2.expect(true.B)
+      dut.io.in.rvalid3.expect(true.B)
+      dut.io.in.rdata.expect(line0(3).U)
       dut.io.in.rdata1.expect(line1(0).U)
+      dut.io.in.rdata2.expect(line1(1).U)
+      dut.io.in.rdata3.expect(line1(2).U)
       dut.clock.step()
       dut.io.in.arvalid.poke(false.B)
 
       for (_ <- 0 until 2) {
         dut.io.in.rvalid.expect(true.B)
         dut.io.in.rvalid1.expect(true.B)
-        dut.io.in.rdata.expect(line0(1).U)
+        dut.io.in.rvalid2.expect(true.B)
+        dut.io.in.rvalid3.expect(true.B)
+        dut.io.in.rdata.expect(line0(3).U)
         dut.io.in.rdata1.expect(line1(0).U)
+        dut.io.in.rdata2.expect(line1(1).U)
+        dut.io.in.rdata3.expect(line1(2).U)
         dut.clock.step()
       }
       dut.io.in.rready.poke(true.B)
@@ -2798,6 +3279,49 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "coalesce a non-monotonic same-line prefix with masked burst holes" in {
+    simulate(new StoreBuffer()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleStoreBuffer(dut)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.addr.poke("h8000000c".U)
+      dut.io.enq.bits.data.poke("h33333333".U)
+      dut.io.enq.bits.mask.poke(WWORD)
+      dut.io.enq1.valid.poke(true.B)
+      dut.io.enq1.bits.addr.poke("h80000000".U)
+      dut.io.enq1.bits.data.poke("h00000000".U)
+      dut.io.enq1.bits.mask.poke(WWORD)
+      dut.clock.step()
+      idleStoreBuffer(dut)
+      dut.clock.step()
+
+      dut.io.dmem.awready.poke(true.B)
+      dut.io.dmem.wready.poke(true.B)
+      dut.io.dmem.awaddr.expect("h80000000".U)
+      dut.io.dmem.awlen.expect(3.U)
+      dut.io.dmem.wdata.expect("h00000000".U)
+      dut.io.dmem.wstrb.expect("b1111".U)
+      dut.clock.step()
+      dut.io.dmem.awready.poke(false.B)
+      dut.io.dmem.wstrb.expect(0.U)
+      dut.clock.step()
+      dut.io.dmem.wstrb.expect(0.U)
+      dut.clock.step()
+      dut.io.dmem.wdata.expect("h33333333".U)
+      dut.io.dmem.wstrb.expect("b1111".U)
+      dut.io.dmem.wlast.expect(true.B)
+      dut.clock.step()
+
+      dut.io.dmem.wready.poke(false.B)
+      dut.io.dmem.bvalid.poke(true.B)
+      dut.io.deq_valid.expect(true.B)
+      dut.io.deq_count.expect(2.U)
+      dut.clock.step()
+      dut.io.dmem.bvalid.poke(false.B)
+      dut.io.empty.expect(true.B)
+    }
+  }
+
   it should "forward the youngest matching buffered store" in {
     simulate(new StoreBuffer()) { dut =>
       resetDut(dut.clock, dut.reset)
@@ -2905,6 +3429,54 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.dmem.awsize.expect(2.U)
       dut.io.dmem.wstrb.expect("b0011".U)
       dut.io.dmem.wdata.expect("h0000bbaa".U)
+    }
+  }
+
+  it should "merge the youngest matching word across unrelated buffered stores" in {
+    simulate(new StoreBuffer(size = 8)) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleStoreBuffer(dut)
+      dut.io.bus_busy.poke(true.B)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.mask.poke(WWORD)
+      dut.io.enq.bits.addr.poke("h80000000".U)
+      dut.io.enq.bits.data.poke("h11111111".U)
+      dut.clock.step()
+      dut.io.enq.bits.addr.poke("h80000004".U)
+      dut.io.enq.bits.data.poke("h22222222".U)
+      dut.clock.step()
+      dut.io.enq.bits.addr.poke("h80000000".U)
+      dut.io.enq.bits.data.poke("h33333333".U)
+      dut.io.merged.expect(1.U)
+      dut.clock.step()
+
+      idleStoreBuffer(dut)
+      dut.io.bus_busy.poke(true.B)
+      dut.io.count.expect(2.U)
+      dut.io.ld_valid.poke(true.B)
+      dut.io.ld_addr.poke("h80000000".U)
+      dut.io.ld_mem_rd.poke(RWORD)
+      dut.io.ld_fwd_valid.expect(true.B)
+      dut.io.ld_fwd_data.expect("h33333333".U)
+    }
+  }
+
+  it should "gather a short contiguous stream before opening an AXI burst" in {
+    simulate(new StoreBuffer(size = 8, gatherCycles = 3)) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleStoreBuffer(dut)
+      dut.io.enq.valid.poke(true.B)
+      dut.io.enq.bits.addr.poke("h80000000".U)
+      dut.io.enq.bits.data.poke("h12345678".U)
+      dut.io.enq.bits.mask.poke(WWORD)
+      dut.clock.step()
+      dut.io.enq.valid.poke(false.B)
+      dut.io.write_burst.expect(false.B)
+      dut.clock.step(3)
+      dut.io.write_burst.expect(true.B)
+      dut.clock.step()
+      dut.io.dmem.awvalid.expect(true.B)
+      dut.io.dmem.awlen.expect(0.U)
     }
   }
 
@@ -3057,10 +3629,16 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.commit1Valid.poke(false.B)
     dut.io.commit1Idx.poke(0.U)
     dut.io.commit1Generation.poke(0.U)
+    dut.io.commit2Valid.poke(false.B)
+    dut.io.commit2Idx.poke(0.U)
+    dut.io.commit2Generation.poke(0.U)
+    dut.io.commit3Valid.poke(false.B)
+    dut.io.commit3Idx.poke(0.U)
+    dut.io.commit3Generation.poke(0.U)
     dut.io.recoverIdx.poke(0.U)
     dut.io.recoverGeneration.poke(0.U)
     dut.io.recoverFlush.poke(false.B)
-    dut.io.recoverSlot1.poke(false.B)
+    dut.io.recoverSlot.poke(0.U)
     dut.io.flush.poke(false.B)
   }
 
@@ -3154,7 +3732,7 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.recoverIdx.poke(idx1.U)
       dut.io.recoverGeneration.poke(gen1.U)
       dut.io.recoverFlush.poke(true.B)
-      dut.io.recoverSlot1.poke(false.B)
+      dut.io.recoverSlot.poke(0.U)
       dut.io.recoverValid.expect(true.B)
       dut.clock.step()
 
@@ -3185,6 +3763,51 @@ class OoOUnitTest extends AnyFlatSpec {
     }
   }
 
+  it should "preserve all four slots when recovering the last slot" in {
+    simulate(new FTQ()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleFtq(dut)
+
+      val idx = dut.io.allocIdx.peek().litValue
+      val generation = dut.io.allocGeneration.peek().litValue
+      dut.io.alloc.valid.poke(true.B)
+      dut.io.alloc.bits.basePc.poke("h80000080".U)
+      dut.io.alloc.bits.validMask.poke("hf".U)
+      dut.clock.step()
+
+      idleFtq(dut)
+      dut.io.recoverIdx.poke(idx.U)
+      dut.io.recoverGeneration.poke(generation.U)
+      dut.io.recoverSlot.poke(3.U)
+      dut.io.recoverFlush.poke(true.B)
+      dut.io.recoverValid.expect(true.B)
+      dut.clock.step()
+
+      idleFtq(dut)
+      dut.io.count.expect(1.U)
+      dut.io.recoverIdx.poke(idx.U)
+      dut.io.recoverGeneration.poke(generation.U)
+      dut.io.recoverValid.expect(true.B)
+      dut.io.recover.validMask.expect("hf".U)
+
+      dut.io.commit0Valid.poke(true.B)
+      dut.io.commit0Idx.poke(idx.U)
+      dut.io.commit0Generation.poke(generation.U)
+      dut.io.commit1Valid.poke(true.B)
+      dut.io.commit1Idx.poke(idx.U)
+      dut.io.commit1Generation.poke(generation.U)
+      dut.io.commit2Valid.poke(true.B)
+      dut.io.commit2Idx.poke(idx.U)
+      dut.io.commit2Generation.poke(generation.U)
+      dut.io.commit3Valid.poke(true.B)
+      dut.io.commit3Idx.poke(idx.U)
+      dut.io.commit3Generation.poke(generation.U)
+      dut.clock.step()
+      dut.io.count.expect(0.U)
+      dut.io.recoverValid.expect(false.B)
+    }
+  }
+
   behavior of "FetchQueue"
 
   def idleFq(dut: FetchQueue): Unit = {
@@ -3204,6 +3827,8 @@ class OoOUnitTest extends AnyFlatSpec {
     }
     dut.io.deq.ready.poke(false.B)
     dut.io.deq1.ready.poke(false.B)
+    dut.io.deq2.ready.poke(false.B)
+    dut.io.deq3.ready.poke(false.B)
     dut.io.flush.poke(false.B)
   }
 
@@ -3278,6 +3903,31 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.count.expect(1.U)
       dut.io.deq.bits.pc.expect("h80000008".U)
       dut.io.deq1.valid.expect(false.B)
+    }
+  }
+
+  it should "dequeue a four-instruction prefix in one cycle" in {
+    simulate(new FetchQueue()) { dut =>
+      resetDut(dut.clock, dut.reset)
+      idleFq(dut)
+      dut.io.enq.valid.poke(true.B)
+      for (i <- 0 until OoOParams.FETCH_WIDTH) {
+        dut.io.enq.bits.valid(i).poke(true.B)
+        dut.io.enq.bits.bits(i).pc.poke((0x80000000L + i * 4).U)
+        dut.io.enq.bits.bits(i).inst.poke((0x00100013L + i).U)
+      }
+      dut.clock.step()
+      dut.io.enq.valid.poke(false.B)
+      dut.io.count.expect(OoOParams.FETCH_WIDTH.U)
+      val deq = Seq(dut.io.deq, dut.io.deq1, dut.io.deq2, dut.io.deq3)
+      for (i <- deq.indices) {
+        deq(i).valid.expect(true.B)
+        deq(i).bits.pc.expect((0x80000000L + i * 4).U)
+        deq(i).ready.poke(true.B)
+      }
+      dut.clock.step()
+      dut.io.count.expect(0.U)
+      dut.io.empty.expect(true.B)
     }
   }
 
@@ -3401,6 +4051,10 @@ class OoOUnitTest extends AnyFlatSpec {
     dut.io.predict_inst.poke("h00000013".U)
     dut.io.predict_pc1.poke("h80000004".U)
     dut.io.predict_inst1.poke("h00000013".U)
+    dut.io.predict_pc2.poke("h80000008".U)
+    dut.io.predict_inst2.poke("h00000013".U)
+    dut.io.predict_pc3.poke("h8000000c".U)
+    dut.io.predict_inst3.poke("h00000013".U)
     dut.io.update_pc.poke(0.U)
     dut.io.update_target.poke(0.U)
     dut.io.update_valid.poke(false.B)

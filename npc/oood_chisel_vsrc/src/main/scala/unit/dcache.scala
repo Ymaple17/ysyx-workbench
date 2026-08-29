@@ -123,6 +123,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   val mshrFillLine = RegInit(VecInit(Seq.fill(words)(0.U(32.W))))
   val mshrResp = RegInit(0.U(2.W))
   val mshrKilled = RegInit(false.B)
+  val mshrResponded = RegInit(false.B)
   val pendingValid = RegInit(false.B)
   val pendingCacheable = RegInit(false.B)
   val pendingAddr = RegInit(0.U(32.W))
@@ -134,13 +135,19 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   val mshrIndex = indexOf(mshrAddr)
   val mshrTag = tagOf(mshrAddr)
   val mshrWord = wordOf(mshrAddr)
+  def storeTouchesMshr(valid: Bool, addr: UInt): Bool =
+    valid && cacheable(addr) && indexOf(addr) === mshrIndex && tagOf(addr) === mshrTag
+  // Commit-store notifications depend on the retirement ready path.  Keep
+  // them out of cpu.arready and use them only to poison the refill state.
+  val commitStoreTouchesMshr = mshrValid && mshrCacheable && (
+    storeTouchesMshr(io.store_valid, io.store_addr) ||
+    storeTouchesMshr(io.store2_valid, io.store2_addr))
   val killMshrNow =
     mshrValid && mshrCacheable && (
       (io.invalidate_valid && invCacheable && invIndex === mshrIndex && invTag === mshrTag) ||
       (io.invalidate2_valid && inv2Cacheable && inv2Index === mshrIndex && inv2Tag === mshrTag) ||
       (io.invalidate3_valid && inv3Cacheable && inv3Index === mshrIndex && inv3Tag === mshrTag) ||
-      (io.store3_valid && cacheable(io.store3_addr) &&
-        indexOf(io.store3_addr) === mshrIndex && tagOf(io.store3_addr) === mshrTag)
+      storeTouchesMshr(io.store3_valid, io.store3_addr)
     )
 
   val respValid = hitRespQ.io.deq.valid || missRespValid
@@ -154,10 +161,11 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
 
   val cpuRespFire = io.cpu.rvalid && io.cpu.rready
   val missRespSlotFree = !missRespValid || (cpuRespFire && !respIsHit)
+  val mshrCanAcceptBeat = !missRespValid || (mshrCacheable && mshrResponded)
 
   val canAcceptHit = cpuHit && hitRespQ.io.enq.ready
   val mshrCompletingNow = mshrValid && (mshrState === sMshrR) &&
-    io.mem.rvalid && !missRespValid &&
+    io.mem.rvalid && mshrCanAcceptBeat &&
     Mux(mshrCacheable, mshrFillIdx === (words - 1).U, true.B)
   val localCompletingNow = mshrValid && (mshrState === sMshrLocal) &&
     missRespSlotFree && !mshrKilled && !killMshrNow
@@ -215,6 +223,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
         mshrFillIdx := 0.U
         mshrResp := 0.U
         mshrKilled := false.B
+        mshrResponded := false.B
         mshrState := sMshrAr
         for (i <- 0 until words) {
           mshrFillLine(i) := 0.U
@@ -242,7 +251,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
         mshrKilled := false.B
       }
     }.elsewhen(mshrState === sMshrR) {
-      io.mem.rready := !missRespValid
+      io.mem.rready := mshrCanAcceptBeat
       when(io.mem.rvalid && io.mem.rready) {
         when(mshrCacheable) {
           val nextLine = Wire(Vec(words, UInt(32.W)))
@@ -252,20 +261,24 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
           when(io.mem.rresp =/= 0.U) {
             mshrResp := io.mem.rresp
           }
+          val beatResp = Mux(io.mem.rresp =/= 0.U, io.mem.rresp, mshrResp)
+          when(mshrFillIdx === mshrWord && !mshrResponded) {
+            missRespValid := true.B
+            missRespData := io.mem.rdata
+            missRespResp := beatResp
+            missRespId := mshrId
+            mshrResponded := true.B
+          }
           when(mshrFillIdx === (words - 1).U) {
-            val refillResp = Mux(io.mem.rresp =/= 0.U, io.mem.rresp, mshrResp)
+            val refillResp = beatResp
             val mergePending = pendingValid && pendingCacheable &&
               (lineBase(pendingAddr) === lineBase(mshrAddr)) &&
-              !mshrKilled && !killMshrNow && (refillResp === 0.U)
-            when(!mshrKilled && !killMshrNow) {
+              !mshrKilled && !killMshrNow && !commitStoreTouchesMshr && (refillResp === 0.U)
+            when(!mshrKilled && !killMshrNow && !commitStoreTouchesMshr && refillResp === 0.U) {
               lines(mshrIndex).valid := true.B
               lines(mshrIndex).tag := mshrTag
               lines(mshrIndex).data := nextLine
             }
-            missRespValid := true.B
-            missRespData := nextLine(mshrWord)
-            missRespResp := refillResp
-            missRespId := mshrId
             when(pendingValid) {
               mshrValid := true.B
               mshrCacheable := pendingCacheable
@@ -275,6 +288,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
               mshrFillIdx := 0.U
               mshrResp := 0.U
               mshrKilled := false.B
+              mshrResponded := false.B
               pendingValid := false.B
               when(mergePending) {
                 mshrFillLine := nextLine
@@ -287,6 +301,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
               }
             }.otherwise {
               mshrValid := false.B
+              mshrResponded := false.B
               mshrState := sMshrAr
             }
           }.otherwise {
@@ -306,6 +321,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
             mshrFillIdx := 0.U
             mshrResp := 0.U
             mshrKilled := false.B
+            mshrResponded := false.B
             pendingValid := false.B
             for (i <- 0 until words) {
               mshrFillLine(i) := 0.U
@@ -313,6 +329,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
             mshrState := sMshrAr
           }.otherwise {
             mshrValid := false.B
+            mshrResponded := false.B
             mshrState := sMshrAr
           }
         }
@@ -322,11 +339,12 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
       when(localInvalidated) {
         mshrFillIdx := 0.U
         mshrResp := 0.U
+        mshrResponded := false.B
         mshrState := sMshrAr
         for (i <- 0 until words) {
           mshrFillLine(i) := 0.U
         }
-      }.elsewhen(missRespSlotFree) {
+      }.elsewhen(missRespSlotFree && !commitStoreTouchesMshr) {
         val mergePending = pendingValid && pendingCacheable &&
           (lineBase(pendingAddr) === lineBase(mshrAddr))
         missRespValid := true.B
@@ -342,6 +360,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
           mshrFillIdx := 0.U
           mshrResp := 0.U
           mshrKilled := false.B
+          mshrResponded := false.B
           pendingValid := false.B
           when(mergePending) {
             mshrState := sMshrLocal
@@ -353,6 +372,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
           }
         }.otherwise {
           mshrValid := false.B
+          mshrResponded := false.B
           mshrState := sMshrAr
         }
       }
@@ -375,20 +395,23 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   val storeIndex = indexOf(io.store_addr)
   val storeTag = tagOf(io.store_addr)
   val storeWordIdx = wordOf(io.store_addr)
+  val refillInstallingNow = mshrCompletingNow && mshrCacheable &&
+    !mshrKilled && !killMshrNow && !commitStoreTouchesMshr &&
+    (Mux(io.mem.rresp =/= 0.U, io.mem.rresp, mshrResp) === 0.U)
   val storeHit = io.store_valid && storeCacheable && lines(storeIndex).valid &&
-    lines(storeIndex).tag === storeTag
+    lines(storeIndex).tag === storeTag && !(refillInstallingNow && storeIndex === mshrIndex)
   val store2Cacheable = cacheable(io.store2_addr)
   val store2Index = indexOf(io.store2_addr)
   val store2Tag = tagOf(io.store2_addr)
   val store2WordIdx = wordOf(io.store2_addr)
   val store2Hit = io.store2_valid && store2Cacheable && lines(store2Index).valid &&
-    lines(store2Index).tag === store2Tag
+    lines(store2Index).tag === store2Tag && !(refillInstallingNow && store2Index === mshrIndex)
   val store3Cacheable = cacheable(io.store3_addr)
   val store3Index = indexOf(io.store3_addr)
   val store3Tag = tagOf(io.store3_addr)
   val store3WordIdx = wordOf(io.store3_addr)
   val store3Hit = io.store3_valid && store3Cacheable && lines(store3Index).valid &&
-    lines(store3Index).tag === store3Tag
+    lines(store3Index).tag === store3Tag && !(refillInstallingNow && store3Index === mshrIndex)
   val store3Updated = storeWord(lines(store3Index).data(store3WordIdx),
     io.store3_addr, io.store3_data, io.store3_mask)
   val store0Base = Mux(store3Hit && store3Index === storeIndex &&
@@ -409,7 +432,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
     lines(store2Index).data(store2WordIdx) := storeWord(afterStore0,
       io.store2_addr, io.store2_data, io.store2_mask)
   }
-  when(killMshrNow) {
+  when(killMshrNow || commitStoreTouchesMshr) {
     mshrKilled := true.B
   }
 
@@ -429,7 +452,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
       cpuArFire && !cpuHit && mshrValid)
     val refillMerge = mshrCompletingNow && mshrCacheable && pendingValid &&
       pendingCacheable && (lineBase(pendingAddr) === lineBase(mshrAddr)) &&
-      !mshrKilled && !killMshrNow &&
+      !mshrKilled && !killMshrNow && !commitStoreTouchesMshr &&
       (Mux(io.mem.rresp =/= 0.U, io.mem.rresp, mshrResp) === 0.U)
     val localMerge = mshrValid && (mshrState === sMshrLocal) &&
       missRespSlotFree && !mshrKilled && !killMshrNow && pendingValid &&

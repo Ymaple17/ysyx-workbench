@@ -213,8 +213,10 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     )
     isLoad(i) := entries(i).lsu_mem_valid
 
+    val registeredStoreWait = if (OoOParams.LQ_SPECULATE_UNKNOWN_STORES) false.B
+      else hasOlderPendingStore(entries(i).rob_idx)
     val waitOlderStore = entries(i).valid && entries(i).lsu_mem_valid &&
-      !entries(i).lsu_mem_write && hasOlderPendingStore(entries(i).rob_idx)
+      !entries(i).lsu_mem_write && registeredStoreWait
     val ready = entries(i).valid && !entries(i).issued && issueEntries(i).src1_ready &&
       issueEntries(i).src2_ready && !freeByRob(i)
     canIssue(i) := ready && !waitOlderStore
@@ -277,8 +279,10 @@ class RS(n: Int = OoOParams.RS_SIZE) extends Module {
     } else {
       false.B
     }
+    val registeredStoreWait = if (OoOParams.LQ_SPECULATE_UNKNOWN_STORES) false.B
+      else hasOlderPendingStore(fresh(i).rob_idx)
     val waitOlderStore = fresh(i).lsu_mem_valid && !fresh(i).lsu_mem_write &&
-      (hasOlderPendingStore(fresh(i).rob_idx) || olderFreshStore)
+      (registeredStoreWait || olderFreshStore)
     freshCanIssue(i) := freshAccept(i) && fresh(i).src1_ready &&
       fresh(i).src2_ready && !waitOlderStore
   }

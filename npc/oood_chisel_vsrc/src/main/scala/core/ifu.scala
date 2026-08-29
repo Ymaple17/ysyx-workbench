@@ -37,11 +37,17 @@ class IFU_ICACHE_IO extends Bundle{
 
   val rvalid = Input(Bool())
   val rvalid1 = Input(Bool())
+  val rvalid2 = Input(Bool())
+  val rvalid3 = Input(Bool())
   val rready = Output(Bool())
   val rdata = Input(UInt(32.W))
   val rdata1 = Input(UInt(32.W))
+  val rdata2 = Input(UInt(32.W))
+  val rdata3 = Input(UInt(32.W))
   val rresp = Input(UInt(2.W))
   val rresp1 = Input(UInt(2.W))
+  val rresp2 = Input(UInt(2.W))
+  val rresp3 = Input(UInt(2.W))
 }
 
 class IFU_IO(xlen: Int) extends Bundle{
@@ -56,6 +62,8 @@ class IFU_IO(xlen: Int) extends Bundle{
 
   val state = Input(new State)
   val slot1_enable = Input(Bool())
+  val slot2_enable = Input(Bool())
+  val slot3_enable = Input(Bool())
   val fetch_buffer_replace_ready = Input(Bool())
 
   val bpu_update_valid = Input(Bool())
@@ -84,6 +92,12 @@ class IFU_IO(xlen: Int) extends Bundle{
   val ftq_commit1_valid = Input(Bool())
   val ftq_commit1_idx = Input(UInt(OoOParams.FTQ_PTR_W.W))
   val ftq_commit1_generation = Input(UInt(OoOParams.FTQ_GEN_W.W))
+  val ftq_commit2_valid = Input(Bool())
+  val ftq_commit2_idx = Input(UInt(OoOParams.FTQ_PTR_W.W))
+  val ftq_commit2_generation = Input(UInt(OoOParams.FTQ_GEN_W.W))
+  val ftq_commit3_valid = Input(Bool())
+  val ftq_commit3_idx = Input(UInt(OoOParams.FTQ_PTR_W.W))
+  val ftq_commit3_generation = Input(UInt(OoOParams.FTQ_GEN_W.W))
 
   val bp_recover_valid = Input(Bool())
   val bp_recover_ftq_idx = Input(UInt(OoOParams.FTQ_PTR_W.W))
@@ -130,6 +144,8 @@ class IFU(val conf: CoreConfig) extends Module{
 
   val fetchPc = io.in.bits.next_pc
   val fetchPc1 = fetchPc + 4.U
+  val fetchPc2 = fetchPc + 8.U
+  val fetchPc3 = fetchPc + 12.U
 
   io.imem.araddr := fetchPc
 
@@ -141,6 +157,10 @@ class IFU(val conf: CoreConfig) extends Module{
   bpu.io.predict_inst := io.imem.rdata
   bpu.io.predict_pc1 := fetchPc1
   bpu.io.predict_inst1 := io.imem.rdata1
+  bpu.io.predict_pc2 := fetchPc2
+  bpu.io.predict_inst2 := io.imem.rdata2
+  bpu.io.predict_pc3 := fetchPc3
+  bpu.io.predict_inst3 := io.imem.rdata3
   bpuUpdates.io.enq(0).valid := io.bpu_update_valid
   bpuUpdates.io.enq(0).bits.pc := io.bpu_update_pc
   bpuUpdates.io.enq(0).bits.target := io.bpu_update_target
@@ -170,18 +190,24 @@ class IFU(val conf: CoreConfig) extends Module{
   bpu.io.update_index := bpuUpdates.io.deq.bits.index
   bpu.io.update_is_call := bpuUpdates.io.deq.bits.isCall
   bpu.io.update_is_ret := bpuUpdates.io.deq.bits.isRet
-
   fetchBuffer.io.flush := io.is_flush
   fetchBuffer.io.replaceReady := io.fetch_buffer_replace_ready
   ftq.io.flush := io.is_flush && !io.bp_recover_valid
   ftq.io.recoverFlush := io.is_flush && io.bp_recover_valid
-  ftq.io.recoverSlot1 := io.bp_recover_pc =/= ftq.io.recover.basePc
+  ftq.io.recoverSlot := ((io.bp_recover_pc - ftq.io.recover.basePc) >> 2)(
+    log2Ceil(OoOParams.FETCH_WIDTH) - 1, 0)
   ftq.io.commit0Valid := io.ftq_commit0_valid
   ftq.io.commit0Idx := io.ftq_commit0_idx
   ftq.io.commit0Generation := io.ftq_commit0_generation
   ftq.io.commit1Valid := io.ftq_commit1_valid
   ftq.io.commit1Idx := io.ftq_commit1_idx
   ftq.io.commit1Generation := io.ftq_commit1_generation
+  ftq.io.commit2Valid := io.ftq_commit2_valid
+  ftq.io.commit2Idx := io.ftq_commit2_idx
+  ftq.io.commit2Generation := io.ftq_commit2_generation
+  ftq.io.commit3Valid := io.ftq_commit3_valid
+  ftq.io.commit3Idx := io.ftq_commit3_idx
+  ftq.io.commit3Generation := io.ftq_commit3_generation
   ftq.io.recoverIdx := io.bp_recover_ftq_idx
   ftq.io.recoverGeneration := io.bp_recover_ftq_generation
 
@@ -190,9 +216,21 @@ class IFU(val conf: CoreConfig) extends Module{
   val slot1RawUse = io.imem.rvalid1 && !slot0Taken && !slot0Fault
   val slot1CanUse = io.slot1_enable && slot1RawUse
   val slot1Taken = slot1CanUse && bpu.io.bp1_valid && bpu.io.bp1_taken
-  val seqNext = Mux(slot1CanUse, fetchPc + 8.U, fetchPc + 4.U)
+  val slot1Fault = io.imem.rresp1 =/= 0.U
+  val slot2RawUse = io.imem.rvalid2 && slot1CanUse && !slot1Taken && !slot1Fault
+  val slot2CanUse = io.slot2_enable && slot2RawUse
+  val slot2Taken = slot2CanUse && bpu.io.bp2_valid && bpu.io.bp2_taken
+  val slot2Fault = io.imem.rresp2 =/= 0.U
+  val slot3RawUse = io.imem.rvalid3 && slot2CanUse && !slot2Taken && !slot2Fault
+  val slot3CanUse = io.slot3_enable && slot3RawUse
+  val slot3Taken = slot3CanUse && bpu.io.bp3_valid && bpu.io.bp3_taken
+  val seqNext = Mux(slot3CanUse, fetchPc + 16.U,
+    Mux(slot2CanUse, fetchPc + 12.U,
+      Mux(slot1CanUse, fetchPc + 8.U, fetchPc + 4.U)))
   val predictedNext = Mux(slot0Taken, bpu.io.bp_target,
-    Mux(slot1Taken, bpu.io.bp1_target, seqNext))
+    Mux(slot1Taken, bpu.io.bp1_target,
+      Mux(slot2Taken, bpu.io.bp2_target,
+        Mux(slot3Taken, bpu.io.bp3_target, seqNext))))
 
   val fetchPacket = Wire(new IFUPacket)
   fetchPacket := 0.U.asTypeOf(new IFUPacket)
@@ -222,6 +260,32 @@ class IFU(val conf: CoreConfig) extends Module{
   fetchPacket.bits(1).ftq_idx := ftq.io.allocIdx
   fetchPacket.bits(1).ftq_generation := ftq.io.allocGeneration
 
+  fetchPacket.valid(2) := ready && io.in.valid && slot2CanUse
+  fetchPacket.bits(2).pc := fetchPc2
+  fetchPacket.bits(2).inst := io.imem.rdata2
+  fetchPacket.bits(2).state := io.state
+  fetchPacket.bits(2).state.state := slot2Fault
+  fetchPacket.bits(2).state.state_num := Mux(slot2Fault, IRQ_IAF, 0.U)
+  fetchPacket.bits(2).bp_valid := bpu.io.bp2_valid
+  fetchPacket.bits(2).bp_taken := bpu.io.bp2_valid && bpu.io.bp2_taken
+  fetchPacket.bits(2).bp_target := bpu.io.bp2_target
+  fetchPacket.bits(2).bp_index := bpu.io.bp2_index
+  fetchPacket.bits(2).ftq_idx := ftq.io.allocIdx
+  fetchPacket.bits(2).ftq_generation := ftq.io.allocGeneration
+
+  fetchPacket.valid(3) := ready && io.in.valid && slot3CanUse
+  fetchPacket.bits(3).pc := fetchPc3
+  fetchPacket.bits(3).inst := io.imem.rdata3
+  fetchPacket.bits(3).state := io.state
+  fetchPacket.bits(3).state.state := io.imem.rresp3 =/= 0.U
+  fetchPacket.bits(3).state.state_num := Mux(io.imem.rresp3 =/= 0.U, IRQ_IAF, 0.U)
+  fetchPacket.bits(3).bp_valid := bpu.io.bp3_valid
+  fetchPacket.bits(3).bp_taken := bpu.io.bp3_valid && bpu.io.bp3_taken
+  fetchPacket.bits(3).bp_target := bpu.io.bp3_target
+  fetchPacket.bits(3).bp_index := bpu.io.bp3_index
+  fetchPacket.bits(3).ftq_idx := ftq.io.allocIdx
+  fetchPacket.bits(3).ftq_generation := ftq.io.allocGeneration
+
   val captureCandidate = ready && io.in.valid && !io.is_flush
   fetchBuffer.io.in.valid := captureCandidate && ftq.io.alloc.ready
   fetchBuffer.io.in.bits := fetchPacket
@@ -230,7 +294,8 @@ class IFU(val conf: CoreConfig) extends Module{
   ftq.io.alloc.bits.validMask := fetchPacket.valid.asUInt
   ftq.io.alloc.bits.predictedNextPc := predictedNext
   ftq.io.alloc.bits.cfiSlot := Mux(slot0Taken, 0.U,
-    Mux(slot1Taken, 1.U, 2.U))
+    Mux(slot1Taken, 1.U, Mux(slot2Taken, 2.U,
+      Mux(slot3Taken, 3.U, OoOParams.FETCH_WIDTH.U))))
   ftq.io.alloc.bits.ghr := bpu.io.spec_ghr
   ftq.io.alloc.bits.pathHistory := bpu.io.spec_path_history
   ftq.io.alloc.bits.ras := bpu.io.spec_ras
@@ -289,28 +354,42 @@ class IFU(val conf: CoreConfig) extends Module{
     PM(conf, clock, EVENT_IFU_STALL_IDU, 1.U, state === s_WORK && io.imem.rvalid && !captureFire)
     PM(conf, clock, EVENT_FETCH_SLOT0_VALID, 1.U, captureFire && fetchPacket.valid(0))
     PM(conf, clock, EVENT_FETCH_SLOT1_VALID, 1.U, captureFire && fetchPacket.valid(1))
+    PM(conf, clock, EVENT_FETCH_SLOT2_VALID, 1.U, captureFire && fetchPacket.valid(2))
+    PM(conf, clock, EVENT_FETCH_SLOT3_VALID, 1.U, captureFire && fetchPacket.valid(3))
     PM(conf, clock, EVENT_FETCH_SLOT1_KILLED, 1.U,
       ready && io.in.valid && io.imem.rvalid1 && slot0Taken)
     PM(conf, clock, EVENT_BPU_TAGGED_HIT, 1.U,
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_tagged_hit) ||
-        (fetchPacket.valid(1) && bpu.io.bp1_tagged_hit)))
+        (fetchPacket.valid(1) && bpu.io.bp1_tagged_hit) ||
+        (fetchPacket.valid(2) && bpu.io.bp2_tagged_hit) ||
+        (fetchPacket.valid(3) && bpu.io.bp3_tagged_hit)))
     PM(conf, clock, EVENT_BPU_INDIRECT_HIT, 1.U,
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_indirect_hit) ||
-        (fetchPacket.valid(1) && bpu.io.bp1_indirect_hit)))
+        (fetchPacket.valid(1) && bpu.io.bp1_indirect_hit) ||
+        (fetchPacket.valid(2) && bpu.io.bp2_indirect_hit) ||
+        (fetchPacket.valid(3) && bpu.io.bp3_indirect_hit)))
     PM(conf, clock, EVENT_TAGE_USE_ALT, 1.U,
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_tage_use_alt) ||
-        (fetchPacket.valid(1) && bpu.io.bp1_tage_use_alt)))
+        (fetchPacket.valid(1) && bpu.io.bp1_tage_use_alt) ||
+        (fetchPacket.valid(2) && bpu.io.bp2_tage_use_alt) ||
+        (fetchPacket.valid(3) && bpu.io.bp3_tage_use_alt)))
     PM(conf, clock, EVENT_BIMODAL_SELECTED, 1.U,
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_bimodal_selected) ||
-        (fetchPacket.valid(1) && bpu.io.bp1_bimodal_selected)))
+        (fetchPacket.valid(1) && bpu.io.bp1_bimodal_selected) ||
+        (fetchPacket.valid(2) && bpu.io.bp2_bimodal_selected) ||
+        (fetchPacket.valid(3) && bpu.io.bp3_bimodal_selected)))
     PM(conf, clock, EVENT_TAGE_ALLOC, 1.U, bpu.io.tage_alloc)
     PM(conf, clock, EVENT_ITAGE_HIT, 1.U,
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_itage_hit) ||
-        (fetchPacket.valid(1) && bpu.io.bp1_itage_hit)))
+        (fetchPacket.valid(1) && bpu.io.bp1_itage_hit) ||
+        (fetchPacket.valid(2) && bpu.io.bp2_itage_hit) ||
+        (fetchPacket.valid(3) && bpu.io.bp3_itage_hit)))
     PM(conf, clock, EVENT_ITAGE_ALLOC, 1.U, bpu.io.itage_alloc)
     PM(conf, clock, EVENT_LOOP_PREDICT_HIT, 1.U,
       captureFire && ((fetchPacket.valid(0) && bpu.io.bp_loop_hit) ||
-        (fetchPacket.valid(1) && bpu.io.bp1_loop_hit)))
+        (fetchPacket.valid(1) && bpu.io.bp1_loop_hit) ||
+        (fetchPacket.valid(2) && bpu.io.bp2_loop_hit) ||
+        (fetchPacket.valid(3) && bpu.io.bp3_loop_hit)))
     PM(conf, clock, EVENT_FETCH_BLOCK, 1.U, captureFire)
     PM(conf, clock, EVENT_FETCH_VALID_INST, PopCount(fetchPacket.valid), captureFire)
     PM(conf, clock, EVENT_FETCH_BLOCK2, 1.U,

@@ -47,10 +47,12 @@ module LSU(
   input  [1:0]  io_dmem_rresp,
   input         io_dmem_rvalid,
   input  [3:0]  io_dmem_rid,
-  input         io_is_flush,
-                io_st_fwd_valid,
+  input         io_st_fwd_valid,
   input  [31:0] io_st_fwd_data,
   input         io_st_fwd_wait,
+                io_st_fwd_unknown_only,
+  input  [31:0] io_st_fwd_unknown_mask,
+                io_st_unresolved_mask,
   output        io_ld_query_valid,
   output [4:0]  io_ld_query_rob,
   output [31:0] io_ld_query_addr,
@@ -60,6 +62,10 @@ module LSU(
   input  [4:0]  io_commit0_rob,
   input         io_commit1_valid,
   input  [4:0]  io_commit1_rob,
+  input         io_commit2_valid,
+  input  [4:0]  io_commit2_rob,
+  input         io_commit3_valid,
+  input  [4:0]  io_commit3_rob,
   input         io_flush,
   input  [4:0]  io_flush_idx,
   input         io_flush_all,
@@ -71,7 +77,11 @@ module LSU(
   output        io_mem_violation_valid,
   output [4:0]  io_mem_violation_rob,
   output [31:0] io_mem_violation_pc,
-                io_debug_lq_head_alloc_pc,
+  output        io_load_commit_wait0,
+                io_load_commit_wait1,
+                io_load_commit_wait2,
+                io_load_commit_wait3,
+  output [31:0] io_debug_lq_head_alloc_pc,
   output [1:0]  io_debug_lq_head_remove_reason
 );
 
@@ -95,14 +105,14 @@ module LSU(
   wire        _lq_io_wb_bits_fwd_valid;
   wire        _lq_io_dmem_arvalid;
   wire        _lq_io_queryValid;
-  wire [2:0]  _lq_io_outstanding;
+  wire [3:0]  _lq_io_outstanding;
   wire        is_load =
     ~io_in_bits_signals_lsu_mem_write & io_in_bits_signals_lsu_mem_valid;
   LoadQueue lq (
     .clock                                        (clock),
     .reset                                        (reset),
     .io_alloc_ready                               (_lq_io_alloc_ready),
-    .io_alloc_valid                               (io_in_valid & is_load & ~io_is_flush),
+    .io_alloc_valid                               (io_in_valid & is_load),
     .io_alloc_bits_meta_signals_wbu_reg_write     (io_in_bits_signals_wbu_reg_write),
     .io_alloc_bits_meta_signals_wbu_reg_write_sel (io_in_bits_signals_wbu_reg_write_sel),
     .io_alloc_bits_meta_alu_result                (io_in_bits_alu_result),
@@ -152,6 +162,10 @@ module LSU(
     .io_commit0Rob                                (io_commit0_rob),
     .io_commit1Valid                              (io_commit1_valid),
     .io_commit1Rob                                (io_commit1_rob),
+    .io_commit2Valid                              (io_commit2_valid),
+    .io_commit2Rob                                (io_commit2_rob),
+    .io_commit3Valid                              (io_commit3_valid),
+    .io_commit3Rob                                (io_commit3_rob),
     .io_flush                                     (io_flush),
     .io_flushIdx                                  (io_flush_idx),
     .io_flushAll                                  (io_flush_all),
@@ -162,6 +176,9 @@ module LSU(
     .io_fwdWait                                   (io_st_fwd_wait),
     .io_fwdValid                                  (io_st_fwd_valid),
     .io_fwdData                                   (io_st_fwd_data),
+    .io_fwdUnknownOnly                            (io_st_fwd_unknown_only),
+    .io_fwdUnknownMask                            (io_st_fwd_unknown_mask),
+    .io_unresolvedStores                          (io_st_unresolved_mask),
     .io_mmioReady                                 (io_mmio_ready),
     .io_storeResolve0Valid                        (io_store_resolve0_valid),
     .io_storeResolve0Rob                          (io_store_resolve0_rob),
@@ -170,6 +187,10 @@ module LSU(
     .io_violationValid                            (io_mem_violation_valid),
     .io_violationRob                              (io_mem_violation_rob),
     .io_violationPc                               (io_mem_violation_pc),
+    .io_commitWait0                               (io_load_commit_wait0),
+    .io_commitWait1                               (io_load_commit_wait1),
+    .io_commitWait2                               (io_load_commit_wait2),
+    .io_commitWait3                               (io_load_commit_wait3),
     .io_outstanding                               (_lq_io_outstanding),
     .io_debugHeadAllocPc                          (io_debug_lq_head_alloc_pc),
     .io_debugHeadRemoveReason                     (io_debug_lq_head_remove_reason)
@@ -189,7 +210,7 @@ module LSU(
   PerfMonitor pm_2 (
     .clock    (clock),
     .event_id (32'h5),
-    .data     ({61'h0, _lq_io_outstanding}),
+    .data     ({60'h0, _lq_io_outstanding}),
     .enable   (|_lq_io_outstanding)
   );
   PerfMonitor pm_3 (
@@ -211,9 +232,8 @@ module LSU(
     .enable   (_lq_io_queryValid & ~io_st_fwd_wait & ~io_st_fwd_valid & ~io_dmem_arready)
   );
   assign io_in_ready =
-    ~io_in_valid | io_is_flush
-    | (is_load ? _lq_io_alloc_ready : ~_lq_io_wb_valid & io_out_ready);
-  assign io_out_valid = _lq_io_wb_valid | io_in_valid & ~is_load & ~io_is_flush;
+    ~io_in_valid | (is_load ? _lq_io_alloc_ready : ~_lq_io_wb_valid & io_out_ready);
+  assign io_out_valid = _lq_io_wb_valid | io_in_valid & ~is_load;
   assign io_out_bits_signals_wbu_reg_write =
     _lq_io_wb_valid
       ? _lq_io_wb_bits_signals_wbu_reg_write

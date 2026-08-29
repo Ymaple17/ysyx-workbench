@@ -77,6 +77,8 @@ void print_perf_stats(unsigned long long cycles) {
     printf("\n[Frontend Width]\n");
     printf("Fetch Slot0 Valid: %lld\n", counters[EVENT_FETCH_SLOT0_VALID]);
     printf("Fetch Slot1 Valid: %lld\n", counters[EVENT_FETCH_SLOT1_VALID]);
+    printf("Fetch Slot2 Valid: %lld\n", counters[EVENT_FETCH_SLOT2_VALID]);
+    printf("Fetch Slot3 Valid: %lld\n", counters[EVENT_FETCH_SLOT3_VALID]);
     printf("Fetch Slot1 Killed: %lld\n", counters[EVENT_FETCH_SLOT1_KILLED]);
     printf("FQ Enq2: %lld\n", counters[EVENT_FQ_ENQ2]);
     printf("FQ Space One: %lld\n", counters[EVENT_FQ_SPACE_ONE]);
@@ -159,7 +161,11 @@ void print_perf_stats(unsigned long long cycles) {
     printf("WB Age Reorders:     %lld\n", counters[EVENT_WB_AGE_REORDER]);
     printf("Commit Slot0:        %lld\n", counters[EVENT_COMMIT_SLOT0]);
     printf("Commit Slot1:        %lld\n", counters[EVENT_COMMIT_SLOT1]);
+    printf("Commit Slot2:        %lld\n", counters[EVENT_COMMIT_SLOT2]);
+    printf("Commit Slot3:        %lld\n", counters[EVENT_COMMIT_SLOT3]);
     printf("Commit2 Cycles:      %lld\n", counters[EVENT_COMMIT2]);
+    printf("Commit4 Cycles:      %lld\n", counters[EVENT_COMMIT4]);
+    printf("Quad ALU Issues:     %lld\n", counters[EVENT_QUAD_ALU_ISSUE]);
     printf("Commit Slot1 Block:  %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK]);
     printf("Commit Slot1 NotReady: %lld\n", counters[EVENT_COMMIT_SLOT1_NOT_READY]);
     printf("Commit Slot1 Block Slot0Excl: %lld\n", counters[EVENT_COMMIT_SLOT1_BLOCK_SLOT0_EXCL]);
@@ -183,6 +189,8 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Wait Flush/IRQ:      %lld\n", counters[EVENT_COMMIT_WAIT_FLUSH]);
     printf("StoreBuffer Full:    %lld\n", counters[EVENT_STORE_BUFFER_FULL]);
     printf("Dispatch Slot1:      %lld\n", counters[EVENT_DISPATCH_SLOT1]);
+    printf("Dispatch Slot2:      %lld\n", counters[EVENT_DISPATCH_SLOT2]);
+    printf("Dispatch Slot3:      %lld\n", counters[EVENT_DISPATCH_SLOT3]);
     printf("Dispatch Branch+Slot1: %lld\n", counters[EVENT_DISPATCH_BRANCH_SLOT1]);
     printf("Dispatch Slot1 Ctrl Block: %lld\n", counters[EVENT_DISPATCH_SLOT1_CTRL_BLOCK]);
     printf("Dispatch Slot1 Backend Block: %lld\n", counters[EVENT_DISPATCH_SLOT1_BACKEND_BLOCK]);

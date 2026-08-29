@@ -37,6 +37,10 @@ class LoadQueueIO(depth: Int) extends Bundle {
   val commit0Rob = Input(UInt(OoOParams.ROB_PTR_W.W))
   val commit1Valid = Input(Bool())
   val commit1Rob = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val commit2Valid = Input(Bool())
+  val commit2Rob = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val commit3Valid = Input(Bool())
+  val commit3Rob = Input(UInt(OoOParams.ROB_PTR_W.W))
   val flush = Input(Bool())
   val flushIdx = Input(UInt(OoOParams.ROB_PTR_W.W))
   val flushAll = Input(Bool())
@@ -50,6 +54,7 @@ class LoadQueueIO(depth: Int) extends Bundle {
   val fwdData = Input(UInt(32.W))
   val fwdUnknownOnly = Input(Bool())
   val fwdUnknownMask = Input(UInt(OoOParams.ROB_SIZE.W))
+  val unresolvedStores = Input(UInt(OoOParams.ROB_SIZE.W))
   val mmioReady = Input(Bool())
 
   val storeResolve0Valid = Input(Bool())
@@ -64,6 +69,10 @@ class LoadQueueIO(depth: Int) extends Bundle {
   val violationValid = Output(Bool())
   val violationRob = Output(UInt(OoOParams.ROB_PTR_W.W))
   val violationPc = Output(UInt(32.W))
+  val commitWait0 = Output(Bool())
+  val commitWait1 = Output(Bool())
+  val commitWait2 = Output(Bool())
+  val commitWait3 = Output(Bool())
   val outstanding = Output(UInt(log2Ceil(depth + 1).W))
   val full = Output(Bool())
   val staleResp = Output(Bool())
@@ -253,8 +262,32 @@ class LoadQueue(
   val directValid = directResponse || directForward
   val directIdx = Mux(directResponse, responseIdx, schedIdx)
   val directMeta = Mux(directResponse, responseMeta, forwardMeta)
+  // A zero-latency response can arrive in the same cycle as AR.  Preserve the
+  // dependency snapshot captured by that AR before the direct result retires.
+  val directBypassedStores = Mux(
+    directResponse && respMatchesCurrent && arFire && canBypassUnknown,
+    io.fwdUnknownMask,
+    entries(directIdx).bypassedStores)
 
-  io.wb.valid := (wbValid || directValid) && !io.flushAll
+  // SQ removes a store from unresolvedStores as soon as its address resolves,
+  // while the LQ violation check observes that resolve through a delayed
+  // sideband. Keep dependent loads from writing back during that one-cycle
+  // gap, including a zero-latency response accepted in the same cycle.
+  val resolvingStores =
+    Mux(io.storeResolve0Valid,
+      1.U(OoOParams.ROB_SIZE.W) << io.storeResolve0Rob,
+      0.U(OoOParams.ROB_SIZE.W)) |
+    Mux(io.storeResolve1Valid,
+      1.U(OoOParams.ROB_SIZE.W) << io.storeResolve1Rob,
+      0.U(OoOParams.ROB_SIZE.W))
+  val dependencyStores = io.unresolvedStores | resolvingStores
+  val wbSpecBlocked = wbValid &&
+    (entries(wbIdx).bypassedStores & dependencyStores).orR
+  val directSpecBlocked = directResponse &&
+    (directBypassedStores & dependencyStores).orR
+
+  io.wb.valid := (wbValid || directValid) && !io.flushAll &&
+    !wbSpecBlocked && !directSpecBlocked
   io.wb.bits := Mux(wbValid, entries(wbIdx).meta, directMeta)
 
   def violationForStore(
@@ -289,6 +322,17 @@ class LoadQueue(
   io.violationRob := entries(violationIdx).meta.rob_idx
   io.violationPc := entries(violationIdx).meta.pc
 
+  def commitWaitFor(rob: UInt): Bool =
+    entries.map { entry =>
+      entry.valid && entry.meta.rob_idx === rob &&
+        (entry.bypassedStores & (io.unresolvedStores | resolvingStores)).orR
+    }.reduce(_ || _)
+
+  io.commitWait0 := commitWaitFor(io.commit0Rob)
+  io.commitWait1 := commitWaitFor(io.commit1Rob)
+  io.commitWait2 := commitWaitFor(io.commit2Rob)
+  io.commitWait3 := commitWaitFor(io.commit3Rob)
+
   when(io.alloc.fire) {
     val duplicateAlloc = (0 until depth).map { i =>
       entries(i).valid &&
@@ -322,20 +366,25 @@ class LoadQueue(
   }
   when(io.dmem.rvalid && io.dmem.rready && respMatchesOutstanding) {
     entries(respIdx).meta := outstandingResponseMeta
-    when(!(directResponse && io.wb.ready)) {
+    when(!(directResponse && io.wb.ready && !directSpecBlocked)) {
       entries(respIdx).state := sResult
     }
   }
   when(io.dmem.rvalid && io.dmem.rready && respMatchesCurrent) {
     entries(schedIdx).meta := currentResponseMeta
-    when(!(directResponse && io.wb.ready)) {
+    when(!(directResponse && io.wb.ready && !directSpecBlocked)) {
       entries(schedIdx).state := sResult
     }
   }
   when(io.wb.fire && wbValid) {
     debugRemoveReason(entries(wbIdx).meta.rob_idx) := 1.U
     if (speculateUnknownStores) {
-      entries(wbIdx).state := sComplete
+      when(entries(wbIdx).bypassedStores.orR) {
+        entries(wbIdx).state := sComplete
+      }.otherwise {
+        entries(wbIdx).valid := false.B
+        entries(wbIdx).generation := entries(wbIdx).generation + 1.U
+      }
     } else {
       // Conservative loads never bypass an unresolved older store.  Once the
       // CDB accepts the result, the ROB owns completion and no violation state
@@ -347,10 +396,27 @@ class LoadQueue(
   when(io.wb.fire && directValid) {
     debugRemoveReason(directMeta.rob_idx) := 1.U
     if (speculateUnknownStores) {
-      entries(directIdx).state := sComplete
+      when(directBypassedStores.orR) {
+        entries(directIdx).bypassedStores := directBypassedStores
+        entries(directIdx).state := sComplete
+      }.otherwise {
+        entries(directIdx).valid := false.B
+        entries(directIdx).generation := entries(directIdx).generation + 1.U
+      }
     } else {
       entries(directIdx).valid := false.B
       entries(directIdx).generation := entries(directIdx).generation + 1.U
+    }
+  }
+
+  // Consume dependency bits after the resolve-side violation check above.
+  // The ROB index is a slot, so leaving an old bit set would make a later
+  // store reusing that slot look like the original dependency forever.
+  when(resolvingStores.orR) {
+    for (i <- 0 until depth) {
+      when(entries(i).valid && (entries(i).bypassedStores & resolvingStores).orR) {
+        entries(i).bypassedStores := entries(i).bypassedStores & ~resolvingStores
+      }
     }
   }
 
@@ -369,6 +435,44 @@ class LoadQueue(
         debugRemoveReason(io.commit1Rob) := 2.U
         entries(i).valid := false.B
         entries(i).generation := entries(i).generation + 1.U
+      }
+    }
+  }
+  when(io.commit2Valid) {
+    for (i <- 0 until depth) {
+      when(entries(i).valid && entries(i).meta.rob_idx === io.commit2Rob) {
+        debugRemoveReason(io.commit2Rob) := 2.U
+        entries(i).valid := false.B
+        entries(i).generation := entries(i).generation + 1.U
+      }
+    }
+  }
+  when(io.commit3Valid) {
+    for (i <- 0 until depth) {
+      when(entries(i).valid && entries(i).meta.rob_idx === io.commit3Rob) {
+        debugRemoveReason(io.commit3Rob) := 2.U
+        entries(i).valid := false.B
+        entries(i).generation := entries(i).generation + 1.U
+      }
+    }
+  }
+
+  if (speculateUnknownStores) {
+    // A completed speculative load only needs to stay in the LQ until every
+    // store captured in its dependency snapshot has resolved.  Keeping it
+    // until ROB commit can deadlock the queue when an older load is waiting
+    // for a free LQ slot.
+    for (i <- 0 until depth) {
+      when(entries(i).valid && entries(i).state === sComplete &&
+        entries(i).bypassedStores.orR &&
+        ((entries(i).bypassedStores & io.unresolvedStores) === 0.U) &&
+        // SQ clears unresolvedStores before this delayed resolve event. Keep
+        // the entry alive until the LQ has had a chance to detect a conflict.
+        ((entries(i).bypassedStores & resolvingStores) === 0.U)) {
+        debugRemoveReason(entries(i).meta.rob_idx) := 2.U
+        entries(i).valid := false.B
+        entries(i).generation := entries(i).generation + 1.U
+        entries(i).bypassedStores := 0.U
       }
     }
   }

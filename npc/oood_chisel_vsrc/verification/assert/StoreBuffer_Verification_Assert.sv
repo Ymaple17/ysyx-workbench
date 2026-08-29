@@ -22,7 +22,17 @@ module StoreBuffer_Verification_Assert(
               _GEN,
               _GEN_0,
   input [3:0] _GEN_1,
-  input       clock
+  input       _GEN_2,
+              writeMatches_2,
+              writeMatches_3,
+              writeMatches_0,
+              writeMatches_1,
+              writeMatches_6,
+              writeMatches_7,
+              writeMatches_4,
+              writeMatches_5,
+              _GEN_3,
+              clock
 );
 
   `ifndef SYNTHESIS
@@ -30,6 +40,20 @@ module StoreBuffer_Verification_Assert(
       if (_GEN & _GEN_0 & ~reset & _GEN_1 == 4'h0) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: a non-empty StoreBuffer must form a write burst\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & _GEN_2
+          & {1'h0,
+             {1'h0, {1'h0, writeMatches_0} + {1'h0, writeMatches_1}}
+               + {1'h0, {1'h0, writeMatches_2} + {1'h0, writeMatches_3}}}
+          + {1'h0,
+             {1'h0, {1'h0, writeMatches_4} + {1'h0, writeMatches_5}}
+               + {1'h0,
+                  {1'h0, writeMatches_6}
+                    + {1'h0, writeMatches_7}}} > {3'h0, _GEN_3}) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: same-line StoreBuffer prefix must contain at most one entry per word\n");
         if (`STOP_COND_)
           $fatal;
       end

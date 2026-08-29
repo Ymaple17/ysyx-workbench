@@ -9,6 +9,8 @@ module IFU(
   output        io_out_valid,
                 io_out_bits_valid_0,
                 io_out_bits_valid_1,
+                io_out_bits_valid_2,
+                io_out_bits_valid_3,
   output [31:0] io_out_bits_bits_0_inst,
                 io_out_bits_bits_0_pc,
   output        io_out_bits_bits_0_state_state,
@@ -29,6 +31,26 @@ module IFU(
   output [78:0] io_out_bits_bits_1_bp_index,
   output [3:0]  io_out_bits_bits_1_ftq_idx,
   output [7:0]  io_out_bits_bits_1_ftq_generation,
+  output [31:0] io_out_bits_bits_2_inst,
+                io_out_bits_bits_2_pc,
+  output        io_out_bits_bits_2_state_state,
+  output [7:0]  io_out_bits_bits_2_state_state_num,
+  output        io_out_bits_bits_2_bp_valid,
+                io_out_bits_bits_2_bp_taken,
+  output [31:0] io_out_bits_bits_2_bp_target,
+  output [78:0] io_out_bits_bits_2_bp_index,
+  output [3:0]  io_out_bits_bits_2_ftq_idx,
+  output [7:0]  io_out_bits_bits_2_ftq_generation,
+  output [31:0] io_out_bits_bits_3_inst,
+                io_out_bits_bits_3_pc,
+  output        io_out_bits_bits_3_state_state,
+  output [7:0]  io_out_bits_bits_3_state_state_num,
+  output        io_out_bits_bits_3_bp_valid,
+                io_out_bits_bits_3_bp_taken,
+  output [31:0] io_out_bits_bits_3_bp_target,
+  output [78:0] io_out_bits_bits_3_bp_index,
+  output [3:0]  io_out_bits_bits_3_ftq_idx,
+  output [7:0]  io_out_bits_bits_3_ftq_generation,
   input         io_pc_ready,
   output        io_pc_valid,
   output [31:0] io_pc_bits_next_pc,
@@ -37,14 +59,22 @@ module IFU(
   output        io_imem_arvalid,
   input         io_imem_rvalid,
                 io_imem_rvalid1,
+                io_imem_rvalid2,
+                io_imem_rvalid3,
   output        io_imem_rready,
   input  [31:0] io_imem_rdata,
                 io_imem_rdata1,
+                io_imem_rdata2,
+                io_imem_rdata3,
   input  [1:0]  io_imem_rresp,
                 io_imem_rresp1,
+                io_imem_rresp2,
+                io_imem_rresp3,
   input         io_is_flush,
   input  [31:0] io_correct_pc,
   input         io_slot1_enable,
+                io_slot2_enable,
+                io_slot3_enable,
                 io_fetch_buffer_replace_ready,
                 io_bpu_update_valid,
                 io_bpu_update_taken,
@@ -71,6 +101,12 @@ module IFU(
   input         io_ftq_commit1_valid,
   input  [3:0]  io_ftq_commit1_idx,
   input  [7:0]  io_ftq_commit1_generation,
+  input         io_ftq_commit2_valid,
+  input  [3:0]  io_ftq_commit2_idx,
+  input  [7:0]  io_ftq_commit2_generation,
+  input         io_ftq_commit3_valid,
+  input  [3:0]  io_ftq_commit3_idx,
+  input  [7:0]  io_ftq_commit3_generation,
   input         io_bp_recover_valid,
   input  [3:0]  io_bp_recover_ftq_idx,
   input  [7:0]  io_bp_recover_ftq_generation,
@@ -142,6 +178,18 @@ module IFU(
   wire        _bpu_io_bp1_indirect_hit;
   wire        _bpu_io_bp1_itage_hit;
   wire        _bpu_io_bp1_loop_hit;
+  wire        _bpu_io_bp2_valid;
+  wire        _bpu_io_bp2_taken;
+  wire [31:0] _bpu_io_bp2_target;
+  wire [78:0] _bpu_io_bp2_index;
+  wire        _bpu_io_bp2_bimodal_selected;
+  wire        _bpu_io_bp2_indirect_hit;
+  wire        _bpu_io_bp3_valid;
+  wire        _bpu_io_bp3_taken;
+  wire [31:0] _bpu_io_bp3_target;
+  wire [78:0] _bpu_io_bp3_index;
+  wire        _bpu_io_bp3_bimodal_selected;
+  wire        _bpu_io_bp3_indirect_hit;
   wire [31:0] _bpu_io_spec_ras_0;
   wire [31:0] _bpu_io_spec_ras_1;
   wire [31:0] _bpu_io_spec_ras_2;
@@ -167,15 +215,25 @@ module IFU(
   wire        _io_imem_rready_T_2 = state == 2'h1;
   wire        _io_imem_rready_T = state == 2'h2;
   wire [31:0] bpu_io_predict_pc1 = io_in_bits_next_pc + 32'h4;
+  wire [31:0] bpu_io_predict_pc2 = io_in_bits_next_pc + 32'h8;
+  wire [31:0] bpu_io_predict_pc3 = io_in_bits_next_pc + 32'hC;
+  wire [3:0]  _ftq_io_recoverSlot_T = io_bp_recover_pc[3:0] - _ftq_io_recover_basePc[3:0];
   wire        slot0Taken = _bpu_io_bp_valid & _bpu_io_bp_taken;
   wire        slot1RawUse = io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp);
   wire        slot1CanUse = io_slot1_enable & slot1RawUse;
+  wire        slot1Taken = slot1CanUse & _bpu_io_bp1_valid & _bpu_io_bp1_taken;
+  wire        slot2CanUse =
+    io_slot2_enable & io_imem_rvalid2 & slot1CanUse & ~slot1Taken & ~(|io_imem_rresp1);
+  wire        slot2Taken = slot2CanUse & _bpu_io_bp2_valid & _bpu_io_bp2_taken;
+  wire        slot3CanUse =
+    io_slot3_enable & io_imem_rvalid3 & slot2CanUse & ~slot2Taken & ~(|io_imem_rresp2);
   wire        fetchPacket_valid_0 = io_imem_rvalid & _ready_T & io_in_valid;
   wire        fetchPacket_valid_1 = fetchPacket_valid_0 & slot1CanUse;
+  wire        fetchPacket_valid_2 = fetchPacket_valid_0 & slot2CanUse;
+  wire        fetchPacket_valid_3 = fetchPacket_valid_0 & slot3CanUse;
   wire        captureCandidate = fetchPacket_valid_0 & ~io_is_flush;
   wire        fetchBuffer_io_in_valid = captureCandidate & _ftq_io_alloc_ready;
   wire        ftq_io_alloc_valid = captureCandidate & _fetchBuffer_io_in_ready;
-  wire [1:0]  bpu_io_spec_advance_mask = {fetchPacket_valid_1, fetchPacket_valid_0};
   wire        work = _fetchBuffer_io_in_ready & fetchBuffer_io_in_valid;
   wire        bpu_io_recover_valid = io_bp_recover_valid & _ftq_io_recoverValid;
   assign _ready_T = state != 2'h2;
@@ -214,6 +272,10 @@ module IFU(
     .io_predict_inst         (io_imem_rdata),
     .io_predict_pc1          (bpu_io_predict_pc1),
     .io_predict_inst1        (io_imem_rdata1),
+    .io_predict_pc2          (bpu_io_predict_pc2),
+    .io_predict_inst2        (io_imem_rdata2),
+    .io_predict_pc3          (bpu_io_predict_pc3),
+    .io_predict_inst3        (io_imem_rdata3),
     .io_bp_valid             (_bpu_io_bp_valid),
     .io_bp_taken             (_bpu_io_bp_taken),
     .io_bp_target            (_bpu_io_bp_target),
@@ -234,6 +296,18 @@ module IFU(
     .io_bp1_indirect_hit     (_bpu_io_bp1_indirect_hit),
     .io_bp1_itage_hit        (_bpu_io_bp1_itage_hit),
     .io_bp1_loop_hit         (_bpu_io_bp1_loop_hit),
+    .io_bp2_valid            (_bpu_io_bp2_valid),
+    .io_bp2_taken            (_bpu_io_bp2_taken),
+    .io_bp2_target           (_bpu_io_bp2_target),
+    .io_bp2_index            (_bpu_io_bp2_index),
+    .io_bp2_bimodal_selected (_bpu_io_bp2_bimodal_selected),
+    .io_bp2_indirect_hit     (_bpu_io_bp2_indirect_hit),
+    .io_bp3_valid            (_bpu_io_bp3_valid),
+    .io_bp3_taken            (_bpu_io_bp3_taken),
+    .io_bp3_target           (_bpu_io_bp3_target),
+    .io_bp3_index            (_bpu_io_bp3_index),
+    .io_bp3_bimodal_selected (_bpu_io_bp3_bimodal_selected),
+    .io_bp3_indirect_hit     (_bpu_io_bp3_indirect_hit),
     .io_update_pc            (_bpuUpdates_io_deq_bits_pc),
     .io_update_target        (_bpuUpdates_io_deq_bits_target),
     .io_update_valid         (_bpuUpdates_io_deq_valid),
@@ -244,7 +318,11 @@ module IFU(
     .io_update_is_call       (_bpuUpdates_io_deq_bits_isCall),
     .io_update_is_ret        (_bpuUpdates_io_deq_bits_isRet),
     .io_spec_advance_valid   (work),
-    .io_spec_advance_mask    (bpu_io_spec_advance_mask),
+    .io_spec_advance_mask
+      ({fetchPacket_valid_3,
+        fetchPacket_valid_2,
+        fetchPacket_valid_1,
+        fetchPacket_valid_0}),
     .io_recover_valid        (bpu_io_recover_valid),
     .io_recover_pc           (io_bp_recover_pc),
     .io_recover_index        (io_bp_recover_index),
@@ -334,6 +412,8 @@ module IFU(
     .io_in_valid                        (fetchBuffer_io_in_valid),
     .io_in_bits_valid_0                 (fetchPacket_valid_0),
     .io_in_bits_valid_1                 (fetchPacket_valid_1),
+    .io_in_bits_valid_2                 (fetchPacket_valid_2),
+    .io_in_bits_valid_3                 (fetchPacket_valid_3),
     .io_in_bits_bits_0_inst             (io_imem_rdata),
     .io_in_bits_bits_0_pc               (io_in_bits_next_pc),
     .io_in_bits_bits_0_state_state      (|io_imem_rresp),
@@ -354,10 +434,32 @@ module IFU(
     .io_in_bits_bits_1_bp_index         (_bpu_io_bp1_index),
     .io_in_bits_bits_1_ftq_idx          (_ftq_io_allocIdx),
     .io_in_bits_bits_1_ftq_generation   (_ftq_io_allocGeneration),
+    .io_in_bits_bits_2_inst             (io_imem_rdata2),
+    .io_in_bits_bits_2_pc               (bpu_io_predict_pc2),
+    .io_in_bits_bits_2_state_state      (|io_imem_rresp2),
+    .io_in_bits_bits_2_state_state_num  ({7'h0, |io_imem_rresp2}),
+    .io_in_bits_bits_2_bp_valid         (_bpu_io_bp2_valid),
+    .io_in_bits_bits_2_bp_taken         (_bpu_io_bp2_valid & _bpu_io_bp2_taken),
+    .io_in_bits_bits_2_bp_target        (_bpu_io_bp2_target),
+    .io_in_bits_bits_2_bp_index         (_bpu_io_bp2_index),
+    .io_in_bits_bits_2_ftq_idx          (_ftq_io_allocIdx),
+    .io_in_bits_bits_2_ftq_generation   (_ftq_io_allocGeneration),
+    .io_in_bits_bits_3_inst             (io_imem_rdata3),
+    .io_in_bits_bits_3_pc               (bpu_io_predict_pc3),
+    .io_in_bits_bits_3_state_state      (|io_imem_rresp3),
+    .io_in_bits_bits_3_state_state_num  ({7'h0, |io_imem_rresp3}),
+    .io_in_bits_bits_3_bp_valid         (_bpu_io_bp3_valid),
+    .io_in_bits_bits_3_bp_taken         (_bpu_io_bp3_valid & _bpu_io_bp3_taken),
+    .io_in_bits_bits_3_bp_target        (_bpu_io_bp3_target),
+    .io_in_bits_bits_3_bp_index         (_bpu_io_bp3_index),
+    .io_in_bits_bits_3_ftq_idx          (_ftq_io_allocIdx),
+    .io_in_bits_bits_3_ftq_generation   (_ftq_io_allocGeneration),
     .io_out_ready                       (io_out_ready),
     .io_out_valid                       (_fetchBuffer_io_out_valid),
     .io_out_bits_valid_0                (io_out_bits_valid_0),
     .io_out_bits_valid_1                (io_out_bits_valid_1),
+    .io_out_bits_valid_2                (io_out_bits_valid_2),
+    .io_out_bits_valid_3                (io_out_bits_valid_3),
     .io_out_bits_bits_0_inst            (io_out_bits_bits_0_inst),
     .io_out_bits_bits_0_pc              (io_out_bits_bits_0_pc),
     .io_out_bits_bits_0_state_state     (io_out_bits_bits_0_state_state),
@@ -378,6 +480,26 @@ module IFU(
     .io_out_bits_bits_1_bp_index        (io_out_bits_bits_1_bp_index),
     .io_out_bits_bits_1_ftq_idx         (io_out_bits_bits_1_ftq_idx),
     .io_out_bits_bits_1_ftq_generation  (io_out_bits_bits_1_ftq_generation),
+    .io_out_bits_bits_2_inst            (io_out_bits_bits_2_inst),
+    .io_out_bits_bits_2_pc              (io_out_bits_bits_2_pc),
+    .io_out_bits_bits_2_state_state     (io_out_bits_bits_2_state_state),
+    .io_out_bits_bits_2_state_state_num (io_out_bits_bits_2_state_state_num),
+    .io_out_bits_bits_2_bp_valid        (io_out_bits_bits_2_bp_valid),
+    .io_out_bits_bits_2_bp_taken        (io_out_bits_bits_2_bp_taken),
+    .io_out_bits_bits_2_bp_target       (io_out_bits_bits_2_bp_target),
+    .io_out_bits_bits_2_bp_index        (io_out_bits_bits_2_bp_index),
+    .io_out_bits_bits_2_ftq_idx         (io_out_bits_bits_2_ftq_idx),
+    .io_out_bits_bits_2_ftq_generation  (io_out_bits_bits_2_ftq_generation),
+    .io_out_bits_bits_3_inst            (io_out_bits_bits_3_inst),
+    .io_out_bits_bits_3_pc              (io_out_bits_bits_3_pc),
+    .io_out_bits_bits_3_state_state     (io_out_bits_bits_3_state_state),
+    .io_out_bits_bits_3_state_state_num (io_out_bits_bits_3_state_state_num),
+    .io_out_bits_bits_3_bp_valid        (io_out_bits_bits_3_bp_valid),
+    .io_out_bits_bits_3_bp_taken        (io_out_bits_bits_3_bp_taken),
+    .io_out_bits_bits_3_bp_target       (io_out_bits_bits_3_bp_target),
+    .io_out_bits_bits_3_bp_index        (io_out_bits_bits_3_bp_index),
+    .io_out_bits_bits_3_ftq_idx         (io_out_bits_bits_3_ftq_idx),
+    .io_out_bits_bits_3_ftq_generation  (io_out_bits_bits_3_ftq_generation),
     .io_flush                           (io_is_flush),
     .io_replaceReady                    (io_fetch_buffer_replace_ready),
     .io_full                            (_fetchBuffer_io_full)
@@ -388,7 +510,11 @@ module IFU(
     .io_alloc_ready          (_ftq_io_alloc_ready),
     .io_alloc_valid          (ftq_io_alloc_valid),
     .io_alloc_bits_basePc    (io_in_bits_next_pc),
-    .io_alloc_bits_validMask (bpu_io_spec_advance_mask),
+    .io_alloc_bits_validMask
+      ({fetchPacket_valid_3,
+        fetchPacket_valid_2,
+        fetchPacket_valid_1,
+        fetchPacket_valid_0}),
     .io_alloc_bits_ras_0     (_bpu_io_spec_ras_0),
     .io_alloc_bits_ras_1     (_bpu_io_spec_ras_1),
     .io_alloc_bits_ras_2     (_bpu_io_spec_ras_2),
@@ -415,6 +541,12 @@ module IFU(
     .io_commit1Valid         (io_ftq_commit1_valid),
     .io_commit1Idx           (io_ftq_commit1_idx),
     .io_commit1Generation    (io_ftq_commit1_generation),
+    .io_commit2Valid         (io_ftq_commit2_valid),
+    .io_commit2Idx           (io_ftq_commit2_idx),
+    .io_commit2Generation    (io_ftq_commit2_generation),
+    .io_commit3Valid         (io_ftq_commit3_valid),
+    .io_commit3Idx           (io_ftq_commit3_idx),
+    .io_commit3Generation    (io_ftq_commit3_generation),
     .io_recoverIdx           (io_bp_recover_ftq_idx),
     .io_recoverGeneration    (io_bp_recover_ftq_generation),
     .io_recoverValid         (_ftq_io_recoverValid),
@@ -438,7 +570,7 @@ module IFU(
     .io_recover_rasPtr       (_ftq_io_recover_rasPtr),
     .io_recover_rasCount     (_ftq_io_recover_rasCount),
     .io_recoverFlush         (io_is_flush & io_bp_recover_valid),
-    .io_recoverSlot1         (io_bp_recover_pc != _ftq_io_recover_basePc),
+    .io_recoverSlot          (_ftq_io_recoverSlot_T[3:2]),
     .io_flush                (io_is_flush & ~io_bp_recover_valid),
     .io_count                (_ftq_io_count),
     .io_full                 (_ftq_io_full)
@@ -475,11 +607,23 @@ module IFU(
   );
   PerfMonitor pm_5 (
     .clock    (clock),
+    .event_id (32'h80),
+    .data     (64'h1),
+    .enable   (work & fetchPacket_valid_2)
+  );
+  PerfMonitor pm_6 (
+    .clock    (clock),
+    .event_id (32'h81),
+    .data     (64'h1),
+    .enable   (work & fetchPacket_valid_3)
+  );
+  PerfMonitor pm_7 (
+    .clock    (clock),
     .event_id (32'h31),
     .data     (64'h1),
     .enable   (fetchPacket_valid_0 & io_imem_rvalid1 & slot0Taken)
   );
-  PerfMonitor pm_6 (
+  PerfMonitor pm_8 (
     .clock    (clock),
     .event_id (32'h35),
     .data     (64'h1),
@@ -488,16 +632,17 @@ module IFU(
        & (fetchPacket_valid_0 & _bpu_io_bp_tagged_hit | fetchPacket_valid_1
           & _bpu_io_bp1_tagged_hit))
   );
-  PerfMonitor pm_7 (
+  PerfMonitor pm_9 (
     .clock    (clock),
     .event_id (32'h36),
     .data     (64'h1),
     .enable
       (work
        & (fetchPacket_valid_0 & _bpu_io_bp_indirect_hit | fetchPacket_valid_1
-          & _bpu_io_bp1_indirect_hit))
+          & _bpu_io_bp1_indirect_hit | fetchPacket_valid_2 & _bpu_io_bp2_indirect_hit
+          | fetchPacket_valid_3 & _bpu_io_bp3_indirect_hit))
   );
-  PerfMonitor pm_8 (
+  PerfMonitor pm_10 (
     .clock    (clock),
     .event_id (32'h45),
     .data     (64'h1),
@@ -506,22 +651,24 @@ module IFU(
        & (fetchPacket_valid_0 & _bpu_io_bp_tage_use_alt | fetchPacket_valid_1
           & _bpu_io_bp1_tage_use_alt))
   );
-  PerfMonitor pm_9 (
+  PerfMonitor pm_11 (
     .clock    (clock),
     .event_id (32'h6F),
     .data     (64'h1),
     .enable
       (work
        & (fetchPacket_valid_0 & _bpu_io_bp_bimodal_selected | fetchPacket_valid_1
-          & _bpu_io_bp1_bimodal_selected))
+          & _bpu_io_bp1_bimodal_selected | fetchPacket_valid_2
+          & _bpu_io_bp2_bimodal_selected | fetchPacket_valid_3
+          & _bpu_io_bp3_bimodal_selected))
   );
-  PerfMonitor pm_10 (
+  PerfMonitor pm_12 (
     .clock    (clock),
     .event_id (32'h46),
     .data     (64'h1),
     .enable   (_bpu_io_tage_alloc)
   );
-  PerfMonitor pm_11 (
+  PerfMonitor pm_13 (
     .clock    (clock),
     .event_id (32'h47),
     .data     (64'h1),
@@ -530,13 +677,13 @@ module IFU(
        & (fetchPacket_valid_0 & _bpu_io_bp_itage_hit | fetchPacket_valid_1
           & _bpu_io_bp1_itage_hit))
   );
-  PerfMonitor pm_12 (
+  PerfMonitor pm_14 (
     .clock    (clock),
     .event_id (32'h48),
     .data     (64'h1),
     .enable   (_bpu_io_itage_alloc)
   );
-  PerfMonitor pm_13 (
+  PerfMonitor pm_15 (
     .clock    (clock),
     .event_id (32'h7E),
     .data     (64'h1),
@@ -545,85 +692,88 @@ module IFU(
        & (fetchPacket_valid_0 & _bpu_io_bp_loop_hit | fetchPacket_valid_1
           & _bpu_io_bp1_loop_hit))
   );
-  PerfMonitor pm_14 (
+  PerfMonitor pm_16 (
     .clock    (clock),
     .event_id (32'h57),
     .data     (64'h1),
     .enable   (work)
   );
-  PerfMonitor pm_15 (
+  PerfMonitor pm_17 (
     .clock    (clock),
     .event_id (32'h58),
-    .data     ({62'h0, {1'h0, fetchPacket_valid_0} + {1'h0, fetchPacket_valid_1}}),
+    .data
+      ({61'h0,
+        {1'h0, {1'h0, fetchPacket_valid_0} + {1'h0, fetchPacket_valid_1}}
+          + {1'h0, {1'h0, fetchPacket_valid_2} + {1'h0, fetchPacket_valid_3}}}),
     .enable   (work)
   );
-  PerfMonitor pm_16 (
+  PerfMonitor pm_18 (
     .clock    (clock),
     .event_id (32'h59),
     .data     (64'h1),
     .enable   (_GEN_0)
   );
-  PerfMonitor pm_17 (
+  PerfMonitor pm_19 (
     .clock    (clock),
     .event_id (32'h5A),
     .data     (64'h1),
     .enable   (captureCandidate & _fetchBuffer_io_full)
   );
-  PerfMonitor pm_18 (
+  PerfMonitor pm_20 (
     .clock    (clock),
     .event_id (32'h5B),
     .data     (64'h1),
     .enable   (captureCandidate & _ftq_io_full)
   );
-  PerfMonitor pm_19 (
+  PerfMonitor pm_21 (
     .clock    (clock),
     .event_id (32'h5C),
     .data     (64'h1),
     .enable   (work & ~io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp))
   );
-  PerfMonitor pm_20 (
+  PerfMonitor pm_22 (
     .clock    (clock),
     .event_id (32'h5D),
     .data     (64'h1),
     .enable   (bpu_io_recover_valid)
   );
-  PerfMonitor pm_21 (
+  PerfMonitor pm_23 (
     .clock    (clock),
     .event_id (32'h5E),
     .data     (64'h1),
     .enable   (bpu_io_recover_valid & (io_bp_recover_is_call | io_bp_recover_is_ret))
   );
-  PerfMonitor pm_22 (
+  PerfMonitor pm_24 (
     .clock    (clock),
     .event_id (32'h5F),
     .data     ({59'h0, _ftq_io_count - ftqHighWater}),
     .enable   (_GEN)
   );
-  PerfMonitor pm_23 (
+  PerfMonitor pm_25 (
     .clock    (clock),
     .event_id (32'h60),
     .data     (64'h1),
     .enable   (io_bp_recover_valid & ~_ftq_io_recoverValid)
   );
-  PerfMonitor pm_24 (
+  PerfMonitor pm_26 (
     .clock    (clock),
     .event_id (32'h78),
     .data     (64'h1),
     .enable   (_io_imem_arvalid_T & io_in_valid & ~io_is_flush & ~fetchResourcesReady)
   );
-  PerfMonitor pm_25 (
+  PerfMonitor pm_27 (
     .clock    (clock),
     .event_id (32'h79),
     .data     (64'h1),
     .enable   (_io_imem_arvalid_T & ~io_in_valid & ~io_is_flush)
   );
-  PerfMonitor pm_26 (
+  PerfMonitor pm_28 (
     .clock    (clock),
     .event_id (32'h7A),
     .data     (64'h1),
     .enable   (work & slot1RawUse & ~io_slot1_enable)
   );
-  PerfMonitor pm_27 (
+  PerfMonitor pm_29 (
     .clock    (clock),
     .event_id (32'h34),
     .data     (64'h1),
@@ -637,9 +787,17 @@ module IFU(
       ? io_correct_pc
       : slot0Taken
           ? _bpu_io_bp_target
-          : slot1CanUse & _bpu_io_bp1_valid & _bpu_io_bp1_taken
+          : slot1Taken
               ? _bpu_io_bp1_target
-              : slot1CanUse ? io_in_bits_next_pc + 32'h8 : bpu_io_predict_pc1;
+              : slot2Taken
+                  ? _bpu_io_bp2_target
+                  : slot3CanUse & _bpu_io_bp3_valid & _bpu_io_bp3_taken
+                      ? _bpu_io_bp3_target
+                      : slot3CanUse
+                          ? io_in_bits_next_pc + 32'h10
+                          : slot2CanUse
+                              ? bpu_io_predict_pc3
+                              : slot1CanUse ? bpu_io_predict_pc2 : bpu_io_predict_pc1;
   assign io_imem_araddr = io_in_bits_next_pc;
   assign io_imem_arvalid = io_imem_arvalid_0;
   assign io_imem_rready = work | _io_imem_rready_T | _io_imem_rready_T_2 & io_is_flush;

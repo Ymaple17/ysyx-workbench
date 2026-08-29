@@ -52,18 +52,28 @@ module FTQ_Verification_Assert(
               willFree_0,
               willFree_3,
               willFree_2,
-              _GEN,
-              _GEN_0,
+              prefix,
               io_commit0Valid,
               io_commit1Valid,
-              _GEN_1,
+              io_commit2Valid,
+              io_commit3Valid,
+              _GEN,
+              _GEN_0,
+  input [1:0] io_recoverSlot,
+  input       _GEN_1,
+  input [4:0] _GEN_2,
+  input [3:0] _GEN_3,
+  input [2:0] _GEN_4,
+  input       _GEN_5,
               clock
 );
 
   `ifndef SYNTHESIS
-    wire _GEN_2 = ~reset & _GEN_0;
+    wire [11:0] _GEN_6 = {7'h0, _GEN_2} << {1'h0, io_recoverSlot} + {2'h0, _GEN_1};
+    wire [3:0]  _GEN_7 = ~(_GEN_6[3:0] - {3'h0, _GEN_1});
+    wire        _GEN_8 = ~reset & _GEN_0;
     always @(posedge clock) begin
-      if (_GEN_2
+      if (_GEN_8
           & {1'h0,
              {1'h0,
               {1'h0, {1'h0, entries_0_valid} + {1'h0, entries_1_valid}}
@@ -85,7 +95,7 @@ module FTQ_Verification_Assert(
         if (`STOP_COND_)
           $fatal;
       end
-      if (_GEN_2
+      if (_GEN_8
           & ~({willFree_15,
                willFree_14,
                willFree_13,
@@ -101,15 +111,29 @@ module FTQ_Verification_Assert(
                willFree_3,
                willFree_2,
                willFree_1,
-               willFree_0} == 16'h0 | _GEN)) begin
+               willFree_0} == 16'h0 | prefix)) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: FTQ commits must free blocks in fetch order\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (_GEN_2 & ~(_GEN_1 | ~(io_commit0Valid | io_commit1Valid))) begin
+      if (_GEN_8
+          & ~(_GEN
+              | ~(io_commit0Valid | io_commit1Valid | io_commit2Valid
+                  | io_commit3Valid))) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: FTQ redirect must not race architectural commit\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (_GEN_8
+          & ~(_GEN | _GEN_5
+              | _GEN_4 >= {1'h0,
+                           {1'h0, _GEN_3[0] & _GEN_7[0]} + {1'h0, _GEN_3[1] & _GEN_7[1]}}
+              + {1'h0,
+                 {1'h0, _GEN_3[2] & _GEN_7[2]} + {1'h0, _GEN_3[3] & _GEN_7[3]}})) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: FTQ recovery cannot remove more slots than remain pending\n");
         if (`STOP_COND_)
           $fatal;
       end

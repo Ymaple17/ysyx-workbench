@@ -5,7 +5,7 @@ module FTQ(
   output        io_alloc_ready,
   input         io_alloc_valid,
   input  [31:0] io_alloc_bits_basePc,
-  input  [1:0]  io_alloc_bits_validMask,
+  input  [3:0]  io_alloc_bits_validMask,
   input  [31:0] io_alloc_bits_ras_0,
                 io_alloc_bits_ras_1,
                 io_alloc_bits_ras_2,
@@ -32,6 +32,12 @@ module FTQ(
   input         io_commit1Valid,
   input  [3:0]  io_commit1Idx,
   input  [7:0]  io_commit1Generation,
+  input         io_commit2Valid,
+  input  [3:0]  io_commit2Idx,
+  input  [7:0]  io_commit2Generation,
+  input         io_commit3Valid,
+  input  [3:0]  io_commit3Idx,
+  input  [7:0]  io_commit3Generation,
   input  [3:0]  io_recoverIdx,
   input  [7:0]  io_recoverGeneration,
   output        io_recoverValid,
@@ -55,14 +61,14 @@ module FTQ(
   output [3:0]  io_recover_rasPtr,
   output [4:0]  io_recover_rasCount,
   input         io_recoverFlush,
-                io_recoverSlot1,
-                io_flush,
+  input  [1:0]  io_recoverSlot,
+  input         io_flush,
   output [4:0]  io_count,
   output        io_full
 );
 
   reg  [31:0] entries_0_basePc;
-  reg  [1:0]  entries_0_validMask;
+  reg  [3:0]  entries_0_validMask;
   reg  [31:0] entries_0_ras_0;
   reg  [31:0] entries_0_ras_1;
   reg  [31:0] entries_0_ras_2;
@@ -83,9 +89,9 @@ module FTQ(
   reg  [4:0]  entries_0_rasCount;
   reg         entries_0_valid;
   reg  [7:0]  entries_0_generation;
-  reg  [1:0]  entries_0_pending;
+  reg  [2:0]  entries_0_pending;
   reg  [31:0] entries_1_basePc;
-  reg  [1:0]  entries_1_validMask;
+  reg  [3:0]  entries_1_validMask;
   reg  [31:0] entries_1_ras_0;
   reg  [31:0] entries_1_ras_1;
   reg  [31:0] entries_1_ras_2;
@@ -106,9 +112,9 @@ module FTQ(
   reg  [4:0]  entries_1_rasCount;
   reg         entries_1_valid;
   reg  [7:0]  entries_1_generation;
-  reg  [1:0]  entries_1_pending;
+  reg  [2:0]  entries_1_pending;
   reg  [31:0] entries_2_basePc;
-  reg  [1:0]  entries_2_validMask;
+  reg  [3:0]  entries_2_validMask;
   reg  [31:0] entries_2_ras_0;
   reg  [31:0] entries_2_ras_1;
   reg  [31:0] entries_2_ras_2;
@@ -129,9 +135,9 @@ module FTQ(
   reg  [4:0]  entries_2_rasCount;
   reg         entries_2_valid;
   reg  [7:0]  entries_2_generation;
-  reg  [1:0]  entries_2_pending;
+  reg  [2:0]  entries_2_pending;
   reg  [31:0] entries_3_basePc;
-  reg  [1:0]  entries_3_validMask;
+  reg  [3:0]  entries_3_validMask;
   reg  [31:0] entries_3_ras_0;
   reg  [31:0] entries_3_ras_1;
   reg  [31:0] entries_3_ras_2;
@@ -152,9 +158,9 @@ module FTQ(
   reg  [4:0]  entries_3_rasCount;
   reg         entries_3_valid;
   reg  [7:0]  entries_3_generation;
-  reg  [1:0]  entries_3_pending;
+  reg  [2:0]  entries_3_pending;
   reg  [31:0] entries_4_basePc;
-  reg  [1:0]  entries_4_validMask;
+  reg  [3:0]  entries_4_validMask;
   reg  [31:0] entries_4_ras_0;
   reg  [31:0] entries_4_ras_1;
   reg  [31:0] entries_4_ras_2;
@@ -175,9 +181,9 @@ module FTQ(
   reg  [4:0]  entries_4_rasCount;
   reg         entries_4_valid;
   reg  [7:0]  entries_4_generation;
-  reg  [1:0]  entries_4_pending;
+  reg  [2:0]  entries_4_pending;
   reg  [31:0] entries_5_basePc;
-  reg  [1:0]  entries_5_validMask;
+  reg  [3:0]  entries_5_validMask;
   reg  [31:0] entries_5_ras_0;
   reg  [31:0] entries_5_ras_1;
   reg  [31:0] entries_5_ras_2;
@@ -198,9 +204,9 @@ module FTQ(
   reg  [4:0]  entries_5_rasCount;
   reg         entries_5_valid;
   reg  [7:0]  entries_5_generation;
-  reg  [1:0]  entries_5_pending;
+  reg  [2:0]  entries_5_pending;
   reg  [31:0] entries_6_basePc;
-  reg  [1:0]  entries_6_validMask;
+  reg  [3:0]  entries_6_validMask;
   reg  [31:0] entries_6_ras_0;
   reg  [31:0] entries_6_ras_1;
   reg  [31:0] entries_6_ras_2;
@@ -221,9 +227,9 @@ module FTQ(
   reg  [4:0]  entries_6_rasCount;
   reg         entries_6_valid;
   reg  [7:0]  entries_6_generation;
-  reg  [1:0]  entries_6_pending;
+  reg  [2:0]  entries_6_pending;
   reg  [31:0] entries_7_basePc;
-  reg  [1:0]  entries_7_validMask;
+  reg  [3:0]  entries_7_validMask;
   reg  [31:0] entries_7_ras_0;
   reg  [31:0] entries_7_ras_1;
   reg  [31:0] entries_7_ras_2;
@@ -244,9 +250,9 @@ module FTQ(
   reg  [4:0]  entries_7_rasCount;
   reg         entries_7_valid;
   reg  [7:0]  entries_7_generation;
-  reg  [1:0]  entries_7_pending;
+  reg  [2:0]  entries_7_pending;
   reg  [31:0] entries_8_basePc;
-  reg  [1:0]  entries_8_validMask;
+  reg  [3:0]  entries_8_validMask;
   reg  [31:0] entries_8_ras_0;
   reg  [31:0] entries_8_ras_1;
   reg  [31:0] entries_8_ras_2;
@@ -267,9 +273,9 @@ module FTQ(
   reg  [4:0]  entries_8_rasCount;
   reg         entries_8_valid;
   reg  [7:0]  entries_8_generation;
-  reg  [1:0]  entries_8_pending;
+  reg  [2:0]  entries_8_pending;
   reg  [31:0] entries_9_basePc;
-  reg  [1:0]  entries_9_validMask;
+  reg  [3:0]  entries_9_validMask;
   reg  [31:0] entries_9_ras_0;
   reg  [31:0] entries_9_ras_1;
   reg  [31:0] entries_9_ras_2;
@@ -290,9 +296,9 @@ module FTQ(
   reg  [4:0]  entries_9_rasCount;
   reg         entries_9_valid;
   reg  [7:0]  entries_9_generation;
-  reg  [1:0]  entries_9_pending;
+  reg  [2:0]  entries_9_pending;
   reg  [31:0] entries_10_basePc;
-  reg  [1:0]  entries_10_validMask;
+  reg  [3:0]  entries_10_validMask;
   reg  [31:0] entries_10_ras_0;
   reg  [31:0] entries_10_ras_1;
   reg  [31:0] entries_10_ras_2;
@@ -313,9 +319,9 @@ module FTQ(
   reg  [4:0]  entries_10_rasCount;
   reg         entries_10_valid;
   reg  [7:0]  entries_10_generation;
-  reg  [1:0]  entries_10_pending;
+  reg  [2:0]  entries_10_pending;
   reg  [31:0] entries_11_basePc;
-  reg  [1:0]  entries_11_validMask;
+  reg  [3:0]  entries_11_validMask;
   reg  [31:0] entries_11_ras_0;
   reg  [31:0] entries_11_ras_1;
   reg  [31:0] entries_11_ras_2;
@@ -336,9 +342,9 @@ module FTQ(
   reg  [4:0]  entries_11_rasCount;
   reg         entries_11_valid;
   reg  [7:0]  entries_11_generation;
-  reg  [1:0]  entries_11_pending;
+  reg  [2:0]  entries_11_pending;
   reg  [31:0] entries_12_basePc;
-  reg  [1:0]  entries_12_validMask;
+  reg  [3:0]  entries_12_validMask;
   reg  [31:0] entries_12_ras_0;
   reg  [31:0] entries_12_ras_1;
   reg  [31:0] entries_12_ras_2;
@@ -359,9 +365,9 @@ module FTQ(
   reg  [4:0]  entries_12_rasCount;
   reg         entries_12_valid;
   reg  [7:0]  entries_12_generation;
-  reg  [1:0]  entries_12_pending;
+  reg  [2:0]  entries_12_pending;
   reg  [31:0] entries_13_basePc;
-  reg  [1:0]  entries_13_validMask;
+  reg  [3:0]  entries_13_validMask;
   reg  [31:0] entries_13_ras_0;
   reg  [31:0] entries_13_ras_1;
   reg  [31:0] entries_13_ras_2;
@@ -382,9 +388,9 @@ module FTQ(
   reg  [4:0]  entries_13_rasCount;
   reg         entries_13_valid;
   reg  [7:0]  entries_13_generation;
-  reg  [1:0]  entries_13_pending;
+  reg  [2:0]  entries_13_pending;
   reg  [31:0] entries_14_basePc;
-  reg  [1:0]  entries_14_validMask;
+  reg  [3:0]  entries_14_validMask;
   reg  [31:0] entries_14_ras_0;
   reg  [31:0] entries_14_ras_1;
   reg  [31:0] entries_14_ras_2;
@@ -405,9 +411,9 @@ module FTQ(
   reg  [4:0]  entries_14_rasCount;
   reg         entries_14_valid;
   reg  [7:0]  entries_14_generation;
-  reg  [1:0]  entries_14_pending;
+  reg  [2:0]  entries_14_pending;
   reg  [31:0] entries_15_basePc;
-  reg  [1:0]  entries_15_validMask;
+  reg  [3:0]  entries_15_validMask;
   reg  [31:0] entries_15_ras_0;
   reg  [31:0] entries_15_ras_1;
   reg  [31:0] entries_15_ras_2;
@@ -428,7 +434,7 @@ module FTQ(
   reg  [4:0]  entries_15_rasCount;
   reg         entries_15_valid;
   reg  [7:0]  entries_15_generation;
-  reg  [1:0]  entries_15_pending;
+  reg  [2:0]  entries_15_pending;
   reg  [7:0]  generations_0;
   reg  [7:0]  generations_1;
   reg  [7:0]  generations_2;
@@ -486,6 +492,8 @@ module FTQ(
         casez_tmp = generations_15;
     endcase
   end // always_comb
+  wire [3:0]  _recoverAge_T = io_recoverIdx - head;
+  wire [4:0]  _GEN = {1'h0, _recoverAge_T};
   reg  [31:0] casez_tmp_0;
   always_comb begin
     casez (io_recoverIdx)
@@ -523,7 +531,7 @@ module FTQ(
         casez_tmp_0 = entries_15_basePc;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_1;
+  reg  [3:0]  casez_tmp_1;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
@@ -1300,7 +1308,7 @@ module FTQ(
         casez_tmp_21 = entries_15_generation;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_22;
+  reg  [2:0]  casez_tmp_22;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
@@ -1337,149 +1345,278 @@ module FTQ(
         casez_tmp_22 = entries_15_pending;
     endcase
   end // always_comb
-  wire        io_recoverValid_0 = casez_tmp_20 & casez_tmp_21 == io_recoverGeneration;
-  wire [1:0]  commitHits_0 =
+  wire        io_recoverValid_0 =
+    casez_tmp_20 & casez_tmp_21 == io_recoverGeneration & _GEN < count;
+  wire [2:0]  commitHits_0 =
     {1'h0,
-     io_commit0Valid & entries_0_valid & io_commit0Idx == 4'h0
-       & entries_0_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_0_valid & io_commit0Idx == 4'h0
+        & entries_0_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_0_valid & io_commit1Idx == 4'h0
+            & entries_0_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_0_valid & io_commit1Idx == 4'h0
-         & entries_0_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_0_valid & io_commit2Idx == 4'h0
+          & entries_0_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_0_valid & io_commit3Idx == 4'h0
+              & entries_0_generation == io_commit3Generation}};
   wire        willFree_0 =
     entries_0_valid & (|commitHits_0) & entries_0_pending <= commitHits_0;
-  wire [1:0]  commitHits_1 =
+  wire [2:0]  commitHits_1 =
     {1'h0,
-     io_commit0Valid & entries_1_valid & io_commit0Idx == 4'h1
-       & entries_1_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_1_valid & io_commit0Idx == 4'h1
+        & entries_1_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_1_valid & io_commit1Idx == 4'h1
+            & entries_1_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_1_valid & io_commit1Idx == 4'h1
-         & entries_1_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_1_valid & io_commit2Idx == 4'h1
+          & entries_1_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_1_valid & io_commit3Idx == 4'h1
+              & entries_1_generation == io_commit3Generation}};
   wire        willFree_1 =
     entries_1_valid & (|commitHits_1) & entries_1_pending <= commitHits_1;
-  wire [1:0]  commitHits_2 =
+  wire [2:0]  commitHits_2 =
     {1'h0,
-     io_commit0Valid & entries_2_valid & io_commit0Idx == 4'h2
-       & entries_2_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_2_valid & io_commit0Idx == 4'h2
+        & entries_2_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_2_valid & io_commit1Idx == 4'h2
+            & entries_2_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_2_valid & io_commit1Idx == 4'h2
-         & entries_2_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_2_valid & io_commit2Idx == 4'h2
+          & entries_2_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_2_valid & io_commit3Idx == 4'h2
+              & entries_2_generation == io_commit3Generation}};
   wire        willFree_2 =
     entries_2_valid & (|commitHits_2) & entries_2_pending <= commitHits_2;
-  wire [1:0]  commitHits_3 =
+  wire [2:0]  commitHits_3 =
     {1'h0,
-     io_commit0Valid & entries_3_valid & io_commit0Idx == 4'h3
-       & entries_3_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_3_valid & io_commit0Idx == 4'h3
+        & entries_3_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_3_valid & io_commit1Idx == 4'h3
+            & entries_3_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_3_valid & io_commit1Idx == 4'h3
-         & entries_3_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_3_valid & io_commit2Idx == 4'h3
+          & entries_3_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_3_valid & io_commit3Idx == 4'h3
+              & entries_3_generation == io_commit3Generation}};
   wire        willFree_3 =
     entries_3_valid & (|commitHits_3) & entries_3_pending <= commitHits_3;
-  wire [1:0]  commitHits_4 =
+  wire [2:0]  commitHits_4 =
     {1'h0,
-     io_commit0Valid & entries_4_valid & io_commit0Idx == 4'h4
-       & entries_4_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_4_valid & io_commit0Idx == 4'h4
+        & entries_4_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_4_valid & io_commit1Idx == 4'h4
+            & entries_4_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_4_valid & io_commit1Idx == 4'h4
-         & entries_4_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_4_valid & io_commit2Idx == 4'h4
+          & entries_4_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_4_valid & io_commit3Idx == 4'h4
+              & entries_4_generation == io_commit3Generation}};
   wire        willFree_4 =
     entries_4_valid & (|commitHits_4) & entries_4_pending <= commitHits_4;
-  wire [1:0]  commitHits_5 =
+  wire [2:0]  commitHits_5 =
     {1'h0,
-     io_commit0Valid & entries_5_valid & io_commit0Idx == 4'h5
-       & entries_5_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_5_valid & io_commit0Idx == 4'h5
+        & entries_5_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_5_valid & io_commit1Idx == 4'h5
+            & entries_5_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_5_valid & io_commit1Idx == 4'h5
-         & entries_5_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_5_valid & io_commit2Idx == 4'h5
+          & entries_5_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_5_valid & io_commit3Idx == 4'h5
+              & entries_5_generation == io_commit3Generation}};
   wire        willFree_5 =
     entries_5_valid & (|commitHits_5) & entries_5_pending <= commitHits_5;
-  wire [1:0]  commitHits_6 =
+  wire [2:0]  commitHits_6 =
     {1'h0,
-     io_commit0Valid & entries_6_valid & io_commit0Idx == 4'h6
-       & entries_6_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_6_valid & io_commit0Idx == 4'h6
+        & entries_6_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_6_valid & io_commit1Idx == 4'h6
+            & entries_6_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_6_valid & io_commit1Idx == 4'h6
-         & entries_6_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_6_valid & io_commit2Idx == 4'h6
+          & entries_6_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_6_valid & io_commit3Idx == 4'h6
+              & entries_6_generation == io_commit3Generation}};
   wire        willFree_6 =
     entries_6_valid & (|commitHits_6) & entries_6_pending <= commitHits_6;
-  wire [1:0]  commitHits_7 =
+  wire [2:0]  commitHits_7 =
     {1'h0,
-     io_commit0Valid & entries_7_valid & io_commit0Idx == 4'h7
-       & entries_7_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_7_valid & io_commit0Idx == 4'h7
+        & entries_7_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_7_valid & io_commit1Idx == 4'h7
+            & entries_7_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_7_valid & io_commit1Idx == 4'h7
-         & entries_7_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_7_valid & io_commit2Idx == 4'h7
+          & entries_7_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_7_valid & io_commit3Idx == 4'h7
+              & entries_7_generation == io_commit3Generation}};
   wire        willFree_7 =
     entries_7_valid & (|commitHits_7) & entries_7_pending <= commitHits_7;
-  wire [1:0]  commitHits_8 =
+  wire [2:0]  commitHits_8 =
     {1'h0,
-     io_commit0Valid & entries_8_valid & io_commit0Idx == 4'h8
-       & entries_8_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_8_valid & io_commit0Idx == 4'h8
+        & entries_8_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_8_valid & io_commit1Idx == 4'h8
+            & entries_8_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_8_valid & io_commit1Idx == 4'h8
-         & entries_8_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_8_valid & io_commit2Idx == 4'h8
+          & entries_8_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_8_valid & io_commit3Idx == 4'h8
+              & entries_8_generation == io_commit3Generation}};
   wire        willFree_8 =
     entries_8_valid & (|commitHits_8) & entries_8_pending <= commitHits_8;
-  wire [1:0]  commitHits_9 =
+  wire [2:0]  commitHits_9 =
     {1'h0,
-     io_commit0Valid & entries_9_valid & io_commit0Idx == 4'h9
-       & entries_9_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_9_valid & io_commit0Idx == 4'h9
+        & entries_9_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_9_valid & io_commit1Idx == 4'h9
+            & entries_9_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_9_valid & io_commit1Idx == 4'h9
-         & entries_9_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_9_valid & io_commit2Idx == 4'h9
+          & entries_9_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_9_valid & io_commit3Idx == 4'h9
+              & entries_9_generation == io_commit3Generation}};
   wire        willFree_9 =
     entries_9_valid & (|commitHits_9) & entries_9_pending <= commitHits_9;
-  wire [1:0]  commitHits_10 =
+  wire [2:0]  commitHits_10 =
     {1'h0,
-     io_commit0Valid & entries_10_valid & io_commit0Idx == 4'hA
-       & entries_10_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_10_valid & io_commit0Idx == 4'hA
+        & entries_10_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_10_valid & io_commit1Idx == 4'hA
+            & entries_10_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_10_valid & io_commit1Idx == 4'hA
-         & entries_10_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_10_valid & io_commit2Idx == 4'hA
+          & entries_10_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_10_valid & io_commit3Idx == 4'hA
+              & entries_10_generation == io_commit3Generation}};
   wire        willFree_10 =
     entries_10_valid & (|commitHits_10) & entries_10_pending <= commitHits_10;
-  wire [1:0]  commitHits_11 =
+  wire [2:0]  commitHits_11 =
     {1'h0,
-     io_commit0Valid & entries_11_valid & io_commit0Idx == 4'hB
-       & entries_11_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_11_valid & io_commit0Idx == 4'hB
+        & entries_11_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_11_valid & io_commit1Idx == 4'hB
+            & entries_11_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_11_valid & io_commit1Idx == 4'hB
-         & entries_11_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_11_valid & io_commit2Idx == 4'hB
+          & entries_11_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_11_valid & io_commit3Idx == 4'hB
+              & entries_11_generation == io_commit3Generation}};
   wire        willFree_11 =
     entries_11_valid & (|commitHits_11) & entries_11_pending <= commitHits_11;
-  wire [1:0]  commitHits_12 =
+  wire [2:0]  commitHits_12 =
     {1'h0,
-     io_commit0Valid & entries_12_valid & io_commit0Idx == 4'hC
-       & entries_12_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_12_valid & io_commit0Idx == 4'hC
+        & entries_12_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_12_valid & io_commit1Idx == 4'hC
+            & entries_12_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_12_valid & io_commit1Idx == 4'hC
-         & entries_12_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_12_valid & io_commit2Idx == 4'hC
+          & entries_12_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_12_valid & io_commit3Idx == 4'hC
+              & entries_12_generation == io_commit3Generation}};
   wire        willFree_12 =
     entries_12_valid & (|commitHits_12) & entries_12_pending <= commitHits_12;
-  wire [1:0]  commitHits_13 =
+  wire [2:0]  commitHits_13 =
     {1'h0,
-     io_commit0Valid & entries_13_valid & io_commit0Idx == 4'hD
-       & entries_13_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_13_valid & io_commit0Idx == 4'hD
+        & entries_13_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_13_valid & io_commit1Idx == 4'hD
+            & entries_13_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_13_valid & io_commit1Idx == 4'hD
-         & entries_13_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_13_valid & io_commit2Idx == 4'hD
+          & entries_13_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_13_valid & io_commit3Idx == 4'hD
+              & entries_13_generation == io_commit3Generation}};
   wire        willFree_13 =
     entries_13_valid & (|commitHits_13) & entries_13_pending <= commitHits_13;
-  wire [1:0]  commitHits_14 =
+  wire [2:0]  commitHits_14 =
     {1'h0,
-     io_commit0Valid & entries_14_valid & io_commit0Idx == 4'hE
-       & entries_14_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_14_valid & io_commit0Idx == 4'hE
+        & entries_14_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_14_valid & io_commit1Idx == 4'hE
+            & entries_14_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_14_valid & io_commit1Idx == 4'hE
-         & entries_14_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_14_valid & io_commit2Idx == 4'hE
+          & entries_14_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_14_valid & io_commit3Idx == 4'hE
+              & entries_14_generation == io_commit3Generation}};
   wire        willFree_14 =
     entries_14_valid & (|commitHits_14) & entries_14_pending <= commitHits_14;
-  wire [1:0]  commitHits_15 =
+  wire [2:0]  commitHits_15 =
     {1'h0,
-     io_commit0Valid & entries_15_valid & (&io_commit0Idx)
-       & entries_15_generation == io_commit0Generation}
+     {1'h0,
+      io_commit0Valid & entries_15_valid & (&io_commit0Idx)
+        & entries_15_generation == io_commit0Generation}
+       + {1'h0,
+          io_commit1Valid & entries_15_valid & (&io_commit1Idx)
+            & entries_15_generation == io_commit1Generation}}
     + {1'h0,
-       io_commit1Valid & entries_15_valid & (&io_commit1Idx)
-         & entries_15_generation == io_commit1Generation};
+       {1'h0,
+        io_commit2Valid & entries_15_valid & (&io_commit2Idx)
+          & entries_15_generation == io_commit2Generation}
+         + {1'h0,
+            io_commit3Valid & entries_15_valid & (&io_commit3Idx)
+              & entries_15_generation == io_commit3Generation}};
   wire        willFree_15 =
     entries_15_valid & (|commitHits_15) & entries_15_pending <= commitHits_15;
   reg         casez_tmp_23;
@@ -1556,68 +1693,224 @@ module FTQ(
         casez_tmp_24 = willFree_15;
     endcase
   end // always_comb
-  wire        _GEN = ~io_recoverSlot1 & casez_tmp_1[1];
-  wire [1:0]  _GEN_0 = {1'h0, casez_tmp_1[0]};
-  wire [1:0]  _entries_pending_T = casez_tmp_22 - 2'h1;
-  wire [1:0]  entry_pending =
-    {1'h0, io_alloc_bits_validMask[0]} + {1'h0, io_alloc_bits_validMask[1]};
-  wire [1:0]  freeCount = {1'h0, casez_tmp_23} + {1'h0, casez_tmp_23 & casez_tmp_24};
-  wire [3:0]  _recoverAge_T = io_recoverIdx - head;
-  wire        _GEN_1 = io_flush | io_recoverFlush & ~io_recoverValid_0;
-  wire        _GEN_2 = entries_0_valid & 4'h0 - head > _recoverAge_T;
-  wire        _GEN_3 = entries_1_valid & 4'h1 - head > _recoverAge_T;
-  wire        _GEN_4 = entries_2_valid & 4'h2 - head > _recoverAge_T;
-  wire        _GEN_5 = entries_3_valid & 4'h3 - head > _recoverAge_T;
-  wire        _GEN_6 = entries_4_valid & 4'h4 - head > _recoverAge_T;
-  wire        _GEN_7 = entries_5_valid & 4'h5 - head > _recoverAge_T;
-  wire        _GEN_8 = entries_6_valid & 4'h6 - head > _recoverAge_T;
-  wire        _GEN_9 = entries_7_valid & 4'h7 - head > _recoverAge_T;
-  wire        _GEN_10 = entries_8_valid & 4'h8 - head > _recoverAge_T;
-  wire        _GEN_11 = entries_9_valid & 4'h9 - head > _recoverAge_T;
-  wire        _GEN_12 = entries_10_valid & 4'hA - head > _recoverAge_T;
-  wire        _GEN_13 = entries_11_valid & 4'hB - head > _recoverAge_T;
-  wire        _GEN_14 = entries_12_valid & 4'hC - head > _recoverAge_T;
-  wire        _GEN_15 = entries_13_valid & 4'hD - head > _recoverAge_T;
-  wire        _GEN_16 = entries_14_valid & 4'hE - head > _recoverAge_T;
-  wire        _GEN_17 = entries_15_valid & 4'hF - head > _recoverAge_T;
+  reg         casez_tmp_25;
+  always_comb begin
+    casez (head + 4'h2)
+      4'b0000:
+        casez_tmp_25 = willFree_0;
+      4'b0001:
+        casez_tmp_25 = willFree_1;
+      4'b0010:
+        casez_tmp_25 = willFree_2;
+      4'b0011:
+        casez_tmp_25 = willFree_3;
+      4'b0100:
+        casez_tmp_25 = willFree_4;
+      4'b0101:
+        casez_tmp_25 = willFree_5;
+      4'b0110:
+        casez_tmp_25 = willFree_6;
+      4'b0111:
+        casez_tmp_25 = willFree_7;
+      4'b1000:
+        casez_tmp_25 = willFree_8;
+      4'b1001:
+        casez_tmp_25 = willFree_9;
+      4'b1010:
+        casez_tmp_25 = willFree_10;
+      4'b1011:
+        casez_tmp_25 = willFree_11;
+      4'b1100:
+        casez_tmp_25 = willFree_12;
+      4'b1101:
+        casez_tmp_25 = willFree_13;
+      4'b1110:
+        casez_tmp_25 = willFree_14;
+      default:
+        casez_tmp_25 = willFree_15;
+    endcase
+  end // always_comb
+  reg         casez_tmp_26;
+  always_comb begin
+    casez (head + 4'h3)
+      4'b0000:
+        casez_tmp_26 = willFree_0;
+      4'b0001:
+        casez_tmp_26 = willFree_1;
+      4'b0010:
+        casez_tmp_26 = willFree_2;
+      4'b0011:
+        casez_tmp_26 = willFree_3;
+      4'b0100:
+        casez_tmp_26 = willFree_4;
+      4'b0101:
+        casez_tmp_26 = willFree_5;
+      4'b0110:
+        casez_tmp_26 = willFree_6;
+      4'b0111:
+        casez_tmp_26 = willFree_7;
+      4'b1000:
+        casez_tmp_26 = willFree_8;
+      4'b1001:
+        casez_tmp_26 = willFree_9;
+      4'b1010:
+        casez_tmp_26 = willFree_10;
+      4'b1011:
+        casez_tmp_26 = willFree_11;
+      4'b1100:
+        casez_tmp_26 = willFree_12;
+      4'b1101:
+        casez_tmp_26 = willFree_13;
+      4'b1110:
+        casez_tmp_26 = willFree_14;
+      default:
+        casez_tmp_26 = willFree_15;
+    endcase
+  end // always_comb
+  reg  [7:0]  casez_tmp_27;
+  always_comb begin
+    casez (io_recoverIdx)
+      4'b0000:
+        casez_tmp_27 = generations_0;
+      4'b0001:
+        casez_tmp_27 = generations_1;
+      4'b0010:
+        casez_tmp_27 = generations_2;
+      4'b0011:
+        casez_tmp_27 = generations_3;
+      4'b0100:
+        casez_tmp_27 = generations_4;
+      4'b0101:
+        casez_tmp_27 = generations_5;
+      4'b0110:
+        casez_tmp_27 = generations_6;
+      4'b0111:
+        casez_tmp_27 = generations_7;
+      4'b1000:
+        casez_tmp_27 = generations_8;
+      4'b1001:
+        casez_tmp_27 = generations_9;
+      4'b1010:
+        casez_tmp_27 = generations_10;
+      4'b1011:
+        casez_tmp_27 = generations_11;
+      4'b1100:
+        casez_tmp_27 = generations_12;
+      4'b1101:
+        casez_tmp_27 = generations_13;
+      4'b1110:
+        casez_tmp_27 = generations_14;
+      default:
+        casez_tmp_27 = generations_15;
+    endcase
+  end // always_comb
+  wire [7:0]  _generations_T = casez_tmp_27 + 8'h1;
+  wire [2:0]  entry_pending =
+    {1'h0, {1'h0, io_alloc_bits_validMask[0]} + {1'h0, io_alloc_bits_validMask[1]}}
+    + {1'h0, {1'h0, io_alloc_bits_validMask[2]} + {1'h0, io_alloc_bits_validMask[3]}};
+  wire        freeHead_1 = casez_tmp_23 & casez_tmp_24;
+  wire        freeHead_2 = freeHead_1 & casez_tmp_25;
+  wire [2:0]  freeCount =
+    {1'h0, {1'h0, casez_tmp_23} + {1'h0, freeHead_1}}
+    + {1'h0, {1'h0, freeHead_2} + {1'h0, freeHead_2 & casez_tmp_26}};
+  wire        _GEN_0 = io_flush | io_recoverFlush & ~io_recoverValid_0;
+  wire        _GEN_1 = entries_0_valid & 4'h0 - head > _recoverAge_T;
+  wire        _GEN_2 = entries_1_valid & 4'h1 - head > _recoverAge_T;
+  wire        _GEN_3 = entries_2_valid & 4'h2 - head > _recoverAge_T;
+  wire        _GEN_4 = entries_3_valid & 4'h3 - head > _recoverAge_T;
+  wire        _GEN_5 = entries_4_valid & 4'h4 - head > _recoverAge_T;
+  wire        _GEN_6 = entries_5_valid & 4'h5 - head > _recoverAge_T;
+  wire        _GEN_7 = entries_6_valid & 4'h6 - head > _recoverAge_T;
+  wire        _GEN_8 = entries_7_valid & 4'h7 - head > _recoverAge_T;
+  wire        _GEN_9 = entries_8_valid & 4'h8 - head > _recoverAge_T;
+  wire        _GEN_10 = entries_9_valid & 4'h9 - head > _recoverAge_T;
+  wire        _GEN_11 = entries_10_valid & 4'hA - head > _recoverAge_T;
+  wire        _GEN_12 = entries_11_valid & 4'hB - head > _recoverAge_T;
+  wire        _GEN_13 = entries_12_valid & 4'hC - head > _recoverAge_T;
+  wire        _GEN_14 = entries_13_valid & 4'hD - head > _recoverAge_T;
+  wire        _GEN_15 = entries_14_valid & 4'hE - head > _recoverAge_T;
+  wire        _GEN_16 = entries_15_valid & 4'hF - head > _recoverAge_T;
+  wire [11:0] _keepMask_T = 12'h1 << {1'h0, io_recoverSlot} + 3'h1;
+  wire [3:0]  _keepMask_T_1 = _keepMask_T[3:0] - 4'h1;
+  wire [3:0]  recoveredMask = casez_tmp_1 & _keepMask_T_1;
+  wire [3:0]  _removed_T = ~_keepMask_T_1;
+  wire [2:0]  _recoveredPending_T =
+    casez_tmp_22
+    - ({1'h0,
+        {1'h0, casez_tmp_1[0] & _removed_T[0]} + {1'h0, casez_tmp_1[1] & _removed_T[1]}}
+       + {1'h0,
+          {1'h0, casez_tmp_1[2] & _removed_T[2]}
+            + {1'h0, casez_tmp_1[3] & _removed_T[3]}});
+  wire        _GEN_17 = (|recoveredMask) & (|_recoveredPending_T);
+  wire        _GEN_18 = io_recoverIdx == 4'h0;
+  wire        _GEN_19 = io_recoverIdx == 4'h1;
+  wire        _GEN_20 = io_recoverIdx == 4'h2;
+  wire        _GEN_21 = io_recoverIdx == 4'h3;
+  wire        _GEN_22 = io_recoverIdx == 4'h4;
+  wire        _GEN_23 = io_recoverIdx == 4'h5;
+  wire        _GEN_24 = io_recoverIdx == 4'h6;
+  wire        _GEN_25 = io_recoverIdx == 4'h7;
+  wire        _GEN_26 = io_recoverIdx == 4'h8;
+  wire        _GEN_27 = io_recoverIdx == 4'h9;
+  wire        _GEN_28 = io_recoverIdx == 4'hA;
+  wire        _GEN_29 = io_recoverIdx == 4'hB;
+  wire        _GEN_30 = io_recoverIdx == 4'hC;
+  wire        _GEN_31 = io_recoverIdx == 4'hD;
+  wire        _GEN_32 = io_recoverIdx == 4'hE;
+  wire        _GEN_33 = _GEN_18 | _GEN_1;
+  wire        _GEN_34 = _GEN_19 | _GEN_2;
+  wire        _GEN_35 = _GEN_20 | _GEN_3;
+  wire        _GEN_36 = _GEN_21 | _GEN_4;
+  wire        _GEN_37 = _GEN_22 | _GEN_5;
+  wire        _GEN_38 = _GEN_23 | _GEN_6;
+  wire        _GEN_39 = _GEN_24 | _GEN_7;
+  wire        _GEN_40 = _GEN_25 | _GEN_8;
+  wire        _GEN_41 = _GEN_26 | _GEN_9;
+  wire        _GEN_42 = _GEN_27 | _GEN_10;
+  wire        _GEN_43 = _GEN_28 | _GEN_11;
+  wire        _GEN_44 = _GEN_29 | _GEN_12;
+  wire        _GEN_45 = _GEN_30 | _GEN_13;
+  wire        _GEN_46 = _GEN_31 | _GEN_14;
+  wire        _GEN_47 = _GEN_32 | _GEN_15;
+  wire        _GEN_48 = (&io_recoverIdx) | _GEN_16;
   wire        _count_T = io_alloc_ready_0 & io_alloc_valid;
-  wire        _GEN_18 = _count_T & tail == 4'h0;
-  wire        _GEN_19 = _GEN_1 | io_recoverFlush;
-  wire        _GEN_20 = _GEN_19 | ~_GEN_18;
-  wire        _GEN_21 = _count_T & tail == 4'h1;
-  wire        _GEN_22 = _GEN_19 | ~_GEN_21;
-  wire        _GEN_23 = _count_T & tail == 4'h2;
-  wire        _GEN_24 = _GEN_19 | ~_GEN_23;
-  wire        _GEN_25 = _count_T & tail == 4'h3;
-  wire        _GEN_26 = _GEN_19 | ~_GEN_25;
-  wire        _GEN_27 = _count_T & tail == 4'h4;
-  wire        _GEN_28 = _GEN_19 | ~_GEN_27;
-  wire        _GEN_29 = _count_T & tail == 4'h5;
-  wire        _GEN_30 = _GEN_19 | ~_GEN_29;
-  wire        _GEN_31 = _count_T & tail == 4'h6;
-  wire        _GEN_32 = _GEN_19 | ~_GEN_31;
-  wire        _GEN_33 = _count_T & tail == 4'h7;
-  wire        _GEN_34 = _GEN_19 | ~_GEN_33;
-  wire        _GEN_35 = _count_T & tail == 4'h8;
-  wire        _GEN_36 = _GEN_19 | ~_GEN_35;
-  wire        _GEN_37 = _count_T & tail == 4'h9;
-  wire        _GEN_38 = _GEN_19 | ~_GEN_37;
-  wire        _GEN_39 = _count_T & tail == 4'hA;
-  wire        _GEN_40 = _GEN_19 | ~_GEN_39;
-  wire        _GEN_41 = _count_T & tail == 4'hB;
-  wire        _GEN_42 = _GEN_19 | ~_GEN_41;
-  wire        _GEN_43 = _count_T & tail == 4'hC;
-  wire        _GEN_44 = _GEN_19 | ~_GEN_43;
-  wire        _GEN_45 = _count_T & tail == 4'hD;
-  wire        _GEN_46 = _GEN_19 | ~_GEN_45;
-  wire        _GEN_47 = _count_T & tail == 4'hE;
-  wire        _GEN_48 = _GEN_19 | ~_GEN_47;
-  wire        _GEN_49 = _count_T & (&tail);
-  wire        _GEN_50 = _GEN_19 | ~_GEN_49;
+  wire        _GEN_49 = _count_T & tail == 4'h0;
+  wire        _GEN_50 = _GEN_0 | io_recoverFlush;
+  wire        _GEN_51 = _GEN_50 | ~_GEN_49;
+  wire        _GEN_52 = _count_T & tail == 4'h1;
+  wire        _GEN_53 = _GEN_50 | ~_GEN_52;
+  wire        _GEN_54 = _count_T & tail == 4'h2;
+  wire        _GEN_55 = _GEN_50 | ~_GEN_54;
+  wire        _GEN_56 = _count_T & tail == 4'h3;
+  wire        _GEN_57 = _GEN_50 | ~_GEN_56;
+  wire        _GEN_58 = _count_T & tail == 4'h4;
+  wire        _GEN_59 = _GEN_50 | ~_GEN_58;
+  wire        _GEN_60 = _count_T & tail == 4'h5;
+  wire        _GEN_61 = _GEN_50 | ~_GEN_60;
+  wire        _GEN_62 = _count_T & tail == 4'h6;
+  wire        _GEN_63 = _GEN_50 | ~_GEN_62;
+  wire        _GEN_64 = _count_T & tail == 4'h7;
+  wire        _GEN_65 = _GEN_50 | ~_GEN_64;
+  wire        _GEN_66 = _count_T & tail == 4'h8;
+  wire        _GEN_67 = _GEN_50 | ~_GEN_66;
+  wire        _GEN_68 = _count_T & tail == 4'h9;
+  wire        _GEN_69 = _GEN_50 | ~_GEN_68;
+  wire        _GEN_70 = _count_T & tail == 4'hA;
+  wire        _GEN_71 = _GEN_50 | ~_GEN_70;
+  wire        _GEN_72 = _count_T & tail == 4'hB;
+  wire        _GEN_73 = _GEN_50 | ~_GEN_72;
+  wire        _GEN_74 = _count_T & tail == 4'hC;
+  wire        _GEN_75 = _GEN_50 | ~_GEN_74;
+  wire        _GEN_76 = _count_T & tail == 4'hD;
+  wire        _GEN_77 = _GEN_50 | ~_GEN_76;
+  wire        _GEN_78 = _count_T & tail == 4'hE;
+  wire        _GEN_79 = _GEN_50 | ~_GEN_78;
+  wire        _GEN_80 = _count_T & (&tail);
+  wire        _GEN_81 = _GEN_50 | ~_GEN_80;
   always @(posedge clock) begin
     if (reset) begin
       entries_0_basePc <= 32'h0;
-      entries_0_validMask <= 2'h0;
+      entries_0_validMask <= 4'h0;
       entries_0_ras_0 <= 32'h0;
       entries_0_ras_1 <= 32'h0;
       entries_0_ras_2 <= 32'h0;
@@ -1638,9 +1931,9 @@ module FTQ(
       entries_0_rasCount <= 5'h0;
       entries_0_valid <= 1'h0;
       entries_0_generation <= 8'h0;
-      entries_0_pending <= 2'h0;
+      entries_0_pending <= 3'h0;
       entries_1_basePc <= 32'h0;
-      entries_1_validMask <= 2'h0;
+      entries_1_validMask <= 4'h0;
       entries_1_ras_0 <= 32'h0;
       entries_1_ras_1 <= 32'h0;
       entries_1_ras_2 <= 32'h0;
@@ -1661,9 +1954,9 @@ module FTQ(
       entries_1_rasCount <= 5'h0;
       entries_1_valid <= 1'h0;
       entries_1_generation <= 8'h0;
-      entries_1_pending <= 2'h0;
+      entries_1_pending <= 3'h0;
       entries_2_basePc <= 32'h0;
-      entries_2_validMask <= 2'h0;
+      entries_2_validMask <= 4'h0;
       entries_2_ras_0 <= 32'h0;
       entries_2_ras_1 <= 32'h0;
       entries_2_ras_2 <= 32'h0;
@@ -1684,9 +1977,9 @@ module FTQ(
       entries_2_rasCount <= 5'h0;
       entries_2_valid <= 1'h0;
       entries_2_generation <= 8'h0;
-      entries_2_pending <= 2'h0;
+      entries_2_pending <= 3'h0;
       entries_3_basePc <= 32'h0;
-      entries_3_validMask <= 2'h0;
+      entries_3_validMask <= 4'h0;
       entries_3_ras_0 <= 32'h0;
       entries_3_ras_1 <= 32'h0;
       entries_3_ras_2 <= 32'h0;
@@ -1707,9 +2000,9 @@ module FTQ(
       entries_3_rasCount <= 5'h0;
       entries_3_valid <= 1'h0;
       entries_3_generation <= 8'h0;
-      entries_3_pending <= 2'h0;
+      entries_3_pending <= 3'h0;
       entries_4_basePc <= 32'h0;
-      entries_4_validMask <= 2'h0;
+      entries_4_validMask <= 4'h0;
       entries_4_ras_0 <= 32'h0;
       entries_4_ras_1 <= 32'h0;
       entries_4_ras_2 <= 32'h0;
@@ -1730,9 +2023,9 @@ module FTQ(
       entries_4_rasCount <= 5'h0;
       entries_4_valid <= 1'h0;
       entries_4_generation <= 8'h0;
-      entries_4_pending <= 2'h0;
+      entries_4_pending <= 3'h0;
       entries_5_basePc <= 32'h0;
-      entries_5_validMask <= 2'h0;
+      entries_5_validMask <= 4'h0;
       entries_5_ras_0 <= 32'h0;
       entries_5_ras_1 <= 32'h0;
       entries_5_ras_2 <= 32'h0;
@@ -1753,9 +2046,9 @@ module FTQ(
       entries_5_rasCount <= 5'h0;
       entries_5_valid <= 1'h0;
       entries_5_generation <= 8'h0;
-      entries_5_pending <= 2'h0;
+      entries_5_pending <= 3'h0;
       entries_6_basePc <= 32'h0;
-      entries_6_validMask <= 2'h0;
+      entries_6_validMask <= 4'h0;
       entries_6_ras_0 <= 32'h0;
       entries_6_ras_1 <= 32'h0;
       entries_6_ras_2 <= 32'h0;
@@ -1776,9 +2069,9 @@ module FTQ(
       entries_6_rasCount <= 5'h0;
       entries_6_valid <= 1'h0;
       entries_6_generation <= 8'h0;
-      entries_6_pending <= 2'h0;
+      entries_6_pending <= 3'h0;
       entries_7_basePc <= 32'h0;
-      entries_7_validMask <= 2'h0;
+      entries_7_validMask <= 4'h0;
       entries_7_ras_0 <= 32'h0;
       entries_7_ras_1 <= 32'h0;
       entries_7_ras_2 <= 32'h0;
@@ -1799,9 +2092,9 @@ module FTQ(
       entries_7_rasCount <= 5'h0;
       entries_7_valid <= 1'h0;
       entries_7_generation <= 8'h0;
-      entries_7_pending <= 2'h0;
+      entries_7_pending <= 3'h0;
       entries_8_basePc <= 32'h0;
-      entries_8_validMask <= 2'h0;
+      entries_8_validMask <= 4'h0;
       entries_8_ras_0 <= 32'h0;
       entries_8_ras_1 <= 32'h0;
       entries_8_ras_2 <= 32'h0;
@@ -1822,9 +2115,9 @@ module FTQ(
       entries_8_rasCount <= 5'h0;
       entries_8_valid <= 1'h0;
       entries_8_generation <= 8'h0;
-      entries_8_pending <= 2'h0;
+      entries_8_pending <= 3'h0;
       entries_9_basePc <= 32'h0;
-      entries_9_validMask <= 2'h0;
+      entries_9_validMask <= 4'h0;
       entries_9_ras_0 <= 32'h0;
       entries_9_ras_1 <= 32'h0;
       entries_9_ras_2 <= 32'h0;
@@ -1845,9 +2138,9 @@ module FTQ(
       entries_9_rasCount <= 5'h0;
       entries_9_valid <= 1'h0;
       entries_9_generation <= 8'h0;
-      entries_9_pending <= 2'h0;
+      entries_9_pending <= 3'h0;
       entries_10_basePc <= 32'h0;
-      entries_10_validMask <= 2'h0;
+      entries_10_validMask <= 4'h0;
       entries_10_ras_0 <= 32'h0;
       entries_10_ras_1 <= 32'h0;
       entries_10_ras_2 <= 32'h0;
@@ -1868,9 +2161,9 @@ module FTQ(
       entries_10_rasCount <= 5'h0;
       entries_10_valid <= 1'h0;
       entries_10_generation <= 8'h0;
-      entries_10_pending <= 2'h0;
+      entries_10_pending <= 3'h0;
       entries_11_basePc <= 32'h0;
-      entries_11_validMask <= 2'h0;
+      entries_11_validMask <= 4'h0;
       entries_11_ras_0 <= 32'h0;
       entries_11_ras_1 <= 32'h0;
       entries_11_ras_2 <= 32'h0;
@@ -1891,9 +2184,9 @@ module FTQ(
       entries_11_rasCount <= 5'h0;
       entries_11_valid <= 1'h0;
       entries_11_generation <= 8'h0;
-      entries_11_pending <= 2'h0;
+      entries_11_pending <= 3'h0;
       entries_12_basePc <= 32'h0;
-      entries_12_validMask <= 2'h0;
+      entries_12_validMask <= 4'h0;
       entries_12_ras_0 <= 32'h0;
       entries_12_ras_1 <= 32'h0;
       entries_12_ras_2 <= 32'h0;
@@ -1914,9 +2207,9 @@ module FTQ(
       entries_12_rasCount <= 5'h0;
       entries_12_valid <= 1'h0;
       entries_12_generation <= 8'h0;
-      entries_12_pending <= 2'h0;
+      entries_12_pending <= 3'h0;
       entries_13_basePc <= 32'h0;
-      entries_13_validMask <= 2'h0;
+      entries_13_validMask <= 4'h0;
       entries_13_ras_0 <= 32'h0;
       entries_13_ras_1 <= 32'h0;
       entries_13_ras_2 <= 32'h0;
@@ -1937,9 +2230,9 @@ module FTQ(
       entries_13_rasCount <= 5'h0;
       entries_13_valid <= 1'h0;
       entries_13_generation <= 8'h0;
-      entries_13_pending <= 2'h0;
+      entries_13_pending <= 3'h0;
       entries_14_basePc <= 32'h0;
-      entries_14_validMask <= 2'h0;
+      entries_14_validMask <= 4'h0;
       entries_14_ras_0 <= 32'h0;
       entries_14_ras_1 <= 32'h0;
       entries_14_ras_2 <= 32'h0;
@@ -1960,9 +2253,9 @@ module FTQ(
       entries_14_rasCount <= 5'h0;
       entries_14_valid <= 1'h0;
       entries_14_generation <= 8'h0;
-      entries_14_pending <= 2'h0;
+      entries_14_pending <= 3'h0;
       entries_15_basePc <= 32'h0;
-      entries_15_validMask <= 2'h0;
+      entries_15_validMask <= 4'h0;
       entries_15_ras_0 <= 32'h0;
       entries_15_ras_1 <= 32'h0;
       entries_15_ras_2 <= 32'h0;
@@ -1983,7 +2276,7 @@ module FTQ(
       entries_15_rasCount <= 5'h0;
       entries_15_valid <= 1'h0;
       entries_15_generation <= 8'h0;
-      entries_15_pending <= 2'h0;
+      entries_15_pending <= 3'h0;
       generations_0 <= 8'h0;
       generations_1 <= 8'h0;
       generations_2 <= 8'h0;
@@ -2005,11 +2298,11 @@ module FTQ(
       count <= 5'h0;
     end
     else begin
-      if (_GEN_20) begin
+      if (_GEN_51) begin
       end
       else
         entries_0_basePc <= io_alloc_bits_basePc;
-      if (_GEN_1) begin
+      if (_GEN_0) begin
         generations_0 <= generations_0 + 8'h1;
         generations_1 <= generations_1 + 8'h1;
         generations_2 <= generations_2 + 8'h1;
@@ -2031,233 +2324,333 @@ module FTQ(
       end
       else begin
         if (io_recoverFlush) begin
-          if (_GEN & io_recoverIdx == 4'h0) begin
-            entries_0_validMask <= _GEN_0;
-            entries_0_pending <= _entries_pending_T;
+          if (_GEN_17 & _GEN_18)
+            entries_0_validMask <= recoveredMask;
+          if (_GEN_17) begin
+            if (_GEN_18)
+              entries_0_pending <= _recoveredPending_T;
+            else if (_GEN_1)
+              entries_0_pending <= 3'h0;
+            if (_GEN_19)
+              entries_1_pending <= _recoveredPending_T;
+            else if (_GEN_2)
+              entries_1_pending <= 3'h0;
+            if (_GEN_20)
+              entries_2_pending <= _recoveredPending_T;
+            else if (_GEN_3)
+              entries_2_pending <= 3'h0;
+            if (_GEN_21)
+              entries_3_pending <= _recoveredPending_T;
+            else if (_GEN_4)
+              entries_3_pending <= 3'h0;
+            if (_GEN_22)
+              entries_4_pending <= _recoveredPending_T;
+            else if (_GEN_5)
+              entries_4_pending <= 3'h0;
+            if (_GEN_23)
+              entries_5_pending <= _recoveredPending_T;
+            else if (_GEN_6)
+              entries_5_pending <= 3'h0;
+            if (_GEN_24)
+              entries_6_pending <= _recoveredPending_T;
+            else if (_GEN_7)
+              entries_6_pending <= 3'h0;
+            if (_GEN_25)
+              entries_7_pending <= _recoveredPending_T;
+            else if (_GEN_8)
+              entries_7_pending <= 3'h0;
+            if (_GEN_26)
+              entries_8_pending <= _recoveredPending_T;
+            else if (_GEN_9)
+              entries_8_pending <= 3'h0;
+            if (_GEN_27)
+              entries_9_pending <= _recoveredPending_T;
+            else if (_GEN_10)
+              entries_9_pending <= 3'h0;
+            if (_GEN_28)
+              entries_10_pending <= _recoveredPending_T;
+            else if (_GEN_11)
+              entries_10_pending <= 3'h0;
+            if (_GEN_29)
+              entries_11_pending <= _recoveredPending_T;
+            else if (_GEN_12)
+              entries_11_pending <= 3'h0;
+            if (_GEN_30)
+              entries_12_pending <= _recoveredPending_T;
+            else if (_GEN_13)
+              entries_12_pending <= 3'h0;
+            if (_GEN_31)
+              entries_13_pending <= _recoveredPending_T;
+            else if (_GEN_14)
+              entries_13_pending <= 3'h0;
+            if (_GEN_32)
+              entries_14_pending <= _recoveredPending_T;
+            else if (_GEN_15)
+              entries_14_pending <= 3'h0;
+            if (&io_recoverIdx)
+              entries_15_pending <= _recoveredPending_T;
+            else if (_GEN_16)
+              entries_15_pending <= 3'h0;
           end
-          else if (_GEN_2)
-            entries_0_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h1) begin
-            entries_1_validMask <= _GEN_0;
-            entries_1_pending <= _entries_pending_T;
+          else begin
+            if (_GEN_33)
+              entries_0_pending <= 3'h0;
+            if (_GEN_34)
+              entries_1_pending <= 3'h0;
+            if (_GEN_35)
+              entries_2_pending <= 3'h0;
+            if (_GEN_36)
+              entries_3_pending <= 3'h0;
+            if (_GEN_37)
+              entries_4_pending <= 3'h0;
+            if (_GEN_38)
+              entries_5_pending <= 3'h0;
+            if (_GEN_39)
+              entries_6_pending <= 3'h0;
+            if (_GEN_40)
+              entries_7_pending <= 3'h0;
+            if (_GEN_41)
+              entries_8_pending <= 3'h0;
+            if (_GEN_42)
+              entries_9_pending <= 3'h0;
+            if (_GEN_43)
+              entries_10_pending <= 3'h0;
+            if (_GEN_44)
+              entries_11_pending <= 3'h0;
+            if (_GEN_45)
+              entries_12_pending <= 3'h0;
+            if (_GEN_46)
+              entries_13_pending <= 3'h0;
+            if (_GEN_47)
+              entries_14_pending <= 3'h0;
+            if (_GEN_48)
+              entries_15_pending <= 3'h0;
           end
-          else if (_GEN_3)
-            entries_1_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h2) begin
-            entries_2_validMask <= _GEN_0;
-            entries_2_pending <= _entries_pending_T;
+          if (_GEN_17 & _GEN_19)
+            entries_1_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_20)
+            entries_2_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_21)
+            entries_3_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_22)
+            entries_4_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_23)
+            entries_5_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_24)
+            entries_6_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_25)
+            entries_7_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_26)
+            entries_8_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_27)
+            entries_9_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_28)
+            entries_10_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_29)
+            entries_11_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_30)
+            entries_12_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_31)
+            entries_13_validMask <= recoveredMask;
+          if (_GEN_17 & _GEN_32)
+            entries_14_validMask <= recoveredMask;
+          if (_GEN_17 & (&io_recoverIdx))
+            entries_15_validMask <= recoveredMask;
+          if (_GEN_17 | ~_GEN_18) begin
+            if (_GEN_1)
+              generations_0 <= generations_0 + 8'h1;
           end
-          else if (_GEN_4)
-            entries_2_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h3) begin
-            entries_3_validMask <= _GEN_0;
-            entries_3_pending <= _entries_pending_T;
+          else
+            generations_0 <= _generations_T;
+          if (_GEN_17 | ~_GEN_19) begin
+            if (_GEN_2)
+              generations_1 <= generations_1 + 8'h1;
           end
-          else if (_GEN_5)
-            entries_3_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h4) begin
-            entries_4_validMask <= _GEN_0;
-            entries_4_pending <= _entries_pending_T;
+          else
+            generations_1 <= _generations_T;
+          if (_GEN_17 | ~_GEN_20) begin
+            if (_GEN_3)
+              generations_2 <= generations_2 + 8'h1;
           end
-          else if (_GEN_6)
-            entries_4_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h5) begin
-            entries_5_validMask <= _GEN_0;
-            entries_5_pending <= _entries_pending_T;
+          else
+            generations_2 <= _generations_T;
+          if (_GEN_17 | ~_GEN_21) begin
+            if (_GEN_4)
+              generations_3 <= generations_3 + 8'h1;
           end
-          else if (_GEN_7)
-            entries_5_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h6) begin
-            entries_6_validMask <= _GEN_0;
-            entries_6_pending <= _entries_pending_T;
+          else
+            generations_3 <= _generations_T;
+          if (_GEN_17 | ~_GEN_22) begin
+            if (_GEN_5)
+              generations_4 <= generations_4 + 8'h1;
           end
-          else if (_GEN_8)
-            entries_6_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h7) begin
-            entries_7_validMask <= _GEN_0;
-            entries_7_pending <= _entries_pending_T;
+          else
+            generations_4 <= _generations_T;
+          if (_GEN_17 | ~_GEN_23) begin
+            if (_GEN_6)
+              generations_5 <= generations_5 + 8'h1;
           end
-          else if (_GEN_9)
-            entries_7_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h8) begin
-            entries_8_validMask <= _GEN_0;
-            entries_8_pending <= _entries_pending_T;
+          else
+            generations_5 <= _generations_T;
+          if (_GEN_17 | ~_GEN_24) begin
+            if (_GEN_7)
+              generations_6 <= generations_6 + 8'h1;
           end
-          else if (_GEN_10)
-            entries_8_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'h9) begin
-            entries_9_validMask <= _GEN_0;
-            entries_9_pending <= _entries_pending_T;
+          else
+            generations_6 <= _generations_T;
+          if (_GEN_17 | ~_GEN_25) begin
+            if (_GEN_8)
+              generations_7 <= generations_7 + 8'h1;
           end
-          else if (_GEN_11)
-            entries_9_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'hA) begin
-            entries_10_validMask <= _GEN_0;
-            entries_10_pending <= _entries_pending_T;
+          else
+            generations_7 <= _generations_T;
+          if (_GEN_17 | ~_GEN_26) begin
+            if (_GEN_9)
+              generations_8 <= generations_8 + 8'h1;
           end
-          else if (_GEN_12)
-            entries_10_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'hB) begin
-            entries_11_validMask <= _GEN_0;
-            entries_11_pending <= _entries_pending_T;
+          else
+            generations_8 <= _generations_T;
+          if (_GEN_17 | ~_GEN_27) begin
+            if (_GEN_10)
+              generations_9 <= generations_9 + 8'h1;
           end
-          else if (_GEN_13)
-            entries_11_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'hC) begin
-            entries_12_validMask <= _GEN_0;
-            entries_12_pending <= _entries_pending_T;
+          else
+            generations_9 <= _generations_T;
+          if (_GEN_17 | ~_GEN_28) begin
+            if (_GEN_11)
+              generations_10 <= generations_10 + 8'h1;
           end
-          else if (_GEN_14)
-            entries_12_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'hD) begin
-            entries_13_validMask <= _GEN_0;
-            entries_13_pending <= _entries_pending_T;
+          else
+            generations_10 <= _generations_T;
+          if (_GEN_17 | ~_GEN_29) begin
+            if (_GEN_12)
+              generations_11 <= generations_11 + 8'h1;
           end
-          else if (_GEN_15)
-            entries_13_pending <= 2'h0;
-          if (_GEN & io_recoverIdx == 4'hE) begin
-            entries_14_validMask <= _GEN_0;
-            entries_14_pending <= _entries_pending_T;
+          else
+            generations_11 <= _generations_T;
+          if (_GEN_17 | ~_GEN_30) begin
+            if (_GEN_13)
+              generations_12 <= generations_12 + 8'h1;
           end
-          else if (_GEN_16)
-            entries_14_pending <= 2'h0;
-          if (_GEN & (&io_recoverIdx)) begin
-            entries_15_validMask <= _GEN_0;
-            entries_15_pending <= _entries_pending_T;
+          else
+            generations_12 <= _generations_T;
+          if (_GEN_17 | ~_GEN_31) begin
+            if (_GEN_14)
+              generations_13 <= generations_13 + 8'h1;
           end
-          else if (_GEN_17)
-            entries_15_pending <= 2'h0;
-          if (_GEN_2)
-            generations_0 <= generations_0 + 8'h1;
-          if (_GEN_3)
-            generations_1 <= generations_1 + 8'h1;
-          if (_GEN_4)
-            generations_2 <= generations_2 + 8'h1;
-          if (_GEN_5)
-            generations_3 <= generations_3 + 8'h1;
-          if (_GEN_6)
-            generations_4 <= generations_4 + 8'h1;
-          if (_GEN_7)
-            generations_5 <= generations_5 + 8'h1;
-          if (_GEN_8)
-            generations_6 <= generations_6 + 8'h1;
-          if (_GEN_9)
-            generations_7 <= generations_7 + 8'h1;
-          if (_GEN_10)
-            generations_8 <= generations_8 + 8'h1;
-          if (_GEN_11)
-            generations_9 <= generations_9 + 8'h1;
-          if (_GEN_12)
-            generations_10 <= generations_10 + 8'h1;
-          if (_GEN_13)
-            generations_11 <= generations_11 + 8'h1;
-          if (_GEN_14)
-            generations_12 <= generations_12 + 8'h1;
-          if (_GEN_15)
-            generations_13 <= generations_13 + 8'h1;
-          if (_GEN_16)
-            generations_14 <= generations_14 + 8'h1;
-          if (_GEN_17)
-            generations_15 <= generations_15 + 8'h1;
-          tail <= io_recoverIdx + 4'h1;
+          else
+            generations_13 <= _generations_T;
+          if (_GEN_17 | ~_GEN_32) begin
+            if (_GEN_15)
+              generations_14 <= generations_14 + 8'h1;
+          end
+          else
+            generations_14 <= _generations_T;
+          if (_GEN_17 | ~(&io_recoverIdx)) begin
+            if (_GEN_16)
+              generations_15 <= generations_15 + 8'h1;
+          end
+          else
+            generations_15 <= _generations_T;
+          tail <= _GEN_17 ? io_recoverIdx + 4'h1 : io_recoverIdx;
         end
         else begin
-          if (_GEN_18) begin
+          if (_GEN_49) begin
             entries_0_validMask <= io_alloc_bits_validMask;
             entries_0_pending <= entry_pending;
           end
           else if (|commitHits_0)
-            entries_0_pending <= willFree_0 ? 2'h0 : entries_0_pending - commitHits_0;
-          if (_GEN_21) begin
+            entries_0_pending <= willFree_0 ? 3'h0 : entries_0_pending - commitHits_0;
+          if (_GEN_52) begin
             entries_1_validMask <= io_alloc_bits_validMask;
             entries_1_pending <= entry_pending;
           end
           else if (|commitHits_1)
-            entries_1_pending <= willFree_1 ? 2'h0 : entries_1_pending - commitHits_1;
-          if (_GEN_23) begin
+            entries_1_pending <= willFree_1 ? 3'h0 : entries_1_pending - commitHits_1;
+          if (_GEN_54) begin
             entries_2_validMask <= io_alloc_bits_validMask;
             entries_2_pending <= entry_pending;
           end
           else if (|commitHits_2)
-            entries_2_pending <= willFree_2 ? 2'h0 : entries_2_pending - commitHits_2;
-          if (_GEN_25) begin
+            entries_2_pending <= willFree_2 ? 3'h0 : entries_2_pending - commitHits_2;
+          if (_GEN_56) begin
             entries_3_validMask <= io_alloc_bits_validMask;
             entries_3_pending <= entry_pending;
           end
           else if (|commitHits_3)
-            entries_3_pending <= willFree_3 ? 2'h0 : entries_3_pending - commitHits_3;
-          if (_GEN_27) begin
+            entries_3_pending <= willFree_3 ? 3'h0 : entries_3_pending - commitHits_3;
+          if (_GEN_58) begin
             entries_4_validMask <= io_alloc_bits_validMask;
             entries_4_pending <= entry_pending;
           end
           else if (|commitHits_4)
-            entries_4_pending <= willFree_4 ? 2'h0 : entries_4_pending - commitHits_4;
-          if (_GEN_29) begin
+            entries_4_pending <= willFree_4 ? 3'h0 : entries_4_pending - commitHits_4;
+          if (_GEN_60) begin
             entries_5_validMask <= io_alloc_bits_validMask;
             entries_5_pending <= entry_pending;
           end
           else if (|commitHits_5)
-            entries_5_pending <= willFree_5 ? 2'h0 : entries_5_pending - commitHits_5;
-          if (_GEN_31) begin
+            entries_5_pending <= willFree_5 ? 3'h0 : entries_5_pending - commitHits_5;
+          if (_GEN_62) begin
             entries_6_validMask <= io_alloc_bits_validMask;
             entries_6_pending <= entry_pending;
           end
           else if (|commitHits_6)
-            entries_6_pending <= willFree_6 ? 2'h0 : entries_6_pending - commitHits_6;
-          if (_GEN_33) begin
+            entries_6_pending <= willFree_6 ? 3'h0 : entries_6_pending - commitHits_6;
+          if (_GEN_64) begin
             entries_7_validMask <= io_alloc_bits_validMask;
             entries_7_pending <= entry_pending;
           end
           else if (|commitHits_7)
-            entries_7_pending <= willFree_7 ? 2'h0 : entries_7_pending - commitHits_7;
-          if (_GEN_35) begin
+            entries_7_pending <= willFree_7 ? 3'h0 : entries_7_pending - commitHits_7;
+          if (_GEN_66) begin
             entries_8_validMask <= io_alloc_bits_validMask;
             entries_8_pending <= entry_pending;
           end
           else if (|commitHits_8)
-            entries_8_pending <= willFree_8 ? 2'h0 : entries_8_pending - commitHits_8;
-          if (_GEN_37) begin
+            entries_8_pending <= willFree_8 ? 3'h0 : entries_8_pending - commitHits_8;
+          if (_GEN_68) begin
             entries_9_validMask <= io_alloc_bits_validMask;
             entries_9_pending <= entry_pending;
           end
           else if (|commitHits_9)
-            entries_9_pending <= willFree_9 ? 2'h0 : entries_9_pending - commitHits_9;
-          if (_GEN_39) begin
+            entries_9_pending <= willFree_9 ? 3'h0 : entries_9_pending - commitHits_9;
+          if (_GEN_70) begin
             entries_10_validMask <= io_alloc_bits_validMask;
             entries_10_pending <= entry_pending;
           end
           else if (|commitHits_10)
-            entries_10_pending <= willFree_10 ? 2'h0 : entries_10_pending - commitHits_10;
-          if (_GEN_41) begin
+            entries_10_pending <= willFree_10 ? 3'h0 : entries_10_pending - commitHits_10;
+          if (_GEN_72) begin
             entries_11_validMask <= io_alloc_bits_validMask;
             entries_11_pending <= entry_pending;
           end
           else if (|commitHits_11)
-            entries_11_pending <= willFree_11 ? 2'h0 : entries_11_pending - commitHits_11;
-          if (_GEN_43) begin
+            entries_11_pending <= willFree_11 ? 3'h0 : entries_11_pending - commitHits_11;
+          if (_GEN_74) begin
             entries_12_validMask <= io_alloc_bits_validMask;
             entries_12_pending <= entry_pending;
           end
           else if (|commitHits_12)
-            entries_12_pending <= willFree_12 ? 2'h0 : entries_12_pending - commitHits_12;
-          if (_GEN_45) begin
+            entries_12_pending <= willFree_12 ? 3'h0 : entries_12_pending - commitHits_12;
+          if (_GEN_76) begin
             entries_13_validMask <= io_alloc_bits_validMask;
             entries_13_pending <= entry_pending;
           end
           else if (|commitHits_13)
-            entries_13_pending <= willFree_13 ? 2'h0 : entries_13_pending - commitHits_13;
-          if (_GEN_47) begin
+            entries_13_pending <= willFree_13 ? 3'h0 : entries_13_pending - commitHits_13;
+          if (_GEN_78) begin
             entries_14_validMask <= io_alloc_bits_validMask;
             entries_14_pending <= entry_pending;
           end
           else if (|commitHits_14)
-            entries_14_pending <= willFree_14 ? 2'h0 : entries_14_pending - commitHits_14;
-          if (_GEN_49) begin
+            entries_14_pending <= willFree_14 ? 3'h0 : entries_14_pending - commitHits_14;
+          if (_GEN_80) begin
             entries_15_validMask <= io_alloc_bits_validMask;
             entries_15_pending <= entry_pending;
           end
           else if (|commitHits_15)
-            entries_15_pending <= willFree_15 ? 2'h0 : entries_15_pending - commitHits_15;
+            entries_15_pending <= willFree_15 ? 3'h0 : entries_15_pending - commitHits_15;
           if (willFree_0)
             generations_0 <= generations_0 + 8'h1;
           if (willFree_1)
@@ -2293,12 +2686,12 @@ module FTQ(
           if (_count_T)
             tail <= tail + 4'h1;
         end
-        if (io_recoverFlush | freeCount == 2'h0) begin
+        if (io_recoverFlush | freeCount == 3'h0) begin
         end
         else
-          head <= head + {2'h0, freeCount};
+          head <= head + {1'h0, freeCount};
       end
-      if (_GEN_20) begin
+      if (_GEN_51) begin
       end
       else begin
         entries_0_ras_0 <= io_alloc_bits_ras_0;
@@ -2321,15 +2714,15 @@ module FTQ(
         entries_0_rasCount <= io_alloc_bits_rasCount;
       end
       entries_0_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_2 & entries_0_valid
-             : _GEN_18 | ~willFree_0 & entries_0_valid);
-      if (_GEN_20) begin
+             ? (_GEN_17 ? ~_GEN_1 & entries_0_valid : ~_GEN_33 & entries_0_valid)
+             : _GEN_49 | ~willFree_0 & entries_0_valid);
+      if (_GEN_51) begin
       end
       else
         entries_0_generation <= casez_tmp;
-      if (_GEN_22) begin
+      if (_GEN_53) begin
       end
       else begin
         entries_1_basePc <= io_alloc_bits_basePc;
@@ -2353,15 +2746,15 @@ module FTQ(
         entries_1_rasCount <= io_alloc_bits_rasCount;
       end
       entries_1_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_3 & entries_1_valid
-             : _GEN_21 | ~willFree_1 & entries_1_valid);
-      if (_GEN_22) begin
+             ? (_GEN_17 ? ~_GEN_2 & entries_1_valid : ~_GEN_34 & entries_1_valid)
+             : _GEN_52 | ~willFree_1 & entries_1_valid);
+      if (_GEN_53) begin
       end
       else
         entries_1_generation <= casez_tmp;
-      if (_GEN_24) begin
+      if (_GEN_55) begin
       end
       else begin
         entries_2_basePc <= io_alloc_bits_basePc;
@@ -2385,15 +2778,15 @@ module FTQ(
         entries_2_rasCount <= io_alloc_bits_rasCount;
       end
       entries_2_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_4 & entries_2_valid
-             : _GEN_23 | ~willFree_2 & entries_2_valid);
-      if (_GEN_24) begin
+             ? (_GEN_17 ? ~_GEN_3 & entries_2_valid : ~_GEN_35 & entries_2_valid)
+             : _GEN_54 | ~willFree_2 & entries_2_valid);
+      if (_GEN_55) begin
       end
       else
         entries_2_generation <= casez_tmp;
-      if (_GEN_26) begin
+      if (_GEN_57) begin
       end
       else begin
         entries_3_basePc <= io_alloc_bits_basePc;
@@ -2417,15 +2810,15 @@ module FTQ(
         entries_3_rasCount <= io_alloc_bits_rasCount;
       end
       entries_3_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_5 & entries_3_valid
-             : _GEN_25 | ~willFree_3 & entries_3_valid);
-      if (_GEN_26) begin
+             ? (_GEN_17 ? ~_GEN_4 & entries_3_valid : ~_GEN_36 & entries_3_valid)
+             : _GEN_56 | ~willFree_3 & entries_3_valid);
+      if (_GEN_57) begin
       end
       else
         entries_3_generation <= casez_tmp;
-      if (_GEN_28) begin
+      if (_GEN_59) begin
       end
       else begin
         entries_4_basePc <= io_alloc_bits_basePc;
@@ -2449,15 +2842,15 @@ module FTQ(
         entries_4_rasCount <= io_alloc_bits_rasCount;
       end
       entries_4_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_6 & entries_4_valid
-             : _GEN_27 | ~willFree_4 & entries_4_valid);
-      if (_GEN_28) begin
+             ? (_GEN_17 ? ~_GEN_5 & entries_4_valid : ~_GEN_37 & entries_4_valid)
+             : _GEN_58 | ~willFree_4 & entries_4_valid);
+      if (_GEN_59) begin
       end
       else
         entries_4_generation <= casez_tmp;
-      if (_GEN_30) begin
+      if (_GEN_61) begin
       end
       else begin
         entries_5_basePc <= io_alloc_bits_basePc;
@@ -2481,15 +2874,15 @@ module FTQ(
         entries_5_rasCount <= io_alloc_bits_rasCount;
       end
       entries_5_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_7 & entries_5_valid
-             : _GEN_29 | ~willFree_5 & entries_5_valid);
-      if (_GEN_30) begin
+             ? (_GEN_17 ? ~_GEN_6 & entries_5_valid : ~_GEN_38 & entries_5_valid)
+             : _GEN_60 | ~willFree_5 & entries_5_valid);
+      if (_GEN_61) begin
       end
       else
         entries_5_generation <= casez_tmp;
-      if (_GEN_32) begin
+      if (_GEN_63) begin
       end
       else begin
         entries_6_basePc <= io_alloc_bits_basePc;
@@ -2513,15 +2906,15 @@ module FTQ(
         entries_6_rasCount <= io_alloc_bits_rasCount;
       end
       entries_6_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_8 & entries_6_valid
-             : _GEN_31 | ~willFree_6 & entries_6_valid);
-      if (_GEN_32) begin
+             ? (_GEN_17 ? ~_GEN_7 & entries_6_valid : ~_GEN_39 & entries_6_valid)
+             : _GEN_62 | ~willFree_6 & entries_6_valid);
+      if (_GEN_63) begin
       end
       else
         entries_6_generation <= casez_tmp;
-      if (_GEN_34) begin
+      if (_GEN_65) begin
       end
       else begin
         entries_7_basePc <= io_alloc_bits_basePc;
@@ -2545,15 +2938,15 @@ module FTQ(
         entries_7_rasCount <= io_alloc_bits_rasCount;
       end
       entries_7_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_9 & entries_7_valid
-             : _GEN_33 | ~willFree_7 & entries_7_valid);
-      if (_GEN_34) begin
+             ? (_GEN_17 ? ~_GEN_8 & entries_7_valid : ~_GEN_40 & entries_7_valid)
+             : _GEN_64 | ~willFree_7 & entries_7_valid);
+      if (_GEN_65) begin
       end
       else
         entries_7_generation <= casez_tmp;
-      if (_GEN_36) begin
+      if (_GEN_67) begin
       end
       else begin
         entries_8_basePc <= io_alloc_bits_basePc;
@@ -2577,15 +2970,15 @@ module FTQ(
         entries_8_rasCount <= io_alloc_bits_rasCount;
       end
       entries_8_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_10 & entries_8_valid
-             : _GEN_35 | ~willFree_8 & entries_8_valid);
-      if (_GEN_36) begin
+             ? (_GEN_17 ? ~_GEN_9 & entries_8_valid : ~_GEN_41 & entries_8_valid)
+             : _GEN_66 | ~willFree_8 & entries_8_valid);
+      if (_GEN_67) begin
       end
       else
         entries_8_generation <= casez_tmp;
-      if (_GEN_38) begin
+      if (_GEN_69) begin
       end
       else begin
         entries_9_basePc <= io_alloc_bits_basePc;
@@ -2609,15 +3002,15 @@ module FTQ(
         entries_9_rasCount <= io_alloc_bits_rasCount;
       end
       entries_9_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_11 & entries_9_valid
-             : _GEN_37 | ~willFree_9 & entries_9_valid);
-      if (_GEN_38) begin
+             ? (_GEN_17 ? ~_GEN_10 & entries_9_valid : ~_GEN_42 & entries_9_valid)
+             : _GEN_68 | ~willFree_9 & entries_9_valid);
+      if (_GEN_69) begin
       end
       else
         entries_9_generation <= casez_tmp;
-      if (_GEN_40) begin
+      if (_GEN_71) begin
       end
       else begin
         entries_10_basePc <= io_alloc_bits_basePc;
@@ -2641,15 +3034,15 @@ module FTQ(
         entries_10_rasCount <= io_alloc_bits_rasCount;
       end
       entries_10_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_12 & entries_10_valid
-             : _GEN_39 | ~willFree_10 & entries_10_valid);
-      if (_GEN_40) begin
+             ? (_GEN_17 ? ~_GEN_11 & entries_10_valid : ~_GEN_43 & entries_10_valid)
+             : _GEN_70 | ~willFree_10 & entries_10_valid);
+      if (_GEN_71) begin
       end
       else
         entries_10_generation <= casez_tmp;
-      if (_GEN_42) begin
+      if (_GEN_73) begin
       end
       else begin
         entries_11_basePc <= io_alloc_bits_basePc;
@@ -2673,15 +3066,15 @@ module FTQ(
         entries_11_rasCount <= io_alloc_bits_rasCount;
       end
       entries_11_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_13 & entries_11_valid
-             : _GEN_41 | ~willFree_11 & entries_11_valid);
-      if (_GEN_42) begin
+             ? (_GEN_17 ? ~_GEN_12 & entries_11_valid : ~_GEN_44 & entries_11_valid)
+             : _GEN_72 | ~willFree_11 & entries_11_valid);
+      if (_GEN_73) begin
       end
       else
         entries_11_generation <= casez_tmp;
-      if (_GEN_44) begin
+      if (_GEN_75) begin
       end
       else begin
         entries_12_basePc <= io_alloc_bits_basePc;
@@ -2705,15 +3098,15 @@ module FTQ(
         entries_12_rasCount <= io_alloc_bits_rasCount;
       end
       entries_12_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_14 & entries_12_valid
-             : _GEN_43 | ~willFree_12 & entries_12_valid);
-      if (_GEN_44) begin
+             ? (_GEN_17 ? ~_GEN_13 & entries_12_valid : ~_GEN_45 & entries_12_valid)
+             : _GEN_74 | ~willFree_12 & entries_12_valid);
+      if (_GEN_75) begin
       end
       else
         entries_12_generation <= casez_tmp;
-      if (_GEN_46) begin
+      if (_GEN_77) begin
       end
       else begin
         entries_13_basePc <= io_alloc_bits_basePc;
@@ -2737,15 +3130,15 @@ module FTQ(
         entries_13_rasCount <= io_alloc_bits_rasCount;
       end
       entries_13_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_15 & entries_13_valid
-             : _GEN_45 | ~willFree_13 & entries_13_valid);
-      if (_GEN_46) begin
+             ? (_GEN_17 ? ~_GEN_14 & entries_13_valid : ~_GEN_46 & entries_13_valid)
+             : _GEN_76 | ~willFree_13 & entries_13_valid);
+      if (_GEN_77) begin
       end
       else
         entries_13_generation <= casez_tmp;
-      if (_GEN_48) begin
+      if (_GEN_79) begin
       end
       else begin
         entries_14_basePc <= io_alloc_bits_basePc;
@@ -2769,15 +3162,15 @@ module FTQ(
         entries_14_rasCount <= io_alloc_bits_rasCount;
       end
       entries_14_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_16 & entries_14_valid
-             : _GEN_47 | ~willFree_14 & entries_14_valid);
-      if (_GEN_48) begin
+             ? (_GEN_17 ? ~_GEN_15 & entries_14_valid : ~_GEN_47 & entries_14_valid)
+             : _GEN_78 | ~willFree_14 & entries_14_valid);
+      if (_GEN_79) begin
       end
       else
         entries_14_generation <= casez_tmp;
-      if (_GEN_50) begin
+      if (_GEN_81) begin
       end
       else begin
         entries_15_basePc <= io_alloc_bits_basePc;
@@ -2801,20 +3194,20 @@ module FTQ(
         entries_15_rasCount <= io_alloc_bits_rasCount;
       end
       entries_15_valid <=
-        ~_GEN_1
+        ~_GEN_0
         & (io_recoverFlush
-             ? ~_GEN_17 & entries_15_valid
-             : _GEN_49 | ~willFree_15 & entries_15_valid);
-      if (_GEN_50) begin
+             ? (_GEN_17 ? ~_GEN_16 & entries_15_valid : ~_GEN_48 & entries_15_valid)
+             : _GEN_80 | ~willFree_15 & entries_15_valid);
+      if (_GEN_81) begin
       end
       else
         entries_15_generation <= casez_tmp;
       count <=
-        _GEN_1
+        _GEN_0
           ? 5'h0
           : io_recoverFlush
-              ? {1'h0, _recoverAge_T} + 5'h1
-              : count + {4'h0, _count_T} - {3'h0, freeCount};
+              ? (_GEN_17 ? _GEN + 5'h1 : _GEN)
+              : count + {4'h0, _count_T} - {2'h0, freeCount};
     end
   end // always @(posedge)
   assign io_alloc_ready = io_alloc_ready_0;

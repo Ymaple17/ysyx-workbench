@@ -43,18 +43,28 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
 
     val rdata = RegEnable(io.in.rdata, 0.U(32.W), io.in.rvalid)
     val rdata1 = RegEnable(io.in.rdata1, 0.U(32.W), io.in.rvalid)
+    val rdata2 = RegEnable(io.in.rdata2, 0.U(32.W), io.in.rvalid)
+    val rdata3 = RegEnable(io.in.rdata3, 0.U(32.W), io.in.rvalid)
     val rvalid1Held = RegEnable(io.in.rvalid1, false.B, io.in.rvalid)
+    val rvalid2Held = RegEnable(io.in.rvalid2, false.B, io.in.rvalid)
+    val rvalid3Held = RegEnable(io.in.rvalid3, false.B, io.in.rvalid)
 
     val Cache_Set = Wire(new ICache_Set(tag_size, block_size, way))
 
     val way_hit = Wire(UInt(w.W))
     val hit_data = Wire(UInt((bus_width*8).W))
     val hit_data1 = Wire(UInt((bus_width*8).W))
+    val hit_data2 = Wire(UInt((bus_width*8).W))
+    val hit_data3 = Wire(UInt((bus_width*8).W))
     val miss_data = Wire(UInt((bus_width*8).W))
     val miss_data1 = Wire(UInt((bus_width*8).W))
+    val miss_data2 = Wire(UInt((bus_width*8).W))
+    val miss_data3 = Wire(UInt((bus_width*8).W))
     val hit = Wire(Bool())
     val crossLineHit = Wire(Bool())
     val crossLineData = Wire(UInt(32.W))
+    val crossLineData2 = Wire(UInt(32.W))
+    val crossLineData3 = Wire(UInt(32.W))
 
     val fencei_cnt = RegInit(0.U(n.W))
     val fifo_ptr = RegInit(0.U(w.W))
@@ -102,6 +112,13 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
     val wordIdx = offset(m - 1, 2)
     val hasNextWord = wordIdx =/= (c - 1).U
     val nextWordIdx = Mux(hasNextWord, wordIdx + 1.U, wordIdx)
+    val wordIdxExt = Cat(0.U(2.W), wordIdx)
+    val sameLine2 = wordIdxExt + 2.U < c.U
+    val sameLine3 = wordIdxExt + 3.U < c.U
+    val wordIdx2 = (wordIdxExt + 2.U)(log2Ceil(c) - 1, 0)
+    val wordIdx3 = (wordIdxExt + 3.U)(log2Ceil(c) - 1, 0)
+    val nextLineIdx2 = (wordIdxExt + 2.U - c.U)(log2Ceil(c) - 1, 0)
+    val nextLineIdx3 = (wordIdxExt + 3.U - c.U)(log2Ceil(c) - 1, 0)
     val selectedAddr = Mux(io.in.arvalid, io.in.araddr, in_addr)
     val nextLineAddr = selectedAddr - offset + block_size.U
     val nextLineIndex = nextLineAddr(m + n - 1, m)
@@ -109,10 +126,14 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
 
     hit_data := 0.U
     hit_data1 := 0.U
+    hit_data2 := 0.U
+    hit_data3 := 0.U
     way_hit := 0.U
     hit := false.B
     crossLineHit := false.B
     crossLineData := 0.U
+    crossLineData2 := 0.U
+    crossLineData3 := 0.U
     Cache_Set := icache(index)
     
     for(i <- 0 until way){
@@ -128,6 +149,8 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
             way_hit := i.U
             hit_data := temp_cachedata.data(wordIdx)
             hit_data1 := temp_cachedata.data(nextWordIdx)
+            hit_data2 := temp_cachedata.data(wordIdx2)
+            hit_data3 := temp_cachedata.data(wordIdx3)
         }
     }
     for(i <- 0 until way){
@@ -135,19 +158,31 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
         when(nextBlock.valid && nextBlock.tag === nextLineTag){
             crossLineHit := true.B
             crossLineData := nextBlock.data(0)
+            crossLineData2 := nextBlock.data(nextLineIdx2)
+            crossLineData3 := nextBlock.data(nextLineIdx3)
         }
     }
 
     val secondHitValid = hasNextWord || crossLineHit
     val secondHitData = Mux(hasNextWord, hit_data1, crossLineData)
+    val thirdHitValid = sameLine2 || crossLineHit
+    val thirdHitData = Mux(sameLine2, hit_data2, crossLineData2)
+    val fourthHitValid = sameLine3 || crossLineHit
+    val fourthHitData = Mux(sameLine3, hit_data3, crossLineData3)
 
     io.in.arready := false.B
     io.in.rdata := 0.U
     io.in.rdata1 := 0.U
+    io.in.rdata2 := 0.U
+    io.in.rdata3 := 0.U
     io.in.rvalid := false.B
     io.in.rvalid1 := false.B
+    io.in.rvalid2 := false.B
+    io.in.rvalid3 := false.B
     io.in.rresp := io.out.rresp
     io.in.rresp1 := io.out.rresp
+    io.in.rresp2 := io.out.rresp
+    io.in.rresp3 := io.out.rresp
 
     io.out.araddr  := 0.U
     io.out.arvalid := false.B
@@ -172,12 +207,18 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
     io.in.rdata := Mux(hit & state =/= s_AXI_R, hit_data, Mux(count === 0.U, miss_data, 0.U))
     io.in.rdata1 := Mux(hit & state =/= s_AXI_R, secondHitData,
         Mux(count === 0.U, Mux(hasNextWord, miss_data1, crossLineData), 0.U))
+    io.in.rdata2 := Mux(hit & state =/= s_AXI_R, thirdHitData,
+        Mux(count === 0.U, Mux(sameLine2, miss_data2, crossLineData2), 0.U))
+    io.in.rdata3 := Mux(hit & state =/= s_AXI_R, fourthHitData,
+        Mux(count === 0.U, Mux(sameLine3, miss_data3, crossLineData3), 0.U))
 
     switch(state){
         is(s_IFU_AR){
             io.in.arready := !(io.fencei.valid && io.fencei.bits.is_fencei)
             io.in.rvalid := Mux(hit, true.B, false.B)
             io.in.rvalid1 := hit && secondHitValid
+            io.in.rvalid2 := hit && thirdHitValid
+            io.in.rvalid3 := hit && fourthHitValid
 
             io.out.araddr := 0.U
             io.out.arvalid := false.B
@@ -199,6 +240,8 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
             io.in.arready := false.B
             io.in.rvalid := Mux(count === 0.U & io.out.rvalid, true.B, false.B)
             io.in.rvalid1 := count === 0.U && io.out.rvalid && secondHitValid
+            io.in.rvalid2 := count === 0.U && io.out.rvalid && thirdHitValid
+            io.in.rvalid3 := count === 0.U && io.out.rvalid && fourthHitValid
 
             io.out.araddr := 0.U
             io.out.arvalid := false.B
@@ -208,8 +251,12 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
             io.in.arready := false.B
             io.in.rvalid := true.B
             io.in.rvalid1 := rvalid1Held
+            io.in.rvalid2 := rvalid2Held
+            io.in.rvalid3 := rvalid3Held
             io.in.rdata := rdata
             io.in.rdata1 := rdata1
+            io.in.rdata2 := rdata2
+            io.in.rdata3 := rdata3
 
             io.out.araddr := 0.U
             io.out.arvalid := false.B
@@ -230,6 +277,8 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
     //miss refill
     miss_data := 0.U
     miss_data1 := 0.U
+    miss_data2 := 0.U
+    miss_data3 := 0.U
     val miss_way = Wire(UInt(w.W))
     miss_way := fifo_ptr
 
@@ -245,6 +294,8 @@ class ICache(val set : Int,val way : Int, val block_size : Int, val conf: CoreCo
         new_block.data((c.U - (count + 1.U))(log2Ceil(c).max(1) - 1, 0)) := io.out.rdata
         miss_data := new_block.data(wordIdx).asUInt
         miss_data1 := new_block.data(nextWordIdx).asUInt
+        miss_data2 := new_block.data(wordIdx2).asUInt
+        miss_data3 := new_block.data(wordIdx3).asUInt
 
         val new_Cache_Set = Wire(Cache_Set.set.cloneType)
         new_Cache_Set := Cache_Set.set

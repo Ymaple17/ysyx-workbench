@@ -3,8 +3,8 @@
 ## 学习导航
 - **理论目标**：理解四路 dispatch 的难点是异构资源组合信用，而四路 issue 的难点是年龄选择、FU 互斥和不建立集中式全局调度器。
 - **最小实现**：四槽 packet 按类型路由到 integer RS、BRQ、LQ/SQ；资源按 lane prefix 预留，保留每 FU local oldest-ready。
-- **当前参考核**：双 dispatch；integer RS 向 ALU0/ALU1/LSU/DIV 分布式 issue，BRQ/BRU 独立。该组织可复用，但 enqueue/credit 仍是两路。
-- **后续扩展**：双 LSU/AGU、clustered RS、load/store issue queue 分离、更多 branch ports。
+- **当前参考核**：四路 dispatch credit 和分布式 FU issue 已接入；`Dispatch Slot1/2/3=120806/97936/72344`，`Quad ALU Issues=4021`。当前仍最多一条 LSU/访存和一条 control，说明总宽度已打开但异构资源利用率还不够。
+- **后续扩展**：先把 memory/control admission 的计数与正确性收口，再考虑双 LSU/AGU、clustered RS、load/store issue queue 分离、更多 branch ports。
 - **验收方式**：四普通 ALU、混合 ALU/DIV/load/branch、资源差一项、flush 同拍 wakeup、FU backpressure 定向测试；slot2/3 dispatch 和 issue 计数必须大于零。
 
 ---

@@ -28,7 +28,11 @@ module StoreQueue(
   output [31:0] io_unresolved_mask,
   output        io_fwd_valid,
   output [31:0] io_fwd_data,
-  output        io_wait_load
+  output        io_wait_load,
+                io_wait_unknown,
+                io_wait_partial,
+                io_has_fwd_candidate,
+  output [31:0] io_older_unresolved_mask
 );
 
   reg         entries_0_valid;
@@ -278,6 +282,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T = _loadMask_T[3:0] & _storeMask_T_1[3:0];
+  wire        unknownHits_0 = io_ld_valid & olderStore & ~entries_0_addr_ready;
   wire        _fwdHits_0_T = io_ld_valid & olderStore;
   wire        fwdHits_0 = _fwdHits_0_T & sameWord & _overlap_T == _loadMask_T[3:0];
   wire [62:0] _GEN_0 = {58'h0, io_ld_addr[1:0], 3'h0};
@@ -296,6 +301,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_1 = _loadMask_T_1[3:0] & _storeMask_T_4[3:0];
+  wire        unknownHits_1 = io_ld_valid & olderStore_1 & ~entries_1_addr_ready;
   wire        _fwdHits_1_T = io_ld_valid & olderStore_1;
   wire        fwdHits_1 = _fwdHits_1_T & sameWord_1 & _overlap_T_1 == _loadMask_T_1[3:0];
   wire [62:0] _fwdData_1_T_4 =
@@ -313,6 +319,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_2 = _loadMask_T_2[3:0] & _storeMask_T_7[3:0];
+  wire        unknownHits_2 = io_ld_valid & olderStore_2 & ~entries_2_addr_ready;
   wire        _fwdHits_2_T = io_ld_valid & olderStore_2;
   wire        fwdHits_2 = _fwdHits_2_T & sameWord_2 & _overlap_T_2 == _loadMask_T_2[3:0];
   wire [62:0] _fwdData_2_T_4 =
@@ -330,6 +337,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_3 = _loadMask_T_3[3:0] & _storeMask_T_10[3:0];
+  wire        unknownHits_3 = io_ld_valid & olderStore_3 & ~entries_3_addr_ready;
   wire        _fwdHits_3_T = io_ld_valid & olderStore_3;
   wire        fwdHits_3 = _fwdHits_3_T & sameWord_3 & _overlap_T_3 == _loadMask_T_3[3:0];
   wire [62:0] _fwdData_3_T_4 =
@@ -347,6 +355,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_4 = _loadMask_T_4[3:0] & _storeMask_T_13[3:0];
+  wire        unknownHits_4 = io_ld_valid & olderStore_4 & ~entries_4_addr_ready;
   wire        _fwdHits_4_T = io_ld_valid & olderStore_4;
   wire        fwdHits_4 = _fwdHits_4_T & sameWord_4 & _overlap_T_4 == _loadMask_T_4[3:0];
   wire [62:0] _fwdData_4_T_4 =
@@ -364,6 +373,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_5 = _loadMask_T_5[3:0] & _storeMask_T_16[3:0];
+  wire        unknownHits_5 = io_ld_valid & olderStore_5 & ~entries_5_addr_ready;
   wire        _fwdHits_5_T = io_ld_valid & olderStore_5;
   wire        fwdHits_5 = _fwdHits_5_T & sameWord_5 & _overlap_T_5 == _loadMask_T_5[3:0];
   wire [62:0] _fwdData_5_T_4 =
@@ -381,6 +391,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_6 = _loadMask_T_6[3:0] & _storeMask_T_19[3:0];
+  wire        unknownHits_6 = io_ld_valid & olderStore_6 & ~entries_6_addr_ready;
   wire        _fwdHits_6_T = io_ld_valid & olderStore_6;
   wire        fwdHits_6 = _fwdHits_6_T & sameWord_6 & _overlap_T_6 == _loadMask_T_6[3:0];
   wire [62:0] _fwdData_6_T_4 =
@@ -398,6 +409,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_7 = _loadMask_T_7[3:0] & _storeMask_T_22[3:0];
+  wire        unknownHits_7 = io_ld_valid & olderStore_7 & ~entries_7_addr_ready;
   wire        _fwdHits_7_T = io_ld_valid & olderStore_7;
   wire        fwdHits_7 = _fwdHits_7_T & sameWord_7 & _overlap_T_7 == _loadMask_T_7[3:0];
   wire [62:0] _fwdData_7_T_4 =
@@ -415,6 +427,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_8 = _loadMask_T_8[3:0] & _storeMask_T_25[3:0];
+  wire        unknownHits_8 = io_ld_valid & olderStore_8 & ~entries_8_addr_ready;
   wire        _fwdHits_8_T = io_ld_valid & olderStore_8;
   wire        fwdHits_8 = _fwdHits_8_T & sameWord_8 & _overlap_T_8 == _loadMask_T_8[3:0];
   wire [62:0] _fwdData_8_T_4 =
@@ -432,6 +445,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_9 = _loadMask_T_9[3:0] & _storeMask_T_28[3:0];
+  wire        unknownHits_9 = io_ld_valid & olderStore_9 & ~entries_9_addr_ready;
   wire        _fwdHits_9_T = io_ld_valid & olderStore_9;
   wire        fwdHits_9 = _fwdHits_9_T & sameWord_9 & _overlap_T_9 == _loadMask_T_9[3:0];
   wire [62:0] _fwdData_9_T_4 =
@@ -449,6 +463,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_10 = _loadMask_T_10[3:0] & _storeMask_T_31[3:0];
+  wire        unknownHits_10 = io_ld_valid & olderStore_10 & ~entries_10_addr_ready;
   wire        _fwdHits_10_T = io_ld_valid & olderStore_10;
   wire        fwdHits_10 =
     _fwdHits_10_T & sameWord_10 & _overlap_T_10 == _loadMask_T_10[3:0];
@@ -467,6 +482,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_11 = _loadMask_T_11[3:0] & _storeMask_T_34[3:0];
+  wire        unknownHits_11 = io_ld_valid & olderStore_11 & ~entries_11_addr_ready;
   wire        _fwdHits_11_T = io_ld_valid & olderStore_11;
   wire        fwdHits_11 =
     _fwdHits_11_T & sameWord_11 & _overlap_T_11 == _loadMask_T_11[3:0];
@@ -485,6 +501,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_12 = _loadMask_T_12[3:0] & _storeMask_T_37[3:0];
+  wire        unknownHits_12 = io_ld_valid & olderStore_12 & ~entries_12_addr_ready;
   wire        _fwdHits_12_T = io_ld_valid & olderStore_12;
   wire        fwdHits_12 =
     _fwdHits_12_T & sameWord_12 & _overlap_T_12 == _loadMask_T_12[3:0];
@@ -503,6 +520,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_13 = _loadMask_T_13[3:0] & _storeMask_T_40[3:0];
+  wire        unknownHits_13 = io_ld_valid & olderStore_13 & ~entries_13_addr_ready;
   wire        _fwdHits_13_T = io_ld_valid & olderStore_13;
   wire        fwdHits_13 =
     _fwdHits_13_T & sameWord_13 & _overlap_T_13 == _loadMask_T_13[3:0];
@@ -521,6 +539,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_14 = _loadMask_T_14[3:0] & _storeMask_T_43[3:0];
+  wire        unknownHits_14 = io_ld_valid & olderStore_14 & ~entries_14_addr_ready;
   wire        _fwdHits_14_T = io_ld_valid & olderStore_14;
   wire        fwdHits_14 =
     _fwdHits_14_T & sameWord_14 & _overlap_T_14 == _loadMask_T_14[3:0];
@@ -539,6 +558,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_15 = _loadMask_T_15[3:0] & _storeMask_T_46[3:0];
+  wire        unknownHits_15 = io_ld_valid & olderStore_15 & ~entries_15_addr_ready;
   wire        _fwdHits_15_T = io_ld_valid & olderStore_15;
   wire        fwdHits_15 =
     _fwdHits_15_T & sameWord_15 & _overlap_T_15 == _loadMask_T_15[3:0];
@@ -557,6 +577,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_16 = _loadMask_T_16[3:0] & _storeMask_T_49[3:0];
+  wire        unknownHits_16 = io_ld_valid & olderStore_16 & ~entries_16_addr_ready;
   wire        _fwdHits_16_T = io_ld_valid & olderStore_16;
   wire        fwdHits_16 =
     _fwdHits_16_T & sameWord_16 & _overlap_T_16 == _loadMask_T_16[3:0];
@@ -575,6 +596,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_17 = _loadMask_T_17[3:0] & _storeMask_T_52[3:0];
+  wire        unknownHits_17 = io_ld_valid & olderStore_17 & ~entries_17_addr_ready;
   wire        _fwdHits_17_T = io_ld_valid & olderStore_17;
   wire        fwdHits_17 =
     _fwdHits_17_T & sameWord_17 & _overlap_T_17 == _loadMask_T_17[3:0];
@@ -593,6 +615,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_18 = _loadMask_T_18[3:0] & _storeMask_T_55[3:0];
+  wire        unknownHits_18 = io_ld_valid & olderStore_18 & ~entries_18_addr_ready;
   wire        _fwdHits_18_T = io_ld_valid & olderStore_18;
   wire        fwdHits_18 =
     _fwdHits_18_T & sameWord_18 & _overlap_T_18 == _loadMask_T_18[3:0];
@@ -611,6 +634,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_19 = _loadMask_T_19[3:0] & _storeMask_T_58[3:0];
+  wire        unknownHits_19 = io_ld_valid & olderStore_19 & ~entries_19_addr_ready;
   wire        _fwdHits_19_T = io_ld_valid & olderStore_19;
   wire        fwdHits_19 =
     _fwdHits_19_T & sameWord_19 & _overlap_T_19 == _loadMask_T_19[3:0];
@@ -629,6 +653,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_20 = _loadMask_T_20[3:0] & _storeMask_T_61[3:0];
+  wire        unknownHits_20 = io_ld_valid & olderStore_20 & ~entries_20_addr_ready;
   wire        _fwdHits_20_T = io_ld_valid & olderStore_20;
   wire        fwdHits_20 =
     _fwdHits_20_T & sameWord_20 & _overlap_T_20 == _loadMask_T_20[3:0];
@@ -647,6 +672,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_21 = _loadMask_T_21[3:0] & _storeMask_T_64[3:0];
+  wire        unknownHits_21 = io_ld_valid & olderStore_21 & ~entries_21_addr_ready;
   wire        _fwdHits_21_T = io_ld_valid & olderStore_21;
   wire        fwdHits_21 =
     _fwdHits_21_T & sameWord_21 & _overlap_T_21 == _loadMask_T_21[3:0];
@@ -665,6 +691,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_22 = _loadMask_T_22[3:0] & _storeMask_T_67[3:0];
+  wire        unknownHits_22 = io_ld_valid & olderStore_22 & ~entries_22_addr_ready;
   wire        _fwdHits_22_T = io_ld_valid & olderStore_22;
   wire        fwdHits_22 =
     _fwdHits_22_T & sameWord_22 & _overlap_T_22 == _loadMask_T_22[3:0];
@@ -683,6 +710,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_23 = _loadMask_T_23[3:0] & _storeMask_T_70[3:0];
+  wire        unknownHits_23 = io_ld_valid & olderStore_23 & ~entries_23_addr_ready;
   wire        _fwdHits_23_T = io_ld_valid & olderStore_23;
   wire        fwdHits_23 =
     _fwdHits_23_T & sameWord_23 & _overlap_T_23 == _loadMask_T_23[3:0];
@@ -701,6 +729,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_24 = _loadMask_T_24[3:0] & _storeMask_T_73[3:0];
+  wire        unknownHits_24 = io_ld_valid & olderStore_24 & ~entries_24_addr_ready;
   wire        _fwdHits_24_T = io_ld_valid & olderStore_24;
   wire        fwdHits_24 =
     _fwdHits_24_T & sameWord_24 & _overlap_T_24 == _loadMask_T_24[3:0];
@@ -719,6 +748,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_25 = _loadMask_T_25[3:0] & _storeMask_T_76[3:0];
+  wire        unknownHits_25 = io_ld_valid & olderStore_25 & ~entries_25_addr_ready;
   wire        _fwdHits_25_T = io_ld_valid & olderStore_25;
   wire        fwdHits_25 =
     _fwdHits_25_T & sameWord_25 & _overlap_T_25 == _loadMask_T_25[3:0];
@@ -737,6 +767,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_26 = _loadMask_T_26[3:0] & _storeMask_T_79[3:0];
+  wire        unknownHits_26 = io_ld_valid & olderStore_26 & ~entries_26_addr_ready;
   wire        _fwdHits_26_T = io_ld_valid & olderStore_26;
   wire        fwdHits_26 =
     _fwdHits_26_T & sameWord_26 & _overlap_T_26 == _loadMask_T_26[3:0];
@@ -755,6 +786,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_27 = _loadMask_T_27[3:0] & _storeMask_T_82[3:0];
+  wire        unknownHits_27 = io_ld_valid & olderStore_27 & ~entries_27_addr_ready;
   wire        _fwdHits_27_T = io_ld_valid & olderStore_27;
   wire        fwdHits_27 =
     _fwdHits_27_T & sameWord_27 & _overlap_T_27 == _loadMask_T_27[3:0];
@@ -773,6 +805,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_28 = _loadMask_T_28[3:0] & _storeMask_T_85[3:0];
+  wire        unknownHits_28 = io_ld_valid & olderStore_28 & ~entries_28_addr_ready;
   wire        _fwdHits_28_T = io_ld_valid & olderStore_28;
   wire        fwdHits_28 =
     _fwdHits_28_T & sameWord_28 & _overlap_T_28 == _loadMask_T_28[3:0];
@@ -791,6 +824,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_29 = _loadMask_T_29[3:0] & _storeMask_T_88[3:0];
+  wire        unknownHits_29 = io_ld_valid & olderStore_29 & ~entries_29_addr_ready;
   wire        _fwdHits_29_T = io_ld_valid & olderStore_29;
   wire        fwdHits_29 =
     _fwdHits_29_T & sameWord_29 & _overlap_T_29 == _loadMask_T_29[3:0];
@@ -809,6 +843,7 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_30 = _loadMask_T_30[3:0] & _storeMask_T_91[3:0];
+  wire        unknownHits_30 = io_ld_valid & olderStore_30 & ~entries_30_addr_ready;
   wire        _fwdHits_30_T = io_ld_valid & olderStore_30;
   wire        fwdHits_30 =
     _fwdHits_30_T & sameWord_30 & _overlap_T_30 == _loadMask_T_30[3:0];
@@ -827,98 +862,101 @@ module StoreQueue(
            ? 4'h1
            : _loadMask_base_T_314 ? 4'hF : {2'h0, _loadMask_base_T_312, 1'h1}} << _GEN;
   wire [3:0]  _overlap_T_31 = _loadMask_T_31[3:0] & _storeMask_T_94[3:0];
+  wire        unknownHits_31 = io_ld_valid & olderStore_31 & ~entries_31_addr_ready;
   wire        _fwdHits_31_T = io_ld_valid & olderStore_31;
   wire        fwdHits_31 =
     _fwdHits_31_T & sameWord_31 & _overlap_T_31 == _loadMask_T_31[3:0];
   wire [62:0] _fwdData_31_T_4 =
     {31'h0, entries_31_data} << {58'h0, entries_31_addr[1:0], 3'h0} >> _GEN_0;
-  wire        io_wait_load_0 =
-    (|{io_ld_valid & olderStore_31 & ~entries_31_addr_ready,
-       io_ld_valid & olderStore_30 & ~entries_30_addr_ready,
-       io_ld_valid & olderStore_29 & ~entries_29_addr_ready,
-       io_ld_valid & olderStore_28 & ~entries_28_addr_ready,
-       io_ld_valid & olderStore_27 & ~entries_27_addr_ready,
-       io_ld_valid & olderStore_26 & ~entries_26_addr_ready,
-       io_ld_valid & olderStore_25 & ~entries_25_addr_ready,
-       io_ld_valid & olderStore_24 & ~entries_24_addr_ready,
-       io_ld_valid & olderStore_23 & ~entries_23_addr_ready,
-       io_ld_valid & olderStore_22 & ~entries_22_addr_ready,
-       io_ld_valid & olderStore_21 & ~entries_21_addr_ready,
-       io_ld_valid & olderStore_20 & ~entries_20_addr_ready,
-       io_ld_valid & olderStore_19 & ~entries_19_addr_ready,
-       io_ld_valid & olderStore_18 & ~entries_18_addr_ready,
-       io_ld_valid & olderStore_17 & ~entries_17_addr_ready,
-       io_ld_valid & olderStore_16 & ~entries_16_addr_ready,
-       io_ld_valid & olderStore_15 & ~entries_15_addr_ready,
-       io_ld_valid & olderStore_14 & ~entries_14_addr_ready,
-       io_ld_valid & olderStore_13 & ~entries_13_addr_ready,
-       io_ld_valid & olderStore_12 & ~entries_12_addr_ready,
-       io_ld_valid & olderStore_11 & ~entries_11_addr_ready,
-       io_ld_valid & olderStore_10 & ~entries_10_addr_ready,
-       io_ld_valid & olderStore_9 & ~entries_9_addr_ready,
-       io_ld_valid & olderStore_8 & ~entries_8_addr_ready,
-       io_ld_valid & olderStore_7 & ~entries_7_addr_ready,
-       io_ld_valid & olderStore_6 & ~entries_6_addr_ready,
-       io_ld_valid & olderStore_5 & ~entries_5_addr_ready,
-       io_ld_valid & olderStore_4 & ~entries_4_addr_ready,
-       io_ld_valid & olderStore_3 & ~entries_3_addr_ready,
-       io_ld_valid & olderStore_2 & ~entries_2_addr_ready,
-       io_ld_valid & olderStore_1 & ~entries_1_addr_ready,
-       io_ld_valid & olderStore & ~entries_0_addr_ready})
-    | (|{_fwdHits_31_T & sameWord_31 & (|_overlap_T_31)
-           & _overlap_T_31 != _loadMask_T_31[3:0],
-         _fwdHits_30_T & sameWord_30 & (|_overlap_T_30)
-           & _overlap_T_30 != _loadMask_T_30[3:0],
-         _fwdHits_29_T & sameWord_29 & (|_overlap_T_29)
-           & _overlap_T_29 != _loadMask_T_29[3:0],
-         _fwdHits_28_T & sameWord_28 & (|_overlap_T_28)
-           & _overlap_T_28 != _loadMask_T_28[3:0],
-         _fwdHits_27_T & sameWord_27 & (|_overlap_T_27)
-           & _overlap_T_27 != _loadMask_T_27[3:0],
-         _fwdHits_26_T & sameWord_26 & (|_overlap_T_26)
-           & _overlap_T_26 != _loadMask_T_26[3:0],
-         _fwdHits_25_T & sameWord_25 & (|_overlap_T_25)
-           & _overlap_T_25 != _loadMask_T_25[3:0],
-         _fwdHits_24_T & sameWord_24 & (|_overlap_T_24)
-           & _overlap_T_24 != _loadMask_T_24[3:0],
-         _fwdHits_23_T & sameWord_23 & (|_overlap_T_23)
-           & _overlap_T_23 != _loadMask_T_23[3:0],
-         _fwdHits_22_T & sameWord_22 & (|_overlap_T_22)
-           & _overlap_T_22 != _loadMask_T_22[3:0],
-         _fwdHits_21_T & sameWord_21 & (|_overlap_T_21)
-           & _overlap_T_21 != _loadMask_T_21[3:0],
-         _fwdHits_20_T & sameWord_20 & (|_overlap_T_20)
-           & _overlap_T_20 != _loadMask_T_20[3:0],
-         _fwdHits_19_T & sameWord_19 & (|_overlap_T_19)
-           & _overlap_T_19 != _loadMask_T_19[3:0],
-         _fwdHits_18_T & sameWord_18 & (|_overlap_T_18)
-           & _overlap_T_18 != _loadMask_T_18[3:0],
-         _fwdHits_17_T & sameWord_17 & (|_overlap_T_17)
-           & _overlap_T_17 != _loadMask_T_17[3:0],
-         _fwdHits_16_T & sameWord_16 & (|_overlap_T_16)
-           & _overlap_T_16 != _loadMask_T_16[3:0],
-         _fwdHits_15_T & sameWord_15 & (|_overlap_T_15)
-           & _overlap_T_15 != _loadMask_T_15[3:0],
-         _fwdHits_14_T & sameWord_14 & (|_overlap_T_14)
-           & _overlap_T_14 != _loadMask_T_14[3:0],
-         _fwdHits_13_T & sameWord_13 & (|_overlap_T_13)
-           & _overlap_T_13 != _loadMask_T_13[3:0],
-         _fwdHits_12_T & sameWord_12 & (|_overlap_T_12)
-           & _overlap_T_12 != _loadMask_T_12[3:0],
-         _fwdHits_11_T & sameWord_11 & (|_overlap_T_11)
-           & _overlap_T_11 != _loadMask_T_11[3:0],
-         _fwdHits_10_T & sameWord_10 & (|_overlap_T_10)
-           & _overlap_T_10 != _loadMask_T_10[3:0],
-         _fwdHits_9_T & sameWord_9 & (|_overlap_T_9) & _overlap_T_9 != _loadMask_T_9[3:0],
-         _fwdHits_8_T & sameWord_8 & (|_overlap_T_8) & _overlap_T_8 != _loadMask_T_8[3:0],
-         _fwdHits_7_T & sameWord_7 & (|_overlap_T_7) & _overlap_T_7 != _loadMask_T_7[3:0],
-         _fwdHits_6_T & sameWord_6 & (|_overlap_T_6) & _overlap_T_6 != _loadMask_T_6[3:0],
-         _fwdHits_5_T & sameWord_5 & (|_overlap_T_5) & _overlap_T_5 != _loadMask_T_5[3:0],
-         _fwdHits_4_T & sameWord_4 & (|_overlap_T_4) & _overlap_T_4 != _loadMask_T_4[3:0],
-         _fwdHits_3_T & sameWord_3 & (|_overlap_T_3) & _overlap_T_3 != _loadMask_T_3[3:0],
-         _fwdHits_2_T & sameWord_2 & (|_overlap_T_2) & _overlap_T_2 != _loadMask_T_2[3:0],
-         _fwdHits_1_T & sameWord_1 & (|_overlap_T_1) & _overlap_T_1 != _loadMask_T_1[3:0],
-         _fwdHits_0_T & sameWord & (|_overlap_T) & _overlap_T != _loadMask_T[3:0]});
+  wire [31:0] _io_wait_unknown_T =
+    {unknownHits_31,
+     unknownHits_30,
+     unknownHits_29,
+     unknownHits_28,
+     unknownHits_27,
+     unknownHits_26,
+     unknownHits_25,
+     unknownHits_24,
+     unknownHits_23,
+     unknownHits_22,
+     unknownHits_21,
+     unknownHits_20,
+     unknownHits_19,
+     unknownHits_18,
+     unknownHits_17,
+     unknownHits_16,
+     unknownHits_15,
+     unknownHits_14,
+     unknownHits_13,
+     unknownHits_12,
+     unknownHits_11,
+     unknownHits_10,
+     unknownHits_9,
+     unknownHits_8,
+     unknownHits_7,
+     unknownHits_6,
+     unknownHits_5,
+     unknownHits_4,
+     unknownHits_3,
+     unknownHits_2,
+     unknownHits_1,
+     unknownHits_0};
+  wire [31:0] _io_wait_partial_T =
+    {_fwdHits_31_T & sameWord_31 & (|_overlap_T_31)
+       & _overlap_T_31 != _loadMask_T_31[3:0],
+     _fwdHits_30_T & sameWord_30 & (|_overlap_T_30)
+       & _overlap_T_30 != _loadMask_T_30[3:0],
+     _fwdHits_29_T & sameWord_29 & (|_overlap_T_29)
+       & _overlap_T_29 != _loadMask_T_29[3:0],
+     _fwdHits_28_T & sameWord_28 & (|_overlap_T_28)
+       & _overlap_T_28 != _loadMask_T_28[3:0],
+     _fwdHits_27_T & sameWord_27 & (|_overlap_T_27)
+       & _overlap_T_27 != _loadMask_T_27[3:0],
+     _fwdHits_26_T & sameWord_26 & (|_overlap_T_26)
+       & _overlap_T_26 != _loadMask_T_26[3:0],
+     _fwdHits_25_T & sameWord_25 & (|_overlap_T_25)
+       & _overlap_T_25 != _loadMask_T_25[3:0],
+     _fwdHits_24_T & sameWord_24 & (|_overlap_T_24)
+       & _overlap_T_24 != _loadMask_T_24[3:0],
+     _fwdHits_23_T & sameWord_23 & (|_overlap_T_23)
+       & _overlap_T_23 != _loadMask_T_23[3:0],
+     _fwdHits_22_T & sameWord_22 & (|_overlap_T_22)
+       & _overlap_T_22 != _loadMask_T_22[3:0],
+     _fwdHits_21_T & sameWord_21 & (|_overlap_T_21)
+       & _overlap_T_21 != _loadMask_T_21[3:0],
+     _fwdHits_20_T & sameWord_20 & (|_overlap_T_20)
+       & _overlap_T_20 != _loadMask_T_20[3:0],
+     _fwdHits_19_T & sameWord_19 & (|_overlap_T_19)
+       & _overlap_T_19 != _loadMask_T_19[3:0],
+     _fwdHits_18_T & sameWord_18 & (|_overlap_T_18)
+       & _overlap_T_18 != _loadMask_T_18[3:0],
+     _fwdHits_17_T & sameWord_17 & (|_overlap_T_17)
+       & _overlap_T_17 != _loadMask_T_17[3:0],
+     _fwdHits_16_T & sameWord_16 & (|_overlap_T_16)
+       & _overlap_T_16 != _loadMask_T_16[3:0],
+     _fwdHits_15_T & sameWord_15 & (|_overlap_T_15)
+       & _overlap_T_15 != _loadMask_T_15[3:0],
+     _fwdHits_14_T & sameWord_14 & (|_overlap_T_14)
+       & _overlap_T_14 != _loadMask_T_14[3:0],
+     _fwdHits_13_T & sameWord_13 & (|_overlap_T_13)
+       & _overlap_T_13 != _loadMask_T_13[3:0],
+     _fwdHits_12_T & sameWord_12 & (|_overlap_T_12)
+       & _overlap_T_12 != _loadMask_T_12[3:0],
+     _fwdHits_11_T & sameWord_11 & (|_overlap_T_11)
+       & _overlap_T_11 != _loadMask_T_11[3:0],
+     _fwdHits_10_T & sameWord_10 & (|_overlap_T_10)
+       & _overlap_T_10 != _loadMask_T_10[3:0],
+     _fwdHits_9_T & sameWord_9 & (|_overlap_T_9) & _overlap_T_9 != _loadMask_T_9[3:0],
+     _fwdHits_8_T & sameWord_8 & (|_overlap_T_8) & _overlap_T_8 != _loadMask_T_8[3:0],
+     _fwdHits_7_T & sameWord_7 & (|_overlap_T_7) & _overlap_T_7 != _loadMask_T_7[3:0],
+     _fwdHits_6_T & sameWord_6 & (|_overlap_T_6) & _overlap_T_6 != _loadMask_T_6[3:0],
+     _fwdHits_5_T & sameWord_5 & (|_overlap_T_5) & _overlap_T_5 != _loadMask_T_5[3:0],
+     _fwdHits_4_T & sameWord_4 & (|_overlap_T_4) & _overlap_T_4 != _loadMask_T_4[3:0],
+     _fwdHits_3_T & sameWord_3 & (|_overlap_T_3) & _overlap_T_3 != _loadMask_T_3[3:0],
+     _fwdHits_2_T & sameWord_2 & (|_overlap_T_2) & _overlap_T_2 != _loadMask_T_2[3:0],
+     _fwdHits_1_T & sameWord_1 & (|_overlap_T_1) & _overlap_T_1 != _loadMask_T_1[3:0],
+     _fwdHits_0_T & sameWord & (|_overlap_T) & _overlap_T != _loadMask_T[3:0]};
+  wire        io_wait_load_0 = (|_io_wait_unknown_T) | (|_io_wait_partial_T);
   wire [31:0] _GEN_1 =
     (fwdHits_0
      & ~(fwdHits_1 & _eAge_T_2 > idxAge | fwdHits_2 & _eAge_T_4 > idxAge | fwdHits_3
@@ -2906,5 +2944,73 @@ module StoreQueue(
   assign io_fwd_data =
     _GEN_1 | _GEN_2 | _GEN_3 | _GEN_4 | _GEN_5 | _GEN_6 | _GEN_7 | _GEN_8;
   assign io_wait_load = io_wait_load_0;
+  assign io_wait_unknown = |_io_wait_unknown_T;
+  assign io_wait_partial = |_io_wait_partial_T;
+  assign io_has_fwd_candidate =
+    |{fwdHits_31,
+      fwdHits_30,
+      fwdHits_29,
+      fwdHits_28,
+      fwdHits_27,
+      fwdHits_26,
+      fwdHits_25,
+      fwdHits_24,
+      fwdHits_23,
+      fwdHits_22,
+      fwdHits_21,
+      fwdHits_20,
+      fwdHits_19,
+      fwdHits_18,
+      fwdHits_17,
+      fwdHits_16,
+      fwdHits_15,
+      fwdHits_14,
+      fwdHits_13,
+      fwdHits_12,
+      fwdHits_11,
+      fwdHits_10,
+      fwdHits_9,
+      fwdHits_8,
+      fwdHits_7,
+      fwdHits_6,
+      fwdHits_5,
+      fwdHits_4,
+      fwdHits_3,
+      fwdHits_2,
+      fwdHits_1,
+      fwdHits_0};
+  assign io_older_unresolved_mask =
+    {unknownHits_31,
+     unknownHits_30,
+     unknownHits_29,
+     unknownHits_28,
+     unknownHits_27,
+     unknownHits_26,
+     unknownHits_25,
+     unknownHits_24,
+     unknownHits_23,
+     unknownHits_22,
+     unknownHits_21,
+     unknownHits_20,
+     unknownHits_19,
+     unknownHits_18,
+     unknownHits_17,
+     unknownHits_16,
+     unknownHits_15,
+     unknownHits_14,
+     unknownHits_13,
+     unknownHits_12,
+     unknownHits_11,
+     unknownHits_10,
+     unknownHits_9,
+     unknownHits_8,
+     unknownHits_7,
+     unknownHits_6,
+     unknownHits_5,
+     unknownHits_4,
+     unknownHits_3,
+     unknownHits_2,
+     unknownHits_1,
+     unknownHits_0};
 endmodule
 

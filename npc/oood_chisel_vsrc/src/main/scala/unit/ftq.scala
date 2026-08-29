@@ -8,7 +8,7 @@ class FTQAlloc extends Bundle {
   val basePc = UInt(32.W)
   val validMask = UInt(OoOParams.FETCH_WIDTH.W)
   val predictedNextPc = UInt(32.W)
-  val cfiSlot = UInt(2.W)
+  val cfiSlot = UInt(log2Ceil(OoOParams.FETCH_WIDTH + 1).W)
   val ghr = UInt(BPU_Config.GHR_LENGTH.W)
   val pathHistory = UInt(BPU_Config.PATH_HISTORY_LENGTH.W)
   val ras = Vec(BPU_Config.RAS_SIZE, UInt(32.W))
@@ -38,13 +38,19 @@ class FTQ(n: Int = OoOParams.FTQ_SIZE) extends Module {
     val commit1Valid = Input(Bool())
     val commit1Idx = Input(UInt(ptrW.W))
     val commit1Generation = Input(UInt(OoOParams.FTQ_GEN_W.W))
+    val commit2Valid = Input(Bool())
+    val commit2Idx = Input(UInt(ptrW.W))
+    val commit2Generation = Input(UInt(OoOParams.FTQ_GEN_W.W))
+    val commit3Valid = Input(Bool())
+    val commit3Idx = Input(UInt(ptrW.W))
+    val commit3Generation = Input(UInt(OoOParams.FTQ_GEN_W.W))
 
     val recoverIdx = Input(UInt(ptrW.W))
     val recoverGeneration = Input(UInt(OoOParams.FTQ_GEN_W.W))
     val recoverValid = Output(Bool())
     val recover = Output(new FTQAlloc)
     val recoverFlush = Input(Bool())
-    val recoverSlot1 = Input(Bool())
+    val recoverSlot = Input(UInt(log2Ceil(OoOParams.FETCH_WIDTH).W))
 
     val flush = Input(Bool())
     val count = Output(UInt(log2Ceil(n + 1).W))
@@ -64,8 +70,10 @@ class FTQ(n: Int = OoOParams.FTQ_SIZE) extends Module {
   io.full := count === n.U
 
   val recoverEntry = entries(io.recoverIdx)
+  val recoverAge = (io.recoverIdx - head)(ptrW - 1, 0)
+  val recoverInWindow = recoverAge < count
   io.recoverValid := recoverEntry.valid &&
-    recoverEntry.generation === io.recoverGeneration
+    recoverEntry.generation === io.recoverGeneration && recoverInWindow
   io.recover.basePc := recoverEntry.basePc
   io.recover.validMask := recoverEntry.validMask
   io.recover.predictedNextPc := recoverEntry.predictedNextPc
@@ -76,23 +84,28 @@ class FTQ(n: Int = OoOParams.FTQ_SIZE) extends Module {
   io.recover.rasPtr := recoverEntry.rasPtr
   io.recover.rasCount := recoverEntry.rasCount
 
-  val commitHits = Wire(Vec(n, UInt(2.W)))
+  val commitHits = Wire(Vec(n, UInt(log2Ceil(OoOParams.CORE_WIDTH + 1).W)))
   val willFree = Wire(Vec(n, Bool()))
   for (i <- 0 until n) {
     val hit0 = io.commit0Valid && entries(i).valid &&
       io.commit0Idx === i.U && entries(i).generation === io.commit0Generation
     val hit1 = io.commit1Valid && entries(i).valid &&
       io.commit1Idx === i.U && entries(i).generation === io.commit1Generation
-    commitHits(i) := hit0.asUInt +& hit1.asUInt
+    val hit2 = io.commit2Valid && entries(i).valid &&
+      io.commit2Idx === i.U && entries(i).generation === io.commit2Generation
+    val hit3 = io.commit3Valid && entries(i).valid &&
+      io.commit3Idx === i.U && entries(i).generation === io.commit3Generation
+    commitHits(i) := PopCount(Seq(hit0, hit1, hit2, hit3))
     willFree(i) := entries(i).valid && commitHits(i) =/= 0.U &&
       entries(i).pending <= commitHits(i)
   }
 
-  val head1 = (head + 1.U)(ptrW - 1, 0)
-  val freeHead = willFree(head)
-  val freeHead1 = freeHead && willFree(head1)
-  val freeCount = freeHead.asUInt +& freeHead1.asUInt
-  val recoverAge = (io.recoverIdx - head)(ptrW - 1, 0)
+  val freeHead = Wire(Vec(OoOParams.CORE_WIDTH, Bool()))
+  for (lane <- 0 until OoOParams.CORE_WIDTH) {
+    val prefix = (0 until lane).map(freeHead(_)).foldLeft(true.B)(_ && _)
+    freeHead(lane) := prefix && willFree((head + lane.U)(ptrW - 1, 0))
+  }
+  val freeCount = PopCount(freeHead)
   val recoverKeepCount = recoverAge +& 1.U
 
   when(io.flush || (io.recoverFlush && !io.recoverValid)) {
@@ -112,12 +125,24 @@ class FTQ(n: Int = OoOParams.FTQ_SIZE) extends Module {
         generations(i) := generations(i) + 1.U
       }
     }
-    when(!io.recoverSlot1 && recoverEntry.validMask(1)) {
-      entries(io.recoverIdx).validMask := recoverEntry.validMask & 1.U
-      entries(io.recoverIdx).pending := recoverEntry.pending - 1.U
+    val recoverSlots = io.recoverSlot +& 1.U
+    val keepMask = ((1.U((OoOParams.FETCH_WIDTH + 1).W) <<
+      recoverSlots) - 1.U)(OoOParams.FETCH_WIDTH - 1, 0)
+    val recoveredMask = recoverEntry.validMask & keepMask
+    val removed = PopCount(recoverEntry.validMask & ~keepMask)
+    val recoveredPending = recoverEntry.pending - removed
+    when(recoveredMask.orR && recoveredPending =/= 0.U) {
+      entries(io.recoverIdx).validMask := recoveredMask
+      entries(io.recoverIdx).pending := recoveredPending
+      tail := io.recoverIdx + 1.U
+      count := recoverKeepCount
+    }.otherwise {
+      entries(io.recoverIdx).valid := false.B
+      entries(io.recoverIdx).pending := 0.U
+      generations(io.recoverIdx) := generations(io.recoverIdx) + 1.U
+      tail := io.recoverIdx
+      count := recoverAge
     }
-    tail := io.recoverIdx + 1.U
-    count := recoverKeepCount
   }.otherwise {
     for (i <- 0 until n) {
       when(commitHits(i) =/= 0.U) {
@@ -157,9 +182,14 @@ class FTQ(n: Int = OoOParams.FTQ_SIZE) extends Module {
   when(!reset.asBool && !io.flush) {
     assert(PopCount(entries.map(_.valid)) === count,
       "FTQ valid entries must match the queue count")
-    assert(!willFree.asUInt.orR || freeHead,
+    assert(!willFree.asUInt.orR || freeHead(0),
       "FTQ commits must free blocks in fetch order")
-    assert(!io.recoverFlush || !(io.commit0Valid || io.commit1Valid),
+    assert(!io.recoverFlush || !(io.commit0Valid || io.commit1Valid ||
+      io.commit2Valid || io.commit3Valid),
       "FTQ redirect must not race architectural commit")
+    assert(!io.recoverFlush || !io.recoverValid || recoverEntry.pending >=
+      PopCount(recoverEntry.validMask & ~((1.U((OoOParams.FETCH_WIDTH + 1).W) <<
+        (io.recoverSlot +& 1.U)) - 1.U)(OoOParams.FETCH_WIDTH - 1, 0)),
+      "FTQ recovery cannot remove more slots than remain pending")
   }
 }

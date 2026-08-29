@@ -3,8 +3,8 @@
 ## 学习导航
 - **理论目标**：理解四提交仍必须逐条保持程序序，副作用和异常边界不能用并行 valid 掩盖顺序关系。
 - **最小实现**：ROB 最多提交四条普通指令；按 lane0→3 依次更新 arch RAT、FreeList、BPU、SQ/StoreBuffer 和 C++ difftest，特殊指令建立独占边界。
-- **当前参考核**：双提交，lane1 已支持普通 load/control/cacheable store；四路 commit 和 C++ 导出尚未实现。
-- **后续扩展**：多 store commit、双分支训练、多个特殊副作用；最小版本允许每拍最多一个 store/control side effect。
+- **当前参考核**：四路 ROB commit 和四 lane C++/性能导出接口已接入；当前提交计数为 `slot0/1/2/3=147624/95866/75289/50032`。特殊副作用仍按程序序建立边界，四路完整 difftest 和异常矩阵尚未重新收官。
+- **后续扩展**：完成四 lane 逐条 difftest、恢复和副作用排序后，再做多 store commit、双分支训练和更多特殊副作用；不要用放宽顺序换 IPC。
 - **验收方式**：四普通提交、同 rd WAW、lane1/2/3 exception、store/control 排序、interrupt 间隙、flush+commit 同拍和四路 difftest 定向测试。
 
 ---

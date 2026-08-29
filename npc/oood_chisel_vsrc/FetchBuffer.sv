@@ -6,6 +6,8 @@ module FetchBuffer(
   input         io_in_valid,
                 io_in_bits_valid_0,
                 io_in_bits_valid_1,
+                io_in_bits_valid_2,
+                io_in_bits_valid_3,
   input  [31:0] io_in_bits_bits_0_inst,
                 io_in_bits_bits_0_pc,
   input         io_in_bits_bits_0_state_state,
@@ -26,10 +28,32 @@ module FetchBuffer(
   input  [78:0] io_in_bits_bits_1_bp_index,
   input  [3:0]  io_in_bits_bits_1_ftq_idx,
   input  [7:0]  io_in_bits_bits_1_ftq_generation,
+  input  [31:0] io_in_bits_bits_2_inst,
+                io_in_bits_bits_2_pc,
+  input         io_in_bits_bits_2_state_state,
+  input  [7:0]  io_in_bits_bits_2_state_state_num,
+  input         io_in_bits_bits_2_bp_valid,
+                io_in_bits_bits_2_bp_taken,
+  input  [31:0] io_in_bits_bits_2_bp_target,
+  input  [78:0] io_in_bits_bits_2_bp_index,
+  input  [3:0]  io_in_bits_bits_2_ftq_idx,
+  input  [7:0]  io_in_bits_bits_2_ftq_generation,
+  input  [31:0] io_in_bits_bits_3_inst,
+                io_in_bits_bits_3_pc,
+  input         io_in_bits_bits_3_state_state,
+  input  [7:0]  io_in_bits_bits_3_state_state_num,
+  input         io_in_bits_bits_3_bp_valid,
+                io_in_bits_bits_3_bp_taken,
+  input  [31:0] io_in_bits_bits_3_bp_target,
+  input  [78:0] io_in_bits_bits_3_bp_index,
+  input  [3:0]  io_in_bits_bits_3_ftq_idx,
+  input  [7:0]  io_in_bits_bits_3_ftq_generation,
   input         io_out_ready,
   output        io_out_valid,
                 io_out_bits_valid_0,
                 io_out_bits_valid_1,
+                io_out_bits_valid_2,
+                io_out_bits_valid_3,
   output [31:0] io_out_bits_bits_0_inst,
                 io_out_bits_bits_0_pc,
   output        io_out_bits_bits_0_state_state,
@@ -50,6 +74,26 @@ module FetchBuffer(
   output [78:0] io_out_bits_bits_1_bp_index,
   output [3:0]  io_out_bits_bits_1_ftq_idx,
   output [7:0]  io_out_bits_bits_1_ftq_generation,
+  output [31:0] io_out_bits_bits_2_inst,
+                io_out_bits_bits_2_pc,
+  output        io_out_bits_bits_2_state_state,
+  output [7:0]  io_out_bits_bits_2_state_state_num,
+  output        io_out_bits_bits_2_bp_valid,
+                io_out_bits_bits_2_bp_taken,
+  output [31:0] io_out_bits_bits_2_bp_target,
+  output [78:0] io_out_bits_bits_2_bp_index,
+  output [3:0]  io_out_bits_bits_2_ftq_idx,
+  output [7:0]  io_out_bits_bits_2_ftq_generation,
+  output [31:0] io_out_bits_bits_3_inst,
+                io_out_bits_bits_3_pc,
+  output        io_out_bits_bits_3_state_state,
+  output [7:0]  io_out_bits_bits_3_state_state_num,
+  output        io_out_bits_bits_3_bp_valid,
+                io_out_bits_bits_3_bp_taken,
+  output [31:0] io_out_bits_bits_3_bp_target,
+  output [78:0] io_out_bits_bits_3_bp_index,
+  output [3:0]  io_out_bits_bits_3_ftq_idx,
+  output [7:0]  io_out_bits_bits_3_ftq_generation,
   input         io_flush,
                 io_replaceReady,
   output        io_full
@@ -57,6 +101,8 @@ module FetchBuffer(
 
   reg         entries_0_valid_0;
   reg         entries_0_valid_1;
+  reg         entries_0_valid_2;
+  reg         entries_0_valid_3;
   reg  [31:0] entries_0_bits_0_inst;
   reg  [31:0] entries_0_bits_0_pc;
   reg         entries_0_bits_0_state_state;
@@ -77,8 +123,30 @@ module FetchBuffer(
   reg  [78:0] entries_0_bits_1_bp_index;
   reg  [3:0]  entries_0_bits_1_ftq_idx;
   reg  [7:0]  entries_0_bits_1_ftq_generation;
+  reg  [31:0] entries_0_bits_2_inst;
+  reg  [31:0] entries_0_bits_2_pc;
+  reg         entries_0_bits_2_state_state;
+  reg  [7:0]  entries_0_bits_2_state_state_num;
+  reg         entries_0_bits_2_bp_valid;
+  reg         entries_0_bits_2_bp_taken;
+  reg  [31:0] entries_0_bits_2_bp_target;
+  reg  [78:0] entries_0_bits_2_bp_index;
+  reg  [3:0]  entries_0_bits_2_ftq_idx;
+  reg  [7:0]  entries_0_bits_2_ftq_generation;
+  reg  [31:0] entries_0_bits_3_inst;
+  reg  [31:0] entries_0_bits_3_pc;
+  reg         entries_0_bits_3_state_state;
+  reg  [7:0]  entries_0_bits_3_state_state_num;
+  reg         entries_0_bits_3_bp_valid;
+  reg         entries_0_bits_3_bp_taken;
+  reg  [31:0] entries_0_bits_3_bp_target;
+  reg  [78:0] entries_0_bits_3_bp_index;
+  reg  [3:0]  entries_0_bits_3_ftq_idx;
+  reg  [7:0]  entries_0_bits_3_ftq_generation;
   reg         entries_1_valid_0;
   reg         entries_1_valid_1;
+  reg         entries_1_valid_2;
+  reg         entries_1_valid_3;
   reg  [31:0] entries_1_bits_0_inst;
   reg  [31:0] entries_1_bits_0_pc;
   reg         entries_1_bits_0_state_state;
@@ -99,8 +167,30 @@ module FetchBuffer(
   reg  [78:0] entries_1_bits_1_bp_index;
   reg  [3:0]  entries_1_bits_1_ftq_idx;
   reg  [7:0]  entries_1_bits_1_ftq_generation;
+  reg  [31:0] entries_1_bits_2_inst;
+  reg  [31:0] entries_1_bits_2_pc;
+  reg         entries_1_bits_2_state_state;
+  reg  [7:0]  entries_1_bits_2_state_state_num;
+  reg         entries_1_bits_2_bp_valid;
+  reg         entries_1_bits_2_bp_taken;
+  reg  [31:0] entries_1_bits_2_bp_target;
+  reg  [78:0] entries_1_bits_2_bp_index;
+  reg  [3:0]  entries_1_bits_2_ftq_idx;
+  reg  [7:0]  entries_1_bits_2_ftq_generation;
+  reg  [31:0] entries_1_bits_3_inst;
+  reg  [31:0] entries_1_bits_3_pc;
+  reg         entries_1_bits_3_state_state;
+  reg  [7:0]  entries_1_bits_3_state_state_num;
+  reg         entries_1_bits_3_bp_valid;
+  reg         entries_1_bits_3_bp_taken;
+  reg  [31:0] entries_1_bits_3_bp_target;
+  reg  [78:0] entries_1_bits_3_bp_index;
+  reg  [3:0]  entries_1_bits_3_ftq_idx;
+  reg  [7:0]  entries_1_bits_3_ftq_generation;
   reg         entries_2_valid_0;
   reg         entries_2_valid_1;
+  reg         entries_2_valid_2;
+  reg         entries_2_valid_3;
   reg  [31:0] entries_2_bits_0_inst;
   reg  [31:0] entries_2_bits_0_pc;
   reg         entries_2_bits_0_state_state;
@@ -121,8 +211,30 @@ module FetchBuffer(
   reg  [78:0] entries_2_bits_1_bp_index;
   reg  [3:0]  entries_2_bits_1_ftq_idx;
   reg  [7:0]  entries_2_bits_1_ftq_generation;
+  reg  [31:0] entries_2_bits_2_inst;
+  reg  [31:0] entries_2_bits_2_pc;
+  reg         entries_2_bits_2_state_state;
+  reg  [7:0]  entries_2_bits_2_state_state_num;
+  reg         entries_2_bits_2_bp_valid;
+  reg         entries_2_bits_2_bp_taken;
+  reg  [31:0] entries_2_bits_2_bp_target;
+  reg  [78:0] entries_2_bits_2_bp_index;
+  reg  [3:0]  entries_2_bits_2_ftq_idx;
+  reg  [7:0]  entries_2_bits_2_ftq_generation;
+  reg  [31:0] entries_2_bits_3_inst;
+  reg  [31:0] entries_2_bits_3_pc;
+  reg         entries_2_bits_3_state_state;
+  reg  [7:0]  entries_2_bits_3_state_state_num;
+  reg         entries_2_bits_3_bp_valid;
+  reg         entries_2_bits_3_bp_taken;
+  reg  [31:0] entries_2_bits_3_bp_target;
+  reg  [78:0] entries_2_bits_3_bp_index;
+  reg  [3:0]  entries_2_bits_3_ftq_idx;
+  reg  [7:0]  entries_2_bits_3_ftq_generation;
   reg         entries_3_valid_0;
   reg         entries_3_valid_1;
+  reg         entries_3_valid_2;
+  reg         entries_3_valid_3;
   reg  [31:0] entries_3_bits_0_inst;
   reg  [31:0] entries_3_bits_0_pc;
   reg         entries_3_bits_0_state_state;
@@ -143,6 +255,26 @@ module FetchBuffer(
   reg  [78:0] entries_3_bits_1_bp_index;
   reg  [3:0]  entries_3_bits_1_ftq_idx;
   reg  [7:0]  entries_3_bits_1_ftq_generation;
+  reg  [31:0] entries_3_bits_2_inst;
+  reg  [31:0] entries_3_bits_2_pc;
+  reg         entries_3_bits_2_state_state;
+  reg  [7:0]  entries_3_bits_2_state_state_num;
+  reg         entries_3_bits_2_bp_valid;
+  reg         entries_3_bits_2_bp_taken;
+  reg  [31:0] entries_3_bits_2_bp_target;
+  reg  [78:0] entries_3_bits_2_bp_index;
+  reg  [3:0]  entries_3_bits_2_ftq_idx;
+  reg  [7:0]  entries_3_bits_2_ftq_generation;
+  reg  [31:0] entries_3_bits_3_inst;
+  reg  [31:0] entries_3_bits_3_pc;
+  reg         entries_3_bits_3_state_state;
+  reg  [7:0]  entries_3_bits_3_state_state_num;
+  reg         entries_3_bits_3_bp_valid;
+  reg         entries_3_bits_3_bp_taken;
+  reg  [31:0] entries_3_bits_3_bp_target;
+  reg  [78:0] entries_3_bits_3_bp_index;
+  reg  [3:0]  entries_3_bits_3_ftq_idx;
+  reg  [7:0]  entries_3_bits_3_ftq_generation;
   reg  [1:0]  head;
   reg  [1:0]  tail;
   reg  [2:0]  count;
@@ -173,264 +305,550 @@ module FetchBuffer(
         casez_tmp_0 = entries_3_valid_1;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_1;
+  reg         casez_tmp_1;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_1 = entries_0_bits_0_inst;
+        casez_tmp_1 = entries_0_valid_2;
       2'b01:
-        casez_tmp_1 = entries_1_bits_0_inst;
+        casez_tmp_1 = entries_1_valid_2;
       2'b10:
-        casez_tmp_1 = entries_2_bits_0_inst;
+        casez_tmp_1 = entries_2_valid_2;
       default:
-        casez_tmp_1 = entries_3_bits_0_inst;
+        casez_tmp_1 = entries_3_valid_2;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_2;
+  reg         casez_tmp_2;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_2 = entries_0_bits_0_pc;
+        casez_tmp_2 = entries_0_valid_3;
       2'b01:
-        casez_tmp_2 = entries_1_bits_0_pc;
+        casez_tmp_2 = entries_1_valid_3;
       2'b10:
-        casez_tmp_2 = entries_2_bits_0_pc;
+        casez_tmp_2 = entries_2_valid_3;
       default:
-        casez_tmp_2 = entries_3_bits_0_pc;
+        casez_tmp_2 = entries_3_valid_3;
     endcase
   end // always_comb
-  reg         casez_tmp_3;
+  reg  [31:0] casez_tmp_3;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_3 = entries_0_bits_0_state_state;
+        casez_tmp_3 = entries_0_bits_0_inst;
       2'b01:
-        casez_tmp_3 = entries_1_bits_0_state_state;
+        casez_tmp_3 = entries_1_bits_0_inst;
       2'b10:
-        casez_tmp_3 = entries_2_bits_0_state_state;
+        casez_tmp_3 = entries_2_bits_0_inst;
       default:
-        casez_tmp_3 = entries_3_bits_0_state_state;
+        casez_tmp_3 = entries_3_bits_0_inst;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_4;
+  reg  [31:0] casez_tmp_4;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_4 = entries_0_bits_0_state_state_num;
+        casez_tmp_4 = entries_0_bits_0_pc;
       2'b01:
-        casez_tmp_4 = entries_1_bits_0_state_state_num;
+        casez_tmp_4 = entries_1_bits_0_pc;
       2'b10:
-        casez_tmp_4 = entries_2_bits_0_state_state_num;
+        casez_tmp_4 = entries_2_bits_0_pc;
       default:
-        casez_tmp_4 = entries_3_bits_0_state_state_num;
+        casez_tmp_4 = entries_3_bits_0_pc;
     endcase
   end // always_comb
   reg         casez_tmp_5;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_5 = entries_0_bits_0_bp_valid;
+        casez_tmp_5 = entries_0_bits_0_state_state;
       2'b01:
-        casez_tmp_5 = entries_1_bits_0_bp_valid;
+        casez_tmp_5 = entries_1_bits_0_state_state;
       2'b10:
-        casez_tmp_5 = entries_2_bits_0_bp_valid;
+        casez_tmp_5 = entries_2_bits_0_state_state;
       default:
-        casez_tmp_5 = entries_3_bits_0_bp_valid;
+        casez_tmp_5 = entries_3_bits_0_state_state;
     endcase
   end // always_comb
-  reg         casez_tmp_6;
+  reg  [7:0]  casez_tmp_6;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_6 = entries_0_bits_0_bp_taken;
+        casez_tmp_6 = entries_0_bits_0_state_state_num;
       2'b01:
-        casez_tmp_6 = entries_1_bits_0_bp_taken;
+        casez_tmp_6 = entries_1_bits_0_state_state_num;
       2'b10:
-        casez_tmp_6 = entries_2_bits_0_bp_taken;
+        casez_tmp_6 = entries_2_bits_0_state_state_num;
       default:
-        casez_tmp_6 = entries_3_bits_0_bp_taken;
+        casez_tmp_6 = entries_3_bits_0_state_state_num;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_7;
+  reg         casez_tmp_7;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_7 = entries_0_bits_0_bp_target;
+        casez_tmp_7 = entries_0_bits_0_bp_valid;
       2'b01:
-        casez_tmp_7 = entries_1_bits_0_bp_target;
+        casez_tmp_7 = entries_1_bits_0_bp_valid;
       2'b10:
-        casez_tmp_7 = entries_2_bits_0_bp_target;
+        casez_tmp_7 = entries_2_bits_0_bp_valid;
       default:
-        casez_tmp_7 = entries_3_bits_0_bp_target;
+        casez_tmp_7 = entries_3_bits_0_bp_valid;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_8;
+  reg         casez_tmp_8;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_8 = entries_0_bits_0_bp_index;
+        casez_tmp_8 = entries_0_bits_0_bp_taken;
       2'b01:
-        casez_tmp_8 = entries_1_bits_0_bp_index;
+        casez_tmp_8 = entries_1_bits_0_bp_taken;
       2'b10:
-        casez_tmp_8 = entries_2_bits_0_bp_index;
+        casez_tmp_8 = entries_2_bits_0_bp_taken;
       default:
-        casez_tmp_8 = entries_3_bits_0_bp_index;
+        casez_tmp_8 = entries_3_bits_0_bp_taken;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_9;
+  reg  [31:0] casez_tmp_9;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_9 = entries_0_bits_0_ftq_idx;
+        casez_tmp_9 = entries_0_bits_0_bp_target;
       2'b01:
-        casez_tmp_9 = entries_1_bits_0_ftq_idx;
+        casez_tmp_9 = entries_1_bits_0_bp_target;
       2'b10:
-        casez_tmp_9 = entries_2_bits_0_ftq_idx;
+        casez_tmp_9 = entries_2_bits_0_bp_target;
       default:
-        casez_tmp_9 = entries_3_bits_0_ftq_idx;
+        casez_tmp_9 = entries_3_bits_0_bp_target;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_10;
+  reg  [78:0] casez_tmp_10;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_10 = entries_0_bits_0_ftq_generation;
+        casez_tmp_10 = entries_0_bits_0_bp_index;
       2'b01:
-        casez_tmp_10 = entries_1_bits_0_ftq_generation;
+        casez_tmp_10 = entries_1_bits_0_bp_index;
       2'b10:
-        casez_tmp_10 = entries_2_bits_0_ftq_generation;
+        casez_tmp_10 = entries_2_bits_0_bp_index;
       default:
-        casez_tmp_10 = entries_3_bits_0_ftq_generation;
+        casez_tmp_10 = entries_3_bits_0_bp_index;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_11;
+  reg  [3:0]  casez_tmp_11;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_11 = entries_0_bits_1_inst;
+        casez_tmp_11 = entries_0_bits_0_ftq_idx;
       2'b01:
-        casez_tmp_11 = entries_1_bits_1_inst;
+        casez_tmp_11 = entries_1_bits_0_ftq_idx;
       2'b10:
-        casez_tmp_11 = entries_2_bits_1_inst;
+        casez_tmp_11 = entries_2_bits_0_ftq_idx;
       default:
-        casez_tmp_11 = entries_3_bits_1_inst;
+        casez_tmp_11 = entries_3_bits_0_ftq_idx;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_12;
+  reg  [7:0]  casez_tmp_12;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_12 = entries_0_bits_1_pc;
+        casez_tmp_12 = entries_0_bits_0_ftq_generation;
       2'b01:
-        casez_tmp_12 = entries_1_bits_1_pc;
+        casez_tmp_12 = entries_1_bits_0_ftq_generation;
       2'b10:
-        casez_tmp_12 = entries_2_bits_1_pc;
+        casez_tmp_12 = entries_2_bits_0_ftq_generation;
       default:
-        casez_tmp_12 = entries_3_bits_1_pc;
+        casez_tmp_12 = entries_3_bits_0_ftq_generation;
     endcase
   end // always_comb
-  reg         casez_tmp_13;
+  reg  [31:0] casez_tmp_13;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_13 = entries_0_bits_1_state_state;
+        casez_tmp_13 = entries_0_bits_1_inst;
       2'b01:
-        casez_tmp_13 = entries_1_bits_1_state_state;
+        casez_tmp_13 = entries_1_bits_1_inst;
       2'b10:
-        casez_tmp_13 = entries_2_bits_1_state_state;
+        casez_tmp_13 = entries_2_bits_1_inst;
       default:
-        casez_tmp_13 = entries_3_bits_1_state_state;
+        casez_tmp_13 = entries_3_bits_1_inst;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_14;
+  reg  [31:0] casez_tmp_14;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_14 = entries_0_bits_1_state_state_num;
+        casez_tmp_14 = entries_0_bits_1_pc;
       2'b01:
-        casez_tmp_14 = entries_1_bits_1_state_state_num;
+        casez_tmp_14 = entries_1_bits_1_pc;
       2'b10:
-        casez_tmp_14 = entries_2_bits_1_state_state_num;
+        casez_tmp_14 = entries_2_bits_1_pc;
       default:
-        casez_tmp_14 = entries_3_bits_1_state_state_num;
+        casez_tmp_14 = entries_3_bits_1_pc;
     endcase
   end // always_comb
   reg         casez_tmp_15;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_15 = entries_0_bits_1_bp_valid;
+        casez_tmp_15 = entries_0_bits_1_state_state;
       2'b01:
-        casez_tmp_15 = entries_1_bits_1_bp_valid;
+        casez_tmp_15 = entries_1_bits_1_state_state;
       2'b10:
-        casez_tmp_15 = entries_2_bits_1_bp_valid;
+        casez_tmp_15 = entries_2_bits_1_state_state;
       default:
-        casez_tmp_15 = entries_3_bits_1_bp_valid;
+        casez_tmp_15 = entries_3_bits_1_state_state;
     endcase
   end // always_comb
-  reg         casez_tmp_16;
+  reg  [7:0]  casez_tmp_16;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_16 = entries_0_bits_1_bp_taken;
+        casez_tmp_16 = entries_0_bits_1_state_state_num;
       2'b01:
-        casez_tmp_16 = entries_1_bits_1_bp_taken;
+        casez_tmp_16 = entries_1_bits_1_state_state_num;
       2'b10:
-        casez_tmp_16 = entries_2_bits_1_bp_taken;
+        casez_tmp_16 = entries_2_bits_1_state_state_num;
       default:
-        casez_tmp_16 = entries_3_bits_1_bp_taken;
+        casez_tmp_16 = entries_3_bits_1_state_state_num;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_17;
+  reg         casez_tmp_17;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_17 = entries_0_bits_1_bp_target;
+        casez_tmp_17 = entries_0_bits_1_bp_valid;
       2'b01:
-        casez_tmp_17 = entries_1_bits_1_bp_target;
+        casez_tmp_17 = entries_1_bits_1_bp_valid;
       2'b10:
-        casez_tmp_17 = entries_2_bits_1_bp_target;
+        casez_tmp_17 = entries_2_bits_1_bp_valid;
       default:
-        casez_tmp_17 = entries_3_bits_1_bp_target;
+        casez_tmp_17 = entries_3_bits_1_bp_valid;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_18;
+  reg         casez_tmp_18;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_18 = entries_0_bits_1_bp_index;
+        casez_tmp_18 = entries_0_bits_1_bp_taken;
       2'b01:
-        casez_tmp_18 = entries_1_bits_1_bp_index;
+        casez_tmp_18 = entries_1_bits_1_bp_taken;
       2'b10:
-        casez_tmp_18 = entries_2_bits_1_bp_index;
+        casez_tmp_18 = entries_2_bits_1_bp_taken;
       default:
-        casez_tmp_18 = entries_3_bits_1_bp_index;
+        casez_tmp_18 = entries_3_bits_1_bp_taken;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_19;
+  reg  [31:0] casez_tmp_19;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_19 = entries_0_bits_1_ftq_idx;
+        casez_tmp_19 = entries_0_bits_1_bp_target;
       2'b01:
-        casez_tmp_19 = entries_1_bits_1_ftq_idx;
+        casez_tmp_19 = entries_1_bits_1_bp_target;
       2'b10:
-        casez_tmp_19 = entries_2_bits_1_ftq_idx;
+        casez_tmp_19 = entries_2_bits_1_bp_target;
       default:
-        casez_tmp_19 = entries_3_bits_1_ftq_idx;
+        casez_tmp_19 = entries_3_bits_1_bp_target;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_20;
+  reg  [78:0] casez_tmp_20;
   always_comb begin
     casez (head)
       2'b00:
-        casez_tmp_20 = entries_0_bits_1_ftq_generation;
+        casez_tmp_20 = entries_0_bits_1_bp_index;
       2'b01:
-        casez_tmp_20 = entries_1_bits_1_ftq_generation;
+        casez_tmp_20 = entries_1_bits_1_bp_index;
       2'b10:
-        casez_tmp_20 = entries_2_bits_1_ftq_generation;
+        casez_tmp_20 = entries_2_bits_1_bp_index;
       default:
-        casez_tmp_20 = entries_3_bits_1_ftq_generation;
+        casez_tmp_20 = entries_3_bits_1_bp_index;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_21;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_21 = entries_0_bits_1_ftq_idx;
+      2'b01:
+        casez_tmp_21 = entries_1_bits_1_ftq_idx;
+      2'b10:
+        casez_tmp_21 = entries_2_bits_1_ftq_idx;
+      default:
+        casez_tmp_21 = entries_3_bits_1_ftq_idx;
+    endcase
+  end // always_comb
+  reg  [7:0]  casez_tmp_22;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_22 = entries_0_bits_1_ftq_generation;
+      2'b01:
+        casez_tmp_22 = entries_1_bits_1_ftq_generation;
+      2'b10:
+        casez_tmp_22 = entries_2_bits_1_ftq_generation;
+      default:
+        casez_tmp_22 = entries_3_bits_1_ftq_generation;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_23;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_23 = entries_0_bits_2_inst;
+      2'b01:
+        casez_tmp_23 = entries_1_bits_2_inst;
+      2'b10:
+        casez_tmp_23 = entries_2_bits_2_inst;
+      default:
+        casez_tmp_23 = entries_3_bits_2_inst;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_24;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_24 = entries_0_bits_2_pc;
+      2'b01:
+        casez_tmp_24 = entries_1_bits_2_pc;
+      2'b10:
+        casez_tmp_24 = entries_2_bits_2_pc;
+      default:
+        casez_tmp_24 = entries_3_bits_2_pc;
+    endcase
+  end // always_comb
+  reg         casez_tmp_25;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_25 = entries_0_bits_2_state_state;
+      2'b01:
+        casez_tmp_25 = entries_1_bits_2_state_state;
+      2'b10:
+        casez_tmp_25 = entries_2_bits_2_state_state;
+      default:
+        casez_tmp_25 = entries_3_bits_2_state_state;
+    endcase
+  end // always_comb
+  reg  [7:0]  casez_tmp_26;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_26 = entries_0_bits_2_state_state_num;
+      2'b01:
+        casez_tmp_26 = entries_1_bits_2_state_state_num;
+      2'b10:
+        casez_tmp_26 = entries_2_bits_2_state_state_num;
+      default:
+        casez_tmp_26 = entries_3_bits_2_state_state_num;
+    endcase
+  end // always_comb
+  reg         casez_tmp_27;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_27 = entries_0_bits_2_bp_valid;
+      2'b01:
+        casez_tmp_27 = entries_1_bits_2_bp_valid;
+      2'b10:
+        casez_tmp_27 = entries_2_bits_2_bp_valid;
+      default:
+        casez_tmp_27 = entries_3_bits_2_bp_valid;
+    endcase
+  end // always_comb
+  reg         casez_tmp_28;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_28 = entries_0_bits_2_bp_taken;
+      2'b01:
+        casez_tmp_28 = entries_1_bits_2_bp_taken;
+      2'b10:
+        casez_tmp_28 = entries_2_bits_2_bp_taken;
+      default:
+        casez_tmp_28 = entries_3_bits_2_bp_taken;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_29;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_29 = entries_0_bits_2_bp_target;
+      2'b01:
+        casez_tmp_29 = entries_1_bits_2_bp_target;
+      2'b10:
+        casez_tmp_29 = entries_2_bits_2_bp_target;
+      default:
+        casez_tmp_29 = entries_3_bits_2_bp_target;
+    endcase
+  end // always_comb
+  reg  [78:0] casez_tmp_30;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_30 = entries_0_bits_2_bp_index;
+      2'b01:
+        casez_tmp_30 = entries_1_bits_2_bp_index;
+      2'b10:
+        casez_tmp_30 = entries_2_bits_2_bp_index;
+      default:
+        casez_tmp_30 = entries_3_bits_2_bp_index;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_31;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_31 = entries_0_bits_2_ftq_idx;
+      2'b01:
+        casez_tmp_31 = entries_1_bits_2_ftq_idx;
+      2'b10:
+        casez_tmp_31 = entries_2_bits_2_ftq_idx;
+      default:
+        casez_tmp_31 = entries_3_bits_2_ftq_idx;
+    endcase
+  end // always_comb
+  reg  [7:0]  casez_tmp_32;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_32 = entries_0_bits_2_ftq_generation;
+      2'b01:
+        casez_tmp_32 = entries_1_bits_2_ftq_generation;
+      2'b10:
+        casez_tmp_32 = entries_2_bits_2_ftq_generation;
+      default:
+        casez_tmp_32 = entries_3_bits_2_ftq_generation;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_33;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_33 = entries_0_bits_3_inst;
+      2'b01:
+        casez_tmp_33 = entries_1_bits_3_inst;
+      2'b10:
+        casez_tmp_33 = entries_2_bits_3_inst;
+      default:
+        casez_tmp_33 = entries_3_bits_3_inst;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_34;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_34 = entries_0_bits_3_pc;
+      2'b01:
+        casez_tmp_34 = entries_1_bits_3_pc;
+      2'b10:
+        casez_tmp_34 = entries_2_bits_3_pc;
+      default:
+        casez_tmp_34 = entries_3_bits_3_pc;
+    endcase
+  end // always_comb
+  reg         casez_tmp_35;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_35 = entries_0_bits_3_state_state;
+      2'b01:
+        casez_tmp_35 = entries_1_bits_3_state_state;
+      2'b10:
+        casez_tmp_35 = entries_2_bits_3_state_state;
+      default:
+        casez_tmp_35 = entries_3_bits_3_state_state;
+    endcase
+  end // always_comb
+  reg  [7:0]  casez_tmp_36;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_36 = entries_0_bits_3_state_state_num;
+      2'b01:
+        casez_tmp_36 = entries_1_bits_3_state_state_num;
+      2'b10:
+        casez_tmp_36 = entries_2_bits_3_state_state_num;
+      default:
+        casez_tmp_36 = entries_3_bits_3_state_state_num;
+    endcase
+  end // always_comb
+  reg         casez_tmp_37;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_37 = entries_0_bits_3_bp_valid;
+      2'b01:
+        casez_tmp_37 = entries_1_bits_3_bp_valid;
+      2'b10:
+        casez_tmp_37 = entries_2_bits_3_bp_valid;
+      default:
+        casez_tmp_37 = entries_3_bits_3_bp_valid;
+    endcase
+  end // always_comb
+  reg         casez_tmp_38;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_38 = entries_0_bits_3_bp_taken;
+      2'b01:
+        casez_tmp_38 = entries_1_bits_3_bp_taken;
+      2'b10:
+        casez_tmp_38 = entries_2_bits_3_bp_taken;
+      default:
+        casez_tmp_38 = entries_3_bits_3_bp_taken;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_39;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_39 = entries_0_bits_3_bp_target;
+      2'b01:
+        casez_tmp_39 = entries_1_bits_3_bp_target;
+      2'b10:
+        casez_tmp_39 = entries_2_bits_3_bp_target;
+      default:
+        casez_tmp_39 = entries_3_bits_3_bp_target;
+    endcase
+  end // always_comb
+  reg  [78:0] casez_tmp_40;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_40 = entries_0_bits_3_bp_index;
+      2'b01:
+        casez_tmp_40 = entries_1_bits_3_bp_index;
+      2'b10:
+        casez_tmp_40 = entries_2_bits_3_bp_index;
+      default:
+        casez_tmp_40 = entries_3_bits_3_bp_index;
+    endcase
+  end // always_comb
+  reg  [3:0]  casez_tmp_41;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_41 = entries_0_bits_3_ftq_idx;
+      2'b01:
+        casez_tmp_41 = entries_1_bits_3_ftq_idx;
+      2'b10:
+        casez_tmp_41 = entries_2_bits_3_ftq_idx;
+      default:
+        casez_tmp_41 = entries_3_bits_3_ftq_idx;
+    endcase
+  end // always_comb
+  reg  [7:0]  casez_tmp_42;
+  always_comb begin
+    casez (head)
+      2'b00:
+        casez_tmp_42 = entries_0_bits_3_ftq_generation;
+      2'b01:
+        casez_tmp_42 = entries_1_bits_3_ftq_generation;
+      2'b10:
+        casez_tmp_42 = entries_2_bits_3_ftq_generation;
+      default:
+        casez_tmp_42 = entries_3_bits_3_ftq_generation;
     endcase
   end // always_comb
   wire        io_in_ready_0 = ~io_flush & (count != 3'h4 | io_replaceReady);
@@ -444,6 +862,8 @@ module FetchBuffer(
     else begin
       entries_0_valid_0 <= io_in_bits_valid_0;
       entries_0_valid_1 <= io_in_bits_valid_1;
+      entries_0_valid_2 <= io_in_bits_valid_2;
+      entries_0_valid_3 <= io_in_bits_valid_3;
       entries_0_bits_0_inst <= io_in_bits_bits_0_inst;
       entries_0_bits_0_pc <= io_in_bits_bits_0_pc;
       entries_0_bits_0_state_state <= io_in_bits_bits_0_state_state;
@@ -464,12 +884,34 @@ module FetchBuffer(
       entries_0_bits_1_bp_index <= io_in_bits_bits_1_bp_index;
       entries_0_bits_1_ftq_idx <= io_in_bits_bits_1_ftq_idx;
       entries_0_bits_1_ftq_generation <= io_in_bits_bits_1_ftq_generation;
+      entries_0_bits_2_inst <= io_in_bits_bits_2_inst;
+      entries_0_bits_2_pc <= io_in_bits_bits_2_pc;
+      entries_0_bits_2_state_state <= io_in_bits_bits_2_state_state;
+      entries_0_bits_2_state_state_num <= io_in_bits_bits_2_state_state_num;
+      entries_0_bits_2_bp_valid <= io_in_bits_bits_2_bp_valid;
+      entries_0_bits_2_bp_taken <= io_in_bits_bits_2_bp_taken;
+      entries_0_bits_2_bp_target <= io_in_bits_bits_2_bp_target;
+      entries_0_bits_2_bp_index <= io_in_bits_bits_2_bp_index;
+      entries_0_bits_2_ftq_idx <= io_in_bits_bits_2_ftq_idx;
+      entries_0_bits_2_ftq_generation <= io_in_bits_bits_2_ftq_generation;
+      entries_0_bits_3_inst <= io_in_bits_bits_3_inst;
+      entries_0_bits_3_pc <= io_in_bits_bits_3_pc;
+      entries_0_bits_3_state_state <= io_in_bits_bits_3_state_state;
+      entries_0_bits_3_state_state_num <= io_in_bits_bits_3_state_state_num;
+      entries_0_bits_3_bp_valid <= io_in_bits_bits_3_bp_valid;
+      entries_0_bits_3_bp_taken <= io_in_bits_bits_3_bp_taken;
+      entries_0_bits_3_bp_target <= io_in_bits_bits_3_bp_target;
+      entries_0_bits_3_bp_index <= io_in_bits_bits_3_bp_index;
+      entries_0_bits_3_ftq_idx <= io_in_bits_bits_3_ftq_idx;
+      entries_0_bits_3_ftq_generation <= io_in_bits_bits_3_ftq_generation;
     end
     if (io_flush | ~(storeInput & tail == 2'h1)) begin
     end
     else begin
       entries_1_valid_0 <= io_in_bits_valid_0;
       entries_1_valid_1 <= io_in_bits_valid_1;
+      entries_1_valid_2 <= io_in_bits_valid_2;
+      entries_1_valid_3 <= io_in_bits_valid_3;
       entries_1_bits_0_inst <= io_in_bits_bits_0_inst;
       entries_1_bits_0_pc <= io_in_bits_bits_0_pc;
       entries_1_bits_0_state_state <= io_in_bits_bits_0_state_state;
@@ -490,12 +932,34 @@ module FetchBuffer(
       entries_1_bits_1_bp_index <= io_in_bits_bits_1_bp_index;
       entries_1_bits_1_ftq_idx <= io_in_bits_bits_1_ftq_idx;
       entries_1_bits_1_ftq_generation <= io_in_bits_bits_1_ftq_generation;
+      entries_1_bits_2_inst <= io_in_bits_bits_2_inst;
+      entries_1_bits_2_pc <= io_in_bits_bits_2_pc;
+      entries_1_bits_2_state_state <= io_in_bits_bits_2_state_state;
+      entries_1_bits_2_state_state_num <= io_in_bits_bits_2_state_state_num;
+      entries_1_bits_2_bp_valid <= io_in_bits_bits_2_bp_valid;
+      entries_1_bits_2_bp_taken <= io_in_bits_bits_2_bp_taken;
+      entries_1_bits_2_bp_target <= io_in_bits_bits_2_bp_target;
+      entries_1_bits_2_bp_index <= io_in_bits_bits_2_bp_index;
+      entries_1_bits_2_ftq_idx <= io_in_bits_bits_2_ftq_idx;
+      entries_1_bits_2_ftq_generation <= io_in_bits_bits_2_ftq_generation;
+      entries_1_bits_3_inst <= io_in_bits_bits_3_inst;
+      entries_1_bits_3_pc <= io_in_bits_bits_3_pc;
+      entries_1_bits_3_state_state <= io_in_bits_bits_3_state_state;
+      entries_1_bits_3_state_state_num <= io_in_bits_bits_3_state_state_num;
+      entries_1_bits_3_bp_valid <= io_in_bits_bits_3_bp_valid;
+      entries_1_bits_3_bp_taken <= io_in_bits_bits_3_bp_taken;
+      entries_1_bits_3_bp_target <= io_in_bits_bits_3_bp_target;
+      entries_1_bits_3_bp_index <= io_in_bits_bits_3_bp_index;
+      entries_1_bits_3_ftq_idx <= io_in_bits_bits_3_ftq_idx;
+      entries_1_bits_3_ftq_generation <= io_in_bits_bits_3_ftq_generation;
     end
     if (io_flush | ~(storeInput & tail == 2'h2)) begin
     end
     else begin
       entries_2_valid_0 <= io_in_bits_valid_0;
       entries_2_valid_1 <= io_in_bits_valid_1;
+      entries_2_valid_2 <= io_in_bits_valid_2;
+      entries_2_valid_3 <= io_in_bits_valid_3;
       entries_2_bits_0_inst <= io_in_bits_bits_0_inst;
       entries_2_bits_0_pc <= io_in_bits_bits_0_pc;
       entries_2_bits_0_state_state <= io_in_bits_bits_0_state_state;
@@ -516,12 +980,34 @@ module FetchBuffer(
       entries_2_bits_1_bp_index <= io_in_bits_bits_1_bp_index;
       entries_2_bits_1_ftq_idx <= io_in_bits_bits_1_ftq_idx;
       entries_2_bits_1_ftq_generation <= io_in_bits_bits_1_ftq_generation;
+      entries_2_bits_2_inst <= io_in_bits_bits_2_inst;
+      entries_2_bits_2_pc <= io_in_bits_bits_2_pc;
+      entries_2_bits_2_state_state <= io_in_bits_bits_2_state_state;
+      entries_2_bits_2_state_state_num <= io_in_bits_bits_2_state_state_num;
+      entries_2_bits_2_bp_valid <= io_in_bits_bits_2_bp_valid;
+      entries_2_bits_2_bp_taken <= io_in_bits_bits_2_bp_taken;
+      entries_2_bits_2_bp_target <= io_in_bits_bits_2_bp_target;
+      entries_2_bits_2_bp_index <= io_in_bits_bits_2_bp_index;
+      entries_2_bits_2_ftq_idx <= io_in_bits_bits_2_ftq_idx;
+      entries_2_bits_2_ftq_generation <= io_in_bits_bits_2_ftq_generation;
+      entries_2_bits_3_inst <= io_in_bits_bits_3_inst;
+      entries_2_bits_3_pc <= io_in_bits_bits_3_pc;
+      entries_2_bits_3_state_state <= io_in_bits_bits_3_state_state;
+      entries_2_bits_3_state_state_num <= io_in_bits_bits_3_state_state_num;
+      entries_2_bits_3_bp_valid <= io_in_bits_bits_3_bp_valid;
+      entries_2_bits_3_bp_taken <= io_in_bits_bits_3_bp_taken;
+      entries_2_bits_3_bp_target <= io_in_bits_bits_3_bp_target;
+      entries_2_bits_3_bp_index <= io_in_bits_bits_3_bp_index;
+      entries_2_bits_3_ftq_idx <= io_in_bits_bits_3_ftq_idx;
+      entries_2_bits_3_ftq_generation <= io_in_bits_bits_3_ftq_generation;
     end
     if (io_flush | ~(storeInput & (&tail))) begin
     end
     else begin
       entries_3_valid_0 <= io_in_bits_valid_0;
       entries_3_valid_1 <= io_in_bits_valid_1;
+      entries_3_valid_2 <= io_in_bits_valid_2;
+      entries_3_valid_3 <= io_in_bits_valid_3;
       entries_3_bits_0_inst <= io_in_bits_bits_0_inst;
       entries_3_bits_0_pc <= io_in_bits_bits_0_pc;
       entries_3_bits_0_state_state <= io_in_bits_bits_0_state_state;
@@ -542,6 +1028,26 @@ module FetchBuffer(
       entries_3_bits_1_bp_index <= io_in_bits_bits_1_bp_index;
       entries_3_bits_1_ftq_idx <= io_in_bits_bits_1_ftq_idx;
       entries_3_bits_1_ftq_generation <= io_in_bits_bits_1_ftq_generation;
+      entries_3_bits_2_inst <= io_in_bits_bits_2_inst;
+      entries_3_bits_2_pc <= io_in_bits_bits_2_pc;
+      entries_3_bits_2_state_state <= io_in_bits_bits_2_state_state;
+      entries_3_bits_2_state_state_num <= io_in_bits_bits_2_state_state_num;
+      entries_3_bits_2_bp_valid <= io_in_bits_bits_2_bp_valid;
+      entries_3_bits_2_bp_taken <= io_in_bits_bits_2_bp_taken;
+      entries_3_bits_2_bp_target <= io_in_bits_bits_2_bp_target;
+      entries_3_bits_2_bp_index <= io_in_bits_bits_2_bp_index;
+      entries_3_bits_2_ftq_idx <= io_in_bits_bits_2_ftq_idx;
+      entries_3_bits_2_ftq_generation <= io_in_bits_bits_2_ftq_generation;
+      entries_3_bits_3_inst <= io_in_bits_bits_3_inst;
+      entries_3_bits_3_pc <= io_in_bits_bits_3_pc;
+      entries_3_bits_3_state_state <= io_in_bits_bits_3_state_state;
+      entries_3_bits_3_state_state_num <= io_in_bits_bits_3_state_state_num;
+      entries_3_bits_3_bp_valid <= io_in_bits_bits_3_bp_valid;
+      entries_3_bits_3_bp_taken <= io_in_bits_bits_3_bp_taken;
+      entries_3_bits_3_bp_target <= io_in_bits_bits_3_bp_target;
+      entries_3_bits_3_bp_index <= io_in_bits_bits_3_bp_index;
+      entries_3_bits_3_ftq_idx <= io_in_bits_bits_3_ftq_idx;
+      entries_3_bits_3_ftq_generation <= io_in_bits_bits_3_ftq_generation;
     end
     if (reset) begin
       head <= 2'h0;
@@ -566,40 +1072,76 @@ module FetchBuffer(
   assign io_out_valid = io_out_valid_0;
   assign io_out_bits_valid_0 = (|count) ? casez_tmp : io_in_bits_valid_0;
   assign io_out_bits_valid_1 = (|count) ? casez_tmp_0 : io_in_bits_valid_1;
-  assign io_out_bits_bits_0_inst = (|count) ? casez_tmp_1 : io_in_bits_bits_0_inst;
-  assign io_out_bits_bits_0_pc = (|count) ? casez_tmp_2 : io_in_bits_bits_0_pc;
+  assign io_out_bits_valid_2 = (|count) ? casez_tmp_1 : io_in_bits_valid_2;
+  assign io_out_bits_valid_3 = (|count) ? casez_tmp_2 : io_in_bits_valid_3;
+  assign io_out_bits_bits_0_inst = (|count) ? casez_tmp_3 : io_in_bits_bits_0_inst;
+  assign io_out_bits_bits_0_pc = (|count) ? casez_tmp_4 : io_in_bits_bits_0_pc;
   assign io_out_bits_bits_0_state_state =
-    (|count) ? casez_tmp_3 : io_in_bits_bits_0_state_state;
+    (|count) ? casez_tmp_5 : io_in_bits_bits_0_state_state;
   assign io_out_bits_bits_0_state_state_num =
-    (|count) ? casez_tmp_4 : io_in_bits_bits_0_state_state_num;
+    (|count) ? casez_tmp_6 : io_in_bits_bits_0_state_state_num;
   assign io_out_bits_bits_0_bp_valid =
-    (|count) ? casez_tmp_5 : io_in_bits_bits_0_bp_valid;
+    (|count) ? casez_tmp_7 : io_in_bits_bits_0_bp_valid;
   assign io_out_bits_bits_0_bp_taken =
-    (|count) ? casez_tmp_6 : io_in_bits_bits_0_bp_taken;
+    (|count) ? casez_tmp_8 : io_in_bits_bits_0_bp_taken;
   assign io_out_bits_bits_0_bp_target =
-    (|count) ? casez_tmp_7 : io_in_bits_bits_0_bp_target;
+    (|count) ? casez_tmp_9 : io_in_bits_bits_0_bp_target;
   assign io_out_bits_bits_0_bp_index =
-    (|count) ? casez_tmp_8 : io_in_bits_bits_0_bp_index;
-  assign io_out_bits_bits_0_ftq_idx = (|count) ? casez_tmp_9 : io_in_bits_bits_0_ftq_idx;
+    (|count) ? casez_tmp_10 : io_in_bits_bits_0_bp_index;
+  assign io_out_bits_bits_0_ftq_idx = (|count) ? casez_tmp_11 : io_in_bits_bits_0_ftq_idx;
   assign io_out_bits_bits_0_ftq_generation =
-    (|count) ? casez_tmp_10 : io_in_bits_bits_0_ftq_generation;
-  assign io_out_bits_bits_1_inst = (|count) ? casez_tmp_11 : io_in_bits_bits_1_inst;
-  assign io_out_bits_bits_1_pc = (|count) ? casez_tmp_12 : io_in_bits_bits_1_pc;
+    (|count) ? casez_tmp_12 : io_in_bits_bits_0_ftq_generation;
+  assign io_out_bits_bits_1_inst = (|count) ? casez_tmp_13 : io_in_bits_bits_1_inst;
+  assign io_out_bits_bits_1_pc = (|count) ? casez_tmp_14 : io_in_bits_bits_1_pc;
   assign io_out_bits_bits_1_state_state =
-    (|count) ? casez_tmp_13 : io_in_bits_bits_1_state_state;
+    (|count) ? casez_tmp_15 : io_in_bits_bits_1_state_state;
   assign io_out_bits_bits_1_state_state_num =
-    (|count) ? casez_tmp_14 : io_in_bits_bits_1_state_state_num;
+    (|count) ? casez_tmp_16 : io_in_bits_bits_1_state_state_num;
   assign io_out_bits_bits_1_bp_valid =
-    (|count) ? casez_tmp_15 : io_in_bits_bits_1_bp_valid;
+    (|count) ? casez_tmp_17 : io_in_bits_bits_1_bp_valid;
   assign io_out_bits_bits_1_bp_taken =
-    (|count) ? casez_tmp_16 : io_in_bits_bits_1_bp_taken;
+    (|count) ? casez_tmp_18 : io_in_bits_bits_1_bp_taken;
   assign io_out_bits_bits_1_bp_target =
-    (|count) ? casez_tmp_17 : io_in_bits_bits_1_bp_target;
+    (|count) ? casez_tmp_19 : io_in_bits_bits_1_bp_target;
   assign io_out_bits_bits_1_bp_index =
-    (|count) ? casez_tmp_18 : io_in_bits_bits_1_bp_index;
-  assign io_out_bits_bits_1_ftq_idx = (|count) ? casez_tmp_19 : io_in_bits_bits_1_ftq_idx;
+    (|count) ? casez_tmp_20 : io_in_bits_bits_1_bp_index;
+  assign io_out_bits_bits_1_ftq_idx = (|count) ? casez_tmp_21 : io_in_bits_bits_1_ftq_idx;
   assign io_out_bits_bits_1_ftq_generation =
-    (|count) ? casez_tmp_20 : io_in_bits_bits_1_ftq_generation;
+    (|count) ? casez_tmp_22 : io_in_bits_bits_1_ftq_generation;
+  assign io_out_bits_bits_2_inst = (|count) ? casez_tmp_23 : io_in_bits_bits_2_inst;
+  assign io_out_bits_bits_2_pc = (|count) ? casez_tmp_24 : io_in_bits_bits_2_pc;
+  assign io_out_bits_bits_2_state_state =
+    (|count) ? casez_tmp_25 : io_in_bits_bits_2_state_state;
+  assign io_out_bits_bits_2_state_state_num =
+    (|count) ? casez_tmp_26 : io_in_bits_bits_2_state_state_num;
+  assign io_out_bits_bits_2_bp_valid =
+    (|count) ? casez_tmp_27 : io_in_bits_bits_2_bp_valid;
+  assign io_out_bits_bits_2_bp_taken =
+    (|count) ? casez_tmp_28 : io_in_bits_bits_2_bp_taken;
+  assign io_out_bits_bits_2_bp_target =
+    (|count) ? casez_tmp_29 : io_in_bits_bits_2_bp_target;
+  assign io_out_bits_bits_2_bp_index =
+    (|count) ? casez_tmp_30 : io_in_bits_bits_2_bp_index;
+  assign io_out_bits_bits_2_ftq_idx = (|count) ? casez_tmp_31 : io_in_bits_bits_2_ftq_idx;
+  assign io_out_bits_bits_2_ftq_generation =
+    (|count) ? casez_tmp_32 : io_in_bits_bits_2_ftq_generation;
+  assign io_out_bits_bits_3_inst = (|count) ? casez_tmp_33 : io_in_bits_bits_3_inst;
+  assign io_out_bits_bits_3_pc = (|count) ? casez_tmp_34 : io_in_bits_bits_3_pc;
+  assign io_out_bits_bits_3_state_state =
+    (|count) ? casez_tmp_35 : io_in_bits_bits_3_state_state;
+  assign io_out_bits_bits_3_state_state_num =
+    (|count) ? casez_tmp_36 : io_in_bits_bits_3_state_state_num;
+  assign io_out_bits_bits_3_bp_valid =
+    (|count) ? casez_tmp_37 : io_in_bits_bits_3_bp_valid;
+  assign io_out_bits_bits_3_bp_taken =
+    (|count) ? casez_tmp_38 : io_in_bits_bits_3_bp_taken;
+  assign io_out_bits_bits_3_bp_target =
+    (|count) ? casez_tmp_39 : io_in_bits_bits_3_bp_target;
+  assign io_out_bits_bits_3_bp_index =
+    (|count) ? casez_tmp_40 : io_in_bits_bits_3_bp_index;
+  assign io_out_bits_bits_3_ftq_idx = (|count) ? casez_tmp_41 : io_in_bits_bits_3_ftq_idx;
+  assign io_out_bits_bits_3_ftq_generation =
+    (|count) ? casez_tmp_42 : io_in_bits_bits_3_ftq_generation;
   assign io_full = io_full_0;
 endmodule
 

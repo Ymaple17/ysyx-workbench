@@ -1,2 +1,4 @@
-point,role,ipc,cycles,commits,fetch_width,dispatch_width,commit_width,dispatch_lane2,dispatch_lane3,commit_lane2,commit_lane3,result
-stage13f,baseline,TBD,TBD,TBD,2,2,2,0,0,0,0,pending_stage13
+point,role,ipc,cycles,commits,fetch_width,dispatch_width,commit_width,dispatch_lane2,dispatch_lane3,commit_lane2,commit_lane3,ftq_stale_recover,mem_order_violation,store_buffer_full,wait_store_commit,result
+stage13f,historical_baseline,1.5134,345032,522164,1.8650,2,2,0,0,0,0,0,0,11586,10880,not_directly_comparable_binary_accounting
+stage14_sb128_gather24,current_retained,1.8496,199398,368811,3.0922,4,4,97936,72344,75289,50032,35,368,11786,15418,PASS_FUNCTIONAL_NOT_FINAL
+stage14_final,acceptance_target,2.5000,,,,4,4,,,,,0,0,,,pending

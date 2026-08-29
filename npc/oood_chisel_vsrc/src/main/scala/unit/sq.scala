@@ -54,6 +54,7 @@ class StoreQueueIO extends Bundle {
   val wait_load = Output(Bool())
   val wait_unknown = Output(Bool())
   val wait_partial = Output(Bool())
+  val has_fwd_candidate = Output(Bool())
   val older_unresolved_mask = Output(UInt(OoOParams.ROB_SIZE.W))
 }
 
@@ -184,6 +185,7 @@ class StoreQueue extends Module {
 
   io.wait_unknown := unknownHits.asUInt.orR
   io.wait_partial := partialHits.asUInt.orR
+  io.has_fwd_candidate := fwdHits.asUInt.orR
   io.wait_load := io.wait_unknown || io.wait_partial
   io.older_unresolved_mask := unknownHits.asUInt
   io.fwd_valid := fwdHits.asUInt.orR && !io.wait_load

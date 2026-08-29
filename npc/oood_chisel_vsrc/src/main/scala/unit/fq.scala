@@ -26,12 +26,14 @@ class FQPacket extends Bundle {
 class FetchQueue(n: Int = OoOParams.FQ_SIZE) extends Module {
   val ptrW = log2Ceil(n)
   require(n >= 2 && isPow2(n))
-  require(OoOParams.FETCH_WIDTH == 2)
+  require(OoOParams.FETCH_WIDTH == OoOParams.CORE_WIDTH)
 
   val io = IO(new Bundle {
     val enq   = Flipped(Decoupled(new FQPacket))
     val deq   = Decoupled(new FQEntry)
     val deq1  = Decoupled(new FQEntry)
+    val deq2  = Decoupled(new FQEntry)
+    val deq3  = Decoupled(new FQEntry)
     val flush = Input(Bool())
     val count = Output(UInt(log2Ceil(n + 1).W))
     val full  = Output(Bool())
@@ -58,9 +60,15 @@ class FetchQueue(n: Int = OoOParams.FQ_SIZE) extends Module {
   io.deq.bits  := entries(head)
   io.deq1.valid := (count >= 2.U) && !io.flush
   io.deq1.bits := entries((head + 1.U)(ptrW - 1, 0))
+  io.deq2.valid := (count >= 3.U) && !io.flush
+  io.deq2.bits := entries((head + 2.U)(ptrW - 1, 0))
+  io.deq3.valid := (count >= 4.U) && !io.flush
+  io.deq3.bits := entries((head + 3.U)(ptrW - 1, 0))
   val deq0Fire = io.deq.valid && io.deq.ready
   val deq1Fire = io.deq1.valid && io.deq1.ready && deq0Fire
-  val deqCountNow = PopCount(Seq(deq0Fire, deq1Fire))
+  val deq2Fire = io.deq2.valid && io.deq2.ready && deq1Fire
+  val deq3Fire = io.deq3.valid && io.deq3.ready && deq2Fire
+  val deqCountNow = PopCount(Seq(deq0Fire, deq1Fire, deq2Fire, deq3Fire))
   val enqSpace = space + deqCountNow
   val enqCount = PopCount(io.enq.bits.valid.asUInt)
   io.enqSpace := enqSpace
@@ -71,27 +79,29 @@ class FetchQueue(n: Int = OoOParams.FQ_SIZE) extends Module {
     tail  := 0.U
     count := 0.U
   }.otherwise {
-    val doEnq0 = io.enq.fire && io.enq.bits.valid(0)
-    val doEnq1 = io.enq.fire && io.enq.bits.valid(1) && doEnq0
-    val doDeq0 = deq0Fire
-    val doDeq1 = deq1Fire
-    val deqCount = PopCount(Seq(doDeq0, doDeq1))
-    val actualEnqCount = PopCount(Seq(doEnq0, doEnq1))
-    val tail1 = tail + 1.U
-    val tail2 = tail + 2.U
-
-    when(doEnq0) {
-      entries(tail) := io.enq.bits.bits(0)
+    val doEnq = Wire(Vec(OoOParams.FETCH_WIDTH, Bool()))
+    for (lane <- 0 until OoOParams.FETCH_WIDTH) {
+      val prefix = (0 until lane).map(doEnq(_)).foldLeft(true.B)(_ && _)
+      doEnq(lane) := io.enq.fire && io.enq.bits.valid(lane) && prefix
+      when(doEnq(lane)) {
+        entries((tail + lane.U)(ptrW - 1, 0)) := io.enq.bits.bits(lane)
+      }
     }
-    when(doEnq1) {
-      entries(tail1(ptrW - 1, 0)) := io.enq.bits.bits(1)
-    }
+    val deqCount = PopCount(Seq(deq0Fire, deq1Fire, deq2Fire, deq3Fire))
+    val actualEnqCount = PopCount(doEnq)
     when(actualEnqCount =/= 0.U) {
-      tail := Mux(doEnq1, tail2(ptrW - 1, 0), tail1(ptrW - 1, 0))
+      tail := tail + actualEnqCount
     }
     when(deqCount =/= 0.U) {
       head := head + deqCount
     }
     count := count + actualEnqCount - deqCount
+  }
+
+  when(!reset.asBool) {
+    for (lane <- 1 until OoOParams.FETCH_WIDTH) {
+      assert(!io.enq.bits.valid(lane) || io.enq.bits.valid(lane - 1),
+        "fetch queue enqueue must be a valid prefix")
+    }
   }
 }

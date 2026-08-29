@@ -6,8 +6,29 @@ bind FetchBuffer FetchBuffer_Verification verification ();
 bind FTQ FTQ_Verification verification ();
 bind IFU IFU_Verification verification ();
 bind LoadQueue LoadQueue_Verification verification ();
+bind WidePRF WidePRF_Verification verification ();
+bind WideRename WideRename_Verification verification ();
+bind WideROB WideROB_Verification verification ();
+bind WideRS WideRS_Verification verification ();
+bind FetchQueue FetchQueue_Verification verification ();
 bind StoreBuffer StoreBuffer_Verification verification ();
 bind WritebackArbiter WritebackArbiter_Verification verification ();
-bind Core Core_Verification verification ();
+bind Core Core_Verification verification (
+  .rs_io_issue_lsu_bits_pc        (_rs_io_issue_lsu_bits_pc),
+  .reset                          (reset),
+  ._GEN                           (take_lsu_issue),
+  .idu_io_out_bits_pc             (_idu_io_out_bits_pc),
+  ._GEN_0                         (en_ren),
+  .clock                          (clock),
+  .rs_io_issue_lsu_bits_rob_idx   (_rs_io_issue_lsu_bits_rob_idx),
+  .rs_io_issue_lsu_bits_src2_phys (_rs_io_issue_lsu_bits_src2_phys),
+  .rs_io_issue_lsu_bits_src2_val  (_rs_io_issue_lsu_bits_src2_val),
+  .rename_io_rat_out_1            (_rename_io_rat_out_1),
+  .prf_io_rdata1                  (_prf_io_rdata1),
+  .rob_io_enq_idx                 (_rob_io_enq_idx),
+  ._GEN_1                         (id_psrc2),
+  ._GEN_2                         (id_src2),
+  .busy_io_ready2                 (_busy_io_ready2)
+);
 bind SRAM SRAM_Verification verification ();
 `endif // layers_ysyx_25020039_Verification

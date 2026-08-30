@@ -54,8 +54,12 @@ module LoadQueue_Verification_Assert(
   input [31:0] entries_7_meta_pc,
   input        entries_7_valid,
   input [5:0]  entries_7_meta_pdest,
+  input [4:0]  io_alloc1_bits_meta_rob_idx,
+  input [31:0] io_alloc1_bits_meta_pc,
+  input [5:0]  io_alloc1_bits_meta_pdest,
   input        _GEN,
-               clock
+               clock,
+               _GEN_0
 );
 
   `ifndef SYNTHESIS
@@ -87,6 +91,39 @@ module LoadQueue_Verification_Assert(
              & entries_7_meta_pdest == io_alloc_bits_meta_pdest)) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: duplicate dynamic load allocation\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (_GEN_0 & ~reset
+          & (entries_0_valid & entries_0_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & entries_0_meta_pc == io_alloc1_bits_meta_pc
+             & entries_0_meta_pdest == io_alloc1_bits_meta_pdest | entries_1_valid
+             & entries_1_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & entries_1_meta_pc == io_alloc1_bits_meta_pc
+             & entries_1_meta_pdest == io_alloc1_bits_meta_pdest | entries_2_valid
+             & entries_2_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & entries_2_meta_pc == io_alloc1_bits_meta_pc
+             & entries_2_meta_pdest == io_alloc1_bits_meta_pdest | entries_3_valid
+             & entries_3_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & entries_3_meta_pc == io_alloc1_bits_meta_pc
+             & entries_3_meta_pdest == io_alloc1_bits_meta_pdest | entries_4_valid
+             & entries_4_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & entries_4_meta_pc == io_alloc1_bits_meta_pc
+             & entries_4_meta_pdest == io_alloc1_bits_meta_pdest | entries_5_valid
+             & entries_5_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & entries_5_meta_pc == io_alloc1_bits_meta_pc
+             & entries_5_meta_pdest == io_alloc1_bits_meta_pdest | entries_6_valid
+             & entries_6_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & entries_6_meta_pc == io_alloc1_bits_meta_pc
+             & entries_6_meta_pdest == io_alloc1_bits_meta_pdest | entries_7_valid
+             & entries_7_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & entries_7_meta_pc == io_alloc1_bits_meta_pc
+             & entries_7_meta_pdest == io_alloc1_bits_meta_pdest | _GEN
+             & io_alloc_bits_meta_rob_idx == io_alloc1_bits_meta_rob_idx
+             & io_alloc_bits_meta_pc == io_alloc1_bits_meta_pc
+             & io_alloc_bits_meta_pdest == io_alloc1_bits_meta_pdest)) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: duplicate dynamic load allocation on secondary port\n");
         if (`STOP_COND_)
           $fatal;
       end

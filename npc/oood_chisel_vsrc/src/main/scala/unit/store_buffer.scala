@@ -22,6 +22,12 @@ class StoreBufferIO(size: Int) extends Bundle {
   val ld_wait   = Output(Bool())
   val ld_fwd_valid = Output(Bool())
   val ld_fwd_data  = Output(UInt(32.W))
+  val ld1_valid  = Input(Bool())
+  val ld1_addr   = Input(UInt(32.W))
+  val ld1_mem_rd = Input(UInt(3.W))
+  val ld1_wait   = Output(Bool())
+  val ld1_fwd_valid = Output(Bool())
+  val ld1_fwd_data  = Output(UInt(32.W))
 
   val bus_busy = Input(Bool())
   val dmem = new AXI4Master
@@ -36,6 +42,7 @@ class StoreBufferIO(size: Int) extends Bundle {
   val merged = Output(UInt(2.W))
   val write_burst = Output(Bool())
   val write_beats = Output(UInt(4.W))
+  val write_chain = Output(Bool())
 
   val empty = Output(Bool())
   val full  = Output(Bool())
@@ -131,11 +138,48 @@ class StoreBuffer(
   val maxWord = (0 until maxBurst).map(off =>
     Mux(linePrefix(off), prefixWords(off), 0.U(3.W))).reduce((a, b) => Mux(a > b, a, b))
   val nextBurstCount = (maxWord - minWord) +& 1.U
+  val prefixSealed = count > nextConsumeCount
+  val fullBurstReady = nextConsumeCount === maxBurst.U
+  val nearFull = count >= (size - 4).max(1).U
+  val gatherExpired = if (gatherCycles == 0) true.B else gatherAge === gatherCycles.U
+  val burstStart = state === sIdle && !io.empty && !io.bus_busy &&
+    (prefixSealed || fullBurstReady || nearFull || gatherExpired)
 
   val bFire = io.dmem.bvalid && io.dmem.bready
   val deqFire = (state === sResp) && bFire
   val deqCount = Mux(deqFire, consumeCount, 0.U)
   val available = size.U - count + deqCount
+
+  // While the current B response is accepted, preview the oldest remaining
+  // line prefix so its AW can use the response cycle as a handoff cycle.
+  val chainCount = Mux(count >= consumeCount, count - consumeCount, 0.U)
+  def entryAddrAt(idx: UInt): UInt = Mux1H((0 until size).map { i =>
+    (idx === i.U(ptrW.W)) -> entries(i).addr
+  })
+  val chainAddrs = (0 until maxBurst).map { off =>
+    val idx = (head + consumeCount + off.U)(ptrW - 1, 0)
+    entryAddrAt(idx)
+  }
+  val chainHeadAddr = chainAddrs.head
+  val chainPrefix = Wire(Vec(maxBurst, Bool()))
+  for (off <- 0 until maxBurst) {
+    val entryMatches = off.U < chainCount &&
+      chainAddrs(off)(31, 5) === chainHeadAddr(31, 5)
+    chainPrefix(off) := entryMatches && (if (off == 0) true.B else chainPrefix(off - 1))
+  }
+  val chainConsumeCount = PopCount(chainPrefix)
+  val chainWords = chainAddrs.map(_(4, 2))
+  val chainMinWord = (0 until maxBurst).map(off =>
+    Mux(chainPrefix(off), chainWords(off), 7.U(3.W))).reduce((a, b) => Mux(a < b, a, b))
+  val chainMaxWord = (0 until maxBurst).map(off =>
+    Mux(chainPrefix(off), chainWords(off), 0.U(3.W))).reduce((a, b) => Mux(a > b, a, b))
+  val chainBurstCount = (chainMaxWord - chainMinWord) +& 1.U
+  val chainPrefixSealed = chainCount > chainConsumeCount
+  val chainFullBurstReady = chainConsumeCount === maxBurst.U
+  val chainNearFull = chainCount >= (size - 4).max(1).U
+  val chainCandidate = state === sResp && !io.bus_busy && chainCount =/= 0.U &&
+    (chainPrefixSealed || chainFullBurstReady || chainNearFull || gatherExpired)
+  val chainHandoff = chainCandidate && bFire
 
   // Committed stores may combine across unrelated addresses. Loads scan the
   // whole buffer in age order, and an active AXI burst is immutable until B.
@@ -146,7 +190,10 @@ class StoreBuffer(
   val merge1Found = WireDefault(false.B)
   for (off <- 0 until size) {
     val idx = (head + off.U)(ptrW - 1, 0)
-    val mutable = off.U < count && !(state =/= sIdle && off.U < consumeCount)
+    val activeConsumeCount = Mux(chainCandidate, consumeCount + chainConsumeCount,
+      Mux(state === sIdle, nextConsumeCount, consumeCount))
+    val mutable = off.U < count &&
+      !((state =/= sIdle || burstStart || chainCandidate) && off.U < activeConsumeCount)
     when(mutable && entries(idx).addr === in0.addr) {
       merge0Idx := idx
       merge0Found := true.B
@@ -207,14 +254,10 @@ class StoreBuffer(
   io.deq_valid := deqFire
   io.deq_addr := headEntry.addr
   io.deq_count := deqCount
-  val prefixSealed = count > nextConsumeCount
-  val fullBurstReady = nextConsumeCount === maxBurst.U
-  val nearFull = count >= (size - 4).max(1).U
-  val gatherExpired = if (gatherCycles == 0) true.B else gatherAge === gatherCycles.U
-  val burstStart = state === sIdle && !io.empty && !io.bus_busy &&
-    (prefixSealed || fullBurstReady || nearFull || gatherExpired)
-  io.write_burst := burstStart
-  io.write_beats := Mux(burstStart, nextBurstCount, 0.U)
+  io.write_burst := burstStart || chainHandoff
+  io.write_beats := Mux(chainHandoff, chainBurstCount,
+    Mux(burstStart, nextBurstCount, 0.U))
+  io.write_chain := chainHandoff
 
   when(state =/= sIdle || io.empty || burstStart) {
     gatherAge := 0.U
@@ -231,7 +274,15 @@ class StoreBuffer(
       burstCount := nextBurstCount
       consumeCount := nextConsumeCount
       burstFirstWord := minWord
-      state := sWrite
+      val launchAwFire = io.dmem.awvalid && io.dmem.awready
+      val launchWFire = io.dmem.wvalid && io.dmem.wready
+      val launchLastW = launchWFire && nextBurstCount === 1.U
+      awDone := launchAwFire
+      wDone := launchLastW
+      when(launchWFire && !launchLastW) {
+        writeBeat := 1.U
+      }
+      state := Mux(launchAwFire && launchLastW, sResp, sWrite)
     }
   }.elsewhen(state === sWrite) {
     val awFire = io.dmem.awvalid && io.dmem.awready
@@ -250,10 +301,22 @@ class StoreBuffer(
     }
   }.elsewhen(state === sResp) {
     when(bFire) {
-      state := sIdle
-      awDone := false.B
-      wDone := false.B
-      writeBeat := 0.U
+      when(chainCandidate) {
+        assert(chainConsumeCount =/= 0.U,
+          "a chained StoreBuffer burst must consume a non-empty prefix")
+        burstCount := chainBurstCount
+        consumeCount := chainConsumeCount
+        burstFirstWord := chainMinWord
+        awDone := io.dmem.awvalid && io.dmem.awready
+        wDone := false.B
+        writeBeat := 0.U
+        state := sWrite
+      }.otherwise {
+        state := sIdle
+        awDone := false.B
+        wDone := false.B
+        writeBeat := 0.U
+      }
     }
   }
 
@@ -265,55 +328,76 @@ class StoreBuffer(
   io.dmem.arburst := 0.U
   io.dmem.rready := false.B
 
-  val lineBase = headEntry.addr & "hffff_ffe0".U
-  val writeWord = burstFirstWord + writeBeat
+  val launching = state === sIdle && burstStart
+  val chainLaunching = chainCandidate
+  val activeBurstCount = Mux(chainLaunching, chainBurstCount,
+    Mux(launching, nextBurstCount, burstCount))
+  val activeConsumeCount = Mux(chainLaunching, chainConsumeCount,
+    Mux(launching, nextConsumeCount, consumeCount))
+  val activeFirstWord = Mux(chainLaunching, chainMinWord,
+    Mux(launching, minWord, burstFirstWord))
+  val activeWriteBeat = Mux(launching, 0.U, writeBeat)
+  val activeHeadAddr = Mux(chainLaunching, chainHeadAddr, headEntry.addr)
+  val lineBase = activeHeadAddr & "hffff_ffe0".U
+  val writeWord = activeFirstWord + activeWriteBeat
   val writeAddr = lineBase + (writeWord << 2)
   val writeMatches = Wire(Vec(maxBurst, Bool()))
   for (off <- 0 until maxBurst) {
     val idx = (head + off.U)(ptrW - 1, 0)
-    writeMatches(off) := off.U < consumeCount && entries(idx).addr(4, 2) === writeWord
+    writeMatches(off) := off.U < activeConsumeCount && entries(idx).addr(4, 2) === writeWord
   }
   val writeEntries = (0 until maxBurst).map(off => entries((head + off.U)(ptrW - 1, 0)))
 
-  io.dmem.awaddr := lineBase + (burstFirstWord << 2)
-  io.dmem.awvalid := (state === sWrite) && !awDone
+  io.dmem.awaddr := lineBase + (activeFirstWord << 2)
+  io.dmem.awvalid := (state === sWrite && !awDone) || launching || chainLaunching
   io.dmem.awid := 0.U
-  io.dmem.awlen := burstCount - 1.U
+  io.dmem.awlen := activeBurstCount - 1.U
   io.dmem.awsize := 2.U
   io.dmem.awburst := 1.U
   io.dmem.wdata := Mux1H(writeMatches, writeEntries.map(_.data))
   io.dmem.wstrb := Mux1H(writeMatches, writeEntries.map(_.mask))
-  io.dmem.wvalid := (state === sWrite) && !wDone
-  io.dmem.wlast := writeBeat === (burstCount - 1.U)
+  io.dmem.wvalid := (state === sWrite && !wDone) || launching
+  io.dmem.wlast := activeWriteBeat === (activeBurstCount - 1.U)
   io.dmem.bready := state === sResp
   io.drain_valid := io.dmem.wvalid && io.dmem.wready && io.dmem.wstrb.orR
   io.drain_addr := writeAddr
   io.drain_data := io.dmem.wdata
   io.drain_mask := io.dmem.wstrb
 
-  when(!reset.asBool && state === sWrite) {
+  when(!reset.asBool && (state === sWrite || launching)) {
     assert(PopCount(writeMatches) <= 1.U,
       "same-line StoreBuffer prefix must contain at most one entry per word")
   }
 
-  val mergedData = Wire(Vec(size + 1, UInt(32.W)))
-  val mergedMask = Wire(Vec(size + 1, UInt(4.W)))
-  mergedData(0) := 0.U
-  mergedMask(0) := 0.U
-  for (off <- 0 until size) {
-    val idx = (head + off.U)(ptrW - 1, 0)
-    val e = entries(idx)
-    val hit = off.U < count && e.addr(31, 2) === io.ld_addr(31, 2)
-    val bits = expandMask(e.mask)
-    mergedData(off + 1) := Mux(hit,
-      (mergedData(off) & ~bits) | (e.data & bits), mergedData(off))
-    mergedMask(off + 1) := Mux(hit, mergedMask(off) | e.mask, mergedMask(off))
+  def loadQuery(valid: Bool, addr: UInt, memRd: UInt): (Bool, Bool, UInt) = {
+    val mergedData = Wire(Vec(size + 1, UInt(32.W)))
+    val mergedMask = Wire(Vec(size + 1, UInt(4.W)))
+    mergedData(0) := 0.U
+    mergedMask(0) := 0.U
+    for (off <- 0 until size) {
+      val idx = (head + off.U)(ptrW - 1, 0)
+      val e = entries(idx)
+      val hit = off.U < count && e.addr(31, 2) === addr(31, 2)
+      val bits = expandMask(e.mask)
+      mergedData(off + 1) := Mux(hit,
+        (mergedData(off) & ~bits) | (e.data & bits), mergedData(off))
+      mergedMask(off + 1) := Mux(hit, mergedMask(off) | e.mask, mergedMask(off))
+    }
+
+    val loadMask = loadMaskBytes(memRd, addr)
+    val overlap = (mergedMask(size) & loadMask) =/= 0.U
+    val fullCover = (mergedMask(size) & loadMask) === loadMask
+    (valid && overlap && !fullCover,
+      valid && fullCover,
+      mergedData(size) >> (addr(1, 0) << 3))
   }
 
-  val loadMask = loadMaskBytes(io.ld_mem_rd, io.ld_addr)
-  val overlap = (mergedMask(size) & loadMask) =/= 0.U
-  val fullCover = (mergedMask(size) & loadMask) === loadMask
-  io.ld_wait := io.ld_valid && overlap && !fullCover
-  io.ld_fwd_valid := io.ld_valid && fullCover
-  io.ld_fwd_data := mergedData(size) >> (io.ld_addr(1, 0) << 3)
+  val query0 = loadQuery(io.ld_valid, io.ld_addr, io.ld_mem_rd)
+  io.ld_wait := query0._1
+  io.ld_fwd_valid := query0._2
+  io.ld_fwd_data := query0._3
+  val query1 = loadQuery(io.ld1_valid, io.ld1_addr, io.ld1_mem_rd)
+  io.ld1_wait := query1._1
+  io.ld1_fwd_valid := query1._2
+  io.ld1_fwd_data := query1._3
 }

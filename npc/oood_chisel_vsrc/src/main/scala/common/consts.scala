@@ -153,15 +153,19 @@ object FENCEI_CTRL{
 object BPU_Config{
     val BHT_SIZE = 1024 // base gshare/bimodal entries; independent of history length
     val GHR_LENGTH = 32
-    val PATH_HISTORY_LENGTH = 16
+    val PATH_HISTORY_LENGTH = 32
     val LOCAL_HISTORY_BITS = 12
     val LOCAL_HISTORY_TABLE_SIZE = 256
     val LOCAL_PHT_SIZE = 1024
+    val SC_TABLE_SIZE = 256
+    val SC_COUNTER_BITS = 5
+    val SC_HISTORY_LENGTHS = Seq(0, 8, 32)
+    val SC_THRESHOLD = 8
     val LOOP_ITER_BITS = 10
     val TAGE_PROVIDER_BITS = 3
     val ITAGE_PROVIDER_BITS = 3
     val BP_META_WIDTH = GHR_LENGTH + PATH_HISTORY_LENGTH + LOOP_ITER_BITS + 1 +
-      TAGE_PROVIDER_BITS + ITAGE_PROVIDER_BITS + LOCAL_HISTORY_BITS + 2
+      TAGE_PROVIDER_BITS + ITAGE_PROVIDER_BITS + LOCAL_HISTORY_BITS + 4
     val RAS_SIZE = 16 //返回地址栈深度
     val BHT_INIT = 1 // weak not-taken; a taken branch becomes predicted-taken after one update
     val BHT_COLD_STATIC = true // cold entries use backward-taken / forward-not-taken
@@ -173,5 +177,5 @@ object BPU_Config{
     val LOOP_CONFIDENCE_THRESHOLD = 2
     val INDIRECT_TARGET_SIZE = 256
     val ITAGE_TABLE_SIZE = 128
-    val ITAGE_HISTORY_LENGTHS = Seq(8, 16, 24, 48)
+    val ITAGE_HISTORY_LENGTHS = Seq(8, 16, 24, 32)
 }

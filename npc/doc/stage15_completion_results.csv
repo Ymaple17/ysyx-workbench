@@ -1,0 +1,9 @@
+point,role,ipc,cycles,commits,fetch_width,fq_empty,trace_hits,bp_flushes,head_wait_load,wait_store_commit,store_buffer_full,writebacks,cdb_conflicts,commit_lane4,commit_lane5,result
+stage14_target_path_itage_store_complete,entry_baseline,2.2078,167053,368817,3.1895,12567,0,5100,7723,7461,4095,0,2187,0,0,PASS_REPEAT_SOURCE_REGEN
+stage15_trace_minimal,candidate,,,,,,,,,,,,,,,pending
+stage15_trace_control_stream,candidate,,,,,,,,,,,,,,,pending
+stage15_writeback_l1d,candidate,,,,,,,,,,,,,,,pending
+stage15_banked_dual_access,candidate,,,,,,,,,,,,,,,pending
+stage15_sixwide_integrated,candidate,,,,,,,,,,,,,,,pending
+stage15_frozen,acceptance_target,2.5000,147527,368817,,,,,,,,,,,,pending
+stage15_long_term,architecture_budget,3.0000,122939,368817,,,,,,,,,,,,pending

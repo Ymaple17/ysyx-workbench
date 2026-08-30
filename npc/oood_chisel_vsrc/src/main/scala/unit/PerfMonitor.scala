@@ -140,6 +140,7 @@ object PerfEvents {
   val EVENT_COMMIT_SLOT3 = 133.U(32.W)
   val EVENT_COMMIT4 = 134.U(32.W)
   val EVENT_QUAD_ALU_ISSUE = 135.U(32.W)
+  val EVENT_STORE_BUFFER_CHAIN = 136.U(32.W)
 }
 
 object PcPerfEvents {

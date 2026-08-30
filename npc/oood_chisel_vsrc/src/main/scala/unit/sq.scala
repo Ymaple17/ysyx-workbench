@@ -47,15 +47,32 @@ class StoreQueueIO extends Bundle {
   val ld_rob   = Input(UInt(OoOParams.ROB_PTR_W.W))
   val ld_addr  = Input(UInt(32.W))
   val ld_mem_rd = Input(UInt(3.W))
+  val ld1_valid = Input(Bool())
+  val ld1_rob   = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val ld1_addr  = Input(UInt(32.W))
+  val ld1_mem_rd = Input(UInt(3.W))
 
   val unresolved_mask = Output(UInt(OoOParams.ROB_SIZE.W))
   val fwd_valid = Output(Bool())
   val fwd_data  = Output(UInt(32.W))
+  val partial_valid = Output(Bool())
+  val partial_data = Output(UInt(32.W))
+  val partial_mask = Output(UInt(4.W))
   val wait_load = Output(Bool())
   val wait_unknown = Output(Bool())
   val wait_partial = Output(Bool())
   val has_fwd_candidate = Output(Bool())
   val older_unresolved_mask = Output(UInt(OoOParams.ROB_SIZE.W))
+  val fwd1_valid = Output(Bool())
+  val fwd1_data  = Output(UInt(32.W))
+  val partial1_valid = Output(Bool())
+  val partial1_data = Output(UInt(32.W))
+  val partial1_mask = Output(UInt(4.W))
+  val wait1_load = Output(Bool())
+  val wait1_unknown = Output(Bool())
+  val wait1_partial = Output(Bool())
+  val has_fwd1_candidate = Output(Bool())
+  val older_unresolved1_mask = Output(UInt(OoOParams.ROB_SIZE.W))
 }
 
 class StoreQueue extends Module {
@@ -150,44 +167,81 @@ class StoreQueue extends Module {
     entries(i).valid && !entries(i).addr_ready
   }).asUInt
 
-  val ldAge = age(io.ld_rob)
-  val fwdHits = Wire(Vec(n, Bool()))
-  val unknownHits = Wire(Vec(n, Bool()))
-  val partialHits = Wire(Vec(n, Bool()))
-  val fwdData = Wire(Vec(n, UInt(32.W)))
-  val fwdAge = Wire(Vec(n, UInt(OoOParams.ROB_PTR_W.W)))
+  def loadQuery(valid: Bool, rob: UInt, addr: UInt, memRd: UInt):
+      (Bool, Bool, Bool, Bool, UInt, Bool, UInt, Bool, UInt, UInt) = {
+    val ldAge = age(rob)
+    val unknownHits = Wire(Vec(n, Bool()))
+    val knownByteHits = Wire(Vec(4, Vec(n, Bool())))
+    val normalizedData = Wire(Vec(n, UInt(32.W)))
+    val storeAges = Wire(Vec(n, UInt(OoOParams.ROB_PTR_W.W)))
 
-  for (i <- 0 until n) {
-    val e = entries(i)
-    val eAge = age(i.U)
-    val olderStore = e.valid && (eAge < ldAge)
-    val unresolved = olderStore && !e.addr_ready
-    val sameWord = e.addr_ready && (e.addr(31, 2) === io.ld_addr(31, 2))
-    val storeMask = storeMaskBytes(e.mask, e.addr)
-    val loadMask = loadMaskBytes(io.ld_mem_rd, io.ld_addr)
-    val fullCover = (loadMask & storeMask) === loadMask
-    val overlap = (loadMask & storeMask) =/= 0.U
+    for (i <- 0 until n) {
+      val e = entries(i)
+      val eAge = age(i.U)
+      val olderStore = e.valid && (eAge < ldAge)
+      val unresolved = olderStore && !e.addr_ready
+      val sameWord = e.addr_ready && (e.addr(31, 2) === addr(31, 2))
+      val storeMask = storeMaskBytes(e.mask, e.addr)
 
-    unknownHits(i) := io.ld_valid && unresolved
-    partialHits(i) := io.ld_valid && olderStore && sameWord && overlap && !fullCover
-    fwdHits(i) := io.ld_valid && olderStore && sameWord && fullCover
-    fwdData(i) := storeShiftData(e.data, e.addr) >> (io.ld_addr(1, 0) << 3)
-    fwdAge(i) := eAge
+      unknownHits(i) := valid && unresolved
+      normalizedData(i) := storeShiftData(e.data, e.addr)
+      storeAges(i) := eAge
+      for (b <- 0 until 4) {
+        knownByteHits(b)(i) := valid && olderStore && sameWord && storeMask(b)
+      }
+    }
+
+    val mergedBytes = Wire(Vec(4, UInt(8.W)))
+    val mergedMask = Wire(Vec(4, Bool()))
+    for (b <- 0 until 4) {
+      val youngestOH = Wire(Vec(n, Bool()))
+      for (i <- 0 until n) {
+        val youngerKnown = (0 until n).map { j =>
+          knownByteHits(b)(j) && (storeAges(j) > storeAges(i))
+        }.foldLeft(false.B)(_ || _)
+        youngestOH(i) := knownByteHits(b)(i) && !youngerKnown
+      }
+      mergedMask(b) := knownByteHits(b).asUInt.orR
+      mergedBytes(b) := Mux1H(youngestOH, normalizedData.map(_(8 * b + 7, 8 * b)))
+    }
+
+    val mergedData = Cat(mergedBytes.reverse)
+    val mergedMaskUInt = mergedMask.asUInt
+    val loadMask = loadMaskBytes(memRd, addr)
+    val waitUnknown = unknownHits.asUInt.orR
+    val overlap = (mergedMaskUInt & loadMask).orR
+    val covered = (mergedMaskUInt & loadMask) === loadMask
+    val waitPartial = overlap && !covered
+    val waitLoad = waitUnknown || waitPartial
+    val fwdValid = covered && !waitUnknown
+    val fwdData = mergedData >> (addr(1, 0) << 3)
+    val partialValid = overlap && !covered
+    (waitLoad, waitUnknown, waitPartial, overlap,
+      unknownHits.asUInt, fwdValid, fwdData,
+      partialValid, mergedData, mergedMaskUInt)
   }
 
-  val bestFwdOH = Wire(Vec(n, Bool()))
-  for (i <- 0 until n) {
-    val hasYoungerOlder = (0 until n).map { j =>
-      fwdHits(j) && (fwdAge(j) > fwdAge(i))
-    }.foldLeft(false.B)(_ || _)
-    bestFwdOH(i) := fwdHits(i) && !hasYoungerOlder
-  }
+  val query0 = loadQuery(io.ld_valid, io.ld_rob, io.ld_addr, io.ld_mem_rd)
+  io.wait_load := query0._1
+  io.wait_unknown := query0._2
+  io.wait_partial := query0._3
+  io.has_fwd_candidate := query0._4
+  io.older_unresolved_mask := query0._5
+  io.fwd_valid := query0._6
+  io.fwd_data := query0._7
+  io.partial_valid := query0._8
+  io.partial_data := query0._9
+  io.partial_mask := query0._10
 
-  io.wait_unknown := unknownHits.asUInt.orR
-  io.wait_partial := partialHits.asUInt.orR
-  io.has_fwd_candidate := fwdHits.asUInt.orR
-  io.wait_load := io.wait_unknown || io.wait_partial
-  io.older_unresolved_mask := unknownHits.asUInt
-  io.fwd_valid := fwdHits.asUInt.orR && !io.wait_load
-  io.fwd_data := Mux1H(bestFwdOH, fwdData)
+  val query1 = loadQuery(io.ld1_valid, io.ld1_rob, io.ld1_addr, io.ld1_mem_rd)
+  io.wait1_load := query1._1
+  io.wait1_unknown := query1._2
+  io.wait1_partial := query1._3
+  io.has_fwd1_candidate := query1._4
+  io.older_unresolved1_mask := query1._5
+  io.fwd1_valid := query1._6
+  io.fwd1_data := query1._7
+  io.partial1_valid := query1._8
+  io.partial1_data := query1._9
+  io.partial1_mask := query1._10
 }

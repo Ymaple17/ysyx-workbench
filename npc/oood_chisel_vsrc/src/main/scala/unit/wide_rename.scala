@@ -54,6 +54,7 @@ class WideRename(
     val rebuild = Input(Bool())
     val rebuild_rat = Input(Vec(32, UInt(physW.W)))
     val rebuild_free = Input(UInt(nPhys.W))
+    val reserve_mask = Input(UInt(nPhys.W))
 
     val rat_out = Output(Vec(32, UInt(physW.W)))
     val arch_rat_out = Output(Vec(32, UInt(physW.W)))
@@ -78,13 +79,17 @@ class WideRename(
 
   io.rat_out := rat
   io.arch_rat_out := archRat
-  io.free_cnt := PopCount(noP0(freeBits))
+  // Recovery reconstructs the free list from the ROB.  Keep allocation safe
+  // even if a boundary-cycle reconstruction temporarily exposes a physical
+  // register still owned by the speculative RAT or a live ROB entry.
+  val allocFreeBits = noP0(freeBits & ~io.reserve_mask)
+  io.free_cnt := PopCount(allocFreeBits)
   io.cp_free := PopCount(VecInit(checkpoints.map(!_.valid)).asUInt)
 
   val ratStep = Wire(Vec(width + 1, Vec(32, UInt(physW.W))))
   val freeStep = Wire(Vec(width + 1, UInt(nPhys.W)))
   ratStep(0) := rat
-  freeStep(0) := noP0(freeBits)
+  freeStep(0) := allocFreeBits
 
   for (lane <- 0 until width) {
     val request = io.fire(lane) && io.reg_write(lane) && io.rd(lane) =/= 0.U
@@ -208,6 +213,8 @@ class WideRename(
     for (lane <- 0 until width) {
       assert(!(io.fire(lane) && io.reg_write(lane) && io.rd(lane) =/= 0.U) ||
         io.do_rename(lane), "wide rename requires pre-checked free-list credit")
+      assert(!io.do_rename(lane) || !io.reserve_mask(io.pdest(lane)),
+        "wide rename must not allocate a live physical register")
     }
   }
 }

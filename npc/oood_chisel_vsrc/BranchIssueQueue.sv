@@ -23,7 +23,7 @@ module BranchIssueQueue(
   input         io_enq_bits_bp_valid,
                 io_enq_bits_bp_taken,
   input  [31:0] io_enq_bits_bp_target,
-  input  [78:0] io_enq_bits_bp_index,
+  input  [96:0] io_enq_bits_bp_index,
   input  [3:0]  io_enq_bits_ftq_idx,
   input  [7:0]  io_enq_bits_ftq_generation,
   input  [1:0]  io_enq_bits_exu_alu_srcA,
@@ -54,7 +54,7 @@ module BranchIssueQueue(
   output        io_issue_bits_bp_valid,
                 io_issue_bits_bp_taken,
   output [31:0] io_issue_bits_bp_target,
-  output [78:0] io_issue_bits_bp_index,
+  output [96:0] io_issue_bits_bp_index,
   output [3:0]  io_issue_bits_ftq_idx,
   output [7:0]  io_issue_bits_ftq_generation,
   output [1:0]  io_issue_bits_exu_alu_srcA,
@@ -116,7 +116,7 @@ module BranchIssueQueue(
   reg         entries_0_bp_valid;
   reg         entries_0_bp_taken;
   reg  [31:0] entries_0_bp_target;
-  reg  [78:0] entries_0_bp_index;
+  reg  [96:0] entries_0_bp_index;
   reg  [3:0]  entries_0_ftq_idx;
   reg  [7:0]  entries_0_ftq_generation;
   reg  [1:0]  entries_0_exu_alu_srcA;
@@ -149,7 +149,7 @@ module BranchIssueQueue(
   reg         entries_1_bp_valid;
   reg         entries_1_bp_taken;
   reg  [31:0] entries_1_bp_target;
-  reg  [78:0] entries_1_bp_index;
+  reg  [96:0] entries_1_bp_index;
   reg  [3:0]  entries_1_ftq_idx;
   reg  [7:0]  entries_1_ftq_generation;
   reg  [1:0]  entries_1_exu_alu_srcA;
@@ -182,7 +182,7 @@ module BranchIssueQueue(
   reg         entries_2_bp_valid;
   reg         entries_2_bp_taken;
   reg  [31:0] entries_2_bp_target;
-  reg  [78:0] entries_2_bp_index;
+  reg  [96:0] entries_2_bp_index;
   reg  [3:0]  entries_2_ftq_idx;
   reg  [7:0]  entries_2_ftq_generation;
   reg  [1:0]  entries_2_exu_alu_srcA;
@@ -215,7 +215,7 @@ module BranchIssueQueue(
   reg         entries_3_bp_valid;
   reg         entries_3_bp_taken;
   reg  [31:0] entries_3_bp_target;
-  reg  [78:0] entries_3_bp_index;
+  reg  [96:0] entries_3_bp_index;
   reg  [3:0]  entries_3_ftq_idx;
   reg  [7:0]  entries_3_ftq_generation;
   reg  [1:0]  entries_3_exu_alu_srcA;
@@ -718,7 +718,7 @@ module BranchIssueQueue(
         casez_tmp_15 = entries_3_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_16;
+  reg  [96:0] casez_tmp_16;
   always_comb begin
     casez (issueIdx)
       2'b00:
@@ -974,7 +974,7 @@ module BranchIssueQueue(
       entries_0_bp_valid <= 1'h0;
       entries_0_bp_taken <= 1'h0;
       entries_0_bp_target <= 32'h0;
-      entries_0_bp_index <= 79'h0;
+      entries_0_bp_index <= 97'h0;
       entries_0_ftq_idx <= 4'h0;
       entries_0_ftq_generation <= 8'h0;
       entries_0_exu_alu_srcA <= 2'h0;
@@ -1007,7 +1007,7 @@ module BranchIssueQueue(
       entries_1_bp_valid <= 1'h0;
       entries_1_bp_taken <= 1'h0;
       entries_1_bp_target <= 32'h0;
-      entries_1_bp_index <= 79'h0;
+      entries_1_bp_index <= 97'h0;
       entries_1_ftq_idx <= 4'h0;
       entries_1_ftq_generation <= 8'h0;
       entries_1_exu_alu_srcA <= 2'h0;
@@ -1040,7 +1040,7 @@ module BranchIssueQueue(
       entries_2_bp_valid <= 1'h0;
       entries_2_bp_taken <= 1'h0;
       entries_2_bp_target <= 32'h0;
-      entries_2_bp_index <= 79'h0;
+      entries_2_bp_index <= 97'h0;
       entries_2_ftq_idx <= 4'h0;
       entries_2_ftq_generation <= 8'h0;
       entries_2_exu_alu_srcA <= 2'h0;
@@ -1073,7 +1073,7 @@ module BranchIssueQueue(
       entries_3_bp_valid <= 1'h0;
       entries_3_bp_taken <= 1'h0;
       entries_3_bp_target <= 32'h0;
-      entries_3_bp_index <= 79'h0;
+      entries_3_bp_index <= 97'h0;
       entries_3_ftq_idx <= 4'h0;
       entries_3_ftq_generation <= 8'h0;
       entries_3_exu_alu_srcA <= 2'h0;

@@ -20,15 +20,31 @@
 module Core_Verification_Assert(
   input reset,
         _GEN,
+        _GEN_0,
+        exu_lsu1_io_out_bits_signals_lsu_mem_write,
         clock,
-        _GEN_0
+        _GEN_1,
+        _GEN_2
 );
 
   `ifndef SYNTHESIS
+    wire _GEN_3 = ~reset & _GEN_0;
     always @(posedge clock) begin
-      if (~reset & _GEN & ~_GEN_0) begin
+      if (~reset & _GEN & ~_GEN_1) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: a flushed LSU dispatch entry must not enter LSU or its skid\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (_GEN_3 & ~_GEN_2) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: a flushed secondary LSU entry must not enter LSU or its skid\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (_GEN_3 & exu_lsu1_io_out_bits_signals_lsu_mem_write) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: the secondary address-generation path is load-only\n");
         if (`STOP_COND_)
           $fatal;
       end

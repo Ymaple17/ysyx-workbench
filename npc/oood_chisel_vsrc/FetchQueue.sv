@@ -15,7 +15,7 @@ module FetchQueue(
   input         io_enq_bits_bits_0_bp_valid,
                 io_enq_bits_bits_0_bp_taken,
   input  [31:0] io_enq_bits_bits_0_bp_target,
-  input  [78:0] io_enq_bits_bits_0_bp_index,
+  input  [96:0] io_enq_bits_bits_0_bp_index,
   input  [3:0]  io_enq_bits_bits_0_ftq_idx,
   input  [7:0]  io_enq_bits_bits_0_ftq_generation,
   input  [31:0] io_enq_bits_bits_1_inst,
@@ -25,7 +25,7 @@ module FetchQueue(
   input         io_enq_bits_bits_1_bp_valid,
                 io_enq_bits_bits_1_bp_taken,
   input  [31:0] io_enq_bits_bits_1_bp_target,
-  input  [78:0] io_enq_bits_bits_1_bp_index,
+  input  [96:0] io_enq_bits_bits_1_bp_index,
   input  [3:0]  io_enq_bits_bits_1_ftq_idx,
   input  [7:0]  io_enq_bits_bits_1_ftq_generation,
   input  [31:0] io_enq_bits_bits_2_inst,
@@ -35,7 +35,7 @@ module FetchQueue(
   input         io_enq_bits_bits_2_bp_valid,
                 io_enq_bits_bits_2_bp_taken,
   input  [31:0] io_enq_bits_bits_2_bp_target,
-  input  [78:0] io_enq_bits_bits_2_bp_index,
+  input  [96:0] io_enq_bits_bits_2_bp_index,
   input  [3:0]  io_enq_bits_bits_2_ftq_idx,
   input  [7:0]  io_enq_bits_bits_2_ftq_generation,
   input  [31:0] io_enq_bits_bits_3_inst,
@@ -45,7 +45,7 @@ module FetchQueue(
   input         io_enq_bits_bits_3_bp_valid,
                 io_enq_bits_bits_3_bp_taken,
   input  [31:0] io_enq_bits_bits_3_bp_target,
-  input  [78:0] io_enq_bits_bits_3_bp_index,
+  input  [96:0] io_enq_bits_bits_3_bp_index,
   input  [3:0]  io_enq_bits_bits_3_ftq_idx,
   input  [7:0]  io_enq_bits_bits_3_ftq_generation,
   input         io_deq_ready,
@@ -57,7 +57,7 @@ module FetchQueue(
   output        io_deq_bits_bp_valid,
                 io_deq_bits_bp_taken,
   output [31:0] io_deq_bits_bp_target,
-  output [78:0] io_deq_bits_bp_index,
+  output [96:0] io_deq_bits_bp_index,
   output [3:0]  io_deq_bits_ftq_idx,
   output [7:0]  io_deq_bits_ftq_generation,
   input         io_deq1_ready,
@@ -69,7 +69,7 @@ module FetchQueue(
   output        io_deq1_bits_bp_valid,
                 io_deq1_bits_bp_taken,
   output [31:0] io_deq1_bits_bp_target,
-  output [78:0] io_deq1_bits_bp_index,
+  output [96:0] io_deq1_bits_bp_index,
   output [3:0]  io_deq1_bits_ftq_idx,
   output [7:0]  io_deq1_bits_ftq_generation,
   input         io_deq2_ready,
@@ -81,7 +81,7 @@ module FetchQueue(
   output        io_deq2_bits_bp_valid,
                 io_deq2_bits_bp_taken,
   output [31:0] io_deq2_bits_bp_target,
-  output [78:0] io_deq2_bits_bp_index,
+  output [96:0] io_deq2_bits_bp_index,
   output [3:0]  io_deq2_bits_ftq_idx,
   output [7:0]  io_deq2_bits_ftq_generation,
   input         io_deq3_ready,
@@ -93,7 +93,7 @@ module FetchQueue(
   output        io_deq3_bits_bp_valid,
                 io_deq3_bits_bp_taken,
   output [31:0] io_deq3_bits_bp_target,
-  output [78:0] io_deq3_bits_bp_index,
+  output [96:0] io_deq3_bits_bp_index,
   output [3:0]  io_deq3_bits_ftq_idx,
   output [7:0]  io_deq3_bits_ftq_generation,
   input         io_flush,
@@ -109,7 +109,7 @@ module FetchQueue(
   reg         entries_0_bp_valid;
   reg         entries_0_bp_taken;
   reg  [31:0] entries_0_bp_target;
-  reg  [78:0] entries_0_bp_index;
+  reg  [96:0] entries_0_bp_index;
   reg  [3:0]  entries_0_ftq_idx;
   reg  [7:0]  entries_0_ftq_generation;
   reg  [31:0] entries_1_inst;
@@ -119,7 +119,7 @@ module FetchQueue(
   reg         entries_1_bp_valid;
   reg         entries_1_bp_taken;
   reg  [31:0] entries_1_bp_target;
-  reg  [78:0] entries_1_bp_index;
+  reg  [96:0] entries_1_bp_index;
   reg  [3:0]  entries_1_ftq_idx;
   reg  [7:0]  entries_1_ftq_generation;
   reg  [31:0] entries_2_inst;
@@ -129,7 +129,7 @@ module FetchQueue(
   reg         entries_2_bp_valid;
   reg         entries_2_bp_taken;
   reg  [31:0] entries_2_bp_target;
-  reg  [78:0] entries_2_bp_index;
+  reg  [96:0] entries_2_bp_index;
   reg  [3:0]  entries_2_ftq_idx;
   reg  [7:0]  entries_2_ftq_generation;
   reg  [31:0] entries_3_inst;
@@ -139,7 +139,7 @@ module FetchQueue(
   reg         entries_3_bp_valid;
   reg         entries_3_bp_taken;
   reg  [31:0] entries_3_bp_target;
-  reg  [78:0] entries_3_bp_index;
+  reg  [96:0] entries_3_bp_index;
   reg  [3:0]  entries_3_ftq_idx;
   reg  [7:0]  entries_3_ftq_generation;
   reg  [31:0] entries_4_inst;
@@ -149,7 +149,7 @@ module FetchQueue(
   reg         entries_4_bp_valid;
   reg         entries_4_bp_taken;
   reg  [31:0] entries_4_bp_target;
-  reg  [78:0] entries_4_bp_index;
+  reg  [96:0] entries_4_bp_index;
   reg  [3:0]  entries_4_ftq_idx;
   reg  [7:0]  entries_4_ftq_generation;
   reg  [31:0] entries_5_inst;
@@ -159,7 +159,7 @@ module FetchQueue(
   reg         entries_5_bp_valid;
   reg         entries_5_bp_taken;
   reg  [31:0] entries_5_bp_target;
-  reg  [78:0] entries_5_bp_index;
+  reg  [96:0] entries_5_bp_index;
   reg  [3:0]  entries_5_ftq_idx;
   reg  [7:0]  entries_5_ftq_generation;
   reg  [31:0] entries_6_inst;
@@ -169,7 +169,7 @@ module FetchQueue(
   reg         entries_6_bp_valid;
   reg         entries_6_bp_taken;
   reg  [31:0] entries_6_bp_target;
-  reg  [78:0] entries_6_bp_index;
+  reg  [96:0] entries_6_bp_index;
   reg  [3:0]  entries_6_ftq_idx;
   reg  [7:0]  entries_6_ftq_generation;
   reg  [31:0] entries_7_inst;
@@ -179,7 +179,7 @@ module FetchQueue(
   reg         entries_7_bp_valid;
   reg         entries_7_bp_taken;
   reg  [31:0] entries_7_bp_target;
-  reg  [78:0] entries_7_bp_index;
+  reg  [96:0] entries_7_bp_index;
   reg  [3:0]  entries_7_ftq_idx;
   reg  [7:0]  entries_7_ftq_generation;
   reg  [31:0] entries_8_inst;
@@ -189,7 +189,7 @@ module FetchQueue(
   reg         entries_8_bp_valid;
   reg         entries_8_bp_taken;
   reg  [31:0] entries_8_bp_target;
-  reg  [78:0] entries_8_bp_index;
+  reg  [96:0] entries_8_bp_index;
   reg  [3:0]  entries_8_ftq_idx;
   reg  [7:0]  entries_8_ftq_generation;
   reg  [31:0] entries_9_inst;
@@ -199,7 +199,7 @@ module FetchQueue(
   reg         entries_9_bp_valid;
   reg         entries_9_bp_taken;
   reg  [31:0] entries_9_bp_target;
-  reg  [78:0] entries_9_bp_index;
+  reg  [96:0] entries_9_bp_index;
   reg  [3:0]  entries_9_ftq_idx;
   reg  [7:0]  entries_9_ftq_generation;
   reg  [31:0] entries_10_inst;
@@ -209,7 +209,7 @@ module FetchQueue(
   reg         entries_10_bp_valid;
   reg         entries_10_bp_taken;
   reg  [31:0] entries_10_bp_target;
-  reg  [78:0] entries_10_bp_index;
+  reg  [96:0] entries_10_bp_index;
   reg  [3:0]  entries_10_ftq_idx;
   reg  [7:0]  entries_10_ftq_generation;
   reg  [31:0] entries_11_inst;
@@ -219,7 +219,7 @@ module FetchQueue(
   reg         entries_11_bp_valid;
   reg         entries_11_bp_taken;
   reg  [31:0] entries_11_bp_target;
-  reg  [78:0] entries_11_bp_index;
+  reg  [96:0] entries_11_bp_index;
   reg  [3:0]  entries_11_ftq_idx;
   reg  [7:0]  entries_11_ftq_generation;
   reg  [31:0] entries_12_inst;
@@ -229,7 +229,7 @@ module FetchQueue(
   reg         entries_12_bp_valid;
   reg         entries_12_bp_taken;
   reg  [31:0] entries_12_bp_target;
-  reg  [78:0] entries_12_bp_index;
+  reg  [96:0] entries_12_bp_index;
   reg  [3:0]  entries_12_ftq_idx;
   reg  [7:0]  entries_12_ftq_generation;
   reg  [31:0] entries_13_inst;
@@ -239,7 +239,7 @@ module FetchQueue(
   reg         entries_13_bp_valid;
   reg         entries_13_bp_taken;
   reg  [31:0] entries_13_bp_target;
-  reg  [78:0] entries_13_bp_index;
+  reg  [96:0] entries_13_bp_index;
   reg  [3:0]  entries_13_ftq_idx;
   reg  [7:0]  entries_13_ftq_generation;
   reg  [31:0] entries_14_inst;
@@ -249,7 +249,7 @@ module FetchQueue(
   reg         entries_14_bp_valid;
   reg         entries_14_bp_taken;
   reg  [31:0] entries_14_bp_target;
-  reg  [78:0] entries_14_bp_index;
+  reg  [96:0] entries_14_bp_index;
   reg  [3:0]  entries_14_ftq_idx;
   reg  [7:0]  entries_14_ftq_generation;
   reg  [31:0] entries_15_inst;
@@ -259,7 +259,7 @@ module FetchQueue(
   reg         entries_15_bp_valid;
   reg         entries_15_bp_taken;
   reg  [31:0] entries_15_bp_target;
-  reg  [78:0] entries_15_bp_index;
+  reg  [96:0] entries_15_bp_index;
   reg  [3:0]  entries_15_ftq_idx;
   reg  [7:0]  entries_15_ftq_generation;
   reg  [3:0]  head;
@@ -526,7 +526,7 @@ module FetchQueue(
         casez_tmp_5 = entries_15_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_6;
+  reg  [96:0] casez_tmp_6;
   always_comb begin
     casez (head)
       4'b0000:
@@ -898,7 +898,7 @@ module FetchQueue(
         casez_tmp_15 = entries_15_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_16;
+  reg  [96:0] casez_tmp_16;
   always_comb begin
     casez (_io_deq1_bits_T)
       4'b0000:
@@ -1270,7 +1270,7 @@ module FetchQueue(
         casez_tmp_25 = entries_15_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_26;
+  reg  [96:0] casez_tmp_26;
   always_comb begin
     casez (_io_deq2_bits_T)
       4'b0000:
@@ -1642,7 +1642,7 @@ module FetchQueue(
         casez_tmp_35 = entries_15_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_36;
+  reg  [96:0] casez_tmp_36;
   always_comb begin
     casez (_io_deq3_bits_T)
       4'b0000:
@@ -1784,7 +1784,7 @@ module FetchQueue(
       entries_0_bp_valid <= 1'h0;
       entries_0_bp_taken <= 1'h0;
       entries_0_bp_target <= 32'h0;
-      entries_0_bp_index <= 79'h0;
+      entries_0_bp_index <= 97'h0;
       entries_0_ftq_idx <= 4'h0;
       entries_0_ftq_generation <= 8'h0;
       entries_1_inst <= 32'h0;
@@ -1794,7 +1794,7 @@ module FetchQueue(
       entries_1_bp_valid <= 1'h0;
       entries_1_bp_taken <= 1'h0;
       entries_1_bp_target <= 32'h0;
-      entries_1_bp_index <= 79'h0;
+      entries_1_bp_index <= 97'h0;
       entries_1_ftq_idx <= 4'h0;
       entries_1_ftq_generation <= 8'h0;
       entries_2_inst <= 32'h0;
@@ -1804,7 +1804,7 @@ module FetchQueue(
       entries_2_bp_valid <= 1'h0;
       entries_2_bp_taken <= 1'h0;
       entries_2_bp_target <= 32'h0;
-      entries_2_bp_index <= 79'h0;
+      entries_2_bp_index <= 97'h0;
       entries_2_ftq_idx <= 4'h0;
       entries_2_ftq_generation <= 8'h0;
       entries_3_inst <= 32'h0;
@@ -1814,7 +1814,7 @@ module FetchQueue(
       entries_3_bp_valid <= 1'h0;
       entries_3_bp_taken <= 1'h0;
       entries_3_bp_target <= 32'h0;
-      entries_3_bp_index <= 79'h0;
+      entries_3_bp_index <= 97'h0;
       entries_3_ftq_idx <= 4'h0;
       entries_3_ftq_generation <= 8'h0;
       entries_4_inst <= 32'h0;
@@ -1824,7 +1824,7 @@ module FetchQueue(
       entries_4_bp_valid <= 1'h0;
       entries_4_bp_taken <= 1'h0;
       entries_4_bp_target <= 32'h0;
-      entries_4_bp_index <= 79'h0;
+      entries_4_bp_index <= 97'h0;
       entries_4_ftq_idx <= 4'h0;
       entries_4_ftq_generation <= 8'h0;
       entries_5_inst <= 32'h0;
@@ -1834,7 +1834,7 @@ module FetchQueue(
       entries_5_bp_valid <= 1'h0;
       entries_5_bp_taken <= 1'h0;
       entries_5_bp_target <= 32'h0;
-      entries_5_bp_index <= 79'h0;
+      entries_5_bp_index <= 97'h0;
       entries_5_ftq_idx <= 4'h0;
       entries_5_ftq_generation <= 8'h0;
       entries_6_inst <= 32'h0;
@@ -1844,7 +1844,7 @@ module FetchQueue(
       entries_6_bp_valid <= 1'h0;
       entries_6_bp_taken <= 1'h0;
       entries_6_bp_target <= 32'h0;
-      entries_6_bp_index <= 79'h0;
+      entries_6_bp_index <= 97'h0;
       entries_6_ftq_idx <= 4'h0;
       entries_6_ftq_generation <= 8'h0;
       entries_7_inst <= 32'h0;
@@ -1854,7 +1854,7 @@ module FetchQueue(
       entries_7_bp_valid <= 1'h0;
       entries_7_bp_taken <= 1'h0;
       entries_7_bp_target <= 32'h0;
-      entries_7_bp_index <= 79'h0;
+      entries_7_bp_index <= 97'h0;
       entries_7_ftq_idx <= 4'h0;
       entries_7_ftq_generation <= 8'h0;
       entries_8_inst <= 32'h0;
@@ -1864,7 +1864,7 @@ module FetchQueue(
       entries_8_bp_valid <= 1'h0;
       entries_8_bp_taken <= 1'h0;
       entries_8_bp_target <= 32'h0;
-      entries_8_bp_index <= 79'h0;
+      entries_8_bp_index <= 97'h0;
       entries_8_ftq_idx <= 4'h0;
       entries_8_ftq_generation <= 8'h0;
       entries_9_inst <= 32'h0;
@@ -1874,7 +1874,7 @@ module FetchQueue(
       entries_9_bp_valid <= 1'h0;
       entries_9_bp_taken <= 1'h0;
       entries_9_bp_target <= 32'h0;
-      entries_9_bp_index <= 79'h0;
+      entries_9_bp_index <= 97'h0;
       entries_9_ftq_idx <= 4'h0;
       entries_9_ftq_generation <= 8'h0;
       entries_10_inst <= 32'h0;
@@ -1884,7 +1884,7 @@ module FetchQueue(
       entries_10_bp_valid <= 1'h0;
       entries_10_bp_taken <= 1'h0;
       entries_10_bp_target <= 32'h0;
-      entries_10_bp_index <= 79'h0;
+      entries_10_bp_index <= 97'h0;
       entries_10_ftq_idx <= 4'h0;
       entries_10_ftq_generation <= 8'h0;
       entries_11_inst <= 32'h0;
@@ -1894,7 +1894,7 @@ module FetchQueue(
       entries_11_bp_valid <= 1'h0;
       entries_11_bp_taken <= 1'h0;
       entries_11_bp_target <= 32'h0;
-      entries_11_bp_index <= 79'h0;
+      entries_11_bp_index <= 97'h0;
       entries_11_ftq_idx <= 4'h0;
       entries_11_ftq_generation <= 8'h0;
       entries_12_inst <= 32'h0;
@@ -1904,7 +1904,7 @@ module FetchQueue(
       entries_12_bp_valid <= 1'h0;
       entries_12_bp_taken <= 1'h0;
       entries_12_bp_target <= 32'h0;
-      entries_12_bp_index <= 79'h0;
+      entries_12_bp_index <= 97'h0;
       entries_12_ftq_idx <= 4'h0;
       entries_12_ftq_generation <= 8'h0;
       entries_13_inst <= 32'h0;
@@ -1914,7 +1914,7 @@ module FetchQueue(
       entries_13_bp_valid <= 1'h0;
       entries_13_bp_taken <= 1'h0;
       entries_13_bp_target <= 32'h0;
-      entries_13_bp_index <= 79'h0;
+      entries_13_bp_index <= 97'h0;
       entries_13_ftq_idx <= 4'h0;
       entries_13_ftq_generation <= 8'h0;
       entries_14_inst <= 32'h0;
@@ -1924,7 +1924,7 @@ module FetchQueue(
       entries_14_bp_valid <= 1'h0;
       entries_14_bp_taken <= 1'h0;
       entries_14_bp_target <= 32'h0;
-      entries_14_bp_index <= 79'h0;
+      entries_14_bp_index <= 97'h0;
       entries_14_ftq_idx <= 4'h0;
       entries_14_ftq_generation <= 8'h0;
       entries_15_inst <= 32'h0;
@@ -1934,7 +1934,7 @@ module FetchQueue(
       entries_15_bp_valid <= 1'h0;
       entries_15_bp_taken <= 1'h0;
       entries_15_bp_target <= 32'h0;
-      entries_15_bp_index <= 79'h0;
+      entries_15_bp_index <= 97'h0;
       entries_15_ftq_idx <= 4'h0;
       entries_15_ftq_generation <= 8'h0;
       head <= 4'h0;

@@ -76,45 +76,104 @@ bind IFU IFU_Verification_Assert verification_assert (
   .ftq_io_recoverValid (_ftq_io_recoverValid),
   .clock               (clock)
 );
+bind SpecLoadTracker SpecLoadTracker_Verification_Assert verification_assert (
+  .reset            (reset),
+  .io_track0_robIdx (io_track0_robIdx),
+  .valid_31         (valid_31),
+  .valid_30         (valid_30),
+  .valid_29         (valid_29),
+  .valid_28         (valid_28),
+  .valid_27         (valid_27),
+  .valid_26         (valid_26),
+  .valid_25         (valid_25),
+  .valid_24         (valid_24),
+  .valid_23         (valid_23),
+  .valid_22         (valid_22),
+  .valid_21         (valid_21),
+  .valid_20         (valid_20),
+  .valid_19         (valid_19),
+  .valid_18         (valid_18),
+  .valid_17         (valid_17),
+  .valid_16         (valid_16),
+  .valid_15         (valid_15),
+  .valid_14         (valid_14),
+  .valid_13         (valid_13),
+  .valid_12         (valid_12),
+  .valid_11         (valid_11),
+  .valid_10         (valid_10),
+  .valid_9          (valid_9),
+  .valid_8          (valid_8),
+  .valid_7          (valid_7),
+  .valid_6          (valid_6),
+  .valid_5          (valid_5),
+  .valid_4          (valid_4),
+  .valid_3          (valid_3),
+  .valid_2          (valid_2),
+  .valid_1          (valid_1),
+  .valid_0          (valid_0),
+  .io_track1_robIdx (io_track1_robIdx),
+  .io_track0Valid   (io_track0Valid),
+  ._GEN             (_GEN_68),
+  .clock            (clock),
+  ._GEN_0           (_GEN_69)
+);
 bind LoadQueue LoadQueue_Verification_Assert verification_assert (
-  .reset                      (reset),
-  .entries_0_meta_rob_idx     (entries_0_meta_rob_idx),
-  .io_alloc_bits_meta_rob_idx (io_alloc_bits_meta_rob_idx),
-  .entries_0_meta_pc          (entries_0_meta_pc),
-  .io_alloc_bits_meta_pc      (io_alloc_bits_meta_pc),
-  .entries_0_valid            (entries_0_valid),
-  .entries_0_meta_pdest       (entries_0_meta_pdest),
-  .io_alloc_bits_meta_pdest   (io_alloc_bits_meta_pdest),
-  .entries_1_meta_rob_idx     (entries_1_meta_rob_idx),
-  .entries_1_meta_pc          (entries_1_meta_pc),
-  .entries_1_valid            (entries_1_valid),
-  .entries_1_meta_pdest       (entries_1_meta_pdest),
-  .entries_2_meta_rob_idx     (entries_2_meta_rob_idx),
-  .entries_2_meta_pc          (entries_2_meta_pc),
-  .entries_2_valid            (entries_2_valid),
-  .entries_2_meta_pdest       (entries_2_meta_pdest),
-  .entries_3_meta_rob_idx     (entries_3_meta_rob_idx),
-  .entries_3_meta_pc          (entries_3_meta_pc),
-  .entries_3_valid            (entries_3_valid),
-  .entries_3_meta_pdest       (entries_3_meta_pdest),
-  .entries_4_meta_rob_idx     (entries_4_meta_rob_idx),
-  .entries_4_meta_pc          (entries_4_meta_pc),
-  .entries_4_valid            (entries_4_valid),
-  .entries_4_meta_pdest       (entries_4_meta_pdest),
-  .entries_5_meta_rob_idx     (entries_5_meta_rob_idx),
-  .entries_5_meta_pc          (entries_5_meta_pc),
-  .entries_5_valid            (entries_5_valid),
-  .entries_5_meta_pdest       (entries_5_meta_pdest),
-  .entries_6_meta_rob_idx     (entries_6_meta_rob_idx),
-  .entries_6_meta_pc          (entries_6_meta_pc),
-  .entries_6_valid            (entries_6_valid),
-  .entries_6_meta_pdest       (entries_6_meta_pdest),
-  .entries_7_meta_rob_idx     (entries_7_meta_rob_idx),
-  .entries_7_meta_pc          (entries_7_meta_pc),
-  .entries_7_valid            (entries_7_valid),
-  .entries_7_meta_pdest       (entries_7_meta_pdest),
-  ._GEN                       (_freshSchedValid_T_1),
-  .clock                      (clock)
+  .reset                       (reset),
+  .entries_0_meta_rob_idx      (entries_0_meta_rob_idx),
+  .io_alloc_bits_meta_rob_idx  (io_alloc_bits_meta_rob_idx),
+  .entries_0_meta_pc           (entries_0_meta_pc),
+  .io_alloc_bits_meta_pc       (io_alloc_bits_meta_pc),
+  .entries_0_valid             (entries_0_valid),
+  .entries_0_meta_pdest        (entries_0_meta_pdest),
+  .io_alloc_bits_meta_pdest    (io_alloc_bits_meta_pdest),
+  .entries_1_meta_rob_idx      (entries_1_meta_rob_idx),
+  .entries_1_meta_pc           (entries_1_meta_pc),
+  .entries_1_valid             (entries_1_valid),
+  .entries_1_meta_pdest        (entries_1_meta_pdest),
+  .entries_2_meta_rob_idx      (entries_2_meta_rob_idx),
+  .entries_2_meta_pc           (entries_2_meta_pc),
+  .entries_2_valid             (entries_2_valid),
+  .entries_2_meta_pdest        (entries_2_meta_pdest),
+  .entries_3_meta_rob_idx      (entries_3_meta_rob_idx),
+  .entries_3_meta_pc           (entries_3_meta_pc),
+  .entries_3_valid             (entries_3_valid),
+  .entries_3_meta_pdest        (entries_3_meta_pdest),
+  .entries_4_meta_rob_idx      (entries_4_meta_rob_idx),
+  .entries_4_meta_pc           (entries_4_meta_pc),
+  .entries_4_valid             (entries_4_valid),
+  .entries_4_meta_pdest        (entries_4_meta_pdest),
+  .entries_5_meta_rob_idx      (entries_5_meta_rob_idx),
+  .entries_5_meta_pc           (entries_5_meta_pc),
+  .entries_5_valid             (entries_5_valid),
+  .entries_5_meta_pdest        (entries_5_meta_pdest),
+  .entries_6_meta_rob_idx      (entries_6_meta_rob_idx),
+  .entries_6_meta_pc           (entries_6_meta_pc),
+  .entries_6_valid             (entries_6_valid),
+  .entries_6_meta_pdest        (entries_6_meta_pdest),
+  .entries_7_meta_rob_idx      (entries_7_meta_rob_idx),
+  .entries_7_meta_pc           (entries_7_meta_pc),
+  .entries_7_valid             (entries_7_valid),
+  .entries_7_meta_pdest        (entries_7_meta_pdest),
+  .io_alloc1_bits_meta_rob_idx (io_alloc1_bits_meta_rob_idx),
+  .io_alloc1_bits_meta_pc      (io_alloc1_bits_meta_pc),
+  .io_alloc1_bits_meta_pdest   (io_alloc1_bits_meta_pdest),
+  ._GEN                        (_allocCount_T),
+  .clock                       (clock),
+  ._GEN_0                      (_allocCount_T_1)
+);
+bind LSU LSU_Verification_Assert verification_assert (
+  .reset        (reset),
+  .io_in1_valid (io_in1_valid),
+  .clock        (clock),
+  ._GEN         (is_load1)
+);
+bind DCacheMissQueue DCacheMissQueue_Verification_Assert verification_assert (
+  .activeValid   (activeValid),
+  ._GEN          (arFire),
+  .reset         (reset),
+  .io_mem_rvalid (io_mem_rvalid),
+  .clock         (clock),
+  ._GEN_0        (rMatches)
 );
 bind WidePRF WidePRF_Verification_Assert verification_assert (
   .reset      (reset),
@@ -132,25 +191,30 @@ bind WidePRF WidePRF_Verification_Assert verification_assert (
   .clock      (clock)
 );
 bind WideRename WideRename_Verification_Assert verification_assert (
-  .reset          (reset),
-  .io_fire_1      (io_fire_1),
-  .io_fire_0      (io_fire_0),
-  .io_fire_3      (io_fire_3),
-  .io_fire_2      (io_fire_2),
-  ._GEN           (4'hF),
-  ._GEN_0         (_request_T),
-  ._GEN_1         (|io_rd_0),
-  .io_do_rename_0 (alloc),
-  ._GEN_2         (_request_T_2),
-  ._GEN_3         (|io_rd_1),
-  .io_do_rename_1 (alloc_1),
-  ._GEN_4         (_request_T_4),
-  ._GEN_5         (|io_rd_2),
-  .io_do_rename_2 (alloc_2),
-  ._GEN_6         (_request_T_6),
-  ._GEN_7         (|io_rd_3),
-  .io_do_rename_3 (alloc_3),
-  .clock          (clock)
+  .reset           (reset),
+  .io_fire_1       (io_fire_1),
+  .io_fire_0       (io_fire_0),
+  .io_fire_3       (io_fire_3),
+  .io_fire_2       (io_fire_2),
+  ._GEN            (4'hF),
+  ._GEN_0          (_request_T),
+  ._GEN_1          (|io_rd_0),
+  .io_do_rename_0  (alloc),
+  .io_reserve_mask (io_reserve_mask),
+  .io_pdest_0      (io_pdest_0_0),
+  ._GEN_2          (_request_T_2),
+  ._GEN_3          (|io_rd_1),
+  .io_do_rename_1  (alloc_1),
+  .io_pdest_1      (io_pdest_1_0),
+  ._GEN_4          (_request_T_4),
+  ._GEN_5          (|io_rd_2),
+  .io_do_rename_2  (alloc_2),
+  .io_pdest_2      (io_pdest_2_0),
+  ._GEN_6          (_request_T_6),
+  ._GEN_7          (|io_rd_3),
+  .io_do_rename_3  (alloc_3),
+  .io_pdest_3      (io_pdest_3_0),
+  .clock           (clock)
 );
 bind WideROB WideROB_Verification_Assert verification_assert (
   .reset             (reset),
@@ -204,24 +268,113 @@ bind WideROB WideROB_Verification_Assert verification_assert (
   .clock             (clock)
 );
 bind WideRS WideRS_Verification_Assert verification_assert (
-  .reset                       (reset),
-  .io_enq_fire_0               (io_enq_fire_0),
-  .allocAccept_0               (allocAccept_0),
-  .io_enq_fire_1               (io_enq_fire_1),
-  .allocAccept_1               (allocAccept_1),
-  .io_enq_fire_2               (io_enq_fire_2),
-  .allocAccept_2               (allocAccept_2),
-  .io_enq_fire_3               (io_enq_fire_3),
-  .allocAccept_3               (allocAccept_3),
-  .io_issue_alu_bits_0_rob_idx (io_issue_alu_bits_0_rob_idx_0),
-  .io_issue_alu_bits_1_rob_idx (io_issue_alu_bits_1_rob_idx_0),
-  .io_issue_alu_fire_0         (io_issue_alu_fire_0),
-  .io_issue_alu_fire_1         (io_issue_alu_fire_1),
-  .io_issue_alu_bits_2_rob_idx (io_issue_alu_bits_2_rob_idx_0),
-  .io_issue_alu_fire_2         (io_issue_alu_fire_2),
-  .io_issue_alu_bits_3_rob_idx (io_issue_alu_bits_3_rob_idx_0),
-  .io_issue_alu_fire_3         (io_issue_alu_fire_3),
-  .clock                       (clock)
+  .reset                            (reset),
+  .io_enq_fire_0                    (io_enq_fire_0),
+  .allocAccept_0                    (allocAccept_0),
+  .io_enq_fire_1                    (io_enq_fire_1),
+  .allocAccept_1                    (allocAccept_1),
+  .io_enq_fire_2                    (io_enq_fire_2),
+  .allocAccept_2                    (allocAccept_2),
+  .io_enq_fire_3                    (io_enq_fire_3),
+  .allocAccept_3                    (allocAccept_3),
+  .io_issue_alu_bits_0_rob_idx      (io_issue_alu_bits_0_rob_idx_0),
+  .io_issue_alu_bits_1_rob_idx      (io_issue_alu_bits_1_rob_idx_0),
+  .io_issue_alu_fire_0              (io_issue_alu_fire_0),
+  .io_issue_alu_fire_1              (io_issue_alu_fire_1),
+  .io_issue_alu_bits_2_rob_idx      (io_issue_alu_bits_2_rob_idx_0),
+  .io_issue_alu_fire_2              (io_issue_alu_fire_2),
+  .io_issue_alu_bits_3_rob_idx      (io_issue_alu_bits_3_rob_idx_0),
+  .io_issue_alu_fire_3              (io_issue_alu_fire_3),
+  .io_issue_lsu1_bits_lsu_mem_write (lsu1Bits_lsu_mem_write),
+  .io_issue_lsu1_fire               (io_issue_lsu1_fire),
+  .io_issue_lsu_fire                (io_issue_lsu_fire),
+  .io_issue_lsu_idx                 ((|_residentLsu_T)
+                                       ? (lsuSelect_0
+                                            ? 4'h0
+                                            : lsuSelect_1
+                                                ? 4'h1
+                                                : lsuSelect_2
+                                                    ? 4'h2
+                                                    : lsuSelect_3
+                                                        ? 4'h3
+                                                        : lsuSelect_4
+                                                            ? 4'h4
+                                                            : lsuSelect_5
+                                                                ? 4'h5
+                                                                : lsuSelect_6
+                                                                    ? 4'h6
+                                                                    : lsuSelect_7
+                                                                        ? 4'h7
+                                                                        : lsuSelect_8
+                                                                            ? 4'h8
+                                                                            : lsuSelect_9
+                                                                                ? 4'h9
+                                                                                : lsuSelect_10
+                                                                                    ? 4'hA
+                                                                                    : lsuSelect_11
+                                                                                        ? 4'hB
+                                                                                        : lsuSelect_12
+                                                                                            ? 4'hC
+                                                                                            : lsuSelect_13
+                                                                                                ? 4'hD
+                                                                                                : {3'h7,
+                                                                                                   ~lsuSelect_14})
+                                       : (~(lsuFreshGrant[0]) | allocMask_0[0]
+                                            ? 4'h0
+                                            : _io_enq_idx_0_T_29)
+                                         | (~(lsuFreshGrant[1]) | allocMask_1[0]
+                                              ? 4'h0
+                                              : _io_enq_idx_1_T_29)
+                                         | (~(lsuFreshGrant[2]) | allocMask_2[0]
+                                              ? 4'h0
+                                              : _io_enq_idx_2_T_29)
+                                         | (~(lsuFreshGrant[3]) | allocMask_3[0]
+                                              ? 4'h0
+                                              : _io_enq_idx_3_T_29)),
+  .io_issue_lsu1_idx                ((|_residentLsu1_T)
+                                       ? (lsuSelect1_0
+                                            ? 4'h0
+                                            : lsuSelect1_1
+                                                ? 4'h1
+                                                : lsuSelect1_2
+                                                    ? 4'h2
+                                                    : lsuSelect1_3
+                                                        ? 4'h3
+                                                        : lsuSelect1_4
+                                                            ? 4'h4
+                                                            : lsuSelect1_5
+                                                                ? 4'h5
+                                                                : lsuSelect1_6
+                                                                    ? 4'h6
+                                                                    : lsuSelect1_7
+                                                                        ? 4'h7
+                                                                        : lsuSelect1_8
+                                                                            ? 4'h8
+                                                                            : lsuSelect1_9
+                                                                                ? 4'h9
+                                                                                : lsuSelect1_10
+                                                                                    ? 4'hA
+                                                                                    : lsuSelect1_11
+                                                                                        ? 4'hB
+                                                                                        : lsuSelect1_12
+                                                                                            ? 4'hC
+                                                                                            : lsuSelect1_13
+                                                                                                ? 4'hD
+                                                                                                : {3'h7,
+                                                                                                   ~lsuSelect1_14})
+                                       : (~(lsu1FreshGrant[0]) | allocMask_0[0]
+                                            ? 4'h0
+                                            : _io_enq_idx_0_T_29)
+                                         | (~(lsu1FreshGrant[1]) | allocMask_1[0]
+                                              ? 4'h0
+                                              : _io_enq_idx_1_T_29)
+                                         | (~(lsu1FreshGrant[2]) | allocMask_2[0]
+                                              ? 4'h0
+                                              : _io_enq_idx_2_T_29)
+                                         | (~(lsu1FreshGrant[3]) | allocMask_3[0]
+                                              ? 4'h0
+                                              : _io_enq_idx_3_T_29)),
+  .clock                            (clock)
 );
 bind FetchQueue FetchQueue_Verification_Assert verification_assert (
   .reset               (reset),
@@ -231,41 +384,82 @@ bind FetchQueue FetchQueue_Verification_Assert verification_assert (
   .io_enq_bits_valid_3 (io_enq_bits_valid_3),
   .clock               (clock)
 );
-bind StoreBuffer StoreBuffer_Verification_Assert verification_assert (
-  .reset          (reset),
-  ._GEN           (_burstStart_T),
-  ._GEN_0         (burstStart),
-  ._GEN_1         (nextBurstCount),
-  ._GEN_2         (_io_dmem_wvalid_T),
-  .writeMatches_2 (writeMatches_2),
-  .writeMatches_3 (writeMatches_3),
-  .writeMatches_0 (writeMatches_0),
-  .writeMatches_1 (writeMatches_1),
-  .writeMatches_6 (writeMatches_6),
-  .writeMatches_7 (writeMatches_7),
-  .writeMatches_4 (writeMatches_4),
-  .writeMatches_5 (writeMatches_5),
-  ._GEN_3         (1'h1),
-  .clock          (clock)
+bind WriteCombiningStoreBuffer WriteCombiningStoreBuffer_Verification_Assert verification_assert (
+  .reset         (reset),
+  .io_enq1_ready (batchReady),
+  .io_enq1_valid (io_enq1_valid),
+  .io_enq_ready  (batchReady),
+  .io_enq_valid  (io_enq_valid),
+  ._GEN          (_pairSameLine_T),
+  .lineAddr_0    (lineAddr_0),
+  .lineAddr_1    (lineAddr_1),
+  .valid_0       (valid_0),
+  .valid_1       (valid_1),
+  ._GEN_0        (~(|activeIdx)),
+  ._GEN_1        (_query1_hit_T_5),
+  ._GEN_2        (activeValid),
+  .lineAddr_2    (lineAddr_2),
+  .valid_2       (valid_2),
+  ._GEN_3        (_query1_hit_T_10),
+  .lineAddr_3    (lineAddr_3),
+  .valid_3       (valid_3),
+  ._GEN_4        (_query1_hit_T_15),
+  .lineAddr_4    (lineAddr_4),
+  .valid_4       (valid_4),
+  ._GEN_5        (_query1_hit_T_20),
+  .lineAddr_5    (lineAddr_5),
+  .valid_5       (valid_5),
+  ._GEN_6        (_query1_hit_T_25),
+  .lineAddr_6    (lineAddr_6),
+  .valid_6       (valid_6),
+  ._GEN_7        (_query1_hit_T_30),
+  .lineAddr_7    (lineAddr_7),
+  .valid_7       (valid_7),
+  ._GEN_8        (_query1_hit_T_35),
+  .lineAddr_8    (lineAddr_8),
+  .valid_8       (valid_8),
+  ._GEN_9        (_query1_hit_T_40),
+  .lineAddr_9    (lineAddr_9),
+  .valid_9       (valid_9),
+  ._GEN_10       (_query1_hit_T_45),
+  .lineAddr_10   (lineAddr_10),
+  .valid_10      (valid_10),
+  ._GEN_11       (_query1_hit_T_50),
+  .lineAddr_11   (lineAddr_11),
+  .valid_11      (valid_11),
+  ._GEN_12       (_query1_hit_T_55),
+  .lineAddr_12   (lineAddr_12),
+  .valid_12      (valid_12),
+  ._GEN_13       (_query1_hit_T_60),
+  .lineAddr_13   (lineAddr_13),
+  .valid_13      (valid_13),
+  ._GEN_14       (_query1_hit_T_65),
+  .lineAddr_14   (lineAddr_14),
+  .valid_14      (valid_14),
+  ._GEN_15       (_query1_hit_T_70),
+  .lineAddr_15   (lineAddr_15),
+  .valid_15      (valid_15),
+  ._GEN_16       (&activeIdx),
+  .clock         (clock)
 );
 bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (
   .reset                 (reset),
-  ._GEN                  ({grant_2, grant_1}),
-  .grants_0_0            (grant_0),
-  ._GEN_0                ({grant_6, grant_5}),
-  ._GEN_1                ({grant_4, grant_3}),
-  ._GEN_2                ({grant_1_2, grant_1_1}),
-  .grants_1_0            (grant_1_0),
-  ._GEN_3                ({grant_1_6, grant_1_5}),
-  ._GEN_4                ({grant_1_4, grant_1_3}),
-  ._GEN_5                ({grant_2_2, grant_2_1}),
-  .grants_2_0            (grant_2_0),
-  ._GEN_6                ({grant_2_6, grant_2_5}),
-  ._GEN_7                ({grant_2_4, grant_2_3}),
-  ._GEN_8                ({grant_3_2, grant_3_1}),
-  .grants_3_0            (grant_3_0),
-  ._GEN_9                ({grant_3_6, grant_3_5}),
-  ._GEN_10               ({grant_3_4, grant_3_3}),
+  ._GEN                  ({grant_3, grant_2}),
+  ._GEN_0                ({grant_1, grant_0}),
+  ._GEN_1                ({grant_7, grant_6}),
+  ._GEN_2                ({grant_5, grant_4}),
+  ._GEN_3                ({grant_1_3, grant_1_2}),
+  ._GEN_4                ({grant_1_1, grant_1_0}),
+  ._GEN_5                ({grant_1_7, grant_1_6}),
+  ._GEN_6                ({grant_1_5, grant_1_4}),
+  ._GEN_7                ({grant_2_3, grant_2_2}),
+  ._GEN_8                ({grant_2_1, grant_2_0}),
+  ._GEN_9                ({grant_2_7, grant_2_6}),
+  ._GEN_10               ({grant_2_5, grant_2_4}),
+  ._GEN_11               ({grant_3_3, grant_3_2}),
+  ._GEN_12               ({grant_3_1, grant_3_0}),
+  ._GEN_13               ({grant_3_7, grant_3_6}),
+  ._GEN_14               ({grant_3_5, grant_3_4}),
   .io_out_0_valid        (|_io_out_0_valid_T),
   .io_out_1_valid        (|_io_out_1_valid_T),
   .io_out_0_bits_rob_idx (io_out_0_bits_rob_idx_0),
@@ -278,10 +472,13 @@ bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (
   .clock                 (clock)
 );
 bind Core Core_Verification_Assert verification_assert (
-  .reset  (Core.verification.reset_probe),
-  ._GEN   (lsu_addr_accept),
-  .clock  (clock),
-  ._GEN_0 (~flush_lsu_d)
+  .reset                                      (reset),
+  ._GEN                                       (lsu_addr_accept),
+  ._GEN_0                                     (lsu_addr1_accept),
+  .exu_lsu1_io_out_bits_signals_lsu_mem_write (_exu_lsu1_io_out_bits_signals_lsu_mem_write),
+  .clock                                      (clock),
+  ._GEN_1                                     (~flush_lsu_d),
+  ._GEN_2                                     (~flush_lsu1_d)
 );
 bind SRAM SRAM_Verification_Assert verification_assert (
   .reset         (reset),

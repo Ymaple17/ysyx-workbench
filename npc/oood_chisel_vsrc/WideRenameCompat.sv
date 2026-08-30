@@ -168,7 +168,8 @@ module WideRenameCompat(
                 io_rebuild_rat_29,
                 io_rebuild_rat_30,
                 io_rebuild_rat_31,
-  input  [63:0] io_rebuild_free
+  input  [63:0] io_rebuild_free,
+                io_reserve_mask
 );
 
   wire [2:0] _impl_io_cp_free;
@@ -273,6 +274,7 @@ module WideRenameCompat(
     .io_rebuild_rat_30     (io_rebuild_rat_30),
     .io_rebuild_rat_31     (io_rebuild_rat_31),
     .io_rebuild_free       (io_rebuild_free),
+    .io_reserve_mask       (io_reserve_mask),
     .io_rat_out_0          (io_rat_out_0),
     .io_rat_out_1          (io_rat_out_1),
     .io_rat_out_2          (io_rat_out_2),

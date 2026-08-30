@@ -15,7 +15,7 @@ module FetchBuffer(
   input         io_in_bits_bits_0_bp_valid,
                 io_in_bits_bits_0_bp_taken,
   input  [31:0] io_in_bits_bits_0_bp_target,
-  input  [78:0] io_in_bits_bits_0_bp_index,
+  input  [96:0] io_in_bits_bits_0_bp_index,
   input  [3:0]  io_in_bits_bits_0_ftq_idx,
   input  [7:0]  io_in_bits_bits_0_ftq_generation,
   input  [31:0] io_in_bits_bits_1_inst,
@@ -25,7 +25,7 @@ module FetchBuffer(
   input         io_in_bits_bits_1_bp_valid,
                 io_in_bits_bits_1_bp_taken,
   input  [31:0] io_in_bits_bits_1_bp_target,
-  input  [78:0] io_in_bits_bits_1_bp_index,
+  input  [96:0] io_in_bits_bits_1_bp_index,
   input  [3:0]  io_in_bits_bits_1_ftq_idx,
   input  [7:0]  io_in_bits_bits_1_ftq_generation,
   input  [31:0] io_in_bits_bits_2_inst,
@@ -35,7 +35,7 @@ module FetchBuffer(
   input         io_in_bits_bits_2_bp_valid,
                 io_in_bits_bits_2_bp_taken,
   input  [31:0] io_in_bits_bits_2_bp_target,
-  input  [78:0] io_in_bits_bits_2_bp_index,
+  input  [96:0] io_in_bits_bits_2_bp_index,
   input  [3:0]  io_in_bits_bits_2_ftq_idx,
   input  [7:0]  io_in_bits_bits_2_ftq_generation,
   input  [31:0] io_in_bits_bits_3_inst,
@@ -45,7 +45,7 @@ module FetchBuffer(
   input         io_in_bits_bits_3_bp_valid,
                 io_in_bits_bits_3_bp_taken,
   input  [31:0] io_in_bits_bits_3_bp_target,
-  input  [78:0] io_in_bits_bits_3_bp_index,
+  input  [96:0] io_in_bits_bits_3_bp_index,
   input  [3:0]  io_in_bits_bits_3_ftq_idx,
   input  [7:0]  io_in_bits_bits_3_ftq_generation,
   input         io_out_ready,
@@ -61,7 +61,7 @@ module FetchBuffer(
   output        io_out_bits_bits_0_bp_valid,
                 io_out_bits_bits_0_bp_taken,
   output [31:0] io_out_bits_bits_0_bp_target,
-  output [78:0] io_out_bits_bits_0_bp_index,
+  output [96:0] io_out_bits_bits_0_bp_index,
   output [3:0]  io_out_bits_bits_0_ftq_idx,
   output [7:0]  io_out_bits_bits_0_ftq_generation,
   output [31:0] io_out_bits_bits_1_inst,
@@ -71,7 +71,7 @@ module FetchBuffer(
   output        io_out_bits_bits_1_bp_valid,
                 io_out_bits_bits_1_bp_taken,
   output [31:0] io_out_bits_bits_1_bp_target,
-  output [78:0] io_out_bits_bits_1_bp_index,
+  output [96:0] io_out_bits_bits_1_bp_index,
   output [3:0]  io_out_bits_bits_1_ftq_idx,
   output [7:0]  io_out_bits_bits_1_ftq_generation,
   output [31:0] io_out_bits_bits_2_inst,
@@ -81,7 +81,7 @@ module FetchBuffer(
   output        io_out_bits_bits_2_bp_valid,
                 io_out_bits_bits_2_bp_taken,
   output [31:0] io_out_bits_bits_2_bp_target,
-  output [78:0] io_out_bits_bits_2_bp_index,
+  output [96:0] io_out_bits_bits_2_bp_index,
   output [3:0]  io_out_bits_bits_2_ftq_idx,
   output [7:0]  io_out_bits_bits_2_ftq_generation,
   output [31:0] io_out_bits_bits_3_inst,
@@ -91,7 +91,7 @@ module FetchBuffer(
   output        io_out_bits_bits_3_bp_valid,
                 io_out_bits_bits_3_bp_taken,
   output [31:0] io_out_bits_bits_3_bp_target,
-  output [78:0] io_out_bits_bits_3_bp_index,
+  output [96:0] io_out_bits_bits_3_bp_index,
   output [3:0]  io_out_bits_bits_3_ftq_idx,
   output [7:0]  io_out_bits_bits_3_ftq_generation,
   input         io_flush,
@@ -110,7 +110,7 @@ module FetchBuffer(
   reg         entries_0_bits_0_bp_valid;
   reg         entries_0_bits_0_bp_taken;
   reg  [31:0] entries_0_bits_0_bp_target;
-  reg  [78:0] entries_0_bits_0_bp_index;
+  reg  [96:0] entries_0_bits_0_bp_index;
   reg  [3:0]  entries_0_bits_0_ftq_idx;
   reg  [7:0]  entries_0_bits_0_ftq_generation;
   reg  [31:0] entries_0_bits_1_inst;
@@ -120,7 +120,7 @@ module FetchBuffer(
   reg         entries_0_bits_1_bp_valid;
   reg         entries_0_bits_1_bp_taken;
   reg  [31:0] entries_0_bits_1_bp_target;
-  reg  [78:0] entries_0_bits_1_bp_index;
+  reg  [96:0] entries_0_bits_1_bp_index;
   reg  [3:0]  entries_0_bits_1_ftq_idx;
   reg  [7:0]  entries_0_bits_1_ftq_generation;
   reg  [31:0] entries_0_bits_2_inst;
@@ -130,7 +130,7 @@ module FetchBuffer(
   reg         entries_0_bits_2_bp_valid;
   reg         entries_0_bits_2_bp_taken;
   reg  [31:0] entries_0_bits_2_bp_target;
-  reg  [78:0] entries_0_bits_2_bp_index;
+  reg  [96:0] entries_0_bits_2_bp_index;
   reg  [3:0]  entries_0_bits_2_ftq_idx;
   reg  [7:0]  entries_0_bits_2_ftq_generation;
   reg  [31:0] entries_0_bits_3_inst;
@@ -140,7 +140,7 @@ module FetchBuffer(
   reg         entries_0_bits_3_bp_valid;
   reg         entries_0_bits_3_bp_taken;
   reg  [31:0] entries_0_bits_3_bp_target;
-  reg  [78:0] entries_0_bits_3_bp_index;
+  reg  [96:0] entries_0_bits_3_bp_index;
   reg  [3:0]  entries_0_bits_3_ftq_idx;
   reg  [7:0]  entries_0_bits_3_ftq_generation;
   reg         entries_1_valid_0;
@@ -154,7 +154,7 @@ module FetchBuffer(
   reg         entries_1_bits_0_bp_valid;
   reg         entries_1_bits_0_bp_taken;
   reg  [31:0] entries_1_bits_0_bp_target;
-  reg  [78:0] entries_1_bits_0_bp_index;
+  reg  [96:0] entries_1_bits_0_bp_index;
   reg  [3:0]  entries_1_bits_0_ftq_idx;
   reg  [7:0]  entries_1_bits_0_ftq_generation;
   reg  [31:0] entries_1_bits_1_inst;
@@ -164,7 +164,7 @@ module FetchBuffer(
   reg         entries_1_bits_1_bp_valid;
   reg         entries_1_bits_1_bp_taken;
   reg  [31:0] entries_1_bits_1_bp_target;
-  reg  [78:0] entries_1_bits_1_bp_index;
+  reg  [96:0] entries_1_bits_1_bp_index;
   reg  [3:0]  entries_1_bits_1_ftq_idx;
   reg  [7:0]  entries_1_bits_1_ftq_generation;
   reg  [31:0] entries_1_bits_2_inst;
@@ -174,7 +174,7 @@ module FetchBuffer(
   reg         entries_1_bits_2_bp_valid;
   reg         entries_1_bits_2_bp_taken;
   reg  [31:0] entries_1_bits_2_bp_target;
-  reg  [78:0] entries_1_bits_2_bp_index;
+  reg  [96:0] entries_1_bits_2_bp_index;
   reg  [3:0]  entries_1_bits_2_ftq_idx;
   reg  [7:0]  entries_1_bits_2_ftq_generation;
   reg  [31:0] entries_1_bits_3_inst;
@@ -184,7 +184,7 @@ module FetchBuffer(
   reg         entries_1_bits_3_bp_valid;
   reg         entries_1_bits_3_bp_taken;
   reg  [31:0] entries_1_bits_3_bp_target;
-  reg  [78:0] entries_1_bits_3_bp_index;
+  reg  [96:0] entries_1_bits_3_bp_index;
   reg  [3:0]  entries_1_bits_3_ftq_idx;
   reg  [7:0]  entries_1_bits_3_ftq_generation;
   reg         entries_2_valid_0;
@@ -198,7 +198,7 @@ module FetchBuffer(
   reg         entries_2_bits_0_bp_valid;
   reg         entries_2_bits_0_bp_taken;
   reg  [31:0] entries_2_bits_0_bp_target;
-  reg  [78:0] entries_2_bits_0_bp_index;
+  reg  [96:0] entries_2_bits_0_bp_index;
   reg  [3:0]  entries_2_bits_0_ftq_idx;
   reg  [7:0]  entries_2_bits_0_ftq_generation;
   reg  [31:0] entries_2_bits_1_inst;
@@ -208,7 +208,7 @@ module FetchBuffer(
   reg         entries_2_bits_1_bp_valid;
   reg         entries_2_bits_1_bp_taken;
   reg  [31:0] entries_2_bits_1_bp_target;
-  reg  [78:0] entries_2_bits_1_bp_index;
+  reg  [96:0] entries_2_bits_1_bp_index;
   reg  [3:0]  entries_2_bits_1_ftq_idx;
   reg  [7:0]  entries_2_bits_1_ftq_generation;
   reg  [31:0] entries_2_bits_2_inst;
@@ -218,7 +218,7 @@ module FetchBuffer(
   reg         entries_2_bits_2_bp_valid;
   reg         entries_2_bits_2_bp_taken;
   reg  [31:0] entries_2_bits_2_bp_target;
-  reg  [78:0] entries_2_bits_2_bp_index;
+  reg  [96:0] entries_2_bits_2_bp_index;
   reg  [3:0]  entries_2_bits_2_ftq_idx;
   reg  [7:0]  entries_2_bits_2_ftq_generation;
   reg  [31:0] entries_2_bits_3_inst;
@@ -228,7 +228,7 @@ module FetchBuffer(
   reg         entries_2_bits_3_bp_valid;
   reg         entries_2_bits_3_bp_taken;
   reg  [31:0] entries_2_bits_3_bp_target;
-  reg  [78:0] entries_2_bits_3_bp_index;
+  reg  [96:0] entries_2_bits_3_bp_index;
   reg  [3:0]  entries_2_bits_3_ftq_idx;
   reg  [7:0]  entries_2_bits_3_ftq_generation;
   reg         entries_3_valid_0;
@@ -242,7 +242,7 @@ module FetchBuffer(
   reg         entries_3_bits_0_bp_valid;
   reg         entries_3_bits_0_bp_taken;
   reg  [31:0] entries_3_bits_0_bp_target;
-  reg  [78:0] entries_3_bits_0_bp_index;
+  reg  [96:0] entries_3_bits_0_bp_index;
   reg  [3:0]  entries_3_bits_0_ftq_idx;
   reg  [7:0]  entries_3_bits_0_ftq_generation;
   reg  [31:0] entries_3_bits_1_inst;
@@ -252,7 +252,7 @@ module FetchBuffer(
   reg         entries_3_bits_1_bp_valid;
   reg         entries_3_bits_1_bp_taken;
   reg  [31:0] entries_3_bits_1_bp_target;
-  reg  [78:0] entries_3_bits_1_bp_index;
+  reg  [96:0] entries_3_bits_1_bp_index;
   reg  [3:0]  entries_3_bits_1_ftq_idx;
   reg  [7:0]  entries_3_bits_1_ftq_generation;
   reg  [31:0] entries_3_bits_2_inst;
@@ -262,7 +262,7 @@ module FetchBuffer(
   reg         entries_3_bits_2_bp_valid;
   reg         entries_3_bits_2_bp_taken;
   reg  [31:0] entries_3_bits_2_bp_target;
-  reg  [78:0] entries_3_bits_2_bp_index;
+  reg  [96:0] entries_3_bits_2_bp_index;
   reg  [3:0]  entries_3_bits_2_ftq_idx;
   reg  [7:0]  entries_3_bits_2_ftq_generation;
   reg  [31:0] entries_3_bits_3_inst;
@@ -272,7 +272,7 @@ module FetchBuffer(
   reg         entries_3_bits_3_bp_valid;
   reg         entries_3_bits_3_bp_taken;
   reg  [31:0] entries_3_bits_3_bp_target;
-  reg  [78:0] entries_3_bits_3_bp_index;
+  reg  [96:0] entries_3_bits_3_bp_index;
   reg  [3:0]  entries_3_bits_3_ftq_idx;
   reg  [7:0]  entries_3_bits_3_ftq_generation;
   reg  [1:0]  head;
@@ -422,7 +422,7 @@ module FetchBuffer(
         casez_tmp_9 = entries_3_bits_0_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_10;
+  reg  [96:0] casez_tmp_10;
   always_comb begin
     casez (head)
       2'b00:
@@ -552,7 +552,7 @@ module FetchBuffer(
         casez_tmp_19 = entries_3_bits_1_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_20;
+  reg  [96:0] casez_tmp_20;
   always_comb begin
     casez (head)
       2'b00:
@@ -682,7 +682,7 @@ module FetchBuffer(
         casez_tmp_29 = entries_3_bits_2_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_30;
+  reg  [96:0] casez_tmp_30;
   always_comb begin
     casez (head)
       2'b00:
@@ -812,7 +812,7 @@ module FetchBuffer(
         casez_tmp_39 = entries_3_bits_3_bp_target;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_40;
+  reg  [96:0] casez_tmp_40;
   always_comb begin
     casez (head)
       2'b00:

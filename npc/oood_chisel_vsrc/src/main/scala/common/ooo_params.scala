@@ -29,6 +29,8 @@ object OoOParams {
   // Keep enough committed stores in flight to hide long AXI write bursts.
   val STORE_BUFFER_SIZE = 128
   val STORE_BUFFER_GATHER_CYCLES = 24
+  val STORE_BUFFER_LINES = 16
+  val STORE_BUFFER_RETENTION_CYCLES = 64
   val ICACHE_SET = 128
   val DCACHE_SET = 512
   val DCACHE_BLOCK_SIZE = 32

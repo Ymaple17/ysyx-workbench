@@ -130,7 +130,16 @@ class Xbar(coreConfig: CoreConfig) extends Module{
       }
       is(wDmem) {
         connectWrite(io.dmem, io.soc)
-        when(io.soc.bvalid && io.soc.bready) { wState := wSelect }
+        val nextIsDmem = io.dmem.awvalid && !dmemWriteUart && !dmemWriteClint
+        io.soc.awvalid := nextIsDmem
+        io.dmem.awready := io.soc.awready && !dmemWriteUart && !dmemWriteClint
+        when(io.soc.bvalid && io.soc.bready) {
+          when(nextIsDmem && io.soc.awready) {
+            wState := wDmem
+          }.otherwise {
+            wState := wSelect
+          }
+        }
       }
       is(wClint) {
         connectWrite(io.dmem, io.clint)

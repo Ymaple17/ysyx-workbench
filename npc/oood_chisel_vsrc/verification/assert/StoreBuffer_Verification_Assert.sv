@@ -22,7 +22,15 @@ module StoreBuffer_Verification_Assert(
               _GEN,
               _GEN_0,
   input [3:0] _GEN_1,
-  input       _GEN_2,
+  input [1:0] state,
+              _GEN_2,
+  input       _GEN_3,
+              _GEN_4,
+              _GEN_5,
+              _GEN_6,
+  input [3:0] _GEN_7,
+  input       _GEN_8,
+              _GEN_9,
               writeMatches_2,
               writeMatches_3,
               writeMatches_0,
@@ -31,7 +39,7 @@ module StoreBuffer_Verification_Assert(
               writeMatches_7,
               writeMatches_4,
               writeMatches_5,
-              _GEN_3,
+              _GEN_10,
               clock
 );
 
@@ -43,7 +51,14 @@ module StoreBuffer_Verification_Assert(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & _GEN_2
+      if (_GEN_3 & state != _GEN_2 & _GEN_4 & _GEN_5 & _GEN_6 & ~reset
+          & _GEN_7 == 4'h0) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: a chained StoreBuffer burst must consume a non-empty prefix\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & (_GEN_8 | _GEN_9)
           & {1'h0,
              {1'h0, {1'h0, writeMatches_0} + {1'h0, writeMatches_1}}
                + {1'h0, {1'h0, writeMatches_2} + {1'h0, writeMatches_3}}}
@@ -51,7 +66,7 @@ module StoreBuffer_Verification_Assert(
              {1'h0, {1'h0, writeMatches_4} + {1'h0, writeMatches_5}}
                + {1'h0,
                   {1'h0, writeMatches_6}
-                    + {1'h0, writeMatches_7}}} > {3'h0, _GEN_3}) begin
+                    + {1'h0, writeMatches_7}}} > {3'h0, _GEN_10}) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: same-line StoreBuffer prefix must contain at most one entry per word\n");
         if (`STOP_COND_)

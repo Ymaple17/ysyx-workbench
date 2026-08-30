@@ -18,6 +18,12 @@ module StoreBuffer(
   output        io_ld_wait,
                 io_ld_fwd_valid,
   output [31:0] io_ld_fwd_data,
+  input         io_ld1_valid,
+  input  [31:0] io_ld1_addr,
+  input  [2:0]  io_ld1_mem_rd,
+  output        io_ld1_wait,
+                io_ld1_fwd_valid,
+  output [31:0] io_ld1_fwd_data,
   input         io_bus_busy,
   output [31:0] io_dmem_awaddr,
   output        io_dmem_awvalid,
@@ -39,7 +45,8 @@ module StoreBuffer(
   output [1:0]  io_merged,
   output        io_write_burst,
   output [3:0]  io_write_beats,
-  output        io_empty,
+  output        io_write_chain,
+                io_empty,
                 io_busy,
   output [7:0]  io_free
 );
@@ -705,10 +712,10 @@ module StoreBuffer(
     endcase
   end // always_comb
   wire        entryMatches = (|count) & casez_tmp[31:5] == casez_tmp[31:5];
-  wire [6:0]  _idx_T_290 = idx + 7'h1;
+  wire [6:0]  _query1_idx_T_2 = idx + 7'h1;
   reg  [31:0] casez_tmp_0;
   always_comb begin
-    casez (_idx_T_290)
+    casez (_query1_idx_T_2)
       7'b0000000:
         casez_tmp_0 = entries_0_addr;
       7'b0000001:
@@ -969,11 +976,11 @@ module StoreBuffer(
   end // always_comb
   wire        linePrefix_1 =
     (|(count[7:1])) & casez_tmp_0[31:5] == casez_tmp[31:5] & entryMatches;
-  wire [6:0]  _idx_T_292 = idx + 7'h2;
-  wire        _hit_T_8 = count > 8'h2;
+  wire [6:0]  _query1_idx_T_4 = idx + 7'h2;
+  wire        _query1_hit_T_8 = count > 8'h2;
   reg  [31:0] casez_tmp_1;
   always_comb begin
-    casez (_idx_T_292)
+    casez (_query1_idx_T_4)
       7'b0000000:
         casez_tmp_1 = entries_0_addr;
       7'b0000001:
@@ -1233,11 +1240,11 @@ module StoreBuffer(
     endcase
   end // always_comb
   wire        linePrefix_2 =
-    _hit_T_8 & casez_tmp_1[31:5] == casez_tmp[31:5] & linePrefix_1;
-  wire [6:0]  _idx_T_294 = idx + 7'h3;
+    _query1_hit_T_8 & casez_tmp_1[31:5] == casez_tmp[31:5] & linePrefix_1;
+  wire [6:0]  _query1_idx_T_6 = idx + 7'h3;
   reg  [31:0] casez_tmp_2;
   always_comb begin
-    casez (_idx_T_294)
+    casez (_query1_idx_T_6)
       7'b0000000:
         casez_tmp_2 = entries_0_addr;
       7'b0000001:
@@ -1498,11 +1505,11 @@ module StoreBuffer(
   end // always_comb
   wire        linePrefix_3 =
     (|(count[7:2])) & casez_tmp_2[31:5] == casez_tmp[31:5] & linePrefix_2;
-  wire [6:0]  _idx_T_296 = idx + 7'h4;
-  wire        _hit_T_16 = count > 8'h4;
+  wire [6:0]  _query1_idx_T_8 = idx + 7'h4;
+  wire        _query1_hit_T_16 = count > 8'h4;
   reg  [31:0] casez_tmp_3;
   always_comb begin
-    casez (_idx_T_296)
+    casez (_query1_idx_T_8)
       7'b0000000:
         casez_tmp_3 = entries_0_addr;
       7'b0000001:
@@ -1762,12 +1769,12 @@ module StoreBuffer(
     endcase
   end // always_comb
   wire        linePrefix_4 =
-    _hit_T_16 & casez_tmp_3[31:5] == casez_tmp[31:5] & linePrefix_3;
-  wire [6:0]  _idx_T_298 = idx + 7'h5;
-  wire        _hit_T_20 = count > 8'h5;
+    _query1_hit_T_16 & casez_tmp_3[31:5] == casez_tmp[31:5] & linePrefix_3;
+  wire [6:0]  _query1_idx_T_10 = idx + 7'h5;
+  wire        _query1_hit_T_20 = count > 8'h5;
   reg  [31:0] casez_tmp_4;
   always_comb begin
-    casez (_idx_T_298)
+    casez (_query1_idx_T_10)
       7'b0000000:
         casez_tmp_4 = entries_0_addr;
       7'b0000001:
@@ -2027,12 +2034,12 @@ module StoreBuffer(
     endcase
   end // always_comb
   wire        linePrefix_5 =
-    _hit_T_20 & casez_tmp_4[31:5] == casez_tmp[31:5] & linePrefix_4;
-  wire [6:0]  _idx_T_300 = idx + 7'h6;
-  wire        _hit_T_24 = count > 8'h6;
+    _query1_hit_T_20 & casez_tmp_4[31:5] == casez_tmp[31:5] & linePrefix_4;
+  wire [6:0]  _query1_idx_T_12 = idx + 7'h6;
+  wire        _query1_hit_T_24 = count > 8'h6;
   reg  [31:0] casez_tmp_5;
   always_comb begin
-    casez (_idx_T_300)
+    casez (_query1_idx_T_12)
       7'b0000000:
         casez_tmp_5 = entries_0_addr;
       7'b0000001:
@@ -2292,11 +2299,11 @@ module StoreBuffer(
     endcase
   end // always_comb
   wire        linePrefix_6 =
-    _hit_T_24 & casez_tmp_5[31:5] == casez_tmp[31:5] & linePrefix_5;
-  wire [6:0]  _idx_T_302 = idx + 7'h7;
+    _query1_hit_T_24 & casez_tmp_5[31:5] == casez_tmp[31:5] & linePrefix_5;
+  wire [6:0]  _query1_idx_T_14 = idx + 7'h7;
   reg  [31:0] casez_tmp_6;
   always_comb begin
-    casez (_idx_T_302)
+    casez (_query1_idx_T_14)
       7'b0000000:
         casez_tmp_6 = entries_0_addr;
       7'b0000001:
@@ -2596,45 +2603,1206 @@ module StoreBuffer(
   wire [3:0]  nextBurstCount =
     {1'h0, (_maxWord_T_19 > _maxWord_T_7 ? _maxWord_T_19 : _maxWord_T_7) - minWord}
     + 4'h1;
+  wire        gatherExpired = gatherAge == 5'h18;
+  wire        burstStart =
+    ~(|state) & ~io_empty_0 & ~io_bus_busy
+    & (count > {4'h0, nextConsumeCount} | nextConsumeCount == 4'h8 | count > 8'h7B
+       | gatherExpired);
   wire        bFire = io_dmem_bvalid & io_dmem_bready_0;
   assign io_dmem_bready_0 = state == 2'h2;
   wire [3:0]  deqCount = bFire ? consumeCount : 4'h0;
   wire [7:0]  _GEN = {4'h0, deqCount};
   wire [7:0]  _available_T_2 = 8'h80 - count + _GEN;
-  wire        mutable = (|count) & ~((|state) & (|consumeCount));
-  wire        _GEN_0 = mutable & casez_tmp == in0_addr;
-  wire        _GEN_1 = mutable & casez_tmp == in1_addr;
-  wire        mutable_1 = (|(count[7:1])) & ~((|state) & (|(consumeCount[3:1])));
-  wire        _GEN_2 = mutable_1 & casez_tmp_0 == in0_addr;
-  wire        _GEN_3 = mutable_1 & casez_tmp_0 == in1_addr;
-  wire        _writeMatches_2_T = consumeCount > 4'h2;
-  wire        mutable_2 = _hit_T_8 & ~((|state) & _writeMatches_2_T);
-  wire        _GEN_4 = mutable_2 & casez_tmp_1 == in0_addr;
-  wire        _GEN_5 = mutable_2 & casez_tmp_1 == in1_addr;
-  wire        mutable_3 = (|(count[7:2])) & ~((|state) & (|(consumeCount[3:2])));
-  wire        _GEN_6 = mutable_3 & casez_tmp_2 == in0_addr;
-  wire        _GEN_7 = mutable_3 & casez_tmp_2 == in1_addr;
-  wire        _writeMatches_4_T = consumeCount > 4'h4;
-  wire        mutable_4 = _hit_T_16 & ~((|state) & _writeMatches_4_T);
-  wire        _GEN_8 = mutable_4 & casez_tmp_3 == in0_addr;
-  wire        _GEN_9 = mutable_4 & casez_tmp_3 == in1_addr;
-  wire        _writeMatches_5_T = consumeCount > 4'h5;
-  wire        mutable_5 = _hit_T_20 & ~((|state) & _writeMatches_5_T);
-  wire        _GEN_10 = mutable_5 & casez_tmp_4 == in0_addr;
-  wire        _GEN_11 = mutable_5 & casez_tmp_4 == in1_addr;
-  wire        _writeMatches_6_T = consumeCount > 4'h6;
-  wire        mutable_6 = _hit_T_24 & ~((|state) & _writeMatches_6_T);
-  wire        _GEN_12 = mutable_6 & casez_tmp_5 == in0_addr;
-  wire        _GEN_13 = mutable_6 & casez_tmp_5 == in1_addr;
-  wire        mutable_7 = (|(count[7:3])) & ~((|state) & consumeCount[3]);
-  wire        _GEN_14 = mutable_7 & casez_tmp_6 == in0_addr;
-  wire        _GEN_15 = mutable_7 & casez_tmp_6 == in1_addr;
-  wire [6:0]  _idx_T_304 = idx + 7'h8;
-  wire        _hit_T_32 = count > 8'h8;
-  wire        mutable_8 = _hit_T_32 & ~((|state) & consumeCount > 4'h8);
+  wire [7:0]  _GEN_0 = {4'h0, consumeCount};
+  wire [7:0]  chainCount = count >= _GEN_0 ? count - _GEN_0 : 8'h0;
+  wire [6:0]  _head_T = idx + {3'h0, consumeCount};
+  wire [31:0] chainAddrs_0 =
+    (_head_T == 7'h0 ? entries_0_addr : 32'h0)
+    | (_head_T == 7'h1 ? entries_1_addr : 32'h0)
+    | (_head_T == 7'h2 ? entries_2_addr : 32'h0)
+    | (_head_T == 7'h3 ? entries_3_addr : 32'h0)
+    | (_head_T == 7'h4 ? entries_4_addr : 32'h0)
+    | (_head_T == 7'h5 ? entries_5_addr : 32'h0)
+    | (_head_T == 7'h6 ? entries_6_addr : 32'h0)
+    | (_head_T == 7'h7 ? entries_7_addr : 32'h0)
+    | (_head_T == 7'h8 ? entries_8_addr : 32'h0)
+    | (_head_T == 7'h9 ? entries_9_addr : 32'h0)
+    | (_head_T == 7'hA ? entries_10_addr : 32'h0)
+    | (_head_T == 7'hB ? entries_11_addr : 32'h0)
+    | (_head_T == 7'hC ? entries_12_addr : 32'h0)
+    | (_head_T == 7'hD ? entries_13_addr : 32'h0)
+    | (_head_T == 7'hE ? entries_14_addr : 32'h0)
+    | (_head_T == 7'hF ? entries_15_addr : 32'h0)
+    | (_head_T == 7'h10 ? entries_16_addr : 32'h0)
+    | (_head_T == 7'h11 ? entries_17_addr : 32'h0)
+    | (_head_T == 7'h12 ? entries_18_addr : 32'h0)
+    | (_head_T == 7'h13 ? entries_19_addr : 32'h0)
+    | (_head_T == 7'h14 ? entries_20_addr : 32'h0)
+    | (_head_T == 7'h15 ? entries_21_addr : 32'h0)
+    | (_head_T == 7'h16 ? entries_22_addr : 32'h0)
+    | (_head_T == 7'h17 ? entries_23_addr : 32'h0)
+    | (_head_T == 7'h18 ? entries_24_addr : 32'h0)
+    | (_head_T == 7'h19 ? entries_25_addr : 32'h0)
+    | (_head_T == 7'h1A ? entries_26_addr : 32'h0)
+    | (_head_T == 7'h1B ? entries_27_addr : 32'h0)
+    | (_head_T == 7'h1C ? entries_28_addr : 32'h0)
+    | (_head_T == 7'h1D ? entries_29_addr : 32'h0)
+    | (_head_T == 7'h1E ? entries_30_addr : 32'h0)
+    | (_head_T == 7'h1F ? entries_31_addr : 32'h0)
+    | (_head_T == 7'h20 ? entries_32_addr : 32'h0)
+    | (_head_T == 7'h21 ? entries_33_addr : 32'h0)
+    | (_head_T == 7'h22 ? entries_34_addr : 32'h0)
+    | (_head_T == 7'h23 ? entries_35_addr : 32'h0)
+    | (_head_T == 7'h24 ? entries_36_addr : 32'h0)
+    | (_head_T == 7'h25 ? entries_37_addr : 32'h0)
+    | (_head_T == 7'h26 ? entries_38_addr : 32'h0)
+    | (_head_T == 7'h27 ? entries_39_addr : 32'h0)
+    | (_head_T == 7'h28 ? entries_40_addr : 32'h0)
+    | (_head_T == 7'h29 ? entries_41_addr : 32'h0)
+    | (_head_T == 7'h2A ? entries_42_addr : 32'h0)
+    | (_head_T == 7'h2B ? entries_43_addr : 32'h0)
+    | (_head_T == 7'h2C ? entries_44_addr : 32'h0)
+    | (_head_T == 7'h2D ? entries_45_addr : 32'h0)
+    | (_head_T == 7'h2E ? entries_46_addr : 32'h0)
+    | (_head_T == 7'h2F ? entries_47_addr : 32'h0)
+    | (_head_T == 7'h30 ? entries_48_addr : 32'h0)
+    | (_head_T == 7'h31 ? entries_49_addr : 32'h0)
+    | (_head_T == 7'h32 ? entries_50_addr : 32'h0)
+    | (_head_T == 7'h33 ? entries_51_addr : 32'h0)
+    | (_head_T == 7'h34 ? entries_52_addr : 32'h0)
+    | (_head_T == 7'h35 ? entries_53_addr : 32'h0)
+    | (_head_T == 7'h36 ? entries_54_addr : 32'h0)
+    | (_head_T == 7'h37 ? entries_55_addr : 32'h0)
+    | (_head_T == 7'h38 ? entries_56_addr : 32'h0)
+    | (_head_T == 7'h39 ? entries_57_addr : 32'h0)
+    | (_head_T == 7'h3A ? entries_58_addr : 32'h0)
+    | (_head_T == 7'h3B ? entries_59_addr : 32'h0)
+    | (_head_T == 7'h3C ? entries_60_addr : 32'h0)
+    | (_head_T == 7'h3D ? entries_61_addr : 32'h0)
+    | (_head_T == 7'h3E ? entries_62_addr : 32'h0)
+    | (_head_T == 7'h3F ? entries_63_addr : 32'h0)
+    | (_head_T == 7'h40 ? entries_64_addr : 32'h0)
+    | (_head_T == 7'h41 ? entries_65_addr : 32'h0)
+    | (_head_T == 7'h42 ? entries_66_addr : 32'h0)
+    | (_head_T == 7'h43 ? entries_67_addr : 32'h0)
+    | (_head_T == 7'h44 ? entries_68_addr : 32'h0)
+    | (_head_T == 7'h45 ? entries_69_addr : 32'h0)
+    | (_head_T == 7'h46 ? entries_70_addr : 32'h0)
+    | (_head_T == 7'h47 ? entries_71_addr : 32'h0)
+    | (_head_T == 7'h48 ? entries_72_addr : 32'h0)
+    | (_head_T == 7'h49 ? entries_73_addr : 32'h0)
+    | (_head_T == 7'h4A ? entries_74_addr : 32'h0)
+    | (_head_T == 7'h4B ? entries_75_addr : 32'h0)
+    | (_head_T == 7'h4C ? entries_76_addr : 32'h0)
+    | (_head_T == 7'h4D ? entries_77_addr : 32'h0)
+    | (_head_T == 7'h4E ? entries_78_addr : 32'h0)
+    | (_head_T == 7'h4F ? entries_79_addr : 32'h0)
+    | (_head_T == 7'h50 ? entries_80_addr : 32'h0)
+    | (_head_T == 7'h51 ? entries_81_addr : 32'h0)
+    | (_head_T == 7'h52 ? entries_82_addr : 32'h0)
+    | (_head_T == 7'h53 ? entries_83_addr : 32'h0)
+    | (_head_T == 7'h54 ? entries_84_addr : 32'h0)
+    | (_head_T == 7'h55 ? entries_85_addr : 32'h0)
+    | (_head_T == 7'h56 ? entries_86_addr : 32'h0)
+    | (_head_T == 7'h57 ? entries_87_addr : 32'h0)
+    | (_head_T == 7'h58 ? entries_88_addr : 32'h0)
+    | (_head_T == 7'h59 ? entries_89_addr : 32'h0)
+    | (_head_T == 7'h5A ? entries_90_addr : 32'h0)
+    | (_head_T == 7'h5B ? entries_91_addr : 32'h0)
+    | (_head_T == 7'h5C ? entries_92_addr : 32'h0)
+    | (_head_T == 7'h5D ? entries_93_addr : 32'h0)
+    | (_head_T == 7'h5E ? entries_94_addr : 32'h0)
+    | (_head_T == 7'h5F ? entries_95_addr : 32'h0)
+    | (_head_T == 7'h60 ? entries_96_addr : 32'h0)
+    | (_head_T == 7'h61 ? entries_97_addr : 32'h0)
+    | (_head_T == 7'h62 ? entries_98_addr : 32'h0)
+    | (_head_T == 7'h63 ? entries_99_addr : 32'h0)
+    | (_head_T == 7'h64 ? entries_100_addr : 32'h0)
+    | (_head_T == 7'h65 ? entries_101_addr : 32'h0)
+    | (_head_T == 7'h66 ? entries_102_addr : 32'h0)
+    | (_head_T == 7'h67 ? entries_103_addr : 32'h0)
+    | (_head_T == 7'h68 ? entries_104_addr : 32'h0)
+    | (_head_T == 7'h69 ? entries_105_addr : 32'h0)
+    | (_head_T == 7'h6A ? entries_106_addr : 32'h0)
+    | (_head_T == 7'h6B ? entries_107_addr : 32'h0)
+    | (_head_T == 7'h6C ? entries_108_addr : 32'h0)
+    | (_head_T == 7'h6D ? entries_109_addr : 32'h0)
+    | (_head_T == 7'h6E ? entries_110_addr : 32'h0)
+    | (_head_T == 7'h6F ? entries_111_addr : 32'h0)
+    | (_head_T == 7'h70 ? entries_112_addr : 32'h0)
+    | (_head_T == 7'h71 ? entries_113_addr : 32'h0)
+    | (_head_T == 7'h72 ? entries_114_addr : 32'h0)
+    | (_head_T == 7'h73 ? entries_115_addr : 32'h0)
+    | (_head_T == 7'h74 ? entries_116_addr : 32'h0)
+    | (_head_T == 7'h75 ? entries_117_addr : 32'h0)
+    | (_head_T == 7'h76 ? entries_118_addr : 32'h0)
+    | (_head_T == 7'h77 ? entries_119_addr : 32'h0)
+    | (_head_T == 7'h78 ? entries_120_addr : 32'h0)
+    | (_head_T == 7'h79 ? entries_121_addr : 32'h0)
+    | (_head_T == 7'h7A ? entries_122_addr : 32'h0)
+    | (_head_T == 7'h7B ? entries_123_addr : 32'h0)
+    | (_head_T == 7'h7C ? entries_124_addr : 32'h0)
+    | (_head_T == 7'h7D ? entries_125_addr : 32'h0)
+    | (_head_T == 7'h7E ? entries_126_addr : 32'h0)
+    | ((&_head_T) ? entries_127_addr : 32'h0);
+  wire [6:0]  _chainAddrs_idx_T_6 = _head_T + 7'h1;
+  wire [29:0] chainAddrs_1 =
+    (_chainAddrs_idx_T_6 == 7'h0 ? entries_0_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h1 ? entries_1_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h2 ? entries_2_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h3 ? entries_3_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h4 ? entries_4_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h5 ? entries_5_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h6 ? entries_6_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h7 ? entries_7_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h8 ? entries_8_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h9 ? entries_9_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'hA ? entries_10_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'hB ? entries_11_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'hC ? entries_12_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'hD ? entries_13_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'hE ? entries_14_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'hF ? entries_15_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h10 ? entries_16_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h11 ? entries_17_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h12 ? entries_18_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h13 ? entries_19_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h14 ? entries_20_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h15 ? entries_21_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h16 ? entries_22_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h17 ? entries_23_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h18 ? entries_24_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h19 ? entries_25_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h1A ? entries_26_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h1B ? entries_27_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h1C ? entries_28_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h1D ? entries_29_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h1E ? entries_30_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h1F ? entries_31_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h20 ? entries_32_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h21 ? entries_33_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h22 ? entries_34_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h23 ? entries_35_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h24 ? entries_36_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h25 ? entries_37_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h26 ? entries_38_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h27 ? entries_39_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h28 ? entries_40_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h29 ? entries_41_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h2A ? entries_42_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h2B ? entries_43_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h2C ? entries_44_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h2D ? entries_45_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h2E ? entries_46_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h2F ? entries_47_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h30 ? entries_48_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h31 ? entries_49_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h32 ? entries_50_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h33 ? entries_51_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h34 ? entries_52_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h35 ? entries_53_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h36 ? entries_54_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h37 ? entries_55_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h38 ? entries_56_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h39 ? entries_57_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h3A ? entries_58_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h3B ? entries_59_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h3C ? entries_60_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h3D ? entries_61_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h3E ? entries_62_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h3F ? entries_63_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h40 ? entries_64_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h41 ? entries_65_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h42 ? entries_66_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h43 ? entries_67_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h44 ? entries_68_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h45 ? entries_69_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h46 ? entries_70_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h47 ? entries_71_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h48 ? entries_72_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h49 ? entries_73_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h4A ? entries_74_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h4B ? entries_75_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h4C ? entries_76_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h4D ? entries_77_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h4E ? entries_78_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h4F ? entries_79_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h50 ? entries_80_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h51 ? entries_81_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h52 ? entries_82_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h53 ? entries_83_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h54 ? entries_84_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h55 ? entries_85_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h56 ? entries_86_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h57 ? entries_87_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h58 ? entries_88_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h59 ? entries_89_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h5A ? entries_90_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h5B ? entries_91_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h5C ? entries_92_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h5D ? entries_93_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h5E ? entries_94_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h5F ? entries_95_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h60 ? entries_96_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h61 ? entries_97_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h62 ? entries_98_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h63 ? entries_99_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h64 ? entries_100_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h65 ? entries_101_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h66 ? entries_102_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h67 ? entries_103_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h68 ? entries_104_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h69 ? entries_105_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h6A ? entries_106_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h6B ? entries_107_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h6C ? entries_108_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h6D ? entries_109_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h6E ? entries_110_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h6F ? entries_111_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h70 ? entries_112_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h71 ? entries_113_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h72 ? entries_114_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h73 ? entries_115_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h74 ? entries_116_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h75 ? entries_117_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h76 ? entries_118_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h77 ? entries_119_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h78 ? entries_120_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h79 ? entries_121_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h7A ? entries_122_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h7B ? entries_123_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h7C ? entries_124_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h7D ? entries_125_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_6 == 7'h7E ? entries_126_addr[31:2] : 30'h0)
+    | ((&_chainAddrs_idx_T_6) ? entries_127_addr[31:2] : 30'h0);
+  wire [6:0]  _chainAddrs_idx_T_10 = _head_T + 7'h2;
+  wire [29:0] chainAddrs_2 =
+    (_chainAddrs_idx_T_10 == 7'h0 ? entries_0_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h1 ? entries_1_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h2 ? entries_2_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h3 ? entries_3_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h4 ? entries_4_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h5 ? entries_5_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h6 ? entries_6_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h7 ? entries_7_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h8 ? entries_8_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h9 ? entries_9_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'hA ? entries_10_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'hB ? entries_11_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'hC ? entries_12_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'hD ? entries_13_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'hE ? entries_14_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'hF ? entries_15_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h10 ? entries_16_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h11 ? entries_17_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h12 ? entries_18_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h13 ? entries_19_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h14 ? entries_20_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h15 ? entries_21_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h16 ? entries_22_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h17 ? entries_23_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h18 ? entries_24_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h19 ? entries_25_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h1A ? entries_26_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h1B ? entries_27_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h1C ? entries_28_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h1D ? entries_29_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h1E ? entries_30_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h1F ? entries_31_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h20 ? entries_32_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h21 ? entries_33_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h22 ? entries_34_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h23 ? entries_35_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h24 ? entries_36_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h25 ? entries_37_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h26 ? entries_38_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h27 ? entries_39_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h28 ? entries_40_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h29 ? entries_41_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h2A ? entries_42_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h2B ? entries_43_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h2C ? entries_44_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h2D ? entries_45_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h2E ? entries_46_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h2F ? entries_47_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h30 ? entries_48_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h31 ? entries_49_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h32 ? entries_50_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h33 ? entries_51_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h34 ? entries_52_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h35 ? entries_53_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h36 ? entries_54_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h37 ? entries_55_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h38 ? entries_56_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h39 ? entries_57_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h3A ? entries_58_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h3B ? entries_59_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h3C ? entries_60_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h3D ? entries_61_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h3E ? entries_62_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h3F ? entries_63_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h40 ? entries_64_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h41 ? entries_65_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h42 ? entries_66_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h43 ? entries_67_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h44 ? entries_68_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h45 ? entries_69_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h46 ? entries_70_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h47 ? entries_71_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h48 ? entries_72_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h49 ? entries_73_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h4A ? entries_74_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h4B ? entries_75_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h4C ? entries_76_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h4D ? entries_77_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h4E ? entries_78_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h4F ? entries_79_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h50 ? entries_80_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h51 ? entries_81_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h52 ? entries_82_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h53 ? entries_83_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h54 ? entries_84_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h55 ? entries_85_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h56 ? entries_86_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h57 ? entries_87_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h58 ? entries_88_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h59 ? entries_89_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h5A ? entries_90_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h5B ? entries_91_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h5C ? entries_92_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h5D ? entries_93_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h5E ? entries_94_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h5F ? entries_95_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h60 ? entries_96_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h61 ? entries_97_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h62 ? entries_98_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h63 ? entries_99_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h64 ? entries_100_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h65 ? entries_101_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h66 ? entries_102_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h67 ? entries_103_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h68 ? entries_104_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h69 ? entries_105_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h6A ? entries_106_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h6B ? entries_107_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h6C ? entries_108_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h6D ? entries_109_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h6E ? entries_110_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h6F ? entries_111_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h70 ? entries_112_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h71 ? entries_113_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h72 ? entries_114_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h73 ? entries_115_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h74 ? entries_116_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h75 ? entries_117_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h76 ? entries_118_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h77 ? entries_119_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h78 ? entries_120_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h79 ? entries_121_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h7A ? entries_122_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h7B ? entries_123_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h7C ? entries_124_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h7D ? entries_125_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_10 == 7'h7E ? entries_126_addr[31:2] : 30'h0)
+    | ((&_chainAddrs_idx_T_10) ? entries_127_addr[31:2] : 30'h0);
+  wire [6:0]  _chainAddrs_idx_T_14 = _head_T + 7'h3;
+  wire [29:0] chainAddrs_3 =
+    (_chainAddrs_idx_T_14 == 7'h0 ? entries_0_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h1 ? entries_1_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h2 ? entries_2_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h3 ? entries_3_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h4 ? entries_4_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h5 ? entries_5_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h6 ? entries_6_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h7 ? entries_7_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h8 ? entries_8_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h9 ? entries_9_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'hA ? entries_10_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'hB ? entries_11_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'hC ? entries_12_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'hD ? entries_13_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'hE ? entries_14_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'hF ? entries_15_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h10 ? entries_16_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h11 ? entries_17_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h12 ? entries_18_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h13 ? entries_19_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h14 ? entries_20_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h15 ? entries_21_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h16 ? entries_22_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h17 ? entries_23_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h18 ? entries_24_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h19 ? entries_25_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h1A ? entries_26_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h1B ? entries_27_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h1C ? entries_28_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h1D ? entries_29_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h1E ? entries_30_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h1F ? entries_31_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h20 ? entries_32_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h21 ? entries_33_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h22 ? entries_34_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h23 ? entries_35_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h24 ? entries_36_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h25 ? entries_37_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h26 ? entries_38_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h27 ? entries_39_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h28 ? entries_40_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h29 ? entries_41_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h2A ? entries_42_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h2B ? entries_43_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h2C ? entries_44_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h2D ? entries_45_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h2E ? entries_46_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h2F ? entries_47_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h30 ? entries_48_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h31 ? entries_49_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h32 ? entries_50_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h33 ? entries_51_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h34 ? entries_52_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h35 ? entries_53_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h36 ? entries_54_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h37 ? entries_55_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h38 ? entries_56_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h39 ? entries_57_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h3A ? entries_58_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h3B ? entries_59_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h3C ? entries_60_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h3D ? entries_61_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h3E ? entries_62_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h3F ? entries_63_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h40 ? entries_64_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h41 ? entries_65_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h42 ? entries_66_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h43 ? entries_67_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h44 ? entries_68_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h45 ? entries_69_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h46 ? entries_70_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h47 ? entries_71_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h48 ? entries_72_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h49 ? entries_73_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h4A ? entries_74_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h4B ? entries_75_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h4C ? entries_76_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h4D ? entries_77_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h4E ? entries_78_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h4F ? entries_79_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h50 ? entries_80_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h51 ? entries_81_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h52 ? entries_82_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h53 ? entries_83_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h54 ? entries_84_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h55 ? entries_85_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h56 ? entries_86_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h57 ? entries_87_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h58 ? entries_88_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h59 ? entries_89_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h5A ? entries_90_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h5B ? entries_91_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h5C ? entries_92_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h5D ? entries_93_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h5E ? entries_94_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h5F ? entries_95_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h60 ? entries_96_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h61 ? entries_97_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h62 ? entries_98_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h63 ? entries_99_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h64 ? entries_100_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h65 ? entries_101_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h66 ? entries_102_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h67 ? entries_103_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h68 ? entries_104_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h69 ? entries_105_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h6A ? entries_106_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h6B ? entries_107_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h6C ? entries_108_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h6D ? entries_109_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h6E ? entries_110_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h6F ? entries_111_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h70 ? entries_112_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h71 ? entries_113_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h72 ? entries_114_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h73 ? entries_115_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h74 ? entries_116_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h75 ? entries_117_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h76 ? entries_118_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h77 ? entries_119_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h78 ? entries_120_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h79 ? entries_121_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h7A ? entries_122_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h7B ? entries_123_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h7C ? entries_124_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h7D ? entries_125_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_14 == 7'h7E ? entries_126_addr[31:2] : 30'h0)
+    | ((&_chainAddrs_idx_T_14) ? entries_127_addr[31:2] : 30'h0);
+  wire [6:0]  _chainAddrs_idx_T_18 = _head_T + 7'h4;
+  wire [29:0] chainAddrs_4 =
+    (_chainAddrs_idx_T_18 == 7'h0 ? entries_0_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h1 ? entries_1_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h2 ? entries_2_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h3 ? entries_3_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h4 ? entries_4_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h5 ? entries_5_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h6 ? entries_6_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h7 ? entries_7_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h8 ? entries_8_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h9 ? entries_9_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'hA ? entries_10_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'hB ? entries_11_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'hC ? entries_12_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'hD ? entries_13_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'hE ? entries_14_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'hF ? entries_15_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h10 ? entries_16_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h11 ? entries_17_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h12 ? entries_18_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h13 ? entries_19_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h14 ? entries_20_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h15 ? entries_21_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h16 ? entries_22_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h17 ? entries_23_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h18 ? entries_24_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h19 ? entries_25_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h1A ? entries_26_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h1B ? entries_27_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h1C ? entries_28_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h1D ? entries_29_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h1E ? entries_30_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h1F ? entries_31_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h20 ? entries_32_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h21 ? entries_33_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h22 ? entries_34_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h23 ? entries_35_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h24 ? entries_36_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h25 ? entries_37_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h26 ? entries_38_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h27 ? entries_39_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h28 ? entries_40_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h29 ? entries_41_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h2A ? entries_42_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h2B ? entries_43_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h2C ? entries_44_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h2D ? entries_45_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h2E ? entries_46_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h2F ? entries_47_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h30 ? entries_48_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h31 ? entries_49_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h32 ? entries_50_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h33 ? entries_51_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h34 ? entries_52_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h35 ? entries_53_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h36 ? entries_54_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h37 ? entries_55_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h38 ? entries_56_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h39 ? entries_57_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h3A ? entries_58_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h3B ? entries_59_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h3C ? entries_60_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h3D ? entries_61_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h3E ? entries_62_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h3F ? entries_63_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h40 ? entries_64_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h41 ? entries_65_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h42 ? entries_66_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h43 ? entries_67_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h44 ? entries_68_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h45 ? entries_69_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h46 ? entries_70_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h47 ? entries_71_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h48 ? entries_72_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h49 ? entries_73_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h4A ? entries_74_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h4B ? entries_75_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h4C ? entries_76_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h4D ? entries_77_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h4E ? entries_78_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h4F ? entries_79_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h50 ? entries_80_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h51 ? entries_81_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h52 ? entries_82_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h53 ? entries_83_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h54 ? entries_84_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h55 ? entries_85_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h56 ? entries_86_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h57 ? entries_87_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h58 ? entries_88_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h59 ? entries_89_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h5A ? entries_90_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h5B ? entries_91_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h5C ? entries_92_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h5D ? entries_93_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h5E ? entries_94_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h5F ? entries_95_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h60 ? entries_96_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h61 ? entries_97_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h62 ? entries_98_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h63 ? entries_99_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h64 ? entries_100_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h65 ? entries_101_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h66 ? entries_102_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h67 ? entries_103_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h68 ? entries_104_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h69 ? entries_105_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h6A ? entries_106_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h6B ? entries_107_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h6C ? entries_108_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h6D ? entries_109_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h6E ? entries_110_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h6F ? entries_111_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h70 ? entries_112_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h71 ? entries_113_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h72 ? entries_114_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h73 ? entries_115_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h74 ? entries_116_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h75 ? entries_117_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h76 ? entries_118_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h77 ? entries_119_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h78 ? entries_120_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h79 ? entries_121_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h7A ? entries_122_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h7B ? entries_123_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h7C ? entries_124_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h7D ? entries_125_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_18 == 7'h7E ? entries_126_addr[31:2] : 30'h0)
+    | ((&_chainAddrs_idx_T_18) ? entries_127_addr[31:2] : 30'h0);
+  wire [6:0]  _chainAddrs_idx_T_22 = _head_T + 7'h5;
+  wire [29:0] chainAddrs_5 =
+    (_chainAddrs_idx_T_22 == 7'h0 ? entries_0_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h1 ? entries_1_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h2 ? entries_2_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h3 ? entries_3_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h4 ? entries_4_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h5 ? entries_5_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h6 ? entries_6_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h7 ? entries_7_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h8 ? entries_8_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h9 ? entries_9_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'hA ? entries_10_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'hB ? entries_11_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'hC ? entries_12_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'hD ? entries_13_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'hE ? entries_14_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'hF ? entries_15_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h10 ? entries_16_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h11 ? entries_17_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h12 ? entries_18_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h13 ? entries_19_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h14 ? entries_20_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h15 ? entries_21_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h16 ? entries_22_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h17 ? entries_23_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h18 ? entries_24_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h19 ? entries_25_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h1A ? entries_26_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h1B ? entries_27_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h1C ? entries_28_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h1D ? entries_29_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h1E ? entries_30_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h1F ? entries_31_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h20 ? entries_32_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h21 ? entries_33_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h22 ? entries_34_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h23 ? entries_35_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h24 ? entries_36_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h25 ? entries_37_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h26 ? entries_38_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h27 ? entries_39_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h28 ? entries_40_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h29 ? entries_41_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h2A ? entries_42_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h2B ? entries_43_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h2C ? entries_44_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h2D ? entries_45_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h2E ? entries_46_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h2F ? entries_47_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h30 ? entries_48_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h31 ? entries_49_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h32 ? entries_50_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h33 ? entries_51_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h34 ? entries_52_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h35 ? entries_53_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h36 ? entries_54_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h37 ? entries_55_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h38 ? entries_56_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h39 ? entries_57_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h3A ? entries_58_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h3B ? entries_59_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h3C ? entries_60_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h3D ? entries_61_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h3E ? entries_62_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h3F ? entries_63_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h40 ? entries_64_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h41 ? entries_65_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h42 ? entries_66_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h43 ? entries_67_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h44 ? entries_68_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h45 ? entries_69_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h46 ? entries_70_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h47 ? entries_71_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h48 ? entries_72_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h49 ? entries_73_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h4A ? entries_74_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h4B ? entries_75_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h4C ? entries_76_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h4D ? entries_77_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h4E ? entries_78_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h4F ? entries_79_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h50 ? entries_80_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h51 ? entries_81_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h52 ? entries_82_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h53 ? entries_83_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h54 ? entries_84_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h55 ? entries_85_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h56 ? entries_86_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h57 ? entries_87_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h58 ? entries_88_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h59 ? entries_89_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h5A ? entries_90_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h5B ? entries_91_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h5C ? entries_92_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h5D ? entries_93_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h5E ? entries_94_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h5F ? entries_95_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h60 ? entries_96_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h61 ? entries_97_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h62 ? entries_98_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h63 ? entries_99_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h64 ? entries_100_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h65 ? entries_101_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h66 ? entries_102_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h67 ? entries_103_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h68 ? entries_104_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h69 ? entries_105_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h6A ? entries_106_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h6B ? entries_107_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h6C ? entries_108_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h6D ? entries_109_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h6E ? entries_110_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h6F ? entries_111_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h70 ? entries_112_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h71 ? entries_113_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h72 ? entries_114_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h73 ? entries_115_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h74 ? entries_116_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h75 ? entries_117_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h76 ? entries_118_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h77 ? entries_119_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h78 ? entries_120_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h79 ? entries_121_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h7A ? entries_122_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h7B ? entries_123_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h7C ? entries_124_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h7D ? entries_125_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_22 == 7'h7E ? entries_126_addr[31:2] : 30'h0)
+    | ((&_chainAddrs_idx_T_22) ? entries_127_addr[31:2] : 30'h0);
+  wire [6:0]  _chainAddrs_idx_T_26 = _head_T + 7'h6;
+  wire [29:0] chainAddrs_6 =
+    (_chainAddrs_idx_T_26 == 7'h0 ? entries_0_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h1 ? entries_1_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h2 ? entries_2_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h3 ? entries_3_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h4 ? entries_4_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h5 ? entries_5_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h6 ? entries_6_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h7 ? entries_7_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h8 ? entries_8_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h9 ? entries_9_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'hA ? entries_10_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'hB ? entries_11_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'hC ? entries_12_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'hD ? entries_13_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'hE ? entries_14_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'hF ? entries_15_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h10 ? entries_16_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h11 ? entries_17_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h12 ? entries_18_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h13 ? entries_19_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h14 ? entries_20_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h15 ? entries_21_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h16 ? entries_22_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h17 ? entries_23_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h18 ? entries_24_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h19 ? entries_25_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h1A ? entries_26_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h1B ? entries_27_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h1C ? entries_28_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h1D ? entries_29_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h1E ? entries_30_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h1F ? entries_31_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h20 ? entries_32_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h21 ? entries_33_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h22 ? entries_34_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h23 ? entries_35_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h24 ? entries_36_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h25 ? entries_37_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h26 ? entries_38_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h27 ? entries_39_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h28 ? entries_40_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h29 ? entries_41_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h2A ? entries_42_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h2B ? entries_43_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h2C ? entries_44_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h2D ? entries_45_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h2E ? entries_46_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h2F ? entries_47_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h30 ? entries_48_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h31 ? entries_49_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h32 ? entries_50_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h33 ? entries_51_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h34 ? entries_52_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h35 ? entries_53_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h36 ? entries_54_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h37 ? entries_55_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h38 ? entries_56_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h39 ? entries_57_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h3A ? entries_58_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h3B ? entries_59_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h3C ? entries_60_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h3D ? entries_61_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h3E ? entries_62_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h3F ? entries_63_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h40 ? entries_64_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h41 ? entries_65_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h42 ? entries_66_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h43 ? entries_67_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h44 ? entries_68_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h45 ? entries_69_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h46 ? entries_70_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h47 ? entries_71_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h48 ? entries_72_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h49 ? entries_73_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h4A ? entries_74_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h4B ? entries_75_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h4C ? entries_76_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h4D ? entries_77_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h4E ? entries_78_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h4F ? entries_79_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h50 ? entries_80_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h51 ? entries_81_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h52 ? entries_82_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h53 ? entries_83_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h54 ? entries_84_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h55 ? entries_85_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h56 ? entries_86_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h57 ? entries_87_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h58 ? entries_88_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h59 ? entries_89_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h5A ? entries_90_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h5B ? entries_91_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h5C ? entries_92_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h5D ? entries_93_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h5E ? entries_94_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h5F ? entries_95_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h60 ? entries_96_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h61 ? entries_97_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h62 ? entries_98_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h63 ? entries_99_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h64 ? entries_100_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h65 ? entries_101_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h66 ? entries_102_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h67 ? entries_103_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h68 ? entries_104_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h69 ? entries_105_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h6A ? entries_106_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h6B ? entries_107_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h6C ? entries_108_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h6D ? entries_109_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h6E ? entries_110_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h6F ? entries_111_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h70 ? entries_112_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h71 ? entries_113_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h72 ? entries_114_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h73 ? entries_115_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h74 ? entries_116_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h75 ? entries_117_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h76 ? entries_118_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h77 ? entries_119_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h78 ? entries_120_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h79 ? entries_121_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h7A ? entries_122_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h7B ? entries_123_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h7C ? entries_124_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h7D ? entries_125_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_26 == 7'h7E ? entries_126_addr[31:2] : 30'h0)
+    | ((&_chainAddrs_idx_T_26) ? entries_127_addr[31:2] : 30'h0);
+  wire [6:0]  _chainAddrs_idx_T_30 = _head_T + 7'h7;
+  wire [29:0] chainAddrs_7 =
+    (_chainAddrs_idx_T_30 == 7'h0 ? entries_0_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h1 ? entries_1_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h2 ? entries_2_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h3 ? entries_3_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h4 ? entries_4_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h5 ? entries_5_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h6 ? entries_6_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h7 ? entries_7_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h8 ? entries_8_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h9 ? entries_9_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'hA ? entries_10_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'hB ? entries_11_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'hC ? entries_12_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'hD ? entries_13_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'hE ? entries_14_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'hF ? entries_15_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h10 ? entries_16_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h11 ? entries_17_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h12 ? entries_18_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h13 ? entries_19_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h14 ? entries_20_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h15 ? entries_21_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h16 ? entries_22_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h17 ? entries_23_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h18 ? entries_24_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h19 ? entries_25_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h1A ? entries_26_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h1B ? entries_27_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h1C ? entries_28_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h1D ? entries_29_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h1E ? entries_30_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h1F ? entries_31_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h20 ? entries_32_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h21 ? entries_33_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h22 ? entries_34_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h23 ? entries_35_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h24 ? entries_36_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h25 ? entries_37_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h26 ? entries_38_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h27 ? entries_39_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h28 ? entries_40_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h29 ? entries_41_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h2A ? entries_42_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h2B ? entries_43_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h2C ? entries_44_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h2D ? entries_45_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h2E ? entries_46_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h2F ? entries_47_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h30 ? entries_48_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h31 ? entries_49_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h32 ? entries_50_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h33 ? entries_51_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h34 ? entries_52_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h35 ? entries_53_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h36 ? entries_54_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h37 ? entries_55_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h38 ? entries_56_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h39 ? entries_57_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h3A ? entries_58_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h3B ? entries_59_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h3C ? entries_60_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h3D ? entries_61_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h3E ? entries_62_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h3F ? entries_63_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h40 ? entries_64_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h41 ? entries_65_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h42 ? entries_66_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h43 ? entries_67_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h44 ? entries_68_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h45 ? entries_69_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h46 ? entries_70_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h47 ? entries_71_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h48 ? entries_72_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h49 ? entries_73_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h4A ? entries_74_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h4B ? entries_75_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h4C ? entries_76_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h4D ? entries_77_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h4E ? entries_78_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h4F ? entries_79_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h50 ? entries_80_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h51 ? entries_81_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h52 ? entries_82_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h53 ? entries_83_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h54 ? entries_84_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h55 ? entries_85_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h56 ? entries_86_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h57 ? entries_87_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h58 ? entries_88_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h59 ? entries_89_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h5A ? entries_90_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h5B ? entries_91_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h5C ? entries_92_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h5D ? entries_93_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h5E ? entries_94_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h5F ? entries_95_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h60 ? entries_96_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h61 ? entries_97_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h62 ? entries_98_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h63 ? entries_99_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h64 ? entries_100_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h65 ? entries_101_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h66 ? entries_102_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h67 ? entries_103_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h68 ? entries_104_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h69 ? entries_105_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h6A ? entries_106_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h6B ? entries_107_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h6C ? entries_108_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h6D ? entries_109_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h6E ? entries_110_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h6F ? entries_111_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h70 ? entries_112_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h71 ? entries_113_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h72 ? entries_114_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h73 ? entries_115_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h74 ? entries_116_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h75 ? entries_117_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h76 ? entries_118_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h77 ? entries_119_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h78 ? entries_120_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h79 ? entries_121_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h7A ? entries_122_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h7B ? entries_123_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h7C ? entries_124_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h7D ? entries_125_addr[31:2] : 30'h0)
+    | (_chainAddrs_idx_T_30 == 7'h7E ? entries_126_addr[31:2] : 30'h0)
+    | ((&_chainAddrs_idx_T_30) ? entries_127_addr[31:2] : 30'h0);
+  wire        chainPrefix_1 =
+    (|(chainCount[7:1])) & chainAddrs_1[29:3] == chainAddrs_0[31:5] & (|chainCount);
+  wire        chainPrefix_2 =
+    chainCount > 8'h2 & chainAddrs_2[29:3] == chainAddrs_0[31:5] & chainPrefix_1;
+  wire        chainPrefix_3 =
+    (|(chainCount[7:2])) & chainAddrs_3[29:3] == chainAddrs_0[31:5] & chainPrefix_2;
+  wire        chainPrefix_4 =
+    chainCount > 8'h4 & chainAddrs_4[29:3] == chainAddrs_0[31:5] & chainPrefix_3;
+  wire        chainPrefix_5 =
+    chainCount > 8'h5 & chainAddrs_5[29:3] == chainAddrs_0[31:5] & chainPrefix_4;
+  wire        chainPrefix_6 =
+    chainCount > 8'h6 & chainAddrs_6[29:3] == chainAddrs_0[31:5] & chainPrefix_5;
+  wire        chainPrefix_7 =
+    (|(chainCount[7:3])) & chainAddrs_7[29:3] == chainAddrs_0[31:5] & chainPrefix_6;
+  wire [3:0]  chainConsumeCount =
+    {1'h0,
+     {1'h0, {1'h0, |chainCount} + {1'h0, chainPrefix_1}}
+       + {1'h0, {1'h0, chainPrefix_2} + {1'h0, chainPrefix_3}}}
+    + {1'h0,
+       {1'h0, {1'h0, chainPrefix_4} + {1'h0, chainPrefix_5}}
+         + {1'h0, {1'h0, chainPrefix_6} + {1'h0, chainPrefix_7}}};
+  wire [2:0]  _chainMinWord_T = (|chainCount) ? chainAddrs_0[4:2] : 3'h7;
+  wire [2:0]  _chainMinWord_T_1 = chainPrefix_1 ? chainAddrs_1[2:0] : 3'h7;
+  wire [2:0]  _chainMinWord_T_2 = chainPrefix_2 ? chainAddrs_2[2:0] : 3'h7;
+  wire [2:0]  _chainMinWord_T_3 = chainPrefix_3 ? chainAddrs_3[2:0] : 3'h7;
+  wire [2:0]  _chainMinWord_T_4 = chainPrefix_4 ? chainAddrs_4[2:0] : 3'h7;
+  wire [2:0]  _chainMinWord_T_5 = chainPrefix_5 ? chainAddrs_5[2:0] : 3'h7;
+  wire [2:0]  _chainMinWord_T_6 = chainPrefix_6 ? chainAddrs_6[2:0] : 3'h7;
+  wire [2:0]  _chainMinWord_T_7 = chainPrefix_7 ? chainAddrs_7[2:0] : 3'h7;
+  wire [2:0]  _chainMinWord_T_9 =
+    _chainMinWord_T < _chainMinWord_T_1 ? _chainMinWord_T : _chainMinWord_T_1;
+  wire [2:0]  _chainMinWord_T_11 =
+    _chainMinWord_T_9 < _chainMinWord_T_2 ? _chainMinWord_T_9 : _chainMinWord_T_2;
+  wire [2:0]  _chainMinWord_T_13 =
+    _chainMinWord_T_11 < _chainMinWord_T_3 ? _chainMinWord_T_11 : _chainMinWord_T_3;
+  wire [2:0]  _chainMinWord_T_15 =
+    _chainMinWord_T_13 < _chainMinWord_T_4 ? _chainMinWord_T_13 : _chainMinWord_T_4;
+  wire [2:0]  _chainMinWord_T_17 =
+    _chainMinWord_T_15 < _chainMinWord_T_5 ? _chainMinWord_T_15 : _chainMinWord_T_5;
+  wire [2:0]  _chainMinWord_T_19 =
+    _chainMinWord_T_17 < _chainMinWord_T_6 ? _chainMinWord_T_17 : _chainMinWord_T_6;
+  wire [2:0]  chainMinWord =
+    _chainMinWord_T_19 < _chainMinWord_T_7 ? _chainMinWord_T_19 : _chainMinWord_T_7;
+  wire [2:0]  _chainMaxWord_T = (|chainCount) ? chainAddrs_0[4:2] : 3'h0;
+  wire [2:0]  _chainMaxWord_T_1 = chainPrefix_1 ? chainAddrs_1[2:0] : 3'h0;
+  wire [2:0]  _chainMaxWord_T_2 = chainPrefix_2 ? chainAddrs_2[2:0] : 3'h0;
+  wire [2:0]  _chainMaxWord_T_3 = chainPrefix_3 ? chainAddrs_3[2:0] : 3'h0;
+  wire [2:0]  _chainMaxWord_T_4 = chainPrefix_4 ? chainAddrs_4[2:0] : 3'h0;
+  wire [2:0]  _chainMaxWord_T_5 = chainPrefix_5 ? chainAddrs_5[2:0] : 3'h0;
+  wire [2:0]  _chainMaxWord_T_6 = chainPrefix_6 ? chainAddrs_6[2:0] : 3'h0;
+  wire [2:0]  _chainMaxWord_T_7 = chainPrefix_7 ? chainAddrs_7[2:0] : 3'h0;
+  wire [2:0]  _chainMaxWord_T_9 =
+    _chainMaxWord_T > _chainMaxWord_T_1 ? _chainMaxWord_T : _chainMaxWord_T_1;
+  wire [2:0]  _chainMaxWord_T_11 =
+    _chainMaxWord_T_9 > _chainMaxWord_T_2 ? _chainMaxWord_T_9 : _chainMaxWord_T_2;
+  wire [2:0]  _chainMaxWord_T_13 =
+    _chainMaxWord_T_11 > _chainMaxWord_T_3 ? _chainMaxWord_T_11 : _chainMaxWord_T_3;
+  wire [2:0]  _chainMaxWord_T_15 =
+    _chainMaxWord_T_13 > _chainMaxWord_T_4 ? _chainMaxWord_T_13 : _chainMaxWord_T_4;
+  wire [2:0]  _chainMaxWord_T_17 =
+    _chainMaxWord_T_15 > _chainMaxWord_T_5 ? _chainMaxWord_T_15 : _chainMaxWord_T_5;
+  wire [2:0]  _chainMaxWord_T_19 =
+    _chainMaxWord_T_17 > _chainMaxWord_T_6 ? _chainMaxWord_T_17 : _chainMaxWord_T_6;
+  wire [3:0]  chainBurstCount =
+    {1'h0,
+     (_chainMaxWord_T_19 > _chainMaxWord_T_7 ? _chainMaxWord_T_19 : _chainMaxWord_T_7)
+       - chainMinWord} + 4'h1;
+  wire        chainCandidate =
+    io_dmem_bready_0 & ~io_bus_busy & (|chainCount)
+    & (chainCount > {4'h0, chainConsumeCount} | chainConsumeCount == 4'h8
+       | chainCount > 8'h7B | gatherExpired);
+  wire        chainHandoff = chainCandidate & bFire;
+  wire [3:0]  _activeConsumeCount_T_508 = consumeCount + chainConsumeCount;
+  wire        mutable =
+    (|count)
+    & ~(((|state) | burstStart | chainCandidate)
+        & (|(chainCandidate
+               ? _activeConsumeCount_T_508
+               : (|state) ? consumeCount : nextConsumeCount)));
+  wire        _GEN_1 = mutable & casez_tmp == in0_addr;
+  wire        _GEN_2 = mutable & casez_tmp == in1_addr;
+  wire        mutable_1 =
+    (|(count[7:1]))
+    & ~(((|state) | burstStart | chainCandidate)
+        & (|(chainCandidate
+               ? _activeConsumeCount_T_508[3:1]
+               : (|state) ? consumeCount[3:1] : nextConsumeCount[3:1])));
+  wire        _GEN_3 = mutable_1 & casez_tmp_0 == in0_addr;
+  wire        _GEN_4 = mutable_1 & casez_tmp_0 == in1_addr;
+  wire        mutable_2 =
+    _query1_hit_T_8
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'h2);
+  wire        _GEN_5 = mutable_2 & casez_tmp_1 == in0_addr;
+  wire        _GEN_6 = mutable_2 & casez_tmp_1 == in1_addr;
+  wire        mutable_3 =
+    (|(count[7:2]))
+    & ~(((|state) | burstStart | chainCandidate)
+        & (|(chainCandidate
+               ? _activeConsumeCount_T_508[3:2]
+               : (|state) ? consumeCount[3:2] : nextConsumeCount[3:2])));
+  wire        _GEN_7 = mutable_3 & casez_tmp_2 == in0_addr;
+  wire        _GEN_8 = mutable_3 & casez_tmp_2 == in1_addr;
+  wire        mutable_4 =
+    _query1_hit_T_16
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'h4);
+  wire        _GEN_9 = mutable_4 & casez_tmp_3 == in0_addr;
+  wire        _GEN_10 = mutable_4 & casez_tmp_3 == in1_addr;
+  wire        mutable_5 =
+    _query1_hit_T_20
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'h5);
+  wire        _GEN_11 = mutable_5 & casez_tmp_4 == in0_addr;
+  wire        _GEN_12 = mutable_5 & casez_tmp_4 == in1_addr;
+  wire        mutable_6 =
+    _query1_hit_T_24
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'h6);
+  wire        _GEN_13 = mutable_6 & casez_tmp_5 == in0_addr;
+  wire        _GEN_14 = mutable_6 & casez_tmp_5 == in1_addr;
+  wire        mutable_7 =
+    (|(count[7:3]))
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508[3]
+             : (|state) ? consumeCount[3] : nextConsumeCount[3]));
+  wire        _GEN_15 = mutable_7 & casez_tmp_6 == in0_addr;
+  wire        _GEN_16 = mutable_7 & casez_tmp_6 == in1_addr;
+  wire [6:0]  _query1_idx_T_16 = idx + 7'h8;
+  wire        _query1_hit_T_32 = count > 8'h8;
+  wire        mutable_8 =
+    _query1_hit_T_32
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'h8);
   reg  [31:0] casez_tmp_7;
   always_comb begin
-    casez (_idx_T_304)
+    casez (_query1_idx_T_16)
       7'b0000000:
         casez_tmp_7 = entries_0_addr;
       7'b0000001:
@@ -2893,14 +4061,19 @@ module StoreBuffer(
         casez_tmp_7 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_16 = mutable_8 & casez_tmp_7 == in0_addr;
-  wire        _GEN_17 = mutable_8 & casez_tmp_7 == in1_addr;
-  wire [6:0]  _idx_T_306 = idx + 7'h9;
-  wire        _hit_T_36 = count > 8'h9;
-  wire        mutable_9 = _hit_T_36 & ~((|state) & consumeCount > 4'h9);
+  wire        _GEN_17 = mutable_8 & casez_tmp_7 == in0_addr;
+  wire        _GEN_18 = mutable_8 & casez_tmp_7 == in1_addr;
+  wire [6:0]  _query1_idx_T_18 = idx + 7'h9;
+  wire        _query1_hit_T_36 = count > 8'h9;
+  wire        mutable_9 =
+    _query1_hit_T_36
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'h9);
   reg  [31:0] casez_tmp_8;
   always_comb begin
-    casez (_idx_T_306)
+    casez (_query1_idx_T_18)
       7'b0000000:
         casez_tmp_8 = entries_0_addr;
       7'b0000001:
@@ -3159,14 +4332,19 @@ module StoreBuffer(
         casez_tmp_8 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_18 = mutable_9 & casez_tmp_8 == in0_addr;
-  wire        _GEN_19 = mutable_9 & casez_tmp_8 == in1_addr;
-  wire [6:0]  _idx_T_308 = idx + 7'hA;
-  wire        _hit_T_40 = count > 8'hA;
-  wire        mutable_10 = _hit_T_40 & ~((|state) & consumeCount > 4'hA);
+  wire        _GEN_19 = mutable_9 & casez_tmp_8 == in0_addr;
+  wire        _GEN_20 = mutable_9 & casez_tmp_8 == in1_addr;
+  wire [6:0]  _query1_idx_T_20 = idx + 7'hA;
+  wire        _query1_hit_T_40 = count > 8'hA;
+  wire        mutable_10 =
+    _query1_hit_T_40
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'hA);
   reg  [31:0] casez_tmp_9;
   always_comb begin
-    casez (_idx_T_308)
+    casez (_query1_idx_T_20)
       7'b0000000:
         casez_tmp_9 = entries_0_addr;
       7'b0000001:
@@ -3425,14 +4603,19 @@ module StoreBuffer(
         casez_tmp_9 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_20 = mutable_10 & casez_tmp_9 == in0_addr;
-  wire        _GEN_21 = mutable_10 & casez_tmp_9 == in1_addr;
-  wire [6:0]  _idx_T_310 = idx + 7'hB;
-  wire        _hit_T_44 = count > 8'hB;
-  wire        mutable_11 = _hit_T_44 & ~((|state) & consumeCount > 4'hB);
+  wire        _GEN_21 = mutable_10 & casez_tmp_9 == in0_addr;
+  wire        _GEN_22 = mutable_10 & casez_tmp_9 == in1_addr;
+  wire [6:0]  _query1_idx_T_22 = idx + 7'hB;
+  wire        _query1_hit_T_44 = count > 8'hB;
+  wire        mutable_11 =
+    _query1_hit_T_44
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'hB);
   reg  [31:0] casez_tmp_10;
   always_comb begin
-    casez (_idx_T_310)
+    casez (_query1_idx_T_22)
       7'b0000000:
         casez_tmp_10 = entries_0_addr;
       7'b0000001:
@@ -3691,14 +4874,19 @@ module StoreBuffer(
         casez_tmp_10 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_22 = mutable_11 & casez_tmp_10 == in0_addr;
-  wire        _GEN_23 = mutable_11 & casez_tmp_10 == in1_addr;
-  wire [6:0]  _idx_T_312 = idx + 7'hC;
-  wire        _hit_T_48 = count > 8'hC;
-  wire        mutable_12 = _hit_T_48 & ~((|state) & consumeCount > 4'hC);
+  wire        _GEN_23 = mutable_11 & casez_tmp_10 == in0_addr;
+  wire        _GEN_24 = mutable_11 & casez_tmp_10 == in1_addr;
+  wire [6:0]  _query1_idx_T_24 = idx + 7'hC;
+  wire        _query1_hit_T_48 = count > 8'hC;
+  wire        mutable_12 =
+    _query1_hit_T_48
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'hC);
   reg  [31:0] casez_tmp_11;
   always_comb begin
-    casez (_idx_T_312)
+    casez (_query1_idx_T_24)
       7'b0000000:
         casez_tmp_11 = entries_0_addr;
       7'b0000001:
@@ -3957,14 +5145,19 @@ module StoreBuffer(
         casez_tmp_11 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_24 = mutable_12 & casez_tmp_11 == in0_addr;
-  wire        _GEN_25 = mutable_12 & casez_tmp_11 == in1_addr;
-  wire [6:0]  _idx_T_314 = idx + 7'hD;
-  wire        _hit_T_52 = count > 8'hD;
-  wire        mutable_13 = _hit_T_52 & ~((|state) & consumeCount > 4'hD);
+  wire        _GEN_25 = mutable_12 & casez_tmp_11 == in0_addr;
+  wire        _GEN_26 = mutable_12 & casez_tmp_11 == in1_addr;
+  wire [6:0]  _query1_idx_T_26 = idx + 7'hD;
+  wire        _query1_hit_T_52 = count > 8'hD;
+  wire        mutable_13 =
+    _query1_hit_T_52
+    & ~(((|state) | burstStart | chainCandidate)
+        & (chainCandidate
+             ? _activeConsumeCount_T_508
+             : (|state) ? consumeCount : nextConsumeCount) > 4'hD);
   reg  [31:0] casez_tmp_12;
   always_comb begin
-    casez (_idx_T_314)
+    casez (_query1_idx_T_26)
       7'b0000000:
         casez_tmp_12 = entries_0_addr;
       7'b0000001:
@@ -4223,14 +5416,19 @@ module StoreBuffer(
         casez_tmp_12 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_26 = mutable_13 & casez_tmp_12 == in0_addr;
-  wire        _GEN_27 = mutable_13 & casez_tmp_12 == in1_addr;
-  wire [6:0]  _idx_T_316 = idx + 7'hE;
-  wire        _hit_T_56 = count > 8'hE;
-  wire        mutable_14 = _hit_T_56 & ~((|state) & (&consumeCount));
+  wire        _GEN_27 = mutable_13 & casez_tmp_12 == in0_addr;
+  wire        _GEN_28 = mutable_13 & casez_tmp_12 == in1_addr;
+  wire [6:0]  _query1_idx_T_28 = idx + 7'hE;
+  wire        _query1_hit_T_56 = count > 8'hE;
+  wire        mutable_14 =
+    _query1_hit_T_56
+    & ~(((|state) | burstStart | chainCandidate)
+        & (&(chainCandidate
+               ? _activeConsumeCount_T_508
+               : (|state) ? consumeCount : nextConsumeCount)));
   reg  [31:0] casez_tmp_13;
   always_comb begin
-    casez (_idx_T_316)
+    casez (_query1_idx_T_28)
       7'b0000000:
         casez_tmp_13 = entries_0_addr;
       7'b0000001:
@@ -4489,12 +5687,12 @@ module StoreBuffer(
         casez_tmp_13 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_28 = mutable_14 & casez_tmp_13 == in0_addr;
-  wire        _GEN_29 = mutable_14 & casez_tmp_13 == in1_addr;
-  wire [6:0]  _idx_T_318 = idx + 7'hF;
+  wire        _GEN_29 = mutable_14 & casez_tmp_13 == in0_addr;
+  wire        _GEN_30 = mutable_14 & casez_tmp_13 == in1_addr;
+  wire [6:0]  _query1_idx_T_30 = idx + 7'hF;
   reg  [31:0] casez_tmp_14;
   always_comb begin
-    casez (_idx_T_318)
+    casez (_query1_idx_T_30)
       7'b0000000:
         casez_tmp_14 = entries_0_addr;
       7'b0000001:
@@ -4753,13 +5951,13 @@ module StoreBuffer(
         casez_tmp_14 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_30 = (|(count[7:4])) & casez_tmp_14 == in0_addr;
-  wire        _GEN_31 = (|(count[7:4])) & casez_tmp_14 == in1_addr;
-  wire [6:0]  _idx_T_320 = idx + 7'h10;
+  wire        _GEN_31 = (|(count[7:4])) & casez_tmp_14 == in0_addr;
+  wire        _GEN_32 = (|(count[7:4])) & casez_tmp_14 == in1_addr;
+  wire [6:0]  _query1_idx_T_32 = idx + 7'h10;
   wire        mutable_16 = count > 8'h10;
   reg  [31:0] casez_tmp_15;
   always_comb begin
-    casez (_idx_T_320)
+    casez (_query1_idx_T_32)
       7'b0000000:
         casez_tmp_15 = entries_0_addr;
       7'b0000001:
@@ -5018,13 +6216,13 @@ module StoreBuffer(
         casez_tmp_15 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_32 = mutable_16 & casez_tmp_15 == in0_addr;
-  wire        _GEN_33 = mutable_16 & casez_tmp_15 == in1_addr;
-  wire [6:0]  _idx_T_322 = idx + 7'h11;
+  wire        _GEN_33 = mutable_16 & casez_tmp_15 == in0_addr;
+  wire        _GEN_34 = mutable_16 & casez_tmp_15 == in1_addr;
+  wire [6:0]  _query1_idx_T_34 = idx + 7'h11;
   wire        mutable_17 = count > 8'h11;
   reg  [31:0] casez_tmp_16;
   always_comb begin
-    casez (_idx_T_322)
+    casez (_query1_idx_T_34)
       7'b0000000:
         casez_tmp_16 = entries_0_addr;
       7'b0000001:
@@ -5283,13 +6481,13 @@ module StoreBuffer(
         casez_tmp_16 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_34 = mutable_17 & casez_tmp_16 == in0_addr;
-  wire        _GEN_35 = mutable_17 & casez_tmp_16 == in1_addr;
-  wire [6:0]  _idx_T_324 = idx + 7'h12;
+  wire        _GEN_35 = mutable_17 & casez_tmp_16 == in0_addr;
+  wire        _GEN_36 = mutable_17 & casez_tmp_16 == in1_addr;
+  wire [6:0]  _query1_idx_T_36 = idx + 7'h12;
   wire        mutable_18 = count > 8'h12;
   reg  [31:0] casez_tmp_17;
   always_comb begin
-    casez (_idx_T_324)
+    casez (_query1_idx_T_36)
       7'b0000000:
         casez_tmp_17 = entries_0_addr;
       7'b0000001:
@@ -5548,13 +6746,13 @@ module StoreBuffer(
         casez_tmp_17 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_36 = mutable_18 & casez_tmp_17 == in0_addr;
-  wire        _GEN_37 = mutable_18 & casez_tmp_17 == in1_addr;
-  wire [6:0]  _idx_T_326 = idx + 7'h13;
+  wire        _GEN_37 = mutable_18 & casez_tmp_17 == in0_addr;
+  wire        _GEN_38 = mutable_18 & casez_tmp_17 == in1_addr;
+  wire [6:0]  _query1_idx_T_38 = idx + 7'h13;
   wire        mutable_19 = count > 8'h13;
   reg  [31:0] casez_tmp_18;
   always_comb begin
-    casez (_idx_T_326)
+    casez (_query1_idx_T_38)
       7'b0000000:
         casez_tmp_18 = entries_0_addr;
       7'b0000001:
@@ -5813,13 +7011,13 @@ module StoreBuffer(
         casez_tmp_18 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_38 = mutable_19 & casez_tmp_18 == in0_addr;
-  wire        _GEN_39 = mutable_19 & casez_tmp_18 == in1_addr;
-  wire [6:0]  _idx_T_328 = idx + 7'h14;
+  wire        _GEN_39 = mutable_19 & casez_tmp_18 == in0_addr;
+  wire        _GEN_40 = mutable_19 & casez_tmp_18 == in1_addr;
+  wire [6:0]  _query1_idx_T_40 = idx + 7'h14;
   wire        mutable_20 = count > 8'h14;
   reg  [31:0] casez_tmp_19;
   always_comb begin
-    casez (_idx_T_328)
+    casez (_query1_idx_T_40)
       7'b0000000:
         casez_tmp_19 = entries_0_addr;
       7'b0000001:
@@ -6078,13 +7276,13 @@ module StoreBuffer(
         casez_tmp_19 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_40 = mutable_20 & casez_tmp_19 == in0_addr;
-  wire        _GEN_41 = mutable_20 & casez_tmp_19 == in1_addr;
-  wire [6:0]  _idx_T_330 = idx + 7'h15;
+  wire        _GEN_41 = mutable_20 & casez_tmp_19 == in0_addr;
+  wire        _GEN_42 = mutable_20 & casez_tmp_19 == in1_addr;
+  wire [6:0]  _query1_idx_T_42 = idx + 7'h15;
   wire        mutable_21 = count > 8'h15;
   reg  [31:0] casez_tmp_20;
   always_comb begin
-    casez (_idx_T_330)
+    casez (_query1_idx_T_42)
       7'b0000000:
         casez_tmp_20 = entries_0_addr;
       7'b0000001:
@@ -6343,13 +7541,13 @@ module StoreBuffer(
         casez_tmp_20 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_42 = mutable_21 & casez_tmp_20 == in0_addr;
-  wire        _GEN_43 = mutable_21 & casez_tmp_20 == in1_addr;
-  wire [6:0]  _idx_T_332 = idx + 7'h16;
+  wire        _GEN_43 = mutable_21 & casez_tmp_20 == in0_addr;
+  wire        _GEN_44 = mutable_21 & casez_tmp_20 == in1_addr;
+  wire [6:0]  _query1_idx_T_44 = idx + 7'h16;
   wire        mutable_22 = count > 8'h16;
   reg  [31:0] casez_tmp_21;
   always_comb begin
-    casez (_idx_T_332)
+    casez (_query1_idx_T_44)
       7'b0000000:
         casez_tmp_21 = entries_0_addr;
       7'b0000001:
@@ -6608,13 +7806,13 @@ module StoreBuffer(
         casez_tmp_21 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_44 = mutable_22 & casez_tmp_21 == in0_addr;
-  wire        _GEN_45 = mutable_22 & casez_tmp_21 == in1_addr;
-  wire [6:0]  _idx_T_334 = idx + 7'h17;
+  wire        _GEN_45 = mutable_22 & casez_tmp_21 == in0_addr;
+  wire        _GEN_46 = mutable_22 & casez_tmp_21 == in1_addr;
+  wire [6:0]  _query1_idx_T_46 = idx + 7'h17;
   wire        mutable_23 = count > 8'h17;
   reg  [31:0] casez_tmp_22;
   always_comb begin
-    casez (_idx_T_334)
+    casez (_query1_idx_T_46)
       7'b0000000:
         casez_tmp_22 = entries_0_addr;
       7'b0000001:
@@ -6873,13 +8071,13 @@ module StoreBuffer(
         casez_tmp_22 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_46 = mutable_23 & casez_tmp_22 == in0_addr;
-  wire        _GEN_47 = mutable_23 & casez_tmp_22 == in1_addr;
-  wire [6:0]  _idx_T_336 = idx + 7'h18;
+  wire        _GEN_47 = mutable_23 & casez_tmp_22 == in0_addr;
+  wire        _GEN_48 = mutable_23 & casez_tmp_22 == in1_addr;
+  wire [6:0]  _query1_idx_T_48 = idx + 7'h18;
   wire        mutable_24 = count > 8'h18;
   reg  [31:0] casez_tmp_23;
   always_comb begin
-    casez (_idx_T_336)
+    casez (_query1_idx_T_48)
       7'b0000000:
         casez_tmp_23 = entries_0_addr;
       7'b0000001:
@@ -7138,13 +8336,13 @@ module StoreBuffer(
         casez_tmp_23 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_48 = mutable_24 & casez_tmp_23 == in0_addr;
-  wire        _GEN_49 = mutable_24 & casez_tmp_23 == in1_addr;
-  wire [6:0]  _idx_T_338 = idx + 7'h19;
+  wire        _GEN_49 = mutable_24 & casez_tmp_23 == in0_addr;
+  wire        _GEN_50 = mutable_24 & casez_tmp_23 == in1_addr;
+  wire [6:0]  _query1_idx_T_50 = idx + 7'h19;
   wire        mutable_25 = count > 8'h19;
   reg  [31:0] casez_tmp_24;
   always_comb begin
-    casez (_idx_T_338)
+    casez (_query1_idx_T_50)
       7'b0000000:
         casez_tmp_24 = entries_0_addr;
       7'b0000001:
@@ -7403,13 +8601,13 @@ module StoreBuffer(
         casez_tmp_24 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_50 = mutable_25 & casez_tmp_24 == in0_addr;
-  wire        _GEN_51 = mutable_25 & casez_tmp_24 == in1_addr;
-  wire [6:0]  _idx_T_340 = idx + 7'h1A;
+  wire        _GEN_51 = mutable_25 & casez_tmp_24 == in0_addr;
+  wire        _GEN_52 = mutable_25 & casez_tmp_24 == in1_addr;
+  wire [6:0]  _query1_idx_T_52 = idx + 7'h1A;
   wire        mutable_26 = count > 8'h1A;
   reg  [31:0] casez_tmp_25;
   always_comb begin
-    casez (_idx_T_340)
+    casez (_query1_idx_T_52)
       7'b0000000:
         casez_tmp_25 = entries_0_addr;
       7'b0000001:
@@ -7668,13 +8866,13 @@ module StoreBuffer(
         casez_tmp_25 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_52 = mutable_26 & casez_tmp_25 == in0_addr;
-  wire        _GEN_53 = mutable_26 & casez_tmp_25 == in1_addr;
-  wire [6:0]  _idx_T_342 = idx + 7'h1B;
+  wire        _GEN_53 = mutable_26 & casez_tmp_25 == in0_addr;
+  wire        _GEN_54 = mutable_26 & casez_tmp_25 == in1_addr;
+  wire [6:0]  _query1_idx_T_54 = idx + 7'h1B;
   wire        mutable_27 = count > 8'h1B;
   reg  [31:0] casez_tmp_26;
   always_comb begin
-    casez (_idx_T_342)
+    casez (_query1_idx_T_54)
       7'b0000000:
         casez_tmp_26 = entries_0_addr;
       7'b0000001:
@@ -7933,13 +9131,13 @@ module StoreBuffer(
         casez_tmp_26 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_54 = mutable_27 & casez_tmp_26 == in0_addr;
-  wire        _GEN_55 = mutable_27 & casez_tmp_26 == in1_addr;
-  wire [6:0]  _idx_T_344 = idx + 7'h1C;
+  wire        _GEN_55 = mutable_27 & casez_tmp_26 == in0_addr;
+  wire        _GEN_56 = mutable_27 & casez_tmp_26 == in1_addr;
+  wire [6:0]  _query1_idx_T_56 = idx + 7'h1C;
   wire        mutable_28 = count > 8'h1C;
   reg  [31:0] casez_tmp_27;
   always_comb begin
-    casez (_idx_T_344)
+    casez (_query1_idx_T_56)
       7'b0000000:
         casez_tmp_27 = entries_0_addr;
       7'b0000001:
@@ -8198,13 +9396,13 @@ module StoreBuffer(
         casez_tmp_27 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_56 = mutable_28 & casez_tmp_27 == in0_addr;
-  wire        _GEN_57 = mutable_28 & casez_tmp_27 == in1_addr;
-  wire [6:0]  _idx_T_346 = idx + 7'h1D;
+  wire        _GEN_57 = mutable_28 & casez_tmp_27 == in0_addr;
+  wire        _GEN_58 = mutable_28 & casez_tmp_27 == in1_addr;
+  wire [6:0]  _query1_idx_T_58 = idx + 7'h1D;
   wire        mutable_29 = count > 8'h1D;
   reg  [31:0] casez_tmp_28;
   always_comb begin
-    casez (_idx_T_346)
+    casez (_query1_idx_T_58)
       7'b0000000:
         casez_tmp_28 = entries_0_addr;
       7'b0000001:
@@ -8463,13 +9661,13 @@ module StoreBuffer(
         casez_tmp_28 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_58 = mutable_29 & casez_tmp_28 == in0_addr;
-  wire        _GEN_59 = mutable_29 & casez_tmp_28 == in1_addr;
-  wire [6:0]  _idx_T_348 = idx + 7'h1E;
+  wire        _GEN_59 = mutable_29 & casez_tmp_28 == in0_addr;
+  wire        _GEN_60 = mutable_29 & casez_tmp_28 == in1_addr;
+  wire [6:0]  _query1_idx_T_60 = idx + 7'h1E;
   wire        mutable_30 = count > 8'h1E;
   reg  [31:0] casez_tmp_29;
   always_comb begin
-    casez (_idx_T_348)
+    casez (_query1_idx_T_60)
       7'b0000000:
         casez_tmp_29 = entries_0_addr;
       7'b0000001:
@@ -8728,12 +9926,12 @@ module StoreBuffer(
         casez_tmp_29 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_60 = mutable_30 & casez_tmp_29 == in0_addr;
-  wire        _GEN_61 = mutable_30 & casez_tmp_29 == in1_addr;
-  wire [6:0]  _idx_T_350 = idx + 7'h1F;
+  wire        _GEN_61 = mutable_30 & casez_tmp_29 == in0_addr;
+  wire        _GEN_62 = mutable_30 & casez_tmp_29 == in1_addr;
+  wire [6:0]  _query1_idx_T_62 = idx + 7'h1F;
   reg  [31:0] casez_tmp_30;
   always_comb begin
-    casez (_idx_T_350)
+    casez (_query1_idx_T_62)
       7'b0000000:
         casez_tmp_30 = entries_0_addr;
       7'b0000001:
@@ -8992,13 +10190,13 @@ module StoreBuffer(
         casez_tmp_30 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_62 = (|(count[7:5])) & casez_tmp_30 == in0_addr;
-  wire        _GEN_63 = (|(count[7:5])) & casez_tmp_30 == in1_addr;
-  wire [6:0]  _idx_T_352 = idx + 7'h20;
+  wire        _GEN_63 = (|(count[7:5])) & casez_tmp_30 == in0_addr;
+  wire        _GEN_64 = (|(count[7:5])) & casez_tmp_30 == in1_addr;
+  wire [6:0]  _query1_idx_T_64 = idx + 7'h20;
   wire        mutable_32 = count > 8'h20;
   reg  [31:0] casez_tmp_31;
   always_comb begin
-    casez (_idx_T_352)
+    casez (_query1_idx_T_64)
       7'b0000000:
         casez_tmp_31 = entries_0_addr;
       7'b0000001:
@@ -9257,13 +10455,13 @@ module StoreBuffer(
         casez_tmp_31 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_64 = mutable_32 & casez_tmp_31 == in0_addr;
-  wire        _GEN_65 = mutable_32 & casez_tmp_31 == in1_addr;
-  wire [6:0]  _idx_T_354 = idx + 7'h21;
+  wire        _GEN_65 = mutable_32 & casez_tmp_31 == in0_addr;
+  wire        _GEN_66 = mutable_32 & casez_tmp_31 == in1_addr;
+  wire [6:0]  _query1_idx_T_66 = idx + 7'h21;
   wire        mutable_33 = count > 8'h21;
   reg  [31:0] casez_tmp_32;
   always_comb begin
-    casez (_idx_T_354)
+    casez (_query1_idx_T_66)
       7'b0000000:
         casez_tmp_32 = entries_0_addr;
       7'b0000001:
@@ -9522,13 +10720,13 @@ module StoreBuffer(
         casez_tmp_32 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_66 = mutable_33 & casez_tmp_32 == in0_addr;
-  wire        _GEN_67 = mutable_33 & casez_tmp_32 == in1_addr;
-  wire [6:0]  _idx_T_356 = idx + 7'h22;
+  wire        _GEN_67 = mutable_33 & casez_tmp_32 == in0_addr;
+  wire        _GEN_68 = mutable_33 & casez_tmp_32 == in1_addr;
+  wire [6:0]  _query1_idx_T_68 = idx + 7'h22;
   wire        mutable_34 = count > 8'h22;
   reg  [31:0] casez_tmp_33;
   always_comb begin
-    casez (_idx_T_356)
+    casez (_query1_idx_T_68)
       7'b0000000:
         casez_tmp_33 = entries_0_addr;
       7'b0000001:
@@ -9787,13 +10985,13 @@ module StoreBuffer(
         casez_tmp_33 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_68 = mutable_34 & casez_tmp_33 == in0_addr;
-  wire        _GEN_69 = mutable_34 & casez_tmp_33 == in1_addr;
-  wire [6:0]  _idx_T_358 = idx + 7'h23;
+  wire        _GEN_69 = mutable_34 & casez_tmp_33 == in0_addr;
+  wire        _GEN_70 = mutable_34 & casez_tmp_33 == in1_addr;
+  wire [6:0]  _query1_idx_T_70 = idx + 7'h23;
   wire        mutable_35 = count > 8'h23;
   reg  [31:0] casez_tmp_34;
   always_comb begin
-    casez (_idx_T_358)
+    casez (_query1_idx_T_70)
       7'b0000000:
         casez_tmp_34 = entries_0_addr;
       7'b0000001:
@@ -10052,13 +11250,13 @@ module StoreBuffer(
         casez_tmp_34 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_70 = mutable_35 & casez_tmp_34 == in0_addr;
-  wire        _GEN_71 = mutable_35 & casez_tmp_34 == in1_addr;
-  wire [6:0]  _idx_T_360 = idx + 7'h24;
+  wire        _GEN_71 = mutable_35 & casez_tmp_34 == in0_addr;
+  wire        _GEN_72 = mutable_35 & casez_tmp_34 == in1_addr;
+  wire [6:0]  _query1_idx_T_72 = idx + 7'h24;
   wire        mutable_36 = count > 8'h24;
   reg  [31:0] casez_tmp_35;
   always_comb begin
-    casez (_idx_T_360)
+    casez (_query1_idx_T_72)
       7'b0000000:
         casez_tmp_35 = entries_0_addr;
       7'b0000001:
@@ -10317,13 +11515,13 @@ module StoreBuffer(
         casez_tmp_35 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_72 = mutable_36 & casez_tmp_35 == in0_addr;
-  wire        _GEN_73 = mutable_36 & casez_tmp_35 == in1_addr;
-  wire [6:0]  _idx_T_362 = idx + 7'h25;
+  wire        _GEN_73 = mutable_36 & casez_tmp_35 == in0_addr;
+  wire        _GEN_74 = mutable_36 & casez_tmp_35 == in1_addr;
+  wire [6:0]  _query1_idx_T_74 = idx + 7'h25;
   wire        mutable_37 = count > 8'h25;
   reg  [31:0] casez_tmp_36;
   always_comb begin
-    casez (_idx_T_362)
+    casez (_query1_idx_T_74)
       7'b0000000:
         casez_tmp_36 = entries_0_addr;
       7'b0000001:
@@ -10582,13 +11780,13 @@ module StoreBuffer(
         casez_tmp_36 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_74 = mutable_37 & casez_tmp_36 == in0_addr;
-  wire        _GEN_75 = mutable_37 & casez_tmp_36 == in1_addr;
-  wire [6:0]  _idx_T_364 = idx + 7'h26;
+  wire        _GEN_75 = mutable_37 & casez_tmp_36 == in0_addr;
+  wire        _GEN_76 = mutable_37 & casez_tmp_36 == in1_addr;
+  wire [6:0]  _query1_idx_T_76 = idx + 7'h26;
   wire        mutable_38 = count > 8'h26;
   reg  [31:0] casez_tmp_37;
   always_comb begin
-    casez (_idx_T_364)
+    casez (_query1_idx_T_76)
       7'b0000000:
         casez_tmp_37 = entries_0_addr;
       7'b0000001:
@@ -10847,13 +12045,13 @@ module StoreBuffer(
         casez_tmp_37 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_76 = mutable_38 & casez_tmp_37 == in0_addr;
-  wire        _GEN_77 = mutable_38 & casez_tmp_37 == in1_addr;
-  wire [6:0]  _idx_T_366 = idx + 7'h27;
+  wire        _GEN_77 = mutable_38 & casez_tmp_37 == in0_addr;
+  wire        _GEN_78 = mutable_38 & casez_tmp_37 == in1_addr;
+  wire [6:0]  _query1_idx_T_78 = idx + 7'h27;
   wire        mutable_39 = count > 8'h27;
   reg  [31:0] casez_tmp_38;
   always_comb begin
-    casez (_idx_T_366)
+    casez (_query1_idx_T_78)
       7'b0000000:
         casez_tmp_38 = entries_0_addr;
       7'b0000001:
@@ -11112,13 +12310,13 @@ module StoreBuffer(
         casez_tmp_38 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_78 = mutable_39 & casez_tmp_38 == in0_addr;
-  wire        _GEN_79 = mutable_39 & casez_tmp_38 == in1_addr;
-  wire [6:0]  _idx_T_368 = idx + 7'h28;
+  wire        _GEN_79 = mutable_39 & casez_tmp_38 == in0_addr;
+  wire        _GEN_80 = mutable_39 & casez_tmp_38 == in1_addr;
+  wire [6:0]  _query1_idx_T_80 = idx + 7'h28;
   wire        mutable_40 = count > 8'h28;
   reg  [31:0] casez_tmp_39;
   always_comb begin
-    casez (_idx_T_368)
+    casez (_query1_idx_T_80)
       7'b0000000:
         casez_tmp_39 = entries_0_addr;
       7'b0000001:
@@ -11377,13 +12575,13 @@ module StoreBuffer(
         casez_tmp_39 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_80 = mutable_40 & casez_tmp_39 == in0_addr;
-  wire        _GEN_81 = mutable_40 & casez_tmp_39 == in1_addr;
-  wire [6:0]  _idx_T_370 = idx + 7'h29;
+  wire        _GEN_81 = mutable_40 & casez_tmp_39 == in0_addr;
+  wire        _GEN_82 = mutable_40 & casez_tmp_39 == in1_addr;
+  wire [6:0]  _query1_idx_T_82 = idx + 7'h29;
   wire        mutable_41 = count > 8'h29;
   reg  [31:0] casez_tmp_40;
   always_comb begin
-    casez (_idx_T_370)
+    casez (_query1_idx_T_82)
       7'b0000000:
         casez_tmp_40 = entries_0_addr;
       7'b0000001:
@@ -11642,13 +12840,13 @@ module StoreBuffer(
         casez_tmp_40 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_82 = mutable_41 & casez_tmp_40 == in0_addr;
-  wire        _GEN_83 = mutable_41 & casez_tmp_40 == in1_addr;
-  wire [6:0]  _idx_T_372 = idx + 7'h2A;
+  wire        _GEN_83 = mutable_41 & casez_tmp_40 == in0_addr;
+  wire        _GEN_84 = mutable_41 & casez_tmp_40 == in1_addr;
+  wire [6:0]  _query1_idx_T_84 = idx + 7'h2A;
   wire        mutable_42 = count > 8'h2A;
   reg  [31:0] casez_tmp_41;
   always_comb begin
-    casez (_idx_T_372)
+    casez (_query1_idx_T_84)
       7'b0000000:
         casez_tmp_41 = entries_0_addr;
       7'b0000001:
@@ -11907,13 +13105,13 @@ module StoreBuffer(
         casez_tmp_41 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_84 = mutable_42 & casez_tmp_41 == in0_addr;
-  wire        _GEN_85 = mutable_42 & casez_tmp_41 == in1_addr;
-  wire [6:0]  _idx_T_374 = idx + 7'h2B;
+  wire        _GEN_85 = mutable_42 & casez_tmp_41 == in0_addr;
+  wire        _GEN_86 = mutable_42 & casez_tmp_41 == in1_addr;
+  wire [6:0]  _query1_idx_T_86 = idx + 7'h2B;
   wire        mutable_43 = count > 8'h2B;
   reg  [31:0] casez_tmp_42;
   always_comb begin
-    casez (_idx_T_374)
+    casez (_query1_idx_T_86)
       7'b0000000:
         casez_tmp_42 = entries_0_addr;
       7'b0000001:
@@ -12172,13 +13370,13 @@ module StoreBuffer(
         casez_tmp_42 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_86 = mutable_43 & casez_tmp_42 == in0_addr;
-  wire        _GEN_87 = mutable_43 & casez_tmp_42 == in1_addr;
-  wire [6:0]  _idx_T_376 = idx + 7'h2C;
+  wire        _GEN_87 = mutable_43 & casez_tmp_42 == in0_addr;
+  wire        _GEN_88 = mutable_43 & casez_tmp_42 == in1_addr;
+  wire [6:0]  _query1_idx_T_88 = idx + 7'h2C;
   wire        mutable_44 = count > 8'h2C;
   reg  [31:0] casez_tmp_43;
   always_comb begin
-    casez (_idx_T_376)
+    casez (_query1_idx_T_88)
       7'b0000000:
         casez_tmp_43 = entries_0_addr;
       7'b0000001:
@@ -12437,13 +13635,13 @@ module StoreBuffer(
         casez_tmp_43 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_88 = mutable_44 & casez_tmp_43 == in0_addr;
-  wire        _GEN_89 = mutable_44 & casez_tmp_43 == in1_addr;
-  wire [6:0]  _idx_T_378 = idx + 7'h2D;
+  wire        _GEN_89 = mutable_44 & casez_tmp_43 == in0_addr;
+  wire        _GEN_90 = mutable_44 & casez_tmp_43 == in1_addr;
+  wire [6:0]  _query1_idx_T_90 = idx + 7'h2D;
   wire        mutable_45 = count > 8'h2D;
   reg  [31:0] casez_tmp_44;
   always_comb begin
-    casez (_idx_T_378)
+    casez (_query1_idx_T_90)
       7'b0000000:
         casez_tmp_44 = entries_0_addr;
       7'b0000001:
@@ -12702,13 +13900,13 @@ module StoreBuffer(
         casez_tmp_44 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_90 = mutable_45 & casez_tmp_44 == in0_addr;
-  wire        _GEN_91 = mutable_45 & casez_tmp_44 == in1_addr;
-  wire [6:0]  _idx_T_380 = idx + 7'h2E;
+  wire        _GEN_91 = mutable_45 & casez_tmp_44 == in0_addr;
+  wire        _GEN_92 = mutable_45 & casez_tmp_44 == in1_addr;
+  wire [6:0]  _query1_idx_T_92 = idx + 7'h2E;
   wire        mutable_46 = count > 8'h2E;
   reg  [31:0] casez_tmp_45;
   always_comb begin
-    casez (_idx_T_380)
+    casez (_query1_idx_T_92)
       7'b0000000:
         casez_tmp_45 = entries_0_addr;
       7'b0000001:
@@ -12967,13 +14165,13 @@ module StoreBuffer(
         casez_tmp_45 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_92 = mutable_46 & casez_tmp_45 == in0_addr;
-  wire        _GEN_93 = mutable_46 & casez_tmp_45 == in1_addr;
-  wire [6:0]  _idx_T_382 = idx + 7'h2F;
+  wire        _GEN_93 = mutable_46 & casez_tmp_45 == in0_addr;
+  wire        _GEN_94 = mutable_46 & casez_tmp_45 == in1_addr;
+  wire [6:0]  _query1_idx_T_94 = idx + 7'h2F;
   wire        mutable_47 = count > 8'h2F;
   reg  [31:0] casez_tmp_46;
   always_comb begin
-    casez (_idx_T_382)
+    casez (_query1_idx_T_94)
       7'b0000000:
         casez_tmp_46 = entries_0_addr;
       7'b0000001:
@@ -13232,13 +14430,13 @@ module StoreBuffer(
         casez_tmp_46 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_94 = mutable_47 & casez_tmp_46 == in0_addr;
-  wire        _GEN_95 = mutable_47 & casez_tmp_46 == in1_addr;
-  wire [6:0]  _idx_T_384 = idx + 7'h30;
+  wire        _GEN_95 = mutable_47 & casez_tmp_46 == in0_addr;
+  wire        _GEN_96 = mutable_47 & casez_tmp_46 == in1_addr;
+  wire [6:0]  _query1_idx_T_96 = idx + 7'h30;
   wire        mutable_48 = count > 8'h30;
   reg  [31:0] casez_tmp_47;
   always_comb begin
-    casez (_idx_T_384)
+    casez (_query1_idx_T_96)
       7'b0000000:
         casez_tmp_47 = entries_0_addr;
       7'b0000001:
@@ -13497,13 +14695,13 @@ module StoreBuffer(
         casez_tmp_47 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_96 = mutable_48 & casez_tmp_47 == in0_addr;
-  wire        _GEN_97 = mutable_48 & casez_tmp_47 == in1_addr;
-  wire [6:0]  _idx_T_386 = idx + 7'h31;
+  wire        _GEN_97 = mutable_48 & casez_tmp_47 == in0_addr;
+  wire        _GEN_98 = mutable_48 & casez_tmp_47 == in1_addr;
+  wire [6:0]  _query1_idx_T_98 = idx + 7'h31;
   wire        mutable_49 = count > 8'h31;
   reg  [31:0] casez_tmp_48;
   always_comb begin
-    casez (_idx_T_386)
+    casez (_query1_idx_T_98)
       7'b0000000:
         casez_tmp_48 = entries_0_addr;
       7'b0000001:
@@ -13762,13 +14960,13 @@ module StoreBuffer(
         casez_tmp_48 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_98 = mutable_49 & casez_tmp_48 == in0_addr;
-  wire        _GEN_99 = mutable_49 & casez_tmp_48 == in1_addr;
-  wire [6:0]  _idx_T_388 = idx + 7'h32;
+  wire        _GEN_99 = mutable_49 & casez_tmp_48 == in0_addr;
+  wire        _GEN_100 = mutable_49 & casez_tmp_48 == in1_addr;
+  wire [6:0]  _query1_idx_T_100 = idx + 7'h32;
   wire        mutable_50 = count > 8'h32;
   reg  [31:0] casez_tmp_49;
   always_comb begin
-    casez (_idx_T_388)
+    casez (_query1_idx_T_100)
       7'b0000000:
         casez_tmp_49 = entries_0_addr;
       7'b0000001:
@@ -14027,13 +15225,13 @@ module StoreBuffer(
         casez_tmp_49 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_100 = mutable_50 & casez_tmp_49 == in0_addr;
-  wire        _GEN_101 = mutable_50 & casez_tmp_49 == in1_addr;
-  wire [6:0]  _idx_T_390 = idx + 7'h33;
+  wire        _GEN_101 = mutable_50 & casez_tmp_49 == in0_addr;
+  wire        _GEN_102 = mutable_50 & casez_tmp_49 == in1_addr;
+  wire [6:0]  _query1_idx_T_102 = idx + 7'h33;
   wire        mutable_51 = count > 8'h33;
   reg  [31:0] casez_tmp_50;
   always_comb begin
-    casez (_idx_T_390)
+    casez (_query1_idx_T_102)
       7'b0000000:
         casez_tmp_50 = entries_0_addr;
       7'b0000001:
@@ -14292,13 +15490,13 @@ module StoreBuffer(
         casez_tmp_50 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_102 = mutable_51 & casez_tmp_50 == in0_addr;
-  wire        _GEN_103 = mutable_51 & casez_tmp_50 == in1_addr;
-  wire [6:0]  _idx_T_392 = idx + 7'h34;
+  wire        _GEN_103 = mutable_51 & casez_tmp_50 == in0_addr;
+  wire        _GEN_104 = mutable_51 & casez_tmp_50 == in1_addr;
+  wire [6:0]  _query1_idx_T_104 = idx + 7'h34;
   wire        mutable_52 = count > 8'h34;
   reg  [31:0] casez_tmp_51;
   always_comb begin
-    casez (_idx_T_392)
+    casez (_query1_idx_T_104)
       7'b0000000:
         casez_tmp_51 = entries_0_addr;
       7'b0000001:
@@ -14557,13 +15755,13 @@ module StoreBuffer(
         casez_tmp_51 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_104 = mutable_52 & casez_tmp_51 == in0_addr;
-  wire        _GEN_105 = mutable_52 & casez_tmp_51 == in1_addr;
-  wire [6:0]  _idx_T_394 = idx + 7'h35;
+  wire        _GEN_105 = mutable_52 & casez_tmp_51 == in0_addr;
+  wire        _GEN_106 = mutable_52 & casez_tmp_51 == in1_addr;
+  wire [6:0]  _query1_idx_T_106 = idx + 7'h35;
   wire        mutable_53 = count > 8'h35;
   reg  [31:0] casez_tmp_52;
   always_comb begin
-    casez (_idx_T_394)
+    casez (_query1_idx_T_106)
       7'b0000000:
         casez_tmp_52 = entries_0_addr;
       7'b0000001:
@@ -14822,13 +16020,13 @@ module StoreBuffer(
         casez_tmp_52 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_106 = mutable_53 & casez_tmp_52 == in0_addr;
-  wire        _GEN_107 = mutable_53 & casez_tmp_52 == in1_addr;
-  wire [6:0]  _idx_T_396 = idx + 7'h36;
+  wire        _GEN_107 = mutable_53 & casez_tmp_52 == in0_addr;
+  wire        _GEN_108 = mutable_53 & casez_tmp_52 == in1_addr;
+  wire [6:0]  _query1_idx_T_108 = idx + 7'h36;
   wire        mutable_54 = count > 8'h36;
   reg  [31:0] casez_tmp_53;
   always_comb begin
-    casez (_idx_T_396)
+    casez (_query1_idx_T_108)
       7'b0000000:
         casez_tmp_53 = entries_0_addr;
       7'b0000001:
@@ -15087,13 +16285,13 @@ module StoreBuffer(
         casez_tmp_53 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_108 = mutable_54 & casez_tmp_53 == in0_addr;
-  wire        _GEN_109 = mutable_54 & casez_tmp_53 == in1_addr;
-  wire [6:0]  _idx_T_398 = idx + 7'h37;
+  wire        _GEN_109 = mutable_54 & casez_tmp_53 == in0_addr;
+  wire        _GEN_110 = mutable_54 & casez_tmp_53 == in1_addr;
+  wire [6:0]  _query1_idx_T_110 = idx + 7'h37;
   wire        mutable_55 = count > 8'h37;
   reg  [31:0] casez_tmp_54;
   always_comb begin
-    casez (_idx_T_398)
+    casez (_query1_idx_T_110)
       7'b0000000:
         casez_tmp_54 = entries_0_addr;
       7'b0000001:
@@ -15352,13 +16550,13 @@ module StoreBuffer(
         casez_tmp_54 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_110 = mutable_55 & casez_tmp_54 == in0_addr;
-  wire        _GEN_111 = mutable_55 & casez_tmp_54 == in1_addr;
-  wire [6:0]  _idx_T_400 = idx + 7'h38;
+  wire        _GEN_111 = mutable_55 & casez_tmp_54 == in0_addr;
+  wire        _GEN_112 = mutable_55 & casez_tmp_54 == in1_addr;
+  wire [6:0]  _query1_idx_T_112 = idx + 7'h38;
   wire        mutable_56 = count > 8'h38;
   reg  [31:0] casez_tmp_55;
   always_comb begin
-    casez (_idx_T_400)
+    casez (_query1_idx_T_112)
       7'b0000000:
         casez_tmp_55 = entries_0_addr;
       7'b0000001:
@@ -15617,13 +16815,13 @@ module StoreBuffer(
         casez_tmp_55 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_112 = mutable_56 & casez_tmp_55 == in0_addr;
-  wire        _GEN_113 = mutable_56 & casez_tmp_55 == in1_addr;
-  wire [6:0]  _idx_T_402 = idx + 7'h39;
+  wire        _GEN_113 = mutable_56 & casez_tmp_55 == in0_addr;
+  wire        _GEN_114 = mutable_56 & casez_tmp_55 == in1_addr;
+  wire [6:0]  _query1_idx_T_114 = idx + 7'h39;
   wire        mutable_57 = count > 8'h39;
   reg  [31:0] casez_tmp_56;
   always_comb begin
-    casez (_idx_T_402)
+    casez (_query1_idx_T_114)
       7'b0000000:
         casez_tmp_56 = entries_0_addr;
       7'b0000001:
@@ -15882,13 +17080,13 @@ module StoreBuffer(
         casez_tmp_56 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_114 = mutable_57 & casez_tmp_56 == in0_addr;
-  wire        _GEN_115 = mutable_57 & casez_tmp_56 == in1_addr;
-  wire [6:0]  _idx_T_404 = idx + 7'h3A;
+  wire        _GEN_115 = mutable_57 & casez_tmp_56 == in0_addr;
+  wire        _GEN_116 = mutable_57 & casez_tmp_56 == in1_addr;
+  wire [6:0]  _query1_idx_T_116 = idx + 7'h3A;
   wire        mutable_58 = count > 8'h3A;
   reg  [31:0] casez_tmp_57;
   always_comb begin
-    casez (_idx_T_404)
+    casez (_query1_idx_T_116)
       7'b0000000:
         casez_tmp_57 = entries_0_addr;
       7'b0000001:
@@ -16147,13 +17345,13 @@ module StoreBuffer(
         casez_tmp_57 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_116 = mutable_58 & casez_tmp_57 == in0_addr;
-  wire        _GEN_117 = mutable_58 & casez_tmp_57 == in1_addr;
-  wire [6:0]  _idx_T_406 = idx + 7'h3B;
+  wire        _GEN_117 = mutable_58 & casez_tmp_57 == in0_addr;
+  wire        _GEN_118 = mutable_58 & casez_tmp_57 == in1_addr;
+  wire [6:0]  _query1_idx_T_118 = idx + 7'h3B;
   wire        mutable_59 = count > 8'h3B;
   reg  [31:0] casez_tmp_58;
   always_comb begin
-    casez (_idx_T_406)
+    casez (_query1_idx_T_118)
       7'b0000000:
         casez_tmp_58 = entries_0_addr;
       7'b0000001:
@@ -16412,13 +17610,13 @@ module StoreBuffer(
         casez_tmp_58 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_118 = mutable_59 & casez_tmp_58 == in0_addr;
-  wire        _GEN_119 = mutable_59 & casez_tmp_58 == in1_addr;
-  wire [6:0]  _idx_T_408 = idx + 7'h3C;
+  wire        _GEN_119 = mutable_59 & casez_tmp_58 == in0_addr;
+  wire        _GEN_120 = mutable_59 & casez_tmp_58 == in1_addr;
+  wire [6:0]  _query1_idx_T_120 = idx + 7'h3C;
   wire        mutable_60 = count > 8'h3C;
   reg  [31:0] casez_tmp_59;
   always_comb begin
-    casez (_idx_T_408)
+    casez (_query1_idx_T_120)
       7'b0000000:
         casez_tmp_59 = entries_0_addr;
       7'b0000001:
@@ -16677,13 +17875,13 @@ module StoreBuffer(
         casez_tmp_59 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_120 = mutable_60 & casez_tmp_59 == in0_addr;
-  wire        _GEN_121 = mutable_60 & casez_tmp_59 == in1_addr;
-  wire [6:0]  _idx_T_410 = idx + 7'h3D;
+  wire        _GEN_121 = mutable_60 & casez_tmp_59 == in0_addr;
+  wire        _GEN_122 = mutable_60 & casez_tmp_59 == in1_addr;
+  wire [6:0]  _query1_idx_T_122 = idx + 7'h3D;
   wire        mutable_61 = count > 8'h3D;
   reg  [31:0] casez_tmp_60;
   always_comb begin
-    casez (_idx_T_410)
+    casez (_query1_idx_T_122)
       7'b0000000:
         casez_tmp_60 = entries_0_addr;
       7'b0000001:
@@ -16942,13 +18140,13 @@ module StoreBuffer(
         casez_tmp_60 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_122 = mutable_61 & casez_tmp_60 == in0_addr;
-  wire        _GEN_123 = mutable_61 & casez_tmp_60 == in1_addr;
-  wire [6:0]  _idx_T_412 = idx + 7'h3E;
+  wire        _GEN_123 = mutable_61 & casez_tmp_60 == in0_addr;
+  wire        _GEN_124 = mutable_61 & casez_tmp_60 == in1_addr;
+  wire [6:0]  _query1_idx_T_124 = idx + 7'h3E;
   wire        mutable_62 = count > 8'h3E;
   reg  [31:0] casez_tmp_61;
   always_comb begin
-    casez (_idx_T_412)
+    casez (_query1_idx_T_124)
       7'b0000000:
         casez_tmp_61 = entries_0_addr;
       7'b0000001:
@@ -17207,12 +18405,12 @@ module StoreBuffer(
         casez_tmp_61 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_124 = mutable_62 & casez_tmp_61 == in0_addr;
-  wire        _GEN_125 = mutable_62 & casez_tmp_61 == in1_addr;
-  wire [6:0]  _idx_T_414 = idx + 7'h3F;
+  wire        _GEN_125 = mutable_62 & casez_tmp_61 == in0_addr;
+  wire        _GEN_126 = mutable_62 & casez_tmp_61 == in1_addr;
+  wire [6:0]  _query1_idx_T_126 = idx + 7'h3F;
   reg  [31:0] casez_tmp_62;
   always_comb begin
-    casez (_idx_T_414)
+    casez (_query1_idx_T_126)
       7'b0000000:
         casez_tmp_62 = entries_0_addr;
       7'b0000001:
@@ -17471,13 +18669,13 @@ module StoreBuffer(
         casez_tmp_62 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_126 = (|(count[7:6])) & casez_tmp_62 == in0_addr;
-  wire        _GEN_127 = (|(count[7:6])) & casez_tmp_62 == in1_addr;
-  wire [6:0]  _idx_T_416 = idx - 7'h40;
+  wire        _GEN_127 = (|(count[7:6])) & casez_tmp_62 == in0_addr;
+  wire        _GEN_128 = (|(count[7:6])) & casez_tmp_62 == in1_addr;
+  wire [6:0]  _query1_idx_T_128 = idx - 7'h40;
   wire        mutable_64 = count > 8'h40;
   reg  [31:0] casez_tmp_63;
   always_comb begin
-    casez (_idx_T_416)
+    casez (_query1_idx_T_128)
       7'b0000000:
         casez_tmp_63 = entries_0_addr;
       7'b0000001:
@@ -17736,13 +18934,13 @@ module StoreBuffer(
         casez_tmp_63 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_128 = mutable_64 & casez_tmp_63 == in0_addr;
-  wire        _GEN_129 = mutable_64 & casez_tmp_63 == in1_addr;
-  wire [6:0]  _idx_T_418 = idx - 7'h3F;
+  wire        _GEN_129 = mutable_64 & casez_tmp_63 == in0_addr;
+  wire        _GEN_130 = mutable_64 & casez_tmp_63 == in1_addr;
+  wire [6:0]  _query1_idx_T_130 = idx - 7'h3F;
   wire        mutable_65 = count > 8'h41;
   reg  [31:0] casez_tmp_64;
   always_comb begin
-    casez (_idx_T_418)
+    casez (_query1_idx_T_130)
       7'b0000000:
         casez_tmp_64 = entries_0_addr;
       7'b0000001:
@@ -18001,13 +19199,13 @@ module StoreBuffer(
         casez_tmp_64 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_130 = mutable_65 & casez_tmp_64 == in0_addr;
-  wire        _GEN_131 = mutable_65 & casez_tmp_64 == in1_addr;
-  wire [6:0]  _idx_T_420 = idx - 7'h3E;
+  wire        _GEN_131 = mutable_65 & casez_tmp_64 == in0_addr;
+  wire        _GEN_132 = mutable_65 & casez_tmp_64 == in1_addr;
+  wire [6:0]  _query1_idx_T_132 = idx - 7'h3E;
   wire        mutable_66 = count > 8'h42;
   reg  [31:0] casez_tmp_65;
   always_comb begin
-    casez (_idx_T_420)
+    casez (_query1_idx_T_132)
       7'b0000000:
         casez_tmp_65 = entries_0_addr;
       7'b0000001:
@@ -18266,13 +19464,13 @@ module StoreBuffer(
         casez_tmp_65 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_132 = mutable_66 & casez_tmp_65 == in0_addr;
-  wire        _GEN_133 = mutable_66 & casez_tmp_65 == in1_addr;
-  wire [6:0]  _idx_T_422 = idx - 7'h3D;
+  wire        _GEN_133 = mutable_66 & casez_tmp_65 == in0_addr;
+  wire        _GEN_134 = mutable_66 & casez_tmp_65 == in1_addr;
+  wire [6:0]  _query1_idx_T_134 = idx - 7'h3D;
   wire        mutable_67 = count > 8'h43;
   reg  [31:0] casez_tmp_66;
   always_comb begin
-    casez (_idx_T_422)
+    casez (_query1_idx_T_134)
       7'b0000000:
         casez_tmp_66 = entries_0_addr;
       7'b0000001:
@@ -18531,13 +19729,13 @@ module StoreBuffer(
         casez_tmp_66 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_134 = mutable_67 & casez_tmp_66 == in0_addr;
-  wire        _GEN_135 = mutable_67 & casez_tmp_66 == in1_addr;
-  wire [6:0]  _idx_T_424 = idx - 7'h3C;
+  wire        _GEN_135 = mutable_67 & casez_tmp_66 == in0_addr;
+  wire        _GEN_136 = mutable_67 & casez_tmp_66 == in1_addr;
+  wire [6:0]  _query1_idx_T_136 = idx - 7'h3C;
   wire        mutable_68 = count > 8'h44;
   reg  [31:0] casez_tmp_67;
   always_comb begin
-    casez (_idx_T_424)
+    casez (_query1_idx_T_136)
       7'b0000000:
         casez_tmp_67 = entries_0_addr;
       7'b0000001:
@@ -18796,13 +19994,13 @@ module StoreBuffer(
         casez_tmp_67 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_136 = mutable_68 & casez_tmp_67 == in0_addr;
-  wire        _GEN_137 = mutable_68 & casez_tmp_67 == in1_addr;
-  wire [6:0]  _idx_T_426 = idx - 7'h3B;
+  wire        _GEN_137 = mutable_68 & casez_tmp_67 == in0_addr;
+  wire        _GEN_138 = mutable_68 & casez_tmp_67 == in1_addr;
+  wire [6:0]  _query1_idx_T_138 = idx - 7'h3B;
   wire        mutable_69 = count > 8'h45;
   reg  [31:0] casez_tmp_68;
   always_comb begin
-    casez (_idx_T_426)
+    casez (_query1_idx_T_138)
       7'b0000000:
         casez_tmp_68 = entries_0_addr;
       7'b0000001:
@@ -19061,13 +20259,13 @@ module StoreBuffer(
         casez_tmp_68 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_138 = mutable_69 & casez_tmp_68 == in0_addr;
-  wire        _GEN_139 = mutable_69 & casez_tmp_68 == in1_addr;
-  wire [6:0]  _idx_T_428 = idx - 7'h3A;
+  wire        _GEN_139 = mutable_69 & casez_tmp_68 == in0_addr;
+  wire        _GEN_140 = mutable_69 & casez_tmp_68 == in1_addr;
+  wire [6:0]  _query1_idx_T_140 = idx - 7'h3A;
   wire        mutable_70 = count > 8'h46;
   reg  [31:0] casez_tmp_69;
   always_comb begin
-    casez (_idx_T_428)
+    casez (_query1_idx_T_140)
       7'b0000000:
         casez_tmp_69 = entries_0_addr;
       7'b0000001:
@@ -19326,13 +20524,13 @@ module StoreBuffer(
         casez_tmp_69 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_140 = mutable_70 & casez_tmp_69 == in0_addr;
-  wire        _GEN_141 = mutable_70 & casez_tmp_69 == in1_addr;
-  wire [6:0]  _idx_T_430 = idx - 7'h39;
+  wire        _GEN_141 = mutable_70 & casez_tmp_69 == in0_addr;
+  wire        _GEN_142 = mutable_70 & casez_tmp_69 == in1_addr;
+  wire [6:0]  _query1_idx_T_142 = idx - 7'h39;
   wire        mutable_71 = count > 8'h47;
   reg  [31:0] casez_tmp_70;
   always_comb begin
-    casez (_idx_T_430)
+    casez (_query1_idx_T_142)
       7'b0000000:
         casez_tmp_70 = entries_0_addr;
       7'b0000001:
@@ -19591,13 +20789,13 @@ module StoreBuffer(
         casez_tmp_70 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_142 = mutable_71 & casez_tmp_70 == in0_addr;
-  wire        _GEN_143 = mutable_71 & casez_tmp_70 == in1_addr;
-  wire [6:0]  _idx_T_432 = idx - 7'h38;
+  wire        _GEN_143 = mutable_71 & casez_tmp_70 == in0_addr;
+  wire        _GEN_144 = mutable_71 & casez_tmp_70 == in1_addr;
+  wire [6:0]  _query1_idx_T_144 = idx - 7'h38;
   wire        mutable_72 = count > 8'h48;
   reg  [31:0] casez_tmp_71;
   always_comb begin
-    casez (_idx_T_432)
+    casez (_query1_idx_T_144)
       7'b0000000:
         casez_tmp_71 = entries_0_addr;
       7'b0000001:
@@ -19856,13 +21054,13 @@ module StoreBuffer(
         casez_tmp_71 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_144 = mutable_72 & casez_tmp_71 == in0_addr;
-  wire        _GEN_145 = mutable_72 & casez_tmp_71 == in1_addr;
-  wire [6:0]  _idx_T_434 = idx - 7'h37;
+  wire        _GEN_145 = mutable_72 & casez_tmp_71 == in0_addr;
+  wire        _GEN_146 = mutable_72 & casez_tmp_71 == in1_addr;
+  wire [6:0]  _query1_idx_T_146 = idx - 7'h37;
   wire        mutable_73 = count > 8'h49;
   reg  [31:0] casez_tmp_72;
   always_comb begin
-    casez (_idx_T_434)
+    casez (_query1_idx_T_146)
       7'b0000000:
         casez_tmp_72 = entries_0_addr;
       7'b0000001:
@@ -20121,13 +21319,13 @@ module StoreBuffer(
         casez_tmp_72 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_146 = mutable_73 & casez_tmp_72 == in0_addr;
-  wire        _GEN_147 = mutable_73 & casez_tmp_72 == in1_addr;
-  wire [6:0]  _idx_T_436 = idx - 7'h36;
+  wire        _GEN_147 = mutable_73 & casez_tmp_72 == in0_addr;
+  wire        _GEN_148 = mutable_73 & casez_tmp_72 == in1_addr;
+  wire [6:0]  _query1_idx_T_148 = idx - 7'h36;
   wire        mutable_74 = count > 8'h4A;
   reg  [31:0] casez_tmp_73;
   always_comb begin
-    casez (_idx_T_436)
+    casez (_query1_idx_T_148)
       7'b0000000:
         casez_tmp_73 = entries_0_addr;
       7'b0000001:
@@ -20386,13 +21584,13 @@ module StoreBuffer(
         casez_tmp_73 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_148 = mutable_74 & casez_tmp_73 == in0_addr;
-  wire        _GEN_149 = mutable_74 & casez_tmp_73 == in1_addr;
-  wire [6:0]  _idx_T_438 = idx - 7'h35;
+  wire        _GEN_149 = mutable_74 & casez_tmp_73 == in0_addr;
+  wire        _GEN_150 = mutable_74 & casez_tmp_73 == in1_addr;
+  wire [6:0]  _query1_idx_T_150 = idx - 7'h35;
   wire        mutable_75 = count > 8'h4B;
   reg  [31:0] casez_tmp_74;
   always_comb begin
-    casez (_idx_T_438)
+    casez (_query1_idx_T_150)
       7'b0000000:
         casez_tmp_74 = entries_0_addr;
       7'b0000001:
@@ -20651,13 +21849,13 @@ module StoreBuffer(
         casez_tmp_74 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_150 = mutable_75 & casez_tmp_74 == in0_addr;
-  wire        _GEN_151 = mutable_75 & casez_tmp_74 == in1_addr;
-  wire [6:0]  _idx_T_440 = idx - 7'h34;
+  wire        _GEN_151 = mutable_75 & casez_tmp_74 == in0_addr;
+  wire        _GEN_152 = mutable_75 & casez_tmp_74 == in1_addr;
+  wire [6:0]  _query1_idx_T_152 = idx - 7'h34;
   wire        mutable_76 = count > 8'h4C;
   reg  [31:0] casez_tmp_75;
   always_comb begin
-    casez (_idx_T_440)
+    casez (_query1_idx_T_152)
       7'b0000000:
         casez_tmp_75 = entries_0_addr;
       7'b0000001:
@@ -20916,13 +22114,13 @@ module StoreBuffer(
         casez_tmp_75 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_152 = mutable_76 & casez_tmp_75 == in0_addr;
-  wire        _GEN_153 = mutable_76 & casez_tmp_75 == in1_addr;
-  wire [6:0]  _idx_T_442 = idx - 7'h33;
+  wire        _GEN_153 = mutable_76 & casez_tmp_75 == in0_addr;
+  wire        _GEN_154 = mutable_76 & casez_tmp_75 == in1_addr;
+  wire [6:0]  _query1_idx_T_154 = idx - 7'h33;
   wire        mutable_77 = count > 8'h4D;
   reg  [31:0] casez_tmp_76;
   always_comb begin
-    casez (_idx_T_442)
+    casez (_query1_idx_T_154)
       7'b0000000:
         casez_tmp_76 = entries_0_addr;
       7'b0000001:
@@ -21181,13 +22379,13 @@ module StoreBuffer(
         casez_tmp_76 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_154 = mutable_77 & casez_tmp_76 == in0_addr;
-  wire        _GEN_155 = mutable_77 & casez_tmp_76 == in1_addr;
-  wire [6:0]  _idx_T_444 = idx - 7'h32;
+  wire        _GEN_155 = mutable_77 & casez_tmp_76 == in0_addr;
+  wire        _GEN_156 = mutable_77 & casez_tmp_76 == in1_addr;
+  wire [6:0]  _query1_idx_T_156 = idx - 7'h32;
   wire        mutable_78 = count > 8'h4E;
   reg  [31:0] casez_tmp_77;
   always_comb begin
-    casez (_idx_T_444)
+    casez (_query1_idx_T_156)
       7'b0000000:
         casez_tmp_77 = entries_0_addr;
       7'b0000001:
@@ -21446,13 +22644,13 @@ module StoreBuffer(
         casez_tmp_77 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_156 = mutable_78 & casez_tmp_77 == in0_addr;
-  wire        _GEN_157 = mutable_78 & casez_tmp_77 == in1_addr;
-  wire [6:0]  _idx_T_446 = idx - 7'h31;
+  wire        _GEN_157 = mutable_78 & casez_tmp_77 == in0_addr;
+  wire        _GEN_158 = mutable_78 & casez_tmp_77 == in1_addr;
+  wire [6:0]  _query1_idx_T_158 = idx - 7'h31;
   wire        mutable_79 = count > 8'h4F;
   reg  [31:0] casez_tmp_78;
   always_comb begin
-    casez (_idx_T_446)
+    casez (_query1_idx_T_158)
       7'b0000000:
         casez_tmp_78 = entries_0_addr;
       7'b0000001:
@@ -21711,13 +22909,13 @@ module StoreBuffer(
         casez_tmp_78 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_158 = mutable_79 & casez_tmp_78 == in0_addr;
-  wire        _GEN_159 = mutable_79 & casez_tmp_78 == in1_addr;
-  wire [6:0]  _idx_T_448 = idx - 7'h30;
+  wire        _GEN_159 = mutable_79 & casez_tmp_78 == in0_addr;
+  wire        _GEN_160 = mutable_79 & casez_tmp_78 == in1_addr;
+  wire [6:0]  _query1_idx_T_160 = idx - 7'h30;
   wire        mutable_80 = count > 8'h50;
   reg  [31:0] casez_tmp_79;
   always_comb begin
-    casez (_idx_T_448)
+    casez (_query1_idx_T_160)
       7'b0000000:
         casez_tmp_79 = entries_0_addr;
       7'b0000001:
@@ -21976,13 +23174,13 @@ module StoreBuffer(
         casez_tmp_79 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_160 = mutable_80 & casez_tmp_79 == in0_addr;
-  wire        _GEN_161 = mutable_80 & casez_tmp_79 == in1_addr;
-  wire [6:0]  _idx_T_450 = idx - 7'h2F;
+  wire        _GEN_161 = mutable_80 & casez_tmp_79 == in0_addr;
+  wire        _GEN_162 = mutable_80 & casez_tmp_79 == in1_addr;
+  wire [6:0]  _query1_idx_T_162 = idx - 7'h2F;
   wire        mutable_81 = count > 8'h51;
   reg  [31:0] casez_tmp_80;
   always_comb begin
-    casez (_idx_T_450)
+    casez (_query1_idx_T_162)
       7'b0000000:
         casez_tmp_80 = entries_0_addr;
       7'b0000001:
@@ -22241,13 +23439,13 @@ module StoreBuffer(
         casez_tmp_80 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_162 = mutable_81 & casez_tmp_80 == in0_addr;
-  wire        _GEN_163 = mutable_81 & casez_tmp_80 == in1_addr;
-  wire [6:0]  _idx_T_452 = idx - 7'h2E;
+  wire        _GEN_163 = mutable_81 & casez_tmp_80 == in0_addr;
+  wire        _GEN_164 = mutable_81 & casez_tmp_80 == in1_addr;
+  wire [6:0]  _query1_idx_T_164 = idx - 7'h2E;
   wire        mutable_82 = count > 8'h52;
   reg  [31:0] casez_tmp_81;
   always_comb begin
-    casez (_idx_T_452)
+    casez (_query1_idx_T_164)
       7'b0000000:
         casez_tmp_81 = entries_0_addr;
       7'b0000001:
@@ -22506,13 +23704,13 @@ module StoreBuffer(
         casez_tmp_81 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_164 = mutable_82 & casez_tmp_81 == in0_addr;
-  wire        _GEN_165 = mutable_82 & casez_tmp_81 == in1_addr;
-  wire [6:0]  _idx_T_454 = idx - 7'h2D;
+  wire        _GEN_165 = mutable_82 & casez_tmp_81 == in0_addr;
+  wire        _GEN_166 = mutable_82 & casez_tmp_81 == in1_addr;
+  wire [6:0]  _query1_idx_T_166 = idx - 7'h2D;
   wire        mutable_83 = count > 8'h53;
   reg  [31:0] casez_tmp_82;
   always_comb begin
-    casez (_idx_T_454)
+    casez (_query1_idx_T_166)
       7'b0000000:
         casez_tmp_82 = entries_0_addr;
       7'b0000001:
@@ -22771,13 +23969,13 @@ module StoreBuffer(
         casez_tmp_82 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_166 = mutable_83 & casez_tmp_82 == in0_addr;
-  wire        _GEN_167 = mutable_83 & casez_tmp_82 == in1_addr;
-  wire [6:0]  _idx_T_456 = idx - 7'h2C;
+  wire        _GEN_167 = mutable_83 & casez_tmp_82 == in0_addr;
+  wire        _GEN_168 = mutable_83 & casez_tmp_82 == in1_addr;
+  wire [6:0]  _query1_idx_T_168 = idx - 7'h2C;
   wire        mutable_84 = count > 8'h54;
   reg  [31:0] casez_tmp_83;
   always_comb begin
-    casez (_idx_T_456)
+    casez (_query1_idx_T_168)
       7'b0000000:
         casez_tmp_83 = entries_0_addr;
       7'b0000001:
@@ -23036,13 +24234,13 @@ module StoreBuffer(
         casez_tmp_83 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_168 = mutable_84 & casez_tmp_83 == in0_addr;
-  wire        _GEN_169 = mutable_84 & casez_tmp_83 == in1_addr;
-  wire [6:0]  _idx_T_458 = idx - 7'h2B;
+  wire        _GEN_169 = mutable_84 & casez_tmp_83 == in0_addr;
+  wire        _GEN_170 = mutable_84 & casez_tmp_83 == in1_addr;
+  wire [6:0]  _query1_idx_T_170 = idx - 7'h2B;
   wire        mutable_85 = count > 8'h55;
   reg  [31:0] casez_tmp_84;
   always_comb begin
-    casez (_idx_T_458)
+    casez (_query1_idx_T_170)
       7'b0000000:
         casez_tmp_84 = entries_0_addr;
       7'b0000001:
@@ -23301,13 +24499,13 @@ module StoreBuffer(
         casez_tmp_84 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_170 = mutable_85 & casez_tmp_84 == in0_addr;
-  wire        _GEN_171 = mutable_85 & casez_tmp_84 == in1_addr;
-  wire [6:0]  _idx_T_460 = idx - 7'h2A;
+  wire        _GEN_171 = mutable_85 & casez_tmp_84 == in0_addr;
+  wire        _GEN_172 = mutable_85 & casez_tmp_84 == in1_addr;
+  wire [6:0]  _query1_idx_T_172 = idx - 7'h2A;
   wire        mutable_86 = count > 8'h56;
   reg  [31:0] casez_tmp_85;
   always_comb begin
-    casez (_idx_T_460)
+    casez (_query1_idx_T_172)
       7'b0000000:
         casez_tmp_85 = entries_0_addr;
       7'b0000001:
@@ -23566,13 +24764,13 @@ module StoreBuffer(
         casez_tmp_85 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_172 = mutable_86 & casez_tmp_85 == in0_addr;
-  wire        _GEN_173 = mutable_86 & casez_tmp_85 == in1_addr;
-  wire [6:0]  _idx_T_462 = idx - 7'h29;
+  wire        _GEN_173 = mutable_86 & casez_tmp_85 == in0_addr;
+  wire        _GEN_174 = mutable_86 & casez_tmp_85 == in1_addr;
+  wire [6:0]  _query1_idx_T_174 = idx - 7'h29;
   wire        mutable_87 = count > 8'h57;
   reg  [31:0] casez_tmp_86;
   always_comb begin
-    casez (_idx_T_462)
+    casez (_query1_idx_T_174)
       7'b0000000:
         casez_tmp_86 = entries_0_addr;
       7'b0000001:
@@ -23831,13 +25029,13 @@ module StoreBuffer(
         casez_tmp_86 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_174 = mutable_87 & casez_tmp_86 == in0_addr;
-  wire        _GEN_175 = mutable_87 & casez_tmp_86 == in1_addr;
-  wire [6:0]  _idx_T_464 = idx - 7'h28;
+  wire        _GEN_175 = mutable_87 & casez_tmp_86 == in0_addr;
+  wire        _GEN_176 = mutable_87 & casez_tmp_86 == in1_addr;
+  wire [6:0]  _query1_idx_T_176 = idx - 7'h28;
   wire        mutable_88 = count > 8'h58;
   reg  [31:0] casez_tmp_87;
   always_comb begin
-    casez (_idx_T_464)
+    casez (_query1_idx_T_176)
       7'b0000000:
         casez_tmp_87 = entries_0_addr;
       7'b0000001:
@@ -24096,13 +25294,13 @@ module StoreBuffer(
         casez_tmp_87 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_176 = mutable_88 & casez_tmp_87 == in0_addr;
-  wire        _GEN_177 = mutable_88 & casez_tmp_87 == in1_addr;
-  wire [6:0]  _idx_T_466 = idx - 7'h27;
+  wire        _GEN_177 = mutable_88 & casez_tmp_87 == in0_addr;
+  wire        _GEN_178 = mutable_88 & casez_tmp_87 == in1_addr;
+  wire [6:0]  _query1_idx_T_178 = idx - 7'h27;
   wire        mutable_89 = count > 8'h59;
   reg  [31:0] casez_tmp_88;
   always_comb begin
-    casez (_idx_T_466)
+    casez (_query1_idx_T_178)
       7'b0000000:
         casez_tmp_88 = entries_0_addr;
       7'b0000001:
@@ -24361,13 +25559,13 @@ module StoreBuffer(
         casez_tmp_88 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_178 = mutable_89 & casez_tmp_88 == in0_addr;
-  wire        _GEN_179 = mutable_89 & casez_tmp_88 == in1_addr;
-  wire [6:0]  _idx_T_468 = idx - 7'h26;
+  wire        _GEN_179 = mutable_89 & casez_tmp_88 == in0_addr;
+  wire        _GEN_180 = mutable_89 & casez_tmp_88 == in1_addr;
+  wire [6:0]  _query1_idx_T_180 = idx - 7'h26;
   wire        mutable_90 = count > 8'h5A;
   reg  [31:0] casez_tmp_89;
   always_comb begin
-    casez (_idx_T_468)
+    casez (_query1_idx_T_180)
       7'b0000000:
         casez_tmp_89 = entries_0_addr;
       7'b0000001:
@@ -24626,13 +25824,13 @@ module StoreBuffer(
         casez_tmp_89 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_180 = mutable_90 & casez_tmp_89 == in0_addr;
-  wire        _GEN_181 = mutable_90 & casez_tmp_89 == in1_addr;
-  wire [6:0]  _idx_T_470 = idx - 7'h25;
+  wire        _GEN_181 = mutable_90 & casez_tmp_89 == in0_addr;
+  wire        _GEN_182 = mutable_90 & casez_tmp_89 == in1_addr;
+  wire [6:0]  _query1_idx_T_182 = idx - 7'h25;
   wire        mutable_91 = count > 8'h5B;
   reg  [31:0] casez_tmp_90;
   always_comb begin
-    casez (_idx_T_470)
+    casez (_query1_idx_T_182)
       7'b0000000:
         casez_tmp_90 = entries_0_addr;
       7'b0000001:
@@ -24891,13 +26089,13 @@ module StoreBuffer(
         casez_tmp_90 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_182 = mutable_91 & casez_tmp_90 == in0_addr;
-  wire        _GEN_183 = mutable_91 & casez_tmp_90 == in1_addr;
-  wire [6:0]  _idx_T_472 = idx - 7'h24;
+  wire        _GEN_183 = mutable_91 & casez_tmp_90 == in0_addr;
+  wire        _GEN_184 = mutable_91 & casez_tmp_90 == in1_addr;
+  wire [6:0]  _query1_idx_T_184 = idx - 7'h24;
   wire        mutable_92 = count > 8'h5C;
   reg  [31:0] casez_tmp_91;
   always_comb begin
-    casez (_idx_T_472)
+    casez (_query1_idx_T_184)
       7'b0000000:
         casez_tmp_91 = entries_0_addr;
       7'b0000001:
@@ -25156,13 +26354,13 @@ module StoreBuffer(
         casez_tmp_91 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_184 = mutable_92 & casez_tmp_91 == in0_addr;
-  wire        _GEN_185 = mutable_92 & casez_tmp_91 == in1_addr;
-  wire [6:0]  _idx_T_474 = idx - 7'h23;
+  wire        _GEN_185 = mutable_92 & casez_tmp_91 == in0_addr;
+  wire        _GEN_186 = mutable_92 & casez_tmp_91 == in1_addr;
+  wire [6:0]  _query1_idx_T_186 = idx - 7'h23;
   wire        mutable_93 = count > 8'h5D;
   reg  [31:0] casez_tmp_92;
   always_comb begin
-    casez (_idx_T_474)
+    casez (_query1_idx_T_186)
       7'b0000000:
         casez_tmp_92 = entries_0_addr;
       7'b0000001:
@@ -25421,13 +26619,13 @@ module StoreBuffer(
         casez_tmp_92 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_186 = mutable_93 & casez_tmp_92 == in0_addr;
-  wire        _GEN_187 = mutable_93 & casez_tmp_92 == in1_addr;
-  wire [6:0]  _idx_T_476 = idx - 7'h22;
+  wire        _GEN_187 = mutable_93 & casez_tmp_92 == in0_addr;
+  wire        _GEN_188 = mutable_93 & casez_tmp_92 == in1_addr;
+  wire [6:0]  _query1_idx_T_188 = idx - 7'h22;
   wire        mutable_94 = count > 8'h5E;
   reg  [31:0] casez_tmp_93;
   always_comb begin
-    casez (_idx_T_476)
+    casez (_query1_idx_T_188)
       7'b0000000:
         casez_tmp_93 = entries_0_addr;
       7'b0000001:
@@ -25686,13 +26884,13 @@ module StoreBuffer(
         casez_tmp_93 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_188 = mutable_94 & casez_tmp_93 == in0_addr;
-  wire        _GEN_189 = mutable_94 & casez_tmp_93 == in1_addr;
-  wire [6:0]  _idx_T_478 = idx - 7'h21;
+  wire        _GEN_189 = mutable_94 & casez_tmp_93 == in0_addr;
+  wire        _GEN_190 = mutable_94 & casez_tmp_93 == in1_addr;
+  wire [6:0]  _query1_idx_T_190 = idx - 7'h21;
   wire        mutable_95 = count > 8'h5F;
   reg  [31:0] casez_tmp_94;
   always_comb begin
-    casez (_idx_T_478)
+    casez (_query1_idx_T_190)
       7'b0000000:
         casez_tmp_94 = entries_0_addr;
       7'b0000001:
@@ -25951,13 +27149,13 @@ module StoreBuffer(
         casez_tmp_94 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_190 = mutable_95 & casez_tmp_94 == in0_addr;
-  wire        _GEN_191 = mutable_95 & casez_tmp_94 == in1_addr;
-  wire [6:0]  _idx_T_480 = idx - 7'h20;
+  wire        _GEN_191 = mutable_95 & casez_tmp_94 == in0_addr;
+  wire        _GEN_192 = mutable_95 & casez_tmp_94 == in1_addr;
+  wire [6:0]  _query1_idx_T_192 = idx - 7'h20;
   wire        mutable_96 = count > 8'h60;
   reg  [31:0] casez_tmp_95;
   always_comb begin
-    casez (_idx_T_480)
+    casez (_query1_idx_T_192)
       7'b0000000:
         casez_tmp_95 = entries_0_addr;
       7'b0000001:
@@ -26216,13 +27414,13 @@ module StoreBuffer(
         casez_tmp_95 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_192 = mutable_96 & casez_tmp_95 == in0_addr;
-  wire        _GEN_193 = mutable_96 & casez_tmp_95 == in1_addr;
-  wire [6:0]  _idx_T_482 = idx - 7'h1F;
+  wire        _GEN_193 = mutable_96 & casez_tmp_95 == in0_addr;
+  wire        _GEN_194 = mutable_96 & casez_tmp_95 == in1_addr;
+  wire [6:0]  _query1_idx_T_194 = idx - 7'h1F;
   wire        mutable_97 = count > 8'h61;
   reg  [31:0] casez_tmp_96;
   always_comb begin
-    casez (_idx_T_482)
+    casez (_query1_idx_T_194)
       7'b0000000:
         casez_tmp_96 = entries_0_addr;
       7'b0000001:
@@ -26481,13 +27679,13 @@ module StoreBuffer(
         casez_tmp_96 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_194 = mutable_97 & casez_tmp_96 == in0_addr;
-  wire        _GEN_195 = mutable_97 & casez_tmp_96 == in1_addr;
-  wire [6:0]  _idx_T_484 = idx - 7'h1E;
+  wire        _GEN_195 = mutable_97 & casez_tmp_96 == in0_addr;
+  wire        _GEN_196 = mutable_97 & casez_tmp_96 == in1_addr;
+  wire [6:0]  _query1_idx_T_196 = idx - 7'h1E;
   wire        mutable_98 = count > 8'h62;
   reg  [31:0] casez_tmp_97;
   always_comb begin
-    casez (_idx_T_484)
+    casez (_query1_idx_T_196)
       7'b0000000:
         casez_tmp_97 = entries_0_addr;
       7'b0000001:
@@ -26746,13 +27944,13 @@ module StoreBuffer(
         casez_tmp_97 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_196 = mutable_98 & casez_tmp_97 == in0_addr;
-  wire        _GEN_197 = mutable_98 & casez_tmp_97 == in1_addr;
-  wire [6:0]  _idx_T_486 = idx - 7'h1D;
+  wire        _GEN_197 = mutable_98 & casez_tmp_97 == in0_addr;
+  wire        _GEN_198 = mutable_98 & casez_tmp_97 == in1_addr;
+  wire [6:0]  _query1_idx_T_198 = idx - 7'h1D;
   wire        mutable_99 = count > 8'h63;
   reg  [31:0] casez_tmp_98;
   always_comb begin
-    casez (_idx_T_486)
+    casez (_query1_idx_T_198)
       7'b0000000:
         casez_tmp_98 = entries_0_addr;
       7'b0000001:
@@ -27011,13 +28209,13 @@ module StoreBuffer(
         casez_tmp_98 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_198 = mutable_99 & casez_tmp_98 == in0_addr;
-  wire        _GEN_199 = mutable_99 & casez_tmp_98 == in1_addr;
-  wire [6:0]  _idx_T_488 = idx - 7'h1C;
+  wire        _GEN_199 = mutable_99 & casez_tmp_98 == in0_addr;
+  wire        _GEN_200 = mutable_99 & casez_tmp_98 == in1_addr;
+  wire [6:0]  _query1_idx_T_200 = idx - 7'h1C;
   wire        mutable_100 = count > 8'h64;
   reg  [31:0] casez_tmp_99;
   always_comb begin
-    casez (_idx_T_488)
+    casez (_query1_idx_T_200)
       7'b0000000:
         casez_tmp_99 = entries_0_addr;
       7'b0000001:
@@ -27276,13 +28474,13 @@ module StoreBuffer(
         casez_tmp_99 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_200 = mutable_100 & casez_tmp_99 == in0_addr;
-  wire        _GEN_201 = mutable_100 & casez_tmp_99 == in1_addr;
-  wire [6:0]  _idx_T_490 = idx - 7'h1B;
+  wire        _GEN_201 = mutable_100 & casez_tmp_99 == in0_addr;
+  wire        _GEN_202 = mutable_100 & casez_tmp_99 == in1_addr;
+  wire [6:0]  _query1_idx_T_202 = idx - 7'h1B;
   wire        mutable_101 = count > 8'h65;
   reg  [31:0] casez_tmp_100;
   always_comb begin
-    casez (_idx_T_490)
+    casez (_query1_idx_T_202)
       7'b0000000:
         casez_tmp_100 = entries_0_addr;
       7'b0000001:
@@ -27541,13 +28739,13 @@ module StoreBuffer(
         casez_tmp_100 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_202 = mutable_101 & casez_tmp_100 == in0_addr;
-  wire        _GEN_203 = mutable_101 & casez_tmp_100 == in1_addr;
-  wire [6:0]  _idx_T_492 = idx - 7'h1A;
+  wire        _GEN_203 = mutable_101 & casez_tmp_100 == in0_addr;
+  wire        _GEN_204 = mutable_101 & casez_tmp_100 == in1_addr;
+  wire [6:0]  _query1_idx_T_204 = idx - 7'h1A;
   wire        mutable_102 = count > 8'h66;
   reg  [31:0] casez_tmp_101;
   always_comb begin
-    casez (_idx_T_492)
+    casez (_query1_idx_T_204)
       7'b0000000:
         casez_tmp_101 = entries_0_addr;
       7'b0000001:
@@ -27806,13 +29004,13 @@ module StoreBuffer(
         casez_tmp_101 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_204 = mutable_102 & casez_tmp_101 == in0_addr;
-  wire        _GEN_205 = mutable_102 & casez_tmp_101 == in1_addr;
-  wire [6:0]  _idx_T_494 = idx - 7'h19;
+  wire        _GEN_205 = mutable_102 & casez_tmp_101 == in0_addr;
+  wire        _GEN_206 = mutable_102 & casez_tmp_101 == in1_addr;
+  wire [6:0]  _query1_idx_T_206 = idx - 7'h19;
   wire        mutable_103 = count > 8'h67;
   reg  [31:0] casez_tmp_102;
   always_comb begin
-    casez (_idx_T_494)
+    casez (_query1_idx_T_206)
       7'b0000000:
         casez_tmp_102 = entries_0_addr;
       7'b0000001:
@@ -28071,13 +29269,13 @@ module StoreBuffer(
         casez_tmp_102 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_206 = mutable_103 & casez_tmp_102 == in0_addr;
-  wire        _GEN_207 = mutable_103 & casez_tmp_102 == in1_addr;
-  wire [6:0]  _idx_T_496 = idx - 7'h18;
+  wire        _GEN_207 = mutable_103 & casez_tmp_102 == in0_addr;
+  wire        _GEN_208 = mutable_103 & casez_tmp_102 == in1_addr;
+  wire [6:0]  _query1_idx_T_208 = idx - 7'h18;
   wire        mutable_104 = count > 8'h68;
   reg  [31:0] casez_tmp_103;
   always_comb begin
-    casez (_idx_T_496)
+    casez (_query1_idx_T_208)
       7'b0000000:
         casez_tmp_103 = entries_0_addr;
       7'b0000001:
@@ -28336,13 +29534,13 @@ module StoreBuffer(
         casez_tmp_103 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_208 = mutable_104 & casez_tmp_103 == in0_addr;
-  wire        _GEN_209 = mutable_104 & casez_tmp_103 == in1_addr;
-  wire [6:0]  _idx_T_498 = idx - 7'h17;
+  wire        _GEN_209 = mutable_104 & casez_tmp_103 == in0_addr;
+  wire        _GEN_210 = mutable_104 & casez_tmp_103 == in1_addr;
+  wire [6:0]  _query1_idx_T_210 = idx - 7'h17;
   wire        mutable_105 = count > 8'h69;
   reg  [31:0] casez_tmp_104;
   always_comb begin
-    casez (_idx_T_498)
+    casez (_query1_idx_T_210)
       7'b0000000:
         casez_tmp_104 = entries_0_addr;
       7'b0000001:
@@ -28601,13 +29799,13 @@ module StoreBuffer(
         casez_tmp_104 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_210 = mutable_105 & casez_tmp_104 == in0_addr;
-  wire        _GEN_211 = mutable_105 & casez_tmp_104 == in1_addr;
-  wire [6:0]  _idx_T_500 = idx - 7'h16;
+  wire        _GEN_211 = mutable_105 & casez_tmp_104 == in0_addr;
+  wire        _GEN_212 = mutable_105 & casez_tmp_104 == in1_addr;
+  wire [6:0]  _query1_idx_T_212 = idx - 7'h16;
   wire        mutable_106 = count > 8'h6A;
   reg  [31:0] casez_tmp_105;
   always_comb begin
-    casez (_idx_T_500)
+    casez (_query1_idx_T_212)
       7'b0000000:
         casez_tmp_105 = entries_0_addr;
       7'b0000001:
@@ -28866,13 +30064,13 @@ module StoreBuffer(
         casez_tmp_105 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_212 = mutable_106 & casez_tmp_105 == in0_addr;
-  wire        _GEN_213 = mutable_106 & casez_tmp_105 == in1_addr;
-  wire [6:0]  _idx_T_502 = idx - 7'h15;
+  wire        _GEN_213 = mutable_106 & casez_tmp_105 == in0_addr;
+  wire        _GEN_214 = mutable_106 & casez_tmp_105 == in1_addr;
+  wire [6:0]  _query1_idx_T_214 = idx - 7'h15;
   wire        mutable_107 = count > 8'h6B;
   reg  [31:0] casez_tmp_106;
   always_comb begin
-    casez (_idx_T_502)
+    casez (_query1_idx_T_214)
       7'b0000000:
         casez_tmp_106 = entries_0_addr;
       7'b0000001:
@@ -29131,13 +30329,13 @@ module StoreBuffer(
         casez_tmp_106 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_214 = mutable_107 & casez_tmp_106 == in0_addr;
-  wire        _GEN_215 = mutable_107 & casez_tmp_106 == in1_addr;
-  wire [6:0]  _idx_T_504 = idx - 7'h14;
+  wire        _GEN_215 = mutable_107 & casez_tmp_106 == in0_addr;
+  wire        _GEN_216 = mutable_107 & casez_tmp_106 == in1_addr;
+  wire [6:0]  _query1_idx_T_216 = idx - 7'h14;
   wire        mutable_108 = count > 8'h6C;
   reg  [31:0] casez_tmp_107;
   always_comb begin
-    casez (_idx_T_504)
+    casez (_query1_idx_T_216)
       7'b0000000:
         casez_tmp_107 = entries_0_addr;
       7'b0000001:
@@ -29396,13 +30594,13 @@ module StoreBuffer(
         casez_tmp_107 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_216 = mutable_108 & casez_tmp_107 == in0_addr;
-  wire        _GEN_217 = mutable_108 & casez_tmp_107 == in1_addr;
-  wire [6:0]  _idx_T_506 = idx - 7'h13;
+  wire        _GEN_217 = mutable_108 & casez_tmp_107 == in0_addr;
+  wire        _GEN_218 = mutable_108 & casez_tmp_107 == in1_addr;
+  wire [6:0]  _query1_idx_T_218 = idx - 7'h13;
   wire        mutable_109 = count > 8'h6D;
   reg  [31:0] casez_tmp_108;
   always_comb begin
-    casez (_idx_T_506)
+    casez (_query1_idx_T_218)
       7'b0000000:
         casez_tmp_108 = entries_0_addr;
       7'b0000001:
@@ -29661,13 +30859,13 @@ module StoreBuffer(
         casez_tmp_108 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_218 = mutable_109 & casez_tmp_108 == in0_addr;
-  wire        _GEN_219 = mutable_109 & casez_tmp_108 == in1_addr;
-  wire [6:0]  _idx_T_508 = idx - 7'h12;
+  wire        _GEN_219 = mutable_109 & casez_tmp_108 == in0_addr;
+  wire        _GEN_220 = mutable_109 & casez_tmp_108 == in1_addr;
+  wire [6:0]  _query1_idx_T_220 = idx - 7'h12;
   wire        mutable_110 = count > 8'h6E;
   reg  [31:0] casez_tmp_109;
   always_comb begin
-    casez (_idx_T_508)
+    casez (_query1_idx_T_220)
       7'b0000000:
         casez_tmp_109 = entries_0_addr;
       7'b0000001:
@@ -29926,13 +31124,13 @@ module StoreBuffer(
         casez_tmp_109 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_220 = mutable_110 & casez_tmp_109 == in0_addr;
-  wire        _GEN_221 = mutable_110 & casez_tmp_109 == in1_addr;
-  wire [6:0]  _idx_T_510 = idx - 7'h11;
+  wire        _GEN_221 = mutable_110 & casez_tmp_109 == in0_addr;
+  wire        _GEN_222 = mutable_110 & casez_tmp_109 == in1_addr;
+  wire [6:0]  _query1_idx_T_222 = idx - 7'h11;
   wire        mutable_111 = count > 8'h6F;
   reg  [31:0] casez_tmp_110;
   always_comb begin
-    casez (_idx_T_510)
+    casez (_query1_idx_T_222)
       7'b0000000:
         casez_tmp_110 = entries_0_addr;
       7'b0000001:
@@ -30191,13 +31389,13 @@ module StoreBuffer(
         casez_tmp_110 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_222 = mutable_111 & casez_tmp_110 == in0_addr;
-  wire        _GEN_223 = mutable_111 & casez_tmp_110 == in1_addr;
-  wire [6:0]  _idx_T_512 = idx - 7'h10;
+  wire        _GEN_223 = mutable_111 & casez_tmp_110 == in0_addr;
+  wire        _GEN_224 = mutable_111 & casez_tmp_110 == in1_addr;
+  wire [6:0]  _query1_idx_T_224 = idx - 7'h10;
   wire        mutable_112 = count > 8'h70;
   reg  [31:0] casez_tmp_111;
   always_comb begin
-    casez (_idx_T_512)
+    casez (_query1_idx_T_224)
       7'b0000000:
         casez_tmp_111 = entries_0_addr;
       7'b0000001:
@@ -30456,13 +31654,13 @@ module StoreBuffer(
         casez_tmp_111 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_224 = mutable_112 & casez_tmp_111 == in0_addr;
-  wire        _GEN_225 = mutable_112 & casez_tmp_111 == in1_addr;
-  wire [6:0]  _idx_T_514 = idx - 7'hF;
+  wire        _GEN_225 = mutable_112 & casez_tmp_111 == in0_addr;
+  wire        _GEN_226 = mutable_112 & casez_tmp_111 == in1_addr;
+  wire [6:0]  _query1_idx_T_226 = idx - 7'hF;
   wire        mutable_113 = count > 8'h71;
   reg  [31:0] casez_tmp_112;
   always_comb begin
-    casez (_idx_T_514)
+    casez (_query1_idx_T_226)
       7'b0000000:
         casez_tmp_112 = entries_0_addr;
       7'b0000001:
@@ -30721,13 +31919,13 @@ module StoreBuffer(
         casez_tmp_112 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_226 = mutable_113 & casez_tmp_112 == in0_addr;
-  wire        _GEN_227 = mutable_113 & casez_tmp_112 == in1_addr;
-  wire [6:0]  _idx_T_516 = idx - 7'hE;
+  wire        _GEN_227 = mutable_113 & casez_tmp_112 == in0_addr;
+  wire        _GEN_228 = mutable_113 & casez_tmp_112 == in1_addr;
+  wire [6:0]  _query1_idx_T_228 = idx - 7'hE;
   wire        mutable_114 = count > 8'h72;
   reg  [31:0] casez_tmp_113;
   always_comb begin
-    casez (_idx_T_516)
+    casez (_query1_idx_T_228)
       7'b0000000:
         casez_tmp_113 = entries_0_addr;
       7'b0000001:
@@ -30986,13 +32184,13 @@ module StoreBuffer(
         casez_tmp_113 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_228 = mutable_114 & casez_tmp_113 == in0_addr;
-  wire        _GEN_229 = mutable_114 & casez_tmp_113 == in1_addr;
-  wire [6:0]  _idx_T_518 = idx - 7'hD;
+  wire        _GEN_229 = mutable_114 & casez_tmp_113 == in0_addr;
+  wire        _GEN_230 = mutable_114 & casez_tmp_113 == in1_addr;
+  wire [6:0]  _query1_idx_T_230 = idx - 7'hD;
   wire        mutable_115 = count > 8'h73;
   reg  [31:0] casez_tmp_114;
   always_comb begin
-    casez (_idx_T_518)
+    casez (_query1_idx_T_230)
       7'b0000000:
         casez_tmp_114 = entries_0_addr;
       7'b0000001:
@@ -31251,13 +32449,13 @@ module StoreBuffer(
         casez_tmp_114 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_230 = mutable_115 & casez_tmp_114 == in0_addr;
-  wire        _GEN_231 = mutable_115 & casez_tmp_114 == in1_addr;
-  wire [6:0]  _idx_T_520 = idx - 7'hC;
+  wire        _GEN_231 = mutable_115 & casez_tmp_114 == in0_addr;
+  wire        _GEN_232 = mutable_115 & casez_tmp_114 == in1_addr;
+  wire [6:0]  _query1_idx_T_232 = idx - 7'hC;
   wire        mutable_116 = count > 8'h74;
   reg  [31:0] casez_tmp_115;
   always_comb begin
-    casez (_idx_T_520)
+    casez (_query1_idx_T_232)
       7'b0000000:
         casez_tmp_115 = entries_0_addr;
       7'b0000001:
@@ -31516,13 +32714,13 @@ module StoreBuffer(
         casez_tmp_115 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_232 = mutable_116 & casez_tmp_115 == in0_addr;
-  wire        _GEN_233 = mutable_116 & casez_tmp_115 == in1_addr;
-  wire [6:0]  _idx_T_522 = idx - 7'hB;
+  wire        _GEN_233 = mutable_116 & casez_tmp_115 == in0_addr;
+  wire        _GEN_234 = mutable_116 & casez_tmp_115 == in1_addr;
+  wire [6:0]  _query1_idx_T_234 = idx - 7'hB;
   wire        mutable_117 = count > 8'h75;
   reg  [31:0] casez_tmp_116;
   always_comb begin
-    casez (_idx_T_522)
+    casez (_query1_idx_T_234)
       7'b0000000:
         casez_tmp_116 = entries_0_addr;
       7'b0000001:
@@ -31781,13 +32979,13 @@ module StoreBuffer(
         casez_tmp_116 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_234 = mutable_117 & casez_tmp_116 == in0_addr;
-  wire        _GEN_235 = mutable_117 & casez_tmp_116 == in1_addr;
-  wire [6:0]  _idx_T_524 = idx - 7'hA;
+  wire        _GEN_235 = mutable_117 & casez_tmp_116 == in0_addr;
+  wire        _GEN_236 = mutable_117 & casez_tmp_116 == in1_addr;
+  wire [6:0]  _query1_idx_T_236 = idx - 7'hA;
   wire        mutable_118 = count > 8'h76;
   reg  [31:0] casez_tmp_117;
   always_comb begin
-    casez (_idx_T_524)
+    casez (_query1_idx_T_236)
       7'b0000000:
         casez_tmp_117 = entries_0_addr;
       7'b0000001:
@@ -32046,13 +33244,13 @@ module StoreBuffer(
         casez_tmp_117 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_236 = mutable_118 & casez_tmp_117 == in0_addr;
-  wire        _GEN_237 = mutable_118 & casez_tmp_117 == in1_addr;
-  wire [6:0]  _idx_T_526 = idx - 7'h9;
+  wire        _GEN_237 = mutable_118 & casez_tmp_117 == in0_addr;
+  wire        _GEN_238 = mutable_118 & casez_tmp_117 == in1_addr;
+  wire [6:0]  _query1_idx_T_238 = idx - 7'h9;
   wire        mutable_119 = count > 8'h77;
   reg  [31:0] casez_tmp_118;
   always_comb begin
-    casez (_idx_T_526)
+    casez (_query1_idx_T_238)
       7'b0000000:
         casez_tmp_118 = entries_0_addr;
       7'b0000001:
@@ -32311,13 +33509,13 @@ module StoreBuffer(
         casez_tmp_118 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_238 = mutable_119 & casez_tmp_118 == in0_addr;
-  wire        _GEN_239 = mutable_119 & casez_tmp_118 == in1_addr;
-  wire [6:0]  _idx_T_528 = idx - 7'h8;
+  wire        _GEN_239 = mutable_119 & casez_tmp_118 == in0_addr;
+  wire        _GEN_240 = mutable_119 & casez_tmp_118 == in1_addr;
+  wire [6:0]  _query1_idx_T_240 = idx - 7'h8;
   wire        mutable_120 = count > 8'h78;
   reg  [31:0] casez_tmp_119;
   always_comb begin
-    casez (_idx_T_528)
+    casez (_query1_idx_T_240)
       7'b0000000:
         casez_tmp_119 = entries_0_addr;
       7'b0000001:
@@ -32576,13 +33774,13 @@ module StoreBuffer(
         casez_tmp_119 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_240 = mutable_120 & casez_tmp_119 == in0_addr;
-  wire        _GEN_241 = mutable_120 & casez_tmp_119 == in1_addr;
-  wire [6:0]  _idx_T_530 = idx - 7'h7;
+  wire        _GEN_241 = mutable_120 & casez_tmp_119 == in0_addr;
+  wire        _GEN_242 = mutable_120 & casez_tmp_119 == in1_addr;
+  wire [6:0]  _query1_idx_T_242 = idx - 7'h7;
   wire        mutable_121 = count > 8'h79;
   reg  [31:0] casez_tmp_120;
   always_comb begin
-    casez (_idx_T_530)
+    casez (_query1_idx_T_242)
       7'b0000000:
         casez_tmp_120 = entries_0_addr;
       7'b0000001:
@@ -32841,13 +34039,13 @@ module StoreBuffer(
         casez_tmp_120 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_242 = mutable_121 & casez_tmp_120 == in0_addr;
-  wire        _GEN_243 = mutable_121 & casez_tmp_120 == in1_addr;
-  wire [6:0]  _idx_T_532 = idx - 7'h6;
+  wire        _GEN_243 = mutable_121 & casez_tmp_120 == in0_addr;
+  wire        _GEN_244 = mutable_121 & casez_tmp_120 == in1_addr;
+  wire [6:0]  _query1_idx_T_244 = idx - 7'h6;
   wire        mutable_122 = count > 8'h7A;
   reg  [31:0] casez_tmp_121;
   always_comb begin
-    casez (_idx_T_532)
+    casez (_query1_idx_T_244)
       7'b0000000:
         casez_tmp_121 = entries_0_addr;
       7'b0000001:
@@ -33106,13 +34304,13 @@ module StoreBuffer(
         casez_tmp_121 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_244 = mutable_122 & casez_tmp_121 == in0_addr;
-  wire        _GEN_245 = mutable_122 & casez_tmp_121 == in1_addr;
-  wire [6:0]  _idx_T_534 = idx - 7'h5;
+  wire        _GEN_245 = mutable_122 & casez_tmp_121 == in0_addr;
+  wire        _GEN_246 = mutable_122 & casez_tmp_121 == in1_addr;
+  wire [6:0]  _query1_idx_T_246 = idx - 7'h5;
   wire        mutable_123 = count > 8'h7B;
   reg  [31:0] casez_tmp_122;
   always_comb begin
-    casez (_idx_T_534)
+    casez (_query1_idx_T_246)
       7'b0000000:
         casez_tmp_122 = entries_0_addr;
       7'b0000001:
@@ -33371,13 +34569,13 @@ module StoreBuffer(
         casez_tmp_122 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_246 = mutable_123 & casez_tmp_122 == in0_addr;
-  wire        _GEN_247 = mutable_123 & casez_tmp_122 == in1_addr;
-  wire [6:0]  _idx_T_536 = idx - 7'h4;
+  wire        _GEN_247 = mutable_123 & casez_tmp_122 == in0_addr;
+  wire        _GEN_248 = mutable_123 & casez_tmp_122 == in1_addr;
+  wire [6:0]  _query1_idx_T_248 = idx - 7'h4;
   wire        mutable_124 = count > 8'h7C;
   reg  [31:0] casez_tmp_123;
   always_comb begin
-    casez (_idx_T_536)
+    casez (_query1_idx_T_248)
       7'b0000000:
         casez_tmp_123 = entries_0_addr;
       7'b0000001:
@@ -33636,13 +34834,13 @@ module StoreBuffer(
         casez_tmp_123 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_248 = mutable_124 & casez_tmp_123 == in0_addr;
-  wire        _GEN_249 = mutable_124 & casez_tmp_123 == in1_addr;
-  wire [6:0]  _idx_T_538 = idx - 7'h3;
+  wire        _GEN_249 = mutable_124 & casez_tmp_123 == in0_addr;
+  wire        _GEN_250 = mutable_124 & casez_tmp_123 == in1_addr;
+  wire [6:0]  _query1_idx_T_250 = idx - 7'h3;
   wire        mutable_125 = count > 8'h7D;
   reg  [31:0] casez_tmp_124;
   always_comb begin
-    casez (_idx_T_538)
+    casez (_query1_idx_T_250)
       7'b0000000:
         casez_tmp_124 = entries_0_addr;
       7'b0000001:
@@ -33901,13 +35099,13 @@ module StoreBuffer(
         casez_tmp_124 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_250 = mutable_125 & casez_tmp_124 == in0_addr;
-  wire        _GEN_251 = mutable_125 & casez_tmp_124 == in1_addr;
-  wire [6:0]  _idx_T_540 = idx - 7'h2;
+  wire        _GEN_251 = mutable_125 & casez_tmp_124 == in0_addr;
+  wire        _GEN_252 = mutable_125 & casez_tmp_124 == in1_addr;
+  wire [6:0]  _query1_idx_T_252 = idx - 7'h2;
   wire        mutable_126 = count > 8'h7E;
   reg  [31:0] casez_tmp_125;
   always_comb begin
-    casez (_idx_T_540)
+    casez (_query1_idx_T_252)
       7'b0000000:
         casez_tmp_125 = entries_0_addr;
       7'b0000001:
@@ -34166,12 +35364,12 @@ module StoreBuffer(
         casez_tmp_125 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_252 = mutable_126 & casez_tmp_125 == in0_addr;
-  wire        _GEN_253 = mutable_126 & casez_tmp_125 == in1_addr;
-  wire [6:0]  _idx_T_542 = idx - 7'h1;
+  wire        _GEN_253 = mutable_126 & casez_tmp_125 == in0_addr;
+  wire        _GEN_254 = mutable_126 & casez_tmp_125 == in1_addr;
+  wire [6:0]  _query1_idx_T_254 = idx - 7'h1;
   reg  [31:0] casez_tmp_126;
   always_comb begin
-    casez (_idx_T_542)
+    casez (_query1_idx_T_254)
       7'b0000000:
         casez_tmp_126 = entries_0_addr;
       7'b0000001:
@@ -34430,547 +35628,526 @@ module StoreBuffer(
         casez_tmp_126 = entries_127_addr;
     endcase
   end // always_comb
-  wire        _GEN_254 = count[7] & casez_tmp_126 == in0_addr;
+  wire        _GEN_255 = count[7] & casez_tmp_126 == in0_addr;
   wire [6:0]  merge0Idx =
-    _GEN_254
-      ? _idx_T_542
-      : _GEN_252
-          ? _idx_T_540
-          : _GEN_250
-              ? _idx_T_538
-              : _GEN_248
-                  ? _idx_T_536
-                  : _GEN_246
-                      ? _idx_T_534
-                      : _GEN_244
-                          ? _idx_T_532
-                          : _GEN_242
-                              ? _idx_T_530
-                              : _GEN_240
-                                  ? _idx_T_528
-                                  : _GEN_238
-                                      ? _idx_T_526
-                                      : _GEN_236
-                                          ? _idx_T_524
-                                          : _GEN_234
-                                              ? _idx_T_522
-                                              : _GEN_232
-                                                  ? _idx_T_520
-                                                  : _GEN_230
-                                                      ? _idx_T_518
-                                                      : _GEN_228
-                                                          ? _idx_T_516
-                                                          : _GEN_226
-                                                              ? _idx_T_514
-                                                              : _GEN_224
-                                                                  ? _idx_T_512
-                                                                  : _GEN_222
-                                                                      ? _idx_T_510
-                                                                      : _GEN_220
-                                                                          ? _idx_T_508
-                                                                          : _GEN_218
-                                                                              ? _idx_T_506
-                                                                              : _GEN_216
-                                                                                  ? _idx_T_504
-                                                                                  : _GEN_214
-                                                                                      ? _idx_T_502
-                                                                                      : _GEN_212
-                                                                                          ? _idx_T_500
-                                                                                          : _GEN_210
-                                                                                              ? _idx_T_498
-                                                                                              : _GEN_208
-                                                                                                  ? _idx_T_496
-                                                                                                  : _GEN_206
-                                                                                                      ? _idx_T_494
-                                                                                                      : _GEN_204
-                                                                                                          ? _idx_T_492
-                                                                                                          : _GEN_202
-                                                                                                              ? _idx_T_490
-                                                                                                              : _GEN_200
-                                                                                                                  ? _idx_T_488
-                                                                                                                  : _GEN_198
-                                                                                                                      ? _idx_T_486
-                                                                                                                      : _GEN_196
-                                                                                                                          ? _idx_T_484
-                                                                                                                          : _GEN_194
-                                                                                                                              ? _idx_T_482
-                                                                                                                              : _GEN_192
-                                                                                                                                  ? _idx_T_480
-                                                                                                                                  : _GEN_190
-                                                                                                                                      ? _idx_T_478
-                                                                                                                                      : _GEN_188
-                                                                                                                                          ? _idx_T_476
-                                                                                                                                          : _GEN_186
-                                                                                                                                              ? _idx_T_474
-                                                                                                                                              : _GEN_184
-                                                                                                                                                  ? _idx_T_472
-                                                                                                                                                  : _GEN_182
-                                                                                                                                                      ? _idx_T_470
-                                                                                                                                                      : _GEN_180
-                                                                                                                                                          ? _idx_T_468
-                                                                                                                                                          : _GEN_178
-                                                                                                                                                              ? _idx_T_466
-                                                                                                                                                              : _GEN_176
-                                                                                                                                                                  ? _idx_T_464
-                                                                                                                                                                  : _GEN_174
-                                                                                                                                                                      ? _idx_T_462
-                                                                                                                                                                      : _GEN_172
-                                                                                                                                                                          ? _idx_T_460
-                                                                                                                                                                          : _GEN_170
-                                                                                                                                                                              ? _idx_T_458
-                                                                                                                                                                              : _GEN_168
-                                                                                                                                                                                  ? _idx_T_456
-                                                                                                                                                                                  : _GEN_166
-                                                                                                                                                                                      ? _idx_T_454
-                                                                                                                                                                                      : _GEN_164
-                                                                                                                                                                                          ? _idx_T_452
-                                                                                                                                                                                          : _GEN_162
-                                                                                                                                                                                              ? _idx_T_450
-                                                                                                                                                                                              : _GEN_160
-                                                                                                                                                                                                  ? _idx_T_448
-                                                                                                                                                                                                  : _GEN_158
-                                                                                                                                                                                                      ? _idx_T_446
-                                                                                                                                                                                                      : _GEN_156
-                                                                                                                                                                                                          ? _idx_T_444
-                                                                                                                                                                                                          : _GEN_154
-                                                                                                                                                                                                              ? _idx_T_442
-                                                                                                                                                                                                              : _GEN_152
-                                                                                                                                                                                                                  ? _idx_T_440
-                                                                                                                                                                                                                  : _GEN_150
-                                                                                                                                                                                                                      ? _idx_T_438
-                                                                                                                                                                                                                      : _GEN_148
-                                                                                                                                                                                                                          ? _idx_T_436
-                                                                                                                                                                                                                          : _GEN_146
-                                                                                                                                                                                                                              ? _idx_T_434
-                                                                                                                                                                                                                              : _GEN_144
-                                                                                                                                                                                                                                  ? _idx_T_432
-                                                                                                                                                                                                                                  : _GEN_142
-                                                                                                                                                                                                                                      ? _idx_T_430
-                                                                                                                                                                                                                                      : _GEN_140
-                                                                                                                                                                                                                                          ? _idx_T_428
-                                                                                                                                                                                                                                          : _GEN_138
-                                                                                                                                                                                                                                              ? _idx_T_426
-                                                                                                                                                                                                                                              : _GEN_136
-                                                                                                                                                                                                                                                  ? _idx_T_424
-                                                                                                                                                                                                                                                  : _GEN_134
-                                                                                                                                                                                                                                                      ? _idx_T_422
-                                                                                                                                                                                                                                                      : _GEN_132
-                                                                                                                                                                                                                                                          ? _idx_T_420
-                                                                                                                                                                                                                                                          : _GEN_130
-                                                                                                                                                                                                                                                              ? _idx_T_418
-                                                                                                                                                                                                                                                              : _GEN_128
-                                                                                                                                                                                                                                                                  ? _idx_T_416
-                                                                                                                                                                                                                                                                  : _GEN_126
-                                                                                                                                                                                                                                                                      ? _idx_T_414
-                                                                                                                                                                                                                                                                      : _GEN_124
-                                                                                                                                                                                                                                                                          ? _idx_T_412
-                                                                                                                                                                                                                                                                          : _GEN_122
-                                                                                                                                                                                                                                                                              ? _idx_T_410
-                                                                                                                                                                                                                                                                              : _GEN_120
-                                                                                                                                                                                                                                                                                  ? _idx_T_408
-                                                                                                                                                                                                                                                                                  : _GEN_118
-                                                                                                                                                                                                                                                                                      ? _idx_T_406
-                                                                                                                                                                                                                                                                                      : _GEN_116
-                                                                                                                                                                                                                                                                                          ? _idx_T_404
-                                                                                                                                                                                                                                                                                          : _GEN_114
-                                                                                                                                                                                                                                                                                              ? _idx_T_402
-                                                                                                                                                                                                                                                                                              : _GEN_112
-                                                                                                                                                                                                                                                                                                  ? _idx_T_400
-                                                                                                                                                                                                                                                                                                  : _GEN_110
-                                                                                                                                                                                                                                                                                                      ? _idx_T_398
-                                                                                                                                                                                                                                                                                                      : _GEN_108
-                                                                                                                                                                                                                                                                                                          ? _idx_T_396
-                                                                                                                                                                                                                                                                                                          : _GEN_106
-                                                                                                                                                                                                                                                                                                              ? _idx_T_394
-                                                                                                                                                                                                                                                                                                              : _GEN_104
-                                                                                                                                                                                                                                                                                                                  ? _idx_T_392
-                                                                                                                                                                                                                                                                                                                  : _GEN_102
-                                                                                                                                                                                                                                                                                                                      ? _idx_T_390
-                                                                                                                                                                                                                                                                                                                      : _GEN_100
-                                                                                                                                                                                                                                                                                                                          ? _idx_T_388
-                                                                                                                                                                                                                                                                                                                          : _GEN_98
-                                                                                                                                                                                                                                                                                                                              ? _idx_T_386
-                                                                                                                                                                                                                                                                                                                              : _GEN_96
-                                                                                                                                                                                                                                                                                                                                  ? _idx_T_384
-                                                                                                                                                                                                                                                                                                                                  : _GEN_94
-                                                                                                                                                                                                                                                                                                                                      ? _idx_T_382
-                                                                                                                                                                                                                                                                                                                                      : _GEN_92
-                                                                                                                                                                                                                                                                                                                                          ? _idx_T_380
-                                                                                                                                                                                                                                                                                                                                          : _GEN_90
-                                                                                                                                                                                                                                                                                                                                              ? _idx_T_378
-                                                                                                                                                                                                                                                                                                                                              : _GEN_88
-                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_376
-                                                                                                                                                                                                                                                                                                                                                  : _GEN_86
-                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_374
-                                                                                                                                                                                                                                                                                                                                                      : _GEN_84
-                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_372
-                                                                                                                                                                                                                                                                                                                                                          : _GEN_82
-                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_370
-                                                                                                                                                                                                                                                                                                                                                              : _GEN_80
-                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_368
-                                                                                                                                                                                                                                                                                                                                                                  : _GEN_78
-                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_366
-                                                                                                                                                                                                                                                                                                                                                                      : _GEN_76
-                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_364
-                                                                                                                                                                                                                                                                                                                                                                          : _GEN_74
-                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_362
-                                                                                                                                                                                                                                                                                                                                                                              : _GEN_72
-                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_360
-                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_70
-                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_358
-                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_68
-                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_356
-                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_66
-                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_354
-                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_64
-                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_352
-                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_62
-                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_350
-                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_60
-                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_348
-                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_58
-                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_346
-                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_56
-                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_344
-                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_54
-                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_342
-                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_52
-                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_340
-                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_50
-                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_338
-                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_48
-                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_336
-                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_46
-                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_334
-                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_44
-                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_332
-                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_42
-                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_330
-                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_40
-                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_328
-                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_38
-                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_326
-                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_36
-                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_324
-                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_34
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_322
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_32
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_320
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_30
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_318
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_28
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_316
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_26
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_314
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_24
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_312
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_22
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_310
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_20
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_308
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_18
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_306
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_16
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_304
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_14
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_302
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_12
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_300
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_10
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_298
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_8
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_296
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_6
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_294
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_4
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_292
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_2
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_290
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_0
+    _GEN_255
+      ? _query1_idx_T_254
+      : _GEN_253
+          ? _query1_idx_T_252
+          : _GEN_251
+              ? _query1_idx_T_250
+              : _GEN_249
+                  ? _query1_idx_T_248
+                  : _GEN_247
+                      ? _query1_idx_T_246
+                      : _GEN_245
+                          ? _query1_idx_T_244
+                          : _GEN_243
+                              ? _query1_idx_T_242
+                              : _GEN_241
+                                  ? _query1_idx_T_240
+                                  : _GEN_239
+                                      ? _query1_idx_T_238
+                                      : _GEN_237
+                                          ? _query1_idx_T_236
+                                          : _GEN_235
+                                              ? _query1_idx_T_234
+                                              : _GEN_233
+                                                  ? _query1_idx_T_232
+                                                  : _GEN_231
+                                                      ? _query1_idx_T_230
+                                                      : _GEN_229
+                                                          ? _query1_idx_T_228
+                                                          : _GEN_227
+                                                              ? _query1_idx_T_226
+                                                              : _GEN_225
+                                                                  ? _query1_idx_T_224
+                                                                  : _GEN_223
+                                                                      ? _query1_idx_T_222
+                                                                      : _GEN_221
+                                                                          ? _query1_idx_T_220
+                                                                          : _GEN_219
+                                                                              ? _query1_idx_T_218
+                                                                              : _GEN_217
+                                                                                  ? _query1_idx_T_216
+                                                                                  : _GEN_215
+                                                                                      ? _query1_idx_T_214
+                                                                                      : _GEN_213
+                                                                                          ? _query1_idx_T_212
+                                                                                          : _GEN_211
+                                                                                              ? _query1_idx_T_210
+                                                                                              : _GEN_209
+                                                                                                  ? _query1_idx_T_208
+                                                                                                  : _GEN_207
+                                                                                                      ? _query1_idx_T_206
+                                                                                                      : _GEN_205
+                                                                                                          ? _query1_idx_T_204
+                                                                                                          : _GEN_203
+                                                                                                              ? _query1_idx_T_202
+                                                                                                              : _GEN_201
+                                                                                                                  ? _query1_idx_T_200
+                                                                                                                  : _GEN_199
+                                                                                                                      ? _query1_idx_T_198
+                                                                                                                      : _GEN_197
+                                                                                                                          ? _query1_idx_T_196
+                                                                                                                          : _GEN_195
+                                                                                                                              ? _query1_idx_T_194
+                                                                                                                              : _GEN_193
+                                                                                                                                  ? _query1_idx_T_192
+                                                                                                                                  : _GEN_191
+                                                                                                                                      ? _query1_idx_T_190
+                                                                                                                                      : _GEN_189
+                                                                                                                                          ? _query1_idx_T_188
+                                                                                                                                          : _GEN_187
+                                                                                                                                              ? _query1_idx_T_186
+                                                                                                                                              : _GEN_185
+                                                                                                                                                  ? _query1_idx_T_184
+                                                                                                                                                  : _GEN_183
+                                                                                                                                                      ? _query1_idx_T_182
+                                                                                                                                                      : _GEN_181
+                                                                                                                                                          ? _query1_idx_T_180
+                                                                                                                                                          : _GEN_179
+                                                                                                                                                              ? _query1_idx_T_178
+                                                                                                                                                              : _GEN_177
+                                                                                                                                                                  ? _query1_idx_T_176
+                                                                                                                                                                  : _GEN_175
+                                                                                                                                                                      ? _query1_idx_T_174
+                                                                                                                                                                      : _GEN_173
+                                                                                                                                                                          ? _query1_idx_T_172
+                                                                                                                                                                          : _GEN_171
+                                                                                                                                                                              ? _query1_idx_T_170
+                                                                                                                                                                              : _GEN_169
+                                                                                                                                                                                  ? _query1_idx_T_168
+                                                                                                                                                                                  : _GEN_167
+                                                                                                                                                                                      ? _query1_idx_T_166
+                                                                                                                                                                                      : _GEN_165
+                                                                                                                                                                                          ? _query1_idx_T_164
+                                                                                                                                                                                          : _GEN_163
+                                                                                                                                                                                              ? _query1_idx_T_162
+                                                                                                                                                                                              : _GEN_161
+                                                                                                                                                                                                  ? _query1_idx_T_160
+                                                                                                                                                                                                  : _GEN_159
+                                                                                                                                                                                                      ? _query1_idx_T_158
+                                                                                                                                                                                                      : _GEN_157
+                                                                                                                                                                                                          ? _query1_idx_T_156
+                                                                                                                                                                                                          : _GEN_155
+                                                                                                                                                                                                              ? _query1_idx_T_154
+                                                                                                                                                                                                              : _GEN_153
+                                                                                                                                                                                                                  ? _query1_idx_T_152
+                                                                                                                                                                                                                  : _GEN_151
+                                                                                                                                                                                                                      ? _query1_idx_T_150
+                                                                                                                                                                                                                      : _GEN_149
+                                                                                                                                                                                                                          ? _query1_idx_T_148
+                                                                                                                                                                                                                          : _GEN_147
+                                                                                                                                                                                                                              ? _query1_idx_T_146
+                                                                                                                                                                                                                              : _GEN_145
+                                                                                                                                                                                                                                  ? _query1_idx_T_144
+                                                                                                                                                                                                                                  : _GEN_143
+                                                                                                                                                                                                                                      ? _query1_idx_T_142
+                                                                                                                                                                                                                                      : _GEN_141
+                                                                                                                                                                                                                                          ? _query1_idx_T_140
+                                                                                                                                                                                                                                          : _GEN_139
+                                                                                                                                                                                                                                              ? _query1_idx_T_138
+                                                                                                                                                                                                                                              : _GEN_137
+                                                                                                                                                                                                                                                  ? _query1_idx_T_136
+                                                                                                                                                                                                                                                  : _GEN_135
+                                                                                                                                                                                                                                                      ? _query1_idx_T_134
+                                                                                                                                                                                                                                                      : _GEN_133
+                                                                                                                                                                                                                                                          ? _query1_idx_T_132
+                                                                                                                                                                                                                                                          : _GEN_131
+                                                                                                                                                                                                                                                              ? _query1_idx_T_130
+                                                                                                                                                                                                                                                              : _GEN_129
+                                                                                                                                                                                                                                                                  ? _query1_idx_T_128
+                                                                                                                                                                                                                                                                  : _GEN_127
+                                                                                                                                                                                                                                                                      ? _query1_idx_T_126
+                                                                                                                                                                                                                                                                      : _GEN_125
+                                                                                                                                                                                                                                                                          ? _query1_idx_T_124
+                                                                                                                                                                                                                                                                          : _GEN_123
+                                                                                                                                                                                                                                                                              ? _query1_idx_T_122
+                                                                                                                                                                                                                                                                              : _GEN_121
+                                                                                                                                                                                                                                                                                  ? _query1_idx_T_120
+                                                                                                                                                                                                                                                                                  : _GEN_119
+                                                                                                                                                                                                                                                                                      ? _query1_idx_T_118
+                                                                                                                                                                                                                                                                                      : _GEN_117
+                                                                                                                                                                                                                                                                                          ? _query1_idx_T_116
+                                                                                                                                                                                                                                                                                          : _GEN_115
+                                                                                                                                                                                                                                                                                              ? _query1_idx_T_114
+                                                                                                                                                                                                                                                                                              : _GEN_113
+                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_112
+                                                                                                                                                                                                                                                                                                  : _GEN_111
+                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_110
+                                                                                                                                                                                                                                                                                                      : _GEN_109
+                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_108
+                                                                                                                                                                                                                                                                                                          : _GEN_107
+                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_106
+                                                                                                                                                                                                                                                                                                              : _GEN_105
+                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_104
+                                                                                                                                                                                                                                                                                                                  : _GEN_103
+                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_102
+                                                                                                                                                                                                                                                                                                                      : _GEN_101
+                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_100
+                                                                                                                                                                                                                                                                                                                          : _GEN_99
+                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_98
+                                                                                                                                                                                                                                                                                                                              : _GEN_97
+                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_96
+                                                                                                                                                                                                                                                                                                                                  : _GEN_95
+                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_94
+                                                                                                                                                                                                                                                                                                                                      : _GEN_93
+                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_92
+                                                                                                                                                                                                                                                                                                                                          : _GEN_91
+                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_90
+                                                                                                                                                                                                                                                                                                                                              : _GEN_89
+                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_88
+                                                                                                                                                                                                                                                                                                                                                  : _GEN_87
+                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_86
+                                                                                                                                                                                                                                                                                                                                                      : _GEN_85
+                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_84
+                                                                                                                                                                                                                                                                                                                                                          : _GEN_83
+                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_82
+                                                                                                                                                                                                                                                                                                                                                              : _GEN_81
+                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_80
+                                                                                                                                                                                                                                                                                                                                                                  : _GEN_79
+                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_78
+                                                                                                                                                                                                                                                                                                                                                                      : _GEN_77
+                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_76
+                                                                                                                                                                                                                                                                                                                                                                          : _GEN_75
+                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_74
+                                                                                                                                                                                                                                                                                                                                                                              : _GEN_73
+                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_72
+                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_71
+                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_70
+                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_69
+                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_68
+                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_67
+                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_66
+                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_65
+                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_64
+                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_63
+                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_62
+                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_61
+                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_60
+                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_59
+                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_58
+                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_57
+                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_56
+                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_55
+                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_54
+                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_53
+                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_52
+                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_51
+                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_50
+                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_49
+                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_48
+                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_47
+                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_46
+                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_45
+                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_44
+                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_43
+                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_42
+                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_41
+                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_40
+                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_39
+                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_38
+                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_37
+                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_36
+                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_35
+                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_34
+                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_33
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_32
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_31
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_30
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_29
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_28
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_27
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_26
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_25
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_24
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_23
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_22
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_21
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_20
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_19
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_18
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_17
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_16
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_15
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_14
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_13
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_12
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_11
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_10
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_9
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_8
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_7
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_6
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_5
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_4
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_3
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_2
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_1
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ? idx
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   : 7'h0;
-  wire        _GEN_255 = count[7] & casez_tmp_126 == in1_addr;
+  wire        _GEN_256 = count[7] & casez_tmp_126 == in1_addr;
   wire [6:0]  merge1Idx =
-    _GEN_255
-      ? _idx_T_542
-      : _GEN_253
-          ? _idx_T_540
-          : _GEN_251
-              ? _idx_T_538
-              : _GEN_249
-                  ? _idx_T_536
-                  : _GEN_247
-                      ? _idx_T_534
-                      : _GEN_245
-                          ? _idx_T_532
-                          : _GEN_243
-                              ? _idx_T_530
-                              : _GEN_241
-                                  ? _idx_T_528
-                                  : _GEN_239
-                                      ? _idx_T_526
-                                      : _GEN_237
-                                          ? _idx_T_524
-                                          : _GEN_235
-                                              ? _idx_T_522
-                                              : _GEN_233
-                                                  ? _idx_T_520
-                                                  : _GEN_231
-                                                      ? _idx_T_518
-                                                      : _GEN_229
-                                                          ? _idx_T_516
-                                                          : _GEN_227
-                                                              ? _idx_T_514
-                                                              : _GEN_225
-                                                                  ? _idx_T_512
-                                                                  : _GEN_223
-                                                                      ? _idx_T_510
-                                                                      : _GEN_221
-                                                                          ? _idx_T_508
-                                                                          : _GEN_219
-                                                                              ? _idx_T_506
-                                                                              : _GEN_217
-                                                                                  ? _idx_T_504
-                                                                                  : _GEN_215
-                                                                                      ? _idx_T_502
-                                                                                      : _GEN_213
-                                                                                          ? _idx_T_500
-                                                                                          : _GEN_211
-                                                                                              ? _idx_T_498
-                                                                                              : _GEN_209
-                                                                                                  ? _idx_T_496
-                                                                                                  : _GEN_207
-                                                                                                      ? _idx_T_494
-                                                                                                      : _GEN_205
-                                                                                                          ? _idx_T_492
-                                                                                                          : _GEN_203
-                                                                                                              ? _idx_T_490
-                                                                                                              : _GEN_201
-                                                                                                                  ? _idx_T_488
-                                                                                                                  : _GEN_199
-                                                                                                                      ? _idx_T_486
-                                                                                                                      : _GEN_197
-                                                                                                                          ? _idx_T_484
-                                                                                                                          : _GEN_195
-                                                                                                                              ? _idx_T_482
-                                                                                                                              : _GEN_193
-                                                                                                                                  ? _idx_T_480
-                                                                                                                                  : _GEN_191
-                                                                                                                                      ? _idx_T_478
-                                                                                                                                      : _GEN_189
-                                                                                                                                          ? _idx_T_476
-                                                                                                                                          : _GEN_187
-                                                                                                                                              ? _idx_T_474
-                                                                                                                                              : _GEN_185
-                                                                                                                                                  ? _idx_T_472
-                                                                                                                                                  : _GEN_183
-                                                                                                                                                      ? _idx_T_470
-                                                                                                                                                      : _GEN_181
-                                                                                                                                                          ? _idx_T_468
-                                                                                                                                                          : _GEN_179
-                                                                                                                                                              ? _idx_T_466
-                                                                                                                                                              : _GEN_177
-                                                                                                                                                                  ? _idx_T_464
-                                                                                                                                                                  : _GEN_175
-                                                                                                                                                                      ? _idx_T_462
-                                                                                                                                                                      : _GEN_173
-                                                                                                                                                                          ? _idx_T_460
-                                                                                                                                                                          : _GEN_171
-                                                                                                                                                                              ? _idx_T_458
-                                                                                                                                                                              : _GEN_169
-                                                                                                                                                                                  ? _idx_T_456
-                                                                                                                                                                                  : _GEN_167
-                                                                                                                                                                                      ? _idx_T_454
-                                                                                                                                                                                      : _GEN_165
-                                                                                                                                                                                          ? _idx_T_452
-                                                                                                                                                                                          : _GEN_163
-                                                                                                                                                                                              ? _idx_T_450
-                                                                                                                                                                                              : _GEN_161
-                                                                                                                                                                                                  ? _idx_T_448
-                                                                                                                                                                                                  : _GEN_159
-                                                                                                                                                                                                      ? _idx_T_446
-                                                                                                                                                                                                      : _GEN_157
-                                                                                                                                                                                                          ? _idx_T_444
-                                                                                                                                                                                                          : _GEN_155
-                                                                                                                                                                                                              ? _idx_T_442
-                                                                                                                                                                                                              : _GEN_153
-                                                                                                                                                                                                                  ? _idx_T_440
-                                                                                                                                                                                                                  : _GEN_151
-                                                                                                                                                                                                                      ? _idx_T_438
-                                                                                                                                                                                                                      : _GEN_149
-                                                                                                                                                                                                                          ? _idx_T_436
-                                                                                                                                                                                                                          : _GEN_147
-                                                                                                                                                                                                                              ? _idx_T_434
-                                                                                                                                                                                                                              : _GEN_145
-                                                                                                                                                                                                                                  ? _idx_T_432
-                                                                                                                                                                                                                                  : _GEN_143
-                                                                                                                                                                                                                                      ? _idx_T_430
-                                                                                                                                                                                                                                      : _GEN_141
-                                                                                                                                                                                                                                          ? _idx_T_428
-                                                                                                                                                                                                                                          : _GEN_139
-                                                                                                                                                                                                                                              ? _idx_T_426
-                                                                                                                                                                                                                                              : _GEN_137
-                                                                                                                                                                                                                                                  ? _idx_T_424
-                                                                                                                                                                                                                                                  : _GEN_135
-                                                                                                                                                                                                                                                      ? _idx_T_422
-                                                                                                                                                                                                                                                      : _GEN_133
-                                                                                                                                                                                                                                                          ? _idx_T_420
-                                                                                                                                                                                                                                                          : _GEN_131
-                                                                                                                                                                                                                                                              ? _idx_T_418
-                                                                                                                                                                                                                                                              : _GEN_129
-                                                                                                                                                                                                                                                                  ? _idx_T_416
-                                                                                                                                                                                                                                                                  : _GEN_127
-                                                                                                                                                                                                                                                                      ? _idx_T_414
-                                                                                                                                                                                                                                                                      : _GEN_125
-                                                                                                                                                                                                                                                                          ? _idx_T_412
-                                                                                                                                                                                                                                                                          : _GEN_123
-                                                                                                                                                                                                                                                                              ? _idx_T_410
-                                                                                                                                                                                                                                                                              : _GEN_121
-                                                                                                                                                                                                                                                                                  ? _idx_T_408
-                                                                                                                                                                                                                                                                                  : _GEN_119
-                                                                                                                                                                                                                                                                                      ? _idx_T_406
-                                                                                                                                                                                                                                                                                      : _GEN_117
-                                                                                                                                                                                                                                                                                          ? _idx_T_404
-                                                                                                                                                                                                                                                                                          : _GEN_115
-                                                                                                                                                                                                                                                                                              ? _idx_T_402
-                                                                                                                                                                                                                                                                                              : _GEN_113
-                                                                                                                                                                                                                                                                                                  ? _idx_T_400
-                                                                                                                                                                                                                                                                                                  : _GEN_111
-                                                                                                                                                                                                                                                                                                      ? _idx_T_398
-                                                                                                                                                                                                                                                                                                      : _GEN_109
-                                                                                                                                                                                                                                                                                                          ? _idx_T_396
-                                                                                                                                                                                                                                                                                                          : _GEN_107
-                                                                                                                                                                                                                                                                                                              ? _idx_T_394
-                                                                                                                                                                                                                                                                                                              : _GEN_105
-                                                                                                                                                                                                                                                                                                                  ? _idx_T_392
-                                                                                                                                                                                                                                                                                                                  : _GEN_103
-                                                                                                                                                                                                                                                                                                                      ? _idx_T_390
-                                                                                                                                                                                                                                                                                                                      : _GEN_101
-                                                                                                                                                                                                                                                                                                                          ? _idx_T_388
-                                                                                                                                                                                                                                                                                                                          : _GEN_99
-                                                                                                                                                                                                                                                                                                                              ? _idx_T_386
-                                                                                                                                                                                                                                                                                                                              : _GEN_97
-                                                                                                                                                                                                                                                                                                                                  ? _idx_T_384
-                                                                                                                                                                                                                                                                                                                                  : _GEN_95
-                                                                                                                                                                                                                                                                                                                                      ? _idx_T_382
-                                                                                                                                                                                                                                                                                                                                      : _GEN_93
-                                                                                                                                                                                                                                                                                                                                          ? _idx_T_380
-                                                                                                                                                                                                                                                                                                                                          : _GEN_91
-                                                                                                                                                                                                                                                                                                                                              ? _idx_T_378
-                                                                                                                                                                                                                                                                                                                                              : _GEN_89
-                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_376
-                                                                                                                                                                                                                                                                                                                                                  : _GEN_87
-                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_374
-                                                                                                                                                                                                                                                                                                                                                      : _GEN_85
-                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_372
-                                                                                                                                                                                                                                                                                                                                                          : _GEN_83
-                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_370
-                                                                                                                                                                                                                                                                                                                                                              : _GEN_81
-                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_368
-                                                                                                                                                                                                                                                                                                                                                                  : _GEN_79
-                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_366
-                                                                                                                                                                                                                                                                                                                                                                      : _GEN_77
-                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_364
-                                                                                                                                                                                                                                                                                                                                                                          : _GEN_75
-                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_362
-                                                                                                                                                                                                                                                                                                                                                                              : _GEN_73
-                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_360
-                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_71
-                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_358
-                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_69
-                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_356
-                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_67
-                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_354
-                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_65
-                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_352
-                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_63
-                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_350
-                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_61
-                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_348
-                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_59
-                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_346
-                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_57
-                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_344
-                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_55
-                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_342
-                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_53
-                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_340
-                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_51
-                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_338
-                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_49
-                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_336
-                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_47
-                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_334
-                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_45
-                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_332
-                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_43
-                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_330
-                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_41
-                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_328
-                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_39
-                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_326
-                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_37
-                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_324
-                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_35
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_322
-                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_33
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_320
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_31
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_318
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_29
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_316
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_27
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_314
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_25
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_312
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_23
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_310
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_21
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_308
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_19
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_306
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_17
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_304
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_15
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_302
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_13
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_300
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_11
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_298
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_9
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _idx_T_296
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_7
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _idx_T_294
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_5
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _idx_T_292
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_3
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _idx_T_290
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_1
+    _GEN_256
+      ? _query1_idx_T_254
+      : _GEN_254
+          ? _query1_idx_T_252
+          : _GEN_252
+              ? _query1_idx_T_250
+              : _GEN_250
+                  ? _query1_idx_T_248
+                  : _GEN_248
+                      ? _query1_idx_T_246
+                      : _GEN_246
+                          ? _query1_idx_T_244
+                          : _GEN_244
+                              ? _query1_idx_T_242
+                              : _GEN_242
+                                  ? _query1_idx_T_240
+                                  : _GEN_240
+                                      ? _query1_idx_T_238
+                                      : _GEN_238
+                                          ? _query1_idx_T_236
+                                          : _GEN_236
+                                              ? _query1_idx_T_234
+                                              : _GEN_234
+                                                  ? _query1_idx_T_232
+                                                  : _GEN_232
+                                                      ? _query1_idx_T_230
+                                                      : _GEN_230
+                                                          ? _query1_idx_T_228
+                                                          : _GEN_228
+                                                              ? _query1_idx_T_226
+                                                              : _GEN_226
+                                                                  ? _query1_idx_T_224
+                                                                  : _GEN_224
+                                                                      ? _query1_idx_T_222
+                                                                      : _GEN_222
+                                                                          ? _query1_idx_T_220
+                                                                          : _GEN_220
+                                                                              ? _query1_idx_T_218
+                                                                              : _GEN_218
+                                                                                  ? _query1_idx_T_216
+                                                                                  : _GEN_216
+                                                                                      ? _query1_idx_T_214
+                                                                                      : _GEN_214
+                                                                                          ? _query1_idx_T_212
+                                                                                          : _GEN_212
+                                                                                              ? _query1_idx_T_210
+                                                                                              : _GEN_210
+                                                                                                  ? _query1_idx_T_208
+                                                                                                  : _GEN_208
+                                                                                                      ? _query1_idx_T_206
+                                                                                                      : _GEN_206
+                                                                                                          ? _query1_idx_T_204
+                                                                                                          : _GEN_204
+                                                                                                              ? _query1_idx_T_202
+                                                                                                              : _GEN_202
+                                                                                                                  ? _query1_idx_T_200
+                                                                                                                  : _GEN_200
+                                                                                                                      ? _query1_idx_T_198
+                                                                                                                      : _GEN_198
+                                                                                                                          ? _query1_idx_T_196
+                                                                                                                          : _GEN_196
+                                                                                                                              ? _query1_idx_T_194
+                                                                                                                              : _GEN_194
+                                                                                                                                  ? _query1_idx_T_192
+                                                                                                                                  : _GEN_192
+                                                                                                                                      ? _query1_idx_T_190
+                                                                                                                                      : _GEN_190
+                                                                                                                                          ? _query1_idx_T_188
+                                                                                                                                          : _GEN_188
+                                                                                                                                              ? _query1_idx_T_186
+                                                                                                                                              : _GEN_186
+                                                                                                                                                  ? _query1_idx_T_184
+                                                                                                                                                  : _GEN_184
+                                                                                                                                                      ? _query1_idx_T_182
+                                                                                                                                                      : _GEN_182
+                                                                                                                                                          ? _query1_idx_T_180
+                                                                                                                                                          : _GEN_180
+                                                                                                                                                              ? _query1_idx_T_178
+                                                                                                                                                              : _GEN_178
+                                                                                                                                                                  ? _query1_idx_T_176
+                                                                                                                                                                  : _GEN_176
+                                                                                                                                                                      ? _query1_idx_T_174
+                                                                                                                                                                      : _GEN_174
+                                                                                                                                                                          ? _query1_idx_T_172
+                                                                                                                                                                          : _GEN_172
+                                                                                                                                                                              ? _query1_idx_T_170
+                                                                                                                                                                              : _GEN_170
+                                                                                                                                                                                  ? _query1_idx_T_168
+                                                                                                                                                                                  : _GEN_168
+                                                                                                                                                                                      ? _query1_idx_T_166
+                                                                                                                                                                                      : _GEN_166
+                                                                                                                                                                                          ? _query1_idx_T_164
+                                                                                                                                                                                          : _GEN_164
+                                                                                                                                                                                              ? _query1_idx_T_162
+                                                                                                                                                                                              : _GEN_162
+                                                                                                                                                                                                  ? _query1_idx_T_160
+                                                                                                                                                                                                  : _GEN_160
+                                                                                                                                                                                                      ? _query1_idx_T_158
+                                                                                                                                                                                                      : _GEN_158
+                                                                                                                                                                                                          ? _query1_idx_T_156
+                                                                                                                                                                                                          : _GEN_156
+                                                                                                                                                                                                              ? _query1_idx_T_154
+                                                                                                                                                                                                              : _GEN_154
+                                                                                                                                                                                                                  ? _query1_idx_T_152
+                                                                                                                                                                                                                  : _GEN_152
+                                                                                                                                                                                                                      ? _query1_idx_T_150
+                                                                                                                                                                                                                      : _GEN_150
+                                                                                                                                                                                                                          ? _query1_idx_T_148
+                                                                                                                                                                                                                          : _GEN_148
+                                                                                                                                                                                                                              ? _query1_idx_T_146
+                                                                                                                                                                                                                              : _GEN_146
+                                                                                                                                                                                                                                  ? _query1_idx_T_144
+                                                                                                                                                                                                                                  : _GEN_144
+                                                                                                                                                                                                                                      ? _query1_idx_T_142
+                                                                                                                                                                                                                                      : _GEN_142
+                                                                                                                                                                                                                                          ? _query1_idx_T_140
+                                                                                                                                                                                                                                          : _GEN_140
+                                                                                                                                                                                                                                              ? _query1_idx_T_138
+                                                                                                                                                                                                                                              : _GEN_138
+                                                                                                                                                                                                                                                  ? _query1_idx_T_136
+                                                                                                                                                                                                                                                  : _GEN_136
+                                                                                                                                                                                                                                                      ? _query1_idx_T_134
+                                                                                                                                                                                                                                                      : _GEN_134
+                                                                                                                                                                                                                                                          ? _query1_idx_T_132
+                                                                                                                                                                                                                                                          : _GEN_132
+                                                                                                                                                                                                                                                              ? _query1_idx_T_130
+                                                                                                                                                                                                                                                              : _GEN_130
+                                                                                                                                                                                                                                                                  ? _query1_idx_T_128
+                                                                                                                                                                                                                                                                  : _GEN_128
+                                                                                                                                                                                                                                                                      ? _query1_idx_T_126
+                                                                                                                                                                                                                                                                      : _GEN_126
+                                                                                                                                                                                                                                                                          ? _query1_idx_T_124
+                                                                                                                                                                                                                                                                          : _GEN_124
+                                                                                                                                                                                                                                                                              ? _query1_idx_T_122
+                                                                                                                                                                                                                                                                              : _GEN_122
+                                                                                                                                                                                                                                                                                  ? _query1_idx_T_120
+                                                                                                                                                                                                                                                                                  : _GEN_120
+                                                                                                                                                                                                                                                                                      ? _query1_idx_T_118
+                                                                                                                                                                                                                                                                                      : _GEN_118
+                                                                                                                                                                                                                                                                                          ? _query1_idx_T_116
+                                                                                                                                                                                                                                                                                          : _GEN_116
+                                                                                                                                                                                                                                                                                              ? _query1_idx_T_114
+                                                                                                                                                                                                                                                                                              : _GEN_114
+                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_112
+                                                                                                                                                                                                                                                                                                  : _GEN_112
+                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_110
+                                                                                                                                                                                                                                                                                                      : _GEN_110
+                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_108
+                                                                                                                                                                                                                                                                                                          : _GEN_108
+                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_106
+                                                                                                                                                                                                                                                                                                              : _GEN_106
+                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_104
+                                                                                                                                                                                                                                                                                                                  : _GEN_104
+                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_102
+                                                                                                                                                                                                                                                                                                                      : _GEN_102
+                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_100
+                                                                                                                                                                                                                                                                                                                          : _GEN_100
+                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_98
+                                                                                                                                                                                                                                                                                                                              : _GEN_98
+                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_96
+                                                                                                                                                                                                                                                                                                                                  : _GEN_96
+                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_94
+                                                                                                                                                                                                                                                                                                                                      : _GEN_94
+                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_92
+                                                                                                                                                                                                                                                                                                                                          : _GEN_92
+                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_90
+                                                                                                                                                                                                                                                                                                                                              : _GEN_90
+                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_88
+                                                                                                                                                                                                                                                                                                                                                  : _GEN_88
+                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_86
+                                                                                                                                                                                                                                                                                                                                                      : _GEN_86
+                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_84
+                                                                                                                                                                                                                                                                                                                                                          : _GEN_84
+                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_82
+                                                                                                                                                                                                                                                                                                                                                              : _GEN_82
+                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_80
+                                                                                                                                                                                                                                                                                                                                                                  : _GEN_80
+                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_78
+                                                                                                                                                                                                                                                                                                                                                                      : _GEN_78
+                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_76
+                                                                                                                                                                                                                                                                                                                                                                          : _GEN_76
+                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_74
+                                                                                                                                                                                                                                                                                                                                                                              : _GEN_74
+                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_72
+                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_72
+                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_70
+                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_70
+                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_68
+                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_68
+                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_66
+                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_66
+                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_64
+                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_64
+                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_62
+                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_62
+                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_60
+                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_60
+                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_58
+                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_58
+                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_56
+                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_56
+                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_54
+                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_54
+                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_52
+                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_52
+                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_50
+                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_50
+                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_48
+                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_48
+                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_46
+                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_46
+                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_44
+                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_44
+                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_42
+                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_42
+                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_40
+                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_40
+                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_38
+                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_38
+                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_36
+                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_36
+                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_34
+                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_34
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_32
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_32
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_30
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_30
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_28
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_28
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_26
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_26
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_24
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_24
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_22
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_22
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_20
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_20
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_18
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_18
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_16
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_16
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_14
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_14
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_12
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_12
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_10
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_10
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  ? _query1_idx_T_8
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  : _GEN_8
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      ? _query1_idx_T_6
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      : _GEN_6
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          ? _query1_idx_T_4
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          : _GEN_4
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              ? _query1_idx_T_2
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              : _GEN_2
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ? idx
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   : 7'h0;
   wire        merge0Existing =
     io_enq_valid
-    & (_GEN_254 | _GEN_252 | _GEN_250 | _GEN_248 | _GEN_246 | _GEN_244 | _GEN_242
-       | _GEN_240 | _GEN_238 | _GEN_236 | _GEN_234 | _GEN_232 | _GEN_230 | _GEN_228
-       | _GEN_226 | _GEN_224 | _GEN_222 | _GEN_220 | _GEN_218 | _GEN_216 | _GEN_214
-       | _GEN_212 | _GEN_210 | _GEN_208 | _GEN_206 | _GEN_204 | _GEN_202 | _GEN_200
-       | _GEN_198 | _GEN_196 | _GEN_194 | _GEN_192 | _GEN_190 | _GEN_188 | _GEN_186
-       | _GEN_184 | _GEN_182 | _GEN_180 | _GEN_178 | _GEN_176 | _GEN_174 | _GEN_172
-       | _GEN_170 | _GEN_168 | _GEN_166 | _GEN_164 | _GEN_162 | _GEN_160 | _GEN_158
-       | _GEN_156 | _GEN_154 | _GEN_152 | _GEN_150 | _GEN_148 | _GEN_146 | _GEN_144
-       | _GEN_142 | _GEN_140 | _GEN_138 | _GEN_136 | _GEN_134 | _GEN_132 | _GEN_130
-       | _GEN_128 | _GEN_126 | _GEN_124 | _GEN_122 | _GEN_120 | _GEN_118 | _GEN_116
-       | _GEN_114 | _GEN_112 | _GEN_110 | _GEN_108 | _GEN_106 | _GEN_104 | _GEN_102
-       | _GEN_100 | _GEN_98 | _GEN_96 | _GEN_94 | _GEN_92 | _GEN_90 | _GEN_88 | _GEN_86
-       | _GEN_84 | _GEN_82 | _GEN_80 | _GEN_78 | _GEN_76 | _GEN_74 | _GEN_72 | _GEN_70
-       | _GEN_68 | _GEN_66 | _GEN_64 | _GEN_62 | _GEN_60 | _GEN_58 | _GEN_56 | _GEN_54
-       | _GEN_52 | _GEN_50 | _GEN_48 | _GEN_46 | _GEN_44 | _GEN_42 | _GEN_40 | _GEN_38
-       | _GEN_36 | _GEN_34 | _GEN_32 | _GEN_30 | _GEN_28 | _GEN_26 | _GEN_24 | _GEN_22
-       | _GEN_20 | _GEN_18 | _GEN_16 | _GEN_14 | _GEN_12 | _GEN_10 | _GEN_8 | _GEN_6
-       | _GEN_4 | _GEN_2 | _GEN_0);
-  wire        pairSameWord = io_enq_valid & io_enq1_valid & in0_addr == in1_addr;
-  wire        merge1Existing =
-    io_enq1_valid & ~pairSameWord
     & (_GEN_255 | _GEN_253 | _GEN_251 | _GEN_249 | _GEN_247 | _GEN_245 | _GEN_243
        | _GEN_241 | _GEN_239 | _GEN_237 | _GEN_235 | _GEN_233 | _GEN_231 | _GEN_229
        | _GEN_227 | _GEN_225 | _GEN_223 | _GEN_221 | _GEN_219 | _GEN_217 | _GEN_215
@@ -34989,6 +36166,27 @@ module StoreBuffer(
        | _GEN_37 | _GEN_35 | _GEN_33 | _GEN_31 | _GEN_29 | _GEN_27 | _GEN_25 | _GEN_23
        | _GEN_21 | _GEN_19 | _GEN_17 | _GEN_15 | _GEN_13 | _GEN_11 | _GEN_9 | _GEN_7
        | _GEN_5 | _GEN_3 | _GEN_1);
+  wire        pairSameWord = io_enq_valid & io_enq1_valid & in0_addr == in1_addr;
+  wire        merge1Existing =
+    io_enq1_valid & ~pairSameWord
+    & (_GEN_256 | _GEN_254 | _GEN_252 | _GEN_250 | _GEN_248 | _GEN_246 | _GEN_244
+       | _GEN_242 | _GEN_240 | _GEN_238 | _GEN_236 | _GEN_234 | _GEN_232 | _GEN_230
+       | _GEN_228 | _GEN_226 | _GEN_224 | _GEN_222 | _GEN_220 | _GEN_218 | _GEN_216
+       | _GEN_214 | _GEN_212 | _GEN_210 | _GEN_208 | _GEN_206 | _GEN_204 | _GEN_202
+       | _GEN_200 | _GEN_198 | _GEN_196 | _GEN_194 | _GEN_192 | _GEN_190 | _GEN_188
+       | _GEN_186 | _GEN_184 | _GEN_182 | _GEN_180 | _GEN_178 | _GEN_176 | _GEN_174
+       | _GEN_172 | _GEN_170 | _GEN_168 | _GEN_166 | _GEN_164 | _GEN_162 | _GEN_160
+       | _GEN_158 | _GEN_156 | _GEN_154 | _GEN_152 | _GEN_150 | _GEN_148 | _GEN_146
+       | _GEN_144 | _GEN_142 | _GEN_140 | _GEN_138 | _GEN_136 | _GEN_134 | _GEN_132
+       | _GEN_130 | _GEN_128 | _GEN_126 | _GEN_124 | _GEN_122 | _GEN_120 | _GEN_118
+       | _GEN_116 | _GEN_114 | _GEN_112 | _GEN_110 | _GEN_108 | _GEN_106 | _GEN_104
+       | _GEN_102 | _GEN_100 | _GEN_98 | _GEN_96 | _GEN_94 | _GEN_92 | _GEN_90 | _GEN_88
+       | _GEN_86 | _GEN_84 | _GEN_82 | _GEN_80 | _GEN_78 | _GEN_76 | _GEN_74 | _GEN_72
+       | _GEN_70 | _GEN_68 | _GEN_66 | _GEN_64 | _GEN_62 | _GEN_60 | _GEN_58 | _GEN_56
+       | _GEN_54 | _GEN_52 | _GEN_50 | _GEN_48 | _GEN_46 | _GEN_44 | _GEN_42 | _GEN_40
+       | _GEN_38 | _GEN_36 | _GEN_34 | _GEN_32 | _GEN_30 | _GEN_28 | _GEN_26 | _GEN_24
+       | _GEN_22 | _GEN_20 | _GEN_18 | _GEN_16 | _GEN_14 | _GEN_12 | _GEN_10 | _GEN_8
+       | _GEN_6 | _GEN_4 | _GEN_2);
   wire        slot0Needed = io_enq_valid & ~merge0Existing;
   wire [1:0]  slotsNeeded =
     {1'h0, slot0Needed} + {1'h0, io_enq1_valid & ~pairSameWord & ~merge1Existing};
@@ -36561,25 +37759,33 @@ module StoreBuffer(
         casez_tmp_132 = entries_127_mask;
     endcase
   end // always_comb
-  wire        _burstStart_T = state == 2'h0;
-  wire        burstStart =
-    _burstStart_T & ~io_empty_0 & ~io_bus_busy
-    & (count > {4'h0, nextConsumeCount} | nextConsumeCount == 4'h8 | count > 8'h7B
-       | gatherAge == 5'h18);
-  wire [3:0]  _GEN_256 = {1'h0, writeBeat};
-  wire [31:0] lineBase = casez_tmp & 32'hFFFFFFE0;
-  wire [2:0]  _writeWord_T = burstFirstWord + writeBeat;
-  wire        writeMatches_0 = (|consumeCount) & casez_tmp[4:2] == _writeWord_T;
-  wire        writeMatches_1 = (|(consumeCount[3:1])) & casez_tmp_0[4:2] == _writeWord_T;
-  wire        writeMatches_2 = _writeMatches_2_T & casez_tmp_1[4:2] == _writeWord_T;
-  wire        writeMatches_3 = (|(consumeCount[3:2])) & casez_tmp_2[4:2] == _writeWord_T;
-  wire        writeMatches_4 = _writeMatches_4_T & casez_tmp_3[4:2] == _writeWord_T;
-  wire        writeMatches_5 = _writeMatches_5_T & casez_tmp_4[4:2] == _writeWord_T;
-  wire        writeMatches_6 = _writeMatches_6_T & casez_tmp_5[4:2] == _writeWord_T;
-  wire        writeMatches_7 = consumeCount[3] & casez_tmp_6[4:2] == _writeWord_T;
+  wire [3:0]  activeConsumeCount_128 =
+    chainCandidate ? chainConsumeCount : burstStart ? nextConsumeCount : consumeCount;
+  wire [2:0]  activeFirstWord =
+    chainCandidate ? chainMinWord : burstStart ? minWord : burstFirstWord;
+  wire [2:0]  activeWriteBeat = burstStart ? 3'h0 : writeBeat;
+  wire [31:0] lineBase = (chainCandidate ? chainAddrs_0 : casez_tmp) & 32'hFFFFFFE0;
+  wire [2:0]  _writeWord_T = activeFirstWord + activeWriteBeat;
+  wire        writeMatches_0 = (|activeConsumeCount_128) & casez_tmp[4:2] == _writeWord_T;
+  wire        writeMatches_1 =
+    (|(activeConsumeCount_128[3:1])) & casez_tmp_0[4:2] == _writeWord_T;
+  wire        writeMatches_2 =
+    activeConsumeCount_128 > 4'h2 & casez_tmp_1[4:2] == _writeWord_T;
+  wire        writeMatches_3 =
+    (|(activeConsumeCount_128[3:2])) & casez_tmp_2[4:2] == _writeWord_T;
+  wire        writeMatches_4 =
+    activeConsumeCount_128 > 4'h4 & casez_tmp_3[4:2] == _writeWord_T;
+  wire        writeMatches_5 =
+    activeConsumeCount_128 > 4'h5 & casez_tmp_4[4:2] == _writeWord_T;
+  wire        writeMatches_6 =
+    activeConsumeCount_128 > 4'h6 & casez_tmp_5[4:2] == _writeWord_T;
+  wire        writeMatches_7 =
+    activeConsumeCount_128[3] & casez_tmp_6[4:2] == _writeWord_T;
   wire        _io_dmem_wvalid_T = state == 2'h1;
-  wire        io_dmem_awvalid_0 = _io_dmem_wvalid_T & ~awDone;
-  wire [3:0]  _io_dmem_wlast_T = burstCount - 4'h1;
+  wire        io_dmem_awvalid_0 =
+    _io_dmem_wvalid_T & ~awDone | burstStart | chainCandidate;
+  wire [3:0]  _io_dmem_wlast_T =
+    (chainCandidate ? chainBurstCount : burstStart ? nextBurstCount : burstCount) - 4'h1;
   reg  [31:0] casez_tmp_133;
   always_comb begin
     casez (idx)
@@ -37104,7 +38310,7 @@ module StoreBuffer(
   end // always_comb
   reg  [31:0] casez_tmp_135;
   always_comb begin
-    casez (_idx_T_290)
+    casez (_query1_idx_T_2)
       7'b0000000:
         casez_tmp_135 = entries_0_data;
       7'b0000001:
@@ -37365,7 +38571,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_136;
   always_comb begin
-    casez (_idx_T_290)
+    casez (_query1_idx_T_2)
       7'b0000000:
         casez_tmp_136 = entries_0_mask;
       7'b0000001:
@@ -37626,7 +38832,7 @@ module StoreBuffer(
   end // always_comb
   reg  [31:0] casez_tmp_137;
   always_comb begin
-    casez (_idx_T_292)
+    casez (_query1_idx_T_4)
       7'b0000000:
         casez_tmp_137 = entries_0_data;
       7'b0000001:
@@ -37887,7 +39093,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_138;
   always_comb begin
-    casez (_idx_T_292)
+    casez (_query1_idx_T_4)
       7'b0000000:
         casez_tmp_138 = entries_0_mask;
       7'b0000001:
@@ -38148,7 +39354,7 @@ module StoreBuffer(
   end // always_comb
   reg  [31:0] casez_tmp_139;
   always_comb begin
-    casez (_idx_T_294)
+    casez (_query1_idx_T_6)
       7'b0000000:
         casez_tmp_139 = entries_0_data;
       7'b0000001:
@@ -38409,7 +39615,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_140;
   always_comb begin
-    casez (_idx_T_294)
+    casez (_query1_idx_T_6)
       7'b0000000:
         casez_tmp_140 = entries_0_mask;
       7'b0000001:
@@ -38670,7 +39876,7 @@ module StoreBuffer(
   end // always_comb
   reg  [31:0] casez_tmp_141;
   always_comb begin
-    casez (_idx_T_296)
+    casez (_query1_idx_T_8)
       7'b0000000:
         casez_tmp_141 = entries_0_data;
       7'b0000001:
@@ -38931,7 +40137,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_142;
   always_comb begin
-    casez (_idx_T_296)
+    casez (_query1_idx_T_8)
       7'b0000000:
         casez_tmp_142 = entries_0_mask;
       7'b0000001:
@@ -39192,7 +40398,7 @@ module StoreBuffer(
   end // always_comb
   reg  [31:0] casez_tmp_143;
   always_comb begin
-    casez (_idx_T_298)
+    casez (_query1_idx_T_10)
       7'b0000000:
         casez_tmp_143 = entries_0_data;
       7'b0000001:
@@ -39453,7 +40659,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_144;
   always_comb begin
-    casez (_idx_T_298)
+    casez (_query1_idx_T_10)
       7'b0000000:
         casez_tmp_144 = entries_0_mask;
       7'b0000001:
@@ -39714,7 +40920,7 @@ module StoreBuffer(
   end // always_comb
   reg  [31:0] casez_tmp_145;
   always_comb begin
-    casez (_idx_T_300)
+    casez (_query1_idx_T_12)
       7'b0000000:
         casez_tmp_145 = entries_0_data;
       7'b0000001:
@@ -39975,7 +41181,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_146;
   always_comb begin
-    casez (_idx_T_300)
+    casez (_query1_idx_T_12)
       7'b0000000:
         casez_tmp_146 = entries_0_mask;
       7'b0000001:
@@ -40236,7 +41442,7 @@ module StoreBuffer(
   end // always_comb
   reg  [31:0] casez_tmp_147;
   always_comb begin
-    casez (_idx_T_302)
+    casez (_query1_idx_T_14)
       7'b0000000:
         casez_tmp_147 = entries_0_data;
       7'b0000001:
@@ -40497,7 +41703,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_148;
   always_comb begin
-    casez (_idx_T_302)
+    casez (_query1_idx_T_14)
       7'b0000000:
         casez_tmp_148 = entries_0_mask;
       7'b0000001:
@@ -40766,75 +41972,89 @@ module StoreBuffer(
     | (writeMatches_2 ? casez_tmp_138 : 4'h0) | (writeMatches_3 ? casez_tmp_140 : 4'h0)
     | (writeMatches_4 ? casez_tmp_142 : 4'h0) | (writeMatches_5 ? casez_tmp_144 : 4'h0)
     | (writeMatches_6 ? casez_tmp_146 : 4'h0) | (writeMatches_7 ? casez_tmp_148 : 4'h0);
-  wire        io_dmem_wvalid_0 = _io_dmem_wvalid_T & ~wDone;
-  wire        hit = (|count) & casez_tmp[31:2] == io_ld_addr[31:2];
-  wire [31:0] mergedData_1 =
-    hit
+  wire        io_dmem_wvalid_0 = _io_dmem_wvalid_T & ~wDone | burstStart;
+  wire        query0_hit = (|count) & casez_tmp[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_mergedData_1 =
+    query0_hit
       ? casez_tmp_133
         & {{8{casez_tmp_134[3]}},
            {8{casez_tmp_134[2]}},
            {8{casez_tmp_134[1]}},
            {8{casez_tmp_134[0]}}}
       : 32'h0;
-  wire        hit_1 = (|(count[7:1])) & casez_tmp_0[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_1 =
+  wire        query0_hit_1 = (|(count[7:1])) & casez_tmp_0[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_1 =
     {{8{casez_tmp_136[3]}},
      {8{casez_tmp_136[2]}},
      {8{casez_tmp_136[1]}},
      {8{casez_tmp_136[0]}}};
-  wire [31:0] mergedData_2 =
-    hit_1 ? mergedData_1 & ~bits_1 | casez_tmp_135 & bits_1 : mergedData_1;
-  wire        hit_2 = _hit_T_8 & casez_tmp_1[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_2 =
+  wire [31:0] query0_mergedData_2 =
+    query0_hit_1
+      ? query0_mergedData_1 & ~query0_bits_1 | casez_tmp_135 & query0_bits_1
+      : query0_mergedData_1;
+  wire        query0_hit_2 = _query1_hit_T_8 & casez_tmp_1[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_2 =
     {{8{casez_tmp_138[3]}},
      {8{casez_tmp_138[2]}},
      {8{casez_tmp_138[1]}},
      {8{casez_tmp_138[0]}}};
-  wire [31:0] mergedData_3 =
-    hit_2 ? mergedData_2 & ~bits_2 | casez_tmp_137 & bits_2 : mergedData_2;
-  wire        hit_3 = (|(count[7:2])) & casez_tmp_2[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_3 =
+  wire [31:0] query0_mergedData_3 =
+    query0_hit_2
+      ? query0_mergedData_2 & ~query0_bits_2 | casez_tmp_137 & query0_bits_2
+      : query0_mergedData_2;
+  wire        query0_hit_3 = (|(count[7:2])) & casez_tmp_2[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_3 =
     {{8{casez_tmp_140[3]}},
      {8{casez_tmp_140[2]}},
      {8{casez_tmp_140[1]}},
      {8{casez_tmp_140[0]}}};
-  wire [31:0] mergedData_4 =
-    hit_3 ? mergedData_3 & ~bits_3 | casez_tmp_139 & bits_3 : mergedData_3;
-  wire        hit_4 = _hit_T_16 & casez_tmp_3[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_4 =
+  wire [31:0] query0_mergedData_4 =
+    query0_hit_3
+      ? query0_mergedData_3 & ~query0_bits_3 | casez_tmp_139 & query0_bits_3
+      : query0_mergedData_3;
+  wire        query0_hit_4 = _query1_hit_T_16 & casez_tmp_3[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_4 =
     {{8{casez_tmp_142[3]}},
      {8{casez_tmp_142[2]}},
      {8{casez_tmp_142[1]}},
      {8{casez_tmp_142[0]}}};
-  wire [31:0] mergedData_5 =
-    hit_4 ? mergedData_4 & ~bits_4 | casez_tmp_141 & bits_4 : mergedData_4;
-  wire        hit_5 = _hit_T_20 & casez_tmp_4[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_5 =
+  wire [31:0] query0_mergedData_5 =
+    query0_hit_4
+      ? query0_mergedData_4 & ~query0_bits_4 | casez_tmp_141 & query0_bits_4
+      : query0_mergedData_4;
+  wire        query0_hit_5 = _query1_hit_T_20 & casez_tmp_4[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_5 =
     {{8{casez_tmp_144[3]}},
      {8{casez_tmp_144[2]}},
      {8{casez_tmp_144[1]}},
      {8{casez_tmp_144[0]}}};
-  wire [31:0] mergedData_6 =
-    hit_5 ? mergedData_5 & ~bits_5 | casez_tmp_143 & bits_5 : mergedData_5;
-  wire        hit_6 = _hit_T_24 & casez_tmp_5[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_6 =
+  wire [31:0] query0_mergedData_6 =
+    query0_hit_5
+      ? query0_mergedData_5 & ~query0_bits_5 | casez_tmp_143 & query0_bits_5
+      : query0_mergedData_5;
+  wire        query0_hit_6 = _query1_hit_T_24 & casez_tmp_5[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_6 =
     {{8{casez_tmp_146[3]}},
      {8{casez_tmp_146[2]}},
      {8{casez_tmp_146[1]}},
      {8{casez_tmp_146[0]}}};
-  wire [31:0] mergedData_7 =
-    hit_6 ? mergedData_6 & ~bits_6 | casez_tmp_145 & bits_6 : mergedData_6;
-  wire        hit_7 = (|(count[7:3])) & casez_tmp_6[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_7 =
+  wire [31:0] query0_mergedData_7 =
+    query0_hit_6
+      ? query0_mergedData_6 & ~query0_bits_6 | casez_tmp_145 & query0_bits_6
+      : query0_mergedData_6;
+  wire        query0_hit_7 = (|(count[7:3])) & casez_tmp_6[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_7 =
     {{8{casez_tmp_148[3]}},
      {8{casez_tmp_148[2]}},
      {8{casez_tmp_148[1]}},
      {8{casez_tmp_148[0]}}};
-  wire [31:0] mergedData_8 =
-    hit_7 ? mergedData_7 & ~bits_7 | casez_tmp_147 & bits_7 : mergedData_7;
+  wire [31:0] query0_mergedData_8 =
+    query0_hit_7
+      ? query0_mergedData_7 & ~query0_bits_7 | casez_tmp_147 & query0_bits_7
+      : query0_mergedData_7;
   reg  [31:0] casez_tmp_149;
   always_comb begin
-    casez (_idx_T_304)
+    casez (_query1_idx_T_16)
       7'b0000000:
         casez_tmp_149 = entries_0_data;
       7'b0000001:
@@ -41095,7 +42315,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_150;
   always_comb begin
-    casez (_idx_T_304)
+    casez (_query1_idx_T_16)
       7'b0000000:
         casez_tmp_150 = entries_0_mask;
       7'b0000001:
@@ -41354,17 +42574,19 @@ module StoreBuffer(
         casez_tmp_150 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_8 = _hit_T_32 & casez_tmp_7[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_8 =
+  wire        query0_hit_8 = _query1_hit_T_32 & casez_tmp_7[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_8 =
     {{8{casez_tmp_150[3]}},
      {8{casez_tmp_150[2]}},
      {8{casez_tmp_150[1]}},
      {8{casez_tmp_150[0]}}};
-  wire [31:0] mergedData_9 =
-    hit_8 ? mergedData_8 & ~bits_8 | casez_tmp_149 & bits_8 : mergedData_8;
+  wire [31:0] query0_mergedData_9 =
+    query0_hit_8
+      ? query0_mergedData_8 & ~query0_bits_8 | casez_tmp_149 & query0_bits_8
+      : query0_mergedData_8;
   reg  [31:0] casez_tmp_151;
   always_comb begin
-    casez (_idx_T_306)
+    casez (_query1_idx_T_18)
       7'b0000000:
         casez_tmp_151 = entries_0_data;
       7'b0000001:
@@ -41625,7 +42847,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_152;
   always_comb begin
-    casez (_idx_T_306)
+    casez (_query1_idx_T_18)
       7'b0000000:
         casez_tmp_152 = entries_0_mask;
       7'b0000001:
@@ -41884,17 +43106,19 @@ module StoreBuffer(
         casez_tmp_152 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_9 = _hit_T_36 & casez_tmp_8[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_9 =
+  wire        query0_hit_9 = _query1_hit_T_36 & casez_tmp_8[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_9 =
     {{8{casez_tmp_152[3]}},
      {8{casez_tmp_152[2]}},
      {8{casez_tmp_152[1]}},
      {8{casez_tmp_152[0]}}};
-  wire [31:0] mergedData_10 =
-    hit_9 ? mergedData_9 & ~bits_9 | casez_tmp_151 & bits_9 : mergedData_9;
+  wire [31:0] query0_mergedData_10 =
+    query0_hit_9
+      ? query0_mergedData_9 & ~query0_bits_9 | casez_tmp_151 & query0_bits_9
+      : query0_mergedData_9;
   reg  [31:0] casez_tmp_153;
   always_comb begin
-    casez (_idx_T_308)
+    casez (_query1_idx_T_20)
       7'b0000000:
         casez_tmp_153 = entries_0_data;
       7'b0000001:
@@ -42155,7 +43379,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_154;
   always_comb begin
-    casez (_idx_T_308)
+    casez (_query1_idx_T_20)
       7'b0000000:
         casez_tmp_154 = entries_0_mask;
       7'b0000001:
@@ -42414,17 +43638,19 @@ module StoreBuffer(
         casez_tmp_154 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_10 = _hit_T_40 & casez_tmp_9[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_10 =
+  wire        query0_hit_10 = _query1_hit_T_40 & casez_tmp_9[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_10 =
     {{8{casez_tmp_154[3]}},
      {8{casez_tmp_154[2]}},
      {8{casez_tmp_154[1]}},
      {8{casez_tmp_154[0]}}};
-  wire [31:0] mergedData_11 =
-    hit_10 ? mergedData_10 & ~bits_10 | casez_tmp_153 & bits_10 : mergedData_10;
+  wire [31:0] query0_mergedData_11 =
+    query0_hit_10
+      ? query0_mergedData_10 & ~query0_bits_10 | casez_tmp_153 & query0_bits_10
+      : query0_mergedData_10;
   reg  [31:0] casez_tmp_155;
   always_comb begin
-    casez (_idx_T_310)
+    casez (_query1_idx_T_22)
       7'b0000000:
         casez_tmp_155 = entries_0_data;
       7'b0000001:
@@ -42685,7 +43911,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_156;
   always_comb begin
-    casez (_idx_T_310)
+    casez (_query1_idx_T_22)
       7'b0000000:
         casez_tmp_156 = entries_0_mask;
       7'b0000001:
@@ -42944,17 +44170,19 @@ module StoreBuffer(
         casez_tmp_156 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_11 = _hit_T_44 & casez_tmp_10[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_11 =
+  wire        query0_hit_11 = _query1_hit_T_44 & casez_tmp_10[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_11 =
     {{8{casez_tmp_156[3]}},
      {8{casez_tmp_156[2]}},
      {8{casez_tmp_156[1]}},
      {8{casez_tmp_156[0]}}};
-  wire [31:0] mergedData_12 =
-    hit_11 ? mergedData_11 & ~bits_11 | casez_tmp_155 & bits_11 : mergedData_11;
+  wire [31:0] query0_mergedData_12 =
+    query0_hit_11
+      ? query0_mergedData_11 & ~query0_bits_11 | casez_tmp_155 & query0_bits_11
+      : query0_mergedData_11;
   reg  [31:0] casez_tmp_157;
   always_comb begin
-    casez (_idx_T_312)
+    casez (_query1_idx_T_24)
       7'b0000000:
         casez_tmp_157 = entries_0_data;
       7'b0000001:
@@ -43215,7 +44443,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_158;
   always_comb begin
-    casez (_idx_T_312)
+    casez (_query1_idx_T_24)
       7'b0000000:
         casez_tmp_158 = entries_0_mask;
       7'b0000001:
@@ -43474,17 +44702,19 @@ module StoreBuffer(
         casez_tmp_158 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_12 = _hit_T_48 & casez_tmp_11[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_12 =
+  wire        query0_hit_12 = _query1_hit_T_48 & casez_tmp_11[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_12 =
     {{8{casez_tmp_158[3]}},
      {8{casez_tmp_158[2]}},
      {8{casez_tmp_158[1]}},
      {8{casez_tmp_158[0]}}};
-  wire [31:0] mergedData_13 =
-    hit_12 ? mergedData_12 & ~bits_12 | casez_tmp_157 & bits_12 : mergedData_12;
+  wire [31:0] query0_mergedData_13 =
+    query0_hit_12
+      ? query0_mergedData_12 & ~query0_bits_12 | casez_tmp_157 & query0_bits_12
+      : query0_mergedData_12;
   reg  [31:0] casez_tmp_159;
   always_comb begin
-    casez (_idx_T_314)
+    casez (_query1_idx_T_26)
       7'b0000000:
         casez_tmp_159 = entries_0_data;
       7'b0000001:
@@ -43745,7 +44975,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_160;
   always_comb begin
-    casez (_idx_T_314)
+    casez (_query1_idx_T_26)
       7'b0000000:
         casez_tmp_160 = entries_0_mask;
       7'b0000001:
@@ -44004,17 +45234,19 @@ module StoreBuffer(
         casez_tmp_160 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_13 = _hit_T_52 & casez_tmp_12[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_13 =
+  wire        query0_hit_13 = _query1_hit_T_52 & casez_tmp_12[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_13 =
     {{8{casez_tmp_160[3]}},
      {8{casez_tmp_160[2]}},
      {8{casez_tmp_160[1]}},
      {8{casez_tmp_160[0]}}};
-  wire [31:0] mergedData_14 =
-    hit_13 ? mergedData_13 & ~bits_13 | casez_tmp_159 & bits_13 : mergedData_13;
+  wire [31:0] query0_mergedData_14 =
+    query0_hit_13
+      ? query0_mergedData_13 & ~query0_bits_13 | casez_tmp_159 & query0_bits_13
+      : query0_mergedData_13;
   reg  [31:0] casez_tmp_161;
   always_comb begin
-    casez (_idx_T_316)
+    casez (_query1_idx_T_28)
       7'b0000000:
         casez_tmp_161 = entries_0_data;
       7'b0000001:
@@ -44275,7 +45507,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_162;
   always_comb begin
-    casez (_idx_T_316)
+    casez (_query1_idx_T_28)
       7'b0000000:
         casez_tmp_162 = entries_0_mask;
       7'b0000001:
@@ -44534,17 +45766,19 @@ module StoreBuffer(
         casez_tmp_162 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_14 = _hit_T_56 & casez_tmp_13[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_14 =
+  wire        query0_hit_14 = _query1_hit_T_56 & casez_tmp_13[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_14 =
     {{8{casez_tmp_162[3]}},
      {8{casez_tmp_162[2]}},
      {8{casez_tmp_162[1]}},
      {8{casez_tmp_162[0]}}};
-  wire [31:0] mergedData_15 =
-    hit_14 ? mergedData_14 & ~bits_14 | casez_tmp_161 & bits_14 : mergedData_14;
+  wire [31:0] query0_mergedData_15 =
+    query0_hit_14
+      ? query0_mergedData_14 & ~query0_bits_14 | casez_tmp_161 & query0_bits_14
+      : query0_mergedData_14;
   reg  [31:0] casez_tmp_163;
   always_comb begin
-    casez (_idx_T_318)
+    casez (_query1_idx_T_30)
       7'b0000000:
         casez_tmp_163 = entries_0_data;
       7'b0000001:
@@ -44805,7 +46039,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_164;
   always_comb begin
-    casez (_idx_T_318)
+    casez (_query1_idx_T_30)
       7'b0000000:
         casez_tmp_164 = entries_0_mask;
       7'b0000001:
@@ -45064,17 +46298,19 @@ module StoreBuffer(
         casez_tmp_164 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_15 = (|(count[7:4])) & casez_tmp_14[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_15 =
+  wire        query0_hit_15 = (|(count[7:4])) & casez_tmp_14[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_15 =
     {{8{casez_tmp_164[3]}},
      {8{casez_tmp_164[2]}},
      {8{casez_tmp_164[1]}},
      {8{casez_tmp_164[0]}}};
-  wire [31:0] mergedData_16 =
-    hit_15 ? mergedData_15 & ~bits_15 | casez_tmp_163 & bits_15 : mergedData_15;
+  wire [31:0] query0_mergedData_16 =
+    query0_hit_15
+      ? query0_mergedData_15 & ~query0_bits_15 | casez_tmp_163 & query0_bits_15
+      : query0_mergedData_15;
   reg  [31:0] casez_tmp_165;
   always_comb begin
-    casez (_idx_T_320)
+    casez (_query1_idx_T_32)
       7'b0000000:
         casez_tmp_165 = entries_0_data;
       7'b0000001:
@@ -45335,7 +46571,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_166;
   always_comb begin
-    casez (_idx_T_320)
+    casez (_query1_idx_T_32)
       7'b0000000:
         casez_tmp_166 = entries_0_mask;
       7'b0000001:
@@ -45594,17 +46830,19 @@ module StoreBuffer(
         casez_tmp_166 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_16 = mutable_16 & casez_tmp_15[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_16 =
+  wire        query0_hit_16 = mutable_16 & casez_tmp_15[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_16 =
     {{8{casez_tmp_166[3]}},
      {8{casez_tmp_166[2]}},
      {8{casez_tmp_166[1]}},
      {8{casez_tmp_166[0]}}};
-  wire [31:0] mergedData_17 =
-    hit_16 ? mergedData_16 & ~bits_16 | casez_tmp_165 & bits_16 : mergedData_16;
+  wire [31:0] query0_mergedData_17 =
+    query0_hit_16
+      ? query0_mergedData_16 & ~query0_bits_16 | casez_tmp_165 & query0_bits_16
+      : query0_mergedData_16;
   reg  [31:0] casez_tmp_167;
   always_comb begin
-    casez (_idx_T_322)
+    casez (_query1_idx_T_34)
       7'b0000000:
         casez_tmp_167 = entries_0_data;
       7'b0000001:
@@ -45865,7 +47103,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_168;
   always_comb begin
-    casez (_idx_T_322)
+    casez (_query1_idx_T_34)
       7'b0000000:
         casez_tmp_168 = entries_0_mask;
       7'b0000001:
@@ -46124,17 +47362,19 @@ module StoreBuffer(
         casez_tmp_168 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_17 = mutable_17 & casez_tmp_16[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_17 =
+  wire        query0_hit_17 = mutable_17 & casez_tmp_16[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_17 =
     {{8{casez_tmp_168[3]}},
      {8{casez_tmp_168[2]}},
      {8{casez_tmp_168[1]}},
      {8{casez_tmp_168[0]}}};
-  wire [31:0] mergedData_18 =
-    hit_17 ? mergedData_17 & ~bits_17 | casez_tmp_167 & bits_17 : mergedData_17;
+  wire [31:0] query0_mergedData_18 =
+    query0_hit_17
+      ? query0_mergedData_17 & ~query0_bits_17 | casez_tmp_167 & query0_bits_17
+      : query0_mergedData_17;
   reg  [31:0] casez_tmp_169;
   always_comb begin
-    casez (_idx_T_324)
+    casez (_query1_idx_T_36)
       7'b0000000:
         casez_tmp_169 = entries_0_data;
       7'b0000001:
@@ -46395,7 +47635,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_170;
   always_comb begin
-    casez (_idx_T_324)
+    casez (_query1_idx_T_36)
       7'b0000000:
         casez_tmp_170 = entries_0_mask;
       7'b0000001:
@@ -46654,17 +47894,19 @@ module StoreBuffer(
         casez_tmp_170 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_18 = mutable_18 & casez_tmp_17[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_18 =
+  wire        query0_hit_18 = mutable_18 & casez_tmp_17[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_18 =
     {{8{casez_tmp_170[3]}},
      {8{casez_tmp_170[2]}},
      {8{casez_tmp_170[1]}},
      {8{casez_tmp_170[0]}}};
-  wire [31:0] mergedData_19 =
-    hit_18 ? mergedData_18 & ~bits_18 | casez_tmp_169 & bits_18 : mergedData_18;
+  wire [31:0] query0_mergedData_19 =
+    query0_hit_18
+      ? query0_mergedData_18 & ~query0_bits_18 | casez_tmp_169 & query0_bits_18
+      : query0_mergedData_18;
   reg  [31:0] casez_tmp_171;
   always_comb begin
-    casez (_idx_T_326)
+    casez (_query1_idx_T_38)
       7'b0000000:
         casez_tmp_171 = entries_0_data;
       7'b0000001:
@@ -46925,7 +48167,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_172;
   always_comb begin
-    casez (_idx_T_326)
+    casez (_query1_idx_T_38)
       7'b0000000:
         casez_tmp_172 = entries_0_mask;
       7'b0000001:
@@ -47184,17 +48426,19 @@ module StoreBuffer(
         casez_tmp_172 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_19 = mutable_19 & casez_tmp_18[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_19 =
+  wire        query0_hit_19 = mutable_19 & casez_tmp_18[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_19 =
     {{8{casez_tmp_172[3]}},
      {8{casez_tmp_172[2]}},
      {8{casez_tmp_172[1]}},
      {8{casez_tmp_172[0]}}};
-  wire [31:0] mergedData_20 =
-    hit_19 ? mergedData_19 & ~bits_19 | casez_tmp_171 & bits_19 : mergedData_19;
+  wire [31:0] query0_mergedData_20 =
+    query0_hit_19
+      ? query0_mergedData_19 & ~query0_bits_19 | casez_tmp_171 & query0_bits_19
+      : query0_mergedData_19;
   reg  [31:0] casez_tmp_173;
   always_comb begin
-    casez (_idx_T_328)
+    casez (_query1_idx_T_40)
       7'b0000000:
         casez_tmp_173 = entries_0_data;
       7'b0000001:
@@ -47455,7 +48699,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_174;
   always_comb begin
-    casez (_idx_T_328)
+    casez (_query1_idx_T_40)
       7'b0000000:
         casez_tmp_174 = entries_0_mask;
       7'b0000001:
@@ -47714,17 +48958,19 @@ module StoreBuffer(
         casez_tmp_174 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_20 = mutable_20 & casez_tmp_19[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_20 =
+  wire        query0_hit_20 = mutable_20 & casez_tmp_19[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_20 =
     {{8{casez_tmp_174[3]}},
      {8{casez_tmp_174[2]}},
      {8{casez_tmp_174[1]}},
      {8{casez_tmp_174[0]}}};
-  wire [31:0] mergedData_21 =
-    hit_20 ? mergedData_20 & ~bits_20 | casez_tmp_173 & bits_20 : mergedData_20;
+  wire [31:0] query0_mergedData_21 =
+    query0_hit_20
+      ? query0_mergedData_20 & ~query0_bits_20 | casez_tmp_173 & query0_bits_20
+      : query0_mergedData_20;
   reg  [31:0] casez_tmp_175;
   always_comb begin
-    casez (_idx_T_330)
+    casez (_query1_idx_T_42)
       7'b0000000:
         casez_tmp_175 = entries_0_data;
       7'b0000001:
@@ -47985,7 +49231,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_176;
   always_comb begin
-    casez (_idx_T_330)
+    casez (_query1_idx_T_42)
       7'b0000000:
         casez_tmp_176 = entries_0_mask;
       7'b0000001:
@@ -48244,17 +49490,19 @@ module StoreBuffer(
         casez_tmp_176 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_21 = mutable_21 & casez_tmp_20[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_21 =
+  wire        query0_hit_21 = mutable_21 & casez_tmp_20[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_21 =
     {{8{casez_tmp_176[3]}},
      {8{casez_tmp_176[2]}},
      {8{casez_tmp_176[1]}},
      {8{casez_tmp_176[0]}}};
-  wire [31:0] mergedData_22 =
-    hit_21 ? mergedData_21 & ~bits_21 | casez_tmp_175 & bits_21 : mergedData_21;
+  wire [31:0] query0_mergedData_22 =
+    query0_hit_21
+      ? query0_mergedData_21 & ~query0_bits_21 | casez_tmp_175 & query0_bits_21
+      : query0_mergedData_21;
   reg  [31:0] casez_tmp_177;
   always_comb begin
-    casez (_idx_T_332)
+    casez (_query1_idx_T_44)
       7'b0000000:
         casez_tmp_177 = entries_0_data;
       7'b0000001:
@@ -48515,7 +49763,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_178;
   always_comb begin
-    casez (_idx_T_332)
+    casez (_query1_idx_T_44)
       7'b0000000:
         casez_tmp_178 = entries_0_mask;
       7'b0000001:
@@ -48774,17 +50022,19 @@ module StoreBuffer(
         casez_tmp_178 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_22 = mutable_22 & casez_tmp_21[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_22 =
+  wire        query0_hit_22 = mutable_22 & casez_tmp_21[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_22 =
     {{8{casez_tmp_178[3]}},
      {8{casez_tmp_178[2]}},
      {8{casez_tmp_178[1]}},
      {8{casez_tmp_178[0]}}};
-  wire [31:0] mergedData_23 =
-    hit_22 ? mergedData_22 & ~bits_22 | casez_tmp_177 & bits_22 : mergedData_22;
+  wire [31:0] query0_mergedData_23 =
+    query0_hit_22
+      ? query0_mergedData_22 & ~query0_bits_22 | casez_tmp_177 & query0_bits_22
+      : query0_mergedData_22;
   reg  [31:0] casez_tmp_179;
   always_comb begin
-    casez (_idx_T_334)
+    casez (_query1_idx_T_46)
       7'b0000000:
         casez_tmp_179 = entries_0_data;
       7'b0000001:
@@ -49045,7 +50295,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_180;
   always_comb begin
-    casez (_idx_T_334)
+    casez (_query1_idx_T_46)
       7'b0000000:
         casez_tmp_180 = entries_0_mask;
       7'b0000001:
@@ -49304,17 +50554,19 @@ module StoreBuffer(
         casez_tmp_180 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_23 = mutable_23 & casez_tmp_22[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_23 =
+  wire        query0_hit_23 = mutable_23 & casez_tmp_22[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_23 =
     {{8{casez_tmp_180[3]}},
      {8{casez_tmp_180[2]}},
      {8{casez_tmp_180[1]}},
      {8{casez_tmp_180[0]}}};
-  wire [31:0] mergedData_24 =
-    hit_23 ? mergedData_23 & ~bits_23 | casez_tmp_179 & bits_23 : mergedData_23;
+  wire [31:0] query0_mergedData_24 =
+    query0_hit_23
+      ? query0_mergedData_23 & ~query0_bits_23 | casez_tmp_179 & query0_bits_23
+      : query0_mergedData_23;
   reg  [31:0] casez_tmp_181;
   always_comb begin
-    casez (_idx_T_336)
+    casez (_query1_idx_T_48)
       7'b0000000:
         casez_tmp_181 = entries_0_data;
       7'b0000001:
@@ -49575,7 +50827,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_182;
   always_comb begin
-    casez (_idx_T_336)
+    casez (_query1_idx_T_48)
       7'b0000000:
         casez_tmp_182 = entries_0_mask;
       7'b0000001:
@@ -49834,17 +51086,19 @@ module StoreBuffer(
         casez_tmp_182 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_24 = mutable_24 & casez_tmp_23[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_24 =
+  wire        query0_hit_24 = mutable_24 & casez_tmp_23[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_24 =
     {{8{casez_tmp_182[3]}},
      {8{casez_tmp_182[2]}},
      {8{casez_tmp_182[1]}},
      {8{casez_tmp_182[0]}}};
-  wire [31:0] mergedData_25 =
-    hit_24 ? mergedData_24 & ~bits_24 | casez_tmp_181 & bits_24 : mergedData_24;
+  wire [31:0] query0_mergedData_25 =
+    query0_hit_24
+      ? query0_mergedData_24 & ~query0_bits_24 | casez_tmp_181 & query0_bits_24
+      : query0_mergedData_24;
   reg  [31:0] casez_tmp_183;
   always_comb begin
-    casez (_idx_T_338)
+    casez (_query1_idx_T_50)
       7'b0000000:
         casez_tmp_183 = entries_0_data;
       7'b0000001:
@@ -50105,7 +51359,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_184;
   always_comb begin
-    casez (_idx_T_338)
+    casez (_query1_idx_T_50)
       7'b0000000:
         casez_tmp_184 = entries_0_mask;
       7'b0000001:
@@ -50364,17 +51618,19 @@ module StoreBuffer(
         casez_tmp_184 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_25 = mutable_25 & casez_tmp_24[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_25 =
+  wire        query0_hit_25 = mutable_25 & casez_tmp_24[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_25 =
     {{8{casez_tmp_184[3]}},
      {8{casez_tmp_184[2]}},
      {8{casez_tmp_184[1]}},
      {8{casez_tmp_184[0]}}};
-  wire [31:0] mergedData_26 =
-    hit_25 ? mergedData_25 & ~bits_25 | casez_tmp_183 & bits_25 : mergedData_25;
+  wire [31:0] query0_mergedData_26 =
+    query0_hit_25
+      ? query0_mergedData_25 & ~query0_bits_25 | casez_tmp_183 & query0_bits_25
+      : query0_mergedData_25;
   reg  [31:0] casez_tmp_185;
   always_comb begin
-    casez (_idx_T_340)
+    casez (_query1_idx_T_52)
       7'b0000000:
         casez_tmp_185 = entries_0_data;
       7'b0000001:
@@ -50635,7 +51891,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_186;
   always_comb begin
-    casez (_idx_T_340)
+    casez (_query1_idx_T_52)
       7'b0000000:
         casez_tmp_186 = entries_0_mask;
       7'b0000001:
@@ -50894,17 +52150,19 @@ module StoreBuffer(
         casez_tmp_186 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_26 = mutable_26 & casez_tmp_25[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_26 =
+  wire        query0_hit_26 = mutable_26 & casez_tmp_25[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_26 =
     {{8{casez_tmp_186[3]}},
      {8{casez_tmp_186[2]}},
      {8{casez_tmp_186[1]}},
      {8{casez_tmp_186[0]}}};
-  wire [31:0] mergedData_27 =
-    hit_26 ? mergedData_26 & ~bits_26 | casez_tmp_185 & bits_26 : mergedData_26;
+  wire [31:0] query0_mergedData_27 =
+    query0_hit_26
+      ? query0_mergedData_26 & ~query0_bits_26 | casez_tmp_185 & query0_bits_26
+      : query0_mergedData_26;
   reg  [31:0] casez_tmp_187;
   always_comb begin
-    casez (_idx_T_342)
+    casez (_query1_idx_T_54)
       7'b0000000:
         casez_tmp_187 = entries_0_data;
       7'b0000001:
@@ -51165,7 +52423,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_188;
   always_comb begin
-    casez (_idx_T_342)
+    casez (_query1_idx_T_54)
       7'b0000000:
         casez_tmp_188 = entries_0_mask;
       7'b0000001:
@@ -51424,17 +52682,19 @@ module StoreBuffer(
         casez_tmp_188 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_27 = mutable_27 & casez_tmp_26[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_27 =
+  wire        query0_hit_27 = mutable_27 & casez_tmp_26[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_27 =
     {{8{casez_tmp_188[3]}},
      {8{casez_tmp_188[2]}},
      {8{casez_tmp_188[1]}},
      {8{casez_tmp_188[0]}}};
-  wire [31:0] mergedData_28 =
-    hit_27 ? mergedData_27 & ~bits_27 | casez_tmp_187 & bits_27 : mergedData_27;
+  wire [31:0] query0_mergedData_28 =
+    query0_hit_27
+      ? query0_mergedData_27 & ~query0_bits_27 | casez_tmp_187 & query0_bits_27
+      : query0_mergedData_27;
   reg  [31:0] casez_tmp_189;
   always_comb begin
-    casez (_idx_T_344)
+    casez (_query1_idx_T_56)
       7'b0000000:
         casez_tmp_189 = entries_0_data;
       7'b0000001:
@@ -51695,7 +52955,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_190;
   always_comb begin
-    casez (_idx_T_344)
+    casez (_query1_idx_T_56)
       7'b0000000:
         casez_tmp_190 = entries_0_mask;
       7'b0000001:
@@ -51954,17 +53214,19 @@ module StoreBuffer(
         casez_tmp_190 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_28 = mutable_28 & casez_tmp_27[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_28 =
+  wire        query0_hit_28 = mutable_28 & casez_tmp_27[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_28 =
     {{8{casez_tmp_190[3]}},
      {8{casez_tmp_190[2]}},
      {8{casez_tmp_190[1]}},
      {8{casez_tmp_190[0]}}};
-  wire [31:0] mergedData_29 =
-    hit_28 ? mergedData_28 & ~bits_28 | casez_tmp_189 & bits_28 : mergedData_28;
+  wire [31:0] query0_mergedData_29 =
+    query0_hit_28
+      ? query0_mergedData_28 & ~query0_bits_28 | casez_tmp_189 & query0_bits_28
+      : query0_mergedData_28;
   reg  [31:0] casez_tmp_191;
   always_comb begin
-    casez (_idx_T_346)
+    casez (_query1_idx_T_58)
       7'b0000000:
         casez_tmp_191 = entries_0_data;
       7'b0000001:
@@ -52225,7 +53487,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_192;
   always_comb begin
-    casez (_idx_T_346)
+    casez (_query1_idx_T_58)
       7'b0000000:
         casez_tmp_192 = entries_0_mask;
       7'b0000001:
@@ -52484,17 +53746,19 @@ module StoreBuffer(
         casez_tmp_192 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_29 = mutable_29 & casez_tmp_28[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_29 =
+  wire        query0_hit_29 = mutable_29 & casez_tmp_28[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_29 =
     {{8{casez_tmp_192[3]}},
      {8{casez_tmp_192[2]}},
      {8{casez_tmp_192[1]}},
      {8{casez_tmp_192[0]}}};
-  wire [31:0] mergedData_30 =
-    hit_29 ? mergedData_29 & ~bits_29 | casez_tmp_191 & bits_29 : mergedData_29;
+  wire [31:0] query0_mergedData_30 =
+    query0_hit_29
+      ? query0_mergedData_29 & ~query0_bits_29 | casez_tmp_191 & query0_bits_29
+      : query0_mergedData_29;
   reg  [31:0] casez_tmp_193;
   always_comb begin
-    casez (_idx_T_348)
+    casez (_query1_idx_T_60)
       7'b0000000:
         casez_tmp_193 = entries_0_data;
       7'b0000001:
@@ -52755,7 +54019,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_194;
   always_comb begin
-    casez (_idx_T_348)
+    casez (_query1_idx_T_60)
       7'b0000000:
         casez_tmp_194 = entries_0_mask;
       7'b0000001:
@@ -53014,17 +54278,19 @@ module StoreBuffer(
         casez_tmp_194 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_30 = mutable_30 & casez_tmp_29[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_30 =
+  wire        query0_hit_30 = mutable_30 & casez_tmp_29[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_30 =
     {{8{casez_tmp_194[3]}},
      {8{casez_tmp_194[2]}},
      {8{casez_tmp_194[1]}},
      {8{casez_tmp_194[0]}}};
-  wire [31:0] mergedData_31 =
-    hit_30 ? mergedData_30 & ~bits_30 | casez_tmp_193 & bits_30 : mergedData_30;
+  wire [31:0] query0_mergedData_31 =
+    query0_hit_30
+      ? query0_mergedData_30 & ~query0_bits_30 | casez_tmp_193 & query0_bits_30
+      : query0_mergedData_30;
   reg  [31:0] casez_tmp_195;
   always_comb begin
-    casez (_idx_T_350)
+    casez (_query1_idx_T_62)
       7'b0000000:
         casez_tmp_195 = entries_0_data;
       7'b0000001:
@@ -53285,7 +54551,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_196;
   always_comb begin
-    casez (_idx_T_350)
+    casez (_query1_idx_T_62)
       7'b0000000:
         casez_tmp_196 = entries_0_mask;
       7'b0000001:
@@ -53544,17 +54810,19 @@ module StoreBuffer(
         casez_tmp_196 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_31 = (|(count[7:5])) & casez_tmp_30[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_31 =
+  wire        query0_hit_31 = (|(count[7:5])) & casez_tmp_30[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_31 =
     {{8{casez_tmp_196[3]}},
      {8{casez_tmp_196[2]}},
      {8{casez_tmp_196[1]}},
      {8{casez_tmp_196[0]}}};
-  wire [31:0] mergedData_32 =
-    hit_31 ? mergedData_31 & ~bits_31 | casez_tmp_195 & bits_31 : mergedData_31;
+  wire [31:0] query0_mergedData_32 =
+    query0_hit_31
+      ? query0_mergedData_31 & ~query0_bits_31 | casez_tmp_195 & query0_bits_31
+      : query0_mergedData_31;
   reg  [31:0] casez_tmp_197;
   always_comb begin
-    casez (_idx_T_352)
+    casez (_query1_idx_T_64)
       7'b0000000:
         casez_tmp_197 = entries_0_data;
       7'b0000001:
@@ -53815,7 +55083,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_198;
   always_comb begin
-    casez (_idx_T_352)
+    casez (_query1_idx_T_64)
       7'b0000000:
         casez_tmp_198 = entries_0_mask;
       7'b0000001:
@@ -54074,17 +55342,19 @@ module StoreBuffer(
         casez_tmp_198 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_32 = mutable_32 & casez_tmp_31[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_32 =
+  wire        query0_hit_32 = mutable_32 & casez_tmp_31[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_32 =
     {{8{casez_tmp_198[3]}},
      {8{casez_tmp_198[2]}},
      {8{casez_tmp_198[1]}},
      {8{casez_tmp_198[0]}}};
-  wire [31:0] mergedData_33 =
-    hit_32 ? mergedData_32 & ~bits_32 | casez_tmp_197 & bits_32 : mergedData_32;
+  wire [31:0] query0_mergedData_33 =
+    query0_hit_32
+      ? query0_mergedData_32 & ~query0_bits_32 | casez_tmp_197 & query0_bits_32
+      : query0_mergedData_32;
   reg  [31:0] casez_tmp_199;
   always_comb begin
-    casez (_idx_T_354)
+    casez (_query1_idx_T_66)
       7'b0000000:
         casez_tmp_199 = entries_0_data;
       7'b0000001:
@@ -54345,7 +55615,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_200;
   always_comb begin
-    casez (_idx_T_354)
+    casez (_query1_idx_T_66)
       7'b0000000:
         casez_tmp_200 = entries_0_mask;
       7'b0000001:
@@ -54604,17 +55874,19 @@ module StoreBuffer(
         casez_tmp_200 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_33 = mutable_33 & casez_tmp_32[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_33 =
+  wire        query0_hit_33 = mutable_33 & casez_tmp_32[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_33 =
     {{8{casez_tmp_200[3]}},
      {8{casez_tmp_200[2]}},
      {8{casez_tmp_200[1]}},
      {8{casez_tmp_200[0]}}};
-  wire [31:0] mergedData_34 =
-    hit_33 ? mergedData_33 & ~bits_33 | casez_tmp_199 & bits_33 : mergedData_33;
+  wire [31:0] query0_mergedData_34 =
+    query0_hit_33
+      ? query0_mergedData_33 & ~query0_bits_33 | casez_tmp_199 & query0_bits_33
+      : query0_mergedData_33;
   reg  [31:0] casez_tmp_201;
   always_comb begin
-    casez (_idx_T_356)
+    casez (_query1_idx_T_68)
       7'b0000000:
         casez_tmp_201 = entries_0_data;
       7'b0000001:
@@ -54875,7 +56147,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_202;
   always_comb begin
-    casez (_idx_T_356)
+    casez (_query1_idx_T_68)
       7'b0000000:
         casez_tmp_202 = entries_0_mask;
       7'b0000001:
@@ -55134,17 +56406,19 @@ module StoreBuffer(
         casez_tmp_202 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_34 = mutable_34 & casez_tmp_33[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_34 =
+  wire        query0_hit_34 = mutable_34 & casez_tmp_33[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_34 =
     {{8{casez_tmp_202[3]}},
      {8{casez_tmp_202[2]}},
      {8{casez_tmp_202[1]}},
      {8{casez_tmp_202[0]}}};
-  wire [31:0] mergedData_35 =
-    hit_34 ? mergedData_34 & ~bits_34 | casez_tmp_201 & bits_34 : mergedData_34;
+  wire [31:0] query0_mergedData_35 =
+    query0_hit_34
+      ? query0_mergedData_34 & ~query0_bits_34 | casez_tmp_201 & query0_bits_34
+      : query0_mergedData_34;
   reg  [31:0] casez_tmp_203;
   always_comb begin
-    casez (_idx_T_358)
+    casez (_query1_idx_T_70)
       7'b0000000:
         casez_tmp_203 = entries_0_data;
       7'b0000001:
@@ -55405,7 +56679,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_204;
   always_comb begin
-    casez (_idx_T_358)
+    casez (_query1_idx_T_70)
       7'b0000000:
         casez_tmp_204 = entries_0_mask;
       7'b0000001:
@@ -55664,17 +56938,19 @@ module StoreBuffer(
         casez_tmp_204 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_35 = mutable_35 & casez_tmp_34[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_35 =
+  wire        query0_hit_35 = mutable_35 & casez_tmp_34[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_35 =
     {{8{casez_tmp_204[3]}},
      {8{casez_tmp_204[2]}},
      {8{casez_tmp_204[1]}},
      {8{casez_tmp_204[0]}}};
-  wire [31:0] mergedData_36 =
-    hit_35 ? mergedData_35 & ~bits_35 | casez_tmp_203 & bits_35 : mergedData_35;
+  wire [31:0] query0_mergedData_36 =
+    query0_hit_35
+      ? query0_mergedData_35 & ~query0_bits_35 | casez_tmp_203 & query0_bits_35
+      : query0_mergedData_35;
   reg  [31:0] casez_tmp_205;
   always_comb begin
-    casez (_idx_T_360)
+    casez (_query1_idx_T_72)
       7'b0000000:
         casez_tmp_205 = entries_0_data;
       7'b0000001:
@@ -55935,7 +57211,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_206;
   always_comb begin
-    casez (_idx_T_360)
+    casez (_query1_idx_T_72)
       7'b0000000:
         casez_tmp_206 = entries_0_mask;
       7'b0000001:
@@ -56194,17 +57470,19 @@ module StoreBuffer(
         casez_tmp_206 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_36 = mutable_36 & casez_tmp_35[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_36 =
+  wire        query0_hit_36 = mutable_36 & casez_tmp_35[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_36 =
     {{8{casez_tmp_206[3]}},
      {8{casez_tmp_206[2]}},
      {8{casez_tmp_206[1]}},
      {8{casez_tmp_206[0]}}};
-  wire [31:0] mergedData_37 =
-    hit_36 ? mergedData_36 & ~bits_36 | casez_tmp_205 & bits_36 : mergedData_36;
+  wire [31:0] query0_mergedData_37 =
+    query0_hit_36
+      ? query0_mergedData_36 & ~query0_bits_36 | casez_tmp_205 & query0_bits_36
+      : query0_mergedData_36;
   reg  [31:0] casez_tmp_207;
   always_comb begin
-    casez (_idx_T_362)
+    casez (_query1_idx_T_74)
       7'b0000000:
         casez_tmp_207 = entries_0_data;
       7'b0000001:
@@ -56465,7 +57743,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_208;
   always_comb begin
-    casez (_idx_T_362)
+    casez (_query1_idx_T_74)
       7'b0000000:
         casez_tmp_208 = entries_0_mask;
       7'b0000001:
@@ -56724,17 +58002,19 @@ module StoreBuffer(
         casez_tmp_208 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_37 = mutable_37 & casez_tmp_36[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_37 =
+  wire        query0_hit_37 = mutable_37 & casez_tmp_36[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_37 =
     {{8{casez_tmp_208[3]}},
      {8{casez_tmp_208[2]}},
      {8{casez_tmp_208[1]}},
      {8{casez_tmp_208[0]}}};
-  wire [31:0] mergedData_38 =
-    hit_37 ? mergedData_37 & ~bits_37 | casez_tmp_207 & bits_37 : mergedData_37;
+  wire [31:0] query0_mergedData_38 =
+    query0_hit_37
+      ? query0_mergedData_37 & ~query0_bits_37 | casez_tmp_207 & query0_bits_37
+      : query0_mergedData_37;
   reg  [31:0] casez_tmp_209;
   always_comb begin
-    casez (_idx_T_364)
+    casez (_query1_idx_T_76)
       7'b0000000:
         casez_tmp_209 = entries_0_data;
       7'b0000001:
@@ -56995,7 +58275,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_210;
   always_comb begin
-    casez (_idx_T_364)
+    casez (_query1_idx_T_76)
       7'b0000000:
         casez_tmp_210 = entries_0_mask;
       7'b0000001:
@@ -57254,17 +58534,19 @@ module StoreBuffer(
         casez_tmp_210 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_38 = mutable_38 & casez_tmp_37[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_38 =
+  wire        query0_hit_38 = mutable_38 & casez_tmp_37[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_38 =
     {{8{casez_tmp_210[3]}},
      {8{casez_tmp_210[2]}},
      {8{casez_tmp_210[1]}},
      {8{casez_tmp_210[0]}}};
-  wire [31:0] mergedData_39 =
-    hit_38 ? mergedData_38 & ~bits_38 | casez_tmp_209 & bits_38 : mergedData_38;
+  wire [31:0] query0_mergedData_39 =
+    query0_hit_38
+      ? query0_mergedData_38 & ~query0_bits_38 | casez_tmp_209 & query0_bits_38
+      : query0_mergedData_38;
   reg  [31:0] casez_tmp_211;
   always_comb begin
-    casez (_idx_T_366)
+    casez (_query1_idx_T_78)
       7'b0000000:
         casez_tmp_211 = entries_0_data;
       7'b0000001:
@@ -57525,7 +58807,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_212;
   always_comb begin
-    casez (_idx_T_366)
+    casez (_query1_idx_T_78)
       7'b0000000:
         casez_tmp_212 = entries_0_mask;
       7'b0000001:
@@ -57784,17 +59066,19 @@ module StoreBuffer(
         casez_tmp_212 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_39 = mutable_39 & casez_tmp_38[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_39 =
+  wire        query0_hit_39 = mutable_39 & casez_tmp_38[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_39 =
     {{8{casez_tmp_212[3]}},
      {8{casez_tmp_212[2]}},
      {8{casez_tmp_212[1]}},
      {8{casez_tmp_212[0]}}};
-  wire [31:0] mergedData_40 =
-    hit_39 ? mergedData_39 & ~bits_39 | casez_tmp_211 & bits_39 : mergedData_39;
+  wire [31:0] query0_mergedData_40 =
+    query0_hit_39
+      ? query0_mergedData_39 & ~query0_bits_39 | casez_tmp_211 & query0_bits_39
+      : query0_mergedData_39;
   reg  [31:0] casez_tmp_213;
   always_comb begin
-    casez (_idx_T_368)
+    casez (_query1_idx_T_80)
       7'b0000000:
         casez_tmp_213 = entries_0_data;
       7'b0000001:
@@ -58055,7 +59339,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_214;
   always_comb begin
-    casez (_idx_T_368)
+    casez (_query1_idx_T_80)
       7'b0000000:
         casez_tmp_214 = entries_0_mask;
       7'b0000001:
@@ -58314,17 +59598,19 @@ module StoreBuffer(
         casez_tmp_214 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_40 = mutable_40 & casez_tmp_39[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_40 =
+  wire        query0_hit_40 = mutable_40 & casez_tmp_39[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_40 =
     {{8{casez_tmp_214[3]}},
      {8{casez_tmp_214[2]}},
      {8{casez_tmp_214[1]}},
      {8{casez_tmp_214[0]}}};
-  wire [31:0] mergedData_41 =
-    hit_40 ? mergedData_40 & ~bits_40 | casez_tmp_213 & bits_40 : mergedData_40;
+  wire [31:0] query0_mergedData_41 =
+    query0_hit_40
+      ? query0_mergedData_40 & ~query0_bits_40 | casez_tmp_213 & query0_bits_40
+      : query0_mergedData_40;
   reg  [31:0] casez_tmp_215;
   always_comb begin
-    casez (_idx_T_370)
+    casez (_query1_idx_T_82)
       7'b0000000:
         casez_tmp_215 = entries_0_data;
       7'b0000001:
@@ -58585,7 +59871,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_216;
   always_comb begin
-    casez (_idx_T_370)
+    casez (_query1_idx_T_82)
       7'b0000000:
         casez_tmp_216 = entries_0_mask;
       7'b0000001:
@@ -58844,17 +60130,19 @@ module StoreBuffer(
         casez_tmp_216 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_41 = mutable_41 & casez_tmp_40[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_41 =
+  wire        query0_hit_41 = mutable_41 & casez_tmp_40[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_41 =
     {{8{casez_tmp_216[3]}},
      {8{casez_tmp_216[2]}},
      {8{casez_tmp_216[1]}},
      {8{casez_tmp_216[0]}}};
-  wire [31:0] mergedData_42 =
-    hit_41 ? mergedData_41 & ~bits_41 | casez_tmp_215 & bits_41 : mergedData_41;
+  wire [31:0] query0_mergedData_42 =
+    query0_hit_41
+      ? query0_mergedData_41 & ~query0_bits_41 | casez_tmp_215 & query0_bits_41
+      : query0_mergedData_41;
   reg  [31:0] casez_tmp_217;
   always_comb begin
-    casez (_idx_T_372)
+    casez (_query1_idx_T_84)
       7'b0000000:
         casez_tmp_217 = entries_0_data;
       7'b0000001:
@@ -59115,7 +60403,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_218;
   always_comb begin
-    casez (_idx_T_372)
+    casez (_query1_idx_T_84)
       7'b0000000:
         casez_tmp_218 = entries_0_mask;
       7'b0000001:
@@ -59374,17 +60662,19 @@ module StoreBuffer(
         casez_tmp_218 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_42 = mutable_42 & casez_tmp_41[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_42 =
+  wire        query0_hit_42 = mutable_42 & casez_tmp_41[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_42 =
     {{8{casez_tmp_218[3]}},
      {8{casez_tmp_218[2]}},
      {8{casez_tmp_218[1]}},
      {8{casez_tmp_218[0]}}};
-  wire [31:0] mergedData_43 =
-    hit_42 ? mergedData_42 & ~bits_42 | casez_tmp_217 & bits_42 : mergedData_42;
+  wire [31:0] query0_mergedData_43 =
+    query0_hit_42
+      ? query0_mergedData_42 & ~query0_bits_42 | casez_tmp_217 & query0_bits_42
+      : query0_mergedData_42;
   reg  [31:0] casez_tmp_219;
   always_comb begin
-    casez (_idx_T_374)
+    casez (_query1_idx_T_86)
       7'b0000000:
         casez_tmp_219 = entries_0_data;
       7'b0000001:
@@ -59645,7 +60935,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_220;
   always_comb begin
-    casez (_idx_T_374)
+    casez (_query1_idx_T_86)
       7'b0000000:
         casez_tmp_220 = entries_0_mask;
       7'b0000001:
@@ -59904,17 +61194,19 @@ module StoreBuffer(
         casez_tmp_220 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_43 = mutable_43 & casez_tmp_42[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_43 =
+  wire        query0_hit_43 = mutable_43 & casez_tmp_42[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_43 =
     {{8{casez_tmp_220[3]}},
      {8{casez_tmp_220[2]}},
      {8{casez_tmp_220[1]}},
      {8{casez_tmp_220[0]}}};
-  wire [31:0] mergedData_44 =
-    hit_43 ? mergedData_43 & ~bits_43 | casez_tmp_219 & bits_43 : mergedData_43;
+  wire [31:0] query0_mergedData_44 =
+    query0_hit_43
+      ? query0_mergedData_43 & ~query0_bits_43 | casez_tmp_219 & query0_bits_43
+      : query0_mergedData_43;
   reg  [31:0] casez_tmp_221;
   always_comb begin
-    casez (_idx_T_376)
+    casez (_query1_idx_T_88)
       7'b0000000:
         casez_tmp_221 = entries_0_data;
       7'b0000001:
@@ -60175,7 +61467,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_222;
   always_comb begin
-    casez (_idx_T_376)
+    casez (_query1_idx_T_88)
       7'b0000000:
         casez_tmp_222 = entries_0_mask;
       7'b0000001:
@@ -60434,17 +61726,19 @@ module StoreBuffer(
         casez_tmp_222 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_44 = mutable_44 & casez_tmp_43[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_44 =
+  wire        query0_hit_44 = mutable_44 & casez_tmp_43[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_44 =
     {{8{casez_tmp_222[3]}},
      {8{casez_tmp_222[2]}},
      {8{casez_tmp_222[1]}},
      {8{casez_tmp_222[0]}}};
-  wire [31:0] mergedData_45 =
-    hit_44 ? mergedData_44 & ~bits_44 | casez_tmp_221 & bits_44 : mergedData_44;
+  wire [31:0] query0_mergedData_45 =
+    query0_hit_44
+      ? query0_mergedData_44 & ~query0_bits_44 | casez_tmp_221 & query0_bits_44
+      : query0_mergedData_44;
   reg  [31:0] casez_tmp_223;
   always_comb begin
-    casez (_idx_T_378)
+    casez (_query1_idx_T_90)
       7'b0000000:
         casez_tmp_223 = entries_0_data;
       7'b0000001:
@@ -60705,7 +61999,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_224;
   always_comb begin
-    casez (_idx_T_378)
+    casez (_query1_idx_T_90)
       7'b0000000:
         casez_tmp_224 = entries_0_mask;
       7'b0000001:
@@ -60964,17 +62258,19 @@ module StoreBuffer(
         casez_tmp_224 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_45 = mutable_45 & casez_tmp_44[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_45 =
+  wire        query0_hit_45 = mutable_45 & casez_tmp_44[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_45 =
     {{8{casez_tmp_224[3]}},
      {8{casez_tmp_224[2]}},
      {8{casez_tmp_224[1]}},
      {8{casez_tmp_224[0]}}};
-  wire [31:0] mergedData_46 =
-    hit_45 ? mergedData_45 & ~bits_45 | casez_tmp_223 & bits_45 : mergedData_45;
+  wire [31:0] query0_mergedData_46 =
+    query0_hit_45
+      ? query0_mergedData_45 & ~query0_bits_45 | casez_tmp_223 & query0_bits_45
+      : query0_mergedData_45;
   reg  [31:0] casez_tmp_225;
   always_comb begin
-    casez (_idx_T_380)
+    casez (_query1_idx_T_92)
       7'b0000000:
         casez_tmp_225 = entries_0_data;
       7'b0000001:
@@ -61235,7 +62531,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_226;
   always_comb begin
-    casez (_idx_T_380)
+    casez (_query1_idx_T_92)
       7'b0000000:
         casez_tmp_226 = entries_0_mask;
       7'b0000001:
@@ -61494,17 +62790,19 @@ module StoreBuffer(
         casez_tmp_226 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_46 = mutable_46 & casez_tmp_45[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_46 =
+  wire        query0_hit_46 = mutable_46 & casez_tmp_45[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_46 =
     {{8{casez_tmp_226[3]}},
      {8{casez_tmp_226[2]}},
      {8{casez_tmp_226[1]}},
      {8{casez_tmp_226[0]}}};
-  wire [31:0] mergedData_47 =
-    hit_46 ? mergedData_46 & ~bits_46 | casez_tmp_225 & bits_46 : mergedData_46;
+  wire [31:0] query0_mergedData_47 =
+    query0_hit_46
+      ? query0_mergedData_46 & ~query0_bits_46 | casez_tmp_225 & query0_bits_46
+      : query0_mergedData_46;
   reg  [31:0] casez_tmp_227;
   always_comb begin
-    casez (_idx_T_382)
+    casez (_query1_idx_T_94)
       7'b0000000:
         casez_tmp_227 = entries_0_data;
       7'b0000001:
@@ -61765,7 +63063,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_228;
   always_comb begin
-    casez (_idx_T_382)
+    casez (_query1_idx_T_94)
       7'b0000000:
         casez_tmp_228 = entries_0_mask;
       7'b0000001:
@@ -62024,17 +63322,19 @@ module StoreBuffer(
         casez_tmp_228 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_47 = mutable_47 & casez_tmp_46[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_47 =
+  wire        query0_hit_47 = mutable_47 & casez_tmp_46[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_47 =
     {{8{casez_tmp_228[3]}},
      {8{casez_tmp_228[2]}},
      {8{casez_tmp_228[1]}},
      {8{casez_tmp_228[0]}}};
-  wire [31:0] mergedData_48 =
-    hit_47 ? mergedData_47 & ~bits_47 | casez_tmp_227 & bits_47 : mergedData_47;
+  wire [31:0] query0_mergedData_48 =
+    query0_hit_47
+      ? query0_mergedData_47 & ~query0_bits_47 | casez_tmp_227 & query0_bits_47
+      : query0_mergedData_47;
   reg  [31:0] casez_tmp_229;
   always_comb begin
-    casez (_idx_T_384)
+    casez (_query1_idx_T_96)
       7'b0000000:
         casez_tmp_229 = entries_0_data;
       7'b0000001:
@@ -62295,7 +63595,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_230;
   always_comb begin
-    casez (_idx_T_384)
+    casez (_query1_idx_T_96)
       7'b0000000:
         casez_tmp_230 = entries_0_mask;
       7'b0000001:
@@ -62554,17 +63854,19 @@ module StoreBuffer(
         casez_tmp_230 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_48 = mutable_48 & casez_tmp_47[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_48 =
+  wire        query0_hit_48 = mutable_48 & casez_tmp_47[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_48 =
     {{8{casez_tmp_230[3]}},
      {8{casez_tmp_230[2]}},
      {8{casez_tmp_230[1]}},
      {8{casez_tmp_230[0]}}};
-  wire [31:0] mergedData_49 =
-    hit_48 ? mergedData_48 & ~bits_48 | casez_tmp_229 & bits_48 : mergedData_48;
+  wire [31:0] query0_mergedData_49 =
+    query0_hit_48
+      ? query0_mergedData_48 & ~query0_bits_48 | casez_tmp_229 & query0_bits_48
+      : query0_mergedData_48;
   reg  [31:0] casez_tmp_231;
   always_comb begin
-    casez (_idx_T_386)
+    casez (_query1_idx_T_98)
       7'b0000000:
         casez_tmp_231 = entries_0_data;
       7'b0000001:
@@ -62825,7 +64127,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_232;
   always_comb begin
-    casez (_idx_T_386)
+    casez (_query1_idx_T_98)
       7'b0000000:
         casez_tmp_232 = entries_0_mask;
       7'b0000001:
@@ -63084,17 +64386,19 @@ module StoreBuffer(
         casez_tmp_232 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_49 = mutable_49 & casez_tmp_48[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_49 =
+  wire        query0_hit_49 = mutable_49 & casez_tmp_48[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_49 =
     {{8{casez_tmp_232[3]}},
      {8{casez_tmp_232[2]}},
      {8{casez_tmp_232[1]}},
      {8{casez_tmp_232[0]}}};
-  wire [31:0] mergedData_50 =
-    hit_49 ? mergedData_49 & ~bits_49 | casez_tmp_231 & bits_49 : mergedData_49;
+  wire [31:0] query0_mergedData_50 =
+    query0_hit_49
+      ? query0_mergedData_49 & ~query0_bits_49 | casez_tmp_231 & query0_bits_49
+      : query0_mergedData_49;
   reg  [31:0] casez_tmp_233;
   always_comb begin
-    casez (_idx_T_388)
+    casez (_query1_idx_T_100)
       7'b0000000:
         casez_tmp_233 = entries_0_data;
       7'b0000001:
@@ -63355,7 +64659,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_234;
   always_comb begin
-    casez (_idx_T_388)
+    casez (_query1_idx_T_100)
       7'b0000000:
         casez_tmp_234 = entries_0_mask;
       7'b0000001:
@@ -63614,17 +64918,19 @@ module StoreBuffer(
         casez_tmp_234 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_50 = mutable_50 & casez_tmp_49[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_50 =
+  wire        query0_hit_50 = mutable_50 & casez_tmp_49[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_50 =
     {{8{casez_tmp_234[3]}},
      {8{casez_tmp_234[2]}},
      {8{casez_tmp_234[1]}},
      {8{casez_tmp_234[0]}}};
-  wire [31:0] mergedData_51 =
-    hit_50 ? mergedData_50 & ~bits_50 | casez_tmp_233 & bits_50 : mergedData_50;
+  wire [31:0] query0_mergedData_51 =
+    query0_hit_50
+      ? query0_mergedData_50 & ~query0_bits_50 | casez_tmp_233 & query0_bits_50
+      : query0_mergedData_50;
   reg  [31:0] casez_tmp_235;
   always_comb begin
-    casez (_idx_T_390)
+    casez (_query1_idx_T_102)
       7'b0000000:
         casez_tmp_235 = entries_0_data;
       7'b0000001:
@@ -63885,7 +65191,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_236;
   always_comb begin
-    casez (_idx_T_390)
+    casez (_query1_idx_T_102)
       7'b0000000:
         casez_tmp_236 = entries_0_mask;
       7'b0000001:
@@ -64144,17 +65450,19 @@ module StoreBuffer(
         casez_tmp_236 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_51 = mutable_51 & casez_tmp_50[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_51 =
+  wire        query0_hit_51 = mutable_51 & casez_tmp_50[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_51 =
     {{8{casez_tmp_236[3]}},
      {8{casez_tmp_236[2]}},
      {8{casez_tmp_236[1]}},
      {8{casez_tmp_236[0]}}};
-  wire [31:0] mergedData_52 =
-    hit_51 ? mergedData_51 & ~bits_51 | casez_tmp_235 & bits_51 : mergedData_51;
+  wire [31:0] query0_mergedData_52 =
+    query0_hit_51
+      ? query0_mergedData_51 & ~query0_bits_51 | casez_tmp_235 & query0_bits_51
+      : query0_mergedData_51;
   reg  [31:0] casez_tmp_237;
   always_comb begin
-    casez (_idx_T_392)
+    casez (_query1_idx_T_104)
       7'b0000000:
         casez_tmp_237 = entries_0_data;
       7'b0000001:
@@ -64415,7 +65723,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_238;
   always_comb begin
-    casez (_idx_T_392)
+    casez (_query1_idx_T_104)
       7'b0000000:
         casez_tmp_238 = entries_0_mask;
       7'b0000001:
@@ -64674,17 +65982,19 @@ module StoreBuffer(
         casez_tmp_238 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_52 = mutable_52 & casez_tmp_51[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_52 =
+  wire        query0_hit_52 = mutable_52 & casez_tmp_51[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_52 =
     {{8{casez_tmp_238[3]}},
      {8{casez_tmp_238[2]}},
      {8{casez_tmp_238[1]}},
      {8{casez_tmp_238[0]}}};
-  wire [31:0] mergedData_53 =
-    hit_52 ? mergedData_52 & ~bits_52 | casez_tmp_237 & bits_52 : mergedData_52;
+  wire [31:0] query0_mergedData_53 =
+    query0_hit_52
+      ? query0_mergedData_52 & ~query0_bits_52 | casez_tmp_237 & query0_bits_52
+      : query0_mergedData_52;
   reg  [31:0] casez_tmp_239;
   always_comb begin
-    casez (_idx_T_394)
+    casez (_query1_idx_T_106)
       7'b0000000:
         casez_tmp_239 = entries_0_data;
       7'b0000001:
@@ -64945,7 +66255,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_240;
   always_comb begin
-    casez (_idx_T_394)
+    casez (_query1_idx_T_106)
       7'b0000000:
         casez_tmp_240 = entries_0_mask;
       7'b0000001:
@@ -65204,17 +66514,19 @@ module StoreBuffer(
         casez_tmp_240 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_53 = mutable_53 & casez_tmp_52[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_53 =
+  wire        query0_hit_53 = mutable_53 & casez_tmp_52[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_53 =
     {{8{casez_tmp_240[3]}},
      {8{casez_tmp_240[2]}},
      {8{casez_tmp_240[1]}},
      {8{casez_tmp_240[0]}}};
-  wire [31:0] mergedData_54 =
-    hit_53 ? mergedData_53 & ~bits_53 | casez_tmp_239 & bits_53 : mergedData_53;
+  wire [31:0] query0_mergedData_54 =
+    query0_hit_53
+      ? query0_mergedData_53 & ~query0_bits_53 | casez_tmp_239 & query0_bits_53
+      : query0_mergedData_53;
   reg  [31:0] casez_tmp_241;
   always_comb begin
-    casez (_idx_T_396)
+    casez (_query1_idx_T_108)
       7'b0000000:
         casez_tmp_241 = entries_0_data;
       7'b0000001:
@@ -65475,7 +66787,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_242;
   always_comb begin
-    casez (_idx_T_396)
+    casez (_query1_idx_T_108)
       7'b0000000:
         casez_tmp_242 = entries_0_mask;
       7'b0000001:
@@ -65734,17 +67046,19 @@ module StoreBuffer(
         casez_tmp_242 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_54 = mutable_54 & casez_tmp_53[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_54 =
+  wire        query0_hit_54 = mutable_54 & casez_tmp_53[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_54 =
     {{8{casez_tmp_242[3]}},
      {8{casez_tmp_242[2]}},
      {8{casez_tmp_242[1]}},
      {8{casez_tmp_242[0]}}};
-  wire [31:0] mergedData_55 =
-    hit_54 ? mergedData_54 & ~bits_54 | casez_tmp_241 & bits_54 : mergedData_54;
+  wire [31:0] query0_mergedData_55 =
+    query0_hit_54
+      ? query0_mergedData_54 & ~query0_bits_54 | casez_tmp_241 & query0_bits_54
+      : query0_mergedData_54;
   reg  [31:0] casez_tmp_243;
   always_comb begin
-    casez (_idx_T_398)
+    casez (_query1_idx_T_110)
       7'b0000000:
         casez_tmp_243 = entries_0_data;
       7'b0000001:
@@ -66005,7 +67319,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_244;
   always_comb begin
-    casez (_idx_T_398)
+    casez (_query1_idx_T_110)
       7'b0000000:
         casez_tmp_244 = entries_0_mask;
       7'b0000001:
@@ -66264,17 +67578,19 @@ module StoreBuffer(
         casez_tmp_244 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_55 = mutable_55 & casez_tmp_54[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_55 =
+  wire        query0_hit_55 = mutable_55 & casez_tmp_54[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_55 =
     {{8{casez_tmp_244[3]}},
      {8{casez_tmp_244[2]}},
      {8{casez_tmp_244[1]}},
      {8{casez_tmp_244[0]}}};
-  wire [31:0] mergedData_56 =
-    hit_55 ? mergedData_55 & ~bits_55 | casez_tmp_243 & bits_55 : mergedData_55;
+  wire [31:0] query0_mergedData_56 =
+    query0_hit_55
+      ? query0_mergedData_55 & ~query0_bits_55 | casez_tmp_243 & query0_bits_55
+      : query0_mergedData_55;
   reg  [31:0] casez_tmp_245;
   always_comb begin
-    casez (_idx_T_400)
+    casez (_query1_idx_T_112)
       7'b0000000:
         casez_tmp_245 = entries_0_data;
       7'b0000001:
@@ -66535,7 +67851,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_246;
   always_comb begin
-    casez (_idx_T_400)
+    casez (_query1_idx_T_112)
       7'b0000000:
         casez_tmp_246 = entries_0_mask;
       7'b0000001:
@@ -66794,17 +68110,19 @@ module StoreBuffer(
         casez_tmp_246 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_56 = mutable_56 & casez_tmp_55[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_56 =
+  wire        query0_hit_56 = mutable_56 & casez_tmp_55[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_56 =
     {{8{casez_tmp_246[3]}},
      {8{casez_tmp_246[2]}},
      {8{casez_tmp_246[1]}},
      {8{casez_tmp_246[0]}}};
-  wire [31:0] mergedData_57 =
-    hit_56 ? mergedData_56 & ~bits_56 | casez_tmp_245 & bits_56 : mergedData_56;
+  wire [31:0] query0_mergedData_57 =
+    query0_hit_56
+      ? query0_mergedData_56 & ~query0_bits_56 | casez_tmp_245 & query0_bits_56
+      : query0_mergedData_56;
   reg  [31:0] casez_tmp_247;
   always_comb begin
-    casez (_idx_T_402)
+    casez (_query1_idx_T_114)
       7'b0000000:
         casez_tmp_247 = entries_0_data;
       7'b0000001:
@@ -67065,7 +68383,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_248;
   always_comb begin
-    casez (_idx_T_402)
+    casez (_query1_idx_T_114)
       7'b0000000:
         casez_tmp_248 = entries_0_mask;
       7'b0000001:
@@ -67324,17 +68642,19 @@ module StoreBuffer(
         casez_tmp_248 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_57 = mutable_57 & casez_tmp_56[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_57 =
+  wire        query0_hit_57 = mutable_57 & casez_tmp_56[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_57 =
     {{8{casez_tmp_248[3]}},
      {8{casez_tmp_248[2]}},
      {8{casez_tmp_248[1]}},
      {8{casez_tmp_248[0]}}};
-  wire [31:0] mergedData_58 =
-    hit_57 ? mergedData_57 & ~bits_57 | casez_tmp_247 & bits_57 : mergedData_57;
+  wire [31:0] query0_mergedData_58 =
+    query0_hit_57
+      ? query0_mergedData_57 & ~query0_bits_57 | casez_tmp_247 & query0_bits_57
+      : query0_mergedData_57;
   reg  [31:0] casez_tmp_249;
   always_comb begin
-    casez (_idx_T_404)
+    casez (_query1_idx_T_116)
       7'b0000000:
         casez_tmp_249 = entries_0_data;
       7'b0000001:
@@ -67595,7 +68915,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_250;
   always_comb begin
-    casez (_idx_T_404)
+    casez (_query1_idx_T_116)
       7'b0000000:
         casez_tmp_250 = entries_0_mask;
       7'b0000001:
@@ -67854,17 +69174,19 @@ module StoreBuffer(
         casez_tmp_250 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_58 = mutable_58 & casez_tmp_57[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_58 =
+  wire        query0_hit_58 = mutable_58 & casez_tmp_57[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_58 =
     {{8{casez_tmp_250[3]}},
      {8{casez_tmp_250[2]}},
      {8{casez_tmp_250[1]}},
      {8{casez_tmp_250[0]}}};
-  wire [31:0] mergedData_59 =
-    hit_58 ? mergedData_58 & ~bits_58 | casez_tmp_249 & bits_58 : mergedData_58;
+  wire [31:0] query0_mergedData_59 =
+    query0_hit_58
+      ? query0_mergedData_58 & ~query0_bits_58 | casez_tmp_249 & query0_bits_58
+      : query0_mergedData_58;
   reg  [31:0] casez_tmp_251;
   always_comb begin
-    casez (_idx_T_406)
+    casez (_query1_idx_T_118)
       7'b0000000:
         casez_tmp_251 = entries_0_data;
       7'b0000001:
@@ -68125,7 +69447,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_252;
   always_comb begin
-    casez (_idx_T_406)
+    casez (_query1_idx_T_118)
       7'b0000000:
         casez_tmp_252 = entries_0_mask;
       7'b0000001:
@@ -68384,17 +69706,19 @@ module StoreBuffer(
         casez_tmp_252 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_59 = mutable_59 & casez_tmp_58[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_59 =
+  wire        query0_hit_59 = mutable_59 & casez_tmp_58[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_59 =
     {{8{casez_tmp_252[3]}},
      {8{casez_tmp_252[2]}},
      {8{casez_tmp_252[1]}},
      {8{casez_tmp_252[0]}}};
-  wire [31:0] mergedData_60 =
-    hit_59 ? mergedData_59 & ~bits_59 | casez_tmp_251 & bits_59 : mergedData_59;
+  wire [31:0] query0_mergedData_60 =
+    query0_hit_59
+      ? query0_mergedData_59 & ~query0_bits_59 | casez_tmp_251 & query0_bits_59
+      : query0_mergedData_59;
   reg  [31:0] casez_tmp_253;
   always_comb begin
-    casez (_idx_T_408)
+    casez (_query1_idx_T_120)
       7'b0000000:
         casez_tmp_253 = entries_0_data;
       7'b0000001:
@@ -68655,7 +69979,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_254;
   always_comb begin
-    casez (_idx_T_408)
+    casez (_query1_idx_T_120)
       7'b0000000:
         casez_tmp_254 = entries_0_mask;
       7'b0000001:
@@ -68914,17 +70238,19 @@ module StoreBuffer(
         casez_tmp_254 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_60 = mutable_60 & casez_tmp_59[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_60 =
+  wire        query0_hit_60 = mutable_60 & casez_tmp_59[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_60 =
     {{8{casez_tmp_254[3]}},
      {8{casez_tmp_254[2]}},
      {8{casez_tmp_254[1]}},
      {8{casez_tmp_254[0]}}};
-  wire [31:0] mergedData_61 =
-    hit_60 ? mergedData_60 & ~bits_60 | casez_tmp_253 & bits_60 : mergedData_60;
+  wire [31:0] query0_mergedData_61 =
+    query0_hit_60
+      ? query0_mergedData_60 & ~query0_bits_60 | casez_tmp_253 & query0_bits_60
+      : query0_mergedData_60;
   reg  [31:0] casez_tmp_255;
   always_comb begin
-    casez (_idx_T_410)
+    casez (_query1_idx_T_122)
       7'b0000000:
         casez_tmp_255 = entries_0_data;
       7'b0000001:
@@ -69185,7 +70511,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_256;
   always_comb begin
-    casez (_idx_T_410)
+    casez (_query1_idx_T_122)
       7'b0000000:
         casez_tmp_256 = entries_0_mask;
       7'b0000001:
@@ -69444,17 +70770,19 @@ module StoreBuffer(
         casez_tmp_256 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_61 = mutable_61 & casez_tmp_60[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_61 =
+  wire        query0_hit_61 = mutable_61 & casez_tmp_60[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_61 =
     {{8{casez_tmp_256[3]}},
      {8{casez_tmp_256[2]}},
      {8{casez_tmp_256[1]}},
      {8{casez_tmp_256[0]}}};
-  wire [31:0] mergedData_62 =
-    hit_61 ? mergedData_61 & ~bits_61 | casez_tmp_255 & bits_61 : mergedData_61;
+  wire [31:0] query0_mergedData_62 =
+    query0_hit_61
+      ? query0_mergedData_61 & ~query0_bits_61 | casez_tmp_255 & query0_bits_61
+      : query0_mergedData_61;
   reg  [31:0] casez_tmp_257;
   always_comb begin
-    casez (_idx_T_412)
+    casez (_query1_idx_T_124)
       7'b0000000:
         casez_tmp_257 = entries_0_data;
       7'b0000001:
@@ -69715,7 +71043,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_258;
   always_comb begin
-    casez (_idx_T_412)
+    casez (_query1_idx_T_124)
       7'b0000000:
         casez_tmp_258 = entries_0_mask;
       7'b0000001:
@@ -69974,17 +71302,19 @@ module StoreBuffer(
         casez_tmp_258 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_62 = mutable_62 & casez_tmp_61[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_62 =
+  wire        query0_hit_62 = mutable_62 & casez_tmp_61[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_62 =
     {{8{casez_tmp_258[3]}},
      {8{casez_tmp_258[2]}},
      {8{casez_tmp_258[1]}},
      {8{casez_tmp_258[0]}}};
-  wire [31:0] mergedData_63 =
-    hit_62 ? mergedData_62 & ~bits_62 | casez_tmp_257 & bits_62 : mergedData_62;
+  wire [31:0] query0_mergedData_63 =
+    query0_hit_62
+      ? query0_mergedData_62 & ~query0_bits_62 | casez_tmp_257 & query0_bits_62
+      : query0_mergedData_62;
   reg  [31:0] casez_tmp_259;
   always_comb begin
-    casez (_idx_T_414)
+    casez (_query1_idx_T_126)
       7'b0000000:
         casez_tmp_259 = entries_0_data;
       7'b0000001:
@@ -70245,7 +71575,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_260;
   always_comb begin
-    casez (_idx_T_414)
+    casez (_query1_idx_T_126)
       7'b0000000:
         casez_tmp_260 = entries_0_mask;
       7'b0000001:
@@ -70504,17 +71834,19 @@ module StoreBuffer(
         casez_tmp_260 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_63 = (|(count[7:6])) & casez_tmp_62[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_63 =
+  wire        query0_hit_63 = (|(count[7:6])) & casez_tmp_62[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_63 =
     {{8{casez_tmp_260[3]}},
      {8{casez_tmp_260[2]}},
      {8{casez_tmp_260[1]}},
      {8{casez_tmp_260[0]}}};
-  wire [31:0] mergedData_64 =
-    hit_63 ? mergedData_63 & ~bits_63 | casez_tmp_259 & bits_63 : mergedData_63;
+  wire [31:0] query0_mergedData_64 =
+    query0_hit_63
+      ? query0_mergedData_63 & ~query0_bits_63 | casez_tmp_259 & query0_bits_63
+      : query0_mergedData_63;
   reg  [31:0] casez_tmp_261;
   always_comb begin
-    casez (_idx_T_416)
+    casez (_query1_idx_T_128)
       7'b0000000:
         casez_tmp_261 = entries_0_data;
       7'b0000001:
@@ -70775,7 +72107,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_262;
   always_comb begin
-    casez (_idx_T_416)
+    casez (_query1_idx_T_128)
       7'b0000000:
         casez_tmp_262 = entries_0_mask;
       7'b0000001:
@@ -71034,17 +72366,19 @@ module StoreBuffer(
         casez_tmp_262 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_64 = mutable_64 & casez_tmp_63[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_64 =
+  wire        query0_hit_64 = mutable_64 & casez_tmp_63[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_64 =
     {{8{casez_tmp_262[3]}},
      {8{casez_tmp_262[2]}},
      {8{casez_tmp_262[1]}},
      {8{casez_tmp_262[0]}}};
-  wire [31:0] mergedData_65 =
-    hit_64 ? mergedData_64 & ~bits_64 | casez_tmp_261 & bits_64 : mergedData_64;
+  wire [31:0] query0_mergedData_65 =
+    query0_hit_64
+      ? query0_mergedData_64 & ~query0_bits_64 | casez_tmp_261 & query0_bits_64
+      : query0_mergedData_64;
   reg  [31:0] casez_tmp_263;
   always_comb begin
-    casez (_idx_T_418)
+    casez (_query1_idx_T_130)
       7'b0000000:
         casez_tmp_263 = entries_0_data;
       7'b0000001:
@@ -71305,7 +72639,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_264;
   always_comb begin
-    casez (_idx_T_418)
+    casez (_query1_idx_T_130)
       7'b0000000:
         casez_tmp_264 = entries_0_mask;
       7'b0000001:
@@ -71564,17 +72898,19 @@ module StoreBuffer(
         casez_tmp_264 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_65 = mutable_65 & casez_tmp_64[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_65 =
+  wire        query0_hit_65 = mutable_65 & casez_tmp_64[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_65 =
     {{8{casez_tmp_264[3]}},
      {8{casez_tmp_264[2]}},
      {8{casez_tmp_264[1]}},
      {8{casez_tmp_264[0]}}};
-  wire [31:0] mergedData_66 =
-    hit_65 ? mergedData_65 & ~bits_65 | casez_tmp_263 & bits_65 : mergedData_65;
+  wire [31:0] query0_mergedData_66 =
+    query0_hit_65
+      ? query0_mergedData_65 & ~query0_bits_65 | casez_tmp_263 & query0_bits_65
+      : query0_mergedData_65;
   reg  [31:0] casez_tmp_265;
   always_comb begin
-    casez (_idx_T_420)
+    casez (_query1_idx_T_132)
       7'b0000000:
         casez_tmp_265 = entries_0_data;
       7'b0000001:
@@ -71835,7 +73171,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_266;
   always_comb begin
-    casez (_idx_T_420)
+    casez (_query1_idx_T_132)
       7'b0000000:
         casez_tmp_266 = entries_0_mask;
       7'b0000001:
@@ -72094,17 +73430,19 @@ module StoreBuffer(
         casez_tmp_266 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_66 = mutable_66 & casez_tmp_65[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_66 =
+  wire        query0_hit_66 = mutable_66 & casez_tmp_65[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_66 =
     {{8{casez_tmp_266[3]}},
      {8{casez_tmp_266[2]}},
      {8{casez_tmp_266[1]}},
      {8{casez_tmp_266[0]}}};
-  wire [31:0] mergedData_67 =
-    hit_66 ? mergedData_66 & ~bits_66 | casez_tmp_265 & bits_66 : mergedData_66;
+  wire [31:0] query0_mergedData_67 =
+    query0_hit_66
+      ? query0_mergedData_66 & ~query0_bits_66 | casez_tmp_265 & query0_bits_66
+      : query0_mergedData_66;
   reg  [31:0] casez_tmp_267;
   always_comb begin
-    casez (_idx_T_422)
+    casez (_query1_idx_T_134)
       7'b0000000:
         casez_tmp_267 = entries_0_data;
       7'b0000001:
@@ -72365,7 +73703,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_268;
   always_comb begin
-    casez (_idx_T_422)
+    casez (_query1_idx_T_134)
       7'b0000000:
         casez_tmp_268 = entries_0_mask;
       7'b0000001:
@@ -72624,17 +73962,19 @@ module StoreBuffer(
         casez_tmp_268 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_67 = mutable_67 & casez_tmp_66[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_67 =
+  wire        query0_hit_67 = mutable_67 & casez_tmp_66[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_67 =
     {{8{casez_tmp_268[3]}},
      {8{casez_tmp_268[2]}},
      {8{casez_tmp_268[1]}},
      {8{casez_tmp_268[0]}}};
-  wire [31:0] mergedData_68 =
-    hit_67 ? mergedData_67 & ~bits_67 | casez_tmp_267 & bits_67 : mergedData_67;
+  wire [31:0] query0_mergedData_68 =
+    query0_hit_67
+      ? query0_mergedData_67 & ~query0_bits_67 | casez_tmp_267 & query0_bits_67
+      : query0_mergedData_67;
   reg  [31:0] casez_tmp_269;
   always_comb begin
-    casez (_idx_T_424)
+    casez (_query1_idx_T_136)
       7'b0000000:
         casez_tmp_269 = entries_0_data;
       7'b0000001:
@@ -72895,7 +74235,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_270;
   always_comb begin
-    casez (_idx_T_424)
+    casez (_query1_idx_T_136)
       7'b0000000:
         casez_tmp_270 = entries_0_mask;
       7'b0000001:
@@ -73154,17 +74494,19 @@ module StoreBuffer(
         casez_tmp_270 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_68 = mutable_68 & casez_tmp_67[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_68 =
+  wire        query0_hit_68 = mutable_68 & casez_tmp_67[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_68 =
     {{8{casez_tmp_270[3]}},
      {8{casez_tmp_270[2]}},
      {8{casez_tmp_270[1]}},
      {8{casez_tmp_270[0]}}};
-  wire [31:0] mergedData_69 =
-    hit_68 ? mergedData_68 & ~bits_68 | casez_tmp_269 & bits_68 : mergedData_68;
+  wire [31:0] query0_mergedData_69 =
+    query0_hit_68
+      ? query0_mergedData_68 & ~query0_bits_68 | casez_tmp_269 & query0_bits_68
+      : query0_mergedData_68;
   reg  [31:0] casez_tmp_271;
   always_comb begin
-    casez (_idx_T_426)
+    casez (_query1_idx_T_138)
       7'b0000000:
         casez_tmp_271 = entries_0_data;
       7'b0000001:
@@ -73425,7 +74767,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_272;
   always_comb begin
-    casez (_idx_T_426)
+    casez (_query1_idx_T_138)
       7'b0000000:
         casez_tmp_272 = entries_0_mask;
       7'b0000001:
@@ -73684,17 +75026,19 @@ module StoreBuffer(
         casez_tmp_272 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_69 = mutable_69 & casez_tmp_68[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_69 =
+  wire        query0_hit_69 = mutable_69 & casez_tmp_68[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_69 =
     {{8{casez_tmp_272[3]}},
      {8{casez_tmp_272[2]}},
      {8{casez_tmp_272[1]}},
      {8{casez_tmp_272[0]}}};
-  wire [31:0] mergedData_70 =
-    hit_69 ? mergedData_69 & ~bits_69 | casez_tmp_271 & bits_69 : mergedData_69;
+  wire [31:0] query0_mergedData_70 =
+    query0_hit_69
+      ? query0_mergedData_69 & ~query0_bits_69 | casez_tmp_271 & query0_bits_69
+      : query0_mergedData_69;
   reg  [31:0] casez_tmp_273;
   always_comb begin
-    casez (_idx_T_428)
+    casez (_query1_idx_T_140)
       7'b0000000:
         casez_tmp_273 = entries_0_data;
       7'b0000001:
@@ -73955,7 +75299,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_274;
   always_comb begin
-    casez (_idx_T_428)
+    casez (_query1_idx_T_140)
       7'b0000000:
         casez_tmp_274 = entries_0_mask;
       7'b0000001:
@@ -74214,17 +75558,19 @@ module StoreBuffer(
         casez_tmp_274 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_70 = mutable_70 & casez_tmp_69[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_70 =
+  wire        query0_hit_70 = mutable_70 & casez_tmp_69[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_70 =
     {{8{casez_tmp_274[3]}},
      {8{casez_tmp_274[2]}},
      {8{casez_tmp_274[1]}},
      {8{casez_tmp_274[0]}}};
-  wire [31:0] mergedData_71 =
-    hit_70 ? mergedData_70 & ~bits_70 | casez_tmp_273 & bits_70 : mergedData_70;
+  wire [31:0] query0_mergedData_71 =
+    query0_hit_70
+      ? query0_mergedData_70 & ~query0_bits_70 | casez_tmp_273 & query0_bits_70
+      : query0_mergedData_70;
   reg  [31:0] casez_tmp_275;
   always_comb begin
-    casez (_idx_T_430)
+    casez (_query1_idx_T_142)
       7'b0000000:
         casez_tmp_275 = entries_0_data;
       7'b0000001:
@@ -74485,7 +75831,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_276;
   always_comb begin
-    casez (_idx_T_430)
+    casez (_query1_idx_T_142)
       7'b0000000:
         casez_tmp_276 = entries_0_mask;
       7'b0000001:
@@ -74744,17 +76090,19 @@ module StoreBuffer(
         casez_tmp_276 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_71 = mutable_71 & casez_tmp_70[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_71 =
+  wire        query0_hit_71 = mutable_71 & casez_tmp_70[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_71 =
     {{8{casez_tmp_276[3]}},
      {8{casez_tmp_276[2]}},
      {8{casez_tmp_276[1]}},
      {8{casez_tmp_276[0]}}};
-  wire [31:0] mergedData_72 =
-    hit_71 ? mergedData_71 & ~bits_71 | casez_tmp_275 & bits_71 : mergedData_71;
+  wire [31:0] query0_mergedData_72 =
+    query0_hit_71
+      ? query0_mergedData_71 & ~query0_bits_71 | casez_tmp_275 & query0_bits_71
+      : query0_mergedData_71;
   reg  [31:0] casez_tmp_277;
   always_comb begin
-    casez (_idx_T_432)
+    casez (_query1_idx_T_144)
       7'b0000000:
         casez_tmp_277 = entries_0_data;
       7'b0000001:
@@ -75015,7 +76363,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_278;
   always_comb begin
-    casez (_idx_T_432)
+    casez (_query1_idx_T_144)
       7'b0000000:
         casez_tmp_278 = entries_0_mask;
       7'b0000001:
@@ -75274,17 +76622,19 @@ module StoreBuffer(
         casez_tmp_278 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_72 = mutable_72 & casez_tmp_71[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_72 =
+  wire        query0_hit_72 = mutable_72 & casez_tmp_71[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_72 =
     {{8{casez_tmp_278[3]}},
      {8{casez_tmp_278[2]}},
      {8{casez_tmp_278[1]}},
      {8{casez_tmp_278[0]}}};
-  wire [31:0] mergedData_73 =
-    hit_72 ? mergedData_72 & ~bits_72 | casez_tmp_277 & bits_72 : mergedData_72;
+  wire [31:0] query0_mergedData_73 =
+    query0_hit_72
+      ? query0_mergedData_72 & ~query0_bits_72 | casez_tmp_277 & query0_bits_72
+      : query0_mergedData_72;
   reg  [31:0] casez_tmp_279;
   always_comb begin
-    casez (_idx_T_434)
+    casez (_query1_idx_T_146)
       7'b0000000:
         casez_tmp_279 = entries_0_data;
       7'b0000001:
@@ -75545,7 +76895,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_280;
   always_comb begin
-    casez (_idx_T_434)
+    casez (_query1_idx_T_146)
       7'b0000000:
         casez_tmp_280 = entries_0_mask;
       7'b0000001:
@@ -75804,17 +77154,19 @@ module StoreBuffer(
         casez_tmp_280 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_73 = mutable_73 & casez_tmp_72[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_73 =
+  wire        query0_hit_73 = mutable_73 & casez_tmp_72[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_73 =
     {{8{casez_tmp_280[3]}},
      {8{casez_tmp_280[2]}},
      {8{casez_tmp_280[1]}},
      {8{casez_tmp_280[0]}}};
-  wire [31:0] mergedData_74 =
-    hit_73 ? mergedData_73 & ~bits_73 | casez_tmp_279 & bits_73 : mergedData_73;
+  wire [31:0] query0_mergedData_74 =
+    query0_hit_73
+      ? query0_mergedData_73 & ~query0_bits_73 | casez_tmp_279 & query0_bits_73
+      : query0_mergedData_73;
   reg  [31:0] casez_tmp_281;
   always_comb begin
-    casez (_idx_T_436)
+    casez (_query1_idx_T_148)
       7'b0000000:
         casez_tmp_281 = entries_0_data;
       7'b0000001:
@@ -76075,7 +77427,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_282;
   always_comb begin
-    casez (_idx_T_436)
+    casez (_query1_idx_T_148)
       7'b0000000:
         casez_tmp_282 = entries_0_mask;
       7'b0000001:
@@ -76334,17 +77686,19 @@ module StoreBuffer(
         casez_tmp_282 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_74 = mutable_74 & casez_tmp_73[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_74 =
+  wire        query0_hit_74 = mutable_74 & casez_tmp_73[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_74 =
     {{8{casez_tmp_282[3]}},
      {8{casez_tmp_282[2]}},
      {8{casez_tmp_282[1]}},
      {8{casez_tmp_282[0]}}};
-  wire [31:0] mergedData_75 =
-    hit_74 ? mergedData_74 & ~bits_74 | casez_tmp_281 & bits_74 : mergedData_74;
+  wire [31:0] query0_mergedData_75 =
+    query0_hit_74
+      ? query0_mergedData_74 & ~query0_bits_74 | casez_tmp_281 & query0_bits_74
+      : query0_mergedData_74;
   reg  [31:0] casez_tmp_283;
   always_comb begin
-    casez (_idx_T_438)
+    casez (_query1_idx_T_150)
       7'b0000000:
         casez_tmp_283 = entries_0_data;
       7'b0000001:
@@ -76605,7 +77959,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_284;
   always_comb begin
-    casez (_idx_T_438)
+    casez (_query1_idx_T_150)
       7'b0000000:
         casez_tmp_284 = entries_0_mask;
       7'b0000001:
@@ -76864,17 +78218,19 @@ module StoreBuffer(
         casez_tmp_284 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_75 = mutable_75 & casez_tmp_74[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_75 =
+  wire        query0_hit_75 = mutable_75 & casez_tmp_74[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_75 =
     {{8{casez_tmp_284[3]}},
      {8{casez_tmp_284[2]}},
      {8{casez_tmp_284[1]}},
      {8{casez_tmp_284[0]}}};
-  wire [31:0] mergedData_76 =
-    hit_75 ? mergedData_75 & ~bits_75 | casez_tmp_283 & bits_75 : mergedData_75;
+  wire [31:0] query0_mergedData_76 =
+    query0_hit_75
+      ? query0_mergedData_75 & ~query0_bits_75 | casez_tmp_283 & query0_bits_75
+      : query0_mergedData_75;
   reg  [31:0] casez_tmp_285;
   always_comb begin
-    casez (_idx_T_440)
+    casez (_query1_idx_T_152)
       7'b0000000:
         casez_tmp_285 = entries_0_data;
       7'b0000001:
@@ -77135,7 +78491,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_286;
   always_comb begin
-    casez (_idx_T_440)
+    casez (_query1_idx_T_152)
       7'b0000000:
         casez_tmp_286 = entries_0_mask;
       7'b0000001:
@@ -77394,17 +78750,19 @@ module StoreBuffer(
         casez_tmp_286 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_76 = mutable_76 & casez_tmp_75[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_76 =
+  wire        query0_hit_76 = mutable_76 & casez_tmp_75[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_76 =
     {{8{casez_tmp_286[3]}},
      {8{casez_tmp_286[2]}},
      {8{casez_tmp_286[1]}},
      {8{casez_tmp_286[0]}}};
-  wire [31:0] mergedData_77 =
-    hit_76 ? mergedData_76 & ~bits_76 | casez_tmp_285 & bits_76 : mergedData_76;
+  wire [31:0] query0_mergedData_77 =
+    query0_hit_76
+      ? query0_mergedData_76 & ~query0_bits_76 | casez_tmp_285 & query0_bits_76
+      : query0_mergedData_76;
   reg  [31:0] casez_tmp_287;
   always_comb begin
-    casez (_idx_T_442)
+    casez (_query1_idx_T_154)
       7'b0000000:
         casez_tmp_287 = entries_0_data;
       7'b0000001:
@@ -77665,7 +79023,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_288;
   always_comb begin
-    casez (_idx_T_442)
+    casez (_query1_idx_T_154)
       7'b0000000:
         casez_tmp_288 = entries_0_mask;
       7'b0000001:
@@ -77924,17 +79282,19 @@ module StoreBuffer(
         casez_tmp_288 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_77 = mutable_77 & casez_tmp_76[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_77 =
+  wire        query0_hit_77 = mutable_77 & casez_tmp_76[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_77 =
     {{8{casez_tmp_288[3]}},
      {8{casez_tmp_288[2]}},
      {8{casez_tmp_288[1]}},
      {8{casez_tmp_288[0]}}};
-  wire [31:0] mergedData_78 =
-    hit_77 ? mergedData_77 & ~bits_77 | casez_tmp_287 & bits_77 : mergedData_77;
+  wire [31:0] query0_mergedData_78 =
+    query0_hit_77
+      ? query0_mergedData_77 & ~query0_bits_77 | casez_tmp_287 & query0_bits_77
+      : query0_mergedData_77;
   reg  [31:0] casez_tmp_289;
   always_comb begin
-    casez (_idx_T_444)
+    casez (_query1_idx_T_156)
       7'b0000000:
         casez_tmp_289 = entries_0_data;
       7'b0000001:
@@ -78195,7 +79555,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_290;
   always_comb begin
-    casez (_idx_T_444)
+    casez (_query1_idx_T_156)
       7'b0000000:
         casez_tmp_290 = entries_0_mask;
       7'b0000001:
@@ -78454,17 +79814,19 @@ module StoreBuffer(
         casez_tmp_290 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_78 = mutable_78 & casez_tmp_77[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_78 =
+  wire        query0_hit_78 = mutable_78 & casez_tmp_77[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_78 =
     {{8{casez_tmp_290[3]}},
      {8{casez_tmp_290[2]}},
      {8{casez_tmp_290[1]}},
      {8{casez_tmp_290[0]}}};
-  wire [31:0] mergedData_79 =
-    hit_78 ? mergedData_78 & ~bits_78 | casez_tmp_289 & bits_78 : mergedData_78;
+  wire [31:0] query0_mergedData_79 =
+    query0_hit_78
+      ? query0_mergedData_78 & ~query0_bits_78 | casez_tmp_289 & query0_bits_78
+      : query0_mergedData_78;
   reg  [31:0] casez_tmp_291;
   always_comb begin
-    casez (_idx_T_446)
+    casez (_query1_idx_T_158)
       7'b0000000:
         casez_tmp_291 = entries_0_data;
       7'b0000001:
@@ -78725,7 +80087,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_292;
   always_comb begin
-    casez (_idx_T_446)
+    casez (_query1_idx_T_158)
       7'b0000000:
         casez_tmp_292 = entries_0_mask;
       7'b0000001:
@@ -78984,17 +80346,19 @@ module StoreBuffer(
         casez_tmp_292 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_79 = mutable_79 & casez_tmp_78[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_79 =
+  wire        query0_hit_79 = mutable_79 & casez_tmp_78[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_79 =
     {{8{casez_tmp_292[3]}},
      {8{casez_tmp_292[2]}},
      {8{casez_tmp_292[1]}},
      {8{casez_tmp_292[0]}}};
-  wire [31:0] mergedData_80 =
-    hit_79 ? mergedData_79 & ~bits_79 | casez_tmp_291 & bits_79 : mergedData_79;
+  wire [31:0] query0_mergedData_80 =
+    query0_hit_79
+      ? query0_mergedData_79 & ~query0_bits_79 | casez_tmp_291 & query0_bits_79
+      : query0_mergedData_79;
   reg  [31:0] casez_tmp_293;
   always_comb begin
-    casez (_idx_T_448)
+    casez (_query1_idx_T_160)
       7'b0000000:
         casez_tmp_293 = entries_0_data;
       7'b0000001:
@@ -79255,7 +80619,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_294;
   always_comb begin
-    casez (_idx_T_448)
+    casez (_query1_idx_T_160)
       7'b0000000:
         casez_tmp_294 = entries_0_mask;
       7'b0000001:
@@ -79514,17 +80878,19 @@ module StoreBuffer(
         casez_tmp_294 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_80 = mutable_80 & casez_tmp_79[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_80 =
+  wire        query0_hit_80 = mutable_80 & casez_tmp_79[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_80 =
     {{8{casez_tmp_294[3]}},
      {8{casez_tmp_294[2]}},
      {8{casez_tmp_294[1]}},
      {8{casez_tmp_294[0]}}};
-  wire [31:0] mergedData_81 =
-    hit_80 ? mergedData_80 & ~bits_80 | casez_tmp_293 & bits_80 : mergedData_80;
+  wire [31:0] query0_mergedData_81 =
+    query0_hit_80
+      ? query0_mergedData_80 & ~query0_bits_80 | casez_tmp_293 & query0_bits_80
+      : query0_mergedData_80;
   reg  [31:0] casez_tmp_295;
   always_comb begin
-    casez (_idx_T_450)
+    casez (_query1_idx_T_162)
       7'b0000000:
         casez_tmp_295 = entries_0_data;
       7'b0000001:
@@ -79785,7 +81151,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_296;
   always_comb begin
-    casez (_idx_T_450)
+    casez (_query1_idx_T_162)
       7'b0000000:
         casez_tmp_296 = entries_0_mask;
       7'b0000001:
@@ -80044,17 +81410,19 @@ module StoreBuffer(
         casez_tmp_296 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_81 = mutable_81 & casez_tmp_80[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_81 =
+  wire        query0_hit_81 = mutable_81 & casez_tmp_80[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_81 =
     {{8{casez_tmp_296[3]}},
      {8{casez_tmp_296[2]}},
      {8{casez_tmp_296[1]}},
      {8{casez_tmp_296[0]}}};
-  wire [31:0] mergedData_82 =
-    hit_81 ? mergedData_81 & ~bits_81 | casez_tmp_295 & bits_81 : mergedData_81;
+  wire [31:0] query0_mergedData_82 =
+    query0_hit_81
+      ? query0_mergedData_81 & ~query0_bits_81 | casez_tmp_295 & query0_bits_81
+      : query0_mergedData_81;
   reg  [31:0] casez_tmp_297;
   always_comb begin
-    casez (_idx_T_452)
+    casez (_query1_idx_T_164)
       7'b0000000:
         casez_tmp_297 = entries_0_data;
       7'b0000001:
@@ -80315,7 +81683,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_298;
   always_comb begin
-    casez (_idx_T_452)
+    casez (_query1_idx_T_164)
       7'b0000000:
         casez_tmp_298 = entries_0_mask;
       7'b0000001:
@@ -80574,17 +81942,19 @@ module StoreBuffer(
         casez_tmp_298 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_82 = mutable_82 & casez_tmp_81[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_82 =
+  wire        query0_hit_82 = mutable_82 & casez_tmp_81[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_82 =
     {{8{casez_tmp_298[3]}},
      {8{casez_tmp_298[2]}},
      {8{casez_tmp_298[1]}},
      {8{casez_tmp_298[0]}}};
-  wire [31:0] mergedData_83 =
-    hit_82 ? mergedData_82 & ~bits_82 | casez_tmp_297 & bits_82 : mergedData_82;
+  wire [31:0] query0_mergedData_83 =
+    query0_hit_82
+      ? query0_mergedData_82 & ~query0_bits_82 | casez_tmp_297 & query0_bits_82
+      : query0_mergedData_82;
   reg  [31:0] casez_tmp_299;
   always_comb begin
-    casez (_idx_T_454)
+    casez (_query1_idx_T_166)
       7'b0000000:
         casez_tmp_299 = entries_0_data;
       7'b0000001:
@@ -80845,7 +82215,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_300;
   always_comb begin
-    casez (_idx_T_454)
+    casez (_query1_idx_T_166)
       7'b0000000:
         casez_tmp_300 = entries_0_mask;
       7'b0000001:
@@ -81104,17 +82474,19 @@ module StoreBuffer(
         casez_tmp_300 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_83 = mutable_83 & casez_tmp_82[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_83 =
+  wire        query0_hit_83 = mutable_83 & casez_tmp_82[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_83 =
     {{8{casez_tmp_300[3]}},
      {8{casez_tmp_300[2]}},
      {8{casez_tmp_300[1]}},
      {8{casez_tmp_300[0]}}};
-  wire [31:0] mergedData_84 =
-    hit_83 ? mergedData_83 & ~bits_83 | casez_tmp_299 & bits_83 : mergedData_83;
+  wire [31:0] query0_mergedData_84 =
+    query0_hit_83
+      ? query0_mergedData_83 & ~query0_bits_83 | casez_tmp_299 & query0_bits_83
+      : query0_mergedData_83;
   reg  [31:0] casez_tmp_301;
   always_comb begin
-    casez (_idx_T_456)
+    casez (_query1_idx_T_168)
       7'b0000000:
         casez_tmp_301 = entries_0_data;
       7'b0000001:
@@ -81375,7 +82747,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_302;
   always_comb begin
-    casez (_idx_T_456)
+    casez (_query1_idx_T_168)
       7'b0000000:
         casez_tmp_302 = entries_0_mask;
       7'b0000001:
@@ -81634,17 +83006,19 @@ module StoreBuffer(
         casez_tmp_302 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_84 = mutable_84 & casez_tmp_83[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_84 =
+  wire        query0_hit_84 = mutable_84 & casez_tmp_83[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_84 =
     {{8{casez_tmp_302[3]}},
      {8{casez_tmp_302[2]}},
      {8{casez_tmp_302[1]}},
      {8{casez_tmp_302[0]}}};
-  wire [31:0] mergedData_85 =
-    hit_84 ? mergedData_84 & ~bits_84 | casez_tmp_301 & bits_84 : mergedData_84;
+  wire [31:0] query0_mergedData_85 =
+    query0_hit_84
+      ? query0_mergedData_84 & ~query0_bits_84 | casez_tmp_301 & query0_bits_84
+      : query0_mergedData_84;
   reg  [31:0] casez_tmp_303;
   always_comb begin
-    casez (_idx_T_458)
+    casez (_query1_idx_T_170)
       7'b0000000:
         casez_tmp_303 = entries_0_data;
       7'b0000001:
@@ -81905,7 +83279,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_304;
   always_comb begin
-    casez (_idx_T_458)
+    casez (_query1_idx_T_170)
       7'b0000000:
         casez_tmp_304 = entries_0_mask;
       7'b0000001:
@@ -82164,17 +83538,19 @@ module StoreBuffer(
         casez_tmp_304 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_85 = mutable_85 & casez_tmp_84[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_85 =
+  wire        query0_hit_85 = mutable_85 & casez_tmp_84[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_85 =
     {{8{casez_tmp_304[3]}},
      {8{casez_tmp_304[2]}},
      {8{casez_tmp_304[1]}},
      {8{casez_tmp_304[0]}}};
-  wire [31:0] mergedData_86 =
-    hit_85 ? mergedData_85 & ~bits_85 | casez_tmp_303 & bits_85 : mergedData_85;
+  wire [31:0] query0_mergedData_86 =
+    query0_hit_85
+      ? query0_mergedData_85 & ~query0_bits_85 | casez_tmp_303 & query0_bits_85
+      : query0_mergedData_85;
   reg  [31:0] casez_tmp_305;
   always_comb begin
-    casez (_idx_T_460)
+    casez (_query1_idx_T_172)
       7'b0000000:
         casez_tmp_305 = entries_0_data;
       7'b0000001:
@@ -82435,7 +83811,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_306;
   always_comb begin
-    casez (_idx_T_460)
+    casez (_query1_idx_T_172)
       7'b0000000:
         casez_tmp_306 = entries_0_mask;
       7'b0000001:
@@ -82694,17 +84070,19 @@ module StoreBuffer(
         casez_tmp_306 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_86 = mutable_86 & casez_tmp_85[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_86 =
+  wire        query0_hit_86 = mutable_86 & casez_tmp_85[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_86 =
     {{8{casez_tmp_306[3]}},
      {8{casez_tmp_306[2]}},
      {8{casez_tmp_306[1]}},
      {8{casez_tmp_306[0]}}};
-  wire [31:0] mergedData_87 =
-    hit_86 ? mergedData_86 & ~bits_86 | casez_tmp_305 & bits_86 : mergedData_86;
+  wire [31:0] query0_mergedData_87 =
+    query0_hit_86
+      ? query0_mergedData_86 & ~query0_bits_86 | casez_tmp_305 & query0_bits_86
+      : query0_mergedData_86;
   reg  [31:0] casez_tmp_307;
   always_comb begin
-    casez (_idx_T_462)
+    casez (_query1_idx_T_174)
       7'b0000000:
         casez_tmp_307 = entries_0_data;
       7'b0000001:
@@ -82965,7 +84343,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_308;
   always_comb begin
-    casez (_idx_T_462)
+    casez (_query1_idx_T_174)
       7'b0000000:
         casez_tmp_308 = entries_0_mask;
       7'b0000001:
@@ -83224,17 +84602,19 @@ module StoreBuffer(
         casez_tmp_308 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_87 = mutable_87 & casez_tmp_86[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_87 =
+  wire        query0_hit_87 = mutable_87 & casez_tmp_86[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_87 =
     {{8{casez_tmp_308[3]}},
      {8{casez_tmp_308[2]}},
      {8{casez_tmp_308[1]}},
      {8{casez_tmp_308[0]}}};
-  wire [31:0] mergedData_88 =
-    hit_87 ? mergedData_87 & ~bits_87 | casez_tmp_307 & bits_87 : mergedData_87;
+  wire [31:0] query0_mergedData_88 =
+    query0_hit_87
+      ? query0_mergedData_87 & ~query0_bits_87 | casez_tmp_307 & query0_bits_87
+      : query0_mergedData_87;
   reg  [31:0] casez_tmp_309;
   always_comb begin
-    casez (_idx_T_464)
+    casez (_query1_idx_T_176)
       7'b0000000:
         casez_tmp_309 = entries_0_data;
       7'b0000001:
@@ -83495,7 +84875,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_310;
   always_comb begin
-    casez (_idx_T_464)
+    casez (_query1_idx_T_176)
       7'b0000000:
         casez_tmp_310 = entries_0_mask;
       7'b0000001:
@@ -83754,17 +85134,19 @@ module StoreBuffer(
         casez_tmp_310 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_88 = mutable_88 & casez_tmp_87[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_88 =
+  wire        query0_hit_88 = mutable_88 & casez_tmp_87[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_88 =
     {{8{casez_tmp_310[3]}},
      {8{casez_tmp_310[2]}},
      {8{casez_tmp_310[1]}},
      {8{casez_tmp_310[0]}}};
-  wire [31:0] mergedData_89 =
-    hit_88 ? mergedData_88 & ~bits_88 | casez_tmp_309 & bits_88 : mergedData_88;
+  wire [31:0] query0_mergedData_89 =
+    query0_hit_88
+      ? query0_mergedData_88 & ~query0_bits_88 | casez_tmp_309 & query0_bits_88
+      : query0_mergedData_88;
   reg  [31:0] casez_tmp_311;
   always_comb begin
-    casez (_idx_T_466)
+    casez (_query1_idx_T_178)
       7'b0000000:
         casez_tmp_311 = entries_0_data;
       7'b0000001:
@@ -84025,7 +85407,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_312;
   always_comb begin
-    casez (_idx_T_466)
+    casez (_query1_idx_T_178)
       7'b0000000:
         casez_tmp_312 = entries_0_mask;
       7'b0000001:
@@ -84284,17 +85666,19 @@ module StoreBuffer(
         casez_tmp_312 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_89 = mutable_89 & casez_tmp_88[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_89 =
+  wire        query0_hit_89 = mutable_89 & casez_tmp_88[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_89 =
     {{8{casez_tmp_312[3]}},
      {8{casez_tmp_312[2]}},
      {8{casez_tmp_312[1]}},
      {8{casez_tmp_312[0]}}};
-  wire [31:0] mergedData_90 =
-    hit_89 ? mergedData_89 & ~bits_89 | casez_tmp_311 & bits_89 : mergedData_89;
+  wire [31:0] query0_mergedData_90 =
+    query0_hit_89
+      ? query0_mergedData_89 & ~query0_bits_89 | casez_tmp_311 & query0_bits_89
+      : query0_mergedData_89;
   reg  [31:0] casez_tmp_313;
   always_comb begin
-    casez (_idx_T_468)
+    casez (_query1_idx_T_180)
       7'b0000000:
         casez_tmp_313 = entries_0_data;
       7'b0000001:
@@ -84555,7 +85939,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_314;
   always_comb begin
-    casez (_idx_T_468)
+    casez (_query1_idx_T_180)
       7'b0000000:
         casez_tmp_314 = entries_0_mask;
       7'b0000001:
@@ -84814,17 +86198,19 @@ module StoreBuffer(
         casez_tmp_314 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_90 = mutable_90 & casez_tmp_89[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_90 =
+  wire        query0_hit_90 = mutable_90 & casez_tmp_89[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_90 =
     {{8{casez_tmp_314[3]}},
      {8{casez_tmp_314[2]}},
      {8{casez_tmp_314[1]}},
      {8{casez_tmp_314[0]}}};
-  wire [31:0] mergedData_91 =
-    hit_90 ? mergedData_90 & ~bits_90 | casez_tmp_313 & bits_90 : mergedData_90;
+  wire [31:0] query0_mergedData_91 =
+    query0_hit_90
+      ? query0_mergedData_90 & ~query0_bits_90 | casez_tmp_313 & query0_bits_90
+      : query0_mergedData_90;
   reg  [31:0] casez_tmp_315;
   always_comb begin
-    casez (_idx_T_470)
+    casez (_query1_idx_T_182)
       7'b0000000:
         casez_tmp_315 = entries_0_data;
       7'b0000001:
@@ -85085,7 +86471,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_316;
   always_comb begin
-    casez (_idx_T_470)
+    casez (_query1_idx_T_182)
       7'b0000000:
         casez_tmp_316 = entries_0_mask;
       7'b0000001:
@@ -85344,17 +86730,19 @@ module StoreBuffer(
         casez_tmp_316 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_91 = mutable_91 & casez_tmp_90[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_91 =
+  wire        query0_hit_91 = mutable_91 & casez_tmp_90[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_91 =
     {{8{casez_tmp_316[3]}},
      {8{casez_tmp_316[2]}},
      {8{casez_tmp_316[1]}},
      {8{casez_tmp_316[0]}}};
-  wire [31:0] mergedData_92 =
-    hit_91 ? mergedData_91 & ~bits_91 | casez_tmp_315 & bits_91 : mergedData_91;
+  wire [31:0] query0_mergedData_92 =
+    query0_hit_91
+      ? query0_mergedData_91 & ~query0_bits_91 | casez_tmp_315 & query0_bits_91
+      : query0_mergedData_91;
   reg  [31:0] casez_tmp_317;
   always_comb begin
-    casez (_idx_T_472)
+    casez (_query1_idx_T_184)
       7'b0000000:
         casez_tmp_317 = entries_0_data;
       7'b0000001:
@@ -85615,7 +87003,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_318;
   always_comb begin
-    casez (_idx_T_472)
+    casez (_query1_idx_T_184)
       7'b0000000:
         casez_tmp_318 = entries_0_mask;
       7'b0000001:
@@ -85874,17 +87262,19 @@ module StoreBuffer(
         casez_tmp_318 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_92 = mutable_92 & casez_tmp_91[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_92 =
+  wire        query0_hit_92 = mutable_92 & casez_tmp_91[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_92 =
     {{8{casez_tmp_318[3]}},
      {8{casez_tmp_318[2]}},
      {8{casez_tmp_318[1]}},
      {8{casez_tmp_318[0]}}};
-  wire [31:0] mergedData_93 =
-    hit_92 ? mergedData_92 & ~bits_92 | casez_tmp_317 & bits_92 : mergedData_92;
+  wire [31:0] query0_mergedData_93 =
+    query0_hit_92
+      ? query0_mergedData_92 & ~query0_bits_92 | casez_tmp_317 & query0_bits_92
+      : query0_mergedData_92;
   reg  [31:0] casez_tmp_319;
   always_comb begin
-    casez (_idx_T_474)
+    casez (_query1_idx_T_186)
       7'b0000000:
         casez_tmp_319 = entries_0_data;
       7'b0000001:
@@ -86145,7 +87535,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_320;
   always_comb begin
-    casez (_idx_T_474)
+    casez (_query1_idx_T_186)
       7'b0000000:
         casez_tmp_320 = entries_0_mask;
       7'b0000001:
@@ -86404,17 +87794,19 @@ module StoreBuffer(
         casez_tmp_320 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_93 = mutable_93 & casez_tmp_92[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_93 =
+  wire        query0_hit_93 = mutable_93 & casez_tmp_92[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_93 =
     {{8{casez_tmp_320[3]}},
      {8{casez_tmp_320[2]}},
      {8{casez_tmp_320[1]}},
      {8{casez_tmp_320[0]}}};
-  wire [31:0] mergedData_94 =
-    hit_93 ? mergedData_93 & ~bits_93 | casez_tmp_319 & bits_93 : mergedData_93;
+  wire [31:0] query0_mergedData_94 =
+    query0_hit_93
+      ? query0_mergedData_93 & ~query0_bits_93 | casez_tmp_319 & query0_bits_93
+      : query0_mergedData_93;
   reg  [31:0] casez_tmp_321;
   always_comb begin
-    casez (_idx_T_476)
+    casez (_query1_idx_T_188)
       7'b0000000:
         casez_tmp_321 = entries_0_data;
       7'b0000001:
@@ -86675,7 +88067,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_322;
   always_comb begin
-    casez (_idx_T_476)
+    casez (_query1_idx_T_188)
       7'b0000000:
         casez_tmp_322 = entries_0_mask;
       7'b0000001:
@@ -86934,17 +88326,19 @@ module StoreBuffer(
         casez_tmp_322 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_94 = mutable_94 & casez_tmp_93[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_94 =
+  wire        query0_hit_94 = mutable_94 & casez_tmp_93[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_94 =
     {{8{casez_tmp_322[3]}},
      {8{casez_tmp_322[2]}},
      {8{casez_tmp_322[1]}},
      {8{casez_tmp_322[0]}}};
-  wire [31:0] mergedData_95 =
-    hit_94 ? mergedData_94 & ~bits_94 | casez_tmp_321 & bits_94 : mergedData_94;
+  wire [31:0] query0_mergedData_95 =
+    query0_hit_94
+      ? query0_mergedData_94 & ~query0_bits_94 | casez_tmp_321 & query0_bits_94
+      : query0_mergedData_94;
   reg  [31:0] casez_tmp_323;
   always_comb begin
-    casez (_idx_T_478)
+    casez (_query1_idx_T_190)
       7'b0000000:
         casez_tmp_323 = entries_0_data;
       7'b0000001:
@@ -87205,7 +88599,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_324;
   always_comb begin
-    casez (_idx_T_478)
+    casez (_query1_idx_T_190)
       7'b0000000:
         casez_tmp_324 = entries_0_mask;
       7'b0000001:
@@ -87464,17 +88858,19 @@ module StoreBuffer(
         casez_tmp_324 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_95 = mutable_95 & casez_tmp_94[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_95 =
+  wire        query0_hit_95 = mutable_95 & casez_tmp_94[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_95 =
     {{8{casez_tmp_324[3]}},
      {8{casez_tmp_324[2]}},
      {8{casez_tmp_324[1]}},
      {8{casez_tmp_324[0]}}};
-  wire [31:0] mergedData_96 =
-    hit_95 ? mergedData_95 & ~bits_95 | casez_tmp_323 & bits_95 : mergedData_95;
+  wire [31:0] query0_mergedData_96 =
+    query0_hit_95
+      ? query0_mergedData_95 & ~query0_bits_95 | casez_tmp_323 & query0_bits_95
+      : query0_mergedData_95;
   reg  [31:0] casez_tmp_325;
   always_comb begin
-    casez (_idx_T_480)
+    casez (_query1_idx_T_192)
       7'b0000000:
         casez_tmp_325 = entries_0_data;
       7'b0000001:
@@ -87735,7 +89131,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_326;
   always_comb begin
-    casez (_idx_T_480)
+    casez (_query1_idx_T_192)
       7'b0000000:
         casez_tmp_326 = entries_0_mask;
       7'b0000001:
@@ -87994,17 +89390,19 @@ module StoreBuffer(
         casez_tmp_326 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_96 = mutable_96 & casez_tmp_95[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_96 =
+  wire        query0_hit_96 = mutable_96 & casez_tmp_95[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_96 =
     {{8{casez_tmp_326[3]}},
      {8{casez_tmp_326[2]}},
      {8{casez_tmp_326[1]}},
      {8{casez_tmp_326[0]}}};
-  wire [31:0] mergedData_97 =
-    hit_96 ? mergedData_96 & ~bits_96 | casez_tmp_325 & bits_96 : mergedData_96;
+  wire [31:0] query0_mergedData_97 =
+    query0_hit_96
+      ? query0_mergedData_96 & ~query0_bits_96 | casez_tmp_325 & query0_bits_96
+      : query0_mergedData_96;
   reg  [31:0] casez_tmp_327;
   always_comb begin
-    casez (_idx_T_482)
+    casez (_query1_idx_T_194)
       7'b0000000:
         casez_tmp_327 = entries_0_data;
       7'b0000001:
@@ -88265,7 +89663,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_328;
   always_comb begin
-    casez (_idx_T_482)
+    casez (_query1_idx_T_194)
       7'b0000000:
         casez_tmp_328 = entries_0_mask;
       7'b0000001:
@@ -88524,17 +89922,19 @@ module StoreBuffer(
         casez_tmp_328 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_97 = mutable_97 & casez_tmp_96[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_97 =
+  wire        query0_hit_97 = mutable_97 & casez_tmp_96[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_97 =
     {{8{casez_tmp_328[3]}},
      {8{casez_tmp_328[2]}},
      {8{casez_tmp_328[1]}},
      {8{casez_tmp_328[0]}}};
-  wire [31:0] mergedData_98 =
-    hit_97 ? mergedData_97 & ~bits_97 | casez_tmp_327 & bits_97 : mergedData_97;
+  wire [31:0] query0_mergedData_98 =
+    query0_hit_97
+      ? query0_mergedData_97 & ~query0_bits_97 | casez_tmp_327 & query0_bits_97
+      : query0_mergedData_97;
   reg  [31:0] casez_tmp_329;
   always_comb begin
-    casez (_idx_T_484)
+    casez (_query1_idx_T_196)
       7'b0000000:
         casez_tmp_329 = entries_0_data;
       7'b0000001:
@@ -88795,7 +90195,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_330;
   always_comb begin
-    casez (_idx_T_484)
+    casez (_query1_idx_T_196)
       7'b0000000:
         casez_tmp_330 = entries_0_mask;
       7'b0000001:
@@ -89054,17 +90454,19 @@ module StoreBuffer(
         casez_tmp_330 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_98 = mutable_98 & casez_tmp_97[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_98 =
+  wire        query0_hit_98 = mutable_98 & casez_tmp_97[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_98 =
     {{8{casez_tmp_330[3]}},
      {8{casez_tmp_330[2]}},
      {8{casez_tmp_330[1]}},
      {8{casez_tmp_330[0]}}};
-  wire [31:0] mergedData_99 =
-    hit_98 ? mergedData_98 & ~bits_98 | casez_tmp_329 & bits_98 : mergedData_98;
+  wire [31:0] query0_mergedData_99 =
+    query0_hit_98
+      ? query0_mergedData_98 & ~query0_bits_98 | casez_tmp_329 & query0_bits_98
+      : query0_mergedData_98;
   reg  [31:0] casez_tmp_331;
   always_comb begin
-    casez (_idx_T_486)
+    casez (_query1_idx_T_198)
       7'b0000000:
         casez_tmp_331 = entries_0_data;
       7'b0000001:
@@ -89325,7 +90727,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_332;
   always_comb begin
-    casez (_idx_T_486)
+    casez (_query1_idx_T_198)
       7'b0000000:
         casez_tmp_332 = entries_0_mask;
       7'b0000001:
@@ -89584,17 +90986,19 @@ module StoreBuffer(
         casez_tmp_332 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_99 = mutable_99 & casez_tmp_98[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_99 =
+  wire        query0_hit_99 = mutable_99 & casez_tmp_98[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_99 =
     {{8{casez_tmp_332[3]}},
      {8{casez_tmp_332[2]}},
      {8{casez_tmp_332[1]}},
      {8{casez_tmp_332[0]}}};
-  wire [31:0] mergedData_100 =
-    hit_99 ? mergedData_99 & ~bits_99 | casez_tmp_331 & bits_99 : mergedData_99;
+  wire [31:0] query0_mergedData_100 =
+    query0_hit_99
+      ? query0_mergedData_99 & ~query0_bits_99 | casez_tmp_331 & query0_bits_99
+      : query0_mergedData_99;
   reg  [31:0] casez_tmp_333;
   always_comb begin
-    casez (_idx_T_488)
+    casez (_query1_idx_T_200)
       7'b0000000:
         casez_tmp_333 = entries_0_data;
       7'b0000001:
@@ -89855,7 +91259,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_334;
   always_comb begin
-    casez (_idx_T_488)
+    casez (_query1_idx_T_200)
       7'b0000000:
         casez_tmp_334 = entries_0_mask;
       7'b0000001:
@@ -90114,17 +91518,19 @@ module StoreBuffer(
         casez_tmp_334 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_100 = mutable_100 & casez_tmp_99[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_100 =
+  wire        query0_hit_100 = mutable_100 & casez_tmp_99[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_100 =
     {{8{casez_tmp_334[3]}},
      {8{casez_tmp_334[2]}},
      {8{casez_tmp_334[1]}},
      {8{casez_tmp_334[0]}}};
-  wire [31:0] mergedData_101 =
-    hit_100 ? mergedData_100 & ~bits_100 | casez_tmp_333 & bits_100 : mergedData_100;
+  wire [31:0] query0_mergedData_101 =
+    query0_hit_100
+      ? query0_mergedData_100 & ~query0_bits_100 | casez_tmp_333 & query0_bits_100
+      : query0_mergedData_100;
   reg  [31:0] casez_tmp_335;
   always_comb begin
-    casez (_idx_T_490)
+    casez (_query1_idx_T_202)
       7'b0000000:
         casez_tmp_335 = entries_0_data;
       7'b0000001:
@@ -90385,7 +91791,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_336;
   always_comb begin
-    casez (_idx_T_490)
+    casez (_query1_idx_T_202)
       7'b0000000:
         casez_tmp_336 = entries_0_mask;
       7'b0000001:
@@ -90644,17 +92050,19 @@ module StoreBuffer(
         casez_tmp_336 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_101 = mutable_101 & casez_tmp_100[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_101 =
+  wire        query0_hit_101 = mutable_101 & casez_tmp_100[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_101 =
     {{8{casez_tmp_336[3]}},
      {8{casez_tmp_336[2]}},
      {8{casez_tmp_336[1]}},
      {8{casez_tmp_336[0]}}};
-  wire [31:0] mergedData_102 =
-    hit_101 ? mergedData_101 & ~bits_101 | casez_tmp_335 & bits_101 : mergedData_101;
+  wire [31:0] query0_mergedData_102 =
+    query0_hit_101
+      ? query0_mergedData_101 & ~query0_bits_101 | casez_tmp_335 & query0_bits_101
+      : query0_mergedData_101;
   reg  [31:0] casez_tmp_337;
   always_comb begin
-    casez (_idx_T_492)
+    casez (_query1_idx_T_204)
       7'b0000000:
         casez_tmp_337 = entries_0_data;
       7'b0000001:
@@ -90915,7 +92323,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_338;
   always_comb begin
-    casez (_idx_T_492)
+    casez (_query1_idx_T_204)
       7'b0000000:
         casez_tmp_338 = entries_0_mask;
       7'b0000001:
@@ -91174,17 +92582,19 @@ module StoreBuffer(
         casez_tmp_338 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_102 = mutable_102 & casez_tmp_101[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_102 =
+  wire        query0_hit_102 = mutable_102 & casez_tmp_101[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_102 =
     {{8{casez_tmp_338[3]}},
      {8{casez_tmp_338[2]}},
      {8{casez_tmp_338[1]}},
      {8{casez_tmp_338[0]}}};
-  wire [31:0] mergedData_103 =
-    hit_102 ? mergedData_102 & ~bits_102 | casez_tmp_337 & bits_102 : mergedData_102;
+  wire [31:0] query0_mergedData_103 =
+    query0_hit_102
+      ? query0_mergedData_102 & ~query0_bits_102 | casez_tmp_337 & query0_bits_102
+      : query0_mergedData_102;
   reg  [31:0] casez_tmp_339;
   always_comb begin
-    casez (_idx_T_494)
+    casez (_query1_idx_T_206)
       7'b0000000:
         casez_tmp_339 = entries_0_data;
       7'b0000001:
@@ -91445,7 +92855,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_340;
   always_comb begin
-    casez (_idx_T_494)
+    casez (_query1_idx_T_206)
       7'b0000000:
         casez_tmp_340 = entries_0_mask;
       7'b0000001:
@@ -91704,17 +93114,19 @@ module StoreBuffer(
         casez_tmp_340 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_103 = mutable_103 & casez_tmp_102[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_103 =
+  wire        query0_hit_103 = mutable_103 & casez_tmp_102[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_103 =
     {{8{casez_tmp_340[3]}},
      {8{casez_tmp_340[2]}},
      {8{casez_tmp_340[1]}},
      {8{casez_tmp_340[0]}}};
-  wire [31:0] mergedData_104 =
-    hit_103 ? mergedData_103 & ~bits_103 | casez_tmp_339 & bits_103 : mergedData_103;
+  wire [31:0] query0_mergedData_104 =
+    query0_hit_103
+      ? query0_mergedData_103 & ~query0_bits_103 | casez_tmp_339 & query0_bits_103
+      : query0_mergedData_103;
   reg  [31:0] casez_tmp_341;
   always_comb begin
-    casez (_idx_T_496)
+    casez (_query1_idx_T_208)
       7'b0000000:
         casez_tmp_341 = entries_0_data;
       7'b0000001:
@@ -91975,7 +93387,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_342;
   always_comb begin
-    casez (_idx_T_496)
+    casez (_query1_idx_T_208)
       7'b0000000:
         casez_tmp_342 = entries_0_mask;
       7'b0000001:
@@ -92234,17 +93646,19 @@ module StoreBuffer(
         casez_tmp_342 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_104 = mutable_104 & casez_tmp_103[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_104 =
+  wire        query0_hit_104 = mutable_104 & casez_tmp_103[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_104 =
     {{8{casez_tmp_342[3]}},
      {8{casez_tmp_342[2]}},
      {8{casez_tmp_342[1]}},
      {8{casez_tmp_342[0]}}};
-  wire [31:0] mergedData_105 =
-    hit_104 ? mergedData_104 & ~bits_104 | casez_tmp_341 & bits_104 : mergedData_104;
+  wire [31:0] query0_mergedData_105 =
+    query0_hit_104
+      ? query0_mergedData_104 & ~query0_bits_104 | casez_tmp_341 & query0_bits_104
+      : query0_mergedData_104;
   reg  [31:0] casez_tmp_343;
   always_comb begin
-    casez (_idx_T_498)
+    casez (_query1_idx_T_210)
       7'b0000000:
         casez_tmp_343 = entries_0_data;
       7'b0000001:
@@ -92505,7 +93919,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_344;
   always_comb begin
-    casez (_idx_T_498)
+    casez (_query1_idx_T_210)
       7'b0000000:
         casez_tmp_344 = entries_0_mask;
       7'b0000001:
@@ -92764,17 +94178,19 @@ module StoreBuffer(
         casez_tmp_344 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_105 = mutable_105 & casez_tmp_104[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_105 =
+  wire        query0_hit_105 = mutable_105 & casez_tmp_104[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_105 =
     {{8{casez_tmp_344[3]}},
      {8{casez_tmp_344[2]}},
      {8{casez_tmp_344[1]}},
      {8{casez_tmp_344[0]}}};
-  wire [31:0] mergedData_106 =
-    hit_105 ? mergedData_105 & ~bits_105 | casez_tmp_343 & bits_105 : mergedData_105;
+  wire [31:0] query0_mergedData_106 =
+    query0_hit_105
+      ? query0_mergedData_105 & ~query0_bits_105 | casez_tmp_343 & query0_bits_105
+      : query0_mergedData_105;
   reg  [31:0] casez_tmp_345;
   always_comb begin
-    casez (_idx_T_500)
+    casez (_query1_idx_T_212)
       7'b0000000:
         casez_tmp_345 = entries_0_data;
       7'b0000001:
@@ -93035,7 +94451,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_346;
   always_comb begin
-    casez (_idx_T_500)
+    casez (_query1_idx_T_212)
       7'b0000000:
         casez_tmp_346 = entries_0_mask;
       7'b0000001:
@@ -93294,17 +94710,19 @@ module StoreBuffer(
         casez_tmp_346 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_106 = mutable_106 & casez_tmp_105[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_106 =
+  wire        query0_hit_106 = mutable_106 & casez_tmp_105[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_106 =
     {{8{casez_tmp_346[3]}},
      {8{casez_tmp_346[2]}},
      {8{casez_tmp_346[1]}},
      {8{casez_tmp_346[0]}}};
-  wire [31:0] mergedData_107 =
-    hit_106 ? mergedData_106 & ~bits_106 | casez_tmp_345 & bits_106 : mergedData_106;
+  wire [31:0] query0_mergedData_107 =
+    query0_hit_106
+      ? query0_mergedData_106 & ~query0_bits_106 | casez_tmp_345 & query0_bits_106
+      : query0_mergedData_106;
   reg  [31:0] casez_tmp_347;
   always_comb begin
-    casez (_idx_T_502)
+    casez (_query1_idx_T_214)
       7'b0000000:
         casez_tmp_347 = entries_0_data;
       7'b0000001:
@@ -93565,7 +94983,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_348;
   always_comb begin
-    casez (_idx_T_502)
+    casez (_query1_idx_T_214)
       7'b0000000:
         casez_tmp_348 = entries_0_mask;
       7'b0000001:
@@ -93824,17 +95242,19 @@ module StoreBuffer(
         casez_tmp_348 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_107 = mutable_107 & casez_tmp_106[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_107 =
+  wire        query0_hit_107 = mutable_107 & casez_tmp_106[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_107 =
     {{8{casez_tmp_348[3]}},
      {8{casez_tmp_348[2]}},
      {8{casez_tmp_348[1]}},
      {8{casez_tmp_348[0]}}};
-  wire [31:0] mergedData_108 =
-    hit_107 ? mergedData_107 & ~bits_107 | casez_tmp_347 & bits_107 : mergedData_107;
+  wire [31:0] query0_mergedData_108 =
+    query0_hit_107
+      ? query0_mergedData_107 & ~query0_bits_107 | casez_tmp_347 & query0_bits_107
+      : query0_mergedData_107;
   reg  [31:0] casez_tmp_349;
   always_comb begin
-    casez (_idx_T_504)
+    casez (_query1_idx_T_216)
       7'b0000000:
         casez_tmp_349 = entries_0_data;
       7'b0000001:
@@ -94095,7 +95515,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_350;
   always_comb begin
-    casez (_idx_T_504)
+    casez (_query1_idx_T_216)
       7'b0000000:
         casez_tmp_350 = entries_0_mask;
       7'b0000001:
@@ -94354,17 +95774,19 @@ module StoreBuffer(
         casez_tmp_350 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_108 = mutable_108 & casez_tmp_107[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_108 =
+  wire        query0_hit_108 = mutable_108 & casez_tmp_107[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_108 =
     {{8{casez_tmp_350[3]}},
      {8{casez_tmp_350[2]}},
      {8{casez_tmp_350[1]}},
      {8{casez_tmp_350[0]}}};
-  wire [31:0] mergedData_109 =
-    hit_108 ? mergedData_108 & ~bits_108 | casez_tmp_349 & bits_108 : mergedData_108;
+  wire [31:0] query0_mergedData_109 =
+    query0_hit_108
+      ? query0_mergedData_108 & ~query0_bits_108 | casez_tmp_349 & query0_bits_108
+      : query0_mergedData_108;
   reg  [31:0] casez_tmp_351;
   always_comb begin
-    casez (_idx_T_506)
+    casez (_query1_idx_T_218)
       7'b0000000:
         casez_tmp_351 = entries_0_data;
       7'b0000001:
@@ -94625,7 +96047,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_352;
   always_comb begin
-    casez (_idx_T_506)
+    casez (_query1_idx_T_218)
       7'b0000000:
         casez_tmp_352 = entries_0_mask;
       7'b0000001:
@@ -94884,17 +96306,19 @@ module StoreBuffer(
         casez_tmp_352 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_109 = mutable_109 & casez_tmp_108[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_109 =
+  wire        query0_hit_109 = mutable_109 & casez_tmp_108[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_109 =
     {{8{casez_tmp_352[3]}},
      {8{casez_tmp_352[2]}},
      {8{casez_tmp_352[1]}},
      {8{casez_tmp_352[0]}}};
-  wire [31:0] mergedData_110 =
-    hit_109 ? mergedData_109 & ~bits_109 | casez_tmp_351 & bits_109 : mergedData_109;
+  wire [31:0] query0_mergedData_110 =
+    query0_hit_109
+      ? query0_mergedData_109 & ~query0_bits_109 | casez_tmp_351 & query0_bits_109
+      : query0_mergedData_109;
   reg  [31:0] casez_tmp_353;
   always_comb begin
-    casez (_idx_T_508)
+    casez (_query1_idx_T_220)
       7'b0000000:
         casez_tmp_353 = entries_0_data;
       7'b0000001:
@@ -95155,7 +96579,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_354;
   always_comb begin
-    casez (_idx_T_508)
+    casez (_query1_idx_T_220)
       7'b0000000:
         casez_tmp_354 = entries_0_mask;
       7'b0000001:
@@ -95414,17 +96838,19 @@ module StoreBuffer(
         casez_tmp_354 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_110 = mutable_110 & casez_tmp_109[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_110 =
+  wire        query0_hit_110 = mutable_110 & casez_tmp_109[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_110 =
     {{8{casez_tmp_354[3]}},
      {8{casez_tmp_354[2]}},
      {8{casez_tmp_354[1]}},
      {8{casez_tmp_354[0]}}};
-  wire [31:0] mergedData_111 =
-    hit_110 ? mergedData_110 & ~bits_110 | casez_tmp_353 & bits_110 : mergedData_110;
+  wire [31:0] query0_mergedData_111 =
+    query0_hit_110
+      ? query0_mergedData_110 & ~query0_bits_110 | casez_tmp_353 & query0_bits_110
+      : query0_mergedData_110;
   reg  [31:0] casez_tmp_355;
   always_comb begin
-    casez (_idx_T_510)
+    casez (_query1_idx_T_222)
       7'b0000000:
         casez_tmp_355 = entries_0_data;
       7'b0000001:
@@ -95685,7 +97111,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_356;
   always_comb begin
-    casez (_idx_T_510)
+    casez (_query1_idx_T_222)
       7'b0000000:
         casez_tmp_356 = entries_0_mask;
       7'b0000001:
@@ -95944,17 +97370,19 @@ module StoreBuffer(
         casez_tmp_356 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_111 = mutable_111 & casez_tmp_110[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_111 =
+  wire        query0_hit_111 = mutable_111 & casez_tmp_110[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_111 =
     {{8{casez_tmp_356[3]}},
      {8{casez_tmp_356[2]}},
      {8{casez_tmp_356[1]}},
      {8{casez_tmp_356[0]}}};
-  wire [31:0] mergedData_112 =
-    hit_111 ? mergedData_111 & ~bits_111 | casez_tmp_355 & bits_111 : mergedData_111;
+  wire [31:0] query0_mergedData_112 =
+    query0_hit_111
+      ? query0_mergedData_111 & ~query0_bits_111 | casez_tmp_355 & query0_bits_111
+      : query0_mergedData_111;
   reg  [31:0] casez_tmp_357;
   always_comb begin
-    casez (_idx_T_512)
+    casez (_query1_idx_T_224)
       7'b0000000:
         casez_tmp_357 = entries_0_data;
       7'b0000001:
@@ -96215,7 +97643,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_358;
   always_comb begin
-    casez (_idx_T_512)
+    casez (_query1_idx_T_224)
       7'b0000000:
         casez_tmp_358 = entries_0_mask;
       7'b0000001:
@@ -96474,17 +97902,19 @@ module StoreBuffer(
         casez_tmp_358 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_112 = mutable_112 & casez_tmp_111[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_112 =
+  wire        query0_hit_112 = mutable_112 & casez_tmp_111[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_112 =
     {{8{casez_tmp_358[3]}},
      {8{casez_tmp_358[2]}},
      {8{casez_tmp_358[1]}},
      {8{casez_tmp_358[0]}}};
-  wire [31:0] mergedData_113 =
-    hit_112 ? mergedData_112 & ~bits_112 | casez_tmp_357 & bits_112 : mergedData_112;
+  wire [31:0] query0_mergedData_113 =
+    query0_hit_112
+      ? query0_mergedData_112 & ~query0_bits_112 | casez_tmp_357 & query0_bits_112
+      : query0_mergedData_112;
   reg  [31:0] casez_tmp_359;
   always_comb begin
-    casez (_idx_T_514)
+    casez (_query1_idx_T_226)
       7'b0000000:
         casez_tmp_359 = entries_0_data;
       7'b0000001:
@@ -96745,7 +98175,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_360;
   always_comb begin
-    casez (_idx_T_514)
+    casez (_query1_idx_T_226)
       7'b0000000:
         casez_tmp_360 = entries_0_mask;
       7'b0000001:
@@ -97004,17 +98434,19 @@ module StoreBuffer(
         casez_tmp_360 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_113 = mutable_113 & casez_tmp_112[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_113 =
+  wire        query0_hit_113 = mutable_113 & casez_tmp_112[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_113 =
     {{8{casez_tmp_360[3]}},
      {8{casez_tmp_360[2]}},
      {8{casez_tmp_360[1]}},
      {8{casez_tmp_360[0]}}};
-  wire [31:0] mergedData_114 =
-    hit_113 ? mergedData_113 & ~bits_113 | casez_tmp_359 & bits_113 : mergedData_113;
+  wire [31:0] query0_mergedData_114 =
+    query0_hit_113
+      ? query0_mergedData_113 & ~query0_bits_113 | casez_tmp_359 & query0_bits_113
+      : query0_mergedData_113;
   reg  [31:0] casez_tmp_361;
   always_comb begin
-    casez (_idx_T_516)
+    casez (_query1_idx_T_228)
       7'b0000000:
         casez_tmp_361 = entries_0_data;
       7'b0000001:
@@ -97275,7 +98707,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_362;
   always_comb begin
-    casez (_idx_T_516)
+    casez (_query1_idx_T_228)
       7'b0000000:
         casez_tmp_362 = entries_0_mask;
       7'b0000001:
@@ -97534,17 +98966,19 @@ module StoreBuffer(
         casez_tmp_362 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_114 = mutable_114 & casez_tmp_113[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_114 =
+  wire        query0_hit_114 = mutable_114 & casez_tmp_113[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_114 =
     {{8{casez_tmp_362[3]}},
      {8{casez_tmp_362[2]}},
      {8{casez_tmp_362[1]}},
      {8{casez_tmp_362[0]}}};
-  wire [31:0] mergedData_115 =
-    hit_114 ? mergedData_114 & ~bits_114 | casez_tmp_361 & bits_114 : mergedData_114;
+  wire [31:0] query0_mergedData_115 =
+    query0_hit_114
+      ? query0_mergedData_114 & ~query0_bits_114 | casez_tmp_361 & query0_bits_114
+      : query0_mergedData_114;
   reg  [31:0] casez_tmp_363;
   always_comb begin
-    casez (_idx_T_518)
+    casez (_query1_idx_T_230)
       7'b0000000:
         casez_tmp_363 = entries_0_data;
       7'b0000001:
@@ -97805,7 +99239,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_364;
   always_comb begin
-    casez (_idx_T_518)
+    casez (_query1_idx_T_230)
       7'b0000000:
         casez_tmp_364 = entries_0_mask;
       7'b0000001:
@@ -98064,17 +99498,19 @@ module StoreBuffer(
         casez_tmp_364 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_115 = mutable_115 & casez_tmp_114[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_115 =
+  wire        query0_hit_115 = mutable_115 & casez_tmp_114[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_115 =
     {{8{casez_tmp_364[3]}},
      {8{casez_tmp_364[2]}},
      {8{casez_tmp_364[1]}},
      {8{casez_tmp_364[0]}}};
-  wire [31:0] mergedData_116 =
-    hit_115 ? mergedData_115 & ~bits_115 | casez_tmp_363 & bits_115 : mergedData_115;
+  wire [31:0] query0_mergedData_116 =
+    query0_hit_115
+      ? query0_mergedData_115 & ~query0_bits_115 | casez_tmp_363 & query0_bits_115
+      : query0_mergedData_115;
   reg  [31:0] casez_tmp_365;
   always_comb begin
-    casez (_idx_T_520)
+    casez (_query1_idx_T_232)
       7'b0000000:
         casez_tmp_365 = entries_0_data;
       7'b0000001:
@@ -98335,7 +99771,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_366;
   always_comb begin
-    casez (_idx_T_520)
+    casez (_query1_idx_T_232)
       7'b0000000:
         casez_tmp_366 = entries_0_mask;
       7'b0000001:
@@ -98594,17 +100030,19 @@ module StoreBuffer(
         casez_tmp_366 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_116 = mutable_116 & casez_tmp_115[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_116 =
+  wire        query0_hit_116 = mutable_116 & casez_tmp_115[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_116 =
     {{8{casez_tmp_366[3]}},
      {8{casez_tmp_366[2]}},
      {8{casez_tmp_366[1]}},
      {8{casez_tmp_366[0]}}};
-  wire [31:0] mergedData_117 =
-    hit_116 ? mergedData_116 & ~bits_116 | casez_tmp_365 & bits_116 : mergedData_116;
+  wire [31:0] query0_mergedData_117 =
+    query0_hit_116
+      ? query0_mergedData_116 & ~query0_bits_116 | casez_tmp_365 & query0_bits_116
+      : query0_mergedData_116;
   reg  [31:0] casez_tmp_367;
   always_comb begin
-    casez (_idx_T_522)
+    casez (_query1_idx_T_234)
       7'b0000000:
         casez_tmp_367 = entries_0_data;
       7'b0000001:
@@ -98865,7 +100303,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_368;
   always_comb begin
-    casez (_idx_T_522)
+    casez (_query1_idx_T_234)
       7'b0000000:
         casez_tmp_368 = entries_0_mask;
       7'b0000001:
@@ -99124,17 +100562,19 @@ module StoreBuffer(
         casez_tmp_368 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_117 = mutable_117 & casez_tmp_116[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_117 =
+  wire        query0_hit_117 = mutable_117 & casez_tmp_116[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_117 =
     {{8{casez_tmp_368[3]}},
      {8{casez_tmp_368[2]}},
      {8{casez_tmp_368[1]}},
      {8{casez_tmp_368[0]}}};
-  wire [31:0] mergedData_118 =
-    hit_117 ? mergedData_117 & ~bits_117 | casez_tmp_367 & bits_117 : mergedData_117;
+  wire [31:0] query0_mergedData_118 =
+    query0_hit_117
+      ? query0_mergedData_117 & ~query0_bits_117 | casez_tmp_367 & query0_bits_117
+      : query0_mergedData_117;
   reg  [31:0] casez_tmp_369;
   always_comb begin
-    casez (_idx_T_524)
+    casez (_query1_idx_T_236)
       7'b0000000:
         casez_tmp_369 = entries_0_data;
       7'b0000001:
@@ -99395,7 +100835,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_370;
   always_comb begin
-    casez (_idx_T_524)
+    casez (_query1_idx_T_236)
       7'b0000000:
         casez_tmp_370 = entries_0_mask;
       7'b0000001:
@@ -99654,17 +101094,19 @@ module StoreBuffer(
         casez_tmp_370 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_118 = mutable_118 & casez_tmp_117[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_118 =
+  wire        query0_hit_118 = mutable_118 & casez_tmp_117[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_118 =
     {{8{casez_tmp_370[3]}},
      {8{casez_tmp_370[2]}},
      {8{casez_tmp_370[1]}},
      {8{casez_tmp_370[0]}}};
-  wire [31:0] mergedData_119 =
-    hit_118 ? mergedData_118 & ~bits_118 | casez_tmp_369 & bits_118 : mergedData_118;
+  wire [31:0] query0_mergedData_119 =
+    query0_hit_118
+      ? query0_mergedData_118 & ~query0_bits_118 | casez_tmp_369 & query0_bits_118
+      : query0_mergedData_118;
   reg  [31:0] casez_tmp_371;
   always_comb begin
-    casez (_idx_T_526)
+    casez (_query1_idx_T_238)
       7'b0000000:
         casez_tmp_371 = entries_0_data;
       7'b0000001:
@@ -99925,7 +101367,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_372;
   always_comb begin
-    casez (_idx_T_526)
+    casez (_query1_idx_T_238)
       7'b0000000:
         casez_tmp_372 = entries_0_mask;
       7'b0000001:
@@ -100184,17 +101626,19 @@ module StoreBuffer(
         casez_tmp_372 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_119 = mutable_119 & casez_tmp_118[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_119 =
+  wire        query0_hit_119 = mutable_119 & casez_tmp_118[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_119 =
     {{8{casez_tmp_372[3]}},
      {8{casez_tmp_372[2]}},
      {8{casez_tmp_372[1]}},
      {8{casez_tmp_372[0]}}};
-  wire [31:0] mergedData_120 =
-    hit_119 ? mergedData_119 & ~bits_119 | casez_tmp_371 & bits_119 : mergedData_119;
+  wire [31:0] query0_mergedData_120 =
+    query0_hit_119
+      ? query0_mergedData_119 & ~query0_bits_119 | casez_tmp_371 & query0_bits_119
+      : query0_mergedData_119;
   reg  [31:0] casez_tmp_373;
   always_comb begin
-    casez (_idx_T_528)
+    casez (_query1_idx_T_240)
       7'b0000000:
         casez_tmp_373 = entries_0_data;
       7'b0000001:
@@ -100455,7 +101899,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_374;
   always_comb begin
-    casez (_idx_T_528)
+    casez (_query1_idx_T_240)
       7'b0000000:
         casez_tmp_374 = entries_0_mask;
       7'b0000001:
@@ -100714,17 +102158,19 @@ module StoreBuffer(
         casez_tmp_374 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_120 = mutable_120 & casez_tmp_119[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_120 =
+  wire        query0_hit_120 = mutable_120 & casez_tmp_119[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_120 =
     {{8{casez_tmp_374[3]}},
      {8{casez_tmp_374[2]}},
      {8{casez_tmp_374[1]}},
      {8{casez_tmp_374[0]}}};
-  wire [31:0] mergedData_121 =
-    hit_120 ? mergedData_120 & ~bits_120 | casez_tmp_373 & bits_120 : mergedData_120;
+  wire [31:0] query0_mergedData_121 =
+    query0_hit_120
+      ? query0_mergedData_120 & ~query0_bits_120 | casez_tmp_373 & query0_bits_120
+      : query0_mergedData_120;
   reg  [31:0] casez_tmp_375;
   always_comb begin
-    casez (_idx_T_530)
+    casez (_query1_idx_T_242)
       7'b0000000:
         casez_tmp_375 = entries_0_data;
       7'b0000001:
@@ -100985,7 +102431,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_376;
   always_comb begin
-    casez (_idx_T_530)
+    casez (_query1_idx_T_242)
       7'b0000000:
         casez_tmp_376 = entries_0_mask;
       7'b0000001:
@@ -101244,17 +102690,19 @@ module StoreBuffer(
         casez_tmp_376 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_121 = mutable_121 & casez_tmp_120[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_121 =
+  wire        query0_hit_121 = mutable_121 & casez_tmp_120[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_121 =
     {{8{casez_tmp_376[3]}},
      {8{casez_tmp_376[2]}},
      {8{casez_tmp_376[1]}},
      {8{casez_tmp_376[0]}}};
-  wire [31:0] mergedData_122 =
-    hit_121 ? mergedData_121 & ~bits_121 | casez_tmp_375 & bits_121 : mergedData_121;
+  wire [31:0] query0_mergedData_122 =
+    query0_hit_121
+      ? query0_mergedData_121 & ~query0_bits_121 | casez_tmp_375 & query0_bits_121
+      : query0_mergedData_121;
   reg  [31:0] casez_tmp_377;
   always_comb begin
-    casez (_idx_T_532)
+    casez (_query1_idx_T_244)
       7'b0000000:
         casez_tmp_377 = entries_0_data;
       7'b0000001:
@@ -101515,7 +102963,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_378;
   always_comb begin
-    casez (_idx_T_532)
+    casez (_query1_idx_T_244)
       7'b0000000:
         casez_tmp_378 = entries_0_mask;
       7'b0000001:
@@ -101774,17 +103222,19 @@ module StoreBuffer(
         casez_tmp_378 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_122 = mutable_122 & casez_tmp_121[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_122 =
+  wire        query0_hit_122 = mutable_122 & casez_tmp_121[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_122 =
     {{8{casez_tmp_378[3]}},
      {8{casez_tmp_378[2]}},
      {8{casez_tmp_378[1]}},
      {8{casez_tmp_378[0]}}};
-  wire [31:0] mergedData_123 =
-    hit_122 ? mergedData_122 & ~bits_122 | casez_tmp_377 & bits_122 : mergedData_122;
+  wire [31:0] query0_mergedData_123 =
+    query0_hit_122
+      ? query0_mergedData_122 & ~query0_bits_122 | casez_tmp_377 & query0_bits_122
+      : query0_mergedData_122;
   reg  [31:0] casez_tmp_379;
   always_comb begin
-    casez (_idx_T_534)
+    casez (_query1_idx_T_246)
       7'b0000000:
         casez_tmp_379 = entries_0_data;
       7'b0000001:
@@ -102045,7 +103495,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_380;
   always_comb begin
-    casez (_idx_T_534)
+    casez (_query1_idx_T_246)
       7'b0000000:
         casez_tmp_380 = entries_0_mask;
       7'b0000001:
@@ -102304,17 +103754,19 @@ module StoreBuffer(
         casez_tmp_380 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_123 = mutable_123 & casez_tmp_122[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_123 =
+  wire        query0_hit_123 = mutable_123 & casez_tmp_122[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_123 =
     {{8{casez_tmp_380[3]}},
      {8{casez_tmp_380[2]}},
      {8{casez_tmp_380[1]}},
      {8{casez_tmp_380[0]}}};
-  wire [31:0] mergedData_124 =
-    hit_123 ? mergedData_123 & ~bits_123 | casez_tmp_379 & bits_123 : mergedData_123;
+  wire [31:0] query0_mergedData_124 =
+    query0_hit_123
+      ? query0_mergedData_123 & ~query0_bits_123 | casez_tmp_379 & query0_bits_123
+      : query0_mergedData_123;
   reg  [31:0] casez_tmp_381;
   always_comb begin
-    casez (_idx_T_536)
+    casez (_query1_idx_T_248)
       7'b0000000:
         casez_tmp_381 = entries_0_data;
       7'b0000001:
@@ -102575,7 +104027,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_382;
   always_comb begin
-    casez (_idx_T_536)
+    casez (_query1_idx_T_248)
       7'b0000000:
         casez_tmp_382 = entries_0_mask;
       7'b0000001:
@@ -102834,17 +104286,19 @@ module StoreBuffer(
         casez_tmp_382 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_124 = mutable_124 & casez_tmp_123[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_124 =
+  wire        query0_hit_124 = mutable_124 & casez_tmp_123[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_124 =
     {{8{casez_tmp_382[3]}},
      {8{casez_tmp_382[2]}},
      {8{casez_tmp_382[1]}},
      {8{casez_tmp_382[0]}}};
-  wire [31:0] mergedData_125 =
-    hit_124 ? mergedData_124 & ~bits_124 | casez_tmp_381 & bits_124 : mergedData_124;
+  wire [31:0] query0_mergedData_125 =
+    query0_hit_124
+      ? query0_mergedData_124 & ~query0_bits_124 | casez_tmp_381 & query0_bits_124
+      : query0_mergedData_124;
   reg  [31:0] casez_tmp_383;
   always_comb begin
-    casez (_idx_T_538)
+    casez (_query1_idx_T_250)
       7'b0000000:
         casez_tmp_383 = entries_0_data;
       7'b0000001:
@@ -103105,7 +104559,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_384;
   always_comb begin
-    casez (_idx_T_538)
+    casez (_query1_idx_T_250)
       7'b0000000:
         casez_tmp_384 = entries_0_mask;
       7'b0000001:
@@ -103364,17 +104818,19 @@ module StoreBuffer(
         casez_tmp_384 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_125 = mutable_125 & casez_tmp_124[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_125 =
+  wire        query0_hit_125 = mutable_125 & casez_tmp_124[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_125 =
     {{8{casez_tmp_384[3]}},
      {8{casez_tmp_384[2]}},
      {8{casez_tmp_384[1]}},
      {8{casez_tmp_384[0]}}};
-  wire [31:0] mergedData_126 =
-    hit_125 ? mergedData_125 & ~bits_125 | casez_tmp_383 & bits_125 : mergedData_125;
+  wire [31:0] query0_mergedData_126 =
+    query0_hit_125
+      ? query0_mergedData_125 & ~query0_bits_125 | casez_tmp_383 & query0_bits_125
+      : query0_mergedData_125;
   reg  [31:0] casez_tmp_385;
   always_comb begin
-    casez (_idx_T_540)
+    casez (_query1_idx_T_252)
       7'b0000000:
         casez_tmp_385 = entries_0_data;
       7'b0000001:
@@ -103635,7 +105091,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_386;
   always_comb begin
-    casez (_idx_T_540)
+    casez (_query1_idx_T_252)
       7'b0000000:
         casez_tmp_386 = entries_0_mask;
       7'b0000001:
@@ -103894,17 +105350,19 @@ module StoreBuffer(
         casez_tmp_386 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_126 = mutable_126 & casez_tmp_125[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_126 =
+  wire        query0_hit_126 = mutable_126 & casez_tmp_125[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_126 =
     {{8{casez_tmp_386[3]}},
      {8{casez_tmp_386[2]}},
      {8{casez_tmp_386[1]}},
      {8{casez_tmp_386[0]}}};
-  wire [31:0] mergedData_127 =
-    hit_126 ? mergedData_126 & ~bits_126 | casez_tmp_385 & bits_126 : mergedData_126;
+  wire [31:0] query0_mergedData_127 =
+    query0_hit_126
+      ? query0_mergedData_126 & ~query0_bits_126 | casez_tmp_385 & query0_bits_126
+      : query0_mergedData_126;
   reg  [31:0] casez_tmp_387;
   always_comb begin
-    casez (_idx_T_542)
+    casez (_query1_idx_T_254)
       7'b0000000:
         casez_tmp_387 = entries_0_data;
       7'b0000001:
@@ -104165,7 +105623,7 @@ module StoreBuffer(
   end // always_comb
   reg  [3:0]  casez_tmp_388;
   always_comb begin
-    casez (_idx_T_542)
+    casez (_query1_idx_T_254)
       7'b0000000:
         casez_tmp_388 = entries_0_mask;
       7'b0000001:
@@ -104424,65 +105882,78 @@ module StoreBuffer(
         casez_tmp_388 = entries_127_mask;
     endcase
   end // always_comb
-  wire        hit_127 = count[7] & casez_tmp_126[31:2] == io_ld_addr[31:2];
-  wire [31:0] bits_127 =
+  wire        query0_hit_127 = count[7] & casez_tmp_126[31:2] == io_ld_addr[31:2];
+  wire [31:0] query0_bits_127 =
     {{8{casez_tmp_388[3]}},
      {8{casez_tmp_388[2]}},
      {8{casez_tmp_388[1]}},
      {8{casez_tmp_388[0]}}};
-  wire [3:0]  mergedMask_128 =
-    {4{hit_127}} & casez_tmp_388 | {4{hit_126}} & casez_tmp_386 | {4{hit_125}}
-    & casez_tmp_384 | {4{hit_124}} & casez_tmp_382 | {4{hit_123}} & casez_tmp_380
-    | {4{hit_122}} & casez_tmp_378 | {4{hit_121}} & casez_tmp_376 | {4{hit_120}}
-    & casez_tmp_374 | {4{hit_119}} & casez_tmp_372 | {4{hit_118}} & casez_tmp_370
-    | {4{hit_117}} & casez_tmp_368 | {4{hit_116}} & casez_tmp_366 | {4{hit_115}}
-    & casez_tmp_364 | {4{hit_114}} & casez_tmp_362 | {4{hit_113}} & casez_tmp_360
-    | {4{hit_112}} & casez_tmp_358 | {4{hit_111}} & casez_tmp_356 | {4{hit_110}}
-    & casez_tmp_354 | {4{hit_109}} & casez_tmp_352 | {4{hit_108}} & casez_tmp_350
-    | {4{hit_107}} & casez_tmp_348 | {4{hit_106}} & casez_tmp_346 | {4{hit_105}}
-    & casez_tmp_344 | {4{hit_104}} & casez_tmp_342 | {4{hit_103}} & casez_tmp_340
-    | {4{hit_102}} & casez_tmp_338 | {4{hit_101}} & casez_tmp_336 | {4{hit_100}}
-    & casez_tmp_334 | {4{hit_99}} & casez_tmp_332 | {4{hit_98}} & casez_tmp_330
-    | {4{hit_97}} & casez_tmp_328 | {4{hit_96}} & casez_tmp_326 | {4{hit_95}}
-    & casez_tmp_324 | {4{hit_94}} & casez_tmp_322 | {4{hit_93}} & casez_tmp_320
-    | {4{hit_92}} & casez_tmp_318 | {4{hit_91}} & casez_tmp_316 | {4{hit_90}}
-    & casez_tmp_314 | {4{hit_89}} & casez_tmp_312 | {4{hit_88}} & casez_tmp_310
-    | {4{hit_87}} & casez_tmp_308 | {4{hit_86}} & casez_tmp_306 | {4{hit_85}}
-    & casez_tmp_304 | {4{hit_84}} & casez_tmp_302 | {4{hit_83}} & casez_tmp_300
-    | {4{hit_82}} & casez_tmp_298 | {4{hit_81}} & casez_tmp_296 | {4{hit_80}}
-    & casez_tmp_294 | {4{hit_79}} & casez_tmp_292 | {4{hit_78}} & casez_tmp_290
-    | {4{hit_77}} & casez_tmp_288 | {4{hit_76}} & casez_tmp_286 | {4{hit_75}}
-    & casez_tmp_284 | {4{hit_74}} & casez_tmp_282 | {4{hit_73}} & casez_tmp_280
-    | {4{hit_72}} & casez_tmp_278 | {4{hit_71}} & casez_tmp_276 | {4{hit_70}}
-    & casez_tmp_274 | {4{hit_69}} & casez_tmp_272 | {4{hit_68}} & casez_tmp_270
-    | {4{hit_67}} & casez_tmp_268 | {4{hit_66}} & casez_tmp_266 | {4{hit_65}}
-    & casez_tmp_264 | {4{hit_64}} & casez_tmp_262 | {4{hit_63}} & casez_tmp_260
-    | {4{hit_62}} & casez_tmp_258 | {4{hit_61}} & casez_tmp_256 | {4{hit_60}}
-    & casez_tmp_254 | {4{hit_59}} & casez_tmp_252 | {4{hit_58}} & casez_tmp_250
-    | {4{hit_57}} & casez_tmp_248 | {4{hit_56}} & casez_tmp_246 | {4{hit_55}}
-    & casez_tmp_244 | {4{hit_54}} & casez_tmp_242 | {4{hit_53}} & casez_tmp_240
-    | {4{hit_52}} & casez_tmp_238 | {4{hit_51}} & casez_tmp_236 | {4{hit_50}}
-    & casez_tmp_234 | {4{hit_49}} & casez_tmp_232 | {4{hit_48}} & casez_tmp_230
-    | {4{hit_47}} & casez_tmp_228 | {4{hit_46}} & casez_tmp_226 | {4{hit_45}}
-    & casez_tmp_224 | {4{hit_44}} & casez_tmp_222 | {4{hit_43}} & casez_tmp_220
-    | {4{hit_42}} & casez_tmp_218 | {4{hit_41}} & casez_tmp_216 | {4{hit_40}}
-    & casez_tmp_214 | {4{hit_39}} & casez_tmp_212 | {4{hit_38}} & casez_tmp_210
-    | {4{hit_37}} & casez_tmp_208 | {4{hit_36}} & casez_tmp_206 | {4{hit_35}}
-    & casez_tmp_204 | {4{hit_34}} & casez_tmp_202 | {4{hit_33}} & casez_tmp_200
-    | {4{hit_32}} & casez_tmp_198 | {4{hit_31}} & casez_tmp_196 | {4{hit_30}}
-    & casez_tmp_194 | {4{hit_29}} & casez_tmp_192 | {4{hit_28}} & casez_tmp_190
-    | {4{hit_27}} & casez_tmp_188 | {4{hit_26}} & casez_tmp_186 | {4{hit_25}}
-    & casez_tmp_184 | {4{hit_24}} & casez_tmp_182 | {4{hit_23}} & casez_tmp_180
-    | {4{hit_22}} & casez_tmp_178 | {4{hit_21}} & casez_tmp_176 | {4{hit_20}}
-    & casez_tmp_174 | {4{hit_19}} & casez_tmp_172 | {4{hit_18}} & casez_tmp_170
-    | {4{hit_17}} & casez_tmp_168 | {4{hit_16}} & casez_tmp_166 | {4{hit_15}}
-    & casez_tmp_164 | {4{hit_14}} & casez_tmp_162 | {4{hit_13}} & casez_tmp_160
-    | {4{hit_12}} & casez_tmp_158 | {4{hit_11}} & casez_tmp_156 | {4{hit_10}}
-    & casez_tmp_154 | {4{hit_9}} & casez_tmp_152 | {4{hit_8}} & casez_tmp_150 | {4{hit_7}}
-    & casez_tmp_148 | {4{hit_6}} & casez_tmp_146 | {4{hit_5}} & casez_tmp_144 | {4{hit_4}}
-    & casez_tmp_142 | {4{hit_3}} & casez_tmp_140 | {4{hit_2}} & casez_tmp_138 | {4{hit_1}}
-    & casez_tmp_136 | (hit ? casez_tmp_134 : 4'h0);
-  wire [6:0]  _loadMask_T_1 =
+  wire [3:0]  query0_mergedMask_128 =
+    {4{query0_hit_127}} & casez_tmp_388 | {4{query0_hit_126}} & casez_tmp_386
+    | {4{query0_hit_125}} & casez_tmp_384 | {4{query0_hit_124}} & casez_tmp_382
+    | {4{query0_hit_123}} & casez_tmp_380 | {4{query0_hit_122}} & casez_tmp_378
+    | {4{query0_hit_121}} & casez_tmp_376 | {4{query0_hit_120}} & casez_tmp_374
+    | {4{query0_hit_119}} & casez_tmp_372 | {4{query0_hit_118}} & casez_tmp_370
+    | {4{query0_hit_117}} & casez_tmp_368 | {4{query0_hit_116}} & casez_tmp_366
+    | {4{query0_hit_115}} & casez_tmp_364 | {4{query0_hit_114}} & casez_tmp_362
+    | {4{query0_hit_113}} & casez_tmp_360 | {4{query0_hit_112}} & casez_tmp_358
+    | {4{query0_hit_111}} & casez_tmp_356 | {4{query0_hit_110}} & casez_tmp_354
+    | {4{query0_hit_109}} & casez_tmp_352 | {4{query0_hit_108}} & casez_tmp_350
+    | {4{query0_hit_107}} & casez_tmp_348 | {4{query0_hit_106}} & casez_tmp_346
+    | {4{query0_hit_105}} & casez_tmp_344 | {4{query0_hit_104}} & casez_tmp_342
+    | {4{query0_hit_103}} & casez_tmp_340 | {4{query0_hit_102}} & casez_tmp_338
+    | {4{query0_hit_101}} & casez_tmp_336 | {4{query0_hit_100}} & casez_tmp_334
+    | {4{query0_hit_99}} & casez_tmp_332 | {4{query0_hit_98}} & casez_tmp_330
+    | {4{query0_hit_97}} & casez_tmp_328 | {4{query0_hit_96}} & casez_tmp_326
+    | {4{query0_hit_95}} & casez_tmp_324 | {4{query0_hit_94}} & casez_tmp_322
+    | {4{query0_hit_93}} & casez_tmp_320 | {4{query0_hit_92}} & casez_tmp_318
+    | {4{query0_hit_91}} & casez_tmp_316 | {4{query0_hit_90}} & casez_tmp_314
+    | {4{query0_hit_89}} & casez_tmp_312 | {4{query0_hit_88}} & casez_tmp_310
+    | {4{query0_hit_87}} & casez_tmp_308 | {4{query0_hit_86}} & casez_tmp_306
+    | {4{query0_hit_85}} & casez_tmp_304 | {4{query0_hit_84}} & casez_tmp_302
+    | {4{query0_hit_83}} & casez_tmp_300 | {4{query0_hit_82}} & casez_tmp_298
+    | {4{query0_hit_81}} & casez_tmp_296 | {4{query0_hit_80}} & casez_tmp_294
+    | {4{query0_hit_79}} & casez_tmp_292 | {4{query0_hit_78}} & casez_tmp_290
+    | {4{query0_hit_77}} & casez_tmp_288 | {4{query0_hit_76}} & casez_tmp_286
+    | {4{query0_hit_75}} & casez_tmp_284 | {4{query0_hit_74}} & casez_tmp_282
+    | {4{query0_hit_73}} & casez_tmp_280 | {4{query0_hit_72}} & casez_tmp_278
+    | {4{query0_hit_71}} & casez_tmp_276 | {4{query0_hit_70}} & casez_tmp_274
+    | {4{query0_hit_69}} & casez_tmp_272 | {4{query0_hit_68}} & casez_tmp_270
+    | {4{query0_hit_67}} & casez_tmp_268 | {4{query0_hit_66}} & casez_tmp_266
+    | {4{query0_hit_65}} & casez_tmp_264 | {4{query0_hit_64}} & casez_tmp_262
+    | {4{query0_hit_63}} & casez_tmp_260 | {4{query0_hit_62}} & casez_tmp_258
+    | {4{query0_hit_61}} & casez_tmp_256 | {4{query0_hit_60}} & casez_tmp_254
+    | {4{query0_hit_59}} & casez_tmp_252 | {4{query0_hit_58}} & casez_tmp_250
+    | {4{query0_hit_57}} & casez_tmp_248 | {4{query0_hit_56}} & casez_tmp_246
+    | {4{query0_hit_55}} & casez_tmp_244 | {4{query0_hit_54}} & casez_tmp_242
+    | {4{query0_hit_53}} & casez_tmp_240 | {4{query0_hit_52}} & casez_tmp_238
+    | {4{query0_hit_51}} & casez_tmp_236 | {4{query0_hit_50}} & casez_tmp_234
+    | {4{query0_hit_49}} & casez_tmp_232 | {4{query0_hit_48}} & casez_tmp_230
+    | {4{query0_hit_47}} & casez_tmp_228 | {4{query0_hit_46}} & casez_tmp_226
+    | {4{query0_hit_45}} & casez_tmp_224 | {4{query0_hit_44}} & casez_tmp_222
+    | {4{query0_hit_43}} & casez_tmp_220 | {4{query0_hit_42}} & casez_tmp_218
+    | {4{query0_hit_41}} & casez_tmp_216 | {4{query0_hit_40}} & casez_tmp_214
+    | {4{query0_hit_39}} & casez_tmp_212 | {4{query0_hit_38}} & casez_tmp_210
+    | {4{query0_hit_37}} & casez_tmp_208 | {4{query0_hit_36}} & casez_tmp_206
+    | {4{query0_hit_35}} & casez_tmp_204 | {4{query0_hit_34}} & casez_tmp_202
+    | {4{query0_hit_33}} & casez_tmp_200 | {4{query0_hit_32}} & casez_tmp_198
+    | {4{query0_hit_31}} & casez_tmp_196 | {4{query0_hit_30}} & casez_tmp_194
+    | {4{query0_hit_29}} & casez_tmp_192 | {4{query0_hit_28}} & casez_tmp_190
+    | {4{query0_hit_27}} & casez_tmp_188 | {4{query0_hit_26}} & casez_tmp_186
+    | {4{query0_hit_25}} & casez_tmp_184 | {4{query0_hit_24}} & casez_tmp_182
+    | {4{query0_hit_23}} & casez_tmp_180 | {4{query0_hit_22}} & casez_tmp_178
+    | {4{query0_hit_21}} & casez_tmp_176 | {4{query0_hit_20}} & casez_tmp_174
+    | {4{query0_hit_19}} & casez_tmp_172 | {4{query0_hit_18}} & casez_tmp_170
+    | {4{query0_hit_17}} & casez_tmp_168 | {4{query0_hit_16}} & casez_tmp_166
+    | {4{query0_hit_15}} & casez_tmp_164 | {4{query0_hit_14}} & casez_tmp_162
+    | {4{query0_hit_13}} & casez_tmp_160 | {4{query0_hit_12}} & casez_tmp_158
+    | {4{query0_hit_11}} & casez_tmp_156 | {4{query0_hit_10}} & casez_tmp_154
+    | {4{query0_hit_9}} & casez_tmp_152 | {4{query0_hit_8}} & casez_tmp_150
+    | {4{query0_hit_7}} & casez_tmp_148 | {4{query0_hit_6}} & casez_tmp_146
+    | {4{query0_hit_5}} & casez_tmp_144 | {4{query0_hit_4}} & casez_tmp_142
+    | {4{query0_hit_3}} & casez_tmp_140 | {4{query0_hit_2}} & casez_tmp_138
+    | {4{query0_hit_1}} & casez_tmp_136 | (query0_hit ? casez_tmp_134 : 4'h0);
+  wire [6:0]  _query0_loadMask_T_1 =
     {3'h0,
      io_ld_mem_rd == 3'h5
        ? 4'h3
@@ -104490,7 +105961,1356 @@ module StoreBuffer(
            ? 4'h1
            : io_ld_mem_rd == 3'h3 ? 4'hF : {2'h0, io_ld_mem_rd == 3'h2, 1'h1}}
     << io_ld_addr[1:0];
-  wire [3:0]  _fullCover_T = mergedMask_128 & _loadMask_T_1[3:0];
+  wire [3:0]  _query0_fullCover_T = query0_mergedMask_128 & _query0_loadMask_T_1[3:0];
+  wire        query1_hit = (|count) & casez_tmp[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_mergedData_1 =
+    query1_hit
+      ? casez_tmp_133
+        & {{8{casez_tmp_134[3]}},
+           {8{casez_tmp_134[2]}},
+           {8{casez_tmp_134[1]}},
+           {8{casez_tmp_134[0]}}}
+      : 32'h0;
+  wire        query1_hit_1 = (|(count[7:1])) & casez_tmp_0[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_1 =
+    {{8{casez_tmp_136[3]}},
+     {8{casez_tmp_136[2]}},
+     {8{casez_tmp_136[1]}},
+     {8{casez_tmp_136[0]}}};
+  wire [31:0] query1_mergedData_2 =
+    query1_hit_1
+      ? query1_mergedData_1 & ~query1_bits_1 | casez_tmp_135 & query1_bits_1
+      : query1_mergedData_1;
+  wire        query1_hit_2 = _query1_hit_T_8 & casez_tmp_1[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_2 =
+    {{8{casez_tmp_138[3]}},
+     {8{casez_tmp_138[2]}},
+     {8{casez_tmp_138[1]}},
+     {8{casez_tmp_138[0]}}};
+  wire [31:0] query1_mergedData_3 =
+    query1_hit_2
+      ? query1_mergedData_2 & ~query1_bits_2 | casez_tmp_137 & query1_bits_2
+      : query1_mergedData_2;
+  wire        query1_hit_3 = (|(count[7:2])) & casez_tmp_2[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_3 =
+    {{8{casez_tmp_140[3]}},
+     {8{casez_tmp_140[2]}},
+     {8{casez_tmp_140[1]}},
+     {8{casez_tmp_140[0]}}};
+  wire [31:0] query1_mergedData_4 =
+    query1_hit_3
+      ? query1_mergedData_3 & ~query1_bits_3 | casez_tmp_139 & query1_bits_3
+      : query1_mergedData_3;
+  wire        query1_hit_4 = _query1_hit_T_16 & casez_tmp_3[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_4 =
+    {{8{casez_tmp_142[3]}},
+     {8{casez_tmp_142[2]}},
+     {8{casez_tmp_142[1]}},
+     {8{casez_tmp_142[0]}}};
+  wire [31:0] query1_mergedData_5 =
+    query1_hit_4
+      ? query1_mergedData_4 & ~query1_bits_4 | casez_tmp_141 & query1_bits_4
+      : query1_mergedData_4;
+  wire        query1_hit_5 = _query1_hit_T_20 & casez_tmp_4[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_5 =
+    {{8{casez_tmp_144[3]}},
+     {8{casez_tmp_144[2]}},
+     {8{casez_tmp_144[1]}},
+     {8{casez_tmp_144[0]}}};
+  wire [31:0] query1_mergedData_6 =
+    query1_hit_5
+      ? query1_mergedData_5 & ~query1_bits_5 | casez_tmp_143 & query1_bits_5
+      : query1_mergedData_5;
+  wire        query1_hit_6 = _query1_hit_T_24 & casez_tmp_5[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_6 =
+    {{8{casez_tmp_146[3]}},
+     {8{casez_tmp_146[2]}},
+     {8{casez_tmp_146[1]}},
+     {8{casez_tmp_146[0]}}};
+  wire [31:0] query1_mergedData_7 =
+    query1_hit_6
+      ? query1_mergedData_6 & ~query1_bits_6 | casez_tmp_145 & query1_bits_6
+      : query1_mergedData_6;
+  wire        query1_hit_7 = (|(count[7:3])) & casez_tmp_6[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_7 =
+    {{8{casez_tmp_148[3]}},
+     {8{casez_tmp_148[2]}},
+     {8{casez_tmp_148[1]}},
+     {8{casez_tmp_148[0]}}};
+  wire [31:0] query1_mergedData_8 =
+    query1_hit_7
+      ? query1_mergedData_7 & ~query1_bits_7 | casez_tmp_147 & query1_bits_7
+      : query1_mergedData_7;
+  wire        query1_hit_8 = _query1_hit_T_32 & casez_tmp_7[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_8 =
+    {{8{casez_tmp_150[3]}},
+     {8{casez_tmp_150[2]}},
+     {8{casez_tmp_150[1]}},
+     {8{casez_tmp_150[0]}}};
+  wire [31:0] query1_mergedData_9 =
+    query1_hit_8
+      ? query1_mergedData_8 & ~query1_bits_8 | casez_tmp_149 & query1_bits_8
+      : query1_mergedData_8;
+  wire        query1_hit_9 = _query1_hit_T_36 & casez_tmp_8[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_9 =
+    {{8{casez_tmp_152[3]}},
+     {8{casez_tmp_152[2]}},
+     {8{casez_tmp_152[1]}},
+     {8{casez_tmp_152[0]}}};
+  wire [31:0] query1_mergedData_10 =
+    query1_hit_9
+      ? query1_mergedData_9 & ~query1_bits_9 | casez_tmp_151 & query1_bits_9
+      : query1_mergedData_9;
+  wire        query1_hit_10 = _query1_hit_T_40 & casez_tmp_9[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_10 =
+    {{8{casez_tmp_154[3]}},
+     {8{casez_tmp_154[2]}},
+     {8{casez_tmp_154[1]}},
+     {8{casez_tmp_154[0]}}};
+  wire [31:0] query1_mergedData_11 =
+    query1_hit_10
+      ? query1_mergedData_10 & ~query1_bits_10 | casez_tmp_153 & query1_bits_10
+      : query1_mergedData_10;
+  wire        query1_hit_11 = _query1_hit_T_44 & casez_tmp_10[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_11 =
+    {{8{casez_tmp_156[3]}},
+     {8{casez_tmp_156[2]}},
+     {8{casez_tmp_156[1]}},
+     {8{casez_tmp_156[0]}}};
+  wire [31:0] query1_mergedData_12 =
+    query1_hit_11
+      ? query1_mergedData_11 & ~query1_bits_11 | casez_tmp_155 & query1_bits_11
+      : query1_mergedData_11;
+  wire        query1_hit_12 = _query1_hit_T_48 & casez_tmp_11[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_12 =
+    {{8{casez_tmp_158[3]}},
+     {8{casez_tmp_158[2]}},
+     {8{casez_tmp_158[1]}},
+     {8{casez_tmp_158[0]}}};
+  wire [31:0] query1_mergedData_13 =
+    query1_hit_12
+      ? query1_mergedData_12 & ~query1_bits_12 | casez_tmp_157 & query1_bits_12
+      : query1_mergedData_12;
+  wire        query1_hit_13 = _query1_hit_T_52 & casez_tmp_12[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_13 =
+    {{8{casez_tmp_160[3]}},
+     {8{casez_tmp_160[2]}},
+     {8{casez_tmp_160[1]}},
+     {8{casez_tmp_160[0]}}};
+  wire [31:0] query1_mergedData_14 =
+    query1_hit_13
+      ? query1_mergedData_13 & ~query1_bits_13 | casez_tmp_159 & query1_bits_13
+      : query1_mergedData_13;
+  wire        query1_hit_14 = _query1_hit_T_56 & casez_tmp_13[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_14 =
+    {{8{casez_tmp_162[3]}},
+     {8{casez_tmp_162[2]}},
+     {8{casez_tmp_162[1]}},
+     {8{casez_tmp_162[0]}}};
+  wire [31:0] query1_mergedData_15 =
+    query1_hit_14
+      ? query1_mergedData_14 & ~query1_bits_14 | casez_tmp_161 & query1_bits_14
+      : query1_mergedData_14;
+  wire        query1_hit_15 = (|(count[7:4])) & casez_tmp_14[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_15 =
+    {{8{casez_tmp_164[3]}},
+     {8{casez_tmp_164[2]}},
+     {8{casez_tmp_164[1]}},
+     {8{casez_tmp_164[0]}}};
+  wire [31:0] query1_mergedData_16 =
+    query1_hit_15
+      ? query1_mergedData_15 & ~query1_bits_15 | casez_tmp_163 & query1_bits_15
+      : query1_mergedData_15;
+  wire        query1_hit_16 = mutable_16 & casez_tmp_15[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_16 =
+    {{8{casez_tmp_166[3]}},
+     {8{casez_tmp_166[2]}},
+     {8{casez_tmp_166[1]}},
+     {8{casez_tmp_166[0]}}};
+  wire [31:0] query1_mergedData_17 =
+    query1_hit_16
+      ? query1_mergedData_16 & ~query1_bits_16 | casez_tmp_165 & query1_bits_16
+      : query1_mergedData_16;
+  wire        query1_hit_17 = mutable_17 & casez_tmp_16[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_17 =
+    {{8{casez_tmp_168[3]}},
+     {8{casez_tmp_168[2]}},
+     {8{casez_tmp_168[1]}},
+     {8{casez_tmp_168[0]}}};
+  wire [31:0] query1_mergedData_18 =
+    query1_hit_17
+      ? query1_mergedData_17 & ~query1_bits_17 | casez_tmp_167 & query1_bits_17
+      : query1_mergedData_17;
+  wire        query1_hit_18 = mutable_18 & casez_tmp_17[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_18 =
+    {{8{casez_tmp_170[3]}},
+     {8{casez_tmp_170[2]}},
+     {8{casez_tmp_170[1]}},
+     {8{casez_tmp_170[0]}}};
+  wire [31:0] query1_mergedData_19 =
+    query1_hit_18
+      ? query1_mergedData_18 & ~query1_bits_18 | casez_tmp_169 & query1_bits_18
+      : query1_mergedData_18;
+  wire        query1_hit_19 = mutable_19 & casez_tmp_18[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_19 =
+    {{8{casez_tmp_172[3]}},
+     {8{casez_tmp_172[2]}},
+     {8{casez_tmp_172[1]}},
+     {8{casez_tmp_172[0]}}};
+  wire [31:0] query1_mergedData_20 =
+    query1_hit_19
+      ? query1_mergedData_19 & ~query1_bits_19 | casez_tmp_171 & query1_bits_19
+      : query1_mergedData_19;
+  wire        query1_hit_20 = mutable_20 & casez_tmp_19[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_20 =
+    {{8{casez_tmp_174[3]}},
+     {8{casez_tmp_174[2]}},
+     {8{casez_tmp_174[1]}},
+     {8{casez_tmp_174[0]}}};
+  wire [31:0] query1_mergedData_21 =
+    query1_hit_20
+      ? query1_mergedData_20 & ~query1_bits_20 | casez_tmp_173 & query1_bits_20
+      : query1_mergedData_20;
+  wire        query1_hit_21 = mutable_21 & casez_tmp_20[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_21 =
+    {{8{casez_tmp_176[3]}},
+     {8{casez_tmp_176[2]}},
+     {8{casez_tmp_176[1]}},
+     {8{casez_tmp_176[0]}}};
+  wire [31:0] query1_mergedData_22 =
+    query1_hit_21
+      ? query1_mergedData_21 & ~query1_bits_21 | casez_tmp_175 & query1_bits_21
+      : query1_mergedData_21;
+  wire        query1_hit_22 = mutable_22 & casez_tmp_21[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_22 =
+    {{8{casez_tmp_178[3]}},
+     {8{casez_tmp_178[2]}},
+     {8{casez_tmp_178[1]}},
+     {8{casez_tmp_178[0]}}};
+  wire [31:0] query1_mergedData_23 =
+    query1_hit_22
+      ? query1_mergedData_22 & ~query1_bits_22 | casez_tmp_177 & query1_bits_22
+      : query1_mergedData_22;
+  wire        query1_hit_23 = mutable_23 & casez_tmp_22[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_23 =
+    {{8{casez_tmp_180[3]}},
+     {8{casez_tmp_180[2]}},
+     {8{casez_tmp_180[1]}},
+     {8{casez_tmp_180[0]}}};
+  wire [31:0] query1_mergedData_24 =
+    query1_hit_23
+      ? query1_mergedData_23 & ~query1_bits_23 | casez_tmp_179 & query1_bits_23
+      : query1_mergedData_23;
+  wire        query1_hit_24 = mutable_24 & casez_tmp_23[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_24 =
+    {{8{casez_tmp_182[3]}},
+     {8{casez_tmp_182[2]}},
+     {8{casez_tmp_182[1]}},
+     {8{casez_tmp_182[0]}}};
+  wire [31:0] query1_mergedData_25 =
+    query1_hit_24
+      ? query1_mergedData_24 & ~query1_bits_24 | casez_tmp_181 & query1_bits_24
+      : query1_mergedData_24;
+  wire        query1_hit_25 = mutable_25 & casez_tmp_24[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_25 =
+    {{8{casez_tmp_184[3]}},
+     {8{casez_tmp_184[2]}},
+     {8{casez_tmp_184[1]}},
+     {8{casez_tmp_184[0]}}};
+  wire [31:0] query1_mergedData_26 =
+    query1_hit_25
+      ? query1_mergedData_25 & ~query1_bits_25 | casez_tmp_183 & query1_bits_25
+      : query1_mergedData_25;
+  wire        query1_hit_26 = mutable_26 & casez_tmp_25[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_26 =
+    {{8{casez_tmp_186[3]}},
+     {8{casez_tmp_186[2]}},
+     {8{casez_tmp_186[1]}},
+     {8{casez_tmp_186[0]}}};
+  wire [31:0] query1_mergedData_27 =
+    query1_hit_26
+      ? query1_mergedData_26 & ~query1_bits_26 | casez_tmp_185 & query1_bits_26
+      : query1_mergedData_26;
+  wire        query1_hit_27 = mutable_27 & casez_tmp_26[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_27 =
+    {{8{casez_tmp_188[3]}},
+     {8{casez_tmp_188[2]}},
+     {8{casez_tmp_188[1]}},
+     {8{casez_tmp_188[0]}}};
+  wire [31:0] query1_mergedData_28 =
+    query1_hit_27
+      ? query1_mergedData_27 & ~query1_bits_27 | casez_tmp_187 & query1_bits_27
+      : query1_mergedData_27;
+  wire        query1_hit_28 = mutable_28 & casez_tmp_27[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_28 =
+    {{8{casez_tmp_190[3]}},
+     {8{casez_tmp_190[2]}},
+     {8{casez_tmp_190[1]}},
+     {8{casez_tmp_190[0]}}};
+  wire [31:0] query1_mergedData_29 =
+    query1_hit_28
+      ? query1_mergedData_28 & ~query1_bits_28 | casez_tmp_189 & query1_bits_28
+      : query1_mergedData_28;
+  wire        query1_hit_29 = mutable_29 & casez_tmp_28[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_29 =
+    {{8{casez_tmp_192[3]}},
+     {8{casez_tmp_192[2]}},
+     {8{casez_tmp_192[1]}},
+     {8{casez_tmp_192[0]}}};
+  wire [31:0] query1_mergedData_30 =
+    query1_hit_29
+      ? query1_mergedData_29 & ~query1_bits_29 | casez_tmp_191 & query1_bits_29
+      : query1_mergedData_29;
+  wire        query1_hit_30 = mutable_30 & casez_tmp_29[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_30 =
+    {{8{casez_tmp_194[3]}},
+     {8{casez_tmp_194[2]}},
+     {8{casez_tmp_194[1]}},
+     {8{casez_tmp_194[0]}}};
+  wire [31:0] query1_mergedData_31 =
+    query1_hit_30
+      ? query1_mergedData_30 & ~query1_bits_30 | casez_tmp_193 & query1_bits_30
+      : query1_mergedData_30;
+  wire        query1_hit_31 = (|(count[7:5])) & casez_tmp_30[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_31 =
+    {{8{casez_tmp_196[3]}},
+     {8{casez_tmp_196[2]}},
+     {8{casez_tmp_196[1]}},
+     {8{casez_tmp_196[0]}}};
+  wire [31:0] query1_mergedData_32 =
+    query1_hit_31
+      ? query1_mergedData_31 & ~query1_bits_31 | casez_tmp_195 & query1_bits_31
+      : query1_mergedData_31;
+  wire        query1_hit_32 = mutable_32 & casez_tmp_31[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_32 =
+    {{8{casez_tmp_198[3]}},
+     {8{casez_tmp_198[2]}},
+     {8{casez_tmp_198[1]}},
+     {8{casez_tmp_198[0]}}};
+  wire [31:0] query1_mergedData_33 =
+    query1_hit_32
+      ? query1_mergedData_32 & ~query1_bits_32 | casez_tmp_197 & query1_bits_32
+      : query1_mergedData_32;
+  wire        query1_hit_33 = mutable_33 & casez_tmp_32[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_33 =
+    {{8{casez_tmp_200[3]}},
+     {8{casez_tmp_200[2]}},
+     {8{casez_tmp_200[1]}},
+     {8{casez_tmp_200[0]}}};
+  wire [31:0] query1_mergedData_34 =
+    query1_hit_33
+      ? query1_mergedData_33 & ~query1_bits_33 | casez_tmp_199 & query1_bits_33
+      : query1_mergedData_33;
+  wire        query1_hit_34 = mutable_34 & casez_tmp_33[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_34 =
+    {{8{casez_tmp_202[3]}},
+     {8{casez_tmp_202[2]}},
+     {8{casez_tmp_202[1]}},
+     {8{casez_tmp_202[0]}}};
+  wire [31:0] query1_mergedData_35 =
+    query1_hit_34
+      ? query1_mergedData_34 & ~query1_bits_34 | casez_tmp_201 & query1_bits_34
+      : query1_mergedData_34;
+  wire        query1_hit_35 = mutable_35 & casez_tmp_34[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_35 =
+    {{8{casez_tmp_204[3]}},
+     {8{casez_tmp_204[2]}},
+     {8{casez_tmp_204[1]}},
+     {8{casez_tmp_204[0]}}};
+  wire [31:0] query1_mergedData_36 =
+    query1_hit_35
+      ? query1_mergedData_35 & ~query1_bits_35 | casez_tmp_203 & query1_bits_35
+      : query1_mergedData_35;
+  wire        query1_hit_36 = mutable_36 & casez_tmp_35[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_36 =
+    {{8{casez_tmp_206[3]}},
+     {8{casez_tmp_206[2]}},
+     {8{casez_tmp_206[1]}},
+     {8{casez_tmp_206[0]}}};
+  wire [31:0] query1_mergedData_37 =
+    query1_hit_36
+      ? query1_mergedData_36 & ~query1_bits_36 | casez_tmp_205 & query1_bits_36
+      : query1_mergedData_36;
+  wire        query1_hit_37 = mutable_37 & casez_tmp_36[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_37 =
+    {{8{casez_tmp_208[3]}},
+     {8{casez_tmp_208[2]}},
+     {8{casez_tmp_208[1]}},
+     {8{casez_tmp_208[0]}}};
+  wire [31:0] query1_mergedData_38 =
+    query1_hit_37
+      ? query1_mergedData_37 & ~query1_bits_37 | casez_tmp_207 & query1_bits_37
+      : query1_mergedData_37;
+  wire        query1_hit_38 = mutable_38 & casez_tmp_37[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_38 =
+    {{8{casez_tmp_210[3]}},
+     {8{casez_tmp_210[2]}},
+     {8{casez_tmp_210[1]}},
+     {8{casez_tmp_210[0]}}};
+  wire [31:0] query1_mergedData_39 =
+    query1_hit_38
+      ? query1_mergedData_38 & ~query1_bits_38 | casez_tmp_209 & query1_bits_38
+      : query1_mergedData_38;
+  wire        query1_hit_39 = mutable_39 & casez_tmp_38[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_39 =
+    {{8{casez_tmp_212[3]}},
+     {8{casez_tmp_212[2]}},
+     {8{casez_tmp_212[1]}},
+     {8{casez_tmp_212[0]}}};
+  wire [31:0] query1_mergedData_40 =
+    query1_hit_39
+      ? query1_mergedData_39 & ~query1_bits_39 | casez_tmp_211 & query1_bits_39
+      : query1_mergedData_39;
+  wire        query1_hit_40 = mutable_40 & casez_tmp_39[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_40 =
+    {{8{casez_tmp_214[3]}},
+     {8{casez_tmp_214[2]}},
+     {8{casez_tmp_214[1]}},
+     {8{casez_tmp_214[0]}}};
+  wire [31:0] query1_mergedData_41 =
+    query1_hit_40
+      ? query1_mergedData_40 & ~query1_bits_40 | casez_tmp_213 & query1_bits_40
+      : query1_mergedData_40;
+  wire        query1_hit_41 = mutable_41 & casez_tmp_40[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_41 =
+    {{8{casez_tmp_216[3]}},
+     {8{casez_tmp_216[2]}},
+     {8{casez_tmp_216[1]}},
+     {8{casez_tmp_216[0]}}};
+  wire [31:0] query1_mergedData_42 =
+    query1_hit_41
+      ? query1_mergedData_41 & ~query1_bits_41 | casez_tmp_215 & query1_bits_41
+      : query1_mergedData_41;
+  wire        query1_hit_42 = mutable_42 & casez_tmp_41[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_42 =
+    {{8{casez_tmp_218[3]}},
+     {8{casez_tmp_218[2]}},
+     {8{casez_tmp_218[1]}},
+     {8{casez_tmp_218[0]}}};
+  wire [31:0] query1_mergedData_43 =
+    query1_hit_42
+      ? query1_mergedData_42 & ~query1_bits_42 | casez_tmp_217 & query1_bits_42
+      : query1_mergedData_42;
+  wire        query1_hit_43 = mutable_43 & casez_tmp_42[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_43 =
+    {{8{casez_tmp_220[3]}},
+     {8{casez_tmp_220[2]}},
+     {8{casez_tmp_220[1]}},
+     {8{casez_tmp_220[0]}}};
+  wire [31:0] query1_mergedData_44 =
+    query1_hit_43
+      ? query1_mergedData_43 & ~query1_bits_43 | casez_tmp_219 & query1_bits_43
+      : query1_mergedData_43;
+  wire        query1_hit_44 = mutable_44 & casez_tmp_43[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_44 =
+    {{8{casez_tmp_222[3]}},
+     {8{casez_tmp_222[2]}},
+     {8{casez_tmp_222[1]}},
+     {8{casez_tmp_222[0]}}};
+  wire [31:0] query1_mergedData_45 =
+    query1_hit_44
+      ? query1_mergedData_44 & ~query1_bits_44 | casez_tmp_221 & query1_bits_44
+      : query1_mergedData_44;
+  wire        query1_hit_45 = mutable_45 & casez_tmp_44[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_45 =
+    {{8{casez_tmp_224[3]}},
+     {8{casez_tmp_224[2]}},
+     {8{casez_tmp_224[1]}},
+     {8{casez_tmp_224[0]}}};
+  wire [31:0] query1_mergedData_46 =
+    query1_hit_45
+      ? query1_mergedData_45 & ~query1_bits_45 | casez_tmp_223 & query1_bits_45
+      : query1_mergedData_45;
+  wire        query1_hit_46 = mutable_46 & casez_tmp_45[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_46 =
+    {{8{casez_tmp_226[3]}},
+     {8{casez_tmp_226[2]}},
+     {8{casez_tmp_226[1]}},
+     {8{casez_tmp_226[0]}}};
+  wire [31:0] query1_mergedData_47 =
+    query1_hit_46
+      ? query1_mergedData_46 & ~query1_bits_46 | casez_tmp_225 & query1_bits_46
+      : query1_mergedData_46;
+  wire        query1_hit_47 = mutable_47 & casez_tmp_46[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_47 =
+    {{8{casez_tmp_228[3]}},
+     {8{casez_tmp_228[2]}},
+     {8{casez_tmp_228[1]}},
+     {8{casez_tmp_228[0]}}};
+  wire [31:0] query1_mergedData_48 =
+    query1_hit_47
+      ? query1_mergedData_47 & ~query1_bits_47 | casez_tmp_227 & query1_bits_47
+      : query1_mergedData_47;
+  wire        query1_hit_48 = mutable_48 & casez_tmp_47[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_48 =
+    {{8{casez_tmp_230[3]}},
+     {8{casez_tmp_230[2]}},
+     {8{casez_tmp_230[1]}},
+     {8{casez_tmp_230[0]}}};
+  wire [31:0] query1_mergedData_49 =
+    query1_hit_48
+      ? query1_mergedData_48 & ~query1_bits_48 | casez_tmp_229 & query1_bits_48
+      : query1_mergedData_48;
+  wire        query1_hit_49 = mutable_49 & casez_tmp_48[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_49 =
+    {{8{casez_tmp_232[3]}},
+     {8{casez_tmp_232[2]}},
+     {8{casez_tmp_232[1]}},
+     {8{casez_tmp_232[0]}}};
+  wire [31:0] query1_mergedData_50 =
+    query1_hit_49
+      ? query1_mergedData_49 & ~query1_bits_49 | casez_tmp_231 & query1_bits_49
+      : query1_mergedData_49;
+  wire        query1_hit_50 = mutable_50 & casez_tmp_49[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_50 =
+    {{8{casez_tmp_234[3]}},
+     {8{casez_tmp_234[2]}},
+     {8{casez_tmp_234[1]}},
+     {8{casez_tmp_234[0]}}};
+  wire [31:0] query1_mergedData_51 =
+    query1_hit_50
+      ? query1_mergedData_50 & ~query1_bits_50 | casez_tmp_233 & query1_bits_50
+      : query1_mergedData_50;
+  wire        query1_hit_51 = mutable_51 & casez_tmp_50[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_51 =
+    {{8{casez_tmp_236[3]}},
+     {8{casez_tmp_236[2]}},
+     {8{casez_tmp_236[1]}},
+     {8{casez_tmp_236[0]}}};
+  wire [31:0] query1_mergedData_52 =
+    query1_hit_51
+      ? query1_mergedData_51 & ~query1_bits_51 | casez_tmp_235 & query1_bits_51
+      : query1_mergedData_51;
+  wire        query1_hit_52 = mutable_52 & casez_tmp_51[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_52 =
+    {{8{casez_tmp_238[3]}},
+     {8{casez_tmp_238[2]}},
+     {8{casez_tmp_238[1]}},
+     {8{casez_tmp_238[0]}}};
+  wire [31:0] query1_mergedData_53 =
+    query1_hit_52
+      ? query1_mergedData_52 & ~query1_bits_52 | casez_tmp_237 & query1_bits_52
+      : query1_mergedData_52;
+  wire        query1_hit_53 = mutable_53 & casez_tmp_52[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_53 =
+    {{8{casez_tmp_240[3]}},
+     {8{casez_tmp_240[2]}},
+     {8{casez_tmp_240[1]}},
+     {8{casez_tmp_240[0]}}};
+  wire [31:0] query1_mergedData_54 =
+    query1_hit_53
+      ? query1_mergedData_53 & ~query1_bits_53 | casez_tmp_239 & query1_bits_53
+      : query1_mergedData_53;
+  wire        query1_hit_54 = mutable_54 & casez_tmp_53[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_54 =
+    {{8{casez_tmp_242[3]}},
+     {8{casez_tmp_242[2]}},
+     {8{casez_tmp_242[1]}},
+     {8{casez_tmp_242[0]}}};
+  wire [31:0] query1_mergedData_55 =
+    query1_hit_54
+      ? query1_mergedData_54 & ~query1_bits_54 | casez_tmp_241 & query1_bits_54
+      : query1_mergedData_54;
+  wire        query1_hit_55 = mutable_55 & casez_tmp_54[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_55 =
+    {{8{casez_tmp_244[3]}},
+     {8{casez_tmp_244[2]}},
+     {8{casez_tmp_244[1]}},
+     {8{casez_tmp_244[0]}}};
+  wire [31:0] query1_mergedData_56 =
+    query1_hit_55
+      ? query1_mergedData_55 & ~query1_bits_55 | casez_tmp_243 & query1_bits_55
+      : query1_mergedData_55;
+  wire        query1_hit_56 = mutable_56 & casez_tmp_55[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_56 =
+    {{8{casez_tmp_246[3]}},
+     {8{casez_tmp_246[2]}},
+     {8{casez_tmp_246[1]}},
+     {8{casez_tmp_246[0]}}};
+  wire [31:0] query1_mergedData_57 =
+    query1_hit_56
+      ? query1_mergedData_56 & ~query1_bits_56 | casez_tmp_245 & query1_bits_56
+      : query1_mergedData_56;
+  wire        query1_hit_57 = mutable_57 & casez_tmp_56[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_57 =
+    {{8{casez_tmp_248[3]}},
+     {8{casez_tmp_248[2]}},
+     {8{casez_tmp_248[1]}},
+     {8{casez_tmp_248[0]}}};
+  wire [31:0] query1_mergedData_58 =
+    query1_hit_57
+      ? query1_mergedData_57 & ~query1_bits_57 | casez_tmp_247 & query1_bits_57
+      : query1_mergedData_57;
+  wire        query1_hit_58 = mutable_58 & casez_tmp_57[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_58 =
+    {{8{casez_tmp_250[3]}},
+     {8{casez_tmp_250[2]}},
+     {8{casez_tmp_250[1]}},
+     {8{casez_tmp_250[0]}}};
+  wire [31:0] query1_mergedData_59 =
+    query1_hit_58
+      ? query1_mergedData_58 & ~query1_bits_58 | casez_tmp_249 & query1_bits_58
+      : query1_mergedData_58;
+  wire        query1_hit_59 = mutable_59 & casez_tmp_58[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_59 =
+    {{8{casez_tmp_252[3]}},
+     {8{casez_tmp_252[2]}},
+     {8{casez_tmp_252[1]}},
+     {8{casez_tmp_252[0]}}};
+  wire [31:0] query1_mergedData_60 =
+    query1_hit_59
+      ? query1_mergedData_59 & ~query1_bits_59 | casez_tmp_251 & query1_bits_59
+      : query1_mergedData_59;
+  wire        query1_hit_60 = mutable_60 & casez_tmp_59[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_60 =
+    {{8{casez_tmp_254[3]}},
+     {8{casez_tmp_254[2]}},
+     {8{casez_tmp_254[1]}},
+     {8{casez_tmp_254[0]}}};
+  wire [31:0] query1_mergedData_61 =
+    query1_hit_60
+      ? query1_mergedData_60 & ~query1_bits_60 | casez_tmp_253 & query1_bits_60
+      : query1_mergedData_60;
+  wire        query1_hit_61 = mutable_61 & casez_tmp_60[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_61 =
+    {{8{casez_tmp_256[3]}},
+     {8{casez_tmp_256[2]}},
+     {8{casez_tmp_256[1]}},
+     {8{casez_tmp_256[0]}}};
+  wire [31:0] query1_mergedData_62 =
+    query1_hit_61
+      ? query1_mergedData_61 & ~query1_bits_61 | casez_tmp_255 & query1_bits_61
+      : query1_mergedData_61;
+  wire        query1_hit_62 = mutable_62 & casez_tmp_61[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_62 =
+    {{8{casez_tmp_258[3]}},
+     {8{casez_tmp_258[2]}},
+     {8{casez_tmp_258[1]}},
+     {8{casez_tmp_258[0]}}};
+  wire [31:0] query1_mergedData_63 =
+    query1_hit_62
+      ? query1_mergedData_62 & ~query1_bits_62 | casez_tmp_257 & query1_bits_62
+      : query1_mergedData_62;
+  wire        query1_hit_63 = (|(count[7:6])) & casez_tmp_62[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_63 =
+    {{8{casez_tmp_260[3]}},
+     {8{casez_tmp_260[2]}},
+     {8{casez_tmp_260[1]}},
+     {8{casez_tmp_260[0]}}};
+  wire [31:0] query1_mergedData_64 =
+    query1_hit_63
+      ? query1_mergedData_63 & ~query1_bits_63 | casez_tmp_259 & query1_bits_63
+      : query1_mergedData_63;
+  wire        query1_hit_64 = mutable_64 & casez_tmp_63[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_64 =
+    {{8{casez_tmp_262[3]}},
+     {8{casez_tmp_262[2]}},
+     {8{casez_tmp_262[1]}},
+     {8{casez_tmp_262[0]}}};
+  wire [31:0] query1_mergedData_65 =
+    query1_hit_64
+      ? query1_mergedData_64 & ~query1_bits_64 | casez_tmp_261 & query1_bits_64
+      : query1_mergedData_64;
+  wire        query1_hit_65 = mutable_65 & casez_tmp_64[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_65 =
+    {{8{casez_tmp_264[3]}},
+     {8{casez_tmp_264[2]}},
+     {8{casez_tmp_264[1]}},
+     {8{casez_tmp_264[0]}}};
+  wire [31:0] query1_mergedData_66 =
+    query1_hit_65
+      ? query1_mergedData_65 & ~query1_bits_65 | casez_tmp_263 & query1_bits_65
+      : query1_mergedData_65;
+  wire        query1_hit_66 = mutable_66 & casez_tmp_65[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_66 =
+    {{8{casez_tmp_266[3]}},
+     {8{casez_tmp_266[2]}},
+     {8{casez_tmp_266[1]}},
+     {8{casez_tmp_266[0]}}};
+  wire [31:0] query1_mergedData_67 =
+    query1_hit_66
+      ? query1_mergedData_66 & ~query1_bits_66 | casez_tmp_265 & query1_bits_66
+      : query1_mergedData_66;
+  wire        query1_hit_67 = mutable_67 & casez_tmp_66[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_67 =
+    {{8{casez_tmp_268[3]}},
+     {8{casez_tmp_268[2]}},
+     {8{casez_tmp_268[1]}},
+     {8{casez_tmp_268[0]}}};
+  wire [31:0] query1_mergedData_68 =
+    query1_hit_67
+      ? query1_mergedData_67 & ~query1_bits_67 | casez_tmp_267 & query1_bits_67
+      : query1_mergedData_67;
+  wire        query1_hit_68 = mutable_68 & casez_tmp_67[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_68 =
+    {{8{casez_tmp_270[3]}},
+     {8{casez_tmp_270[2]}},
+     {8{casez_tmp_270[1]}},
+     {8{casez_tmp_270[0]}}};
+  wire [31:0] query1_mergedData_69 =
+    query1_hit_68
+      ? query1_mergedData_68 & ~query1_bits_68 | casez_tmp_269 & query1_bits_68
+      : query1_mergedData_68;
+  wire        query1_hit_69 = mutable_69 & casez_tmp_68[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_69 =
+    {{8{casez_tmp_272[3]}},
+     {8{casez_tmp_272[2]}},
+     {8{casez_tmp_272[1]}},
+     {8{casez_tmp_272[0]}}};
+  wire [31:0] query1_mergedData_70 =
+    query1_hit_69
+      ? query1_mergedData_69 & ~query1_bits_69 | casez_tmp_271 & query1_bits_69
+      : query1_mergedData_69;
+  wire        query1_hit_70 = mutable_70 & casez_tmp_69[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_70 =
+    {{8{casez_tmp_274[3]}},
+     {8{casez_tmp_274[2]}},
+     {8{casez_tmp_274[1]}},
+     {8{casez_tmp_274[0]}}};
+  wire [31:0] query1_mergedData_71 =
+    query1_hit_70
+      ? query1_mergedData_70 & ~query1_bits_70 | casez_tmp_273 & query1_bits_70
+      : query1_mergedData_70;
+  wire        query1_hit_71 = mutable_71 & casez_tmp_70[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_71 =
+    {{8{casez_tmp_276[3]}},
+     {8{casez_tmp_276[2]}},
+     {8{casez_tmp_276[1]}},
+     {8{casez_tmp_276[0]}}};
+  wire [31:0] query1_mergedData_72 =
+    query1_hit_71
+      ? query1_mergedData_71 & ~query1_bits_71 | casez_tmp_275 & query1_bits_71
+      : query1_mergedData_71;
+  wire        query1_hit_72 = mutable_72 & casez_tmp_71[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_72 =
+    {{8{casez_tmp_278[3]}},
+     {8{casez_tmp_278[2]}},
+     {8{casez_tmp_278[1]}},
+     {8{casez_tmp_278[0]}}};
+  wire [31:0] query1_mergedData_73 =
+    query1_hit_72
+      ? query1_mergedData_72 & ~query1_bits_72 | casez_tmp_277 & query1_bits_72
+      : query1_mergedData_72;
+  wire        query1_hit_73 = mutable_73 & casez_tmp_72[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_73 =
+    {{8{casez_tmp_280[3]}},
+     {8{casez_tmp_280[2]}},
+     {8{casez_tmp_280[1]}},
+     {8{casez_tmp_280[0]}}};
+  wire [31:0] query1_mergedData_74 =
+    query1_hit_73
+      ? query1_mergedData_73 & ~query1_bits_73 | casez_tmp_279 & query1_bits_73
+      : query1_mergedData_73;
+  wire        query1_hit_74 = mutable_74 & casez_tmp_73[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_74 =
+    {{8{casez_tmp_282[3]}},
+     {8{casez_tmp_282[2]}},
+     {8{casez_tmp_282[1]}},
+     {8{casez_tmp_282[0]}}};
+  wire [31:0] query1_mergedData_75 =
+    query1_hit_74
+      ? query1_mergedData_74 & ~query1_bits_74 | casez_tmp_281 & query1_bits_74
+      : query1_mergedData_74;
+  wire        query1_hit_75 = mutable_75 & casez_tmp_74[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_75 =
+    {{8{casez_tmp_284[3]}},
+     {8{casez_tmp_284[2]}},
+     {8{casez_tmp_284[1]}},
+     {8{casez_tmp_284[0]}}};
+  wire [31:0] query1_mergedData_76 =
+    query1_hit_75
+      ? query1_mergedData_75 & ~query1_bits_75 | casez_tmp_283 & query1_bits_75
+      : query1_mergedData_75;
+  wire        query1_hit_76 = mutable_76 & casez_tmp_75[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_76 =
+    {{8{casez_tmp_286[3]}},
+     {8{casez_tmp_286[2]}},
+     {8{casez_tmp_286[1]}},
+     {8{casez_tmp_286[0]}}};
+  wire [31:0] query1_mergedData_77 =
+    query1_hit_76
+      ? query1_mergedData_76 & ~query1_bits_76 | casez_tmp_285 & query1_bits_76
+      : query1_mergedData_76;
+  wire        query1_hit_77 = mutable_77 & casez_tmp_76[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_77 =
+    {{8{casez_tmp_288[3]}},
+     {8{casez_tmp_288[2]}},
+     {8{casez_tmp_288[1]}},
+     {8{casez_tmp_288[0]}}};
+  wire [31:0] query1_mergedData_78 =
+    query1_hit_77
+      ? query1_mergedData_77 & ~query1_bits_77 | casez_tmp_287 & query1_bits_77
+      : query1_mergedData_77;
+  wire        query1_hit_78 = mutable_78 & casez_tmp_77[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_78 =
+    {{8{casez_tmp_290[3]}},
+     {8{casez_tmp_290[2]}},
+     {8{casez_tmp_290[1]}},
+     {8{casez_tmp_290[0]}}};
+  wire [31:0] query1_mergedData_79 =
+    query1_hit_78
+      ? query1_mergedData_78 & ~query1_bits_78 | casez_tmp_289 & query1_bits_78
+      : query1_mergedData_78;
+  wire        query1_hit_79 = mutable_79 & casez_tmp_78[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_79 =
+    {{8{casez_tmp_292[3]}},
+     {8{casez_tmp_292[2]}},
+     {8{casez_tmp_292[1]}},
+     {8{casez_tmp_292[0]}}};
+  wire [31:0] query1_mergedData_80 =
+    query1_hit_79
+      ? query1_mergedData_79 & ~query1_bits_79 | casez_tmp_291 & query1_bits_79
+      : query1_mergedData_79;
+  wire        query1_hit_80 = mutable_80 & casez_tmp_79[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_80 =
+    {{8{casez_tmp_294[3]}},
+     {8{casez_tmp_294[2]}},
+     {8{casez_tmp_294[1]}},
+     {8{casez_tmp_294[0]}}};
+  wire [31:0] query1_mergedData_81 =
+    query1_hit_80
+      ? query1_mergedData_80 & ~query1_bits_80 | casez_tmp_293 & query1_bits_80
+      : query1_mergedData_80;
+  wire        query1_hit_81 = mutable_81 & casez_tmp_80[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_81 =
+    {{8{casez_tmp_296[3]}},
+     {8{casez_tmp_296[2]}},
+     {8{casez_tmp_296[1]}},
+     {8{casez_tmp_296[0]}}};
+  wire [31:0] query1_mergedData_82 =
+    query1_hit_81
+      ? query1_mergedData_81 & ~query1_bits_81 | casez_tmp_295 & query1_bits_81
+      : query1_mergedData_81;
+  wire        query1_hit_82 = mutable_82 & casez_tmp_81[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_82 =
+    {{8{casez_tmp_298[3]}},
+     {8{casez_tmp_298[2]}},
+     {8{casez_tmp_298[1]}},
+     {8{casez_tmp_298[0]}}};
+  wire [31:0] query1_mergedData_83 =
+    query1_hit_82
+      ? query1_mergedData_82 & ~query1_bits_82 | casez_tmp_297 & query1_bits_82
+      : query1_mergedData_82;
+  wire        query1_hit_83 = mutable_83 & casez_tmp_82[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_83 =
+    {{8{casez_tmp_300[3]}},
+     {8{casez_tmp_300[2]}},
+     {8{casez_tmp_300[1]}},
+     {8{casez_tmp_300[0]}}};
+  wire [31:0] query1_mergedData_84 =
+    query1_hit_83
+      ? query1_mergedData_83 & ~query1_bits_83 | casez_tmp_299 & query1_bits_83
+      : query1_mergedData_83;
+  wire        query1_hit_84 = mutable_84 & casez_tmp_83[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_84 =
+    {{8{casez_tmp_302[3]}},
+     {8{casez_tmp_302[2]}},
+     {8{casez_tmp_302[1]}},
+     {8{casez_tmp_302[0]}}};
+  wire [31:0] query1_mergedData_85 =
+    query1_hit_84
+      ? query1_mergedData_84 & ~query1_bits_84 | casez_tmp_301 & query1_bits_84
+      : query1_mergedData_84;
+  wire        query1_hit_85 = mutable_85 & casez_tmp_84[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_85 =
+    {{8{casez_tmp_304[3]}},
+     {8{casez_tmp_304[2]}},
+     {8{casez_tmp_304[1]}},
+     {8{casez_tmp_304[0]}}};
+  wire [31:0] query1_mergedData_86 =
+    query1_hit_85
+      ? query1_mergedData_85 & ~query1_bits_85 | casez_tmp_303 & query1_bits_85
+      : query1_mergedData_85;
+  wire        query1_hit_86 = mutable_86 & casez_tmp_85[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_86 =
+    {{8{casez_tmp_306[3]}},
+     {8{casez_tmp_306[2]}},
+     {8{casez_tmp_306[1]}},
+     {8{casez_tmp_306[0]}}};
+  wire [31:0] query1_mergedData_87 =
+    query1_hit_86
+      ? query1_mergedData_86 & ~query1_bits_86 | casez_tmp_305 & query1_bits_86
+      : query1_mergedData_86;
+  wire        query1_hit_87 = mutable_87 & casez_tmp_86[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_87 =
+    {{8{casez_tmp_308[3]}},
+     {8{casez_tmp_308[2]}},
+     {8{casez_tmp_308[1]}},
+     {8{casez_tmp_308[0]}}};
+  wire [31:0] query1_mergedData_88 =
+    query1_hit_87
+      ? query1_mergedData_87 & ~query1_bits_87 | casez_tmp_307 & query1_bits_87
+      : query1_mergedData_87;
+  wire        query1_hit_88 = mutable_88 & casez_tmp_87[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_88 =
+    {{8{casez_tmp_310[3]}},
+     {8{casez_tmp_310[2]}},
+     {8{casez_tmp_310[1]}},
+     {8{casez_tmp_310[0]}}};
+  wire [31:0] query1_mergedData_89 =
+    query1_hit_88
+      ? query1_mergedData_88 & ~query1_bits_88 | casez_tmp_309 & query1_bits_88
+      : query1_mergedData_88;
+  wire        query1_hit_89 = mutable_89 & casez_tmp_88[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_89 =
+    {{8{casez_tmp_312[3]}},
+     {8{casez_tmp_312[2]}},
+     {8{casez_tmp_312[1]}},
+     {8{casez_tmp_312[0]}}};
+  wire [31:0] query1_mergedData_90 =
+    query1_hit_89
+      ? query1_mergedData_89 & ~query1_bits_89 | casez_tmp_311 & query1_bits_89
+      : query1_mergedData_89;
+  wire        query1_hit_90 = mutable_90 & casez_tmp_89[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_90 =
+    {{8{casez_tmp_314[3]}},
+     {8{casez_tmp_314[2]}},
+     {8{casez_tmp_314[1]}},
+     {8{casez_tmp_314[0]}}};
+  wire [31:0] query1_mergedData_91 =
+    query1_hit_90
+      ? query1_mergedData_90 & ~query1_bits_90 | casez_tmp_313 & query1_bits_90
+      : query1_mergedData_90;
+  wire        query1_hit_91 = mutable_91 & casez_tmp_90[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_91 =
+    {{8{casez_tmp_316[3]}},
+     {8{casez_tmp_316[2]}},
+     {8{casez_tmp_316[1]}},
+     {8{casez_tmp_316[0]}}};
+  wire [31:0] query1_mergedData_92 =
+    query1_hit_91
+      ? query1_mergedData_91 & ~query1_bits_91 | casez_tmp_315 & query1_bits_91
+      : query1_mergedData_91;
+  wire        query1_hit_92 = mutable_92 & casez_tmp_91[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_92 =
+    {{8{casez_tmp_318[3]}},
+     {8{casez_tmp_318[2]}},
+     {8{casez_tmp_318[1]}},
+     {8{casez_tmp_318[0]}}};
+  wire [31:0] query1_mergedData_93 =
+    query1_hit_92
+      ? query1_mergedData_92 & ~query1_bits_92 | casez_tmp_317 & query1_bits_92
+      : query1_mergedData_92;
+  wire        query1_hit_93 = mutable_93 & casez_tmp_92[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_93 =
+    {{8{casez_tmp_320[3]}},
+     {8{casez_tmp_320[2]}},
+     {8{casez_tmp_320[1]}},
+     {8{casez_tmp_320[0]}}};
+  wire [31:0] query1_mergedData_94 =
+    query1_hit_93
+      ? query1_mergedData_93 & ~query1_bits_93 | casez_tmp_319 & query1_bits_93
+      : query1_mergedData_93;
+  wire        query1_hit_94 = mutable_94 & casez_tmp_93[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_94 =
+    {{8{casez_tmp_322[3]}},
+     {8{casez_tmp_322[2]}},
+     {8{casez_tmp_322[1]}},
+     {8{casez_tmp_322[0]}}};
+  wire [31:0] query1_mergedData_95 =
+    query1_hit_94
+      ? query1_mergedData_94 & ~query1_bits_94 | casez_tmp_321 & query1_bits_94
+      : query1_mergedData_94;
+  wire        query1_hit_95 = mutable_95 & casez_tmp_94[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_95 =
+    {{8{casez_tmp_324[3]}},
+     {8{casez_tmp_324[2]}},
+     {8{casez_tmp_324[1]}},
+     {8{casez_tmp_324[0]}}};
+  wire [31:0] query1_mergedData_96 =
+    query1_hit_95
+      ? query1_mergedData_95 & ~query1_bits_95 | casez_tmp_323 & query1_bits_95
+      : query1_mergedData_95;
+  wire        query1_hit_96 = mutable_96 & casez_tmp_95[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_96 =
+    {{8{casez_tmp_326[3]}},
+     {8{casez_tmp_326[2]}},
+     {8{casez_tmp_326[1]}},
+     {8{casez_tmp_326[0]}}};
+  wire [31:0] query1_mergedData_97 =
+    query1_hit_96
+      ? query1_mergedData_96 & ~query1_bits_96 | casez_tmp_325 & query1_bits_96
+      : query1_mergedData_96;
+  wire        query1_hit_97 = mutable_97 & casez_tmp_96[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_97 =
+    {{8{casez_tmp_328[3]}},
+     {8{casez_tmp_328[2]}},
+     {8{casez_tmp_328[1]}},
+     {8{casez_tmp_328[0]}}};
+  wire [31:0] query1_mergedData_98 =
+    query1_hit_97
+      ? query1_mergedData_97 & ~query1_bits_97 | casez_tmp_327 & query1_bits_97
+      : query1_mergedData_97;
+  wire        query1_hit_98 = mutable_98 & casez_tmp_97[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_98 =
+    {{8{casez_tmp_330[3]}},
+     {8{casez_tmp_330[2]}},
+     {8{casez_tmp_330[1]}},
+     {8{casez_tmp_330[0]}}};
+  wire [31:0] query1_mergedData_99 =
+    query1_hit_98
+      ? query1_mergedData_98 & ~query1_bits_98 | casez_tmp_329 & query1_bits_98
+      : query1_mergedData_98;
+  wire        query1_hit_99 = mutable_99 & casez_tmp_98[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_99 =
+    {{8{casez_tmp_332[3]}},
+     {8{casez_tmp_332[2]}},
+     {8{casez_tmp_332[1]}},
+     {8{casez_tmp_332[0]}}};
+  wire [31:0] query1_mergedData_100 =
+    query1_hit_99
+      ? query1_mergedData_99 & ~query1_bits_99 | casez_tmp_331 & query1_bits_99
+      : query1_mergedData_99;
+  wire        query1_hit_100 = mutable_100 & casez_tmp_99[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_100 =
+    {{8{casez_tmp_334[3]}},
+     {8{casez_tmp_334[2]}},
+     {8{casez_tmp_334[1]}},
+     {8{casez_tmp_334[0]}}};
+  wire [31:0] query1_mergedData_101 =
+    query1_hit_100
+      ? query1_mergedData_100 & ~query1_bits_100 | casez_tmp_333 & query1_bits_100
+      : query1_mergedData_100;
+  wire        query1_hit_101 = mutable_101 & casez_tmp_100[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_101 =
+    {{8{casez_tmp_336[3]}},
+     {8{casez_tmp_336[2]}},
+     {8{casez_tmp_336[1]}},
+     {8{casez_tmp_336[0]}}};
+  wire [31:0] query1_mergedData_102 =
+    query1_hit_101
+      ? query1_mergedData_101 & ~query1_bits_101 | casez_tmp_335 & query1_bits_101
+      : query1_mergedData_101;
+  wire        query1_hit_102 = mutable_102 & casez_tmp_101[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_102 =
+    {{8{casez_tmp_338[3]}},
+     {8{casez_tmp_338[2]}},
+     {8{casez_tmp_338[1]}},
+     {8{casez_tmp_338[0]}}};
+  wire [31:0] query1_mergedData_103 =
+    query1_hit_102
+      ? query1_mergedData_102 & ~query1_bits_102 | casez_tmp_337 & query1_bits_102
+      : query1_mergedData_102;
+  wire        query1_hit_103 = mutable_103 & casez_tmp_102[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_103 =
+    {{8{casez_tmp_340[3]}},
+     {8{casez_tmp_340[2]}},
+     {8{casez_tmp_340[1]}},
+     {8{casez_tmp_340[0]}}};
+  wire [31:0] query1_mergedData_104 =
+    query1_hit_103
+      ? query1_mergedData_103 & ~query1_bits_103 | casez_tmp_339 & query1_bits_103
+      : query1_mergedData_103;
+  wire        query1_hit_104 = mutable_104 & casez_tmp_103[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_104 =
+    {{8{casez_tmp_342[3]}},
+     {8{casez_tmp_342[2]}},
+     {8{casez_tmp_342[1]}},
+     {8{casez_tmp_342[0]}}};
+  wire [31:0] query1_mergedData_105 =
+    query1_hit_104
+      ? query1_mergedData_104 & ~query1_bits_104 | casez_tmp_341 & query1_bits_104
+      : query1_mergedData_104;
+  wire        query1_hit_105 = mutable_105 & casez_tmp_104[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_105 =
+    {{8{casez_tmp_344[3]}},
+     {8{casez_tmp_344[2]}},
+     {8{casez_tmp_344[1]}},
+     {8{casez_tmp_344[0]}}};
+  wire [31:0] query1_mergedData_106 =
+    query1_hit_105
+      ? query1_mergedData_105 & ~query1_bits_105 | casez_tmp_343 & query1_bits_105
+      : query1_mergedData_105;
+  wire        query1_hit_106 = mutable_106 & casez_tmp_105[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_106 =
+    {{8{casez_tmp_346[3]}},
+     {8{casez_tmp_346[2]}},
+     {8{casez_tmp_346[1]}},
+     {8{casez_tmp_346[0]}}};
+  wire [31:0] query1_mergedData_107 =
+    query1_hit_106
+      ? query1_mergedData_106 & ~query1_bits_106 | casez_tmp_345 & query1_bits_106
+      : query1_mergedData_106;
+  wire        query1_hit_107 = mutable_107 & casez_tmp_106[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_107 =
+    {{8{casez_tmp_348[3]}},
+     {8{casez_tmp_348[2]}},
+     {8{casez_tmp_348[1]}},
+     {8{casez_tmp_348[0]}}};
+  wire [31:0] query1_mergedData_108 =
+    query1_hit_107
+      ? query1_mergedData_107 & ~query1_bits_107 | casez_tmp_347 & query1_bits_107
+      : query1_mergedData_107;
+  wire        query1_hit_108 = mutable_108 & casez_tmp_107[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_108 =
+    {{8{casez_tmp_350[3]}},
+     {8{casez_tmp_350[2]}},
+     {8{casez_tmp_350[1]}},
+     {8{casez_tmp_350[0]}}};
+  wire [31:0] query1_mergedData_109 =
+    query1_hit_108
+      ? query1_mergedData_108 & ~query1_bits_108 | casez_tmp_349 & query1_bits_108
+      : query1_mergedData_108;
+  wire        query1_hit_109 = mutable_109 & casez_tmp_108[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_109 =
+    {{8{casez_tmp_352[3]}},
+     {8{casez_tmp_352[2]}},
+     {8{casez_tmp_352[1]}},
+     {8{casez_tmp_352[0]}}};
+  wire [31:0] query1_mergedData_110 =
+    query1_hit_109
+      ? query1_mergedData_109 & ~query1_bits_109 | casez_tmp_351 & query1_bits_109
+      : query1_mergedData_109;
+  wire        query1_hit_110 = mutable_110 & casez_tmp_109[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_110 =
+    {{8{casez_tmp_354[3]}},
+     {8{casez_tmp_354[2]}},
+     {8{casez_tmp_354[1]}},
+     {8{casez_tmp_354[0]}}};
+  wire [31:0] query1_mergedData_111 =
+    query1_hit_110
+      ? query1_mergedData_110 & ~query1_bits_110 | casez_tmp_353 & query1_bits_110
+      : query1_mergedData_110;
+  wire        query1_hit_111 = mutable_111 & casez_tmp_110[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_111 =
+    {{8{casez_tmp_356[3]}},
+     {8{casez_tmp_356[2]}},
+     {8{casez_tmp_356[1]}},
+     {8{casez_tmp_356[0]}}};
+  wire [31:0] query1_mergedData_112 =
+    query1_hit_111
+      ? query1_mergedData_111 & ~query1_bits_111 | casez_tmp_355 & query1_bits_111
+      : query1_mergedData_111;
+  wire        query1_hit_112 = mutable_112 & casez_tmp_111[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_112 =
+    {{8{casez_tmp_358[3]}},
+     {8{casez_tmp_358[2]}},
+     {8{casez_tmp_358[1]}},
+     {8{casez_tmp_358[0]}}};
+  wire [31:0] query1_mergedData_113 =
+    query1_hit_112
+      ? query1_mergedData_112 & ~query1_bits_112 | casez_tmp_357 & query1_bits_112
+      : query1_mergedData_112;
+  wire        query1_hit_113 = mutable_113 & casez_tmp_112[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_113 =
+    {{8{casez_tmp_360[3]}},
+     {8{casez_tmp_360[2]}},
+     {8{casez_tmp_360[1]}},
+     {8{casez_tmp_360[0]}}};
+  wire [31:0] query1_mergedData_114 =
+    query1_hit_113
+      ? query1_mergedData_113 & ~query1_bits_113 | casez_tmp_359 & query1_bits_113
+      : query1_mergedData_113;
+  wire        query1_hit_114 = mutable_114 & casez_tmp_113[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_114 =
+    {{8{casez_tmp_362[3]}},
+     {8{casez_tmp_362[2]}},
+     {8{casez_tmp_362[1]}},
+     {8{casez_tmp_362[0]}}};
+  wire [31:0] query1_mergedData_115 =
+    query1_hit_114
+      ? query1_mergedData_114 & ~query1_bits_114 | casez_tmp_361 & query1_bits_114
+      : query1_mergedData_114;
+  wire        query1_hit_115 = mutable_115 & casez_tmp_114[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_115 =
+    {{8{casez_tmp_364[3]}},
+     {8{casez_tmp_364[2]}},
+     {8{casez_tmp_364[1]}},
+     {8{casez_tmp_364[0]}}};
+  wire [31:0] query1_mergedData_116 =
+    query1_hit_115
+      ? query1_mergedData_115 & ~query1_bits_115 | casez_tmp_363 & query1_bits_115
+      : query1_mergedData_115;
+  wire        query1_hit_116 = mutable_116 & casez_tmp_115[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_116 =
+    {{8{casez_tmp_366[3]}},
+     {8{casez_tmp_366[2]}},
+     {8{casez_tmp_366[1]}},
+     {8{casez_tmp_366[0]}}};
+  wire [31:0] query1_mergedData_117 =
+    query1_hit_116
+      ? query1_mergedData_116 & ~query1_bits_116 | casez_tmp_365 & query1_bits_116
+      : query1_mergedData_116;
+  wire        query1_hit_117 = mutable_117 & casez_tmp_116[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_117 =
+    {{8{casez_tmp_368[3]}},
+     {8{casez_tmp_368[2]}},
+     {8{casez_tmp_368[1]}},
+     {8{casez_tmp_368[0]}}};
+  wire [31:0] query1_mergedData_118 =
+    query1_hit_117
+      ? query1_mergedData_117 & ~query1_bits_117 | casez_tmp_367 & query1_bits_117
+      : query1_mergedData_117;
+  wire        query1_hit_118 = mutable_118 & casez_tmp_117[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_118 =
+    {{8{casez_tmp_370[3]}},
+     {8{casez_tmp_370[2]}},
+     {8{casez_tmp_370[1]}},
+     {8{casez_tmp_370[0]}}};
+  wire [31:0] query1_mergedData_119 =
+    query1_hit_118
+      ? query1_mergedData_118 & ~query1_bits_118 | casez_tmp_369 & query1_bits_118
+      : query1_mergedData_118;
+  wire        query1_hit_119 = mutable_119 & casez_tmp_118[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_119 =
+    {{8{casez_tmp_372[3]}},
+     {8{casez_tmp_372[2]}},
+     {8{casez_tmp_372[1]}},
+     {8{casez_tmp_372[0]}}};
+  wire [31:0] query1_mergedData_120 =
+    query1_hit_119
+      ? query1_mergedData_119 & ~query1_bits_119 | casez_tmp_371 & query1_bits_119
+      : query1_mergedData_119;
+  wire        query1_hit_120 = mutable_120 & casez_tmp_119[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_120 =
+    {{8{casez_tmp_374[3]}},
+     {8{casez_tmp_374[2]}},
+     {8{casez_tmp_374[1]}},
+     {8{casez_tmp_374[0]}}};
+  wire [31:0] query1_mergedData_121 =
+    query1_hit_120
+      ? query1_mergedData_120 & ~query1_bits_120 | casez_tmp_373 & query1_bits_120
+      : query1_mergedData_120;
+  wire        query1_hit_121 = mutable_121 & casez_tmp_120[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_121 =
+    {{8{casez_tmp_376[3]}},
+     {8{casez_tmp_376[2]}},
+     {8{casez_tmp_376[1]}},
+     {8{casez_tmp_376[0]}}};
+  wire [31:0] query1_mergedData_122 =
+    query1_hit_121
+      ? query1_mergedData_121 & ~query1_bits_121 | casez_tmp_375 & query1_bits_121
+      : query1_mergedData_121;
+  wire        query1_hit_122 = mutable_122 & casez_tmp_121[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_122 =
+    {{8{casez_tmp_378[3]}},
+     {8{casez_tmp_378[2]}},
+     {8{casez_tmp_378[1]}},
+     {8{casez_tmp_378[0]}}};
+  wire [31:0] query1_mergedData_123 =
+    query1_hit_122
+      ? query1_mergedData_122 & ~query1_bits_122 | casez_tmp_377 & query1_bits_122
+      : query1_mergedData_122;
+  wire        query1_hit_123 = mutable_123 & casez_tmp_122[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_123 =
+    {{8{casez_tmp_380[3]}},
+     {8{casez_tmp_380[2]}},
+     {8{casez_tmp_380[1]}},
+     {8{casez_tmp_380[0]}}};
+  wire [31:0] query1_mergedData_124 =
+    query1_hit_123
+      ? query1_mergedData_123 & ~query1_bits_123 | casez_tmp_379 & query1_bits_123
+      : query1_mergedData_123;
+  wire        query1_hit_124 = mutable_124 & casez_tmp_123[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_124 =
+    {{8{casez_tmp_382[3]}},
+     {8{casez_tmp_382[2]}},
+     {8{casez_tmp_382[1]}},
+     {8{casez_tmp_382[0]}}};
+  wire [31:0] query1_mergedData_125 =
+    query1_hit_124
+      ? query1_mergedData_124 & ~query1_bits_124 | casez_tmp_381 & query1_bits_124
+      : query1_mergedData_124;
+  wire        query1_hit_125 = mutable_125 & casez_tmp_124[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_125 =
+    {{8{casez_tmp_384[3]}},
+     {8{casez_tmp_384[2]}},
+     {8{casez_tmp_384[1]}},
+     {8{casez_tmp_384[0]}}};
+  wire [31:0] query1_mergedData_126 =
+    query1_hit_125
+      ? query1_mergedData_125 & ~query1_bits_125 | casez_tmp_383 & query1_bits_125
+      : query1_mergedData_125;
+  wire        query1_hit_126 = mutable_126 & casez_tmp_125[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_126 =
+    {{8{casez_tmp_386[3]}},
+     {8{casez_tmp_386[2]}},
+     {8{casez_tmp_386[1]}},
+     {8{casez_tmp_386[0]}}};
+  wire [31:0] query1_mergedData_127 =
+    query1_hit_126
+      ? query1_mergedData_126 & ~query1_bits_126 | casez_tmp_385 & query1_bits_126
+      : query1_mergedData_126;
+  wire        query1_hit_127 = count[7] & casez_tmp_126[31:2] == io_ld1_addr[31:2];
+  wire [31:0] query1_bits_127 =
+    {{8{casez_tmp_388[3]}},
+     {8{casez_tmp_388[2]}},
+     {8{casez_tmp_388[1]}},
+     {8{casez_tmp_388[0]}}};
+  wire [3:0]  query1_mergedMask_128 =
+    {4{query1_hit_127}} & casez_tmp_388 | {4{query1_hit_126}} & casez_tmp_386
+    | {4{query1_hit_125}} & casez_tmp_384 | {4{query1_hit_124}} & casez_tmp_382
+    | {4{query1_hit_123}} & casez_tmp_380 | {4{query1_hit_122}} & casez_tmp_378
+    | {4{query1_hit_121}} & casez_tmp_376 | {4{query1_hit_120}} & casez_tmp_374
+    | {4{query1_hit_119}} & casez_tmp_372 | {4{query1_hit_118}} & casez_tmp_370
+    | {4{query1_hit_117}} & casez_tmp_368 | {4{query1_hit_116}} & casez_tmp_366
+    | {4{query1_hit_115}} & casez_tmp_364 | {4{query1_hit_114}} & casez_tmp_362
+    | {4{query1_hit_113}} & casez_tmp_360 | {4{query1_hit_112}} & casez_tmp_358
+    | {4{query1_hit_111}} & casez_tmp_356 | {4{query1_hit_110}} & casez_tmp_354
+    | {4{query1_hit_109}} & casez_tmp_352 | {4{query1_hit_108}} & casez_tmp_350
+    | {4{query1_hit_107}} & casez_tmp_348 | {4{query1_hit_106}} & casez_tmp_346
+    | {4{query1_hit_105}} & casez_tmp_344 | {4{query1_hit_104}} & casez_tmp_342
+    | {4{query1_hit_103}} & casez_tmp_340 | {4{query1_hit_102}} & casez_tmp_338
+    | {4{query1_hit_101}} & casez_tmp_336 | {4{query1_hit_100}} & casez_tmp_334
+    | {4{query1_hit_99}} & casez_tmp_332 | {4{query1_hit_98}} & casez_tmp_330
+    | {4{query1_hit_97}} & casez_tmp_328 | {4{query1_hit_96}} & casez_tmp_326
+    | {4{query1_hit_95}} & casez_tmp_324 | {4{query1_hit_94}} & casez_tmp_322
+    | {4{query1_hit_93}} & casez_tmp_320 | {4{query1_hit_92}} & casez_tmp_318
+    | {4{query1_hit_91}} & casez_tmp_316 | {4{query1_hit_90}} & casez_tmp_314
+    | {4{query1_hit_89}} & casez_tmp_312 | {4{query1_hit_88}} & casez_tmp_310
+    | {4{query1_hit_87}} & casez_tmp_308 | {4{query1_hit_86}} & casez_tmp_306
+    | {4{query1_hit_85}} & casez_tmp_304 | {4{query1_hit_84}} & casez_tmp_302
+    | {4{query1_hit_83}} & casez_tmp_300 | {4{query1_hit_82}} & casez_tmp_298
+    | {4{query1_hit_81}} & casez_tmp_296 | {4{query1_hit_80}} & casez_tmp_294
+    | {4{query1_hit_79}} & casez_tmp_292 | {4{query1_hit_78}} & casez_tmp_290
+    | {4{query1_hit_77}} & casez_tmp_288 | {4{query1_hit_76}} & casez_tmp_286
+    | {4{query1_hit_75}} & casez_tmp_284 | {4{query1_hit_74}} & casez_tmp_282
+    | {4{query1_hit_73}} & casez_tmp_280 | {4{query1_hit_72}} & casez_tmp_278
+    | {4{query1_hit_71}} & casez_tmp_276 | {4{query1_hit_70}} & casez_tmp_274
+    | {4{query1_hit_69}} & casez_tmp_272 | {4{query1_hit_68}} & casez_tmp_270
+    | {4{query1_hit_67}} & casez_tmp_268 | {4{query1_hit_66}} & casez_tmp_266
+    | {4{query1_hit_65}} & casez_tmp_264 | {4{query1_hit_64}} & casez_tmp_262
+    | {4{query1_hit_63}} & casez_tmp_260 | {4{query1_hit_62}} & casez_tmp_258
+    | {4{query1_hit_61}} & casez_tmp_256 | {4{query1_hit_60}} & casez_tmp_254
+    | {4{query1_hit_59}} & casez_tmp_252 | {4{query1_hit_58}} & casez_tmp_250
+    | {4{query1_hit_57}} & casez_tmp_248 | {4{query1_hit_56}} & casez_tmp_246
+    | {4{query1_hit_55}} & casez_tmp_244 | {4{query1_hit_54}} & casez_tmp_242
+    | {4{query1_hit_53}} & casez_tmp_240 | {4{query1_hit_52}} & casez_tmp_238
+    | {4{query1_hit_51}} & casez_tmp_236 | {4{query1_hit_50}} & casez_tmp_234
+    | {4{query1_hit_49}} & casez_tmp_232 | {4{query1_hit_48}} & casez_tmp_230
+    | {4{query1_hit_47}} & casez_tmp_228 | {4{query1_hit_46}} & casez_tmp_226
+    | {4{query1_hit_45}} & casez_tmp_224 | {4{query1_hit_44}} & casez_tmp_222
+    | {4{query1_hit_43}} & casez_tmp_220 | {4{query1_hit_42}} & casez_tmp_218
+    | {4{query1_hit_41}} & casez_tmp_216 | {4{query1_hit_40}} & casez_tmp_214
+    | {4{query1_hit_39}} & casez_tmp_212 | {4{query1_hit_38}} & casez_tmp_210
+    | {4{query1_hit_37}} & casez_tmp_208 | {4{query1_hit_36}} & casez_tmp_206
+    | {4{query1_hit_35}} & casez_tmp_204 | {4{query1_hit_34}} & casez_tmp_202
+    | {4{query1_hit_33}} & casez_tmp_200 | {4{query1_hit_32}} & casez_tmp_198
+    | {4{query1_hit_31}} & casez_tmp_196 | {4{query1_hit_30}} & casez_tmp_194
+    | {4{query1_hit_29}} & casez_tmp_192 | {4{query1_hit_28}} & casez_tmp_190
+    | {4{query1_hit_27}} & casez_tmp_188 | {4{query1_hit_26}} & casez_tmp_186
+    | {4{query1_hit_25}} & casez_tmp_184 | {4{query1_hit_24}} & casez_tmp_182
+    | {4{query1_hit_23}} & casez_tmp_180 | {4{query1_hit_22}} & casez_tmp_178
+    | {4{query1_hit_21}} & casez_tmp_176 | {4{query1_hit_20}} & casez_tmp_174
+    | {4{query1_hit_19}} & casez_tmp_172 | {4{query1_hit_18}} & casez_tmp_170
+    | {4{query1_hit_17}} & casez_tmp_168 | {4{query1_hit_16}} & casez_tmp_166
+    | {4{query1_hit_15}} & casez_tmp_164 | {4{query1_hit_14}} & casez_tmp_162
+    | {4{query1_hit_13}} & casez_tmp_160 | {4{query1_hit_12}} & casez_tmp_158
+    | {4{query1_hit_11}} & casez_tmp_156 | {4{query1_hit_10}} & casez_tmp_154
+    | {4{query1_hit_9}} & casez_tmp_152 | {4{query1_hit_8}} & casez_tmp_150
+    | {4{query1_hit_7}} & casez_tmp_148 | {4{query1_hit_6}} & casez_tmp_146
+    | {4{query1_hit_5}} & casez_tmp_144 | {4{query1_hit_4}} & casez_tmp_142
+    | {4{query1_hit_3}} & casez_tmp_140 | {4{query1_hit_2}} & casez_tmp_138
+    | {4{query1_hit_1}} & casez_tmp_136 | (query1_hit ? casez_tmp_134 : 4'h0);
+  wire [6:0]  _query1_loadMask_T_1 =
+    {3'h0,
+     io_ld1_mem_rd == 3'h5
+       ? 4'h3
+       : io_ld1_mem_rd == 3'h4
+           ? 4'h1
+           : io_ld1_mem_rd == 3'h3 ? 4'hF : {2'h0, io_ld1_mem_rd == 3'h2, 1'h1}}
+    << io_ld1_addr[1:0];
+  wire [3:0]  _query1_fullCover_T = query1_mergedMask_128 & _query1_loadMask_T_1[3:0];
   wire        _GEN_257 = doEnq0 & (&merge0Idx);
   wire        _GEN_258 = doEnq0 & (&tail);
   wire [6:0]  _tailAfter0_T = tail + {6'h0, slot0Needed};
@@ -104515,6 +107335,8 @@ module StoreBuffer(
   wire [31:0] entries_out_4_data =
     casez_tmp_131 & ~entries_youngBits_4 | _in1_out_data_T_1[31:0] & entries_youngBits_4;
   wire [3:0]  entries_out_4_mask = casez_tmp_132 | _in1_out_mask_T[3:0];
+  wire        awFire = io_dmem_awvalid_0 & io_dmem_awready;
+  wire        launchAwFire = io_dmem_awvalid_0 & io_dmem_awready;
   wire [62:0] _in0_out_data_T_1 =
     {31'h0, io_enq_bits_data} << {58'h0, io_enq_bits_addr[1:0], 3'h0};
   wire [6:0]  _in0_out_mask_T = {3'h0, io_enq_bits_mask} << io_enq_bits_addr[1:0];
@@ -104781,10 +107603,11 @@ module StoreBuffer(
   wire        _GEN_510 = tail == 7'h7C;
   wire        _GEN_511 = tail == 7'h7D;
   wire        _GEN_512 = tail == 7'h7E;
+  wire        launchWFire = io_dmem_wvalid_0 & io_dmem_wready;
+  wire        launchLastW = launchWFire & nextBurstCount == 4'h1;
   wire        _GEN_513 = state == 2'h1;
-  wire        awFire = io_dmem_awvalid_0 & io_dmem_awready;
   wire        wFire = io_dmem_wvalid_0 & io_dmem_wready;
-  wire        lastWFire = wFire & _GEN_256 == burstCount - 4'h1;
+  wire        lastWFire = wFire & {1'h0, writeBeat} == burstCount - 4'h1;
   wire        _GEN_514 = doEnq0 & _GEN_259;
   wire        _GEN_515 = doEnq0 & _GEN_260;
   wire        _GEN_516 = doEnq0 & _GEN_261;
@@ -114175,34 +116998,47 @@ module StoreBuffer(
         end
       end
       if (bFire)
-        idx <= idx + {3'h0, consumeCount};
+        idx <= _head_T;
       if (|acceptedSlots)
         tail <= tail + {5'h0, acceptedSlots};
       count <= count + {6'h0, acceptedSlots} - _GEN;
-      if (_burstStart_T) begin
-        if (burstStart)
-          state <= 2'h1;
-        writeBeat <= 3'h0;
-      end
-      else if (_GEN_513) begin
-        if ((awDone | awFire) & (wDone | lastWFire))
-          state <= 2'h2;
-        if (~wFire | lastWFire) begin
+      if (|state) begin
+        if (_GEN_513) begin
+          if ((awDone | awFire) & (wDone | lastWFire))
+            state <= 2'h2;
+          awDone <= awFire | awDone;
+          if (~wFire | lastWFire) begin
+          end
+          else
+            writeBeat <= writeBeat + 3'h1;
         end
-        else
-          writeBeat <= writeBeat + 3'h1;
+        else if (bFire) begin
+          state <= {1'h0, chainCandidate};
+          awDone <= chainCandidate & io_dmem_awvalid_0 & io_dmem_awready;
+          writeBeat <= 3'h0;
+        end
+        if (_GEN_513 | ~(bFire & chainCandidate)) begin
+        end
+        else begin
+          burstCount <= chainBurstCount;
+          consumeCount <= chainConsumeCount;
+          burstFirstWord <= chainMinWord;
+        end
       end
-      else if (bFire) begin
-        state <= 2'h0;
-        writeBeat <= 3'h0;
+      else begin
+        if (burstStart) begin
+          state <= launchAwFire & launchLastW ? 2'h2 : 2'h1;
+          burstCount <= nextBurstCount;
+          consumeCount <= nextConsumeCount;
+          burstFirstWord <= minWord;
+        end
+        awDone <= burstStart & launchAwFire;
+        writeBeat <= {2'h0, burstStart & launchWFire & ~launchLastW};
       end
-      awDone <= ~_burstStart_T & (_GEN_513 ? awFire | awDone : ~bFire & awDone);
-      wDone <= ~_burstStart_T & (_GEN_513 ? lastWFire | wDone : ~bFire & wDone);
-      if (burstStart) begin
-        burstCount <= nextBurstCount;
-        consumeCount <= nextConsumeCount;
-        burstFirstWord <= minWord;
-      end
+      wDone <=
+        (|state)
+          ? (_GEN_513 ? lastWFire | wDone : ~bFire & wDone)
+          : burstStart & launchLastW;
       if ((|state) | io_empty_0 | burstStart)
         gatherAge <= 5'h0;
       else if (~(gatherAge == 5'h18))
@@ -114211,18 +117047,30 @@ module StoreBuffer(
   end // always @(posedge)
   assign io_enq_ready = batchReady;
   assign io_enq1_ready = batchReady;
-  assign io_ld_wait = io_ld_valid & (|_fullCover_T) & _fullCover_T != _loadMask_T_1[3:0];
-  assign io_ld_fwd_valid = io_ld_valid & _fullCover_T == _loadMask_T_1[3:0];
+  assign io_ld_wait =
+    io_ld_valid & (|_query0_fullCover_T)
+    & _query0_fullCover_T != _query0_loadMask_T_1[3:0];
+  assign io_ld_fwd_valid = io_ld_valid & _query0_fullCover_T == _query0_loadMask_T_1[3:0];
   assign io_ld_fwd_data =
-    (hit_127 ? mergedData_127 & ~bits_127 | casez_tmp_387 & bits_127 : mergedData_127)
-    >> {27'h0, io_ld_addr[1:0], 3'h0};
-  assign io_dmem_awaddr = lineBase + {27'h0, burstFirstWord, 2'h0};
+    (query0_hit_127
+       ? query0_mergedData_127 & ~query0_bits_127 | casez_tmp_387 & query0_bits_127
+       : query0_mergedData_127) >> {27'h0, io_ld_addr[1:0], 3'h0};
+  assign io_ld1_wait =
+    io_ld1_valid & (|_query1_fullCover_T)
+    & _query1_fullCover_T != _query1_loadMask_T_1[3:0];
+  assign io_ld1_fwd_valid =
+    io_ld1_valid & _query1_fullCover_T == _query1_loadMask_T_1[3:0];
+  assign io_ld1_fwd_data =
+    (query1_hit_127
+       ? query1_mergedData_127 & ~query1_bits_127 | casez_tmp_387 & query1_bits_127
+       : query1_mergedData_127) >> {27'h0, io_ld1_addr[1:0], 3'h0};
+  assign io_dmem_awaddr = lineBase + {27'h0, activeFirstWord, 2'h0};
   assign io_dmem_awvalid = io_dmem_awvalid_0;
   assign io_dmem_awlen = {4'h0, _io_dmem_wlast_T};
   assign io_dmem_wdata = io_drain_data_0;
   assign io_dmem_wstrb = io_drain_mask_0;
   assign io_dmem_wvalid = io_dmem_wvalid_0;
-  assign io_dmem_wlast = _GEN_256 == _io_dmem_wlast_T;
+  assign io_dmem_wlast = {1'h0, activeWriteBeat} == _io_dmem_wlast_T;
   assign io_dmem_bready = io_dmem_bready_0;
   assign io_deq_valid = bFire;
   assign io_deq_count = {4'h0, deqCount};
@@ -114232,8 +117080,10 @@ module StoreBuffer(
   assign io_drain_mask = io_drain_mask_0;
   assign io_merged =
     {1'h0, doEnq0 & merge0Existing} + {1'h0, doEnq1 & (pairSameWord | merge1Existing)};
-  assign io_write_burst = burstStart;
-  assign io_write_beats = burstStart ? nextBurstCount : 4'h0;
+  assign io_write_burst = burstStart | chainHandoff;
+  assign io_write_beats =
+    chainHandoff ? chainBurstCount : burstStart ? nextBurstCount : 4'h0;
+  assign io_write_chain = chainHandoff;
   assign io_empty = io_empty_0;
   assign io_busy = |state;
   assign io_free = _available_T_2;

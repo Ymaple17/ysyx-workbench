@@ -3,8 +3,8 @@
 ## 学习导航
 - **理论目标**：掌握四条程序序指令在同拍形成 prefix RAT/free state 的方法，以及部分分配、同拍 RAW/WAW 和 checkpoint snapshot。
 - **最小实现**：最多分配四个 pdest 和四个 ROB entry，lane i 的源映射看到所有更早 lane 的目的映射；资源不足时只接受连续前缀或整包进入 Rename Queue。
-- **当前参考核**：`WideRenameCompat` 与 `WideROBCompat` 已接入四路分配/提交主干，slot2/slot3 已出现真实提交；同拍 RAW/WAW、checkpoint 和 wrap-around 仍需 WIDTH=2/4 定向回归共同确认。
-- **后续扩展**：先补齐四路随机参考模型和 flush 后资源守恒，再考虑 rename cache、banked RAT、更多 checkpoint、move elimination。
+- **当前参考核**：`WideRenameCompat` 与 `WideROBCompat` 已接入四路分配/提交主干，冻结点 slot2/slot3 实际提交 `76172/54294`；同拍 RAW/WAW、owner reserve、checkpoint 与 wrap-around 均有定向回归。
+- **后续扩展**：Stage15c 若扩到六宽，先用 WIDTH=4/6 随机参考模型证明资源守恒，再考虑 banked RAT、更多 checkpoint 或 move elimination。
 - **验收方式**：随机参考模型加定向 RAW/WAW/free/checkpoint/flush/wrap 测试，四路分配后 freelist/arch RAT/ROB count 守恒。
 
 ---

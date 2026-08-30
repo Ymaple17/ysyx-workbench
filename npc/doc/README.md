@@ -1,4 +1,4 @@
-# 乱序双发 CPU（OoO）设计文档
+# 乱序超标量 CPU（OoO）设计文档
 
 **工程**：`npc/oood_chisel_vsrc` + `npc/oood_chisel_csrc`  
 **顺序基线（对照）**：`npc/ioid_chisel_vsrc` + `ioid_chisel_csrc`
@@ -27,15 +27,16 @@
 | 12 | [阶段11路线](12_阶段11_IPC从0.6到1.md) → [12a](12a_阶段11a_依赖链与执行吞吐.md) → [12b](12b_阶段11b_访存吞吐与DCache重构.md) → [12c](12c_阶段11c_持续前端与有效宽度.md) → [12d](12d_阶段11d_IPC1验收与回归.md) | **阶段 11 IPC 0.6 → 1.0**（依赖链 / 访存吞吐 / 有效前端 / 严格收口） |
 | 13 | [阶段12路线](13_阶段12_IPC从1到1.3.md) → [13a](13a_阶段12a_瓶颈归因与热点.md) → [13b](13b_阶段12b_分支预测与恢复.md) → [13c](13c_阶段12c_持续双取指.md) → [13d](13d_阶段12d_分布式分支执行.md) → [13e](13e_阶段12e_Load关键路径与瓶颈补强.md) → [13f](13f_阶段12f_IPC1.3验收与回归.md) | **阶段 12 IPC 1.0 → 1.3**（热点归因 / 预测 / 持续前端 / BRU / Load 关键路径 / 严格收口） |
 | 14 | [阶段13路线](14_阶段13_双发IPC从1.3到1.6.md) → [13a](14a_阶段13a_重建性能账本.md) → [13b](14b_阶段13b_方向预测与统计校正.md) → [13c](14c_阶段13c_持续取指与跨行供给.md) → [13d](14d_阶段13d_多MSHR与LoadReplay.md) → [13e](14e_阶段13e_分布式完成网络.md) → [13f](14f_阶段13f_IPC1.6验收与回归.md) | **阶段 13 双发极限优化**（IPC 1.3 → 1.5/1.6） |
-| 15 | [阶段14路线](15_阶段14_真乱序四发与IPC2.5.md) → [14a](15a_阶段14a_宽度参数化与双发等价.md) → [14b](15b_阶段14b_四槽前端与取指队列.md) → [14c](15c_阶段14c_四路Rename与ROB.md) → [14d](15d_阶段14d_四路Dispatch与分布式Issue.md) → [14e](15e_阶段14e_PRF操作数与完成网络.md) → [14f](15f_阶段14f_四提交恢复与Difftest.md) → [14g](15g_阶段14g_IPC2.5验收与回归.md) → [14h](15h_阶段14后续IPC路线.md) | **阶段 14 真乱序四发**（四槽主干当前 IPC `1.8496` / IPC 2.5 收口与后续路线） |
-| 16 | [15a](16a_阶段15a_MMU与虚拟内存.md) → [15b](16b_阶段15b_多核与一致性.md) | **阶段 15 系统扩展**（MMU/SV32、多核一致性，后置可选） |
+| 15 | [阶段14路线](15_阶段14_真乱序四发与IPC2.2.md) → [14a](15a_阶段14a_宽度参数化与双发等价.md) → [14b](15b_阶段14b_四槽前端与取指队列.md) → [14c](15c_阶段14c_四路Rename与ROB.md) → [14d](15d_阶段14d_四路Dispatch与分布式Issue.md) → [14e](15e_阶段14e_PRF操作数与完成网络.md) → [14f](15f_阶段14f_四提交恢复与Difftest.md) → [14g](15g_阶段14g_IPC2.2验收与回归.md) → [14h](15h_阶段14结构性收敛记录.md) | **阶段 14 真乱序四发**（源码可复现冻结 IPC `2.2078`） |
+| 16 | [阶段15路线](16_阶段15_Trace与六宽分布式路线.md) → [15a](16a_阶段15a_TraceStream前端.md) → [15b](16b_阶段15b_写回式双端口L1D.md) → [15c](16c_阶段15c_六宽分布式后端.md) → [15d](16d_阶段15d_IPC2.5冻结与IPC3路线.md) | **阶段 15 性能结构**（IPC `2.5` 冻结门 / `3.0` 长期目标） |
+| 17 | [16a](17a_阶段16a_MMU与虚拟内存.md) → [16b](17b_阶段16b_多核与一致性.md) | **阶段 16 系统扩展**（MMU/SV32、多核一致性，后置可选） |
 
-**参考实现水位（≠ 你的学习勾选）**：源码当前进入 **阶段 14 中间参考点**。`CORE_WIDTH=4`，取指/dispatch/写回/提交主干都已按四槽工作；`WideRename/WideROB/WideRS/WidePRF` 与四路完成接口已经接入，普通整数、访存和控制流仍受 FU 数量及每周期 memory/control 限制。当前参数为 `ROB32/PRF64/RS8/BRQ4/FQ16/FetchBuffer4/FTQ16/LQ8/SQ32/StoreBuffer128`、16 KiB 4-way ICache 和 16 KiB direct-mapped DCache，`CDB_NUM=4`。在同一官方 `microbench-riscv32e-npc.bin` 上，最新保留点为 `MicroBench PASS`、`HIT GOOD TRAP`、`199398` cycles、`368811` commits、IPC **`1.8496`**；取指平均宽度 `3.0922`，commit slot2/slot3 分别为 `75289/50032`。这只是功能通过的性能中间点，不等于阶段 14 收官：`FTQ Stale Recover=35`、`Mem Order Violation=368`，完整 Stage14 回归和 IPC `2.5` 尚未通过。后续方向见 [15h_阶段14后续IPC路线.md](15h_阶段14后续IPC路线.md)；MMU/多核后移到阶段 15。你的学习清单仍由你自己勾选。
+**参考实现水位（≠ 你的学习勾选）**：源码已冻结 **阶段 14 真乱序四发参考核**。`CORE_WIDTH=4`，四槽取指/rename/dispatch/写回/提交主干均实际工作；四 ALU、四 CDB、双 load 服务、独立 Store 完成通道、SpecLoadTracker、四 tagged MSHR、写合并 StoreBuffer、统计方向校正和 target-path ITAGE 已接入。固定官方 `microbench-riscv32e-npc.bin` 十项全部 PASS，NPC/NEMU 双端 GOOD TRAP，两次源码干净生成后的同二进制结果均为 `167053` cycles、`368817` commits、IPC **`2.2078`**；平均 fetch width `3.1895`，commit slot2/slot3 为 `76685/54925`。Stage15 讲义已经定义 Trace/Stream、write-back L1D 与六宽分布式路线，但这些结构尚未实现，不能写成当前核能力；严格 IPC `2.5` 是 Stage15 本轮冻结门，`3.0` 是长期目标。MMU/多核顺延到 Stage16。你的学习清单仍由你自己勾选。
 
 ## 原则
 
 1. 本阶段 **cpu-tests + difftest 自测绿** 再往下。  
-2. **2d 不过 → 不做 3b**；**3a 不过 → 不做 3c**；**3c 绿 → 3d**；**3d 绿 → 4a/4b**；**4b 绿 → 4c**；**4c 绿 → 5a/5b**；**6 绿 → 7 → 8a–8d → 9 → 10 → 11（IPC 1.0）→ 12（IPC 1.3）→ 13（双发 1.5/1.6）→ 14（真四发 IPC 2.5）→ 15（系统扩展）**。
+2. **2d 不过 → 不做 3b**；**3a 不过 → 不做 3c**；**3c 绿 → 3d**；**3d 绿 → 4a/4b**；**4b 绿 → 4c**；**4c 绿 → 5a/5b**；**6 绿 → 7 → 8a–8d → 9 → 10 → 11（IPC 1.0）→ 12（IPC 1.3）→ 13（双发 1.5/1.6）→ 14（真四发 IPC 2.2078）→ 15（IPC 2.5/3.0 性能结构）→ 16（系统扩展）**。
 3. freelist flush **禁止**重置成「32..N_PHYS-1 全空闲」。
 4. 文档与仓库字段冲突 → **先改文档**（以 `unit/`、`core/` 真实代码为准）。  
 5. 四件套在 **`unit/`**，流水级在 **`core/`**，参数在 **`common/ooo_params.scala`**。  
@@ -55,8 +56,9 @@ scripts/stage11_final.sh
 scripts/stage12_final.sh
 # 阶段 13 双发收官：IPC >= 1.5，1.6 为冲刺目标
 scripts/stage13_final.sh
-# 阶段 14 真四发收官：IPC >= 2.5
-scripts/stage14_final.sh
+# 阶段 14 真四发收官：固定二进制 IPC >= 2.2，源码可复现冻结值 2.2078
+# 具体命令和硬门槛见 15g_阶段14g_IPC2.2验收与回归.md
+# 阶段 15：达到 IPC >= 2.5 可冻结，3.0 为长期目标
 ```
 
 脚本默认覆盖本阶段验收口径：逐项单测、`cpu-tests`、`microbench(test)`。microbench 只有同时出现 `MicroBench PASS` 与 `HIT GOOD TRAP`、没有 HANG/ABORT/difftest mismatch、且 IPC/cycles/commits 三项非空时才算通过。

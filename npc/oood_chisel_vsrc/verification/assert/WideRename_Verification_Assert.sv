@@ -18,28 +18,37 @@
   `endif // ASSERT_VERBOSE_COND
 `endif // not def ASSERT_VERBOSE_COND_
 module WideRename_Verification_Assert(
-  input       reset,
-              io_fire_1,
-              io_fire_0,
-              io_fire_3,
-              io_fire_2,
-  input [3:0] _GEN,
-  input       _GEN_0,
-              _GEN_1,
-              io_do_rename_0,
-              _GEN_2,
-              _GEN_3,
-              io_do_rename_1,
-              _GEN_4,
-              _GEN_5,
-              io_do_rename_2,
-              _GEN_6,
-              _GEN_7,
-              io_do_rename_3,
-              clock
+  input        reset,
+               io_fire_1,
+               io_fire_0,
+               io_fire_3,
+               io_fire_2,
+  input [3:0]  _GEN,
+  input        _GEN_0,
+               _GEN_1,
+               io_do_rename_0,
+  input [63:0] io_reserve_mask,
+  input [5:0]  io_pdest_0,
+  input        _GEN_2,
+               _GEN_3,
+               io_do_rename_1,
+  input [5:0]  io_pdest_1,
+  input        _GEN_4,
+               _GEN_5,
+               io_do_rename_2,
+  input [5:0]  io_pdest_2,
+  input        _GEN_6,
+               _GEN_7,
+               io_do_rename_3,
+  input [5:0]  io_pdest_3,
+  input        clock
 );
 
   `ifndef SYNTHESIS
+    wire [63:0] _GEN_8 = io_reserve_mask >> io_pdest_0;
+    wire [63:0] _GEN_9 = io_reserve_mask >> io_pdest_1;
+    wire [63:0] _GEN_10 = io_reserve_mask >> io_pdest_2;
+    wire [63:0] _GEN_11 = io_reserve_mask >> io_pdest_3;
     always @(posedge clock) begin
       if (~reset
           & ~({io_fire_3, io_fire_2, io_fire_1, io_fire_0} == (io_fire_0 ? _GEN : 4'h0)
@@ -56,9 +65,21 @@ module WideRename_Verification_Assert(
         if (`STOP_COND_)
           $fatal;
       end
+      if (~reset & ~(~io_do_rename_0 | ~(_GEN_8[0]))) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: wide rename must not allocate a live physical register\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
       if (~reset & ~(~(_GEN_2 & _GEN_3) | io_do_rename_1)) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: wide rename requires pre-checked free-list credit\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & ~(~io_do_rename_1 | ~(_GEN_9[0]))) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: wide rename must not allocate a live physical register\n");
         if (`STOP_COND_)
           $fatal;
       end
@@ -68,9 +89,21 @@ module WideRename_Verification_Assert(
         if (`STOP_COND_)
           $fatal;
       end
+      if (~reset & ~(~io_do_rename_2 | ~(_GEN_10[0]))) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: wide rename must not allocate a live physical register\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
       if (~reset & ~(~(_GEN_6 & _GEN_7) | io_do_rename_3)) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: wide rename requires pre-checked free-list credit\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & ~(~io_do_rename_3 | ~(_GEN_11[0]))) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: wide rename must not allocate a live physical register\n");
         if (`STOP_COND_)
           $fatal;
       end

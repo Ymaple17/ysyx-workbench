@@ -1,4 +1,13 @@
 point,role,ipc,cycles,commits,fetch_width,dispatch_width,commit_width,dispatch_lane2,dispatch_lane3,commit_lane2,commit_lane3,ftq_stale_recover,mem_order_violation,store_buffer_full,wait_store_commit,result
 stage13f,historical_baseline,1.5134,345032,522164,1.8650,2,2,0,0,0,0,0,0,11586,10880,not_directly_comparable_binary_accounting
-stage14_sb128_gather24,current_retained,1.8496,199398,368811,3.0922,4,4,97936,72344,75289,50032,35,368,11786,15418,PASS_FUNCTIONAL_NOT_FINAL
-stage14_final,acceptance_target,2.5000,,,,4,4,,,,,0,0,,,pending
+stage14_fourwide_checkpoint,retained_history,1.8496,199398,368811,3.0922,4,4,97936,72344,75289,50032,35,368,11786,15418,PASS
+stage14_dual_load,retained_history,1.8938,194778,368849,,4,4,,,,,,,,,PASS
+stage14_sb_first_cycle,retained_history,1.9156,192559,368849,,4,4,,,,,,,,,PASS
+stage14_loop_lite,retained_history,1.9243,191682,368855,,4,4,,,,,,,,,PASS_REPEAT
+stage14_critical_first,retained_history,1.9352,190596,368849,,4,4,,,,,,,,,PASS_REPEAT
+stage14_chained_burst,retained_history,1.9578,188383,368819,NA,4,4,NA,NA,NA,NA,NA,NA,6897,10177,PASS_REPEAT
+stage14_write_combining,retained_history,2.0062,183850,368849,NA,4,4,NA,NA,NA,NA,NA,NA,3543,6830,PASS_REPEAT
+stage14_spec_load_tracker,retained_history,2.0983,175774,368849,,4,4,,,,,,,,,PASS_REPEAT
+stage14_tagged_multi_mshr,retained_history,2.1339,172842,368849,,4,4,,,,,,,,,PASS_REPEAT
+stage14_statistical_corrector,retained_history,2.1637,170440,368849,,4,4,,,,,,,,,PASS_REPEAT
+stage14_target_path_itage_store_complete,frozen,2.2078,167053,368817,3.1895,4,4,95614,70954,76685,54925,20,541,4095,7461,PASS_REPEAT_SOURCE_REGEN

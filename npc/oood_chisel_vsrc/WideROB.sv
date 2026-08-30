@@ -23,7 +23,7 @@ module WideROB(
                 io_enq_bits_0_is_fencei,
                 io_enq_bits_0_state_state,
   input  [7:0]  io_enq_bits_0_state_state_num,
-  input  [78:0] io_enq_bits_0_bp_index,
+  input  [96:0] io_enq_bits_0_bp_index,
   input  [3:0]  io_enq_bits_0_ftq_idx,
   input  [7:0]  io_enq_bits_0_ftq_generation,
   input  [1:0]  io_enq_bits_0_cp_idx,
@@ -48,7 +48,7 @@ module WideROB(
                 io_enq_bits_1_is_fencei,
                 io_enq_bits_1_state_state,
   input  [7:0]  io_enq_bits_1_state_state_num,
-  input  [78:0] io_enq_bits_1_bp_index,
+  input  [96:0] io_enq_bits_1_bp_index,
   input  [3:0]  io_enq_bits_1_ftq_idx,
   input  [7:0]  io_enq_bits_1_ftq_generation,
   input  [1:0]  io_enq_bits_1_cp_idx,
@@ -73,7 +73,7 @@ module WideROB(
                 io_enq_bits_2_is_fencei,
                 io_enq_bits_2_state_state,
   input  [7:0]  io_enq_bits_2_state_state_num,
-  input  [78:0] io_enq_bits_2_bp_index,
+  input  [96:0] io_enq_bits_2_bp_index,
   input  [3:0]  io_enq_bits_2_ftq_idx,
   input  [7:0]  io_enq_bits_2_ftq_generation,
   input  [1:0]  io_enq_bits_2_cp_idx,
@@ -98,7 +98,7 @@ module WideROB(
                 io_enq_bits_3_is_fencei,
                 io_enq_bits_3_state_state,
   input  [7:0]  io_enq_bits_3_state_state_num,
-  input  [78:0] io_enq_bits_3_bp_index,
+  input  [96:0] io_enq_bits_3_bp_index,
   input  [3:0]  io_enq_bits_3_ftq_idx,
   input  [7:0]  io_enq_bits_3_ftq_generation,
   input  [1:0]  io_enq_bits_3_cp_idx,
@@ -185,7 +185,7 @@ module WideROB(
                 io_commit_bits_0_is_fencei,
                 io_commit_bits_0_state_state,
   output [7:0]  io_commit_bits_0_state_state_num,
-  output [78:0] io_commit_bits_0_bp_index,
+  output [96:0] io_commit_bits_0_bp_index,
   output [3:0]  io_commit_bits_0_ftq_idx,
   output [7:0]  io_commit_bits_0_ftq_generation,
   output [1:0]  io_commit_bits_0_cp_idx,
@@ -213,7 +213,7 @@ module WideROB(
   output        io_commit_bits_1_is_ebreak,
                 io_commit_bits_1_is_fencei,
                 io_commit_bits_1_state_state,
-  output [78:0] io_commit_bits_1_bp_index,
+  output [96:0] io_commit_bits_1_bp_index,
   output [3:0]  io_commit_bits_1_ftq_idx,
   output [7:0]  io_commit_bits_1_ftq_generation,
   output [1:0]  io_commit_bits_1_cp_idx,
@@ -237,7 +237,7 @@ module WideROB(
   output        io_commit_bits_2_is_ebreak,
                 io_commit_bits_2_is_fencei,
                 io_commit_bits_2_state_state,
-  output [78:0] io_commit_bits_2_bp_index,
+  output [96:0] io_commit_bits_2_bp_index,
   output [3:0]  io_commit_bits_2_ftq_idx,
   output [7:0]  io_commit_bits_2_ftq_generation,
   output [1:0]  io_commit_bits_2_cp_idx,
@@ -261,7 +261,7 @@ module WideROB(
   output        io_commit_bits_3_is_ebreak,
                 io_commit_bits_3_is_fencei,
                 io_commit_bits_3_state_state,
-  output [78:0] io_commit_bits_3_bp_index,
+  output [96:0] io_commit_bits_3_bp_index,
   output [3:0]  io_commit_bits_3_ftq_idx,
   output [7:0]  io_commit_bits_3_ftq_generation,
   output [1:0]  io_commit_bits_3_cp_idx,
@@ -781,7 +781,7 @@ module WideROB(
   reg         entries_0_is_fencei;
   reg         entries_0_state_state;
   reg  [7:0]  entries_0_state_state_num;
-  reg  [78:0] entries_0_bp_index;
+  reg  [96:0] entries_0_bp_index;
   reg  [3:0]  entries_0_ftq_idx;
   reg  [7:0]  entries_0_ftq_generation;
   reg  [1:0]  entries_0_cp_idx;
@@ -813,7 +813,7 @@ module WideROB(
   reg         entries_1_is_fencei;
   reg         entries_1_state_state;
   reg  [7:0]  entries_1_state_state_num;
-  reg  [78:0] entries_1_bp_index;
+  reg  [96:0] entries_1_bp_index;
   reg  [3:0]  entries_1_ftq_idx;
   reg  [7:0]  entries_1_ftq_generation;
   reg  [1:0]  entries_1_cp_idx;
@@ -845,7 +845,7 @@ module WideROB(
   reg         entries_2_is_fencei;
   reg         entries_2_state_state;
   reg  [7:0]  entries_2_state_state_num;
-  reg  [78:0] entries_2_bp_index;
+  reg  [96:0] entries_2_bp_index;
   reg  [3:0]  entries_2_ftq_idx;
   reg  [7:0]  entries_2_ftq_generation;
   reg  [1:0]  entries_2_cp_idx;
@@ -877,7 +877,7 @@ module WideROB(
   reg         entries_3_is_fencei;
   reg         entries_3_state_state;
   reg  [7:0]  entries_3_state_state_num;
-  reg  [78:0] entries_3_bp_index;
+  reg  [96:0] entries_3_bp_index;
   reg  [3:0]  entries_3_ftq_idx;
   reg  [7:0]  entries_3_ftq_generation;
   reg  [1:0]  entries_3_cp_idx;
@@ -909,7 +909,7 @@ module WideROB(
   reg         entries_4_is_fencei;
   reg         entries_4_state_state;
   reg  [7:0]  entries_4_state_state_num;
-  reg  [78:0] entries_4_bp_index;
+  reg  [96:0] entries_4_bp_index;
   reg  [3:0]  entries_4_ftq_idx;
   reg  [7:0]  entries_4_ftq_generation;
   reg  [1:0]  entries_4_cp_idx;
@@ -941,7 +941,7 @@ module WideROB(
   reg         entries_5_is_fencei;
   reg         entries_5_state_state;
   reg  [7:0]  entries_5_state_state_num;
-  reg  [78:0] entries_5_bp_index;
+  reg  [96:0] entries_5_bp_index;
   reg  [3:0]  entries_5_ftq_idx;
   reg  [7:0]  entries_5_ftq_generation;
   reg  [1:0]  entries_5_cp_idx;
@@ -973,7 +973,7 @@ module WideROB(
   reg         entries_6_is_fencei;
   reg         entries_6_state_state;
   reg  [7:0]  entries_6_state_state_num;
-  reg  [78:0] entries_6_bp_index;
+  reg  [96:0] entries_6_bp_index;
   reg  [3:0]  entries_6_ftq_idx;
   reg  [7:0]  entries_6_ftq_generation;
   reg  [1:0]  entries_6_cp_idx;
@@ -1005,7 +1005,7 @@ module WideROB(
   reg         entries_7_is_fencei;
   reg         entries_7_state_state;
   reg  [7:0]  entries_7_state_state_num;
-  reg  [78:0] entries_7_bp_index;
+  reg  [96:0] entries_7_bp_index;
   reg  [3:0]  entries_7_ftq_idx;
   reg  [7:0]  entries_7_ftq_generation;
   reg  [1:0]  entries_7_cp_idx;
@@ -1037,7 +1037,7 @@ module WideROB(
   reg         entries_8_is_fencei;
   reg         entries_8_state_state;
   reg  [7:0]  entries_8_state_state_num;
-  reg  [78:0] entries_8_bp_index;
+  reg  [96:0] entries_8_bp_index;
   reg  [3:0]  entries_8_ftq_idx;
   reg  [7:0]  entries_8_ftq_generation;
   reg  [1:0]  entries_8_cp_idx;
@@ -1069,7 +1069,7 @@ module WideROB(
   reg         entries_9_is_fencei;
   reg         entries_9_state_state;
   reg  [7:0]  entries_9_state_state_num;
-  reg  [78:0] entries_9_bp_index;
+  reg  [96:0] entries_9_bp_index;
   reg  [3:0]  entries_9_ftq_idx;
   reg  [7:0]  entries_9_ftq_generation;
   reg  [1:0]  entries_9_cp_idx;
@@ -1101,7 +1101,7 @@ module WideROB(
   reg         entries_10_is_fencei;
   reg         entries_10_state_state;
   reg  [7:0]  entries_10_state_state_num;
-  reg  [78:0] entries_10_bp_index;
+  reg  [96:0] entries_10_bp_index;
   reg  [3:0]  entries_10_ftq_idx;
   reg  [7:0]  entries_10_ftq_generation;
   reg  [1:0]  entries_10_cp_idx;
@@ -1133,7 +1133,7 @@ module WideROB(
   reg         entries_11_is_fencei;
   reg         entries_11_state_state;
   reg  [7:0]  entries_11_state_state_num;
-  reg  [78:0] entries_11_bp_index;
+  reg  [96:0] entries_11_bp_index;
   reg  [3:0]  entries_11_ftq_idx;
   reg  [7:0]  entries_11_ftq_generation;
   reg  [1:0]  entries_11_cp_idx;
@@ -1165,7 +1165,7 @@ module WideROB(
   reg         entries_12_is_fencei;
   reg         entries_12_state_state;
   reg  [7:0]  entries_12_state_state_num;
-  reg  [78:0] entries_12_bp_index;
+  reg  [96:0] entries_12_bp_index;
   reg  [3:0]  entries_12_ftq_idx;
   reg  [7:0]  entries_12_ftq_generation;
   reg  [1:0]  entries_12_cp_idx;
@@ -1197,7 +1197,7 @@ module WideROB(
   reg         entries_13_is_fencei;
   reg         entries_13_state_state;
   reg  [7:0]  entries_13_state_state_num;
-  reg  [78:0] entries_13_bp_index;
+  reg  [96:0] entries_13_bp_index;
   reg  [3:0]  entries_13_ftq_idx;
   reg  [7:0]  entries_13_ftq_generation;
   reg  [1:0]  entries_13_cp_idx;
@@ -1229,7 +1229,7 @@ module WideROB(
   reg         entries_14_is_fencei;
   reg         entries_14_state_state;
   reg  [7:0]  entries_14_state_state_num;
-  reg  [78:0] entries_14_bp_index;
+  reg  [96:0] entries_14_bp_index;
   reg  [3:0]  entries_14_ftq_idx;
   reg  [7:0]  entries_14_ftq_generation;
   reg  [1:0]  entries_14_cp_idx;
@@ -1261,7 +1261,7 @@ module WideROB(
   reg         entries_15_is_fencei;
   reg         entries_15_state_state;
   reg  [7:0]  entries_15_state_state_num;
-  reg  [78:0] entries_15_bp_index;
+  reg  [96:0] entries_15_bp_index;
   reg  [3:0]  entries_15_ftq_idx;
   reg  [7:0]  entries_15_ftq_generation;
   reg  [1:0]  entries_15_cp_idx;
@@ -1293,7 +1293,7 @@ module WideROB(
   reg         entries_16_is_fencei;
   reg         entries_16_state_state;
   reg  [7:0]  entries_16_state_state_num;
-  reg  [78:0] entries_16_bp_index;
+  reg  [96:0] entries_16_bp_index;
   reg  [3:0]  entries_16_ftq_idx;
   reg  [7:0]  entries_16_ftq_generation;
   reg  [1:0]  entries_16_cp_idx;
@@ -1325,7 +1325,7 @@ module WideROB(
   reg         entries_17_is_fencei;
   reg         entries_17_state_state;
   reg  [7:0]  entries_17_state_state_num;
-  reg  [78:0] entries_17_bp_index;
+  reg  [96:0] entries_17_bp_index;
   reg  [3:0]  entries_17_ftq_idx;
   reg  [7:0]  entries_17_ftq_generation;
   reg  [1:0]  entries_17_cp_idx;
@@ -1357,7 +1357,7 @@ module WideROB(
   reg         entries_18_is_fencei;
   reg         entries_18_state_state;
   reg  [7:0]  entries_18_state_state_num;
-  reg  [78:0] entries_18_bp_index;
+  reg  [96:0] entries_18_bp_index;
   reg  [3:0]  entries_18_ftq_idx;
   reg  [7:0]  entries_18_ftq_generation;
   reg  [1:0]  entries_18_cp_idx;
@@ -1389,7 +1389,7 @@ module WideROB(
   reg         entries_19_is_fencei;
   reg         entries_19_state_state;
   reg  [7:0]  entries_19_state_state_num;
-  reg  [78:0] entries_19_bp_index;
+  reg  [96:0] entries_19_bp_index;
   reg  [3:0]  entries_19_ftq_idx;
   reg  [7:0]  entries_19_ftq_generation;
   reg  [1:0]  entries_19_cp_idx;
@@ -1421,7 +1421,7 @@ module WideROB(
   reg         entries_20_is_fencei;
   reg         entries_20_state_state;
   reg  [7:0]  entries_20_state_state_num;
-  reg  [78:0] entries_20_bp_index;
+  reg  [96:0] entries_20_bp_index;
   reg  [3:0]  entries_20_ftq_idx;
   reg  [7:0]  entries_20_ftq_generation;
   reg  [1:0]  entries_20_cp_idx;
@@ -1453,7 +1453,7 @@ module WideROB(
   reg         entries_21_is_fencei;
   reg         entries_21_state_state;
   reg  [7:0]  entries_21_state_state_num;
-  reg  [78:0] entries_21_bp_index;
+  reg  [96:0] entries_21_bp_index;
   reg  [3:0]  entries_21_ftq_idx;
   reg  [7:0]  entries_21_ftq_generation;
   reg  [1:0]  entries_21_cp_idx;
@@ -1485,7 +1485,7 @@ module WideROB(
   reg         entries_22_is_fencei;
   reg         entries_22_state_state;
   reg  [7:0]  entries_22_state_state_num;
-  reg  [78:0] entries_22_bp_index;
+  reg  [96:0] entries_22_bp_index;
   reg  [3:0]  entries_22_ftq_idx;
   reg  [7:0]  entries_22_ftq_generation;
   reg  [1:0]  entries_22_cp_idx;
@@ -1517,7 +1517,7 @@ module WideROB(
   reg         entries_23_is_fencei;
   reg         entries_23_state_state;
   reg  [7:0]  entries_23_state_state_num;
-  reg  [78:0] entries_23_bp_index;
+  reg  [96:0] entries_23_bp_index;
   reg  [3:0]  entries_23_ftq_idx;
   reg  [7:0]  entries_23_ftq_generation;
   reg  [1:0]  entries_23_cp_idx;
@@ -1549,7 +1549,7 @@ module WideROB(
   reg         entries_24_is_fencei;
   reg         entries_24_state_state;
   reg  [7:0]  entries_24_state_state_num;
-  reg  [78:0] entries_24_bp_index;
+  reg  [96:0] entries_24_bp_index;
   reg  [3:0]  entries_24_ftq_idx;
   reg  [7:0]  entries_24_ftq_generation;
   reg  [1:0]  entries_24_cp_idx;
@@ -1581,7 +1581,7 @@ module WideROB(
   reg         entries_25_is_fencei;
   reg         entries_25_state_state;
   reg  [7:0]  entries_25_state_state_num;
-  reg  [78:0] entries_25_bp_index;
+  reg  [96:0] entries_25_bp_index;
   reg  [3:0]  entries_25_ftq_idx;
   reg  [7:0]  entries_25_ftq_generation;
   reg  [1:0]  entries_25_cp_idx;
@@ -1613,7 +1613,7 @@ module WideROB(
   reg         entries_26_is_fencei;
   reg         entries_26_state_state;
   reg  [7:0]  entries_26_state_state_num;
-  reg  [78:0] entries_26_bp_index;
+  reg  [96:0] entries_26_bp_index;
   reg  [3:0]  entries_26_ftq_idx;
   reg  [7:0]  entries_26_ftq_generation;
   reg  [1:0]  entries_26_cp_idx;
@@ -1645,7 +1645,7 @@ module WideROB(
   reg         entries_27_is_fencei;
   reg         entries_27_state_state;
   reg  [7:0]  entries_27_state_state_num;
-  reg  [78:0] entries_27_bp_index;
+  reg  [96:0] entries_27_bp_index;
   reg  [3:0]  entries_27_ftq_idx;
   reg  [7:0]  entries_27_ftq_generation;
   reg  [1:0]  entries_27_cp_idx;
@@ -1677,7 +1677,7 @@ module WideROB(
   reg         entries_28_is_fencei;
   reg         entries_28_state_state;
   reg  [7:0]  entries_28_state_state_num;
-  reg  [78:0] entries_28_bp_index;
+  reg  [96:0] entries_28_bp_index;
   reg  [3:0]  entries_28_ftq_idx;
   reg  [7:0]  entries_28_ftq_generation;
   reg  [1:0]  entries_28_cp_idx;
@@ -1709,7 +1709,7 @@ module WideROB(
   reg         entries_29_is_fencei;
   reg         entries_29_state_state;
   reg  [7:0]  entries_29_state_state_num;
-  reg  [78:0] entries_29_bp_index;
+  reg  [96:0] entries_29_bp_index;
   reg  [3:0]  entries_29_ftq_idx;
   reg  [7:0]  entries_29_ftq_generation;
   reg  [1:0]  entries_29_cp_idx;
@@ -1741,7 +1741,7 @@ module WideROB(
   reg         entries_30_is_fencei;
   reg         entries_30_state_state;
   reg  [7:0]  entries_30_state_state_num;
-  reg  [78:0] entries_30_bp_index;
+  reg  [96:0] entries_30_bp_index;
   reg  [3:0]  entries_30_ftq_idx;
   reg  [7:0]  entries_30_ftq_generation;
   reg  [1:0]  entries_30_cp_idx;
@@ -1773,7 +1773,7 @@ module WideROB(
   reg         entries_31_is_fencei;
   reg         entries_31_state_state;
   reg  [7:0]  entries_31_state_state_num;
-  reg  [78:0] entries_31_bp_index;
+  reg  [96:0] entries_31_bp_index;
   reg  [3:0]  entries_31_ftq_idx;
   reg  [7:0]  entries_31_ftq_generation;
   reg  [1:0]  entries_31_cp_idx;
@@ -3168,7 +3168,7 @@ module WideROB(
         casez_tmp_18 = entries_31_state_state_num;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_19;
+  reg  [96:0] casez_tmp_19;
   always_comb begin
     casez (idx)
       5'b00000:
@@ -5246,7 +5246,7 @@ module WideROB(
         casez_tmp_48 = entries_31_state_state;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_49;
+  reg  [96:0] casez_tmp_49;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
@@ -7048,7 +7048,7 @@ module WideROB(
         casez_tmp_74 = entries_31_state_state;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_75;
+  reg  [96:0] casez_tmp_75;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
@@ -8850,7 +8850,7 @@ module WideROB(
         casez_tmp_100 = entries_31_state_state;
     endcase
   end // always_comb
-  reg  [78:0] casez_tmp_101;
+  reg  [96:0] casez_tmp_101;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
@@ -10755,7 +10755,7 @@ module WideROB(
       entries_0_is_fencei <= 1'h0;
       entries_0_state_state <= 1'h0;
       entries_0_state_state_num <= 8'h0;
-      entries_0_bp_index <= 79'h0;
+      entries_0_bp_index <= 97'h0;
       entries_0_ftq_idx <= 4'h0;
       entries_0_ftq_generation <= 8'h0;
       entries_0_cp_idx <= 2'h0;
@@ -10787,7 +10787,7 @@ module WideROB(
       entries_1_is_fencei <= 1'h0;
       entries_1_state_state <= 1'h0;
       entries_1_state_state_num <= 8'h0;
-      entries_1_bp_index <= 79'h0;
+      entries_1_bp_index <= 97'h0;
       entries_1_ftq_idx <= 4'h0;
       entries_1_ftq_generation <= 8'h0;
       entries_1_cp_idx <= 2'h0;
@@ -10819,7 +10819,7 @@ module WideROB(
       entries_2_is_fencei <= 1'h0;
       entries_2_state_state <= 1'h0;
       entries_2_state_state_num <= 8'h0;
-      entries_2_bp_index <= 79'h0;
+      entries_2_bp_index <= 97'h0;
       entries_2_ftq_idx <= 4'h0;
       entries_2_ftq_generation <= 8'h0;
       entries_2_cp_idx <= 2'h0;
@@ -10851,7 +10851,7 @@ module WideROB(
       entries_3_is_fencei <= 1'h0;
       entries_3_state_state <= 1'h0;
       entries_3_state_state_num <= 8'h0;
-      entries_3_bp_index <= 79'h0;
+      entries_3_bp_index <= 97'h0;
       entries_3_ftq_idx <= 4'h0;
       entries_3_ftq_generation <= 8'h0;
       entries_3_cp_idx <= 2'h0;
@@ -10883,7 +10883,7 @@ module WideROB(
       entries_4_is_fencei <= 1'h0;
       entries_4_state_state <= 1'h0;
       entries_4_state_state_num <= 8'h0;
-      entries_4_bp_index <= 79'h0;
+      entries_4_bp_index <= 97'h0;
       entries_4_ftq_idx <= 4'h0;
       entries_4_ftq_generation <= 8'h0;
       entries_4_cp_idx <= 2'h0;
@@ -10915,7 +10915,7 @@ module WideROB(
       entries_5_is_fencei <= 1'h0;
       entries_5_state_state <= 1'h0;
       entries_5_state_state_num <= 8'h0;
-      entries_5_bp_index <= 79'h0;
+      entries_5_bp_index <= 97'h0;
       entries_5_ftq_idx <= 4'h0;
       entries_5_ftq_generation <= 8'h0;
       entries_5_cp_idx <= 2'h0;
@@ -10947,7 +10947,7 @@ module WideROB(
       entries_6_is_fencei <= 1'h0;
       entries_6_state_state <= 1'h0;
       entries_6_state_state_num <= 8'h0;
-      entries_6_bp_index <= 79'h0;
+      entries_6_bp_index <= 97'h0;
       entries_6_ftq_idx <= 4'h0;
       entries_6_ftq_generation <= 8'h0;
       entries_6_cp_idx <= 2'h0;
@@ -10979,7 +10979,7 @@ module WideROB(
       entries_7_is_fencei <= 1'h0;
       entries_7_state_state <= 1'h0;
       entries_7_state_state_num <= 8'h0;
-      entries_7_bp_index <= 79'h0;
+      entries_7_bp_index <= 97'h0;
       entries_7_ftq_idx <= 4'h0;
       entries_7_ftq_generation <= 8'h0;
       entries_7_cp_idx <= 2'h0;
@@ -11011,7 +11011,7 @@ module WideROB(
       entries_8_is_fencei <= 1'h0;
       entries_8_state_state <= 1'h0;
       entries_8_state_state_num <= 8'h0;
-      entries_8_bp_index <= 79'h0;
+      entries_8_bp_index <= 97'h0;
       entries_8_ftq_idx <= 4'h0;
       entries_8_ftq_generation <= 8'h0;
       entries_8_cp_idx <= 2'h0;
@@ -11043,7 +11043,7 @@ module WideROB(
       entries_9_is_fencei <= 1'h0;
       entries_9_state_state <= 1'h0;
       entries_9_state_state_num <= 8'h0;
-      entries_9_bp_index <= 79'h0;
+      entries_9_bp_index <= 97'h0;
       entries_9_ftq_idx <= 4'h0;
       entries_9_ftq_generation <= 8'h0;
       entries_9_cp_idx <= 2'h0;
@@ -11075,7 +11075,7 @@ module WideROB(
       entries_10_is_fencei <= 1'h0;
       entries_10_state_state <= 1'h0;
       entries_10_state_state_num <= 8'h0;
-      entries_10_bp_index <= 79'h0;
+      entries_10_bp_index <= 97'h0;
       entries_10_ftq_idx <= 4'h0;
       entries_10_ftq_generation <= 8'h0;
       entries_10_cp_idx <= 2'h0;
@@ -11107,7 +11107,7 @@ module WideROB(
       entries_11_is_fencei <= 1'h0;
       entries_11_state_state <= 1'h0;
       entries_11_state_state_num <= 8'h0;
-      entries_11_bp_index <= 79'h0;
+      entries_11_bp_index <= 97'h0;
       entries_11_ftq_idx <= 4'h0;
       entries_11_ftq_generation <= 8'h0;
       entries_11_cp_idx <= 2'h0;
@@ -11139,7 +11139,7 @@ module WideROB(
       entries_12_is_fencei <= 1'h0;
       entries_12_state_state <= 1'h0;
       entries_12_state_state_num <= 8'h0;
-      entries_12_bp_index <= 79'h0;
+      entries_12_bp_index <= 97'h0;
       entries_12_ftq_idx <= 4'h0;
       entries_12_ftq_generation <= 8'h0;
       entries_12_cp_idx <= 2'h0;
@@ -11171,7 +11171,7 @@ module WideROB(
       entries_13_is_fencei <= 1'h0;
       entries_13_state_state <= 1'h0;
       entries_13_state_state_num <= 8'h0;
-      entries_13_bp_index <= 79'h0;
+      entries_13_bp_index <= 97'h0;
       entries_13_ftq_idx <= 4'h0;
       entries_13_ftq_generation <= 8'h0;
       entries_13_cp_idx <= 2'h0;
@@ -11203,7 +11203,7 @@ module WideROB(
       entries_14_is_fencei <= 1'h0;
       entries_14_state_state <= 1'h0;
       entries_14_state_state_num <= 8'h0;
-      entries_14_bp_index <= 79'h0;
+      entries_14_bp_index <= 97'h0;
       entries_14_ftq_idx <= 4'h0;
       entries_14_ftq_generation <= 8'h0;
       entries_14_cp_idx <= 2'h0;
@@ -11235,7 +11235,7 @@ module WideROB(
       entries_15_is_fencei <= 1'h0;
       entries_15_state_state <= 1'h0;
       entries_15_state_state_num <= 8'h0;
-      entries_15_bp_index <= 79'h0;
+      entries_15_bp_index <= 97'h0;
       entries_15_ftq_idx <= 4'h0;
       entries_15_ftq_generation <= 8'h0;
       entries_15_cp_idx <= 2'h0;
@@ -11267,7 +11267,7 @@ module WideROB(
       entries_16_is_fencei <= 1'h0;
       entries_16_state_state <= 1'h0;
       entries_16_state_state_num <= 8'h0;
-      entries_16_bp_index <= 79'h0;
+      entries_16_bp_index <= 97'h0;
       entries_16_ftq_idx <= 4'h0;
       entries_16_ftq_generation <= 8'h0;
       entries_16_cp_idx <= 2'h0;
@@ -11299,7 +11299,7 @@ module WideROB(
       entries_17_is_fencei <= 1'h0;
       entries_17_state_state <= 1'h0;
       entries_17_state_state_num <= 8'h0;
-      entries_17_bp_index <= 79'h0;
+      entries_17_bp_index <= 97'h0;
       entries_17_ftq_idx <= 4'h0;
       entries_17_ftq_generation <= 8'h0;
       entries_17_cp_idx <= 2'h0;
@@ -11331,7 +11331,7 @@ module WideROB(
       entries_18_is_fencei <= 1'h0;
       entries_18_state_state <= 1'h0;
       entries_18_state_state_num <= 8'h0;
-      entries_18_bp_index <= 79'h0;
+      entries_18_bp_index <= 97'h0;
       entries_18_ftq_idx <= 4'h0;
       entries_18_ftq_generation <= 8'h0;
       entries_18_cp_idx <= 2'h0;
@@ -11363,7 +11363,7 @@ module WideROB(
       entries_19_is_fencei <= 1'h0;
       entries_19_state_state <= 1'h0;
       entries_19_state_state_num <= 8'h0;
-      entries_19_bp_index <= 79'h0;
+      entries_19_bp_index <= 97'h0;
       entries_19_ftq_idx <= 4'h0;
       entries_19_ftq_generation <= 8'h0;
       entries_19_cp_idx <= 2'h0;
@@ -11395,7 +11395,7 @@ module WideROB(
       entries_20_is_fencei <= 1'h0;
       entries_20_state_state <= 1'h0;
       entries_20_state_state_num <= 8'h0;
-      entries_20_bp_index <= 79'h0;
+      entries_20_bp_index <= 97'h0;
       entries_20_ftq_idx <= 4'h0;
       entries_20_ftq_generation <= 8'h0;
       entries_20_cp_idx <= 2'h0;
@@ -11427,7 +11427,7 @@ module WideROB(
       entries_21_is_fencei <= 1'h0;
       entries_21_state_state <= 1'h0;
       entries_21_state_state_num <= 8'h0;
-      entries_21_bp_index <= 79'h0;
+      entries_21_bp_index <= 97'h0;
       entries_21_ftq_idx <= 4'h0;
       entries_21_ftq_generation <= 8'h0;
       entries_21_cp_idx <= 2'h0;
@@ -11459,7 +11459,7 @@ module WideROB(
       entries_22_is_fencei <= 1'h0;
       entries_22_state_state <= 1'h0;
       entries_22_state_state_num <= 8'h0;
-      entries_22_bp_index <= 79'h0;
+      entries_22_bp_index <= 97'h0;
       entries_22_ftq_idx <= 4'h0;
       entries_22_ftq_generation <= 8'h0;
       entries_22_cp_idx <= 2'h0;
@@ -11491,7 +11491,7 @@ module WideROB(
       entries_23_is_fencei <= 1'h0;
       entries_23_state_state <= 1'h0;
       entries_23_state_state_num <= 8'h0;
-      entries_23_bp_index <= 79'h0;
+      entries_23_bp_index <= 97'h0;
       entries_23_ftq_idx <= 4'h0;
       entries_23_ftq_generation <= 8'h0;
       entries_23_cp_idx <= 2'h0;
@@ -11523,7 +11523,7 @@ module WideROB(
       entries_24_is_fencei <= 1'h0;
       entries_24_state_state <= 1'h0;
       entries_24_state_state_num <= 8'h0;
-      entries_24_bp_index <= 79'h0;
+      entries_24_bp_index <= 97'h0;
       entries_24_ftq_idx <= 4'h0;
       entries_24_ftq_generation <= 8'h0;
       entries_24_cp_idx <= 2'h0;
@@ -11555,7 +11555,7 @@ module WideROB(
       entries_25_is_fencei <= 1'h0;
       entries_25_state_state <= 1'h0;
       entries_25_state_state_num <= 8'h0;
-      entries_25_bp_index <= 79'h0;
+      entries_25_bp_index <= 97'h0;
       entries_25_ftq_idx <= 4'h0;
       entries_25_ftq_generation <= 8'h0;
       entries_25_cp_idx <= 2'h0;
@@ -11587,7 +11587,7 @@ module WideROB(
       entries_26_is_fencei <= 1'h0;
       entries_26_state_state <= 1'h0;
       entries_26_state_state_num <= 8'h0;
-      entries_26_bp_index <= 79'h0;
+      entries_26_bp_index <= 97'h0;
       entries_26_ftq_idx <= 4'h0;
       entries_26_ftq_generation <= 8'h0;
       entries_26_cp_idx <= 2'h0;
@@ -11619,7 +11619,7 @@ module WideROB(
       entries_27_is_fencei <= 1'h0;
       entries_27_state_state <= 1'h0;
       entries_27_state_state_num <= 8'h0;
-      entries_27_bp_index <= 79'h0;
+      entries_27_bp_index <= 97'h0;
       entries_27_ftq_idx <= 4'h0;
       entries_27_ftq_generation <= 8'h0;
       entries_27_cp_idx <= 2'h0;
@@ -11651,7 +11651,7 @@ module WideROB(
       entries_28_is_fencei <= 1'h0;
       entries_28_state_state <= 1'h0;
       entries_28_state_state_num <= 8'h0;
-      entries_28_bp_index <= 79'h0;
+      entries_28_bp_index <= 97'h0;
       entries_28_ftq_idx <= 4'h0;
       entries_28_ftq_generation <= 8'h0;
       entries_28_cp_idx <= 2'h0;
@@ -11683,7 +11683,7 @@ module WideROB(
       entries_29_is_fencei <= 1'h0;
       entries_29_state_state <= 1'h0;
       entries_29_state_state_num <= 8'h0;
-      entries_29_bp_index <= 79'h0;
+      entries_29_bp_index <= 97'h0;
       entries_29_ftq_idx <= 4'h0;
       entries_29_ftq_generation <= 8'h0;
       entries_29_cp_idx <= 2'h0;
@@ -11715,7 +11715,7 @@ module WideROB(
       entries_30_is_fencei <= 1'h0;
       entries_30_state_state <= 1'h0;
       entries_30_state_state_num <= 8'h0;
-      entries_30_bp_index <= 79'h0;
+      entries_30_bp_index <= 97'h0;
       entries_30_ftq_idx <= 4'h0;
       entries_30_ftq_generation <= 8'h0;
       entries_30_cp_idx <= 2'h0;
@@ -11747,7 +11747,7 @@ module WideROB(
       entries_31_is_fencei <= 1'h0;
       entries_31_state_state <= 1'h0;
       entries_31_state_state_num <= 8'h0;
-      entries_31_bp_index <= 79'h0;
+      entries_31_bp_index <= 97'h0;
       entries_31_ftq_idx <= 4'h0;
       entries_31_ftq_generation <= 8'h0;
       entries_31_cp_idx <= 2'h0;

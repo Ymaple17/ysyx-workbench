@@ -154,6 +154,7 @@ class WideRenameCompat extends Module {
     val free_mask = Input(UInt(3.W)); val free_vec = Input(Vec(3, UInt(physW.W)))
     val rebuild = Input(Bool()); val rebuild_rat = Input(Vec(32, UInt(physW.W)))
     val rebuild_free = Input(UInt(OoOParams.N_PHYS.W))
+    val reserve_mask = Input(UInt(OoOParams.N_PHYS.W))
     val rb_fire = Input(Bool()); val rb_do_ren = Input(Bool()); val rb_arch_rd = Input(UInt(5.W))
     val rb_old_phys = Input(UInt(physW.W)); val rb_new_phys = Input(UInt(physW.W))
   })
@@ -208,6 +209,7 @@ class WideRenameCompat extends Module {
   impl.io.restore_arch := io.restore_arch
   impl.io.rebuild := io.rebuild; impl.io.rebuild_rat := io.rebuild_rat
   impl.io.rebuild_free := io.rebuild_free
+  impl.io.reserve_mask := io.reserve_mask
   io.rat_out := impl.io.rat_out; io.arch_rat_out := impl.io.arch_rat_out
   io.free_cnt := impl.io.free_cnt; io.fl_empty := impl.io.free_cnt === 0.U
   io.cp_full := impl.io.cp_free === 0.U
@@ -303,6 +305,7 @@ class WideRSCompat extends Module {
     val issue_alu3_valid = Output(Bool()); val issue_alu3_bits = Output(new RSEntry); val issue_alu3_fire = Input(Bool())
     val issue_div_valid = Output(Bool()); val issue_div_bits = Output(new RSEntry); val issue_div_fire = Input(Bool())
     val issue_lsu_valid = Output(Bool()); val issue_lsu_bits = Output(new RSEntry); val issue_lsu_fire = Input(Bool())
+    val issue_lsu1_valid = Output(Bool()); val issue_lsu1_bits = Output(new RSEntry); val issue_lsu1_fire = Input(Bool())
     val issue_fire = Input(Bool())
     val free_rob_fire = Input(Bool()); val free_rob_idx = Input(UInt(ptrW.W))
     val free_rob1_fire = Input(Bool()); val free_rob1_idx = Input(UInt(ptrW.W))
@@ -340,6 +343,8 @@ class WideRSCompat extends Module {
   impl.io.issue_div_fire := io.issue_div_fire
   io.issue_lsu_valid := impl.io.issue_lsu_valid; io.issue_lsu_bits := impl.io.issue_lsu_bits
   impl.io.issue_lsu_fire := io.issue_lsu_fire
+  io.issue_lsu1_valid := impl.io.issue_lsu1_valid; io.issue_lsu1_bits := impl.io.issue_lsu1_bits
+  impl.io.issue_lsu1_fire := io.issue_lsu1_fire
   impl.io.free_ctrl_fire := io.free_ctrl_fire; impl.io.free_ctrl_idx := io.free_ctrl_idx
   impl.io.free_store_fire := io.free_store_fire; impl.io.free_store_idx := io.free_store_idx
   impl.io.flush := io.flush; impl.io.flush_idx := io.flush_idx; impl.io.flush_all := io.flush_all

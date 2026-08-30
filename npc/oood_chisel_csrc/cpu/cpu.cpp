@@ -1318,79 +1318,6 @@ static void execute(uint64_t n) {
               }
             }
             printf("[difftest] =========================================\n\n");
-            auto *r = top->rootp;
-            printf("[debug] cycle=%llu commit=0x%08x violation=%u resolve=%u resolve_rob=%u "
-                   "resolve_mask=0x%x unresolved=0x%08x\n",
-                   (unsigned long long)(main_time / 2), (unsigned)commit_pc,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__mem_violation_w,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__lq_store_resolve0_valid,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__lq_store_resolve0_rob,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__lq_store_resolve0_mask,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT___sq_io_unresolved_mask);
-            CData *lq_valid[] = {
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_valid,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_valid,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_valid,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_valid,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_4_valid,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_5_valid,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_6_valid,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_7_valid,
-            };
-            CData *lq_state[] = {
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_state,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_state,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_state,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_state,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_4_state,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_5_state,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_6_state,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_7_state,
-            };
-            CData *lq_rob[] = {
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_meta_rob_idx,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_meta_rob_idx,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_meta_rob_idx,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_meta_rob_idx,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_4_meta_rob_idx,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_5_meta_rob_idx,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_6_meta_rob_idx,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_7_meta_rob_idx,
-            };
-            IData *lq_pc[] = {
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_meta_pc,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_meta_pc,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_meta_pc,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_meta_pc,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_4_meta_pc,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_5_meta_pc,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_6_meta_pc,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_7_meta_pc,
-            };
-            IData *lq_bypass[] = {
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_0_bypassedStores,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_1_bypassedStores,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_2_bypassedStores,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_3_bypassedStores,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_4_bypassedStores,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_5_bypassedStores,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_6_bypassedStores,
-              &r->ysyx_25020039__DOT__core__DOT__lsu__DOT__lq__DOT__entries_7_bypassedStores,
-            };
-            for (int i = 0; i < 8; i++) {
-              if (*lq_valid[i]) {
-                printf("[debug] lq[%d] state=%u rob=%u pc=0x%08x bypass=0x%08x\n",
-                       i, (unsigned)*lq_state[i], (unsigned)*lq_rob[i],
-                       (unsigned)*lq_pc[i], (unsigned)*lq_bypass[i]);
-              }
-            }
-            printf("[debug] recent commits:");
-            const unsigned recent_count = recent_commit_pos < 32 ? recent_commit_pos : 32;
-            for (unsigned i = 0; i < recent_count; i++) {
-              const unsigned pos = (recent_commit_pos - recent_count + i) & 31u;
-              printf(" 0x%08x", recent_commit_pc[pos]);
-            }
-            printf("\n");
             npc_state.state = NPC_ABORT;
             break;
           }
@@ -1812,7 +1739,7 @@ static void execute(uint64_t n) {
              (unsigned)top->rootp->io_debug_lq_head_alloc_pc,
              (unsigned)top->rootp->io_debug_lq_head_remove_reason,
              (unsigned)top->rootp->io_debug_wb_head_reject_flags);
-      printf("[HANG] rob_head=0x%08x valid=%u done=%u mem=%u ctrl=%u rob=%u rs=%u brq=%u fq=%u brq_issue=%u bru_d=%u unresolved=0x%08x older_unresolved=0x%08x\n",
+      printf("[HANG] rob_head=0x%08x valid=%u done=%u mem=%u ctrl=%u rob=%u rs=%u brq=%u fq=%u brq_issue=%u bru_d=%u\n",
              (unsigned)top->rootp->io_debug_rob_head_pc,
              (unsigned)top->rootp->io_debug_rob_head_valid,
              (unsigned)top->rootp->io_debug_rob_head_done,
@@ -1823,9 +1750,7 @@ static void execute(uint64_t n) {
              (unsigned)top->rootp->io_debug_brq_count,
              (unsigned)top->rootp->io_debug_fq_count,
              (unsigned)top->rootp->io_debug_brq_issue_valid,
-             (unsigned)top->rootp->io_debug_bru_dispatch_valid,
-             (unsigned)top->rootp->ysyx_25020039__DOT__core__DOT___sq_io_unresolved_mask,
-             (unsigned)top->rootp->ysyx_25020039__DOT__core__DOT___sq_io_older_unresolved_mask);
+             (unsigned)top->rootp->io_debug_bru_dispatch_valid);
       CData *rob_done[] = {
         &top->rootp->ysyx_25020039__DOT__core__DOT__rob__DOT__impl__DOT__entries_0_done,
         &top->rootp->ysyx_25020039__DOT__core__DOT__rob__DOT__impl__DOT__entries_1_done,

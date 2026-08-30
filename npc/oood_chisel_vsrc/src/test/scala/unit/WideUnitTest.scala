@@ -202,6 +202,7 @@ class WideUnitTest extends AnyFlatSpec {
       dut.io.rebuild.poke(false.B)
       for (i <- 0 until 32) dut.io.rebuild_rat(i).poke(i.U)
       dut.io.rebuild_free.poke(0.U)
+      dut.io.reserve_mask.poke(0.U)
       resetDut(dut.clock, dut.reset)
 
       for (i <- 0 until width) {
@@ -231,6 +232,42 @@ class WideUnitTest extends AnyFlatSpec {
       dut.io.rat_out(6).expect(34.U)
       dut.io.rat_out(7).expect(35.U)
       dut.io.free_cnt.expect(28.U)
+    }
+  }
+
+  it should "exclude live ownership from a stale free-list bit" in {
+    simulate(new WideRename()) { dut =>
+      for (i <- 0 until width) {
+        dut.io.fire(i).poke(false.B)
+        dut.io.rs1(i).poke(0.U)
+        dut.io.rs2(i).poke(0.U)
+        dut.io.rd(i).poke(0.U)
+        dut.io.reg_write(i).poke(false.B)
+        dut.io.is_branch(i).poke(false.B)
+        dut.io.rob_idx(i).poke(i.U)
+        dut.io.commit_fire(i).poke(false.B)
+        dut.io.commit_do_rename(i).poke(false.B)
+        dut.io.commit_old_phys(i).poke(0.U)
+        dut.io.commit_new_phys(i).poke(0.U)
+        dut.io.commit_arch_rd(i).poke(0.U)
+        dut.io.commit_cp_valid(i).poke(false.B)
+        dut.io.commit_cp_idx(i).poke(0.U)
+      }
+      dut.io.rob_head.poke(0.U)
+      dut.io.restore_cp.poke(false.B)
+      dut.io.restore_cp_idx.poke(0.U)
+      dut.io.restore_arch.poke(false.B)
+      dut.io.rebuild.poke(false.B)
+      for (i <- 0 until 32) dut.io.rebuild_rat(i).poke(i.U)
+      dut.io.rebuild_free.poke(0.U)
+      dut.io.reserve_mask.poke((BigInt(1) << 32).U)
+      resetDut(dut.clock, dut.reset)
+
+      dut.io.fire(0).poke(true.B)
+      dut.io.reg_write(0).poke(true.B)
+      dut.io.rd(0).poke(5.U)
+      dut.io.pdest(0).expect(33.U)
+      dut.io.free_cnt.expect(31.U)
     }
   }
 
@@ -312,6 +349,7 @@ class WideUnitTest extends AnyFlatSpec {
       dut.io.rob_st_pending.poke(0.U)
       dut.io.issue_div_fire.poke(false.B)
       dut.io.issue_lsu_fire.poke(false.B)
+      dut.io.issue_lsu1_fire.poke(false.B)
       dut.io.free_ctrl_fire.poke(false.B)
       dut.io.free_ctrl_idx.poke(0.U)
       dut.io.free_store_fire.poke(false.B)
@@ -341,6 +379,94 @@ class WideUnitTest extends AnyFlatSpec {
       }
       dut.clock.step()
       dut.io.count.expect(0.U)
+    }
+  }
+
+  it should "issue a secondary load independently beside a store" in {
+    simulate(new WideRS()) { dut =>
+      for (i <- 0 until width) {
+        dut.io.enq_fire(i).poke(false.B)
+        zeroRsEntry(dut.io.enq_bits(i))
+        dut.io.issue_alu_fire(i).poke(false.B)
+        dut.io.free_data_fire(i).poke(false.B)
+        dut.io.free_data_idx(i).poke(0.U)
+        dut.io.cdb_valid(i).poke(false.B)
+        dut.io.cdb_pdest(i).poke(0.U)
+        dut.io.cdb_val(i).poke(0.U)
+      }
+      dut.io.rob_head.poke(0.U)
+      dut.io.rob_st_pending.poke(0.U)
+      dut.io.issue_div_fire.poke(false.B)
+      dut.io.issue_lsu_fire.poke(false.B)
+      dut.io.issue_lsu1_fire.poke(false.B)
+      dut.io.free_ctrl_fire.poke(false.B)
+      dut.io.free_ctrl_idx.poke(0.U)
+      dut.io.free_store_fire.poke(false.B)
+      dut.io.free_store_idx.poke(0.U)
+      dut.io.flush.poke(false.B)
+      dut.io.flush_idx.poke(0.U)
+      dut.io.flush_all.poke(false.B)
+      resetDut(dut.clock, dut.reset)
+
+      for (i <- 0 until 2) {
+        dut.io.enq_fire(i).poke(true.B)
+        dut.io.enq_bits(i).rob_idx.poke((i + 1).U)
+        dut.io.enq_bits(i).pc.poke((0x80000100L + i * 4).U)
+        dut.io.enq_bits(i).lsu_mem_valid.poke(true.B)
+        dut.io.enq_bits(i).lsu_mem_write.poke(false.B)
+      }
+      dut.io.issue_lsu_valid.expect(true.B)
+      dut.io.issue_lsu_bits.rob_idx.expect(1.U)
+      dut.io.issue_lsu1_valid.expect(true.B)
+      dut.io.issue_lsu1_bits.rob_idx.expect(2.U)
+      dut.io.issue_lsu_fire.poke(true.B)
+      dut.io.issue_lsu1_fire.poke(true.B)
+      dut.clock.step()
+
+      for (i <- 0 until width) {
+        dut.io.enq_fire(i).poke(false.B)
+      }
+      dut.io.issue_lsu_fire.poke(false.B)
+      dut.io.issue_lsu1_fire.poke(false.B)
+      dut.io.flush.poke(true.B)
+      dut.io.flush_all.poke(true.B)
+      dut.clock.step()
+      dut.io.flush.poke(false.B)
+      dut.io.flush_all.poke(false.B)
+
+      dut.io.enq_fire(0).poke(true.B)
+      dut.io.enq_bits(0).rob_idx.poke(3.U)
+      dut.io.enq_bits(0).lsu_mem_valid.poke(true.B)
+      dut.io.enq_bits(0).lsu_mem_write.poke(true.B)
+      dut.io.enq_fire(1).poke(true.B)
+      dut.io.enq_bits(1).rob_idx.poke(4.U)
+      dut.io.enq_bits(1).lsu_mem_valid.poke(true.B)
+      dut.io.enq_bits(1).lsu_mem_write.poke(false.B)
+      // A same-cycle younger load cannot snapshot the fresh older store yet.
+      dut.io.issue_lsu_valid.expect(true.B)
+      dut.io.issue_lsu_bits.rob_idx.expect(3.U)
+      dut.io.issue_lsu1_valid.expect(false.B)
+      dut.clock.step()
+
+      dut.io.enq_fire(0).poke(false.B)
+      dut.io.enq_fire(1).poke(false.B)
+      // Once resident, the secondary load may issue independently while the
+      // older store remains on the primary port for dependency tracking.
+      dut.io.issue_lsu_valid.expect(true.B)
+      dut.io.issue_lsu_bits.rob_idx.expect(3.U)
+      dut.io.issue_lsu1_valid.expect(true.B)
+      dut.io.issue_lsu1_bits.rob_idx.expect(4.U)
+      dut.io.issue_lsu1_bits.lsu_mem_write.expect(false.B)
+      dut.io.issue_lsu1_fire.poke(true.B)
+      dut.clock.step()
+
+      dut.io.enq_fire(0).poke(false.B)
+      dut.io.enq_fire(1).poke(false.B)
+      dut.io.issue_lsu1_fire.poke(false.B)
+      dut.io.issue_lsu_valid.expect(true.B)
+      dut.io.issue_lsu_bits.rob_idx.expect(3.U)
+      dut.io.issue_lsu_bits.lsu_mem_write.expect(true.B)
+      dut.io.issue_lsu1_valid.expect(false.B)
     }
   }
 }

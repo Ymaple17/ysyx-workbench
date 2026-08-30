@@ -35,7 +35,12 @@ module WideRS_Verification_Assert(
   input       io_issue_alu_fire_2,
   input [4:0] io_issue_alu_bits_3_rob_idx,
   input       io_issue_alu_fire_3,
-              clock
+              io_issue_lsu1_bits_lsu_mem_write,
+              io_issue_lsu1_fire,
+              io_issue_lsu_fire,
+  input [3:0] io_issue_lsu_idx,
+              io_issue_lsu1_idx,
+  input       clock
 );
 
   `ifndef SYNTHESIS
@@ -103,6 +108,20 @@ module WideRS_Verification_Assert(
           & io_issue_alu_bits_2_rob_idx == io_issue_alu_bits_3_rob_idx) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: wide RS must not issue one instruction to two ALUs\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & ~(~io_issue_lsu1_fire | ~io_issue_lsu1_bits_lsu_mem_write)) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: the secondary LSU issue path is load-only\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset
+          & ~(~(io_issue_lsu_fire & io_issue_lsu1_fire)
+              | io_issue_lsu_idx != io_issue_lsu1_idx)) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: the two LSU ports must not issue the same RS entry\n");
         if (`STOP_COND_)
           $fatal;
       end

@@ -33,6 +33,10 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     val issue_lsu_bits = Output(new RSEntry)
     val issue_lsu_idx = Output(UInt(idxW.W))
     val issue_lsu_fire = Input(Bool())
+    val issue_lsu1_valid = Output(Bool())
+    val issue_lsu1_bits = Output(new RSEntry)
+    val issue_lsu1_idx = Output(UInt(idxW.W))
+    val issue_lsu1_fire = Input(Bool())
 
     val free_data_fire = Input(Vec(width, Bool()))
     val free_data_idx = Input(Vec(width, UInt(OoOParams.ROB_PTR_W.W)))
@@ -151,6 +155,8 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
 
   val divSelect = oldest(VecInit((0 until n).map(i => canIssue(i) && residentMulDiv(i))))
   val lsuSelect = oldest(VecInit((0 until n).map(i => canIssue(i) && residentMem(i))))
+  val lsuSelect1 = oldest(VecInit((0 until n).map(i =>
+    canIssue(i) && residentMem(i) && !entries(i).lsu_mem_write && !lsuSelect(i))))
 
   val fresh = Wire(Vec(width, new RSEntry))
   val freshReady = Wire(Vec(width, Bool()))
@@ -184,10 +190,17 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
 
   val freshDivCandidates = VecInit((0 until width).map(i => freshReady(i) && freshMulDiv(i)))
   val freshLsuCandidates = VecInit((0 until width).map(i => freshReady(i) && freshMem(i)))
+  val freshLsu1Candidates = VecInit((0 until width).map(i =>
+    freshReady(i) && freshMem(i) && !fresh(i).lsu_mem_write))
   val freshDivGrant = PriorityEncoderOH(freshDivCandidates.asUInt)
   val freshLsuGrant = PriorityEncoderOH(freshLsuCandidates.asUInt)
+  val freshLsuGrant1 = PriorityEncoderOH(freshLsu1Candidates.asUInt & ~freshLsuGrant)
   val residentDiv = divSelect.asUInt.orR
   val residentLsu = lsuSelect.asUInt.orR
+  val residentLsu1 = lsuSelect1.asUInt.orR
+  val lsuFreshGrant = Mux(residentLsu, 0.U(width.W), freshLsuGrant)
+  val lsu1FreshGrant = Mux(residentLsu1, 0.U(width.W),
+    Mux(residentLsu, PriorityEncoderOH(freshLsu1Candidates.asUInt), freshLsuGrant1))
 
   for (port <- 0 until width) {
     val resident = residentSelect(port).asUInt.orR
@@ -204,11 +217,20 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     Mux1H(freshDivGrant, fresh))
   io.issue_div_idx := Mux(residentDiv, PriorityEncoder(divSelect.asUInt),
     Mux1H(freshDivGrant, io.enq_idx))
-  io.issue_lsu_valid := (residentLsu || freshLsuCandidates.asUInt.orR) && !io.flush
-  io.issue_lsu_bits := Mux(residentLsu, Mux1H(lsuSelect, issueEntry),
-    Mux1H(freshLsuGrant, fresh))
+  val lsuCandidate = residentLsu || lsuFreshGrant.orR
+  val lsu1Candidate = residentLsu1 || lsu1FreshGrant.orR
+  val lsuBits = Mux(residentLsu, Mux1H(lsuSelect, issueEntry),
+    Mux1H(lsuFreshGrant, fresh))
+  val lsu1Bits = Mux(residentLsu1, Mux1H(lsuSelect1, issueEntry),
+    Mux1H(lsu1FreshGrant, fresh))
+  io.issue_lsu_valid := lsuCandidate && !io.flush
+  io.issue_lsu_bits := lsuBits
   io.issue_lsu_idx := Mux(residentLsu, PriorityEncoder(lsuSelect.asUInt),
-    Mux1H(freshLsuGrant, io.enq_idx))
+    Mux1H(lsuFreshGrant, io.enq_idx))
+  io.issue_lsu1_valid := lsu1Candidate && !io.flush
+  io.issue_lsu1_bits := lsu1Bits
+  io.issue_lsu1_idx := Mux(residentLsu1, PriorityEncoder(lsuSelect1.asUInt),
+    Mux1H(lsu1FreshGrant, io.enq_idx))
 
   val freshIssued = Wire(Vec(width, Bool()))
   for (lane <- 0 until width) {
@@ -216,7 +238,8 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
       io.issue_alu_fire(port) && freshAluGrant(port)(lane)).foldLeft(false.B)(_ || _)
     freshIssued(lane) := aluIssued ||
       (io.issue_div_fire && !residentDiv && freshDivGrant(lane)) ||
-      (io.issue_lsu_fire && !residentLsu && freshLsuGrant(lane))
+      (io.issue_lsu_fire && lsuFreshGrant(lane)) ||
+      (io.issue_lsu1_fire && lsu1FreshGrant(lane))
   }
   io.fresh_issue_count := PopCount(freshIssued)
 
@@ -260,6 +283,9 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     when(io.issue_lsu_fire && residentLsu) {
       entries(PriorityEncoder(lsuSelect.asUInt)).issued := true.B
     }
+    when(io.issue_lsu1_fire && residentLsu1) {
+      entries(PriorityEncoder(lsuSelect1.asUInt)).issued := true.B
+    }
     for (lane <- 0 until width) {
       when(allocAccept(lane)) {
         val entry = WireDefault(fresh(lane))
@@ -280,5 +306,10 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
         io.issue_alu_bits(a).rob_idx === io.issue_alu_bits(b).rob_idx),
         "wide RS must not issue one instruction to two ALUs")
     }
+    assert(!io.issue_lsu1_fire || !io.issue_lsu1_bits.lsu_mem_write,
+      "the secondary LSU issue path is load-only")
+    assert(!(io.issue_lsu_fire && io.issue_lsu1_fire) ||
+      (io.issue_lsu_idx =/= io.issue_lsu1_idx),
+      "the two LSU ports must not issue the same RS entry")
   }
 }

@@ -56,19 +56,20 @@ module SRAM(
   wire        wFinal = wbeat_reg == awlen_reg;
   assign io_sram_wready_0 = w_state == 2'h2;
   reg  [1:0]  casez_tmp;
+  wire [1:0]  _w_next_state_T_5 = {1'h0, io_sram_awvalid};
   always_comb begin
     casez (w_state)
       2'b00:
-        casez_tmp = {1'h0, io_sram_awvalid};
+        casez_tmp = _w_next_state_T_5;
       2'b01:
         casez_tmp = (|w_delay_cnt) ? 2'h1 : 2'h2;
       2'b10:
         casez_tmp = {1'h1, wFire & wFinal};
       default:
-        casez_tmp = io_sram_bready ? 2'h0 : 2'h3;
+        casez_tmp = io_sram_bready ? _w_next_state_T_5 : 2'h3;
     endcase
   end // always_comb
-  wire        io_sram_awready_0 = w_state == 2'h0;
+  wire        io_sram_awready_0 = w_state == 2'h0 | (&w_state) & io_sram_bready;
   wire [31:0] writeBeatAddr =
     awburst_reg == 2'h1
       ? awaddr_reg + {17'h0, {7'h0, wbeat_reg} << awsize_reg}

@@ -3,8 +3,8 @@
 ## 学习导航
 - **理论目标**：理解四提交仍必须逐条保持程序序，副作用和异常边界不能用并行 valid 掩盖顺序关系。
 - **最小实现**：ROB 最多提交四条普通指令；按 lane0→3 依次更新 arch RAT、FreeList、BPU、SQ/StoreBuffer 和 C++ difftest，特殊指令建立独占边界。
-- **当前参考核**：四路 ROB commit 和四 lane C++/性能导出接口已接入；当前提交计数为 `slot0/1/2/3=147624/95866/75289/50032`。特殊副作用仍按程序序建立边界，四路完整 difftest 和异常矩阵尚未重新收官。
-- **后续扩展**：完成四 lane 逐条 difftest、恢复和副作用排序后，再做多 store commit、双分支训练和更多特殊副作用；不要用放宽顺序换 IPC。
+- **当前参考核**：四路 ROB commit 和四 lane C++/性能导出接口已接入；冻结点提交计数为 `slot0/1/2/3=137960/100391/76172/54294`。特殊副作用按程序序建立边界，MicroBench 十项通过四 lane 严格 difftest。
+- **后续扩展**：Stage15 若扩六提交，仍按连续前缀逐条 difftest，并保留最老异常/redirect 与 store/MMIO/fence 排序；不要用放宽架构顺序换 IPC。
 - **验收方式**：四普通提交、同 rd WAW、lane1/2/3 exception、store/control 排序、interrupt 间隙、flush+commit 同拍和四路 difftest 定向测试。
 
 ---
@@ -41,4 +41,4 @@ for (int lane = 0; lane < COMMIT_WIDTH; ++lane) {
 - [ ] 最老 redirect 唯一生效
 - [ ] C++ difftest 逐 lane 比较
 
-下一章：[15g_阶段14g_IPC2.5验收与回归.md](15g_阶段14g_IPC2.5验收与回归.md)。
+下一章：[15g_阶段14g_IPC2.2验收与回归.md](15g_阶段14g_IPC2.2验收与回归.md)。

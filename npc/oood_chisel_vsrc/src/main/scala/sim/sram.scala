@@ -201,11 +201,13 @@ class SRAM extends Module{
     s_W_IDLE -> Mux(io.sram.awvalid, s_W_WAIT, s_W_IDLE),
     s_W_WAIT -> Mux(w_delay_cnt === random_delay, s_W_DATA, s_W_WAIT),
     s_W_DATA -> Mux(wFire && wFinal, s_W_RESP, s_W_DATA),
-    s_W_RESP -> Mux(io.sram.bready, s_W_IDLE, s_W_RESP)
+    s_W_RESP -> Mux(io.sram.bready,
+      Mux(io.sram.awvalid, s_W_WAIT, s_W_IDLE), s_W_RESP)
   ))
   w_state := w_next_state
 
-  io.sram.awready := (w_state === s_W_IDLE)
+  io.sram.awready := (w_state === s_W_IDLE) ||
+    (w_state === s_W_RESP && io.sram.bready)
   io.sram.wready := (w_state === s_W_DATA)
   io.sram.bvalid := (w_state === s_W_RESP)
   io.sram.bid := awid_reg

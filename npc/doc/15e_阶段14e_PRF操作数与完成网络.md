@@ -3,8 +3,8 @@
 ## 学习导航
 - **理论目标**：理解四路 rename 理论上带来八个源读取需求，以及多 FU 完成怎样扩展而不构造不可综合的大型多端口 PRF/CDB 交叉网。
 - **最小实现**：采用 operand capture/PRF 复制或 banked read，扩展到足够的 completion lanes，并保持 accepted identity 的统一门控。
-- **当前参考核**：四路 PRF/Busy/RS 完成接口已接入，`CDB_NUM=4`，当前统计 `CDB Conflicts=1301`；control/store 仍走私有 completion，且完成带宽不是 IPC 2.5 的唯一限制。
-- **后续扩展**：先按 producer/consumer 身份消除冲突和 stale wakeup，再考虑 clustered PRF、physical register banking、result bypass mesh、wakeup-select 分级流水。
+- **当前参考核**：四路 PRF/Busy/RS 完成接口已接入，`CDB_NUM=4`，Stage14 冻结点 `CDB Conflicts=1821`；control/store 仍有私有完成路径，完成带宽不是剩余 IPC 损失的唯一来源。
+- **后续扩展**：Stage15c 在六宽时采用 clustered PRF、banked completion 和有界跨 cluster forwarding；producer/consumer 的 ROB/generation 身份继续保留。
 - **验收方式**：八源最坏情况、bank conflict、同拍四 FU 完成、completion backpressure、flush/reuse、依赖链同拍 wakeup 定向测试和利用率计数。
 
 ---

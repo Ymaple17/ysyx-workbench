@@ -21,6 +21,25 @@ module LSU(
   input  [4:0]  io_in_bits_rob_idx,
   input  [5:0]  io_in_bits_pdest,
   input         io_in_bits_br_taken,
+  output        io_in1_ready,
+  input         io_in1_valid,
+  input  [2:0]  io_in1_bits_signals_lsu_mem_rd,
+  input         io_in1_bits_signals_lsu_mem_write,
+                io_in1_bits_signals_lsu_mem_valid,
+                io_in1_bits_signals_wbu_reg_write,
+  input  [2:0]  io_in1_bits_signals_wbu_reg_write_sel,
+  input  [31:0] io_in1_bits_alu_result,
+                io_in1_bits_pc,
+                io_in1_bits_next_pc,
+                io_in1_bits_imm_ext,
+                io_in1_bits_rd2,
+  input  [4:0]  io_in1_bits_waddr,
+  input  [31:0] io_in1_bits_csr_rd1,
+  input         io_in1_bits_state_state,
+  input  [7:0]  io_in1_bits_state_state_num,
+  input  [4:0]  io_in1_bits_rob_idx,
+  input  [5:0]  io_in1_bits_pdest,
+  input         io_in1_bits_br_taken,
                 io_out_ready,
   output        io_out_valid,
                 io_out_bits_signals_wbu_reg_write,
@@ -38,6 +57,32 @@ module LSU(
   output [5:0]  io_out_bits_pdest,
   output        io_out_bits_br_taken,
   output [31:0] io_out_bits_store_data,
+  input         io_out1_ready,
+  output        io_out1_valid,
+                io_out1_bits_signals_wbu_reg_write,
+  output [2:0]  io_out1_bits_signals_wbu_reg_write_sel,
+  output [31:0] io_out1_bits_alu_result,
+                io_out1_bits_pc,
+                io_out1_bits_next_pc,
+                io_out1_bits_imm_ext,
+                io_out1_bits_mem_read,
+  output [4:0]  io_out1_bits_waddr,
+  output [31:0] io_out1_bits_csr_rd1,
+  output        io_out1_bits_state_state,
+  output [7:0]  io_out1_bits_state_state_num,
+  output [4:0]  io_out1_bits_rob_idx,
+  output [5:0]  io_out1_bits_pdest,
+  output        io_out1_bits_br_taken,
+  output [31:0] io_out1_bits_store_data,
+  output        io_storeComplete_valid,
+  output [31:0] io_storeComplete_bits_alu_result,
+                io_storeComplete_bits_pc,
+  output [4:0]  io_storeComplete_bits_waddr,
+  output        io_storeComplete_bits_state_state,
+  output [7:0]  io_storeComplete_bits_state_state_num,
+  output [4:0]  io_storeComplete_bits_rob_idx,
+  output [5:0]  io_storeComplete_bits_pdest,
+  output [31:0] io_storeComplete_bits_store_data,
                 io_dmem_araddr,
   output        io_dmem_arvalid,
   output [3:0]  io_dmem_arid,
@@ -47,16 +92,40 @@ module LSU(
   input  [1:0]  io_dmem_rresp,
   input         io_dmem_rvalid,
   input  [3:0]  io_dmem_rid,
+  output [31:0] io_dmem1_araddr,
+  output        io_dmem1_arvalid,
+  output [3:0]  io_dmem1_arid,
+  output [2:0]  io_dmem1_arsize,
+  input         io_dmem1_arready,
+  input  [31:0] io_dmem1_rdata,
+  input  [1:0]  io_dmem1_rresp,
+  input         io_dmem1_rvalid,
+  input  [3:0]  io_dmem1_rid,
   input         io_st_fwd_valid,
   input  [31:0] io_st_fwd_data,
   input         io_st_fwd_wait,
-                io_st_fwd_unknown_only,
-  input  [31:0] io_st_fwd_unknown_mask,
+                io_st_partial_valid,
+  input  [31:0] io_st_partial_data,
+  input  [3:0]  io_st_partial_mask,
+  input         io_st_unknown_valid,
+  input  [31:0] io_st_unknown_mask,
+  input         io_st_fwd1_valid,
+  input  [31:0] io_st_fwd1_data,
+  input         io_st_fwd1_wait,
+                io_st_partial1_valid,
+  input  [31:0] io_st_partial1_data,
+  input  [3:0]  io_st_partial1_mask,
+  input         io_st_unknown1_valid,
+  input  [31:0] io_st_unknown1_mask,
                 io_st_unresolved_mask,
   output        io_ld_query_valid,
   output [4:0]  io_ld_query_rob,
   output [31:0] io_ld_query_addr,
   output [2:0]  io_ld_query_mem_rd,
+  output        io_ld_query1_valid,
+  output [4:0]  io_ld_query1_rob,
+  output [31:0] io_ld_query1_addr,
+  output [2:0]  io_ld_query1_mem_rd,
   input  [4:0]  io_rob_head,
   input         io_commit0_valid,
   input  [4:0]  io_commit0_rob,
@@ -74,6 +143,7 @@ module LSU(
   input  [4:0]  io_store_resolve0_rob,
   input  [31:0] io_store_resolve0_addr,
   input  [3:0]  io_store_resolve0_mask,
+  input  [4:0]  io_store_resolve_head,
   output        io_mem_violation_valid,
   output [4:0]  io_mem_violation_rob,
   output [31:0] io_mem_violation_pc,
@@ -86,120 +156,202 @@ module LSU(
 );
 
   wire        _lq_io_alloc_ready;
+  wire        _lq_io_alloc1_ready;
   wire        _lq_io_wb_valid;
-  wire        _lq_io_wb_bits_signals_wbu_reg_write;
-  wire [2:0]  _lq_io_wb_bits_signals_wbu_reg_write_sel;
-  wire [31:0] _lq_io_wb_bits_alu_result;
-  wire [31:0] _lq_io_wb_bits_pc;
-  wire [31:0] _lq_io_wb_bits_next_pc;
-  wire [31:0] _lq_io_wb_bits_imm_ext;
-  wire [31:0] _lq_io_wb_bits_mem_read;
-  wire [4:0]  _lq_io_wb_bits_waddr;
-  wire [31:0] _lq_io_wb_bits_csr_rd1;
-  wire        _lq_io_wb_bits_state_state;
-  wire [7:0]  _lq_io_wb_bits_state_state_num;
-  wire [4:0]  _lq_io_wb_bits_rob_idx;
-  wire [5:0]  _lq_io_wb_bits_pdest;
-  wire        _lq_io_wb_bits_br_taken;
-  wire [31:0] _lq_io_wb_bits_store_data;
   wire        _lq_io_wb_bits_fwd_valid;
   wire        _lq_io_dmem_arvalid;
+  wire        _lq_io_dmem1_arvalid;
   wire        _lq_io_queryValid;
   wire [3:0]  _lq_io_outstanding;
+  wire [1:0]  _lq_io_storeReplayCount;
   wire        is_load =
     ~io_in_bits_signals_lsu_mem_write & io_in_bits_signals_lsu_mem_valid;
+  wire        is_load1 =
+    ~io_in1_bits_signals_lsu_mem_write & io_in1_bits_signals_lsu_mem_valid;
+  reg         storeCompleteValid;
+  reg  [31:0] storeCompleteBits_alu_result;
+  reg  [31:0] storeCompleteBits_pc;
+  reg  [4:0]  storeCompleteBits_waddr;
+  reg         storeCompleteBits_state_state;
+  reg  [7:0]  storeCompleteBits_state_state_num;
+  reg  [4:0]  storeCompleteBits_rob_idx;
+  reg  [5:0]  storeCompleteBits_pdest;
+  reg  [31:0] storeCompleteBits_store_data;
+  wire [1:0]  readCount =
+    {1'h0, _lq_io_dmem_arvalid & io_dmem_arready}
+    + {1'h0, _lq_io_dmem1_arvalid & io_dmem1_arready};
+  wire        directValid = io_in_valid & ~is_load;
+  always @(posedge clock) begin
+    if (reset)
+      storeCompleteValid <= 1'h0;
+    else
+      storeCompleteValid <= directValid;
+    if (directValid) begin
+      storeCompleteBits_alu_result <= io_in_bits_alu_result;
+      storeCompleteBits_pc <= io_in_bits_pc;
+      storeCompleteBits_waddr <= io_in_bits_waddr;
+      storeCompleteBits_state_state <= io_in_bits_state_state;
+      storeCompleteBits_state_state_num <= io_in_bits_state_state_num;
+      storeCompleteBits_rob_idx <= io_in_bits_rob_idx;
+      storeCompleteBits_pdest <= io_in_bits_pdest;
+      storeCompleteBits_store_data <= io_in_bits_rd2;
+    end
+  end // always @(posedge)
   LoadQueue lq (
-    .clock                                        (clock),
-    .reset                                        (reset),
-    .io_alloc_ready                               (_lq_io_alloc_ready),
-    .io_alloc_valid                               (io_in_valid & is_load),
-    .io_alloc_bits_meta_signals_wbu_reg_write     (io_in_bits_signals_wbu_reg_write),
-    .io_alloc_bits_meta_signals_wbu_reg_write_sel (io_in_bits_signals_wbu_reg_write_sel),
-    .io_alloc_bits_meta_alu_result                (io_in_bits_alu_result),
-    .io_alloc_bits_meta_pc                        (io_in_bits_pc),
-    .io_alloc_bits_meta_next_pc                   (io_in_bits_next_pc),
-    .io_alloc_bits_meta_imm_ext                   (io_in_bits_imm_ext),
-    .io_alloc_bits_meta_waddr                     (io_in_bits_waddr),
-    .io_alloc_bits_meta_csr_rd1                   (io_in_bits_csr_rd1),
-    .io_alloc_bits_meta_state_state               (io_in_bits_state_state),
-    .io_alloc_bits_meta_state_state_num           (io_in_bits_state_state_num),
-    .io_alloc_bits_meta_rob_idx                   (io_in_bits_rob_idx),
-    .io_alloc_bits_meta_pdest                     (io_in_bits_pdest),
-    .io_alloc_bits_meta_br_taken                  (io_in_bits_br_taken),
-    .io_alloc_bits_meta_store_data                (io_in_bits_rd2),
-    .io_alloc_bits_addr                           (io_in_bits_alu_result),
-    .io_alloc_bits_memRd                          (io_in_bits_signals_lsu_mem_rd),
-    .io_wb_ready                                  (io_out_ready),
-    .io_wb_valid                                  (_lq_io_wb_valid),
-    .io_wb_bits_signals_wbu_reg_write             (_lq_io_wb_bits_signals_wbu_reg_write),
+    .clock                                         (clock),
+    .reset                                         (reset),
+    .io_alloc_ready                                (_lq_io_alloc_ready),
+    .io_alloc_valid                                (io_in_valid & is_load),
+    .io_alloc_bits_meta_signals_wbu_reg_write      (io_in_bits_signals_wbu_reg_write),
+    .io_alloc_bits_meta_signals_wbu_reg_write_sel  (io_in_bits_signals_wbu_reg_write_sel),
+    .io_alloc_bits_meta_alu_result                 (io_in_bits_alu_result),
+    .io_alloc_bits_meta_pc                         (io_in_bits_pc),
+    .io_alloc_bits_meta_next_pc                    (io_in_bits_next_pc),
+    .io_alloc_bits_meta_imm_ext                    (io_in_bits_imm_ext),
+    .io_alloc_bits_meta_waddr                      (io_in_bits_waddr),
+    .io_alloc_bits_meta_csr_rd1                    (io_in_bits_csr_rd1),
+    .io_alloc_bits_meta_state_state                (io_in_bits_state_state),
+    .io_alloc_bits_meta_state_state_num            (io_in_bits_state_state_num),
+    .io_alloc_bits_meta_rob_idx                    (io_in_bits_rob_idx),
+    .io_alloc_bits_meta_pdest                      (io_in_bits_pdest),
+    .io_alloc_bits_meta_br_taken                   (io_in_bits_br_taken),
+    .io_alloc_bits_meta_store_data                 (io_in_bits_rd2),
+    .io_alloc_bits_addr                            (io_in_bits_alu_result),
+    .io_alloc_bits_memRd                           (io_in_bits_signals_lsu_mem_rd),
+    .io_alloc1_ready                               (_lq_io_alloc1_ready),
+    .io_alloc1_valid                               (io_in1_valid & is_load1),
+    .io_alloc1_bits_meta_signals_wbu_reg_write     (io_in1_bits_signals_wbu_reg_write),
+    .io_alloc1_bits_meta_signals_wbu_reg_write_sel
+      (io_in1_bits_signals_wbu_reg_write_sel),
+    .io_alloc1_bits_meta_alu_result                (io_in1_bits_alu_result),
+    .io_alloc1_bits_meta_pc                        (io_in1_bits_pc),
+    .io_alloc1_bits_meta_next_pc                   (io_in1_bits_next_pc),
+    .io_alloc1_bits_meta_imm_ext                   (io_in1_bits_imm_ext),
+    .io_alloc1_bits_meta_waddr                     (io_in1_bits_waddr),
+    .io_alloc1_bits_meta_csr_rd1                   (io_in1_bits_csr_rd1),
+    .io_alloc1_bits_meta_state_state               (io_in1_bits_state_state),
+    .io_alloc1_bits_meta_state_state_num           (io_in1_bits_state_state_num),
+    .io_alloc1_bits_meta_rob_idx                   (io_in1_bits_rob_idx),
+    .io_alloc1_bits_meta_pdest                     (io_in1_bits_pdest),
+    .io_alloc1_bits_meta_br_taken                  (io_in1_bits_br_taken),
+    .io_alloc1_bits_meta_store_data                (io_in1_bits_rd2),
+    .io_alloc1_bits_addr                           (io_in1_bits_alu_result),
+    .io_alloc1_bits_memRd                          (io_in1_bits_signals_lsu_mem_rd),
+    .io_wb_ready                                   (io_out_ready),
+    .io_wb_valid                                   (_lq_io_wb_valid),
+    .io_wb_bits_signals_wbu_reg_write              (io_out_bits_signals_wbu_reg_write),
     .io_wb_bits_signals_wbu_reg_write_sel
-      (_lq_io_wb_bits_signals_wbu_reg_write_sel),
-    .io_wb_bits_alu_result                        (_lq_io_wb_bits_alu_result),
-    .io_wb_bits_pc                                (_lq_io_wb_bits_pc),
-    .io_wb_bits_next_pc                           (_lq_io_wb_bits_next_pc),
-    .io_wb_bits_imm_ext                           (_lq_io_wb_bits_imm_ext),
-    .io_wb_bits_mem_read                          (_lq_io_wb_bits_mem_read),
-    .io_wb_bits_waddr                             (_lq_io_wb_bits_waddr),
-    .io_wb_bits_csr_rd1                           (_lq_io_wb_bits_csr_rd1),
-    .io_wb_bits_state_state                       (_lq_io_wb_bits_state_state),
-    .io_wb_bits_state_state_num                   (_lq_io_wb_bits_state_state_num),
-    .io_wb_bits_rob_idx                           (_lq_io_wb_bits_rob_idx),
-    .io_wb_bits_pdest                             (_lq_io_wb_bits_pdest),
-    .io_wb_bits_br_taken                          (_lq_io_wb_bits_br_taken),
-    .io_wb_bits_store_data                        (_lq_io_wb_bits_store_data),
-    .io_wb_bits_fwd_valid                         (_lq_io_wb_bits_fwd_valid),
-    .io_dmem_araddr                               (io_dmem_araddr),
-    .io_dmem_arvalid                              (_lq_io_dmem_arvalid),
-    .io_dmem_arid                                 (io_dmem_arid),
-    .io_dmem_arsize                               (io_dmem_arsize),
-    .io_dmem_arready                              (io_dmem_arready),
-    .io_dmem_rdata                                (io_dmem_rdata),
-    .io_dmem_rresp                                (io_dmem_rresp),
-    .io_dmem_rvalid                               (io_dmem_rvalid),
-    .io_dmem_rid                                  (io_dmem_rid),
-    .io_robHead                                   (io_rob_head),
-    .io_commit0Valid                              (io_commit0_valid),
-    .io_commit0Rob                                (io_commit0_rob),
-    .io_commit1Valid                              (io_commit1_valid),
-    .io_commit1Rob                                (io_commit1_rob),
-    .io_commit2Valid                              (io_commit2_valid),
-    .io_commit2Rob                                (io_commit2_rob),
-    .io_commit3Valid                              (io_commit3_valid),
-    .io_commit3Rob                                (io_commit3_rob),
-    .io_flush                                     (io_flush),
-    .io_flushIdx                                  (io_flush_idx),
-    .io_flushAll                                  (io_flush_all),
-    .io_queryValid                                (_lq_io_queryValid),
-    .io_queryRob                                  (io_ld_query_rob),
-    .io_queryAddr                                 (io_ld_query_addr),
-    .io_queryMemRd                                (io_ld_query_mem_rd),
-    .io_fwdWait                                   (io_st_fwd_wait),
-    .io_fwdValid                                  (io_st_fwd_valid),
-    .io_fwdData                                   (io_st_fwd_data),
-    .io_fwdUnknownOnly                            (io_st_fwd_unknown_only),
-    .io_fwdUnknownMask                            (io_st_fwd_unknown_mask),
-    .io_unresolvedStores                          (io_st_unresolved_mask),
-    .io_mmioReady                                 (io_mmio_ready),
-    .io_storeResolve0Valid                        (io_store_resolve0_valid),
-    .io_storeResolve0Rob                          (io_store_resolve0_rob),
-    .io_storeResolve0Addr                         (io_store_resolve0_addr),
-    .io_storeResolve0Mask                         (io_store_resolve0_mask),
-    .io_violationValid                            (io_mem_violation_valid),
-    .io_violationRob                              (io_mem_violation_rob),
-    .io_violationPc                               (io_mem_violation_pc),
-    .io_commitWait0                               (io_load_commit_wait0),
-    .io_commitWait1                               (io_load_commit_wait1),
-    .io_commitWait2                               (io_load_commit_wait2),
-    .io_commitWait3                               (io_load_commit_wait3),
-    .io_outstanding                               (_lq_io_outstanding),
-    .io_debugHeadAllocPc                          (io_debug_lq_head_alloc_pc),
-    .io_debugHeadRemoveReason                     (io_debug_lq_head_remove_reason)
+      (io_out_bits_signals_wbu_reg_write_sel),
+    .io_wb_bits_alu_result                         (io_out_bits_alu_result),
+    .io_wb_bits_pc                                 (io_out_bits_pc),
+    .io_wb_bits_next_pc                            (io_out_bits_next_pc),
+    .io_wb_bits_imm_ext                            (io_out_bits_imm_ext),
+    .io_wb_bits_mem_read                           (io_out_bits_mem_read),
+    .io_wb_bits_waddr                              (io_out_bits_waddr),
+    .io_wb_bits_csr_rd1                            (io_out_bits_csr_rd1),
+    .io_wb_bits_state_state                        (io_out_bits_state_state),
+    .io_wb_bits_state_state_num                    (io_out_bits_state_state_num),
+    .io_wb_bits_rob_idx                            (io_out_bits_rob_idx),
+    .io_wb_bits_pdest                              (io_out_bits_pdest),
+    .io_wb_bits_br_taken                           (io_out_bits_br_taken),
+    .io_wb_bits_store_data                         (io_out_bits_store_data),
+    .io_wb_bits_fwd_valid                          (_lq_io_wb_bits_fwd_valid),
+    .io_wb1_ready                                  (io_out1_ready),
+    .io_wb1_valid                                  (io_out1_valid),
+    .io_wb1_bits_signals_wbu_reg_write             (io_out1_bits_signals_wbu_reg_write),
+    .io_wb1_bits_signals_wbu_reg_write_sel
+      (io_out1_bits_signals_wbu_reg_write_sel),
+    .io_wb1_bits_alu_result                        (io_out1_bits_alu_result),
+    .io_wb1_bits_pc                                (io_out1_bits_pc),
+    .io_wb1_bits_next_pc                           (io_out1_bits_next_pc),
+    .io_wb1_bits_imm_ext                           (io_out1_bits_imm_ext),
+    .io_wb1_bits_mem_read                          (io_out1_bits_mem_read),
+    .io_wb1_bits_waddr                             (io_out1_bits_waddr),
+    .io_wb1_bits_csr_rd1                           (io_out1_bits_csr_rd1),
+    .io_wb1_bits_state_state                       (io_out1_bits_state_state),
+    .io_wb1_bits_state_state_num                   (io_out1_bits_state_state_num),
+    .io_wb1_bits_rob_idx                           (io_out1_bits_rob_idx),
+    .io_wb1_bits_pdest                             (io_out1_bits_pdest),
+    .io_wb1_bits_br_taken                          (io_out1_bits_br_taken),
+    .io_wb1_bits_store_data                        (io_out1_bits_store_data),
+    .io_dmem_araddr                                (io_dmem_araddr),
+    .io_dmem_arvalid                               (_lq_io_dmem_arvalid),
+    .io_dmem_arid                                  (io_dmem_arid),
+    .io_dmem_arsize                                (io_dmem_arsize),
+    .io_dmem_arready                               (io_dmem_arready),
+    .io_dmem_rdata                                 (io_dmem_rdata),
+    .io_dmem_rresp                                 (io_dmem_rresp),
+    .io_dmem_rvalid                                (io_dmem_rvalid),
+    .io_dmem_rid                                   (io_dmem_rid),
+    .io_dmem1_araddr                               (io_dmem1_araddr),
+    .io_dmem1_arvalid                              (_lq_io_dmem1_arvalid),
+    .io_dmem1_arid                                 (io_dmem1_arid),
+    .io_dmem1_arsize                               (io_dmem1_arsize),
+    .io_dmem1_arready                              (io_dmem1_arready),
+    .io_dmem1_rdata                                (io_dmem1_rdata),
+    .io_dmem1_rresp                                (io_dmem1_rresp),
+    .io_dmem1_rvalid                               (io_dmem1_rvalid),
+    .io_dmem1_rid                                  (io_dmem1_rid),
+    .io_robHead                                    (io_rob_head),
+    .io_commit0Valid                               (io_commit0_valid),
+    .io_commit0Rob                                 (io_commit0_rob),
+    .io_commit1Valid                               (io_commit1_valid),
+    .io_commit1Rob                                 (io_commit1_rob),
+    .io_commit2Valid                               (io_commit2_valid),
+    .io_commit2Rob                                 (io_commit2_rob),
+    .io_commit3Valid                               (io_commit3_valid),
+    .io_commit3Rob                                 (io_commit3_rob),
+    .io_flush                                      (io_flush),
+    .io_flushIdx                                   (io_flush_idx),
+    .io_flushAll                                   (io_flush_all),
+    .io_queryValid                                 (_lq_io_queryValid),
+    .io_queryRob                                   (io_ld_query_rob),
+    .io_queryAddr                                  (io_ld_query_addr),
+    .io_queryMemRd                                 (io_ld_query_mem_rd),
+    .io_fwdWait                                    (io_st_fwd_wait),
+    .io_fwdValid                                   (io_st_fwd_valid),
+    .io_fwdData                                    (io_st_fwd_data),
+    .io_partialValid                               (io_st_partial_valid),
+    .io_partialData                                (io_st_partial_data),
+    .io_partialMask                                (io_st_partial_mask),
+    .io_unknownValid                               (io_st_unknown_valid),
+    .io_unknownMask                                (io_st_unknown_mask),
+    .io_query1Valid                                (io_ld_query1_valid),
+    .io_query1Rob                                  (io_ld_query1_rob),
+    .io_query1Addr                                 (io_ld_query1_addr),
+    .io_query1MemRd                                (io_ld_query1_mem_rd),
+    .io_fwd1Wait                                   (io_st_fwd1_wait),
+    .io_fwd1Valid                                  (io_st_fwd1_valid),
+    .io_fwd1Data                                   (io_st_fwd1_data),
+    .io_partial1Valid                              (io_st_partial1_valid),
+    .io_partial1Data                               (io_st_partial1_data),
+    .io_partial1Mask                               (io_st_partial1_mask),
+    .io_unknown1Valid                              (io_st_unknown1_valid),
+    .io_unknown1Mask                               (io_st_unknown1_mask),
+    .io_unresolvedStores                           (io_st_unresolved_mask),
+    .io_mmioReady                                  (io_mmio_ready),
+    .io_storeResolve0Valid                         (io_store_resolve0_valid),
+    .io_storeResolve0Rob                           (io_store_resolve0_rob),
+    .io_storeResolve0Addr                          (io_store_resolve0_addr),
+    .io_storeResolve0Mask                          (io_store_resolve0_mask),
+    .io_storeResolveHead                           (io_store_resolve_head),
+    .io_violationValid                             (io_mem_violation_valid),
+    .io_violationRob                               (io_mem_violation_rob),
+    .io_violationPc                                (io_mem_violation_pc),
+    .io_commitWait0                                (io_load_commit_wait0),
+    .io_commitWait1                                (io_load_commit_wait1),
+    .io_commitWait2                                (io_load_commit_wait2),
+    .io_commitWait3                                (io_load_commit_wait3),
+    .io_outstanding                                (_lq_io_outstanding),
+    .io_storeReplayCount                           (_lq_io_storeReplayCount),
+    .io_debugHeadAllocPc                           (io_debug_lq_head_alloc_pc),
+    .io_debugHeadRemoveReason                      (io_debug_lq_head_remove_reason)
   );
   PerfMonitor pm (
     .clock    (clock),
     .event_id (32'h3),
-    .data     (64'h1),
-    .enable   (_lq_io_dmem_arvalid & io_dmem_arready)
+    .data     ({62'h0, readCount}),
+    .enable   (|readCount)
   );
   PerfMonitor pm_1 (
     .clock    (clock),
@@ -216,8 +368,8 @@ module LSU(
   PerfMonitor pm_3 (
     .clock    (clock),
     .event_id (32'h21),
-    .data     (64'h1),
-    .enable   (_lq_io_queryValid & io_st_fwd_wait)
+    .data     ({62'h0, _lq_io_storeReplayCount}),
+    .enable   (|_lq_io_storeReplayCount)
   );
   PerfMonitor pm_4 (
     .clock    (clock),
@@ -231,40 +383,20 @@ module LSU(
     .data     (64'h1),
     .enable   (_lq_io_queryValid & ~io_st_fwd_wait & ~io_st_fwd_valid & ~io_dmem_arready)
   );
-  assign io_in_ready =
-    ~io_in_valid | (is_load ? _lq_io_alloc_ready : ~_lq_io_wb_valid & io_out_ready);
-  assign io_out_valid = _lq_io_wb_valid | io_in_valid & ~is_load;
-  assign io_out_bits_signals_wbu_reg_write =
-    _lq_io_wb_valid
-      ? _lq_io_wb_bits_signals_wbu_reg_write
-      : io_in_bits_signals_wbu_reg_write;
-  assign io_out_bits_signals_wbu_reg_write_sel =
-    _lq_io_wb_valid
-      ? _lq_io_wb_bits_signals_wbu_reg_write_sel
-      : io_in_bits_signals_wbu_reg_write_sel;
-  assign io_out_bits_alu_result =
-    _lq_io_wb_valid ? _lq_io_wb_bits_alu_result : io_in_bits_alu_result;
-  assign io_out_bits_pc = _lq_io_wb_valid ? _lq_io_wb_bits_pc : io_in_bits_pc;
-  assign io_out_bits_next_pc =
-    _lq_io_wb_valid ? _lq_io_wb_bits_next_pc : io_in_bits_next_pc;
-  assign io_out_bits_imm_ext =
-    _lq_io_wb_valid ? _lq_io_wb_bits_imm_ext : io_in_bits_imm_ext;
-  assign io_out_bits_mem_read = _lq_io_wb_valid ? _lq_io_wb_bits_mem_read : 32'h0;
-  assign io_out_bits_waddr = _lq_io_wb_valid ? _lq_io_wb_bits_waddr : io_in_bits_waddr;
-  assign io_out_bits_csr_rd1 =
-    _lq_io_wb_valid ? _lq_io_wb_bits_csr_rd1 : io_in_bits_csr_rd1;
-  assign io_out_bits_state_state =
-    _lq_io_wb_valid ? _lq_io_wb_bits_state_state : io_in_bits_state_state;
-  assign io_out_bits_state_state_num =
-    _lq_io_wb_valid ? _lq_io_wb_bits_state_state_num : io_in_bits_state_state_num;
-  assign io_out_bits_rob_idx =
-    _lq_io_wb_valid ? _lq_io_wb_bits_rob_idx : io_in_bits_rob_idx;
-  assign io_out_bits_pdest = _lq_io_wb_valid ? _lq_io_wb_bits_pdest : io_in_bits_pdest;
-  assign io_out_bits_br_taken =
-    _lq_io_wb_valid ? _lq_io_wb_bits_br_taken : io_in_bits_br_taken;
-  assign io_out_bits_store_data =
-    _lq_io_wb_valid ? _lq_io_wb_bits_store_data : io_in_bits_rd2;
+  assign io_in_ready = ~io_in_valid | ~is_load | _lq_io_alloc_ready;
+  assign io_in1_ready = ~io_in1_valid | is_load1 & _lq_io_alloc1_ready;
+  assign io_out_valid = _lq_io_wb_valid;
+  assign io_storeComplete_valid = storeCompleteValid;
+  assign io_storeComplete_bits_alu_result = storeCompleteBits_alu_result;
+  assign io_storeComplete_bits_pc = storeCompleteBits_pc;
+  assign io_storeComplete_bits_waddr = storeCompleteBits_waddr;
+  assign io_storeComplete_bits_state_state = storeCompleteBits_state_state;
+  assign io_storeComplete_bits_state_state_num = storeCompleteBits_state_state_num;
+  assign io_storeComplete_bits_rob_idx = storeCompleteBits_rob_idx;
+  assign io_storeComplete_bits_pdest = storeCompleteBits_pdest;
+  assign io_storeComplete_bits_store_data = storeCompleteBits_store_data;
   assign io_dmem_arvalid = _lq_io_dmem_arvalid;
+  assign io_dmem1_arvalid = _lq_io_dmem1_arvalid;
   assign io_ld_query_valid = _lq_io_queryValid;
 endmodule
 

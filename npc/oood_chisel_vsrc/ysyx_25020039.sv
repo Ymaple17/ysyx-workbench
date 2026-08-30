@@ -130,7 +130,6 @@ module ysyx_25020039(
   wire        _core_io_dmem_arvalid;
   wire [7:0]  _core_io_dmem_arlen;
   wire [2:0]  _core_io_dmem_arsize;
-  wire        _core_io_dmem_rready;
   wire [31:0] _core_io_dmem_awaddr;
   wire        _core_io_dmem_awvalid;
   wire [7:0]  _core_io_dmem_awlen;
@@ -162,7 +161,6 @@ module ysyx_25020039(
     .io_dmem_rdata                  (_xbar_io_dmem_rdata),
     .io_dmem_rresp                  (_xbar_io_dmem_rresp),
     .io_dmem_rvalid                 (_xbar_io_dmem_rvalid),
-    .io_dmem_rready                 (_core_io_dmem_rready),
     .io_dmem_awaddr                 (_core_io_dmem_awaddr),
     .io_dmem_awvalid                (_core_io_dmem_awvalid),
     .io_dmem_awlen                  (_core_io_dmem_awlen),
@@ -259,7 +257,6 @@ module ysyx_25020039(
     .io_dmem_rdata    (_xbar_io_dmem_rdata),
     .io_dmem_rresp    (_xbar_io_dmem_rresp),
     .io_dmem_rvalid   (_xbar_io_dmem_rvalid),
-    .io_dmem_rready   (_core_io_dmem_rready),
     .io_dmem_awaddr   (_core_io_dmem_awaddr),
     .io_dmem_awvalid  (_core_io_dmem_awvalid),
     .io_dmem_awlen    (_core_io_dmem_awlen),

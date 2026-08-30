@@ -60,7 +60,7 @@ VSRC_MINIRV_PERIP = $(shell find ../ysyxSoC/perip -name "*.v" -o -name "*.sv")
 VSRC_MINIRV_TOP = ../ysyxSoC/ready-to-run/D-stage/ysyxSoCFull.v
 VSRC_SOC_TOP = ../ysyxSoC/build/ysyxSoCFull.v
 
-VERILATOR_FLAGS =
+VERILATOR_FLAGS = --output-split-cfuncs 5000
 
 ifeq ($(CONFIG_CHISEL_MUL_VAL),y)
   ifeq ($(CONFIG_MUL_CHISEL_SOC_VAL),y)
@@ -441,12 +441,12 @@ $(TOP_STAMP): .config
 	@mkdir -p $(OBJ_DIR)
 	@echo "$(TOP_MODULE) $(CONFIG_HASH)" > $@
 
-all: chisel-gen $(EXEC)
+all: $(EXEC)
 	$(info [SUCCESS] Build completed: $(EXEC))
 
-$(EXEC): $(VSRC) $(CSRC) $(NVBOARD_ARCHIVE) $(TOP_STAMP)
+$(EXEC): chisel-gen $(VSRC) $(CSRC) $(NVBOARD_ARCHIVE) $(TOP_STAMP)
 	$(info [BUILD] Compiling Verilator simulation with $(VSRC))
-	$(VERILATOR) --cc $(VSRC) --exe $(CSRC) \
+	+$(VERILATOR) --cc $(VSRC) --exe $(CSRC) \
 		$(INCLUDE_DIRS) \
 		$(VERILATOR_FLAGS) \
 		--build -j $(shell nproc) --top-module $(TOP_MODULE) \

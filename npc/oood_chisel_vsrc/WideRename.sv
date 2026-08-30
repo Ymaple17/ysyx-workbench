@@ -100,6 +100,7 @@ module WideRename(
                 io_rebuild_rat_30,
                 io_rebuild_rat_31,
   input  [63:0] io_rebuild_free,
+                io_reserve_mask,
   output [5:0]  io_rat_out_0,
                 io_rat_out_1,
                 io_rat_out_2,
@@ -236,135 +237,137 @@ module WideRename(
   reg          checkpoints_1_valid;
   reg          checkpoints_2_valid;
   reg          checkpoints_3_valid;
-  wire [63:0]  freeStep_0 = freeBits & 64'hFFFFFFFFFFFFFFFE;
+  wire [63:0]  _allocFreeBits_T = ~io_reserve_mask;
+  wire [63:0]  allocFreeBits = freeBits & _allocFreeBits_T & 64'hFFFFFFFFFFFFFFFE;
   wire         _request_T = io_fire_0 & io_reg_write_0;
   wire [5:0]   _nextPhys_T_125 =
-    freeBits[1]
+    allocFreeBits[1]
       ? 6'h1
-      : freeBits[2]
+      : allocFreeBits[2]
           ? 6'h2
-          : freeBits[3]
+          : allocFreeBits[3]
               ? 6'h3
-              : freeBits[4]
+              : allocFreeBits[4]
                   ? 6'h4
-                  : freeBits[5]
+                  : allocFreeBits[5]
                       ? 6'h5
-                      : freeBits[6]
+                      : allocFreeBits[6]
                           ? 6'h6
-                          : freeBits[7]
+                          : allocFreeBits[7]
                               ? 6'h7
-                              : freeBits[8]
+                              : allocFreeBits[8]
                                   ? 6'h8
-                                  : freeBits[9]
+                                  : allocFreeBits[9]
                                       ? 6'h9
-                                      : freeBits[10]
+                                      : allocFreeBits[10]
                                           ? 6'hA
-                                          : freeBits[11]
+                                          : allocFreeBits[11]
                                               ? 6'hB
-                                              : freeBits[12]
+                                              : allocFreeBits[12]
                                                   ? 6'hC
-                                                  : freeBits[13]
+                                                  : allocFreeBits[13]
                                                       ? 6'hD
-                                                      : freeBits[14]
+                                                      : allocFreeBits[14]
                                                           ? 6'hE
-                                                          : freeBits[15]
+                                                          : allocFreeBits[15]
                                                               ? 6'hF
-                                                              : freeBits[16]
+                                                              : allocFreeBits[16]
                                                                   ? 6'h10
-                                                                  : freeBits[17]
+                                                                  : allocFreeBits[17]
                                                                       ? 6'h11
-                                                                      : freeBits[18]
+                                                                      : allocFreeBits[18]
                                                                           ? 6'h12
-                                                                          : freeBits[19]
+                                                                          : allocFreeBits[19]
                                                                               ? 6'h13
-                                                                              : freeBits[20]
+                                                                              : allocFreeBits[20]
                                                                                   ? 6'h14
-                                                                                  : freeBits[21]
+                                                                                  : allocFreeBits[21]
                                                                                       ? 6'h15
-                                                                                      : freeBits[22]
+                                                                                      : allocFreeBits[22]
                                                                                           ? 6'h16
-                                                                                          : freeBits[23]
+                                                                                          : allocFreeBits[23]
                                                                                               ? 6'h17
-                                                                                              : freeBits[24]
+                                                                                              : allocFreeBits[24]
                                                                                                   ? 6'h18
-                                                                                                  : freeBits[25]
+                                                                                                  : allocFreeBits[25]
                                                                                                       ? 6'h19
-                                                                                                      : freeBits[26]
+                                                                                                      : allocFreeBits[26]
                                                                                                           ? 6'h1A
-                                                                                                          : freeBits[27]
+                                                                                                          : allocFreeBits[27]
                                                                                                               ? 6'h1B
-                                                                                                              : freeBits[28]
+                                                                                                              : allocFreeBits[28]
                                                                                                                   ? 6'h1C
-                                                                                                                  : freeBits[29]
+                                                                                                                  : allocFreeBits[29]
                                                                                                                       ? 6'h1D
-                                                                                                                      : freeBits[30]
+                                                                                                                      : allocFreeBits[30]
                                                                                                                           ? 6'h1E
-                                                                                                                          : freeBits[31]
+                                                                                                                          : allocFreeBits[31]
                                                                                                                               ? 6'h1F
-                                                                                                                              : freeBits[32]
+                                                                                                                              : allocFreeBits[32]
                                                                                                                                   ? 6'h20
-                                                                                                                                  : freeBits[33]
+                                                                                                                                  : allocFreeBits[33]
                                                                                                                                       ? 6'h21
-                                                                                                                                      : freeBits[34]
+                                                                                                                                      : allocFreeBits[34]
                                                                                                                                           ? 6'h22
-                                                                                                                                          : freeBits[35]
+                                                                                                                                          : allocFreeBits[35]
                                                                                                                                               ? 6'h23
-                                                                                                                                              : freeBits[36]
+                                                                                                                                              : allocFreeBits[36]
                                                                                                                                                   ? 6'h24
-                                                                                                                                                  : freeBits[37]
+                                                                                                                                                  : allocFreeBits[37]
                                                                                                                                                       ? 6'h25
-                                                                                                                                                      : freeBits[38]
+                                                                                                                                                      : allocFreeBits[38]
                                                                                                                                                           ? 6'h26
-                                                                                                                                                          : freeBits[39]
+                                                                                                                                                          : allocFreeBits[39]
                                                                                                                                                               ? 6'h27
-                                                                                                                                                              : freeBits[40]
+                                                                                                                                                              : allocFreeBits[40]
                                                                                                                                                                   ? 6'h28
-                                                                                                                                                                  : freeBits[41]
+                                                                                                                                                                  : allocFreeBits[41]
                                                                                                                                                                       ? 6'h29
-                                                                                                                                                                      : freeBits[42]
+                                                                                                                                                                      : allocFreeBits[42]
                                                                                                                                                                           ? 6'h2A
-                                                                                                                                                                          : freeBits[43]
+                                                                                                                                                                          : allocFreeBits[43]
                                                                                                                                                                               ? 6'h2B
-                                                                                                                                                                              : freeBits[44]
+                                                                                                                                                                              : allocFreeBits[44]
                                                                                                                                                                                   ? 6'h2C
-                                                                                                                                                                                  : freeBits[45]
+                                                                                                                                                                                  : allocFreeBits[45]
                                                                                                                                                                                       ? 6'h2D
-                                                                                                                                                                                      : freeBits[46]
+                                                                                                                                                                                      : allocFreeBits[46]
                                                                                                                                                                                           ? 6'h2E
-                                                                                                                                                                                          : freeBits[47]
+                                                                                                                                                                                          : allocFreeBits[47]
                                                                                                                                                                                               ? 6'h2F
-                                                                                                                                                                                              : freeBits[48]
+                                                                                                                                                                                              : allocFreeBits[48]
                                                                                                                                                                                                   ? 6'h30
-                                                                                                                                                                                                  : freeBits[49]
+                                                                                                                                                                                                  : allocFreeBits[49]
                                                                                                                                                                                                       ? 6'h31
-                                                                                                                                                                                                      : freeBits[50]
+                                                                                                                                                                                                      : allocFreeBits[50]
                                                                                                                                                                                                           ? 6'h32
-                                                                                                                                                                                                          : freeBits[51]
+                                                                                                                                                                                                          : allocFreeBits[51]
                                                                                                                                                                                                               ? 6'h33
-                                                                                                                                                                                                              : freeBits[52]
+                                                                                                                                                                                                              : allocFreeBits[52]
                                                                                                                                                                                                                   ? 6'h34
-                                                                                                                                                                                                                  : freeBits[53]
+                                                                                                                                                                                                                  : allocFreeBits[53]
                                                                                                                                                                                                                       ? 6'h35
-                                                                                                                                                                                                                      : freeBits[54]
+                                                                                                                                                                                                                      : allocFreeBits[54]
                                                                                                                                                                                                                           ? 6'h36
-                                                                                                                                                                                                                          : freeBits[55]
+                                                                                                                                                                                                                          : allocFreeBits[55]
                                                                                                                                                                                                                               ? 6'h37
-                                                                                                                                                                                                                              : freeBits[56]
+                                                                                                                                                                                                                              : allocFreeBits[56]
                                                                                                                                                                                                                                   ? 6'h38
-                                                                                                                                                                                                                                  : freeBits[57]
+                                                                                                                                                                                                                                  : allocFreeBits[57]
                                                                                                                                                                                                                                       ? 6'h39
-                                                                                                                                                                                                                                      : freeBits[58]
+                                                                                                                                                                                                                                      : allocFreeBits[58]
                                                                                                                                                                                                                                           ? 6'h3A
-                                                                                                                                                                                                                                          : freeBits[59]
+                                                                                                                                                                                                                                          : allocFreeBits[59]
                                                                                                                                                                                                                                               ? 6'h3B
-                                                                                                                                                                                                                                              : freeBits[60]
+                                                                                                                                                                                                                                              : allocFreeBits[60]
                                                                                                                                                                                                                                                   ? 6'h3C
-                                                                                                                                                                                                                                                  : freeBits[61]
+                                                                                                                                                                                                                                                  : allocFreeBits[61]
                                                                                                                                                                                                                                                       ? 6'h3D
                                                                                                                                                                                                                                                       : {5'h1F,
-                                                                                                                                                                                                                                                         ~(freeBits[62])};
-  wire [5:0]   nextPhys = freeStep_0[0] ? 6'h0 : _nextPhys_T_125;
-  wire         alloc = _request_T & (|io_rd_0) & (|(freeBits[63:1]));
+                                                                                                                                                                                                                                                         ~(allocFreeBits[62])};
+  wire [5:0]   nextPhys = allocFreeBits[0] ? 6'h0 : _nextPhys_T_125;
+  wire         alloc = _request_T & (|io_rd_0) & (|(allocFreeBits[63:1]));
+  wire [5:0]   io_pdest_0_0 = ~alloc | allocFreeBits[0] ? 6'h0 : _nextPhys_T_125;
   reg  [5:0]   casez_tmp;
   always_comb begin
     casez (io_rd_0)
@@ -436,7 +439,7 @@ module WideRename(
   end // always_comb
   wire [126:0] _freeStep_1_T_1 = 127'h1 << nextPhys;
   wire [63:0]  freeStep_1 =
-    ({64{~alloc}} | {64{nextPhys == 6'h0}} | ~(_freeStep_1_T_1[63:0])) & freeStep_0;
+    ({64{~alloc}} | {64{nextPhys == 6'h0}} | ~(_freeStep_1_T_1[63:0])) & allocFreeBits;
   wire         _ratStep_1_0_T_1 = alloc & io_rd_0 == 5'h0;
   wire [5:0]   ratStep_1_0 = _ratStep_1_0_T_1 ? nextPhys : rat_0;
   wire         _ratStep_1_1_T_1 = alloc & io_rd_0 == 5'h1;
@@ -629,6 +632,7 @@ module WideRename(
                                                                                                                                                                                                                                                          ~(freeStep_1[62])};
   wire [5:0]   nextPhys_1 = freeStep_1[0] ? 6'h0 : _nextPhys_T_251;
   wire         alloc_1 = _request_T_2 & (|io_rd_1) & (|(freeStep_1[63:1]));
+  wire [5:0]   io_pdest_1_0 = ~alloc_1 | freeStep_1[0] ? 6'h0 : _nextPhys_T_251;
   reg  [5:0]   casez_tmp_0;
   always_comb begin
     casez (io_rd_1)
@@ -1031,6 +1035,7 @@ module WideRename(
         casez_tmp_2 = ratStep_2_31;
     endcase
   end // always_comb
+  wire [5:0]   io_pdest_2_0 = ~alloc_2 | freeStep_2[0] ? 6'h0 : _nextPhys_T_377;
   reg  [5:0]   casez_tmp_3;
   always_comb begin
     casez (io_rd_2)
@@ -1432,6 +1437,7 @@ module WideRename(
         casez_tmp_5 = ratStep_3_31;
     endcase
   end // always_comb
+  wire [5:0]   io_pdest_3_0 = ~alloc_3 | freeStep_3[0] ? 6'h0 : _nextPhys_T_503;
   reg  [5:0]   casez_tmp_6;
   always_comb begin
     casez (io_rd_3)
@@ -2193,10 +2199,10 @@ module WideRename(
   assign io_psrc1_3 = io_rs1_3 == 5'h0 ? 6'h0 : casez_tmp_4;
   assign io_psrc2_2 = io_rs2_2 == 5'h0 ? 6'h0 : casez_tmp_2;
   assign io_psrc2_3 = io_rs2_3 == 5'h0 ? 6'h0 : casez_tmp_5;
-  assign io_pdest_0 = ~alloc | freeStep_0[0] ? 6'h0 : _nextPhys_T_125;
-  assign io_pdest_1 = ~alloc_1 | freeStep_1[0] ? 6'h0 : _nextPhys_T_251;
-  assign io_pdest_2 = ~alloc_2 | freeStep_2[0] ? 6'h0 : _nextPhys_T_377;
-  assign io_pdest_3 = ~alloc_3 | freeStep_3[0] ? 6'h0 : _nextPhys_T_503;
+  assign io_pdest_0 = io_pdest_0_0;
+  assign io_pdest_1 = io_pdest_1_0;
+  assign io_pdest_2 = io_pdest_2_0;
+  assign io_pdest_3 = io_pdest_3_0;
   assign io_old_phys_0 = alloc ? casez_tmp : 6'h0;
   assign io_old_phys_1 = alloc_1 ? casez_tmp_0 : 6'h0;
   assign io_old_phys_2 = alloc_2 ? casez_tmp_3 : 6'h0;
@@ -2273,63 +2279,127 @@ module WideRename(
     {1'h0,
      {1'h0,
       {1'h0,
-       {1'h0, {2'h0, freeBits[1]} + {1'h0, {1'h0, freeBits[2]} + {1'h0, freeBits[3]}}}
+       {1'h0,
+        {2'h0, freeBits[1] & _allocFreeBits_T[1]}
+          + {1'h0,
+             {1'h0, freeBits[2] & _allocFreeBits_T[2]}
+               + {1'h0, freeBits[3] & _allocFreeBits_T[3]}}}
          + {1'h0,
-            {1'h0, {1'h0, freeBits[4]} + {1'h0, freeBits[5]}}
-              + {1'h0, {1'h0, freeBits[6]} + {1'h0, freeBits[7]}}}}
+            {1'h0,
+             {1'h0, freeBits[4] & _allocFreeBits_T[4]}
+               + {1'h0, freeBits[5] & _allocFreeBits_T[5]}}
+              + {1'h0,
+                 {1'h0, freeBits[6] & _allocFreeBits_T[6]}
+                   + {1'h0, freeBits[7] & _allocFreeBits_T[7]}}}}
         + {1'h0,
            {1'h0,
-            {1'h0, {1'h0, freeBits[8]} + {1'h0, freeBits[9]}}
-              + {1'h0, {1'h0, freeBits[10]} + {1'h0, freeBits[11]}}}
+            {1'h0,
+             {1'h0, freeBits[8] & _allocFreeBits_T[8]}
+               + {1'h0, freeBits[9] & _allocFreeBits_T[9]}}
+              + {1'h0,
+                 {1'h0, freeBits[10] & _allocFreeBits_T[10]}
+                   + {1'h0, freeBits[11] & _allocFreeBits_T[11]}}}
              + {1'h0,
-                {1'h0, {1'h0, freeBits[12]} + {1'h0, freeBits[13]}}
-                  + {1'h0, {1'h0, freeBits[14]} + {1'h0, freeBits[15]}}}}}
+                {1'h0,
+                 {1'h0, freeBits[12] & _allocFreeBits_T[12]}
+                   + {1'h0, freeBits[13] & _allocFreeBits_T[13]}}
+                  + {1'h0,
+                     {1'h0, freeBits[14] & _allocFreeBits_T[14]}
+                       + {1'h0, freeBits[15] & _allocFreeBits_T[15]}}}}}
        + {1'h0,
           {1'h0,
            {1'h0,
-            {1'h0, {1'h0, freeBits[16]} + {1'h0, freeBits[17]}}
-              + {1'h0, {1'h0, freeBits[18]} + {1'h0, freeBits[19]}}}
+            {1'h0,
+             {1'h0, freeBits[16] & _allocFreeBits_T[16]}
+               + {1'h0, freeBits[17] & _allocFreeBits_T[17]}}
+              + {1'h0,
+                 {1'h0, freeBits[18] & _allocFreeBits_T[18]}
+                   + {1'h0, freeBits[19] & _allocFreeBits_T[19]}}}
              + {1'h0,
-                {1'h0, {1'h0, freeBits[20]} + {1'h0, freeBits[21]}}
-                  + {1'h0, {1'h0, freeBits[22]} + {1'h0, freeBits[23]}}}}
+                {1'h0,
+                 {1'h0, freeBits[20] & _allocFreeBits_T[20]}
+                   + {1'h0, freeBits[21] & _allocFreeBits_T[21]}}
+                  + {1'h0,
+                     {1'h0, freeBits[22] & _allocFreeBits_T[22]}
+                       + {1'h0, freeBits[23] & _allocFreeBits_T[23]}}}}
             + {1'h0,
                {1'h0,
-                {1'h0, {1'h0, freeBits[24]} + {1'h0, freeBits[25]}}
-                  + {1'h0, {1'h0, freeBits[26]} + {1'h0, freeBits[27]}}}
+                {1'h0,
+                 {1'h0, freeBits[24] & _allocFreeBits_T[24]}
+                   + {1'h0, freeBits[25] & _allocFreeBits_T[25]}}
+                  + {1'h0,
+                     {1'h0, freeBits[26] & _allocFreeBits_T[26]}
+                       + {1'h0, freeBits[27] & _allocFreeBits_T[27]}}}
                  + {1'h0,
-                    {1'h0, {1'h0, freeBits[28]} + {1'h0, freeBits[29]}}
-                      + {1'h0, {1'h0, freeBits[30]} + {1'h0, freeBits[31]}}}}}}
+                    {1'h0,
+                     {1'h0, freeBits[28] & _allocFreeBits_T[28]}
+                       + {1'h0, freeBits[29] & _allocFreeBits_T[29]}}
+                      + {1'h0,
+                         {1'h0, freeBits[30] & _allocFreeBits_T[30]}
+                           + {1'h0, freeBits[31] & _allocFreeBits_T[31]}}}}}}
     + {1'h0,
        {1'h0,
         {1'h0,
          {1'h0,
-          {1'h0, {1'h0, freeBits[32]} + {1'h0, freeBits[33]}}
-            + {1'h0, {1'h0, freeBits[34]} + {1'h0, freeBits[35]}}}
+          {1'h0,
+           {1'h0, freeBits[32] & _allocFreeBits_T[32]}
+             + {1'h0, freeBits[33] & _allocFreeBits_T[33]}}
+            + {1'h0,
+               {1'h0, freeBits[34] & _allocFreeBits_T[34]}
+                 + {1'h0, freeBits[35] & _allocFreeBits_T[35]}}}
            + {1'h0,
-              {1'h0, {1'h0, freeBits[36]} + {1'h0, freeBits[37]}}
-                + {1'h0, {1'h0, freeBits[38]} + {1'h0, freeBits[39]}}}}
+              {1'h0,
+               {1'h0, freeBits[36] & _allocFreeBits_T[36]}
+                 + {1'h0, freeBits[37] & _allocFreeBits_T[37]}}
+                + {1'h0,
+                   {1'h0, freeBits[38] & _allocFreeBits_T[38]}
+                     + {1'h0, freeBits[39] & _allocFreeBits_T[39]}}}}
           + {1'h0,
              {1'h0,
-              {1'h0, {1'h0, freeBits[40]} + {1'h0, freeBits[41]}}
-                + {1'h0, {1'h0, freeBits[42]} + {1'h0, freeBits[43]}}}
+              {1'h0,
+               {1'h0, freeBits[40] & _allocFreeBits_T[40]}
+                 + {1'h0, freeBits[41] & _allocFreeBits_T[41]}}
+                + {1'h0,
+                   {1'h0, freeBits[42] & _allocFreeBits_T[42]}
+                     + {1'h0, freeBits[43] & _allocFreeBits_T[43]}}}
                + {1'h0,
-                  {1'h0, {1'h0, freeBits[44]} + {1'h0, freeBits[45]}}
-                    + {1'h0, {1'h0, freeBits[46]} + {1'h0, freeBits[47]}}}}}
+                  {1'h0,
+                   {1'h0, freeBits[44] & _allocFreeBits_T[44]}
+                     + {1'h0, freeBits[45] & _allocFreeBits_T[45]}}
+                    + {1'h0,
+                       {1'h0, freeBits[46] & _allocFreeBits_T[46]}
+                         + {1'h0, freeBits[47] & _allocFreeBits_T[47]}}}}}
          + {1'h0,
             {1'h0,
              {1'h0,
-              {1'h0, {1'h0, freeBits[48]} + {1'h0, freeBits[49]}}
-                + {1'h0, {1'h0, freeBits[50]} + {1'h0, freeBits[51]}}}
+              {1'h0,
+               {1'h0, freeBits[48] & _allocFreeBits_T[48]}
+                 + {1'h0, freeBits[49] & _allocFreeBits_T[49]}}
+                + {1'h0,
+                   {1'h0, freeBits[50] & _allocFreeBits_T[50]}
+                     + {1'h0, freeBits[51] & _allocFreeBits_T[51]}}}
                + {1'h0,
-                  {1'h0, {1'h0, freeBits[52]} + {1'h0, freeBits[53]}}
-                    + {1'h0, {1'h0, freeBits[54]} + {1'h0, freeBits[55]}}}}
+                  {1'h0,
+                   {1'h0, freeBits[52] & _allocFreeBits_T[52]}
+                     + {1'h0, freeBits[53] & _allocFreeBits_T[53]}}
+                    + {1'h0,
+                       {1'h0, freeBits[54] & _allocFreeBits_T[54]}
+                         + {1'h0, freeBits[55] & _allocFreeBits_T[55]}}}}
               + {1'h0,
                  {1'h0,
-                  {1'h0, {1'h0, freeBits[56]} + {1'h0, freeBits[57]}}
-                    + {1'h0, {1'h0, freeBits[58]} + {1'h0, freeBits[59]}}}
+                  {1'h0,
+                   {1'h0, freeBits[56] & _allocFreeBits_T[56]}
+                     + {1'h0, freeBits[57] & _allocFreeBits_T[57]}}
+                    + {1'h0,
+                       {1'h0, freeBits[58] & _allocFreeBits_T[58]}
+                         + {1'h0, freeBits[59] & _allocFreeBits_T[59]}}}
                    + {1'h0,
-                      {1'h0, {1'h0, freeBits[60]} + {1'h0, freeBits[61]}}
-                        + {1'h0, {1'h0, freeBits[62]} + {1'h0, freeBits[63]}}}}}};
+                      {1'h0,
+                       {1'h0, freeBits[60] & _allocFreeBits_T[60]}
+                         + {1'h0, freeBits[61] & _allocFreeBits_T[61]}}
+                        + {1'h0,
+                           {1'h0, freeBits[62] & _allocFreeBits_T[62]}
+                             + {1'h0, freeBits[63] & _allocFreeBits_T[63]}}}}}};
   assign io_cp_free =
     {1'h0, {1'h0, ~checkpoints_0_valid} + {1'h0, ~checkpoints_1_valid}}
     + {1'h0, {1'h0, ~checkpoints_2_valid} + {1'h0, ~checkpoints_3_valid}};

@@ -222,6 +222,7 @@ void print_perf_stats(unsigned long long cycles) {
     printf("StoreBuffer Merge: %lld\n", counters[EVENT_STORE_BUFFER_MERGE]);
     printf("StoreBuffer Write Bursts: %lld\n", counters[EVENT_STORE_BUFFER_WRITE_BURST]);
     printf("StoreBuffer Write Beats: %lld\n", counters[EVENT_STORE_BUFFER_WRITE_BEAT]);
+    printf("StoreBuffer Chained Bursts: %lld\n", counters[EVENT_STORE_BUFFER_CHAIN]);
     printf("StoreBuffer Drain: %lld\n", counters[EVENT_STORE_BUFFER_DRAIN]);
     printf("StoreBuffer Fwd:   %lld\n", counters[EVENT_STORE_BUFFER_FORWARD]);
     printf("SQ Wait Cycles: %lld\n", counters[EVENT_LSU_SQ_WAIT]);

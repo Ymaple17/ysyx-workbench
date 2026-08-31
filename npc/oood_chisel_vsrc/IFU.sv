@@ -107,7 +107,24 @@ module IFU(
   input         io_ftq_commit3_valid,
   input  [3:0]  io_ftq_commit3_idx,
   input  [7:0]  io_ftq_commit3_generation,
-  input         io_bp_recover_valid,
+  input         io_trace_commit_0_valid,
+  input  [31:0] io_trace_commit_0_bits_pc,
+                io_trace_commit_0_bits_inst,
+  input  [96:0] io_trace_commit_0_bits_bpIndex,
+  input         io_trace_commit_1_valid,
+  input  [31:0] io_trace_commit_1_bits_pc,
+                io_trace_commit_1_bits_inst,
+  input  [96:0] io_trace_commit_1_bits_bpIndex,
+  input         io_trace_commit_2_valid,
+  input  [31:0] io_trace_commit_2_bits_pc,
+                io_trace_commit_2_bits_inst,
+  input  [96:0] io_trace_commit_2_bits_bpIndex,
+  input         io_trace_commit_3_valid,
+  input  [31:0] io_trace_commit_3_bits_pc,
+                io_trace_commit_3_bits_inst,
+  input  [96:0] io_trace_commit_3_bits_bpIndex,
+  input         io_trace_invalidate,
+                io_bp_recover_valid,
   input  [3:0]  io_bp_recover_ftq_idx,
   input  [7:0]  io_bp_recover_ftq_generation,
   input  [31:0] io_bp_recover_pc,
@@ -120,12 +137,64 @@ module IFU(
                 io_bp_recover_is_ret
 );
 
-  wire        _ready_T;
+  wire        _ready_T_1;
+  wire        _traceBuilder_io_fill_0_valid;
+  wire [31:0] _traceBuilder_io_fill_0_bits_startPc;
+  wire [31:0] _traceBuilder_io_fill_0_bits_context;
+  wire [31:0] _traceBuilder_io_fill_0_bits_pc_0;
+  wire [31:0] _traceBuilder_io_fill_0_bits_pc_1;
+  wire [31:0] _traceBuilder_io_fill_0_bits_pc_2;
+  wire [31:0] _traceBuilder_io_fill_0_bits_pc_3;
+  wire [31:0] _traceBuilder_io_fill_0_bits_inst_0;
+  wire [31:0] _traceBuilder_io_fill_0_bits_inst_1;
+  wire [31:0] _traceBuilder_io_fill_0_bits_inst_2;
+  wire [31:0] _traceBuilder_io_fill_0_bits_inst_3;
+  wire [31:0] _traceBuilder_io_fill_0_bits_nextPc;
+  wire        _traceBuilder_io_fill_1_valid;
+  wire [31:0] _traceBuilder_io_fill_1_bits_startPc;
+  wire [31:0] _traceBuilder_io_fill_1_bits_context;
+  wire [31:0] _traceBuilder_io_fill_1_bits_pc_0;
+  wire [31:0] _traceBuilder_io_fill_1_bits_pc_1;
+  wire [31:0] _traceBuilder_io_fill_1_bits_pc_2;
+  wire [31:0] _traceBuilder_io_fill_1_bits_pc_3;
+  wire [31:0] _traceBuilder_io_fill_1_bits_inst_0;
+  wire [31:0] _traceBuilder_io_fill_1_bits_inst_1;
+  wire [31:0] _traceBuilder_io_fill_1_bits_inst_2;
+  wire [31:0] _traceBuilder_io_fill_1_bits_inst_3;
+  wire [31:0] _traceBuilder_io_fill_1_bits_nextPc;
+  wire        _traceBuilder_io_fill_2_valid;
+  wire [31:0] _traceBuilder_io_fill_2_bits_startPc;
+  wire [31:0] _traceBuilder_io_fill_2_bits_context;
+  wire [31:0] _traceBuilder_io_fill_2_bits_pc_0;
+  wire [31:0] _traceBuilder_io_fill_2_bits_pc_1;
+  wire [31:0] _traceBuilder_io_fill_2_bits_pc_2;
+  wire [31:0] _traceBuilder_io_fill_2_bits_pc_3;
+  wire [31:0] _traceBuilder_io_fill_2_bits_inst_0;
+  wire [31:0] _traceBuilder_io_fill_2_bits_inst_1;
+  wire [31:0] _traceBuilder_io_fill_2_bits_inst_2;
+  wire [31:0] _traceBuilder_io_fill_2_bits_inst_3;
+  wire [31:0] _traceBuilder_io_fill_2_bits_nextPc;
+  wire        _traceBuilder_io_fill_3_valid;
+  wire [31:0] _traceBuilder_io_fill_3_bits_startPc;
+  wire [31:0] _traceBuilder_io_fill_3_bits_context;
+  wire [31:0] _traceBuilder_io_fill_3_bits_pc_0;
+  wire [31:0] _traceBuilder_io_fill_3_bits_pc_1;
+  wire [31:0] _traceBuilder_io_fill_3_bits_pc_2;
+  wire [31:0] _traceBuilder_io_fill_3_bits_pc_3;
+  wire [31:0] _traceBuilder_io_fill_3_bits_inst_0;
+  wire [31:0] _traceBuilder_io_fill_3_bits_inst_1;
+  wire [31:0] _traceBuilder_io_fill_3_bits_inst_2;
+  wire [31:0] _traceBuilder_io_fill_3_bits_inst_3;
+  wire [31:0] _traceBuilder_io_fill_3_bits_nextPc;
   wire        _ftq_io_alloc_ready;
   wire [3:0]  _ftq_io_allocIdx;
   wire [7:0]  _ftq_io_allocGeneration;
   wire        _ftq_io_recoverValid;
-  wire [31:0] _ftq_io_recover_basePc;
+  wire [31:0] _ftq_io_recover_lanePc_0;
+  wire [31:0] _ftq_io_recover_lanePc_1;
+  wire [31:0] _ftq_io_recover_lanePc_2;
+  wire [31:0] _ftq_io_recover_lanePc_3;
+  wire [3:0]  _ftq_io_recover_validMask;
   wire [31:0] _ftq_io_recover_ras_0;
   wire [31:0] _ftq_io_recover_ras_1;
   wire [31:0] _ftq_io_recover_ras_2;
@@ -192,6 +261,8 @@ module IFU(
   wire        _bpu_io_bp3_bimodal_selected;
   wire        _bpu_io_bp3_indirect_hit;
   wire        _bpu_io_bp3_loop_hit;
+  wire [31:0] _bpu_io_spec_ghr;
+  wire [31:0] _bpu_io_spec_path_history;
   wire [31:0] _bpu_io_spec_ras_0;
   wire [31:0] _bpu_io_spec_ras_1;
   wire [31:0] _bpu_io_spec_ras_2;
@@ -214,12 +285,17 @@ module IFU(
   wire        _bpu_io_itage_alloc;
   reg  [1:0]  state;
   wire        _io_imem_arvalid_T = state == 2'h0;
-  wire        _io_imem_rready_T_2 = state == 2'h1;
-  wire        _io_imem_rready_T = state == 2'h2;
-  wire [31:0] bpu_io_predict_pc1 = io_in_bits_next_pc + 32'h4;
-  wire [31:0] bpu_io_predict_pc2 = io_in_bits_next_pc + 32'h8;
-  wire [31:0] bpu_io_predict_pc3 = io_in_bits_next_pc + 32'hC;
-  wire [3:0]  _ftq_io_recoverSlot_T = io_bp_recover_pc[3:0] - _ftq_io_recover_basePc[3:0];
+  wire        _io_imem_rready_T_4 = state == 2'h1;
+  wire        _io_imem_rready_T_2 = state == 2'h2;
+  wire [31:0] sourcePc_1 = io_in_bits_next_pc + 32'h4;
+  wire [31:0] sourcePc_2 = io_in_bits_next_pc + 32'h8;
+  wire [31:0] sourcePc_3 = io_in_bits_next_pc + 32'hC;
+  wire        recoverLaneHit_0 =
+    _ftq_io_recover_validMask[0] & _ftq_io_recover_lanePc_0 == io_bp_recover_pc;
+  wire        recoverLaneHit_1 =
+    _ftq_io_recover_validMask[1] & _ftq_io_recover_lanePc_1 == io_bp_recover_pc;
+  wire        recoverLaneHit_2 =
+    _ftq_io_recover_validMask[2] & _ftq_io_recover_lanePc_2 == io_bp_recover_pc;
   wire        slot0Taken = _bpu_io_bp_valid & _bpu_io_bp_taken;
   wire        slot1RawUse = io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp);
   wire        slot1CanUse = io_slot1_enable & slot1RawUse;
@@ -229,7 +305,7 @@ module IFU(
   wire        slot2Taken = slot2CanUse & _bpu_io_bp2_valid & _bpu_io_bp2_taken;
   wire        slot3CanUse =
     io_slot3_enable & io_imem_rvalid3 & slot2CanUse & ~slot2Taken & ~(|io_imem_rresp2);
-  wire        fetchPacket_valid_0 = io_imem_rvalid & _ready_T & io_in_valid;
+  wire        fetchPacket_valid_0 = io_imem_rvalid & _ready_T_1 & io_in_valid;
   wire        fetchPacket_valid_1 = fetchPacket_valid_0 & slot1CanUse;
   wire        fetchPacket_valid_2 = fetchPacket_valid_0 & slot2CanUse;
   wire        fetchPacket_valid_3 = fetchPacket_valid_0 & slot3CanUse;
@@ -238,31 +314,42 @@ module IFU(
   wire        ftq_io_alloc_valid = captureCandidate & _fetchBuffer_io_in_ready;
   wire        work = _fetchBuffer_io_in_ready & fetchBuffer_io_in_valid;
   wire        bpu_io_recover_valid = io_bp_recover_valid & _ftq_io_recoverValid;
-  assign _ready_T = state != 2'h2;
+  assign _ready_T_1 = state != 2'h2;
   wire        fetchResourcesReady = _fetchBuffer_io_in_ready & _ftq_io_alloc_ready;
   wire        io_imem_arvalid_0 =
     io_in_valid & _io_imem_arvalid_T & ~io_is_flush & fetchResourcesReady;
   wire        idle = io_imem_arvalid_0 & io_imem_arready;
+  wire        packetFire = _fetchBuffer_io_out_valid & io_out_ready;
+  reg         bpCapturePending;
+  reg         bpFqPending;
+  wire        _GEN = bpCapturePending & work;
+  wire        _GEN_0 = bpFqPending & packetFire;
   reg  [4:0]  ftqHighWater;
-  wire        _GEN = _ftq_io_count > ftqHighWater;
-  wire        _GEN_0 = work & fetchPacket_valid_1;
+  wire        _GEN_1 = _ftq_io_count > ftqHighWater;
+  wire        _GEN_2 = work & fetchPacket_valid_1;
   reg         redirectBubble_REG;
   wire [1:0]  _next_state_T_4 = {1'h0, ~work};
   wire [1:0]  _next_state_T_6 = {~io_imem_rvalid, 1'h0};
   always @(posedge clock) begin
     if (reset) begin
       state <= 2'h0;
+      bpCapturePending <= 1'h0;
+      bpFqPending <= 1'h0;
       ftqHighWater <= 5'h0;
       redirectBubble_REG <= 1'h0;
     end
     else begin
       state <=
-        _io_imem_rready_T
+        _io_imem_rready_T_2
           ? _next_state_T_6
-          : _io_imem_rready_T_2
+          : _io_imem_rready_T_4
               ? (io_is_flush ? _next_state_T_6 : _next_state_T_4)
               : ~_io_imem_arvalid_T | io_is_flush | ~idle ? 2'h0 : _next_state_T_4;
-      if (_GEN)
+      bpCapturePending <= io_bp_recover_valid | ~_GEN & bpCapturePending;
+      bpFqPending <=
+        ~(~io_bp_recover_valid & bpFqPending & packetFire)
+        & (io_bp_recover_valid | (_GEN | ~_GEN_0) & bpFqPending);
+      if (_GEN_1)
         ftqHighWater <= _ftq_io_count;
       redirectBubble_REG <= io_is_flush;
     end
@@ -272,11 +359,11 @@ module IFU(
     .reset                   (reset),
     .io_predict_pc           (io_in_bits_next_pc),
     .io_predict_inst         (io_imem_rdata),
-    .io_predict_pc1          (bpu_io_predict_pc1),
+    .io_predict_pc1          (sourcePc_1),
     .io_predict_inst1        (io_imem_rdata1),
-    .io_predict_pc2          (bpu_io_predict_pc2),
+    .io_predict_pc2          (sourcePc_2),
     .io_predict_inst2        (io_imem_rdata2),
-    .io_predict_pc3          (bpu_io_predict_pc3),
+    .io_predict_pc3          (sourcePc_3),
     .io_predict_inst3        (io_imem_rdata3),
     .io_bp_valid             (_bpu_io_bp_valid),
     .io_bp_taken             (_bpu_io_bp_taken),
@@ -356,6 +443,8 @@ module IFU(
     .io_recover_ras_count    (_ftq_io_recover_rasCount),
     .io_reset_spec
       (io_is_flush & (~io_bp_recover_valid | ~_ftq_io_recoverValid)),
+    .io_spec_ghr             (_bpu_io_spec_ghr),
+    .io_spec_path_history    (_bpu_io_spec_path_history),
     .io_spec_ras_0           (_bpu_io_spec_ras_0),
     .io_spec_ras_1           (_bpu_io_spec_ras_1),
     .io_spec_ras_2           (_bpu_io_spec_ras_2),
@@ -429,7 +518,7 @@ module IFU(
     .io_in_bits_bits_0_ftq_idx          (_ftq_io_allocIdx),
     .io_in_bits_bits_0_ftq_generation   (_ftq_io_allocGeneration),
     .io_in_bits_bits_1_inst             (io_imem_rdata1),
-    .io_in_bits_bits_1_pc               (bpu_io_predict_pc1),
+    .io_in_bits_bits_1_pc               (sourcePc_1),
     .io_in_bits_bits_1_state_state      (|io_imem_rresp1),
     .io_in_bits_bits_1_state_state_num  ({7'h0, |io_imem_rresp1}),
     .io_in_bits_bits_1_bp_valid         (_bpu_io_bp1_valid),
@@ -439,7 +528,7 @@ module IFU(
     .io_in_bits_bits_1_ftq_idx          (_ftq_io_allocIdx),
     .io_in_bits_bits_1_ftq_generation   (_ftq_io_allocGeneration),
     .io_in_bits_bits_2_inst             (io_imem_rdata2),
-    .io_in_bits_bits_2_pc               (bpu_io_predict_pc2),
+    .io_in_bits_bits_2_pc               (sourcePc_2),
     .io_in_bits_bits_2_state_state      (|io_imem_rresp2),
     .io_in_bits_bits_2_state_state_num  ({7'h0, |io_imem_rresp2}),
     .io_in_bits_bits_2_bp_valid         (_bpu_io_bp2_valid),
@@ -449,7 +538,7 @@ module IFU(
     .io_in_bits_bits_2_ftq_idx          (_ftq_io_allocIdx),
     .io_in_bits_bits_2_ftq_generation   (_ftq_io_allocGeneration),
     .io_in_bits_bits_3_inst             (io_imem_rdata3),
-    .io_in_bits_bits_3_pc               (bpu_io_predict_pc3),
+    .io_in_bits_bits_3_pc               (sourcePc_3),
     .io_in_bits_bits_3_state_state      (|io_imem_rresp3),
     .io_in_bits_bits_3_state_state_num  ({7'h0, |io_imem_rresp3}),
     .io_in_bits_bits_3_bp_valid         (_bpu_io_bp3_valid),
@@ -513,7 +602,10 @@ module IFU(
     .reset                   (reset),
     .io_alloc_ready          (_ftq_io_alloc_ready),
     .io_alloc_valid          (ftq_io_alloc_valid),
-    .io_alloc_bits_basePc    (io_in_bits_next_pc),
+    .io_alloc_bits_lanePc_0  (io_in_bits_next_pc),
+    .io_alloc_bits_lanePc_1  (sourcePc_1),
+    .io_alloc_bits_lanePc_2  (sourcePc_2),
+    .io_alloc_bits_lanePc_3  (sourcePc_3),
     .io_alloc_bits_validMask
       ({fetchPacket_valid_3,
         fetchPacket_valid_2,
@@ -554,7 +646,11 @@ module IFU(
     .io_recoverIdx           (io_bp_recover_ftq_idx),
     .io_recoverGeneration    (io_bp_recover_ftq_generation),
     .io_recoverValid         (_ftq_io_recoverValid),
-    .io_recover_basePc       (_ftq_io_recover_basePc),
+    .io_recover_lanePc_0     (_ftq_io_recover_lanePc_0),
+    .io_recover_lanePc_1     (_ftq_io_recover_lanePc_1),
+    .io_recover_lanePc_2     (_ftq_io_recover_lanePc_2),
+    .io_recover_lanePc_3     (_ftq_io_recover_lanePc_3),
+    .io_recover_validMask    (_ftq_io_recover_validMask),
     .io_recover_ras_0        (_ftq_io_recover_ras_0),
     .io_recover_ras_1        (_ftq_io_recover_ras_1),
     .io_recover_ras_2        (_ftq_io_recover_ras_2),
@@ -574,10 +670,135 @@ module IFU(
     .io_recover_rasPtr       (_ftq_io_recover_rasPtr),
     .io_recover_rasCount     (_ftq_io_recover_rasCount),
     .io_recoverFlush         (io_is_flush & io_bp_recover_valid),
-    .io_recoverSlot          (_ftq_io_recoverSlot_T[3:2]),
+    .io_recoverSlot
+      (recoverLaneHit_0 ? 2'h0 : recoverLaneHit_1 ? 2'h1 : {1'h1, ~recoverLaneHit_2}),
     .io_flush                (io_is_flush & ~io_bp_recover_valid),
     .io_count                (_ftq_io_count),
     .io_full                 (_ftq_io_full)
+  );
+  CommittedTraceBuilder traceBuilder (
+    .clock                    (clock),
+    .reset                    (reset),
+    .io_commit_0_valid        (io_trace_commit_0_valid),
+    .io_commit_0_bits_pc      (io_trace_commit_0_bits_pc),
+    .io_commit_0_bits_inst    (io_trace_commit_0_bits_inst),
+    .io_commit_0_bits_bpIndex (io_trace_commit_0_bits_bpIndex),
+    .io_commit_1_valid        (io_trace_commit_1_valid),
+    .io_commit_1_bits_pc      (io_trace_commit_1_bits_pc),
+    .io_commit_1_bits_inst    (io_trace_commit_1_bits_inst),
+    .io_commit_1_bits_bpIndex (io_trace_commit_1_bits_bpIndex),
+    .io_commit_2_valid        (io_trace_commit_2_valid),
+    .io_commit_2_bits_pc      (io_trace_commit_2_bits_pc),
+    .io_commit_2_bits_inst    (io_trace_commit_2_bits_inst),
+    .io_commit_2_bits_bpIndex (io_trace_commit_2_bits_bpIndex),
+    .io_commit_3_valid        (io_trace_commit_3_valid),
+    .io_commit_3_bits_pc      (io_trace_commit_3_bits_pc),
+    .io_commit_3_bits_inst    (io_trace_commit_3_bits_inst),
+    .io_commit_3_bits_bpIndex (io_trace_commit_3_bits_bpIndex),
+    .io_clear                 (io_trace_invalidate),
+    .io_fill_0_valid          (_traceBuilder_io_fill_0_valid),
+    .io_fill_0_bits_startPc   (_traceBuilder_io_fill_0_bits_startPc),
+    .io_fill_0_bits_context   (_traceBuilder_io_fill_0_bits_context),
+    .io_fill_0_bits_pc_0      (_traceBuilder_io_fill_0_bits_pc_0),
+    .io_fill_0_bits_pc_1      (_traceBuilder_io_fill_0_bits_pc_1),
+    .io_fill_0_bits_pc_2      (_traceBuilder_io_fill_0_bits_pc_2),
+    .io_fill_0_bits_pc_3      (_traceBuilder_io_fill_0_bits_pc_3),
+    .io_fill_0_bits_inst_0    (_traceBuilder_io_fill_0_bits_inst_0),
+    .io_fill_0_bits_inst_1    (_traceBuilder_io_fill_0_bits_inst_1),
+    .io_fill_0_bits_inst_2    (_traceBuilder_io_fill_0_bits_inst_2),
+    .io_fill_0_bits_inst_3    (_traceBuilder_io_fill_0_bits_inst_3),
+    .io_fill_0_bits_nextPc    (_traceBuilder_io_fill_0_bits_nextPc),
+    .io_fill_1_valid          (_traceBuilder_io_fill_1_valid),
+    .io_fill_1_bits_startPc   (_traceBuilder_io_fill_1_bits_startPc),
+    .io_fill_1_bits_context   (_traceBuilder_io_fill_1_bits_context),
+    .io_fill_1_bits_pc_0      (_traceBuilder_io_fill_1_bits_pc_0),
+    .io_fill_1_bits_pc_1      (_traceBuilder_io_fill_1_bits_pc_1),
+    .io_fill_1_bits_pc_2      (_traceBuilder_io_fill_1_bits_pc_2),
+    .io_fill_1_bits_pc_3      (_traceBuilder_io_fill_1_bits_pc_3),
+    .io_fill_1_bits_inst_0    (_traceBuilder_io_fill_1_bits_inst_0),
+    .io_fill_1_bits_inst_1    (_traceBuilder_io_fill_1_bits_inst_1),
+    .io_fill_1_bits_inst_2    (_traceBuilder_io_fill_1_bits_inst_2),
+    .io_fill_1_bits_inst_3    (_traceBuilder_io_fill_1_bits_inst_3),
+    .io_fill_1_bits_nextPc    (_traceBuilder_io_fill_1_bits_nextPc),
+    .io_fill_2_valid          (_traceBuilder_io_fill_2_valid),
+    .io_fill_2_bits_startPc   (_traceBuilder_io_fill_2_bits_startPc),
+    .io_fill_2_bits_context   (_traceBuilder_io_fill_2_bits_context),
+    .io_fill_2_bits_pc_0      (_traceBuilder_io_fill_2_bits_pc_0),
+    .io_fill_2_bits_pc_1      (_traceBuilder_io_fill_2_bits_pc_1),
+    .io_fill_2_bits_pc_2      (_traceBuilder_io_fill_2_bits_pc_2),
+    .io_fill_2_bits_pc_3      (_traceBuilder_io_fill_2_bits_pc_3),
+    .io_fill_2_bits_inst_0    (_traceBuilder_io_fill_2_bits_inst_0),
+    .io_fill_2_bits_inst_1    (_traceBuilder_io_fill_2_bits_inst_1),
+    .io_fill_2_bits_inst_2    (_traceBuilder_io_fill_2_bits_inst_2),
+    .io_fill_2_bits_inst_3    (_traceBuilder_io_fill_2_bits_inst_3),
+    .io_fill_2_bits_nextPc    (_traceBuilder_io_fill_2_bits_nextPc),
+    .io_fill_3_valid          (_traceBuilder_io_fill_3_valid),
+    .io_fill_3_bits_startPc   (_traceBuilder_io_fill_3_bits_startPc),
+    .io_fill_3_bits_context   (_traceBuilder_io_fill_3_bits_context),
+    .io_fill_3_bits_pc_0      (_traceBuilder_io_fill_3_bits_pc_0),
+    .io_fill_3_bits_pc_1      (_traceBuilder_io_fill_3_bits_pc_1),
+    .io_fill_3_bits_pc_2      (_traceBuilder_io_fill_3_bits_pc_2),
+    .io_fill_3_bits_pc_3      (_traceBuilder_io_fill_3_bits_pc_3),
+    .io_fill_3_bits_inst_0    (_traceBuilder_io_fill_3_bits_inst_0),
+    .io_fill_3_bits_inst_1    (_traceBuilder_io_fill_3_bits_inst_1),
+    .io_fill_3_bits_inst_2    (_traceBuilder_io_fill_3_bits_inst_2),
+    .io_fill_3_bits_inst_3    (_traceBuilder_io_fill_3_bits_inst_3),
+    .io_fill_3_bits_nextPc    (_traceBuilder_io_fill_3_bits_nextPc)
+  );
+  CommittedTraceCache traceCache (
+    .clock                  (clock),
+    .reset                  (reset),
+    .io_lookupPc            (io_in_bits_next_pc),
+    .io_lookupContext       (_bpu_io_spec_ghr ^ _bpu_io_spec_path_history),
+    .io_fill_0_valid        (_traceBuilder_io_fill_0_valid),
+    .io_fill_0_bits_startPc (_traceBuilder_io_fill_0_bits_startPc),
+    .io_fill_0_bits_context (_traceBuilder_io_fill_0_bits_context),
+    .io_fill_0_bits_pc_0    (_traceBuilder_io_fill_0_bits_pc_0),
+    .io_fill_0_bits_pc_1    (_traceBuilder_io_fill_0_bits_pc_1),
+    .io_fill_0_bits_pc_2    (_traceBuilder_io_fill_0_bits_pc_2),
+    .io_fill_0_bits_pc_3    (_traceBuilder_io_fill_0_bits_pc_3),
+    .io_fill_0_bits_inst_0  (_traceBuilder_io_fill_0_bits_inst_0),
+    .io_fill_0_bits_inst_1  (_traceBuilder_io_fill_0_bits_inst_1),
+    .io_fill_0_bits_inst_2  (_traceBuilder_io_fill_0_bits_inst_2),
+    .io_fill_0_bits_inst_3  (_traceBuilder_io_fill_0_bits_inst_3),
+    .io_fill_0_bits_nextPc  (_traceBuilder_io_fill_0_bits_nextPc),
+    .io_fill_1_valid        (_traceBuilder_io_fill_1_valid),
+    .io_fill_1_bits_startPc (_traceBuilder_io_fill_1_bits_startPc),
+    .io_fill_1_bits_context (_traceBuilder_io_fill_1_bits_context),
+    .io_fill_1_bits_pc_0    (_traceBuilder_io_fill_1_bits_pc_0),
+    .io_fill_1_bits_pc_1    (_traceBuilder_io_fill_1_bits_pc_1),
+    .io_fill_1_bits_pc_2    (_traceBuilder_io_fill_1_bits_pc_2),
+    .io_fill_1_bits_pc_3    (_traceBuilder_io_fill_1_bits_pc_3),
+    .io_fill_1_bits_inst_0  (_traceBuilder_io_fill_1_bits_inst_0),
+    .io_fill_1_bits_inst_1  (_traceBuilder_io_fill_1_bits_inst_1),
+    .io_fill_1_bits_inst_2  (_traceBuilder_io_fill_1_bits_inst_2),
+    .io_fill_1_bits_inst_3  (_traceBuilder_io_fill_1_bits_inst_3),
+    .io_fill_1_bits_nextPc  (_traceBuilder_io_fill_1_bits_nextPc),
+    .io_fill_2_valid        (_traceBuilder_io_fill_2_valid),
+    .io_fill_2_bits_startPc (_traceBuilder_io_fill_2_bits_startPc),
+    .io_fill_2_bits_context (_traceBuilder_io_fill_2_bits_context),
+    .io_fill_2_bits_pc_0    (_traceBuilder_io_fill_2_bits_pc_0),
+    .io_fill_2_bits_pc_1    (_traceBuilder_io_fill_2_bits_pc_1),
+    .io_fill_2_bits_pc_2    (_traceBuilder_io_fill_2_bits_pc_2),
+    .io_fill_2_bits_pc_3    (_traceBuilder_io_fill_2_bits_pc_3),
+    .io_fill_2_bits_inst_0  (_traceBuilder_io_fill_2_bits_inst_0),
+    .io_fill_2_bits_inst_1  (_traceBuilder_io_fill_2_bits_inst_1),
+    .io_fill_2_bits_inst_2  (_traceBuilder_io_fill_2_bits_inst_2),
+    .io_fill_2_bits_inst_3  (_traceBuilder_io_fill_2_bits_inst_3),
+    .io_fill_2_bits_nextPc  (_traceBuilder_io_fill_2_bits_nextPc),
+    .io_fill_3_valid        (_traceBuilder_io_fill_3_valid),
+    .io_fill_3_bits_startPc (_traceBuilder_io_fill_3_bits_startPc),
+    .io_fill_3_bits_context (_traceBuilder_io_fill_3_bits_context),
+    .io_fill_3_bits_pc_0    (_traceBuilder_io_fill_3_bits_pc_0),
+    .io_fill_3_bits_pc_1    (_traceBuilder_io_fill_3_bits_pc_1),
+    .io_fill_3_bits_pc_2    (_traceBuilder_io_fill_3_bits_pc_2),
+    .io_fill_3_bits_pc_3    (_traceBuilder_io_fill_3_bits_pc_3),
+    .io_fill_3_bits_inst_0  (_traceBuilder_io_fill_3_bits_inst_0),
+    .io_fill_3_bits_inst_1  (_traceBuilder_io_fill_3_bits_inst_1),
+    .io_fill_3_bits_inst_2  (_traceBuilder_io_fill_3_bits_inst_2),
+    .io_fill_3_bits_inst_3  (_traceBuilder_io_fill_3_bits_inst_3),
+    .io_fill_3_bits_nextPc  (_traceBuilder_io_fill_3_bits_nextPc),
+    .io_invalidate          (io_trace_invalidate)
   );
   PerfMonitor pm (
     .clock    (clock),
@@ -589,13 +810,13 @@ module IFU(
     .clock    (clock),
     .event_id (32'h1),
     .data     (64'h1),
-    .enable   (_io_imem_rready_T_2 & ~io_imem_rvalid)
+    .enable   (_io_imem_rready_T_4 & ~io_imem_rvalid)
   );
   PerfMonitor pm_2 (
     .clock    (clock),
     .event_id (32'h2),
     .data     (64'h1),
-    .enable   (_io_imem_rready_T_2 & io_imem_rvalid & ~work)
+    .enable   (_io_imem_rready_T_4 & io_imem_rvalid & ~work)
   );
   PerfMonitor pm_3 (
     .clock    (clock),
@@ -607,7 +828,7 @@ module IFU(
     .clock    (clock),
     .event_id (32'h30),
     .data     (64'h1),
-    .enable   (_GEN_0)
+    .enable   (_GEN_2)
   );
   PerfMonitor pm_5 (
     .clock    (clock),
@@ -714,75 +935,123 @@ module IFU(
   );
   PerfMonitor pm_18 (
     .clock    (clock),
-    .event_id (32'h59),
+    .event_id (32'h89),
     .data     (64'h1),
-    .enable   (_GEN_0)
+    .enable   (1'h0)
   );
   PerfMonitor pm_19 (
+    .clock    (clock),
+    .event_id (32'h59),
+    .data     (64'h1),
+    .enable   (_GEN_2)
+  );
+  PerfMonitor pm_20 (
     .clock    (clock),
     .event_id (32'h5A),
     .data     (64'h1),
     .enable   (captureCandidate & _fetchBuffer_io_full)
   );
-  PerfMonitor pm_20 (
+  PerfMonitor pm_21 (
     .clock    (clock),
     .event_id (32'h5B),
     .data     (64'h1),
     .enable   (captureCandidate & _ftq_io_full)
   );
-  PerfMonitor pm_21 (
+  PerfMonitor pm_22 (
     .clock    (clock),
     .event_id (32'h5C),
     .data     (64'h1),
     .enable   (work & ~io_imem_rvalid1 & ~slot0Taken & ~(|io_imem_rresp))
   );
-  PerfMonitor pm_22 (
+  PerfMonitor pm_23 (
     .clock    (clock),
     .event_id (32'h5D),
     .data     (64'h1),
     .enable   (bpu_io_recover_valid)
   );
-  PerfMonitor pm_23 (
+  PerfMonitor pm_24 (
     .clock    (clock),
     .event_id (32'h5E),
     .data     (64'h1),
     .enable   (bpu_io_recover_valid & (io_bp_recover_is_call | io_bp_recover_is_ret))
   );
-  PerfMonitor pm_24 (
+  PerfMonitor pm_25 (
     .clock    (clock),
     .event_id (32'h5F),
     .data     ({59'h0, _ftq_io_count - ftqHighWater}),
-    .enable   (_GEN)
+    .enable   (_GEN_1)
   );
-  PerfMonitor pm_25 (
+  PerfMonitor pm_26 (
     .clock    (clock),
     .event_id (32'h60),
     .data     (64'h1),
     .enable   (io_bp_recover_valid & ~_ftq_io_recoverValid)
   );
-  PerfMonitor pm_26 (
+  PerfMonitor pm_27 (
     .clock    (clock),
     .event_id (32'h78),
     .data     (64'h1),
     .enable   (_io_imem_arvalid_T & io_in_valid & ~io_is_flush & ~fetchResourcesReady)
   );
-  PerfMonitor pm_27 (
+  PerfMonitor pm_28 (
     .clock    (clock),
     .event_id (32'h79),
     .data     (64'h1),
     .enable   (_io_imem_arvalid_T & ~io_in_valid & ~io_is_flush)
   );
-  PerfMonitor pm_28 (
+  PerfMonitor pm_29 (
     .clock    (clock),
     .event_id (32'h7A),
     .data     (64'h1),
     .enable   (work & slot1RawUse & ~io_slot1_enable)
   );
-  PerfMonitor pm_29 (
+  PerfMonitor pm_30 (
     .clock    (clock),
     .event_id (32'h34),
     .data     (64'h1),
-    .enable   (redirectBubble_REG & ~(_fetchBuffer_io_out_valid & io_out_ready))
+    .enable   (redirectBubble_REG & ~packetFire)
+  );
+  PerfMonitor pm_31 (
+    .clock    (clock),
+    .event_id (32'h8A),
+    .data     (64'h1),
+    .enable   (bpCapturePending)
+  );
+  PerfMonitor pm_32 (
+    .clock    (clock),
+    .event_id (32'h8B),
+    .data     (64'h1),
+    .enable   (bpFqPending)
+  );
+  PerfMonitor pm_33 (
+    .clock    (clock),
+    .event_id (32'h8C),
+    .data     (64'h1),
+    .enable   (bpFqPending & _io_imem_rready_T_2)
+  );
+  PerfMonitor pm_34 (
+    .clock    (clock),
+    .event_id (32'h8D),
+    .data     (64'h1),
+    .enable   (bpFqPending & _io_imem_rready_T_4 & ~io_imem_rvalid)
+  );
+  PerfMonitor pm_35 (
+    .clock    (clock),
+    .event_id (32'h8E),
+    .data     (64'h1),
+    .enable   (bpFqPending & _io_imem_arvalid_T & io_in_valid & ~fetchResourcesReady)
+  );
+  PerfMonitor pm_36 (
+    .clock    (clock),
+    .event_id (32'h8F),
+    .data     (64'h1),
+    .enable   (_GEN)
+  );
+  PerfMonitor pm_37 (
+    .clock    (clock),
+    .event_id (32'h90),
+    .data     (64'h1),
+    .enable   (_GEN_0)
   );
   assign io_in_ready = ~io_in_valid | work | io_is_flush;
   assign io_out_valid = _fetchBuffer_io_out_valid;
@@ -801,10 +1070,10 @@ module IFU(
                       : slot3CanUse
                           ? io_in_bits_next_pc + 32'h10
                           : slot2CanUse
-                              ? bpu_io_predict_pc3
-                              : slot1CanUse ? bpu_io_predict_pc2 : bpu_io_predict_pc1;
+                              ? sourcePc_3
+                              : slot1CanUse ? sourcePc_2 : sourcePc_1;
   assign io_imem_araddr = io_in_bits_next_pc;
   assign io_imem_arvalid = io_imem_arvalid_0;
-  assign io_imem_rready = work | _io_imem_rready_T | _io_imem_rready_T_2 & io_is_flush;
+  assign io_imem_rready = work | _io_imem_rready_T_2 | _io_imem_rready_T_4 & io_is_flush;
 endmodule
 

@@ -40,7 +40,11 @@ module WideRS_Verification_Assert(
               io_issue_lsu_fire,
   input [3:0] io_issue_lsu_idx,
               io_issue_lsu1_idx,
-  input       clock
+  input       io_issue_store_addr_bits_src2_ready,
+              io_issue_store_addr_bits_lsu_mem_write,
+              io_issue_store_addr_bits_src1_ready,
+              io_issue_store_addr_fire,
+              clock
 );
 
   `ifndef SYNTHESIS
@@ -122,6 +126,15 @@ module WideRS_Verification_Assert(
               | io_issue_lsu_idx != io_issue_lsu1_idx)) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: the two LSU ports must not issue the same RS entry\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset
+          & ~(~io_issue_store_addr_fire | io_issue_store_addr_bits_lsu_mem_write
+              & io_issue_store_addr_bits_src1_ready
+              & ~io_issue_store_addr_bits_src2_ready)) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: Store address issue must be an address-ready/data-wait Store\n");
         if (`STOP_COND_)
           $fatal;
       end

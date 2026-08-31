@@ -173,9 +173,17 @@ static void execute(uint64_t n) {
   static unsigned last_lsu_rob = UINT32_MAX;
   static uint32_t recent_commit_pc[32] = {};
   static unsigned recent_commit_pos = 0;
+  static bool commit_trace_initialized = false;
+  static FILE *commit_trace_file = nullptr;
+  if (!commit_trace_initialized) {
+    commit_trace_initialized = true;
+    const char *path = getenv("NPC_COMMIT_TRACE");
+    if (path != nullptr) commit_trace_file = fopen(path, "w");
+  }
   auto record_commit = [&](uint32_t pc) {
     recent_commit_pc[recent_commit_pos & 31u] = pc;
     recent_commit_pos++;
+    if (commit_trace_file != nullptr) fprintf(commit_trace_file, "%08x\n", pc);
   };
   if (!pipe_trace_initialized) {
     pipe_trace_initialized = true;

@@ -14,6 +14,9 @@ module StoreQueue(
   input  [31:0] io_wb_addr,
                 io_wb_data,
   input  [3:0]  io_wb_mask,
+  input         io_addr_wb_valid,
+  input  [4:0]  io_addr_wb_rob,
+  input  [31:0] io_addr_wb_addr,
   input         io_commit_valid,
   input  [4:0]  io_commit_rob,
   input         io_commit1_valid,
@@ -35,179 +38,213 @@ module StoreQueue(
   output [3:0]  io_partial_mask,
   output        io_wait_load,
                 io_wait_unknown,
+                io_wait_data,
                 io_has_fwd_candidate,
   output [31:0] io_older_unresolved_mask,
                 io_partial1_data,
   output [3:0]  io_partial1_mask,
   output        io_wait1_unknown,
+                io_wait1_data,
                 io_has_fwd1_candidate,
   output [31:0] io_older_unresolved1_mask
 );
 
   reg         entries_0_valid;
   reg         entries_0_addr_ready;
+  reg         entries_0_data_ready;
   reg  [31:0] entries_0_addr;
   reg  [31:0] entries_0_data;
   reg  [3:0]  entries_0_mask;
   reg         entries_1_valid;
   reg         entries_1_addr_ready;
+  reg         entries_1_data_ready;
   reg  [31:0] entries_1_addr;
   reg  [31:0] entries_1_data;
   reg  [3:0]  entries_1_mask;
   reg         entries_2_valid;
   reg         entries_2_addr_ready;
+  reg         entries_2_data_ready;
   reg  [31:0] entries_2_addr;
   reg  [31:0] entries_2_data;
   reg  [3:0]  entries_2_mask;
   reg         entries_3_valid;
   reg         entries_3_addr_ready;
+  reg         entries_3_data_ready;
   reg  [31:0] entries_3_addr;
   reg  [31:0] entries_3_data;
   reg  [3:0]  entries_3_mask;
   reg         entries_4_valid;
   reg         entries_4_addr_ready;
+  reg         entries_4_data_ready;
   reg  [31:0] entries_4_addr;
   reg  [31:0] entries_4_data;
   reg  [3:0]  entries_4_mask;
   reg         entries_5_valid;
   reg         entries_5_addr_ready;
+  reg         entries_5_data_ready;
   reg  [31:0] entries_5_addr;
   reg  [31:0] entries_5_data;
   reg  [3:0]  entries_5_mask;
   reg         entries_6_valid;
   reg         entries_6_addr_ready;
+  reg         entries_6_data_ready;
   reg  [31:0] entries_6_addr;
   reg  [31:0] entries_6_data;
   reg  [3:0]  entries_6_mask;
   reg         entries_7_valid;
   reg         entries_7_addr_ready;
+  reg         entries_7_data_ready;
   reg  [31:0] entries_7_addr;
   reg  [31:0] entries_7_data;
   reg  [3:0]  entries_7_mask;
   reg         entries_8_valid;
   reg         entries_8_addr_ready;
+  reg         entries_8_data_ready;
   reg  [31:0] entries_8_addr;
   reg  [31:0] entries_8_data;
   reg  [3:0]  entries_8_mask;
   reg         entries_9_valid;
   reg         entries_9_addr_ready;
+  reg         entries_9_data_ready;
   reg  [31:0] entries_9_addr;
   reg  [31:0] entries_9_data;
   reg  [3:0]  entries_9_mask;
   reg         entries_10_valid;
   reg         entries_10_addr_ready;
+  reg         entries_10_data_ready;
   reg  [31:0] entries_10_addr;
   reg  [31:0] entries_10_data;
   reg  [3:0]  entries_10_mask;
   reg         entries_11_valid;
   reg         entries_11_addr_ready;
+  reg         entries_11_data_ready;
   reg  [31:0] entries_11_addr;
   reg  [31:0] entries_11_data;
   reg  [3:0]  entries_11_mask;
   reg         entries_12_valid;
   reg         entries_12_addr_ready;
+  reg         entries_12_data_ready;
   reg  [31:0] entries_12_addr;
   reg  [31:0] entries_12_data;
   reg  [3:0]  entries_12_mask;
   reg         entries_13_valid;
   reg         entries_13_addr_ready;
+  reg         entries_13_data_ready;
   reg  [31:0] entries_13_addr;
   reg  [31:0] entries_13_data;
   reg  [3:0]  entries_13_mask;
   reg         entries_14_valid;
   reg         entries_14_addr_ready;
+  reg         entries_14_data_ready;
   reg  [31:0] entries_14_addr;
   reg  [31:0] entries_14_data;
   reg  [3:0]  entries_14_mask;
   reg         entries_15_valid;
   reg         entries_15_addr_ready;
+  reg         entries_15_data_ready;
   reg  [31:0] entries_15_addr;
   reg  [31:0] entries_15_data;
   reg  [3:0]  entries_15_mask;
   reg         entries_16_valid;
   reg         entries_16_addr_ready;
+  reg         entries_16_data_ready;
   reg  [31:0] entries_16_addr;
   reg  [31:0] entries_16_data;
   reg  [3:0]  entries_16_mask;
   reg         entries_17_valid;
   reg         entries_17_addr_ready;
+  reg         entries_17_data_ready;
   reg  [31:0] entries_17_addr;
   reg  [31:0] entries_17_data;
   reg  [3:0]  entries_17_mask;
   reg         entries_18_valid;
   reg         entries_18_addr_ready;
+  reg         entries_18_data_ready;
   reg  [31:0] entries_18_addr;
   reg  [31:0] entries_18_data;
   reg  [3:0]  entries_18_mask;
   reg         entries_19_valid;
   reg         entries_19_addr_ready;
+  reg         entries_19_data_ready;
   reg  [31:0] entries_19_addr;
   reg  [31:0] entries_19_data;
   reg  [3:0]  entries_19_mask;
   reg         entries_20_valid;
   reg         entries_20_addr_ready;
+  reg         entries_20_data_ready;
   reg  [31:0] entries_20_addr;
   reg  [31:0] entries_20_data;
   reg  [3:0]  entries_20_mask;
   reg         entries_21_valid;
   reg         entries_21_addr_ready;
+  reg         entries_21_data_ready;
   reg  [31:0] entries_21_addr;
   reg  [31:0] entries_21_data;
   reg  [3:0]  entries_21_mask;
   reg         entries_22_valid;
   reg         entries_22_addr_ready;
+  reg         entries_22_data_ready;
   reg  [31:0] entries_22_addr;
   reg  [31:0] entries_22_data;
   reg  [3:0]  entries_22_mask;
   reg         entries_23_valid;
   reg         entries_23_addr_ready;
+  reg         entries_23_data_ready;
   reg  [31:0] entries_23_addr;
   reg  [31:0] entries_23_data;
   reg  [3:0]  entries_23_mask;
   reg         entries_24_valid;
   reg         entries_24_addr_ready;
+  reg         entries_24_data_ready;
   reg  [31:0] entries_24_addr;
   reg  [31:0] entries_24_data;
   reg  [3:0]  entries_24_mask;
   reg         entries_25_valid;
   reg         entries_25_addr_ready;
+  reg         entries_25_data_ready;
   reg  [31:0] entries_25_addr;
   reg  [31:0] entries_25_data;
   reg  [3:0]  entries_25_mask;
   reg         entries_26_valid;
   reg         entries_26_addr_ready;
+  reg         entries_26_data_ready;
   reg  [31:0] entries_26_addr;
   reg  [31:0] entries_26_data;
   reg  [3:0]  entries_26_mask;
   reg         entries_27_valid;
   reg         entries_27_addr_ready;
+  reg         entries_27_data_ready;
   reg  [31:0] entries_27_addr;
   reg  [31:0] entries_27_data;
   reg  [3:0]  entries_27_mask;
   reg         entries_28_valid;
   reg         entries_28_addr_ready;
+  reg         entries_28_data_ready;
   reg  [31:0] entries_28_addr;
   reg  [31:0] entries_28_data;
   reg  [3:0]  entries_28_mask;
   reg         entries_29_valid;
   reg         entries_29_addr_ready;
+  reg         entries_29_data_ready;
   reg  [31:0] entries_29_addr;
   reg  [31:0] entries_29_data;
   reg  [3:0]  entries_29_mask;
   reg         entries_30_valid;
   reg         entries_30_addr_ready;
+  reg         entries_30_data_ready;
   reg  [31:0] entries_30_addr;
   reg  [31:0] entries_30_data;
   reg  [3:0]  entries_30_mask;
   reg         entries_31_valid;
   reg         entries_31_addr_ready;
+  reg         entries_31_data_ready;
   reg  [31:0] entries_31_addr;
   reg  [31:0] entries_31_data;
   reg  [3:0]  entries_31_mask;
   wire [4:0]  idxAge = 5'h0 - io_rob_head;
   reg         casez_tmp;
   always_comb begin
-    casez (io_wb_rob)
+    casez (io_addr_wb_rob)
       5'b00000:
         casez_tmp = entries_0_valid;
       5'b00001:
@@ -274,6 +311,75 @@ module StoreQueue(
         casez_tmp = entries_31_valid;
     endcase
   end // always_comb
+  reg         casez_tmp_0;
+  always_comb begin
+    casez (io_wb_rob)
+      5'b00000:
+        casez_tmp_0 = entries_0_valid;
+      5'b00001:
+        casez_tmp_0 = entries_1_valid;
+      5'b00010:
+        casez_tmp_0 = entries_2_valid;
+      5'b00011:
+        casez_tmp_0 = entries_3_valid;
+      5'b00100:
+        casez_tmp_0 = entries_4_valid;
+      5'b00101:
+        casez_tmp_0 = entries_5_valid;
+      5'b00110:
+        casez_tmp_0 = entries_6_valid;
+      5'b00111:
+        casez_tmp_0 = entries_7_valid;
+      5'b01000:
+        casez_tmp_0 = entries_8_valid;
+      5'b01001:
+        casez_tmp_0 = entries_9_valid;
+      5'b01010:
+        casez_tmp_0 = entries_10_valid;
+      5'b01011:
+        casez_tmp_0 = entries_11_valid;
+      5'b01100:
+        casez_tmp_0 = entries_12_valid;
+      5'b01101:
+        casez_tmp_0 = entries_13_valid;
+      5'b01110:
+        casez_tmp_0 = entries_14_valid;
+      5'b01111:
+        casez_tmp_0 = entries_15_valid;
+      5'b10000:
+        casez_tmp_0 = entries_16_valid;
+      5'b10001:
+        casez_tmp_0 = entries_17_valid;
+      5'b10010:
+        casez_tmp_0 = entries_18_valid;
+      5'b10011:
+        casez_tmp_0 = entries_19_valid;
+      5'b10100:
+        casez_tmp_0 = entries_20_valid;
+      5'b10101:
+        casez_tmp_0 = entries_21_valid;
+      5'b10110:
+        casez_tmp_0 = entries_22_valid;
+      5'b10111:
+        casez_tmp_0 = entries_23_valid;
+      5'b11000:
+        casez_tmp_0 = entries_24_valid;
+      5'b11001:
+        casez_tmp_0 = entries_25_valid;
+      5'b11010:
+        casez_tmp_0 = entries_26_valid;
+      5'b11011:
+        casez_tmp_0 = entries_27_valid;
+      5'b11100:
+        casez_tmp_0 = entries_28_valid;
+      5'b11101:
+        casez_tmp_0 = entries_29_valid;
+      5'b11110:
+        casez_tmp_0 = entries_30_valid;
+      default:
+        casez_tmp_0 = entries_31_valid;
+    endcase
+  end // always_comb
   wire [4:0]  _query0_ldAge_T = io_ld_rob - io_rob_head;
   wire        query0_olderStore = entries_0_valid & idxAge < _query0_ldAge_T;
   wire        query0_sameWord =
@@ -286,15 +392,19 @@ module StoreQueue(
   wire [62:0] _GEN_1 = {31'h0, entries_0_data};
   wire [62:0] _GEN_2 = {58'h0, entries_0_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_0_T_1 = _GEN_1 << _GEN_2;
-  wire        _query0_knownByteHits_3_0_T = io_ld_valid & query0_olderStore;
+  wire        _query0_pendingDataByteHits_3_0_T = io_ld_valid & query0_olderStore;
   wire        query0_knownByteHits_0_0 =
-    _query0_knownByteHits_3_0_T & query0_sameWord & _query0_storeMask_T_1[0];
+    _query0_pendingDataByteHits_3_0_T & entries_0_data_ready & query0_sameWord
+    & _query0_storeMask_T_1[0];
   wire        query0_knownByteHits_1_0 =
-    _query0_knownByteHits_3_0_T & query0_sameWord & _query0_storeMask_T_1[1];
+    _query0_pendingDataByteHits_3_0_T & entries_0_data_ready & query0_sameWord
+    & _query0_storeMask_T_1[1];
   wire        query0_knownByteHits_2_0 =
-    _query0_knownByteHits_3_0_T & query0_sameWord & _query0_storeMask_T_1[2];
+    _query0_pendingDataByteHits_3_0_T & entries_0_data_ready & query0_sameWord
+    & _query0_storeMask_T_1[2];
   wire        query0_knownByteHits_3_0 =
-    _query0_knownByteHits_3_0_T & query0_sameWord & _query0_storeMask_T_1[3];
+    _query0_pendingDataByteHits_3_0_T & entries_0_data_ready & query0_sameWord
+    & _query0_storeMask_T_1[3];
   wire [4:0]  _query1_eAge_T_2 = 5'h1 - io_rob_head;
   wire        query0_olderStore_1 = entries_1_valid & _query1_eAge_T_2 < _query0_ldAge_T;
   wire        query0_sameWord_1 =
@@ -307,15 +417,19 @@ module StoreQueue(
   wire [62:0] _GEN_5 = {31'h0, entries_1_data};
   wire [62:0] _GEN_6 = {58'h0, entries_1_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_1_T_1 = _GEN_5 << _GEN_6;
-  wire        _query0_knownByteHits_3_1_T = io_ld_valid & query0_olderStore_1;
+  wire        _query0_pendingDataByteHits_3_1_T = io_ld_valid & query0_olderStore_1;
   wire        query0_knownByteHits_0_1 =
-    _query0_knownByteHits_3_1_T & query0_sameWord_1 & _query0_storeMask_T_4[0];
+    _query0_pendingDataByteHits_3_1_T & entries_1_data_ready & query0_sameWord_1
+    & _query0_storeMask_T_4[0];
   wire        query0_knownByteHits_1_1 =
-    _query0_knownByteHits_3_1_T & query0_sameWord_1 & _query0_storeMask_T_4[1];
+    _query0_pendingDataByteHits_3_1_T & entries_1_data_ready & query0_sameWord_1
+    & _query0_storeMask_T_4[1];
   wire        query0_knownByteHits_2_1 =
-    _query0_knownByteHits_3_1_T & query0_sameWord_1 & _query0_storeMask_T_4[2];
+    _query0_pendingDataByteHits_3_1_T & entries_1_data_ready & query0_sameWord_1
+    & _query0_storeMask_T_4[2];
   wire        query0_knownByteHits_3_1 =
-    _query0_knownByteHits_3_1_T & query0_sameWord_1 & _query0_storeMask_T_4[3];
+    _query0_pendingDataByteHits_3_1_T & entries_1_data_ready & query0_sameWord_1
+    & _query0_storeMask_T_4[3];
   wire [4:0]  _query1_eAge_T_4 = 5'h2 - io_rob_head;
   wire        query0_olderStore_2 = entries_2_valid & _query1_eAge_T_4 < _query0_ldAge_T;
   wire        query0_sameWord_2 =
@@ -328,15 +442,19 @@ module StoreQueue(
   wire [62:0] _GEN_9 = {31'h0, entries_2_data};
   wire [62:0] _GEN_10 = {58'h0, entries_2_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_2_T_1 = _GEN_9 << _GEN_10;
-  wire        _query0_knownByteHits_3_2_T = io_ld_valid & query0_olderStore_2;
+  wire        _query0_pendingDataByteHits_3_2_T = io_ld_valid & query0_olderStore_2;
   wire        query0_knownByteHits_0_2 =
-    _query0_knownByteHits_3_2_T & query0_sameWord_2 & _query0_storeMask_T_7[0];
+    _query0_pendingDataByteHits_3_2_T & entries_2_data_ready & query0_sameWord_2
+    & _query0_storeMask_T_7[0];
   wire        query0_knownByteHits_1_2 =
-    _query0_knownByteHits_3_2_T & query0_sameWord_2 & _query0_storeMask_T_7[1];
+    _query0_pendingDataByteHits_3_2_T & entries_2_data_ready & query0_sameWord_2
+    & _query0_storeMask_T_7[1];
   wire        query0_knownByteHits_2_2 =
-    _query0_knownByteHits_3_2_T & query0_sameWord_2 & _query0_storeMask_T_7[2];
+    _query0_pendingDataByteHits_3_2_T & entries_2_data_ready & query0_sameWord_2
+    & _query0_storeMask_T_7[2];
   wire        query0_knownByteHits_3_2 =
-    _query0_knownByteHits_3_2_T & query0_sameWord_2 & _query0_storeMask_T_7[3];
+    _query0_pendingDataByteHits_3_2_T & entries_2_data_ready & query0_sameWord_2
+    & _query0_storeMask_T_7[3];
   wire [4:0]  _query1_eAge_T_6 = 5'h3 - io_rob_head;
   wire        query0_olderStore_3 = entries_3_valid & _query1_eAge_T_6 < _query0_ldAge_T;
   wire        query0_sameWord_3 =
@@ -349,15 +467,19 @@ module StoreQueue(
   wire [62:0] _GEN_13 = {31'h0, entries_3_data};
   wire [62:0] _GEN_14 = {58'h0, entries_3_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_3_T_1 = _GEN_13 << _GEN_14;
-  wire        _query0_knownByteHits_3_3_T = io_ld_valid & query0_olderStore_3;
+  wire        _query0_pendingDataByteHits_3_3_T = io_ld_valid & query0_olderStore_3;
   wire        query0_knownByteHits_0_3 =
-    _query0_knownByteHits_3_3_T & query0_sameWord_3 & _query0_storeMask_T_10[0];
+    _query0_pendingDataByteHits_3_3_T & entries_3_data_ready & query0_sameWord_3
+    & _query0_storeMask_T_10[0];
   wire        query0_knownByteHits_1_3 =
-    _query0_knownByteHits_3_3_T & query0_sameWord_3 & _query0_storeMask_T_10[1];
+    _query0_pendingDataByteHits_3_3_T & entries_3_data_ready & query0_sameWord_3
+    & _query0_storeMask_T_10[1];
   wire        query0_knownByteHits_2_3 =
-    _query0_knownByteHits_3_3_T & query0_sameWord_3 & _query0_storeMask_T_10[2];
+    _query0_pendingDataByteHits_3_3_T & entries_3_data_ready & query0_sameWord_3
+    & _query0_storeMask_T_10[2];
   wire        query0_knownByteHits_3_3 =
-    _query0_knownByteHits_3_3_T & query0_sameWord_3 & _query0_storeMask_T_10[3];
+    _query0_pendingDataByteHits_3_3_T & entries_3_data_ready & query0_sameWord_3
+    & _query0_storeMask_T_10[3];
   wire [4:0]  _query1_eAge_T_8 = 5'h4 - io_rob_head;
   wire        query0_olderStore_4 = entries_4_valid & _query1_eAge_T_8 < _query0_ldAge_T;
   wire        query0_sameWord_4 =
@@ -370,15 +492,19 @@ module StoreQueue(
   wire [62:0] _GEN_17 = {31'h0, entries_4_data};
   wire [62:0] _GEN_18 = {58'h0, entries_4_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_4_T_1 = _GEN_17 << _GEN_18;
-  wire        _query0_knownByteHits_3_4_T = io_ld_valid & query0_olderStore_4;
+  wire        _query0_pendingDataByteHits_3_4_T = io_ld_valid & query0_olderStore_4;
   wire        query0_knownByteHits_0_4 =
-    _query0_knownByteHits_3_4_T & query0_sameWord_4 & _query0_storeMask_T_13[0];
+    _query0_pendingDataByteHits_3_4_T & entries_4_data_ready & query0_sameWord_4
+    & _query0_storeMask_T_13[0];
   wire        query0_knownByteHits_1_4 =
-    _query0_knownByteHits_3_4_T & query0_sameWord_4 & _query0_storeMask_T_13[1];
+    _query0_pendingDataByteHits_3_4_T & entries_4_data_ready & query0_sameWord_4
+    & _query0_storeMask_T_13[1];
   wire        query0_knownByteHits_2_4 =
-    _query0_knownByteHits_3_4_T & query0_sameWord_4 & _query0_storeMask_T_13[2];
+    _query0_pendingDataByteHits_3_4_T & entries_4_data_ready & query0_sameWord_4
+    & _query0_storeMask_T_13[2];
   wire        query0_knownByteHits_3_4 =
-    _query0_knownByteHits_3_4_T & query0_sameWord_4 & _query0_storeMask_T_13[3];
+    _query0_pendingDataByteHits_3_4_T & entries_4_data_ready & query0_sameWord_4
+    & _query0_storeMask_T_13[3];
   wire [4:0]  _query1_eAge_T_10 = 5'h5 - io_rob_head;
   wire        query0_olderStore_5 = entries_5_valid & _query1_eAge_T_10 < _query0_ldAge_T;
   wire        query0_sameWord_5 =
@@ -391,15 +517,19 @@ module StoreQueue(
   wire [62:0] _GEN_21 = {31'h0, entries_5_data};
   wire [62:0] _GEN_22 = {58'h0, entries_5_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_5_T_1 = _GEN_21 << _GEN_22;
-  wire        _query0_knownByteHits_3_5_T = io_ld_valid & query0_olderStore_5;
+  wire        _query0_pendingDataByteHits_3_5_T = io_ld_valid & query0_olderStore_5;
   wire        query0_knownByteHits_0_5 =
-    _query0_knownByteHits_3_5_T & query0_sameWord_5 & _query0_storeMask_T_16[0];
+    _query0_pendingDataByteHits_3_5_T & entries_5_data_ready & query0_sameWord_5
+    & _query0_storeMask_T_16[0];
   wire        query0_knownByteHits_1_5 =
-    _query0_knownByteHits_3_5_T & query0_sameWord_5 & _query0_storeMask_T_16[1];
+    _query0_pendingDataByteHits_3_5_T & entries_5_data_ready & query0_sameWord_5
+    & _query0_storeMask_T_16[1];
   wire        query0_knownByteHits_2_5 =
-    _query0_knownByteHits_3_5_T & query0_sameWord_5 & _query0_storeMask_T_16[2];
+    _query0_pendingDataByteHits_3_5_T & entries_5_data_ready & query0_sameWord_5
+    & _query0_storeMask_T_16[2];
   wire        query0_knownByteHits_3_5 =
-    _query0_knownByteHits_3_5_T & query0_sameWord_5 & _query0_storeMask_T_16[3];
+    _query0_pendingDataByteHits_3_5_T & entries_5_data_ready & query0_sameWord_5
+    & _query0_storeMask_T_16[3];
   wire [4:0]  _query1_eAge_T_12 = 5'h6 - io_rob_head;
   wire        query0_olderStore_6 = entries_6_valid & _query1_eAge_T_12 < _query0_ldAge_T;
   wire        query0_sameWord_6 =
@@ -412,15 +542,19 @@ module StoreQueue(
   wire [62:0] _GEN_25 = {31'h0, entries_6_data};
   wire [62:0] _GEN_26 = {58'h0, entries_6_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_6_T_1 = _GEN_25 << _GEN_26;
-  wire        _query0_knownByteHits_3_6_T = io_ld_valid & query0_olderStore_6;
+  wire        _query0_pendingDataByteHits_3_6_T = io_ld_valid & query0_olderStore_6;
   wire        query0_knownByteHits_0_6 =
-    _query0_knownByteHits_3_6_T & query0_sameWord_6 & _query0_storeMask_T_19[0];
+    _query0_pendingDataByteHits_3_6_T & entries_6_data_ready & query0_sameWord_6
+    & _query0_storeMask_T_19[0];
   wire        query0_knownByteHits_1_6 =
-    _query0_knownByteHits_3_6_T & query0_sameWord_6 & _query0_storeMask_T_19[1];
+    _query0_pendingDataByteHits_3_6_T & entries_6_data_ready & query0_sameWord_6
+    & _query0_storeMask_T_19[1];
   wire        query0_knownByteHits_2_6 =
-    _query0_knownByteHits_3_6_T & query0_sameWord_6 & _query0_storeMask_T_19[2];
+    _query0_pendingDataByteHits_3_6_T & entries_6_data_ready & query0_sameWord_6
+    & _query0_storeMask_T_19[2];
   wire        query0_knownByteHits_3_6 =
-    _query0_knownByteHits_3_6_T & query0_sameWord_6 & _query0_storeMask_T_19[3];
+    _query0_pendingDataByteHits_3_6_T & entries_6_data_ready & query0_sameWord_6
+    & _query0_storeMask_T_19[3];
   wire [4:0]  _query1_eAge_T_14 = 5'h7 - io_rob_head;
   wire        query0_olderStore_7 = entries_7_valid & _query1_eAge_T_14 < _query0_ldAge_T;
   wire        query0_sameWord_7 =
@@ -433,15 +567,19 @@ module StoreQueue(
   wire [62:0] _GEN_29 = {31'h0, entries_7_data};
   wire [62:0] _GEN_30 = {58'h0, entries_7_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_7_T_1 = _GEN_29 << _GEN_30;
-  wire        _query0_knownByteHits_3_7_T = io_ld_valid & query0_olderStore_7;
+  wire        _query0_pendingDataByteHits_3_7_T = io_ld_valid & query0_olderStore_7;
   wire        query0_knownByteHits_0_7 =
-    _query0_knownByteHits_3_7_T & query0_sameWord_7 & _query0_storeMask_T_22[0];
+    _query0_pendingDataByteHits_3_7_T & entries_7_data_ready & query0_sameWord_7
+    & _query0_storeMask_T_22[0];
   wire        query0_knownByteHits_1_7 =
-    _query0_knownByteHits_3_7_T & query0_sameWord_7 & _query0_storeMask_T_22[1];
+    _query0_pendingDataByteHits_3_7_T & entries_7_data_ready & query0_sameWord_7
+    & _query0_storeMask_T_22[1];
   wire        query0_knownByteHits_2_7 =
-    _query0_knownByteHits_3_7_T & query0_sameWord_7 & _query0_storeMask_T_22[2];
+    _query0_pendingDataByteHits_3_7_T & entries_7_data_ready & query0_sameWord_7
+    & _query0_storeMask_T_22[2];
   wire        query0_knownByteHits_3_7 =
-    _query0_knownByteHits_3_7_T & query0_sameWord_7 & _query0_storeMask_T_22[3];
+    _query0_pendingDataByteHits_3_7_T & entries_7_data_ready & query0_sameWord_7
+    & _query0_storeMask_T_22[3];
   wire [4:0]  _query1_eAge_T_16 = 5'h8 - io_rob_head;
   wire        query0_olderStore_8 = entries_8_valid & _query1_eAge_T_16 < _query0_ldAge_T;
   wire        query0_sameWord_8 =
@@ -454,15 +592,19 @@ module StoreQueue(
   wire [62:0] _GEN_33 = {31'h0, entries_8_data};
   wire [62:0] _GEN_34 = {58'h0, entries_8_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_8_T_1 = _GEN_33 << _GEN_34;
-  wire        _query0_knownByteHits_3_8_T = io_ld_valid & query0_olderStore_8;
+  wire        _query0_pendingDataByteHits_3_8_T = io_ld_valid & query0_olderStore_8;
   wire        query0_knownByteHits_0_8 =
-    _query0_knownByteHits_3_8_T & query0_sameWord_8 & _query0_storeMask_T_25[0];
+    _query0_pendingDataByteHits_3_8_T & entries_8_data_ready & query0_sameWord_8
+    & _query0_storeMask_T_25[0];
   wire        query0_knownByteHits_1_8 =
-    _query0_knownByteHits_3_8_T & query0_sameWord_8 & _query0_storeMask_T_25[1];
+    _query0_pendingDataByteHits_3_8_T & entries_8_data_ready & query0_sameWord_8
+    & _query0_storeMask_T_25[1];
   wire        query0_knownByteHits_2_8 =
-    _query0_knownByteHits_3_8_T & query0_sameWord_8 & _query0_storeMask_T_25[2];
+    _query0_pendingDataByteHits_3_8_T & entries_8_data_ready & query0_sameWord_8
+    & _query0_storeMask_T_25[2];
   wire        query0_knownByteHits_3_8 =
-    _query0_knownByteHits_3_8_T & query0_sameWord_8 & _query0_storeMask_T_25[3];
+    _query0_pendingDataByteHits_3_8_T & entries_8_data_ready & query0_sameWord_8
+    & _query0_storeMask_T_25[3];
   wire [4:0]  _query1_eAge_T_18 = 5'h9 - io_rob_head;
   wire        query0_olderStore_9 = entries_9_valid & _query1_eAge_T_18 < _query0_ldAge_T;
   wire        query0_sameWord_9 =
@@ -475,15 +617,19 @@ module StoreQueue(
   wire [62:0] _GEN_37 = {31'h0, entries_9_data};
   wire [62:0] _GEN_38 = {58'h0, entries_9_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_9_T_1 = _GEN_37 << _GEN_38;
-  wire        _query0_knownByteHits_3_9_T = io_ld_valid & query0_olderStore_9;
+  wire        _query0_pendingDataByteHits_3_9_T = io_ld_valid & query0_olderStore_9;
   wire        query0_knownByteHits_0_9 =
-    _query0_knownByteHits_3_9_T & query0_sameWord_9 & _query0_storeMask_T_28[0];
+    _query0_pendingDataByteHits_3_9_T & entries_9_data_ready & query0_sameWord_9
+    & _query0_storeMask_T_28[0];
   wire        query0_knownByteHits_1_9 =
-    _query0_knownByteHits_3_9_T & query0_sameWord_9 & _query0_storeMask_T_28[1];
+    _query0_pendingDataByteHits_3_9_T & entries_9_data_ready & query0_sameWord_9
+    & _query0_storeMask_T_28[1];
   wire        query0_knownByteHits_2_9 =
-    _query0_knownByteHits_3_9_T & query0_sameWord_9 & _query0_storeMask_T_28[2];
+    _query0_pendingDataByteHits_3_9_T & entries_9_data_ready & query0_sameWord_9
+    & _query0_storeMask_T_28[2];
   wire        query0_knownByteHits_3_9 =
-    _query0_knownByteHits_3_9_T & query0_sameWord_9 & _query0_storeMask_T_28[3];
+    _query0_pendingDataByteHits_3_9_T & entries_9_data_ready & query0_sameWord_9
+    & _query0_storeMask_T_28[3];
   wire [4:0]  _query1_eAge_T_20 = 5'hA - io_rob_head;
   wire        query0_olderStore_10 =
     entries_10_valid & _query1_eAge_T_20 < _query0_ldAge_T;
@@ -497,15 +643,19 @@ module StoreQueue(
   wire [62:0] _GEN_41 = {31'h0, entries_10_data};
   wire [62:0] _GEN_42 = {58'h0, entries_10_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_10_T_1 = _GEN_41 << _GEN_42;
-  wire        _query0_knownByteHits_3_10_T = io_ld_valid & query0_olderStore_10;
+  wire        _query0_pendingDataByteHits_3_10_T = io_ld_valid & query0_olderStore_10;
   wire        query0_knownByteHits_0_10 =
-    _query0_knownByteHits_3_10_T & query0_sameWord_10 & _query0_storeMask_T_31[0];
+    _query0_pendingDataByteHits_3_10_T & entries_10_data_ready & query0_sameWord_10
+    & _query0_storeMask_T_31[0];
   wire        query0_knownByteHits_1_10 =
-    _query0_knownByteHits_3_10_T & query0_sameWord_10 & _query0_storeMask_T_31[1];
+    _query0_pendingDataByteHits_3_10_T & entries_10_data_ready & query0_sameWord_10
+    & _query0_storeMask_T_31[1];
   wire        query0_knownByteHits_2_10 =
-    _query0_knownByteHits_3_10_T & query0_sameWord_10 & _query0_storeMask_T_31[2];
+    _query0_pendingDataByteHits_3_10_T & entries_10_data_ready & query0_sameWord_10
+    & _query0_storeMask_T_31[2];
   wire        query0_knownByteHits_3_10 =
-    _query0_knownByteHits_3_10_T & query0_sameWord_10 & _query0_storeMask_T_31[3];
+    _query0_pendingDataByteHits_3_10_T & entries_10_data_ready & query0_sameWord_10
+    & _query0_storeMask_T_31[3];
   wire [4:0]  _query1_eAge_T_22 = 5'hB - io_rob_head;
   wire        query0_olderStore_11 =
     entries_11_valid & _query1_eAge_T_22 < _query0_ldAge_T;
@@ -519,15 +669,19 @@ module StoreQueue(
   wire [62:0] _GEN_45 = {31'h0, entries_11_data};
   wire [62:0] _GEN_46 = {58'h0, entries_11_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_11_T_1 = _GEN_45 << _GEN_46;
-  wire        _query0_knownByteHits_3_11_T = io_ld_valid & query0_olderStore_11;
+  wire        _query0_pendingDataByteHits_3_11_T = io_ld_valid & query0_olderStore_11;
   wire        query0_knownByteHits_0_11 =
-    _query0_knownByteHits_3_11_T & query0_sameWord_11 & _query0_storeMask_T_34[0];
+    _query0_pendingDataByteHits_3_11_T & entries_11_data_ready & query0_sameWord_11
+    & _query0_storeMask_T_34[0];
   wire        query0_knownByteHits_1_11 =
-    _query0_knownByteHits_3_11_T & query0_sameWord_11 & _query0_storeMask_T_34[1];
+    _query0_pendingDataByteHits_3_11_T & entries_11_data_ready & query0_sameWord_11
+    & _query0_storeMask_T_34[1];
   wire        query0_knownByteHits_2_11 =
-    _query0_knownByteHits_3_11_T & query0_sameWord_11 & _query0_storeMask_T_34[2];
+    _query0_pendingDataByteHits_3_11_T & entries_11_data_ready & query0_sameWord_11
+    & _query0_storeMask_T_34[2];
   wire        query0_knownByteHits_3_11 =
-    _query0_knownByteHits_3_11_T & query0_sameWord_11 & _query0_storeMask_T_34[3];
+    _query0_pendingDataByteHits_3_11_T & entries_11_data_ready & query0_sameWord_11
+    & _query0_storeMask_T_34[3];
   wire [4:0]  _query1_eAge_T_24 = 5'hC - io_rob_head;
   wire        query0_olderStore_12 =
     entries_12_valid & _query1_eAge_T_24 < _query0_ldAge_T;
@@ -541,15 +695,19 @@ module StoreQueue(
   wire [62:0] _GEN_49 = {31'h0, entries_12_data};
   wire [62:0] _GEN_50 = {58'h0, entries_12_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_12_T_1 = _GEN_49 << _GEN_50;
-  wire        _query0_knownByteHits_3_12_T = io_ld_valid & query0_olderStore_12;
+  wire        _query0_pendingDataByteHits_3_12_T = io_ld_valid & query0_olderStore_12;
   wire        query0_knownByteHits_0_12 =
-    _query0_knownByteHits_3_12_T & query0_sameWord_12 & _query0_storeMask_T_37[0];
+    _query0_pendingDataByteHits_3_12_T & entries_12_data_ready & query0_sameWord_12
+    & _query0_storeMask_T_37[0];
   wire        query0_knownByteHits_1_12 =
-    _query0_knownByteHits_3_12_T & query0_sameWord_12 & _query0_storeMask_T_37[1];
+    _query0_pendingDataByteHits_3_12_T & entries_12_data_ready & query0_sameWord_12
+    & _query0_storeMask_T_37[1];
   wire        query0_knownByteHits_2_12 =
-    _query0_knownByteHits_3_12_T & query0_sameWord_12 & _query0_storeMask_T_37[2];
+    _query0_pendingDataByteHits_3_12_T & entries_12_data_ready & query0_sameWord_12
+    & _query0_storeMask_T_37[2];
   wire        query0_knownByteHits_3_12 =
-    _query0_knownByteHits_3_12_T & query0_sameWord_12 & _query0_storeMask_T_37[3];
+    _query0_pendingDataByteHits_3_12_T & entries_12_data_ready & query0_sameWord_12
+    & _query0_storeMask_T_37[3];
   wire [4:0]  _query1_eAge_T_26 = 5'hD - io_rob_head;
   wire        query0_olderStore_13 =
     entries_13_valid & _query1_eAge_T_26 < _query0_ldAge_T;
@@ -563,15 +721,19 @@ module StoreQueue(
   wire [62:0] _GEN_53 = {31'h0, entries_13_data};
   wire [62:0] _GEN_54 = {58'h0, entries_13_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_13_T_1 = _GEN_53 << _GEN_54;
-  wire        _query0_knownByteHits_3_13_T = io_ld_valid & query0_olderStore_13;
+  wire        _query0_pendingDataByteHits_3_13_T = io_ld_valid & query0_olderStore_13;
   wire        query0_knownByteHits_0_13 =
-    _query0_knownByteHits_3_13_T & query0_sameWord_13 & _query0_storeMask_T_40[0];
+    _query0_pendingDataByteHits_3_13_T & entries_13_data_ready & query0_sameWord_13
+    & _query0_storeMask_T_40[0];
   wire        query0_knownByteHits_1_13 =
-    _query0_knownByteHits_3_13_T & query0_sameWord_13 & _query0_storeMask_T_40[1];
+    _query0_pendingDataByteHits_3_13_T & entries_13_data_ready & query0_sameWord_13
+    & _query0_storeMask_T_40[1];
   wire        query0_knownByteHits_2_13 =
-    _query0_knownByteHits_3_13_T & query0_sameWord_13 & _query0_storeMask_T_40[2];
+    _query0_pendingDataByteHits_3_13_T & entries_13_data_ready & query0_sameWord_13
+    & _query0_storeMask_T_40[2];
   wire        query0_knownByteHits_3_13 =
-    _query0_knownByteHits_3_13_T & query0_sameWord_13 & _query0_storeMask_T_40[3];
+    _query0_pendingDataByteHits_3_13_T & entries_13_data_ready & query0_sameWord_13
+    & _query0_storeMask_T_40[3];
   wire [4:0]  _query1_eAge_T_28 = 5'hE - io_rob_head;
   wire        query0_olderStore_14 =
     entries_14_valid & _query1_eAge_T_28 < _query0_ldAge_T;
@@ -585,15 +747,19 @@ module StoreQueue(
   wire [62:0] _GEN_57 = {31'h0, entries_14_data};
   wire [62:0] _GEN_58 = {58'h0, entries_14_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_14_T_1 = _GEN_57 << _GEN_58;
-  wire        _query0_knownByteHits_3_14_T = io_ld_valid & query0_olderStore_14;
+  wire        _query0_pendingDataByteHits_3_14_T = io_ld_valid & query0_olderStore_14;
   wire        query0_knownByteHits_0_14 =
-    _query0_knownByteHits_3_14_T & query0_sameWord_14 & _query0_storeMask_T_43[0];
+    _query0_pendingDataByteHits_3_14_T & entries_14_data_ready & query0_sameWord_14
+    & _query0_storeMask_T_43[0];
   wire        query0_knownByteHits_1_14 =
-    _query0_knownByteHits_3_14_T & query0_sameWord_14 & _query0_storeMask_T_43[1];
+    _query0_pendingDataByteHits_3_14_T & entries_14_data_ready & query0_sameWord_14
+    & _query0_storeMask_T_43[1];
   wire        query0_knownByteHits_2_14 =
-    _query0_knownByteHits_3_14_T & query0_sameWord_14 & _query0_storeMask_T_43[2];
+    _query0_pendingDataByteHits_3_14_T & entries_14_data_ready & query0_sameWord_14
+    & _query0_storeMask_T_43[2];
   wire        query0_knownByteHits_3_14 =
-    _query0_knownByteHits_3_14_T & query0_sameWord_14 & _query0_storeMask_T_43[3];
+    _query0_pendingDataByteHits_3_14_T & entries_14_data_ready & query0_sameWord_14
+    & _query0_storeMask_T_43[3];
   wire [4:0]  _query1_eAge_T_30 = 5'hF - io_rob_head;
   wire        query0_olderStore_15 =
     entries_15_valid & _query1_eAge_T_30 < _query0_ldAge_T;
@@ -607,15 +773,19 @@ module StoreQueue(
   wire [62:0] _GEN_61 = {31'h0, entries_15_data};
   wire [62:0] _GEN_62 = {58'h0, entries_15_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_15_T_1 = _GEN_61 << _GEN_62;
-  wire        _query0_knownByteHits_3_15_T = io_ld_valid & query0_olderStore_15;
+  wire        _query0_pendingDataByteHits_3_15_T = io_ld_valid & query0_olderStore_15;
   wire        query0_knownByteHits_0_15 =
-    _query0_knownByteHits_3_15_T & query0_sameWord_15 & _query0_storeMask_T_46[0];
+    _query0_pendingDataByteHits_3_15_T & entries_15_data_ready & query0_sameWord_15
+    & _query0_storeMask_T_46[0];
   wire        query0_knownByteHits_1_15 =
-    _query0_knownByteHits_3_15_T & query0_sameWord_15 & _query0_storeMask_T_46[1];
+    _query0_pendingDataByteHits_3_15_T & entries_15_data_ready & query0_sameWord_15
+    & _query0_storeMask_T_46[1];
   wire        query0_knownByteHits_2_15 =
-    _query0_knownByteHits_3_15_T & query0_sameWord_15 & _query0_storeMask_T_46[2];
+    _query0_pendingDataByteHits_3_15_T & entries_15_data_ready & query0_sameWord_15
+    & _query0_storeMask_T_46[2];
   wire        query0_knownByteHits_3_15 =
-    _query0_knownByteHits_3_15_T & query0_sameWord_15 & _query0_storeMask_T_46[3];
+    _query0_pendingDataByteHits_3_15_T & entries_15_data_ready & query0_sameWord_15
+    & _query0_storeMask_T_46[3];
   wire [4:0]  _query1_eAge_T_32 = 5'h10 - io_rob_head;
   wire        query0_olderStore_16 =
     entries_16_valid & _query1_eAge_T_32 < _query0_ldAge_T;
@@ -629,15 +799,19 @@ module StoreQueue(
   wire [62:0] _GEN_65 = {31'h0, entries_16_data};
   wire [62:0] _GEN_66 = {58'h0, entries_16_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_16_T_1 = _GEN_65 << _GEN_66;
-  wire        _query0_knownByteHits_3_16_T = io_ld_valid & query0_olderStore_16;
+  wire        _query0_pendingDataByteHits_3_16_T = io_ld_valid & query0_olderStore_16;
   wire        query0_knownByteHits_0_16 =
-    _query0_knownByteHits_3_16_T & query0_sameWord_16 & _query0_storeMask_T_49[0];
+    _query0_pendingDataByteHits_3_16_T & entries_16_data_ready & query0_sameWord_16
+    & _query0_storeMask_T_49[0];
   wire        query0_knownByteHits_1_16 =
-    _query0_knownByteHits_3_16_T & query0_sameWord_16 & _query0_storeMask_T_49[1];
+    _query0_pendingDataByteHits_3_16_T & entries_16_data_ready & query0_sameWord_16
+    & _query0_storeMask_T_49[1];
   wire        query0_knownByteHits_2_16 =
-    _query0_knownByteHits_3_16_T & query0_sameWord_16 & _query0_storeMask_T_49[2];
+    _query0_pendingDataByteHits_3_16_T & entries_16_data_ready & query0_sameWord_16
+    & _query0_storeMask_T_49[2];
   wire        query0_knownByteHits_3_16 =
-    _query0_knownByteHits_3_16_T & query0_sameWord_16 & _query0_storeMask_T_49[3];
+    _query0_pendingDataByteHits_3_16_T & entries_16_data_ready & query0_sameWord_16
+    & _query0_storeMask_T_49[3];
   wire [4:0]  _query1_eAge_T_34 = 5'h11 - io_rob_head;
   wire        query0_olderStore_17 =
     entries_17_valid & _query1_eAge_T_34 < _query0_ldAge_T;
@@ -651,15 +825,19 @@ module StoreQueue(
   wire [62:0] _GEN_69 = {31'h0, entries_17_data};
   wire [62:0] _GEN_70 = {58'h0, entries_17_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_17_T_1 = _GEN_69 << _GEN_70;
-  wire        _query0_knownByteHits_3_17_T = io_ld_valid & query0_olderStore_17;
+  wire        _query0_pendingDataByteHits_3_17_T = io_ld_valid & query0_olderStore_17;
   wire        query0_knownByteHits_0_17 =
-    _query0_knownByteHits_3_17_T & query0_sameWord_17 & _query0_storeMask_T_52[0];
+    _query0_pendingDataByteHits_3_17_T & entries_17_data_ready & query0_sameWord_17
+    & _query0_storeMask_T_52[0];
   wire        query0_knownByteHits_1_17 =
-    _query0_knownByteHits_3_17_T & query0_sameWord_17 & _query0_storeMask_T_52[1];
+    _query0_pendingDataByteHits_3_17_T & entries_17_data_ready & query0_sameWord_17
+    & _query0_storeMask_T_52[1];
   wire        query0_knownByteHits_2_17 =
-    _query0_knownByteHits_3_17_T & query0_sameWord_17 & _query0_storeMask_T_52[2];
+    _query0_pendingDataByteHits_3_17_T & entries_17_data_ready & query0_sameWord_17
+    & _query0_storeMask_T_52[2];
   wire        query0_knownByteHits_3_17 =
-    _query0_knownByteHits_3_17_T & query0_sameWord_17 & _query0_storeMask_T_52[3];
+    _query0_pendingDataByteHits_3_17_T & entries_17_data_ready & query0_sameWord_17
+    & _query0_storeMask_T_52[3];
   wire [4:0]  _query1_eAge_T_36 = 5'h12 - io_rob_head;
   wire        query0_olderStore_18 =
     entries_18_valid & _query1_eAge_T_36 < _query0_ldAge_T;
@@ -673,15 +851,19 @@ module StoreQueue(
   wire [62:0] _GEN_73 = {31'h0, entries_18_data};
   wire [62:0] _GEN_74 = {58'h0, entries_18_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_18_T_1 = _GEN_73 << _GEN_74;
-  wire        _query0_knownByteHits_3_18_T = io_ld_valid & query0_olderStore_18;
+  wire        _query0_pendingDataByteHits_3_18_T = io_ld_valid & query0_olderStore_18;
   wire        query0_knownByteHits_0_18 =
-    _query0_knownByteHits_3_18_T & query0_sameWord_18 & _query0_storeMask_T_55[0];
+    _query0_pendingDataByteHits_3_18_T & entries_18_data_ready & query0_sameWord_18
+    & _query0_storeMask_T_55[0];
   wire        query0_knownByteHits_1_18 =
-    _query0_knownByteHits_3_18_T & query0_sameWord_18 & _query0_storeMask_T_55[1];
+    _query0_pendingDataByteHits_3_18_T & entries_18_data_ready & query0_sameWord_18
+    & _query0_storeMask_T_55[1];
   wire        query0_knownByteHits_2_18 =
-    _query0_knownByteHits_3_18_T & query0_sameWord_18 & _query0_storeMask_T_55[2];
+    _query0_pendingDataByteHits_3_18_T & entries_18_data_ready & query0_sameWord_18
+    & _query0_storeMask_T_55[2];
   wire        query0_knownByteHits_3_18 =
-    _query0_knownByteHits_3_18_T & query0_sameWord_18 & _query0_storeMask_T_55[3];
+    _query0_pendingDataByteHits_3_18_T & entries_18_data_ready & query0_sameWord_18
+    & _query0_storeMask_T_55[3];
   wire [4:0]  _query1_eAge_T_38 = 5'h13 - io_rob_head;
   wire        query0_olderStore_19 =
     entries_19_valid & _query1_eAge_T_38 < _query0_ldAge_T;
@@ -695,15 +877,19 @@ module StoreQueue(
   wire [62:0] _GEN_77 = {31'h0, entries_19_data};
   wire [62:0] _GEN_78 = {58'h0, entries_19_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_19_T_1 = _GEN_77 << _GEN_78;
-  wire        _query0_knownByteHits_3_19_T = io_ld_valid & query0_olderStore_19;
+  wire        _query0_pendingDataByteHits_3_19_T = io_ld_valid & query0_olderStore_19;
   wire        query0_knownByteHits_0_19 =
-    _query0_knownByteHits_3_19_T & query0_sameWord_19 & _query0_storeMask_T_58[0];
+    _query0_pendingDataByteHits_3_19_T & entries_19_data_ready & query0_sameWord_19
+    & _query0_storeMask_T_58[0];
   wire        query0_knownByteHits_1_19 =
-    _query0_knownByteHits_3_19_T & query0_sameWord_19 & _query0_storeMask_T_58[1];
+    _query0_pendingDataByteHits_3_19_T & entries_19_data_ready & query0_sameWord_19
+    & _query0_storeMask_T_58[1];
   wire        query0_knownByteHits_2_19 =
-    _query0_knownByteHits_3_19_T & query0_sameWord_19 & _query0_storeMask_T_58[2];
+    _query0_pendingDataByteHits_3_19_T & entries_19_data_ready & query0_sameWord_19
+    & _query0_storeMask_T_58[2];
   wire        query0_knownByteHits_3_19 =
-    _query0_knownByteHits_3_19_T & query0_sameWord_19 & _query0_storeMask_T_58[3];
+    _query0_pendingDataByteHits_3_19_T & entries_19_data_ready & query0_sameWord_19
+    & _query0_storeMask_T_58[3];
   wire [4:0]  _query1_eAge_T_40 = 5'h14 - io_rob_head;
   wire        query0_olderStore_20 =
     entries_20_valid & _query1_eAge_T_40 < _query0_ldAge_T;
@@ -717,15 +903,19 @@ module StoreQueue(
   wire [62:0] _GEN_81 = {31'h0, entries_20_data};
   wire [62:0] _GEN_82 = {58'h0, entries_20_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_20_T_1 = _GEN_81 << _GEN_82;
-  wire        _query0_knownByteHits_3_20_T = io_ld_valid & query0_olderStore_20;
+  wire        _query0_pendingDataByteHits_3_20_T = io_ld_valid & query0_olderStore_20;
   wire        query0_knownByteHits_0_20 =
-    _query0_knownByteHits_3_20_T & query0_sameWord_20 & _query0_storeMask_T_61[0];
+    _query0_pendingDataByteHits_3_20_T & entries_20_data_ready & query0_sameWord_20
+    & _query0_storeMask_T_61[0];
   wire        query0_knownByteHits_1_20 =
-    _query0_knownByteHits_3_20_T & query0_sameWord_20 & _query0_storeMask_T_61[1];
+    _query0_pendingDataByteHits_3_20_T & entries_20_data_ready & query0_sameWord_20
+    & _query0_storeMask_T_61[1];
   wire        query0_knownByteHits_2_20 =
-    _query0_knownByteHits_3_20_T & query0_sameWord_20 & _query0_storeMask_T_61[2];
+    _query0_pendingDataByteHits_3_20_T & entries_20_data_ready & query0_sameWord_20
+    & _query0_storeMask_T_61[2];
   wire        query0_knownByteHits_3_20 =
-    _query0_knownByteHits_3_20_T & query0_sameWord_20 & _query0_storeMask_T_61[3];
+    _query0_pendingDataByteHits_3_20_T & entries_20_data_ready & query0_sameWord_20
+    & _query0_storeMask_T_61[3];
   wire [4:0]  _query1_eAge_T_42 = 5'h15 - io_rob_head;
   wire        query0_olderStore_21 =
     entries_21_valid & _query1_eAge_T_42 < _query0_ldAge_T;
@@ -739,15 +929,19 @@ module StoreQueue(
   wire [62:0] _GEN_85 = {31'h0, entries_21_data};
   wire [62:0] _GEN_86 = {58'h0, entries_21_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_21_T_1 = _GEN_85 << _GEN_86;
-  wire        _query0_knownByteHits_3_21_T = io_ld_valid & query0_olderStore_21;
+  wire        _query0_pendingDataByteHits_3_21_T = io_ld_valid & query0_olderStore_21;
   wire        query0_knownByteHits_0_21 =
-    _query0_knownByteHits_3_21_T & query0_sameWord_21 & _query0_storeMask_T_64[0];
+    _query0_pendingDataByteHits_3_21_T & entries_21_data_ready & query0_sameWord_21
+    & _query0_storeMask_T_64[0];
   wire        query0_knownByteHits_1_21 =
-    _query0_knownByteHits_3_21_T & query0_sameWord_21 & _query0_storeMask_T_64[1];
+    _query0_pendingDataByteHits_3_21_T & entries_21_data_ready & query0_sameWord_21
+    & _query0_storeMask_T_64[1];
   wire        query0_knownByteHits_2_21 =
-    _query0_knownByteHits_3_21_T & query0_sameWord_21 & _query0_storeMask_T_64[2];
+    _query0_pendingDataByteHits_3_21_T & entries_21_data_ready & query0_sameWord_21
+    & _query0_storeMask_T_64[2];
   wire        query0_knownByteHits_3_21 =
-    _query0_knownByteHits_3_21_T & query0_sameWord_21 & _query0_storeMask_T_64[3];
+    _query0_pendingDataByteHits_3_21_T & entries_21_data_ready & query0_sameWord_21
+    & _query0_storeMask_T_64[3];
   wire [4:0]  _query1_eAge_T_44 = 5'h16 - io_rob_head;
   wire        query0_olderStore_22 =
     entries_22_valid & _query1_eAge_T_44 < _query0_ldAge_T;
@@ -761,15 +955,19 @@ module StoreQueue(
   wire [62:0] _GEN_89 = {31'h0, entries_22_data};
   wire [62:0] _GEN_90 = {58'h0, entries_22_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_22_T_1 = _GEN_89 << _GEN_90;
-  wire        _query0_knownByteHits_3_22_T = io_ld_valid & query0_olderStore_22;
+  wire        _query0_pendingDataByteHits_3_22_T = io_ld_valid & query0_olderStore_22;
   wire        query0_knownByteHits_0_22 =
-    _query0_knownByteHits_3_22_T & query0_sameWord_22 & _query0_storeMask_T_67[0];
+    _query0_pendingDataByteHits_3_22_T & entries_22_data_ready & query0_sameWord_22
+    & _query0_storeMask_T_67[0];
   wire        query0_knownByteHits_1_22 =
-    _query0_knownByteHits_3_22_T & query0_sameWord_22 & _query0_storeMask_T_67[1];
+    _query0_pendingDataByteHits_3_22_T & entries_22_data_ready & query0_sameWord_22
+    & _query0_storeMask_T_67[1];
   wire        query0_knownByteHits_2_22 =
-    _query0_knownByteHits_3_22_T & query0_sameWord_22 & _query0_storeMask_T_67[2];
+    _query0_pendingDataByteHits_3_22_T & entries_22_data_ready & query0_sameWord_22
+    & _query0_storeMask_T_67[2];
   wire        query0_knownByteHits_3_22 =
-    _query0_knownByteHits_3_22_T & query0_sameWord_22 & _query0_storeMask_T_67[3];
+    _query0_pendingDataByteHits_3_22_T & entries_22_data_ready & query0_sameWord_22
+    & _query0_storeMask_T_67[3];
   wire [4:0]  _query1_eAge_T_46 = 5'h17 - io_rob_head;
   wire        query0_olderStore_23 =
     entries_23_valid & _query1_eAge_T_46 < _query0_ldAge_T;
@@ -783,15 +981,19 @@ module StoreQueue(
   wire [62:0] _GEN_93 = {31'h0, entries_23_data};
   wire [62:0] _GEN_94 = {58'h0, entries_23_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_23_T_1 = _GEN_93 << _GEN_94;
-  wire        _query0_knownByteHits_3_23_T = io_ld_valid & query0_olderStore_23;
+  wire        _query0_pendingDataByteHits_3_23_T = io_ld_valid & query0_olderStore_23;
   wire        query0_knownByteHits_0_23 =
-    _query0_knownByteHits_3_23_T & query0_sameWord_23 & _query0_storeMask_T_70[0];
+    _query0_pendingDataByteHits_3_23_T & entries_23_data_ready & query0_sameWord_23
+    & _query0_storeMask_T_70[0];
   wire        query0_knownByteHits_1_23 =
-    _query0_knownByteHits_3_23_T & query0_sameWord_23 & _query0_storeMask_T_70[1];
+    _query0_pendingDataByteHits_3_23_T & entries_23_data_ready & query0_sameWord_23
+    & _query0_storeMask_T_70[1];
   wire        query0_knownByteHits_2_23 =
-    _query0_knownByteHits_3_23_T & query0_sameWord_23 & _query0_storeMask_T_70[2];
+    _query0_pendingDataByteHits_3_23_T & entries_23_data_ready & query0_sameWord_23
+    & _query0_storeMask_T_70[2];
   wire        query0_knownByteHits_3_23 =
-    _query0_knownByteHits_3_23_T & query0_sameWord_23 & _query0_storeMask_T_70[3];
+    _query0_pendingDataByteHits_3_23_T & entries_23_data_ready & query0_sameWord_23
+    & _query0_storeMask_T_70[3];
   wire [4:0]  _query1_eAge_T_48 = 5'h18 - io_rob_head;
   wire        query0_olderStore_24 =
     entries_24_valid & _query1_eAge_T_48 < _query0_ldAge_T;
@@ -805,15 +1007,19 @@ module StoreQueue(
   wire [62:0] _GEN_97 = {31'h0, entries_24_data};
   wire [62:0] _GEN_98 = {58'h0, entries_24_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_24_T_1 = _GEN_97 << _GEN_98;
-  wire        _query0_knownByteHits_3_24_T = io_ld_valid & query0_olderStore_24;
+  wire        _query0_pendingDataByteHits_3_24_T = io_ld_valid & query0_olderStore_24;
   wire        query0_knownByteHits_0_24 =
-    _query0_knownByteHits_3_24_T & query0_sameWord_24 & _query0_storeMask_T_73[0];
+    _query0_pendingDataByteHits_3_24_T & entries_24_data_ready & query0_sameWord_24
+    & _query0_storeMask_T_73[0];
   wire        query0_knownByteHits_1_24 =
-    _query0_knownByteHits_3_24_T & query0_sameWord_24 & _query0_storeMask_T_73[1];
+    _query0_pendingDataByteHits_3_24_T & entries_24_data_ready & query0_sameWord_24
+    & _query0_storeMask_T_73[1];
   wire        query0_knownByteHits_2_24 =
-    _query0_knownByteHits_3_24_T & query0_sameWord_24 & _query0_storeMask_T_73[2];
+    _query0_pendingDataByteHits_3_24_T & entries_24_data_ready & query0_sameWord_24
+    & _query0_storeMask_T_73[2];
   wire        query0_knownByteHits_3_24 =
-    _query0_knownByteHits_3_24_T & query0_sameWord_24 & _query0_storeMask_T_73[3];
+    _query0_pendingDataByteHits_3_24_T & entries_24_data_ready & query0_sameWord_24
+    & _query0_storeMask_T_73[3];
   wire [4:0]  _query1_eAge_T_50 = 5'h19 - io_rob_head;
   wire        query0_olderStore_25 =
     entries_25_valid & _query1_eAge_T_50 < _query0_ldAge_T;
@@ -827,15 +1033,19 @@ module StoreQueue(
   wire [62:0] _GEN_101 = {31'h0, entries_25_data};
   wire [62:0] _GEN_102 = {58'h0, entries_25_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_25_T_1 = _GEN_101 << _GEN_102;
-  wire        _query0_knownByteHits_3_25_T = io_ld_valid & query0_olderStore_25;
+  wire        _query0_pendingDataByteHits_3_25_T = io_ld_valid & query0_olderStore_25;
   wire        query0_knownByteHits_0_25 =
-    _query0_knownByteHits_3_25_T & query0_sameWord_25 & _query0_storeMask_T_76[0];
+    _query0_pendingDataByteHits_3_25_T & entries_25_data_ready & query0_sameWord_25
+    & _query0_storeMask_T_76[0];
   wire        query0_knownByteHits_1_25 =
-    _query0_knownByteHits_3_25_T & query0_sameWord_25 & _query0_storeMask_T_76[1];
+    _query0_pendingDataByteHits_3_25_T & entries_25_data_ready & query0_sameWord_25
+    & _query0_storeMask_T_76[1];
   wire        query0_knownByteHits_2_25 =
-    _query0_knownByteHits_3_25_T & query0_sameWord_25 & _query0_storeMask_T_76[2];
+    _query0_pendingDataByteHits_3_25_T & entries_25_data_ready & query0_sameWord_25
+    & _query0_storeMask_T_76[2];
   wire        query0_knownByteHits_3_25 =
-    _query0_knownByteHits_3_25_T & query0_sameWord_25 & _query0_storeMask_T_76[3];
+    _query0_pendingDataByteHits_3_25_T & entries_25_data_ready & query0_sameWord_25
+    & _query0_storeMask_T_76[3];
   wire [4:0]  _query1_eAge_T_52 = 5'h1A - io_rob_head;
   wire        query0_olderStore_26 =
     entries_26_valid & _query1_eAge_T_52 < _query0_ldAge_T;
@@ -849,15 +1059,19 @@ module StoreQueue(
   wire [62:0] _GEN_105 = {31'h0, entries_26_data};
   wire [62:0] _GEN_106 = {58'h0, entries_26_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_26_T_1 = _GEN_105 << _GEN_106;
-  wire        _query0_knownByteHits_3_26_T = io_ld_valid & query0_olderStore_26;
+  wire        _query0_pendingDataByteHits_3_26_T = io_ld_valid & query0_olderStore_26;
   wire        query0_knownByteHits_0_26 =
-    _query0_knownByteHits_3_26_T & query0_sameWord_26 & _query0_storeMask_T_79[0];
+    _query0_pendingDataByteHits_3_26_T & entries_26_data_ready & query0_sameWord_26
+    & _query0_storeMask_T_79[0];
   wire        query0_knownByteHits_1_26 =
-    _query0_knownByteHits_3_26_T & query0_sameWord_26 & _query0_storeMask_T_79[1];
+    _query0_pendingDataByteHits_3_26_T & entries_26_data_ready & query0_sameWord_26
+    & _query0_storeMask_T_79[1];
   wire        query0_knownByteHits_2_26 =
-    _query0_knownByteHits_3_26_T & query0_sameWord_26 & _query0_storeMask_T_79[2];
+    _query0_pendingDataByteHits_3_26_T & entries_26_data_ready & query0_sameWord_26
+    & _query0_storeMask_T_79[2];
   wire        query0_knownByteHits_3_26 =
-    _query0_knownByteHits_3_26_T & query0_sameWord_26 & _query0_storeMask_T_79[3];
+    _query0_pendingDataByteHits_3_26_T & entries_26_data_ready & query0_sameWord_26
+    & _query0_storeMask_T_79[3];
   wire [4:0]  _query1_eAge_T_54 = 5'h1B - io_rob_head;
   wire        query0_olderStore_27 =
     entries_27_valid & _query1_eAge_T_54 < _query0_ldAge_T;
@@ -871,15 +1085,19 @@ module StoreQueue(
   wire [62:0] _GEN_109 = {31'h0, entries_27_data};
   wire [62:0] _GEN_110 = {58'h0, entries_27_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_27_T_1 = _GEN_109 << _GEN_110;
-  wire        _query0_knownByteHits_3_27_T = io_ld_valid & query0_olderStore_27;
+  wire        _query0_pendingDataByteHits_3_27_T = io_ld_valid & query0_olderStore_27;
   wire        query0_knownByteHits_0_27 =
-    _query0_knownByteHits_3_27_T & query0_sameWord_27 & _query0_storeMask_T_82[0];
+    _query0_pendingDataByteHits_3_27_T & entries_27_data_ready & query0_sameWord_27
+    & _query0_storeMask_T_82[0];
   wire        query0_knownByteHits_1_27 =
-    _query0_knownByteHits_3_27_T & query0_sameWord_27 & _query0_storeMask_T_82[1];
+    _query0_pendingDataByteHits_3_27_T & entries_27_data_ready & query0_sameWord_27
+    & _query0_storeMask_T_82[1];
   wire        query0_knownByteHits_2_27 =
-    _query0_knownByteHits_3_27_T & query0_sameWord_27 & _query0_storeMask_T_82[2];
+    _query0_pendingDataByteHits_3_27_T & entries_27_data_ready & query0_sameWord_27
+    & _query0_storeMask_T_82[2];
   wire        query0_knownByteHits_3_27 =
-    _query0_knownByteHits_3_27_T & query0_sameWord_27 & _query0_storeMask_T_82[3];
+    _query0_pendingDataByteHits_3_27_T & entries_27_data_ready & query0_sameWord_27
+    & _query0_storeMask_T_82[3];
   wire [4:0]  _query1_eAge_T_56 = 5'h1C - io_rob_head;
   wire        query0_olderStore_28 =
     entries_28_valid & _query1_eAge_T_56 < _query0_ldAge_T;
@@ -893,15 +1111,19 @@ module StoreQueue(
   wire [62:0] _GEN_113 = {31'h0, entries_28_data};
   wire [62:0] _GEN_114 = {58'h0, entries_28_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_28_T_1 = _GEN_113 << _GEN_114;
-  wire        _query0_knownByteHits_3_28_T = io_ld_valid & query0_olderStore_28;
+  wire        _query0_pendingDataByteHits_3_28_T = io_ld_valid & query0_olderStore_28;
   wire        query0_knownByteHits_0_28 =
-    _query0_knownByteHits_3_28_T & query0_sameWord_28 & _query0_storeMask_T_85[0];
+    _query0_pendingDataByteHits_3_28_T & entries_28_data_ready & query0_sameWord_28
+    & _query0_storeMask_T_85[0];
   wire        query0_knownByteHits_1_28 =
-    _query0_knownByteHits_3_28_T & query0_sameWord_28 & _query0_storeMask_T_85[1];
+    _query0_pendingDataByteHits_3_28_T & entries_28_data_ready & query0_sameWord_28
+    & _query0_storeMask_T_85[1];
   wire        query0_knownByteHits_2_28 =
-    _query0_knownByteHits_3_28_T & query0_sameWord_28 & _query0_storeMask_T_85[2];
+    _query0_pendingDataByteHits_3_28_T & entries_28_data_ready & query0_sameWord_28
+    & _query0_storeMask_T_85[2];
   wire        query0_knownByteHits_3_28 =
-    _query0_knownByteHits_3_28_T & query0_sameWord_28 & _query0_storeMask_T_85[3];
+    _query0_pendingDataByteHits_3_28_T & entries_28_data_ready & query0_sameWord_28
+    & _query0_storeMask_T_85[3];
   wire [4:0]  _query1_eAge_T_58 = 5'h1D - io_rob_head;
   wire        query0_olderStore_29 =
     entries_29_valid & _query1_eAge_T_58 < _query0_ldAge_T;
@@ -915,15 +1137,19 @@ module StoreQueue(
   wire [62:0] _GEN_117 = {31'h0, entries_29_data};
   wire [62:0] _GEN_118 = {58'h0, entries_29_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_29_T_1 = _GEN_117 << _GEN_118;
-  wire        _query0_knownByteHits_3_29_T = io_ld_valid & query0_olderStore_29;
+  wire        _query0_pendingDataByteHits_3_29_T = io_ld_valid & query0_olderStore_29;
   wire        query0_knownByteHits_0_29 =
-    _query0_knownByteHits_3_29_T & query0_sameWord_29 & _query0_storeMask_T_88[0];
+    _query0_pendingDataByteHits_3_29_T & entries_29_data_ready & query0_sameWord_29
+    & _query0_storeMask_T_88[0];
   wire        query0_knownByteHits_1_29 =
-    _query0_knownByteHits_3_29_T & query0_sameWord_29 & _query0_storeMask_T_88[1];
+    _query0_pendingDataByteHits_3_29_T & entries_29_data_ready & query0_sameWord_29
+    & _query0_storeMask_T_88[1];
   wire        query0_knownByteHits_2_29 =
-    _query0_knownByteHits_3_29_T & query0_sameWord_29 & _query0_storeMask_T_88[2];
+    _query0_pendingDataByteHits_3_29_T & entries_29_data_ready & query0_sameWord_29
+    & _query0_storeMask_T_88[2];
   wire        query0_knownByteHits_3_29 =
-    _query0_knownByteHits_3_29_T & query0_sameWord_29 & _query0_storeMask_T_88[3];
+    _query0_pendingDataByteHits_3_29_T & entries_29_data_ready & query0_sameWord_29
+    & _query0_storeMask_T_88[3];
   wire [4:0]  _query1_eAge_T_60 = 5'h1E - io_rob_head;
   wire        query0_olderStore_30 =
     entries_30_valid & _query1_eAge_T_60 < _query0_ldAge_T;
@@ -937,15 +1163,19 @@ module StoreQueue(
   wire [62:0] _GEN_121 = {31'h0, entries_30_data};
   wire [62:0] _GEN_122 = {58'h0, entries_30_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_30_T_1 = _GEN_121 << _GEN_122;
-  wire        _query0_knownByteHits_3_30_T = io_ld_valid & query0_olderStore_30;
+  wire        _query0_pendingDataByteHits_3_30_T = io_ld_valid & query0_olderStore_30;
   wire        query0_knownByteHits_0_30 =
-    _query0_knownByteHits_3_30_T & query0_sameWord_30 & _query0_storeMask_T_91[0];
+    _query0_pendingDataByteHits_3_30_T & entries_30_data_ready & query0_sameWord_30
+    & _query0_storeMask_T_91[0];
   wire        query0_knownByteHits_1_30 =
-    _query0_knownByteHits_3_30_T & query0_sameWord_30 & _query0_storeMask_T_91[1];
+    _query0_pendingDataByteHits_3_30_T & entries_30_data_ready & query0_sameWord_30
+    & _query0_storeMask_T_91[1];
   wire        query0_knownByteHits_2_30 =
-    _query0_knownByteHits_3_30_T & query0_sameWord_30 & _query0_storeMask_T_91[2];
+    _query0_pendingDataByteHits_3_30_T & entries_30_data_ready & query0_sameWord_30
+    & _query0_storeMask_T_91[2];
   wire        query0_knownByteHits_3_30 =
-    _query0_knownByteHits_3_30_T & query0_sameWord_30 & _query0_storeMask_T_91[3];
+    _query0_pendingDataByteHits_3_30_T & entries_30_data_ready & query0_sameWord_30
+    & _query0_storeMask_T_91[3];
   wire [4:0]  _query1_eAge_T_62 = 5'h1F - io_rob_head;
   wire        query0_olderStore_31 =
     entries_31_valid & _query1_eAge_T_62 < _query0_ldAge_T;
@@ -959,15 +1189,19 @@ module StoreQueue(
   wire [62:0] _GEN_125 = {31'h0, entries_31_data};
   wire [62:0] _GEN_126 = {58'h0, entries_31_addr[1:0], 3'h0};
   wire [62:0] _query0_normalizedData_31_T_1 = _GEN_125 << _GEN_126;
-  wire        _query0_knownByteHits_3_31_T = io_ld_valid & query0_olderStore_31;
+  wire        _query0_pendingDataByteHits_3_31_T = io_ld_valid & query0_olderStore_31;
   wire        query0_knownByteHits_0_31 =
-    _query0_knownByteHits_3_31_T & query0_sameWord_31 & _query0_storeMask_T_94[0];
+    _query0_pendingDataByteHits_3_31_T & entries_31_data_ready & query0_sameWord_31
+    & _query0_storeMask_T_94[0];
   wire        query0_knownByteHits_1_31 =
-    _query0_knownByteHits_3_31_T & query0_sameWord_31 & _query0_storeMask_T_94[1];
+    _query0_pendingDataByteHits_3_31_T & entries_31_data_ready & query0_sameWord_31
+    & _query0_storeMask_T_94[1];
   wire        query0_knownByteHits_2_31 =
-    _query0_knownByteHits_3_31_T & query0_sameWord_31 & _query0_storeMask_T_94[2];
+    _query0_pendingDataByteHits_3_31_T & entries_31_data_ready & query0_sameWord_31
+    & _query0_storeMask_T_94[2];
   wire        query0_knownByteHits_3_31 =
-    _query0_knownByteHits_3_31_T & query0_sameWord_31 & _query0_storeMask_T_94[3];
+    _query0_pendingDataByteHits_3_31_T & entries_31_data_ready & query0_sameWord_31
+    & _query0_storeMask_T_94[3];
   wire        _query0_youngerKnown_T_9122 = _query1_eAge_T_2 > idxAge;
   wire        _query0_youngerKnown_T_9124 = _query1_eAge_T_4 > idxAge;
   wire        _query0_youngerKnown_T_9126 = _query1_eAge_T_6 > idxAge;
@@ -6514,6 +6748,264 @@ module StoreQueue(
      query0_unknownHits_2,
      query0_unknownHits_1,
      query0_unknownHits_0};
+  wire [3:0]  query0_pendingDataMask =
+    {|{_query0_pendingDataByteHits_3_31_T & ~entries_31_data_ready & query0_sameWord_31
+         & _query0_storeMask_T_94[3],
+       _query0_pendingDataByteHits_3_30_T & ~entries_30_data_ready & query0_sameWord_30
+         & _query0_storeMask_T_91[3],
+       _query0_pendingDataByteHits_3_29_T & ~entries_29_data_ready & query0_sameWord_29
+         & _query0_storeMask_T_88[3],
+       _query0_pendingDataByteHits_3_28_T & ~entries_28_data_ready & query0_sameWord_28
+         & _query0_storeMask_T_85[3],
+       _query0_pendingDataByteHits_3_27_T & ~entries_27_data_ready & query0_sameWord_27
+         & _query0_storeMask_T_82[3],
+       _query0_pendingDataByteHits_3_26_T & ~entries_26_data_ready & query0_sameWord_26
+         & _query0_storeMask_T_79[3],
+       _query0_pendingDataByteHits_3_25_T & ~entries_25_data_ready & query0_sameWord_25
+         & _query0_storeMask_T_76[3],
+       _query0_pendingDataByteHits_3_24_T & ~entries_24_data_ready & query0_sameWord_24
+         & _query0_storeMask_T_73[3],
+       _query0_pendingDataByteHits_3_23_T & ~entries_23_data_ready & query0_sameWord_23
+         & _query0_storeMask_T_70[3],
+       _query0_pendingDataByteHits_3_22_T & ~entries_22_data_ready & query0_sameWord_22
+         & _query0_storeMask_T_67[3],
+       _query0_pendingDataByteHits_3_21_T & ~entries_21_data_ready & query0_sameWord_21
+         & _query0_storeMask_T_64[3],
+       _query0_pendingDataByteHits_3_20_T & ~entries_20_data_ready & query0_sameWord_20
+         & _query0_storeMask_T_61[3],
+       _query0_pendingDataByteHits_3_19_T & ~entries_19_data_ready & query0_sameWord_19
+         & _query0_storeMask_T_58[3],
+       _query0_pendingDataByteHits_3_18_T & ~entries_18_data_ready & query0_sameWord_18
+         & _query0_storeMask_T_55[3],
+       _query0_pendingDataByteHits_3_17_T & ~entries_17_data_ready & query0_sameWord_17
+         & _query0_storeMask_T_52[3],
+       _query0_pendingDataByteHits_3_16_T & ~entries_16_data_ready & query0_sameWord_16
+         & _query0_storeMask_T_49[3],
+       _query0_pendingDataByteHits_3_15_T & ~entries_15_data_ready & query0_sameWord_15
+         & _query0_storeMask_T_46[3],
+       _query0_pendingDataByteHits_3_14_T & ~entries_14_data_ready & query0_sameWord_14
+         & _query0_storeMask_T_43[3],
+       _query0_pendingDataByteHits_3_13_T & ~entries_13_data_ready & query0_sameWord_13
+         & _query0_storeMask_T_40[3],
+       _query0_pendingDataByteHits_3_12_T & ~entries_12_data_ready & query0_sameWord_12
+         & _query0_storeMask_T_37[3],
+       _query0_pendingDataByteHits_3_11_T & ~entries_11_data_ready & query0_sameWord_11
+         & _query0_storeMask_T_34[3],
+       _query0_pendingDataByteHits_3_10_T & ~entries_10_data_ready & query0_sameWord_10
+         & _query0_storeMask_T_31[3],
+       _query0_pendingDataByteHits_3_9_T & ~entries_9_data_ready & query0_sameWord_9
+         & _query0_storeMask_T_28[3],
+       _query0_pendingDataByteHits_3_8_T & ~entries_8_data_ready & query0_sameWord_8
+         & _query0_storeMask_T_25[3],
+       _query0_pendingDataByteHits_3_7_T & ~entries_7_data_ready & query0_sameWord_7
+         & _query0_storeMask_T_22[3],
+       _query0_pendingDataByteHits_3_6_T & ~entries_6_data_ready & query0_sameWord_6
+         & _query0_storeMask_T_19[3],
+       _query0_pendingDataByteHits_3_5_T & ~entries_5_data_ready & query0_sameWord_5
+         & _query0_storeMask_T_16[3],
+       _query0_pendingDataByteHits_3_4_T & ~entries_4_data_ready & query0_sameWord_4
+         & _query0_storeMask_T_13[3],
+       _query0_pendingDataByteHits_3_3_T & ~entries_3_data_ready & query0_sameWord_3
+         & _query0_storeMask_T_10[3],
+       _query0_pendingDataByteHits_3_2_T & ~entries_2_data_ready & query0_sameWord_2
+         & _query0_storeMask_T_7[3],
+       _query0_pendingDataByteHits_3_1_T & ~entries_1_data_ready & query0_sameWord_1
+         & _query0_storeMask_T_4[3],
+       _query0_pendingDataByteHits_3_0_T & ~entries_0_data_ready & query0_sameWord
+         & _query0_storeMask_T_1[3]},
+     |{_query0_pendingDataByteHits_3_31_T & ~entries_31_data_ready & query0_sameWord_31
+         & _query0_storeMask_T_94[2],
+       _query0_pendingDataByteHits_3_30_T & ~entries_30_data_ready & query0_sameWord_30
+         & _query0_storeMask_T_91[2],
+       _query0_pendingDataByteHits_3_29_T & ~entries_29_data_ready & query0_sameWord_29
+         & _query0_storeMask_T_88[2],
+       _query0_pendingDataByteHits_3_28_T & ~entries_28_data_ready & query0_sameWord_28
+         & _query0_storeMask_T_85[2],
+       _query0_pendingDataByteHits_3_27_T & ~entries_27_data_ready & query0_sameWord_27
+         & _query0_storeMask_T_82[2],
+       _query0_pendingDataByteHits_3_26_T & ~entries_26_data_ready & query0_sameWord_26
+         & _query0_storeMask_T_79[2],
+       _query0_pendingDataByteHits_3_25_T & ~entries_25_data_ready & query0_sameWord_25
+         & _query0_storeMask_T_76[2],
+       _query0_pendingDataByteHits_3_24_T & ~entries_24_data_ready & query0_sameWord_24
+         & _query0_storeMask_T_73[2],
+       _query0_pendingDataByteHits_3_23_T & ~entries_23_data_ready & query0_sameWord_23
+         & _query0_storeMask_T_70[2],
+       _query0_pendingDataByteHits_3_22_T & ~entries_22_data_ready & query0_sameWord_22
+         & _query0_storeMask_T_67[2],
+       _query0_pendingDataByteHits_3_21_T & ~entries_21_data_ready & query0_sameWord_21
+         & _query0_storeMask_T_64[2],
+       _query0_pendingDataByteHits_3_20_T & ~entries_20_data_ready & query0_sameWord_20
+         & _query0_storeMask_T_61[2],
+       _query0_pendingDataByteHits_3_19_T & ~entries_19_data_ready & query0_sameWord_19
+         & _query0_storeMask_T_58[2],
+       _query0_pendingDataByteHits_3_18_T & ~entries_18_data_ready & query0_sameWord_18
+         & _query0_storeMask_T_55[2],
+       _query0_pendingDataByteHits_3_17_T & ~entries_17_data_ready & query0_sameWord_17
+         & _query0_storeMask_T_52[2],
+       _query0_pendingDataByteHits_3_16_T & ~entries_16_data_ready & query0_sameWord_16
+         & _query0_storeMask_T_49[2],
+       _query0_pendingDataByteHits_3_15_T & ~entries_15_data_ready & query0_sameWord_15
+         & _query0_storeMask_T_46[2],
+       _query0_pendingDataByteHits_3_14_T & ~entries_14_data_ready & query0_sameWord_14
+         & _query0_storeMask_T_43[2],
+       _query0_pendingDataByteHits_3_13_T & ~entries_13_data_ready & query0_sameWord_13
+         & _query0_storeMask_T_40[2],
+       _query0_pendingDataByteHits_3_12_T & ~entries_12_data_ready & query0_sameWord_12
+         & _query0_storeMask_T_37[2],
+       _query0_pendingDataByteHits_3_11_T & ~entries_11_data_ready & query0_sameWord_11
+         & _query0_storeMask_T_34[2],
+       _query0_pendingDataByteHits_3_10_T & ~entries_10_data_ready & query0_sameWord_10
+         & _query0_storeMask_T_31[2],
+       _query0_pendingDataByteHits_3_9_T & ~entries_9_data_ready & query0_sameWord_9
+         & _query0_storeMask_T_28[2],
+       _query0_pendingDataByteHits_3_8_T & ~entries_8_data_ready & query0_sameWord_8
+         & _query0_storeMask_T_25[2],
+       _query0_pendingDataByteHits_3_7_T & ~entries_7_data_ready & query0_sameWord_7
+         & _query0_storeMask_T_22[2],
+       _query0_pendingDataByteHits_3_6_T & ~entries_6_data_ready & query0_sameWord_6
+         & _query0_storeMask_T_19[2],
+       _query0_pendingDataByteHits_3_5_T & ~entries_5_data_ready & query0_sameWord_5
+         & _query0_storeMask_T_16[2],
+       _query0_pendingDataByteHits_3_4_T & ~entries_4_data_ready & query0_sameWord_4
+         & _query0_storeMask_T_13[2],
+       _query0_pendingDataByteHits_3_3_T & ~entries_3_data_ready & query0_sameWord_3
+         & _query0_storeMask_T_10[2],
+       _query0_pendingDataByteHits_3_2_T & ~entries_2_data_ready & query0_sameWord_2
+         & _query0_storeMask_T_7[2],
+       _query0_pendingDataByteHits_3_1_T & ~entries_1_data_ready & query0_sameWord_1
+         & _query0_storeMask_T_4[2],
+       _query0_pendingDataByteHits_3_0_T & ~entries_0_data_ready & query0_sameWord
+         & _query0_storeMask_T_1[2]},
+     |{_query0_pendingDataByteHits_3_31_T & ~entries_31_data_ready & query0_sameWord_31
+         & _query0_storeMask_T_94[1],
+       _query0_pendingDataByteHits_3_30_T & ~entries_30_data_ready & query0_sameWord_30
+         & _query0_storeMask_T_91[1],
+       _query0_pendingDataByteHits_3_29_T & ~entries_29_data_ready & query0_sameWord_29
+         & _query0_storeMask_T_88[1],
+       _query0_pendingDataByteHits_3_28_T & ~entries_28_data_ready & query0_sameWord_28
+         & _query0_storeMask_T_85[1],
+       _query0_pendingDataByteHits_3_27_T & ~entries_27_data_ready & query0_sameWord_27
+         & _query0_storeMask_T_82[1],
+       _query0_pendingDataByteHits_3_26_T & ~entries_26_data_ready & query0_sameWord_26
+         & _query0_storeMask_T_79[1],
+       _query0_pendingDataByteHits_3_25_T & ~entries_25_data_ready & query0_sameWord_25
+         & _query0_storeMask_T_76[1],
+       _query0_pendingDataByteHits_3_24_T & ~entries_24_data_ready & query0_sameWord_24
+         & _query0_storeMask_T_73[1],
+       _query0_pendingDataByteHits_3_23_T & ~entries_23_data_ready & query0_sameWord_23
+         & _query0_storeMask_T_70[1],
+       _query0_pendingDataByteHits_3_22_T & ~entries_22_data_ready & query0_sameWord_22
+         & _query0_storeMask_T_67[1],
+       _query0_pendingDataByteHits_3_21_T & ~entries_21_data_ready & query0_sameWord_21
+         & _query0_storeMask_T_64[1],
+       _query0_pendingDataByteHits_3_20_T & ~entries_20_data_ready & query0_sameWord_20
+         & _query0_storeMask_T_61[1],
+       _query0_pendingDataByteHits_3_19_T & ~entries_19_data_ready & query0_sameWord_19
+         & _query0_storeMask_T_58[1],
+       _query0_pendingDataByteHits_3_18_T & ~entries_18_data_ready & query0_sameWord_18
+         & _query0_storeMask_T_55[1],
+       _query0_pendingDataByteHits_3_17_T & ~entries_17_data_ready & query0_sameWord_17
+         & _query0_storeMask_T_52[1],
+       _query0_pendingDataByteHits_3_16_T & ~entries_16_data_ready & query0_sameWord_16
+         & _query0_storeMask_T_49[1],
+       _query0_pendingDataByteHits_3_15_T & ~entries_15_data_ready & query0_sameWord_15
+         & _query0_storeMask_T_46[1],
+       _query0_pendingDataByteHits_3_14_T & ~entries_14_data_ready & query0_sameWord_14
+         & _query0_storeMask_T_43[1],
+       _query0_pendingDataByteHits_3_13_T & ~entries_13_data_ready & query0_sameWord_13
+         & _query0_storeMask_T_40[1],
+       _query0_pendingDataByteHits_3_12_T & ~entries_12_data_ready & query0_sameWord_12
+         & _query0_storeMask_T_37[1],
+       _query0_pendingDataByteHits_3_11_T & ~entries_11_data_ready & query0_sameWord_11
+         & _query0_storeMask_T_34[1],
+       _query0_pendingDataByteHits_3_10_T & ~entries_10_data_ready & query0_sameWord_10
+         & _query0_storeMask_T_31[1],
+       _query0_pendingDataByteHits_3_9_T & ~entries_9_data_ready & query0_sameWord_9
+         & _query0_storeMask_T_28[1],
+       _query0_pendingDataByteHits_3_8_T & ~entries_8_data_ready & query0_sameWord_8
+         & _query0_storeMask_T_25[1],
+       _query0_pendingDataByteHits_3_7_T & ~entries_7_data_ready & query0_sameWord_7
+         & _query0_storeMask_T_22[1],
+       _query0_pendingDataByteHits_3_6_T & ~entries_6_data_ready & query0_sameWord_6
+         & _query0_storeMask_T_19[1],
+       _query0_pendingDataByteHits_3_5_T & ~entries_5_data_ready & query0_sameWord_5
+         & _query0_storeMask_T_16[1],
+       _query0_pendingDataByteHits_3_4_T & ~entries_4_data_ready & query0_sameWord_4
+         & _query0_storeMask_T_13[1],
+       _query0_pendingDataByteHits_3_3_T & ~entries_3_data_ready & query0_sameWord_3
+         & _query0_storeMask_T_10[1],
+       _query0_pendingDataByteHits_3_2_T & ~entries_2_data_ready & query0_sameWord_2
+         & _query0_storeMask_T_7[1],
+       _query0_pendingDataByteHits_3_1_T & ~entries_1_data_ready & query0_sameWord_1
+         & _query0_storeMask_T_4[1],
+       _query0_pendingDataByteHits_3_0_T & ~entries_0_data_ready & query0_sameWord
+         & _query0_storeMask_T_1[1]},
+     |{_query0_pendingDataByteHits_3_31_T & ~entries_31_data_ready & query0_sameWord_31
+         & _query0_storeMask_T_94[0],
+       _query0_pendingDataByteHits_3_30_T & ~entries_30_data_ready & query0_sameWord_30
+         & _query0_storeMask_T_91[0],
+       _query0_pendingDataByteHits_3_29_T & ~entries_29_data_ready & query0_sameWord_29
+         & _query0_storeMask_T_88[0],
+       _query0_pendingDataByteHits_3_28_T & ~entries_28_data_ready & query0_sameWord_28
+         & _query0_storeMask_T_85[0],
+       _query0_pendingDataByteHits_3_27_T & ~entries_27_data_ready & query0_sameWord_27
+         & _query0_storeMask_T_82[0],
+       _query0_pendingDataByteHits_3_26_T & ~entries_26_data_ready & query0_sameWord_26
+         & _query0_storeMask_T_79[0],
+       _query0_pendingDataByteHits_3_25_T & ~entries_25_data_ready & query0_sameWord_25
+         & _query0_storeMask_T_76[0],
+       _query0_pendingDataByteHits_3_24_T & ~entries_24_data_ready & query0_sameWord_24
+         & _query0_storeMask_T_73[0],
+       _query0_pendingDataByteHits_3_23_T & ~entries_23_data_ready & query0_sameWord_23
+         & _query0_storeMask_T_70[0],
+       _query0_pendingDataByteHits_3_22_T & ~entries_22_data_ready & query0_sameWord_22
+         & _query0_storeMask_T_67[0],
+       _query0_pendingDataByteHits_3_21_T & ~entries_21_data_ready & query0_sameWord_21
+         & _query0_storeMask_T_64[0],
+       _query0_pendingDataByteHits_3_20_T & ~entries_20_data_ready & query0_sameWord_20
+         & _query0_storeMask_T_61[0],
+       _query0_pendingDataByteHits_3_19_T & ~entries_19_data_ready & query0_sameWord_19
+         & _query0_storeMask_T_58[0],
+       _query0_pendingDataByteHits_3_18_T & ~entries_18_data_ready & query0_sameWord_18
+         & _query0_storeMask_T_55[0],
+       _query0_pendingDataByteHits_3_17_T & ~entries_17_data_ready & query0_sameWord_17
+         & _query0_storeMask_T_52[0],
+       _query0_pendingDataByteHits_3_16_T & ~entries_16_data_ready & query0_sameWord_16
+         & _query0_storeMask_T_49[0],
+       _query0_pendingDataByteHits_3_15_T & ~entries_15_data_ready & query0_sameWord_15
+         & _query0_storeMask_T_46[0],
+       _query0_pendingDataByteHits_3_14_T & ~entries_14_data_ready & query0_sameWord_14
+         & _query0_storeMask_T_43[0],
+       _query0_pendingDataByteHits_3_13_T & ~entries_13_data_ready & query0_sameWord_13
+         & _query0_storeMask_T_40[0],
+       _query0_pendingDataByteHits_3_12_T & ~entries_12_data_ready & query0_sameWord_12
+         & _query0_storeMask_T_37[0],
+       _query0_pendingDataByteHits_3_11_T & ~entries_11_data_ready & query0_sameWord_11
+         & _query0_storeMask_T_34[0],
+       _query0_pendingDataByteHits_3_10_T & ~entries_10_data_ready & query0_sameWord_10
+         & _query0_storeMask_T_31[0],
+       _query0_pendingDataByteHits_3_9_T & ~entries_9_data_ready & query0_sameWord_9
+         & _query0_storeMask_T_28[0],
+       _query0_pendingDataByteHits_3_8_T & ~entries_8_data_ready & query0_sameWord_8
+         & _query0_storeMask_T_25[0],
+       _query0_pendingDataByteHits_3_7_T & ~entries_7_data_ready & query0_sameWord_7
+         & _query0_storeMask_T_22[0],
+       _query0_pendingDataByteHits_3_6_T & ~entries_6_data_ready & query0_sameWord_6
+         & _query0_storeMask_T_19[0],
+       _query0_pendingDataByteHits_3_5_T & ~entries_5_data_ready & query0_sameWord_5
+         & _query0_storeMask_T_16[0],
+       _query0_pendingDataByteHits_3_4_T & ~entries_4_data_ready & query0_sameWord_4
+         & _query0_storeMask_T_13[0],
+       _query0_pendingDataByteHits_3_3_T & ~entries_3_data_ready & query0_sameWord_3
+         & _query0_storeMask_T_10[0],
+       _query0_pendingDataByteHits_3_2_T & ~entries_2_data_ready & query0_sameWord_2
+         & _query0_storeMask_T_7[0],
+       _query0_pendingDataByteHits_3_1_T & ~entries_1_data_ready & query0_sameWord_1
+         & _query0_storeMask_T_4[0],
+       _query0_pendingDataByteHits_3_0_T & ~entries_0_data_ready & query0_sameWord
+         & _query0_storeMask_T_1[0]}};
+  wire [3:0]  _query0_waitData_T = query0_pendingDataMask & _query0_loadMask_T[3:0];
   wire [3:0]  _query0_covered_T = query0_10 & _query0_loadMask_T[3:0];
   wire [4:0]  _query1_ldAge_T = io_ld1_rob - io_rob_head;
   wire        query1_olderStore = entries_0_valid & idxAge < _query1_ldAge_T;
@@ -6523,15 +7015,19 @@ module StoreQueue(
   wire        query1_unknownHits_0 =
     io_ld1_valid & query1_olderStore & ~entries_0_addr_ready;
   wire [62:0] _query1_normalizedData_0_T_1 = _GEN_1 << _GEN_2;
-  wire        _query1_knownByteHits_3_0_T = io_ld1_valid & query1_olderStore;
+  wire        _query1_pendingDataByteHits_3_0_T = io_ld1_valid & query1_olderStore;
   wire        query1_knownByteHits_0_0 =
-    _query1_knownByteHits_3_0_T & query1_sameWord & _query1_storeMask_T_1[0];
+    _query1_pendingDataByteHits_3_0_T & entries_0_data_ready & query1_sameWord
+    & _query1_storeMask_T_1[0];
   wire        query1_knownByteHits_1_0 =
-    _query1_knownByteHits_3_0_T & query1_sameWord & _query1_storeMask_T_1[1];
+    _query1_pendingDataByteHits_3_0_T & entries_0_data_ready & query1_sameWord
+    & _query1_storeMask_T_1[1];
   wire        query1_knownByteHits_2_0 =
-    _query1_knownByteHits_3_0_T & query1_sameWord & _query1_storeMask_T_1[2];
+    _query1_pendingDataByteHits_3_0_T & entries_0_data_ready & query1_sameWord
+    & _query1_storeMask_T_1[2];
   wire        query1_knownByteHits_3_0 =
-    _query1_knownByteHits_3_0_T & query1_sameWord & _query1_storeMask_T_1[3];
+    _query1_pendingDataByteHits_3_0_T & entries_0_data_ready & query1_sameWord
+    & _query1_storeMask_T_1[3];
   wire        query1_olderStore_1 = entries_1_valid & _query1_eAge_T_2 < _query1_ldAge_T;
   wire        query1_sameWord_1 =
     entries_1_addr_ready & entries_1_addr[31:2] == io_ld1_addr[31:2];
@@ -6539,15 +7035,19 @@ module StoreQueue(
   wire        query1_unknownHits_1 =
     io_ld1_valid & query1_olderStore_1 & ~entries_1_addr_ready;
   wire [62:0] _query1_normalizedData_1_T_1 = _GEN_5 << _GEN_6;
-  wire        _query1_knownByteHits_3_1_T = io_ld1_valid & query1_olderStore_1;
+  wire        _query1_pendingDataByteHits_3_1_T = io_ld1_valid & query1_olderStore_1;
   wire        query1_knownByteHits_0_1 =
-    _query1_knownByteHits_3_1_T & query1_sameWord_1 & _query1_storeMask_T_4[0];
+    _query1_pendingDataByteHits_3_1_T & entries_1_data_ready & query1_sameWord_1
+    & _query1_storeMask_T_4[0];
   wire        query1_knownByteHits_1_1 =
-    _query1_knownByteHits_3_1_T & query1_sameWord_1 & _query1_storeMask_T_4[1];
+    _query1_pendingDataByteHits_3_1_T & entries_1_data_ready & query1_sameWord_1
+    & _query1_storeMask_T_4[1];
   wire        query1_knownByteHits_2_1 =
-    _query1_knownByteHits_3_1_T & query1_sameWord_1 & _query1_storeMask_T_4[2];
+    _query1_pendingDataByteHits_3_1_T & entries_1_data_ready & query1_sameWord_1
+    & _query1_storeMask_T_4[2];
   wire        query1_knownByteHits_3_1 =
-    _query1_knownByteHits_3_1_T & query1_sameWord_1 & _query1_storeMask_T_4[3];
+    _query1_pendingDataByteHits_3_1_T & entries_1_data_ready & query1_sameWord_1
+    & _query1_storeMask_T_4[3];
   wire        query1_olderStore_2 = entries_2_valid & _query1_eAge_T_4 < _query1_ldAge_T;
   wire        query1_sameWord_2 =
     entries_2_addr_ready & entries_2_addr[31:2] == io_ld1_addr[31:2];
@@ -6555,15 +7055,19 @@ module StoreQueue(
   wire        query1_unknownHits_2 =
     io_ld1_valid & query1_olderStore_2 & ~entries_2_addr_ready;
   wire [62:0] _query1_normalizedData_2_T_1 = _GEN_9 << _GEN_10;
-  wire        _query1_knownByteHits_3_2_T = io_ld1_valid & query1_olderStore_2;
+  wire        _query1_pendingDataByteHits_3_2_T = io_ld1_valid & query1_olderStore_2;
   wire        query1_knownByteHits_0_2 =
-    _query1_knownByteHits_3_2_T & query1_sameWord_2 & _query1_storeMask_T_7[0];
+    _query1_pendingDataByteHits_3_2_T & entries_2_data_ready & query1_sameWord_2
+    & _query1_storeMask_T_7[0];
   wire        query1_knownByteHits_1_2 =
-    _query1_knownByteHits_3_2_T & query1_sameWord_2 & _query1_storeMask_T_7[1];
+    _query1_pendingDataByteHits_3_2_T & entries_2_data_ready & query1_sameWord_2
+    & _query1_storeMask_T_7[1];
   wire        query1_knownByteHits_2_2 =
-    _query1_knownByteHits_3_2_T & query1_sameWord_2 & _query1_storeMask_T_7[2];
+    _query1_pendingDataByteHits_3_2_T & entries_2_data_ready & query1_sameWord_2
+    & _query1_storeMask_T_7[2];
   wire        query1_knownByteHits_3_2 =
-    _query1_knownByteHits_3_2_T & query1_sameWord_2 & _query1_storeMask_T_7[3];
+    _query1_pendingDataByteHits_3_2_T & entries_2_data_ready & query1_sameWord_2
+    & _query1_storeMask_T_7[3];
   wire        query1_olderStore_3 = entries_3_valid & _query1_eAge_T_6 < _query1_ldAge_T;
   wire        query1_sameWord_3 =
     entries_3_addr_ready & entries_3_addr[31:2] == io_ld1_addr[31:2];
@@ -6571,15 +7075,19 @@ module StoreQueue(
   wire        query1_unknownHits_3 =
     io_ld1_valid & query1_olderStore_3 & ~entries_3_addr_ready;
   wire [62:0] _query1_normalizedData_3_T_1 = _GEN_13 << _GEN_14;
-  wire        _query1_knownByteHits_3_3_T = io_ld1_valid & query1_olderStore_3;
+  wire        _query1_pendingDataByteHits_3_3_T = io_ld1_valid & query1_olderStore_3;
   wire        query1_knownByteHits_0_3 =
-    _query1_knownByteHits_3_3_T & query1_sameWord_3 & _query1_storeMask_T_10[0];
+    _query1_pendingDataByteHits_3_3_T & entries_3_data_ready & query1_sameWord_3
+    & _query1_storeMask_T_10[0];
   wire        query1_knownByteHits_1_3 =
-    _query1_knownByteHits_3_3_T & query1_sameWord_3 & _query1_storeMask_T_10[1];
+    _query1_pendingDataByteHits_3_3_T & entries_3_data_ready & query1_sameWord_3
+    & _query1_storeMask_T_10[1];
   wire        query1_knownByteHits_2_3 =
-    _query1_knownByteHits_3_3_T & query1_sameWord_3 & _query1_storeMask_T_10[2];
+    _query1_pendingDataByteHits_3_3_T & entries_3_data_ready & query1_sameWord_3
+    & _query1_storeMask_T_10[2];
   wire        query1_knownByteHits_3_3 =
-    _query1_knownByteHits_3_3_T & query1_sameWord_3 & _query1_storeMask_T_10[3];
+    _query1_pendingDataByteHits_3_3_T & entries_3_data_ready & query1_sameWord_3
+    & _query1_storeMask_T_10[3];
   wire        query1_olderStore_4 = entries_4_valid & _query1_eAge_T_8 < _query1_ldAge_T;
   wire        query1_sameWord_4 =
     entries_4_addr_ready & entries_4_addr[31:2] == io_ld1_addr[31:2];
@@ -6587,15 +7095,19 @@ module StoreQueue(
   wire        query1_unknownHits_4 =
     io_ld1_valid & query1_olderStore_4 & ~entries_4_addr_ready;
   wire [62:0] _query1_normalizedData_4_T_1 = _GEN_17 << _GEN_18;
-  wire        _query1_knownByteHits_3_4_T = io_ld1_valid & query1_olderStore_4;
+  wire        _query1_pendingDataByteHits_3_4_T = io_ld1_valid & query1_olderStore_4;
   wire        query1_knownByteHits_0_4 =
-    _query1_knownByteHits_3_4_T & query1_sameWord_4 & _query1_storeMask_T_13[0];
+    _query1_pendingDataByteHits_3_4_T & entries_4_data_ready & query1_sameWord_4
+    & _query1_storeMask_T_13[0];
   wire        query1_knownByteHits_1_4 =
-    _query1_knownByteHits_3_4_T & query1_sameWord_4 & _query1_storeMask_T_13[1];
+    _query1_pendingDataByteHits_3_4_T & entries_4_data_ready & query1_sameWord_4
+    & _query1_storeMask_T_13[1];
   wire        query1_knownByteHits_2_4 =
-    _query1_knownByteHits_3_4_T & query1_sameWord_4 & _query1_storeMask_T_13[2];
+    _query1_pendingDataByteHits_3_4_T & entries_4_data_ready & query1_sameWord_4
+    & _query1_storeMask_T_13[2];
   wire        query1_knownByteHits_3_4 =
-    _query1_knownByteHits_3_4_T & query1_sameWord_4 & _query1_storeMask_T_13[3];
+    _query1_pendingDataByteHits_3_4_T & entries_4_data_ready & query1_sameWord_4
+    & _query1_storeMask_T_13[3];
   wire        query1_olderStore_5 = entries_5_valid & _query1_eAge_T_10 < _query1_ldAge_T;
   wire        query1_sameWord_5 =
     entries_5_addr_ready & entries_5_addr[31:2] == io_ld1_addr[31:2];
@@ -6603,15 +7115,19 @@ module StoreQueue(
   wire        query1_unknownHits_5 =
     io_ld1_valid & query1_olderStore_5 & ~entries_5_addr_ready;
   wire [62:0] _query1_normalizedData_5_T_1 = _GEN_21 << _GEN_22;
-  wire        _query1_knownByteHits_3_5_T = io_ld1_valid & query1_olderStore_5;
+  wire        _query1_pendingDataByteHits_3_5_T = io_ld1_valid & query1_olderStore_5;
   wire        query1_knownByteHits_0_5 =
-    _query1_knownByteHits_3_5_T & query1_sameWord_5 & _query1_storeMask_T_16[0];
+    _query1_pendingDataByteHits_3_5_T & entries_5_data_ready & query1_sameWord_5
+    & _query1_storeMask_T_16[0];
   wire        query1_knownByteHits_1_5 =
-    _query1_knownByteHits_3_5_T & query1_sameWord_5 & _query1_storeMask_T_16[1];
+    _query1_pendingDataByteHits_3_5_T & entries_5_data_ready & query1_sameWord_5
+    & _query1_storeMask_T_16[1];
   wire        query1_knownByteHits_2_5 =
-    _query1_knownByteHits_3_5_T & query1_sameWord_5 & _query1_storeMask_T_16[2];
+    _query1_pendingDataByteHits_3_5_T & entries_5_data_ready & query1_sameWord_5
+    & _query1_storeMask_T_16[2];
   wire        query1_knownByteHits_3_5 =
-    _query1_knownByteHits_3_5_T & query1_sameWord_5 & _query1_storeMask_T_16[3];
+    _query1_pendingDataByteHits_3_5_T & entries_5_data_ready & query1_sameWord_5
+    & _query1_storeMask_T_16[3];
   wire        query1_olderStore_6 = entries_6_valid & _query1_eAge_T_12 < _query1_ldAge_T;
   wire        query1_sameWord_6 =
     entries_6_addr_ready & entries_6_addr[31:2] == io_ld1_addr[31:2];
@@ -6619,15 +7135,19 @@ module StoreQueue(
   wire        query1_unknownHits_6 =
     io_ld1_valid & query1_olderStore_6 & ~entries_6_addr_ready;
   wire [62:0] _query1_normalizedData_6_T_1 = _GEN_25 << _GEN_26;
-  wire        _query1_knownByteHits_3_6_T = io_ld1_valid & query1_olderStore_6;
+  wire        _query1_pendingDataByteHits_3_6_T = io_ld1_valid & query1_olderStore_6;
   wire        query1_knownByteHits_0_6 =
-    _query1_knownByteHits_3_6_T & query1_sameWord_6 & _query1_storeMask_T_19[0];
+    _query1_pendingDataByteHits_3_6_T & entries_6_data_ready & query1_sameWord_6
+    & _query1_storeMask_T_19[0];
   wire        query1_knownByteHits_1_6 =
-    _query1_knownByteHits_3_6_T & query1_sameWord_6 & _query1_storeMask_T_19[1];
+    _query1_pendingDataByteHits_3_6_T & entries_6_data_ready & query1_sameWord_6
+    & _query1_storeMask_T_19[1];
   wire        query1_knownByteHits_2_6 =
-    _query1_knownByteHits_3_6_T & query1_sameWord_6 & _query1_storeMask_T_19[2];
+    _query1_pendingDataByteHits_3_6_T & entries_6_data_ready & query1_sameWord_6
+    & _query1_storeMask_T_19[2];
   wire        query1_knownByteHits_3_6 =
-    _query1_knownByteHits_3_6_T & query1_sameWord_6 & _query1_storeMask_T_19[3];
+    _query1_pendingDataByteHits_3_6_T & entries_6_data_ready & query1_sameWord_6
+    & _query1_storeMask_T_19[3];
   wire        query1_olderStore_7 = entries_7_valid & _query1_eAge_T_14 < _query1_ldAge_T;
   wire        query1_sameWord_7 =
     entries_7_addr_ready & entries_7_addr[31:2] == io_ld1_addr[31:2];
@@ -6635,15 +7155,19 @@ module StoreQueue(
   wire        query1_unknownHits_7 =
     io_ld1_valid & query1_olderStore_7 & ~entries_7_addr_ready;
   wire [62:0] _query1_normalizedData_7_T_1 = _GEN_29 << _GEN_30;
-  wire        _query1_knownByteHits_3_7_T = io_ld1_valid & query1_olderStore_7;
+  wire        _query1_pendingDataByteHits_3_7_T = io_ld1_valid & query1_olderStore_7;
   wire        query1_knownByteHits_0_7 =
-    _query1_knownByteHits_3_7_T & query1_sameWord_7 & _query1_storeMask_T_22[0];
+    _query1_pendingDataByteHits_3_7_T & entries_7_data_ready & query1_sameWord_7
+    & _query1_storeMask_T_22[0];
   wire        query1_knownByteHits_1_7 =
-    _query1_knownByteHits_3_7_T & query1_sameWord_7 & _query1_storeMask_T_22[1];
+    _query1_pendingDataByteHits_3_7_T & entries_7_data_ready & query1_sameWord_7
+    & _query1_storeMask_T_22[1];
   wire        query1_knownByteHits_2_7 =
-    _query1_knownByteHits_3_7_T & query1_sameWord_7 & _query1_storeMask_T_22[2];
+    _query1_pendingDataByteHits_3_7_T & entries_7_data_ready & query1_sameWord_7
+    & _query1_storeMask_T_22[2];
   wire        query1_knownByteHits_3_7 =
-    _query1_knownByteHits_3_7_T & query1_sameWord_7 & _query1_storeMask_T_22[3];
+    _query1_pendingDataByteHits_3_7_T & entries_7_data_ready & query1_sameWord_7
+    & _query1_storeMask_T_22[3];
   wire        query1_olderStore_8 = entries_8_valid & _query1_eAge_T_16 < _query1_ldAge_T;
   wire        query1_sameWord_8 =
     entries_8_addr_ready & entries_8_addr[31:2] == io_ld1_addr[31:2];
@@ -6651,15 +7175,19 @@ module StoreQueue(
   wire        query1_unknownHits_8 =
     io_ld1_valid & query1_olderStore_8 & ~entries_8_addr_ready;
   wire [62:0] _query1_normalizedData_8_T_1 = _GEN_33 << _GEN_34;
-  wire        _query1_knownByteHits_3_8_T = io_ld1_valid & query1_olderStore_8;
+  wire        _query1_pendingDataByteHits_3_8_T = io_ld1_valid & query1_olderStore_8;
   wire        query1_knownByteHits_0_8 =
-    _query1_knownByteHits_3_8_T & query1_sameWord_8 & _query1_storeMask_T_25[0];
+    _query1_pendingDataByteHits_3_8_T & entries_8_data_ready & query1_sameWord_8
+    & _query1_storeMask_T_25[0];
   wire        query1_knownByteHits_1_8 =
-    _query1_knownByteHits_3_8_T & query1_sameWord_8 & _query1_storeMask_T_25[1];
+    _query1_pendingDataByteHits_3_8_T & entries_8_data_ready & query1_sameWord_8
+    & _query1_storeMask_T_25[1];
   wire        query1_knownByteHits_2_8 =
-    _query1_knownByteHits_3_8_T & query1_sameWord_8 & _query1_storeMask_T_25[2];
+    _query1_pendingDataByteHits_3_8_T & entries_8_data_ready & query1_sameWord_8
+    & _query1_storeMask_T_25[2];
   wire        query1_knownByteHits_3_8 =
-    _query1_knownByteHits_3_8_T & query1_sameWord_8 & _query1_storeMask_T_25[3];
+    _query1_pendingDataByteHits_3_8_T & entries_8_data_ready & query1_sameWord_8
+    & _query1_storeMask_T_25[3];
   wire        query1_olderStore_9 = entries_9_valid & _query1_eAge_T_18 < _query1_ldAge_T;
   wire        query1_sameWord_9 =
     entries_9_addr_ready & entries_9_addr[31:2] == io_ld1_addr[31:2];
@@ -6667,15 +7195,19 @@ module StoreQueue(
   wire        query1_unknownHits_9 =
     io_ld1_valid & query1_olderStore_9 & ~entries_9_addr_ready;
   wire [62:0] _query1_normalizedData_9_T_1 = _GEN_37 << _GEN_38;
-  wire        _query1_knownByteHits_3_9_T = io_ld1_valid & query1_olderStore_9;
+  wire        _query1_pendingDataByteHits_3_9_T = io_ld1_valid & query1_olderStore_9;
   wire        query1_knownByteHits_0_9 =
-    _query1_knownByteHits_3_9_T & query1_sameWord_9 & _query1_storeMask_T_28[0];
+    _query1_pendingDataByteHits_3_9_T & entries_9_data_ready & query1_sameWord_9
+    & _query1_storeMask_T_28[0];
   wire        query1_knownByteHits_1_9 =
-    _query1_knownByteHits_3_9_T & query1_sameWord_9 & _query1_storeMask_T_28[1];
+    _query1_pendingDataByteHits_3_9_T & entries_9_data_ready & query1_sameWord_9
+    & _query1_storeMask_T_28[1];
   wire        query1_knownByteHits_2_9 =
-    _query1_knownByteHits_3_9_T & query1_sameWord_9 & _query1_storeMask_T_28[2];
+    _query1_pendingDataByteHits_3_9_T & entries_9_data_ready & query1_sameWord_9
+    & _query1_storeMask_T_28[2];
   wire        query1_knownByteHits_3_9 =
-    _query1_knownByteHits_3_9_T & query1_sameWord_9 & _query1_storeMask_T_28[3];
+    _query1_pendingDataByteHits_3_9_T & entries_9_data_ready & query1_sameWord_9
+    & _query1_storeMask_T_28[3];
   wire        query1_olderStore_10 =
     entries_10_valid & _query1_eAge_T_20 < _query1_ldAge_T;
   wire        query1_sameWord_10 =
@@ -6684,15 +7216,19 @@ module StoreQueue(
   wire        query1_unknownHits_10 =
     io_ld1_valid & query1_olderStore_10 & ~entries_10_addr_ready;
   wire [62:0] _query1_normalizedData_10_T_1 = _GEN_41 << _GEN_42;
-  wire        _query1_knownByteHits_3_10_T = io_ld1_valid & query1_olderStore_10;
+  wire        _query1_pendingDataByteHits_3_10_T = io_ld1_valid & query1_olderStore_10;
   wire        query1_knownByteHits_0_10 =
-    _query1_knownByteHits_3_10_T & query1_sameWord_10 & _query1_storeMask_T_31[0];
+    _query1_pendingDataByteHits_3_10_T & entries_10_data_ready & query1_sameWord_10
+    & _query1_storeMask_T_31[0];
   wire        query1_knownByteHits_1_10 =
-    _query1_knownByteHits_3_10_T & query1_sameWord_10 & _query1_storeMask_T_31[1];
+    _query1_pendingDataByteHits_3_10_T & entries_10_data_ready & query1_sameWord_10
+    & _query1_storeMask_T_31[1];
   wire        query1_knownByteHits_2_10 =
-    _query1_knownByteHits_3_10_T & query1_sameWord_10 & _query1_storeMask_T_31[2];
+    _query1_pendingDataByteHits_3_10_T & entries_10_data_ready & query1_sameWord_10
+    & _query1_storeMask_T_31[2];
   wire        query1_knownByteHits_3_10 =
-    _query1_knownByteHits_3_10_T & query1_sameWord_10 & _query1_storeMask_T_31[3];
+    _query1_pendingDataByteHits_3_10_T & entries_10_data_ready & query1_sameWord_10
+    & _query1_storeMask_T_31[3];
   wire        query1_olderStore_11 =
     entries_11_valid & _query1_eAge_T_22 < _query1_ldAge_T;
   wire        query1_sameWord_11 =
@@ -6701,15 +7237,19 @@ module StoreQueue(
   wire        query1_unknownHits_11 =
     io_ld1_valid & query1_olderStore_11 & ~entries_11_addr_ready;
   wire [62:0] _query1_normalizedData_11_T_1 = _GEN_45 << _GEN_46;
-  wire        _query1_knownByteHits_3_11_T = io_ld1_valid & query1_olderStore_11;
+  wire        _query1_pendingDataByteHits_3_11_T = io_ld1_valid & query1_olderStore_11;
   wire        query1_knownByteHits_0_11 =
-    _query1_knownByteHits_3_11_T & query1_sameWord_11 & _query1_storeMask_T_34[0];
+    _query1_pendingDataByteHits_3_11_T & entries_11_data_ready & query1_sameWord_11
+    & _query1_storeMask_T_34[0];
   wire        query1_knownByteHits_1_11 =
-    _query1_knownByteHits_3_11_T & query1_sameWord_11 & _query1_storeMask_T_34[1];
+    _query1_pendingDataByteHits_3_11_T & entries_11_data_ready & query1_sameWord_11
+    & _query1_storeMask_T_34[1];
   wire        query1_knownByteHits_2_11 =
-    _query1_knownByteHits_3_11_T & query1_sameWord_11 & _query1_storeMask_T_34[2];
+    _query1_pendingDataByteHits_3_11_T & entries_11_data_ready & query1_sameWord_11
+    & _query1_storeMask_T_34[2];
   wire        query1_knownByteHits_3_11 =
-    _query1_knownByteHits_3_11_T & query1_sameWord_11 & _query1_storeMask_T_34[3];
+    _query1_pendingDataByteHits_3_11_T & entries_11_data_ready & query1_sameWord_11
+    & _query1_storeMask_T_34[3];
   wire        query1_olderStore_12 =
     entries_12_valid & _query1_eAge_T_24 < _query1_ldAge_T;
   wire        query1_sameWord_12 =
@@ -6718,15 +7258,19 @@ module StoreQueue(
   wire        query1_unknownHits_12 =
     io_ld1_valid & query1_olderStore_12 & ~entries_12_addr_ready;
   wire [62:0] _query1_normalizedData_12_T_1 = _GEN_49 << _GEN_50;
-  wire        _query1_knownByteHits_3_12_T = io_ld1_valid & query1_olderStore_12;
+  wire        _query1_pendingDataByteHits_3_12_T = io_ld1_valid & query1_olderStore_12;
   wire        query1_knownByteHits_0_12 =
-    _query1_knownByteHits_3_12_T & query1_sameWord_12 & _query1_storeMask_T_37[0];
+    _query1_pendingDataByteHits_3_12_T & entries_12_data_ready & query1_sameWord_12
+    & _query1_storeMask_T_37[0];
   wire        query1_knownByteHits_1_12 =
-    _query1_knownByteHits_3_12_T & query1_sameWord_12 & _query1_storeMask_T_37[1];
+    _query1_pendingDataByteHits_3_12_T & entries_12_data_ready & query1_sameWord_12
+    & _query1_storeMask_T_37[1];
   wire        query1_knownByteHits_2_12 =
-    _query1_knownByteHits_3_12_T & query1_sameWord_12 & _query1_storeMask_T_37[2];
+    _query1_pendingDataByteHits_3_12_T & entries_12_data_ready & query1_sameWord_12
+    & _query1_storeMask_T_37[2];
   wire        query1_knownByteHits_3_12 =
-    _query1_knownByteHits_3_12_T & query1_sameWord_12 & _query1_storeMask_T_37[3];
+    _query1_pendingDataByteHits_3_12_T & entries_12_data_ready & query1_sameWord_12
+    & _query1_storeMask_T_37[3];
   wire        query1_olderStore_13 =
     entries_13_valid & _query1_eAge_T_26 < _query1_ldAge_T;
   wire        query1_sameWord_13 =
@@ -6735,15 +7279,19 @@ module StoreQueue(
   wire        query1_unknownHits_13 =
     io_ld1_valid & query1_olderStore_13 & ~entries_13_addr_ready;
   wire [62:0] _query1_normalizedData_13_T_1 = _GEN_53 << _GEN_54;
-  wire        _query1_knownByteHits_3_13_T = io_ld1_valid & query1_olderStore_13;
+  wire        _query1_pendingDataByteHits_3_13_T = io_ld1_valid & query1_olderStore_13;
   wire        query1_knownByteHits_0_13 =
-    _query1_knownByteHits_3_13_T & query1_sameWord_13 & _query1_storeMask_T_40[0];
+    _query1_pendingDataByteHits_3_13_T & entries_13_data_ready & query1_sameWord_13
+    & _query1_storeMask_T_40[0];
   wire        query1_knownByteHits_1_13 =
-    _query1_knownByteHits_3_13_T & query1_sameWord_13 & _query1_storeMask_T_40[1];
+    _query1_pendingDataByteHits_3_13_T & entries_13_data_ready & query1_sameWord_13
+    & _query1_storeMask_T_40[1];
   wire        query1_knownByteHits_2_13 =
-    _query1_knownByteHits_3_13_T & query1_sameWord_13 & _query1_storeMask_T_40[2];
+    _query1_pendingDataByteHits_3_13_T & entries_13_data_ready & query1_sameWord_13
+    & _query1_storeMask_T_40[2];
   wire        query1_knownByteHits_3_13 =
-    _query1_knownByteHits_3_13_T & query1_sameWord_13 & _query1_storeMask_T_40[3];
+    _query1_pendingDataByteHits_3_13_T & entries_13_data_ready & query1_sameWord_13
+    & _query1_storeMask_T_40[3];
   wire        query1_olderStore_14 =
     entries_14_valid & _query1_eAge_T_28 < _query1_ldAge_T;
   wire        query1_sameWord_14 =
@@ -6752,15 +7300,19 @@ module StoreQueue(
   wire        query1_unknownHits_14 =
     io_ld1_valid & query1_olderStore_14 & ~entries_14_addr_ready;
   wire [62:0] _query1_normalizedData_14_T_1 = _GEN_57 << _GEN_58;
-  wire        _query1_knownByteHits_3_14_T = io_ld1_valid & query1_olderStore_14;
+  wire        _query1_pendingDataByteHits_3_14_T = io_ld1_valid & query1_olderStore_14;
   wire        query1_knownByteHits_0_14 =
-    _query1_knownByteHits_3_14_T & query1_sameWord_14 & _query1_storeMask_T_43[0];
+    _query1_pendingDataByteHits_3_14_T & entries_14_data_ready & query1_sameWord_14
+    & _query1_storeMask_T_43[0];
   wire        query1_knownByteHits_1_14 =
-    _query1_knownByteHits_3_14_T & query1_sameWord_14 & _query1_storeMask_T_43[1];
+    _query1_pendingDataByteHits_3_14_T & entries_14_data_ready & query1_sameWord_14
+    & _query1_storeMask_T_43[1];
   wire        query1_knownByteHits_2_14 =
-    _query1_knownByteHits_3_14_T & query1_sameWord_14 & _query1_storeMask_T_43[2];
+    _query1_pendingDataByteHits_3_14_T & entries_14_data_ready & query1_sameWord_14
+    & _query1_storeMask_T_43[2];
   wire        query1_knownByteHits_3_14 =
-    _query1_knownByteHits_3_14_T & query1_sameWord_14 & _query1_storeMask_T_43[3];
+    _query1_pendingDataByteHits_3_14_T & entries_14_data_ready & query1_sameWord_14
+    & _query1_storeMask_T_43[3];
   wire        query1_olderStore_15 =
     entries_15_valid & _query1_eAge_T_30 < _query1_ldAge_T;
   wire        query1_sameWord_15 =
@@ -6769,15 +7321,19 @@ module StoreQueue(
   wire        query1_unknownHits_15 =
     io_ld1_valid & query1_olderStore_15 & ~entries_15_addr_ready;
   wire [62:0] _query1_normalizedData_15_T_1 = _GEN_61 << _GEN_62;
-  wire        _query1_knownByteHits_3_15_T = io_ld1_valid & query1_olderStore_15;
+  wire        _query1_pendingDataByteHits_3_15_T = io_ld1_valid & query1_olderStore_15;
   wire        query1_knownByteHits_0_15 =
-    _query1_knownByteHits_3_15_T & query1_sameWord_15 & _query1_storeMask_T_46[0];
+    _query1_pendingDataByteHits_3_15_T & entries_15_data_ready & query1_sameWord_15
+    & _query1_storeMask_T_46[0];
   wire        query1_knownByteHits_1_15 =
-    _query1_knownByteHits_3_15_T & query1_sameWord_15 & _query1_storeMask_T_46[1];
+    _query1_pendingDataByteHits_3_15_T & entries_15_data_ready & query1_sameWord_15
+    & _query1_storeMask_T_46[1];
   wire        query1_knownByteHits_2_15 =
-    _query1_knownByteHits_3_15_T & query1_sameWord_15 & _query1_storeMask_T_46[2];
+    _query1_pendingDataByteHits_3_15_T & entries_15_data_ready & query1_sameWord_15
+    & _query1_storeMask_T_46[2];
   wire        query1_knownByteHits_3_15 =
-    _query1_knownByteHits_3_15_T & query1_sameWord_15 & _query1_storeMask_T_46[3];
+    _query1_pendingDataByteHits_3_15_T & entries_15_data_ready & query1_sameWord_15
+    & _query1_storeMask_T_46[3];
   wire        query1_olderStore_16 =
     entries_16_valid & _query1_eAge_T_32 < _query1_ldAge_T;
   wire        query1_sameWord_16 =
@@ -6786,15 +7342,19 @@ module StoreQueue(
   wire        query1_unknownHits_16 =
     io_ld1_valid & query1_olderStore_16 & ~entries_16_addr_ready;
   wire [62:0] _query1_normalizedData_16_T_1 = _GEN_65 << _GEN_66;
-  wire        _query1_knownByteHits_3_16_T = io_ld1_valid & query1_olderStore_16;
+  wire        _query1_pendingDataByteHits_3_16_T = io_ld1_valid & query1_olderStore_16;
   wire        query1_knownByteHits_0_16 =
-    _query1_knownByteHits_3_16_T & query1_sameWord_16 & _query1_storeMask_T_49[0];
+    _query1_pendingDataByteHits_3_16_T & entries_16_data_ready & query1_sameWord_16
+    & _query1_storeMask_T_49[0];
   wire        query1_knownByteHits_1_16 =
-    _query1_knownByteHits_3_16_T & query1_sameWord_16 & _query1_storeMask_T_49[1];
+    _query1_pendingDataByteHits_3_16_T & entries_16_data_ready & query1_sameWord_16
+    & _query1_storeMask_T_49[1];
   wire        query1_knownByteHits_2_16 =
-    _query1_knownByteHits_3_16_T & query1_sameWord_16 & _query1_storeMask_T_49[2];
+    _query1_pendingDataByteHits_3_16_T & entries_16_data_ready & query1_sameWord_16
+    & _query1_storeMask_T_49[2];
   wire        query1_knownByteHits_3_16 =
-    _query1_knownByteHits_3_16_T & query1_sameWord_16 & _query1_storeMask_T_49[3];
+    _query1_pendingDataByteHits_3_16_T & entries_16_data_ready & query1_sameWord_16
+    & _query1_storeMask_T_49[3];
   wire        query1_olderStore_17 =
     entries_17_valid & _query1_eAge_T_34 < _query1_ldAge_T;
   wire        query1_sameWord_17 =
@@ -6803,15 +7363,19 @@ module StoreQueue(
   wire        query1_unknownHits_17 =
     io_ld1_valid & query1_olderStore_17 & ~entries_17_addr_ready;
   wire [62:0] _query1_normalizedData_17_T_1 = _GEN_69 << _GEN_70;
-  wire        _query1_knownByteHits_3_17_T = io_ld1_valid & query1_olderStore_17;
+  wire        _query1_pendingDataByteHits_3_17_T = io_ld1_valid & query1_olderStore_17;
   wire        query1_knownByteHits_0_17 =
-    _query1_knownByteHits_3_17_T & query1_sameWord_17 & _query1_storeMask_T_52[0];
+    _query1_pendingDataByteHits_3_17_T & entries_17_data_ready & query1_sameWord_17
+    & _query1_storeMask_T_52[0];
   wire        query1_knownByteHits_1_17 =
-    _query1_knownByteHits_3_17_T & query1_sameWord_17 & _query1_storeMask_T_52[1];
+    _query1_pendingDataByteHits_3_17_T & entries_17_data_ready & query1_sameWord_17
+    & _query1_storeMask_T_52[1];
   wire        query1_knownByteHits_2_17 =
-    _query1_knownByteHits_3_17_T & query1_sameWord_17 & _query1_storeMask_T_52[2];
+    _query1_pendingDataByteHits_3_17_T & entries_17_data_ready & query1_sameWord_17
+    & _query1_storeMask_T_52[2];
   wire        query1_knownByteHits_3_17 =
-    _query1_knownByteHits_3_17_T & query1_sameWord_17 & _query1_storeMask_T_52[3];
+    _query1_pendingDataByteHits_3_17_T & entries_17_data_ready & query1_sameWord_17
+    & _query1_storeMask_T_52[3];
   wire        query1_olderStore_18 =
     entries_18_valid & _query1_eAge_T_36 < _query1_ldAge_T;
   wire        query1_sameWord_18 =
@@ -6820,15 +7384,19 @@ module StoreQueue(
   wire        query1_unknownHits_18 =
     io_ld1_valid & query1_olderStore_18 & ~entries_18_addr_ready;
   wire [62:0] _query1_normalizedData_18_T_1 = _GEN_73 << _GEN_74;
-  wire        _query1_knownByteHits_3_18_T = io_ld1_valid & query1_olderStore_18;
+  wire        _query1_pendingDataByteHits_3_18_T = io_ld1_valid & query1_olderStore_18;
   wire        query1_knownByteHits_0_18 =
-    _query1_knownByteHits_3_18_T & query1_sameWord_18 & _query1_storeMask_T_55[0];
+    _query1_pendingDataByteHits_3_18_T & entries_18_data_ready & query1_sameWord_18
+    & _query1_storeMask_T_55[0];
   wire        query1_knownByteHits_1_18 =
-    _query1_knownByteHits_3_18_T & query1_sameWord_18 & _query1_storeMask_T_55[1];
+    _query1_pendingDataByteHits_3_18_T & entries_18_data_ready & query1_sameWord_18
+    & _query1_storeMask_T_55[1];
   wire        query1_knownByteHits_2_18 =
-    _query1_knownByteHits_3_18_T & query1_sameWord_18 & _query1_storeMask_T_55[2];
+    _query1_pendingDataByteHits_3_18_T & entries_18_data_ready & query1_sameWord_18
+    & _query1_storeMask_T_55[2];
   wire        query1_knownByteHits_3_18 =
-    _query1_knownByteHits_3_18_T & query1_sameWord_18 & _query1_storeMask_T_55[3];
+    _query1_pendingDataByteHits_3_18_T & entries_18_data_ready & query1_sameWord_18
+    & _query1_storeMask_T_55[3];
   wire        query1_olderStore_19 =
     entries_19_valid & _query1_eAge_T_38 < _query1_ldAge_T;
   wire        query1_sameWord_19 =
@@ -6837,15 +7405,19 @@ module StoreQueue(
   wire        query1_unknownHits_19 =
     io_ld1_valid & query1_olderStore_19 & ~entries_19_addr_ready;
   wire [62:0] _query1_normalizedData_19_T_1 = _GEN_77 << _GEN_78;
-  wire        _query1_knownByteHits_3_19_T = io_ld1_valid & query1_olderStore_19;
+  wire        _query1_pendingDataByteHits_3_19_T = io_ld1_valid & query1_olderStore_19;
   wire        query1_knownByteHits_0_19 =
-    _query1_knownByteHits_3_19_T & query1_sameWord_19 & _query1_storeMask_T_58[0];
+    _query1_pendingDataByteHits_3_19_T & entries_19_data_ready & query1_sameWord_19
+    & _query1_storeMask_T_58[0];
   wire        query1_knownByteHits_1_19 =
-    _query1_knownByteHits_3_19_T & query1_sameWord_19 & _query1_storeMask_T_58[1];
+    _query1_pendingDataByteHits_3_19_T & entries_19_data_ready & query1_sameWord_19
+    & _query1_storeMask_T_58[1];
   wire        query1_knownByteHits_2_19 =
-    _query1_knownByteHits_3_19_T & query1_sameWord_19 & _query1_storeMask_T_58[2];
+    _query1_pendingDataByteHits_3_19_T & entries_19_data_ready & query1_sameWord_19
+    & _query1_storeMask_T_58[2];
   wire        query1_knownByteHits_3_19 =
-    _query1_knownByteHits_3_19_T & query1_sameWord_19 & _query1_storeMask_T_58[3];
+    _query1_pendingDataByteHits_3_19_T & entries_19_data_ready & query1_sameWord_19
+    & _query1_storeMask_T_58[3];
   wire        query1_olderStore_20 =
     entries_20_valid & _query1_eAge_T_40 < _query1_ldAge_T;
   wire        query1_sameWord_20 =
@@ -6854,15 +7426,19 @@ module StoreQueue(
   wire        query1_unknownHits_20 =
     io_ld1_valid & query1_olderStore_20 & ~entries_20_addr_ready;
   wire [62:0] _query1_normalizedData_20_T_1 = _GEN_81 << _GEN_82;
-  wire        _query1_knownByteHits_3_20_T = io_ld1_valid & query1_olderStore_20;
+  wire        _query1_pendingDataByteHits_3_20_T = io_ld1_valid & query1_olderStore_20;
   wire        query1_knownByteHits_0_20 =
-    _query1_knownByteHits_3_20_T & query1_sameWord_20 & _query1_storeMask_T_61[0];
+    _query1_pendingDataByteHits_3_20_T & entries_20_data_ready & query1_sameWord_20
+    & _query1_storeMask_T_61[0];
   wire        query1_knownByteHits_1_20 =
-    _query1_knownByteHits_3_20_T & query1_sameWord_20 & _query1_storeMask_T_61[1];
+    _query1_pendingDataByteHits_3_20_T & entries_20_data_ready & query1_sameWord_20
+    & _query1_storeMask_T_61[1];
   wire        query1_knownByteHits_2_20 =
-    _query1_knownByteHits_3_20_T & query1_sameWord_20 & _query1_storeMask_T_61[2];
+    _query1_pendingDataByteHits_3_20_T & entries_20_data_ready & query1_sameWord_20
+    & _query1_storeMask_T_61[2];
   wire        query1_knownByteHits_3_20 =
-    _query1_knownByteHits_3_20_T & query1_sameWord_20 & _query1_storeMask_T_61[3];
+    _query1_pendingDataByteHits_3_20_T & entries_20_data_ready & query1_sameWord_20
+    & _query1_storeMask_T_61[3];
   wire        query1_olderStore_21 =
     entries_21_valid & _query1_eAge_T_42 < _query1_ldAge_T;
   wire        query1_sameWord_21 =
@@ -6871,15 +7447,19 @@ module StoreQueue(
   wire        query1_unknownHits_21 =
     io_ld1_valid & query1_olderStore_21 & ~entries_21_addr_ready;
   wire [62:0] _query1_normalizedData_21_T_1 = _GEN_85 << _GEN_86;
-  wire        _query1_knownByteHits_3_21_T = io_ld1_valid & query1_olderStore_21;
+  wire        _query1_pendingDataByteHits_3_21_T = io_ld1_valid & query1_olderStore_21;
   wire        query1_knownByteHits_0_21 =
-    _query1_knownByteHits_3_21_T & query1_sameWord_21 & _query1_storeMask_T_64[0];
+    _query1_pendingDataByteHits_3_21_T & entries_21_data_ready & query1_sameWord_21
+    & _query1_storeMask_T_64[0];
   wire        query1_knownByteHits_1_21 =
-    _query1_knownByteHits_3_21_T & query1_sameWord_21 & _query1_storeMask_T_64[1];
+    _query1_pendingDataByteHits_3_21_T & entries_21_data_ready & query1_sameWord_21
+    & _query1_storeMask_T_64[1];
   wire        query1_knownByteHits_2_21 =
-    _query1_knownByteHits_3_21_T & query1_sameWord_21 & _query1_storeMask_T_64[2];
+    _query1_pendingDataByteHits_3_21_T & entries_21_data_ready & query1_sameWord_21
+    & _query1_storeMask_T_64[2];
   wire        query1_knownByteHits_3_21 =
-    _query1_knownByteHits_3_21_T & query1_sameWord_21 & _query1_storeMask_T_64[3];
+    _query1_pendingDataByteHits_3_21_T & entries_21_data_ready & query1_sameWord_21
+    & _query1_storeMask_T_64[3];
   wire        query1_olderStore_22 =
     entries_22_valid & _query1_eAge_T_44 < _query1_ldAge_T;
   wire        query1_sameWord_22 =
@@ -6888,15 +7468,19 @@ module StoreQueue(
   wire        query1_unknownHits_22 =
     io_ld1_valid & query1_olderStore_22 & ~entries_22_addr_ready;
   wire [62:0] _query1_normalizedData_22_T_1 = _GEN_89 << _GEN_90;
-  wire        _query1_knownByteHits_3_22_T = io_ld1_valid & query1_olderStore_22;
+  wire        _query1_pendingDataByteHits_3_22_T = io_ld1_valid & query1_olderStore_22;
   wire        query1_knownByteHits_0_22 =
-    _query1_knownByteHits_3_22_T & query1_sameWord_22 & _query1_storeMask_T_67[0];
+    _query1_pendingDataByteHits_3_22_T & entries_22_data_ready & query1_sameWord_22
+    & _query1_storeMask_T_67[0];
   wire        query1_knownByteHits_1_22 =
-    _query1_knownByteHits_3_22_T & query1_sameWord_22 & _query1_storeMask_T_67[1];
+    _query1_pendingDataByteHits_3_22_T & entries_22_data_ready & query1_sameWord_22
+    & _query1_storeMask_T_67[1];
   wire        query1_knownByteHits_2_22 =
-    _query1_knownByteHits_3_22_T & query1_sameWord_22 & _query1_storeMask_T_67[2];
+    _query1_pendingDataByteHits_3_22_T & entries_22_data_ready & query1_sameWord_22
+    & _query1_storeMask_T_67[2];
   wire        query1_knownByteHits_3_22 =
-    _query1_knownByteHits_3_22_T & query1_sameWord_22 & _query1_storeMask_T_67[3];
+    _query1_pendingDataByteHits_3_22_T & entries_22_data_ready & query1_sameWord_22
+    & _query1_storeMask_T_67[3];
   wire        query1_olderStore_23 =
     entries_23_valid & _query1_eAge_T_46 < _query1_ldAge_T;
   wire        query1_sameWord_23 =
@@ -6905,15 +7489,19 @@ module StoreQueue(
   wire        query1_unknownHits_23 =
     io_ld1_valid & query1_olderStore_23 & ~entries_23_addr_ready;
   wire [62:0] _query1_normalizedData_23_T_1 = _GEN_93 << _GEN_94;
-  wire        _query1_knownByteHits_3_23_T = io_ld1_valid & query1_olderStore_23;
+  wire        _query1_pendingDataByteHits_3_23_T = io_ld1_valid & query1_olderStore_23;
   wire        query1_knownByteHits_0_23 =
-    _query1_knownByteHits_3_23_T & query1_sameWord_23 & _query1_storeMask_T_70[0];
+    _query1_pendingDataByteHits_3_23_T & entries_23_data_ready & query1_sameWord_23
+    & _query1_storeMask_T_70[0];
   wire        query1_knownByteHits_1_23 =
-    _query1_knownByteHits_3_23_T & query1_sameWord_23 & _query1_storeMask_T_70[1];
+    _query1_pendingDataByteHits_3_23_T & entries_23_data_ready & query1_sameWord_23
+    & _query1_storeMask_T_70[1];
   wire        query1_knownByteHits_2_23 =
-    _query1_knownByteHits_3_23_T & query1_sameWord_23 & _query1_storeMask_T_70[2];
+    _query1_pendingDataByteHits_3_23_T & entries_23_data_ready & query1_sameWord_23
+    & _query1_storeMask_T_70[2];
   wire        query1_knownByteHits_3_23 =
-    _query1_knownByteHits_3_23_T & query1_sameWord_23 & _query1_storeMask_T_70[3];
+    _query1_pendingDataByteHits_3_23_T & entries_23_data_ready & query1_sameWord_23
+    & _query1_storeMask_T_70[3];
   wire        query1_olderStore_24 =
     entries_24_valid & _query1_eAge_T_48 < _query1_ldAge_T;
   wire        query1_sameWord_24 =
@@ -6922,15 +7510,19 @@ module StoreQueue(
   wire        query1_unknownHits_24 =
     io_ld1_valid & query1_olderStore_24 & ~entries_24_addr_ready;
   wire [62:0] _query1_normalizedData_24_T_1 = _GEN_97 << _GEN_98;
-  wire        _query1_knownByteHits_3_24_T = io_ld1_valid & query1_olderStore_24;
+  wire        _query1_pendingDataByteHits_3_24_T = io_ld1_valid & query1_olderStore_24;
   wire        query1_knownByteHits_0_24 =
-    _query1_knownByteHits_3_24_T & query1_sameWord_24 & _query1_storeMask_T_73[0];
+    _query1_pendingDataByteHits_3_24_T & entries_24_data_ready & query1_sameWord_24
+    & _query1_storeMask_T_73[0];
   wire        query1_knownByteHits_1_24 =
-    _query1_knownByteHits_3_24_T & query1_sameWord_24 & _query1_storeMask_T_73[1];
+    _query1_pendingDataByteHits_3_24_T & entries_24_data_ready & query1_sameWord_24
+    & _query1_storeMask_T_73[1];
   wire        query1_knownByteHits_2_24 =
-    _query1_knownByteHits_3_24_T & query1_sameWord_24 & _query1_storeMask_T_73[2];
+    _query1_pendingDataByteHits_3_24_T & entries_24_data_ready & query1_sameWord_24
+    & _query1_storeMask_T_73[2];
   wire        query1_knownByteHits_3_24 =
-    _query1_knownByteHits_3_24_T & query1_sameWord_24 & _query1_storeMask_T_73[3];
+    _query1_pendingDataByteHits_3_24_T & entries_24_data_ready & query1_sameWord_24
+    & _query1_storeMask_T_73[3];
   wire        query1_olderStore_25 =
     entries_25_valid & _query1_eAge_T_50 < _query1_ldAge_T;
   wire        query1_sameWord_25 =
@@ -6939,15 +7531,19 @@ module StoreQueue(
   wire        query1_unknownHits_25 =
     io_ld1_valid & query1_olderStore_25 & ~entries_25_addr_ready;
   wire [62:0] _query1_normalizedData_25_T_1 = _GEN_101 << _GEN_102;
-  wire        _query1_knownByteHits_3_25_T = io_ld1_valid & query1_olderStore_25;
+  wire        _query1_pendingDataByteHits_3_25_T = io_ld1_valid & query1_olderStore_25;
   wire        query1_knownByteHits_0_25 =
-    _query1_knownByteHits_3_25_T & query1_sameWord_25 & _query1_storeMask_T_76[0];
+    _query1_pendingDataByteHits_3_25_T & entries_25_data_ready & query1_sameWord_25
+    & _query1_storeMask_T_76[0];
   wire        query1_knownByteHits_1_25 =
-    _query1_knownByteHits_3_25_T & query1_sameWord_25 & _query1_storeMask_T_76[1];
+    _query1_pendingDataByteHits_3_25_T & entries_25_data_ready & query1_sameWord_25
+    & _query1_storeMask_T_76[1];
   wire        query1_knownByteHits_2_25 =
-    _query1_knownByteHits_3_25_T & query1_sameWord_25 & _query1_storeMask_T_76[2];
+    _query1_pendingDataByteHits_3_25_T & entries_25_data_ready & query1_sameWord_25
+    & _query1_storeMask_T_76[2];
   wire        query1_knownByteHits_3_25 =
-    _query1_knownByteHits_3_25_T & query1_sameWord_25 & _query1_storeMask_T_76[3];
+    _query1_pendingDataByteHits_3_25_T & entries_25_data_ready & query1_sameWord_25
+    & _query1_storeMask_T_76[3];
   wire        query1_olderStore_26 =
     entries_26_valid & _query1_eAge_T_52 < _query1_ldAge_T;
   wire        query1_sameWord_26 =
@@ -6956,15 +7552,19 @@ module StoreQueue(
   wire        query1_unknownHits_26 =
     io_ld1_valid & query1_olderStore_26 & ~entries_26_addr_ready;
   wire [62:0] _query1_normalizedData_26_T_1 = _GEN_105 << _GEN_106;
-  wire        _query1_knownByteHits_3_26_T = io_ld1_valid & query1_olderStore_26;
+  wire        _query1_pendingDataByteHits_3_26_T = io_ld1_valid & query1_olderStore_26;
   wire        query1_knownByteHits_0_26 =
-    _query1_knownByteHits_3_26_T & query1_sameWord_26 & _query1_storeMask_T_79[0];
+    _query1_pendingDataByteHits_3_26_T & entries_26_data_ready & query1_sameWord_26
+    & _query1_storeMask_T_79[0];
   wire        query1_knownByteHits_1_26 =
-    _query1_knownByteHits_3_26_T & query1_sameWord_26 & _query1_storeMask_T_79[1];
+    _query1_pendingDataByteHits_3_26_T & entries_26_data_ready & query1_sameWord_26
+    & _query1_storeMask_T_79[1];
   wire        query1_knownByteHits_2_26 =
-    _query1_knownByteHits_3_26_T & query1_sameWord_26 & _query1_storeMask_T_79[2];
+    _query1_pendingDataByteHits_3_26_T & entries_26_data_ready & query1_sameWord_26
+    & _query1_storeMask_T_79[2];
   wire        query1_knownByteHits_3_26 =
-    _query1_knownByteHits_3_26_T & query1_sameWord_26 & _query1_storeMask_T_79[3];
+    _query1_pendingDataByteHits_3_26_T & entries_26_data_ready & query1_sameWord_26
+    & _query1_storeMask_T_79[3];
   wire        query1_olderStore_27 =
     entries_27_valid & _query1_eAge_T_54 < _query1_ldAge_T;
   wire        query1_sameWord_27 =
@@ -6973,15 +7573,19 @@ module StoreQueue(
   wire        query1_unknownHits_27 =
     io_ld1_valid & query1_olderStore_27 & ~entries_27_addr_ready;
   wire [62:0] _query1_normalizedData_27_T_1 = _GEN_109 << _GEN_110;
-  wire        _query1_knownByteHits_3_27_T = io_ld1_valid & query1_olderStore_27;
+  wire        _query1_pendingDataByteHits_3_27_T = io_ld1_valid & query1_olderStore_27;
   wire        query1_knownByteHits_0_27 =
-    _query1_knownByteHits_3_27_T & query1_sameWord_27 & _query1_storeMask_T_82[0];
+    _query1_pendingDataByteHits_3_27_T & entries_27_data_ready & query1_sameWord_27
+    & _query1_storeMask_T_82[0];
   wire        query1_knownByteHits_1_27 =
-    _query1_knownByteHits_3_27_T & query1_sameWord_27 & _query1_storeMask_T_82[1];
+    _query1_pendingDataByteHits_3_27_T & entries_27_data_ready & query1_sameWord_27
+    & _query1_storeMask_T_82[1];
   wire        query1_knownByteHits_2_27 =
-    _query1_knownByteHits_3_27_T & query1_sameWord_27 & _query1_storeMask_T_82[2];
+    _query1_pendingDataByteHits_3_27_T & entries_27_data_ready & query1_sameWord_27
+    & _query1_storeMask_T_82[2];
   wire        query1_knownByteHits_3_27 =
-    _query1_knownByteHits_3_27_T & query1_sameWord_27 & _query1_storeMask_T_82[3];
+    _query1_pendingDataByteHits_3_27_T & entries_27_data_ready & query1_sameWord_27
+    & _query1_storeMask_T_82[3];
   wire        query1_olderStore_28 =
     entries_28_valid & _query1_eAge_T_56 < _query1_ldAge_T;
   wire        query1_sameWord_28 =
@@ -6990,15 +7594,19 @@ module StoreQueue(
   wire        query1_unknownHits_28 =
     io_ld1_valid & query1_olderStore_28 & ~entries_28_addr_ready;
   wire [62:0] _query1_normalizedData_28_T_1 = _GEN_113 << _GEN_114;
-  wire        _query1_knownByteHits_3_28_T = io_ld1_valid & query1_olderStore_28;
+  wire        _query1_pendingDataByteHits_3_28_T = io_ld1_valid & query1_olderStore_28;
   wire        query1_knownByteHits_0_28 =
-    _query1_knownByteHits_3_28_T & query1_sameWord_28 & _query1_storeMask_T_85[0];
+    _query1_pendingDataByteHits_3_28_T & entries_28_data_ready & query1_sameWord_28
+    & _query1_storeMask_T_85[0];
   wire        query1_knownByteHits_1_28 =
-    _query1_knownByteHits_3_28_T & query1_sameWord_28 & _query1_storeMask_T_85[1];
+    _query1_pendingDataByteHits_3_28_T & entries_28_data_ready & query1_sameWord_28
+    & _query1_storeMask_T_85[1];
   wire        query1_knownByteHits_2_28 =
-    _query1_knownByteHits_3_28_T & query1_sameWord_28 & _query1_storeMask_T_85[2];
+    _query1_pendingDataByteHits_3_28_T & entries_28_data_ready & query1_sameWord_28
+    & _query1_storeMask_T_85[2];
   wire        query1_knownByteHits_3_28 =
-    _query1_knownByteHits_3_28_T & query1_sameWord_28 & _query1_storeMask_T_85[3];
+    _query1_pendingDataByteHits_3_28_T & entries_28_data_ready & query1_sameWord_28
+    & _query1_storeMask_T_85[3];
   wire        query1_olderStore_29 =
     entries_29_valid & _query1_eAge_T_58 < _query1_ldAge_T;
   wire        query1_sameWord_29 =
@@ -7007,15 +7615,19 @@ module StoreQueue(
   wire        query1_unknownHits_29 =
     io_ld1_valid & query1_olderStore_29 & ~entries_29_addr_ready;
   wire [62:0] _query1_normalizedData_29_T_1 = _GEN_117 << _GEN_118;
-  wire        _query1_knownByteHits_3_29_T = io_ld1_valid & query1_olderStore_29;
+  wire        _query1_pendingDataByteHits_3_29_T = io_ld1_valid & query1_olderStore_29;
   wire        query1_knownByteHits_0_29 =
-    _query1_knownByteHits_3_29_T & query1_sameWord_29 & _query1_storeMask_T_88[0];
+    _query1_pendingDataByteHits_3_29_T & entries_29_data_ready & query1_sameWord_29
+    & _query1_storeMask_T_88[0];
   wire        query1_knownByteHits_1_29 =
-    _query1_knownByteHits_3_29_T & query1_sameWord_29 & _query1_storeMask_T_88[1];
+    _query1_pendingDataByteHits_3_29_T & entries_29_data_ready & query1_sameWord_29
+    & _query1_storeMask_T_88[1];
   wire        query1_knownByteHits_2_29 =
-    _query1_knownByteHits_3_29_T & query1_sameWord_29 & _query1_storeMask_T_88[2];
+    _query1_pendingDataByteHits_3_29_T & entries_29_data_ready & query1_sameWord_29
+    & _query1_storeMask_T_88[2];
   wire        query1_knownByteHits_3_29 =
-    _query1_knownByteHits_3_29_T & query1_sameWord_29 & _query1_storeMask_T_88[3];
+    _query1_pendingDataByteHits_3_29_T & entries_29_data_ready & query1_sameWord_29
+    & _query1_storeMask_T_88[3];
   wire        query1_olderStore_30 =
     entries_30_valid & _query1_eAge_T_60 < _query1_ldAge_T;
   wire        query1_sameWord_30 =
@@ -7024,15 +7636,19 @@ module StoreQueue(
   wire        query1_unknownHits_30 =
     io_ld1_valid & query1_olderStore_30 & ~entries_30_addr_ready;
   wire [62:0] _query1_normalizedData_30_T_1 = _GEN_121 << _GEN_122;
-  wire        _query1_knownByteHits_3_30_T = io_ld1_valid & query1_olderStore_30;
+  wire        _query1_pendingDataByteHits_3_30_T = io_ld1_valid & query1_olderStore_30;
   wire        query1_knownByteHits_0_30 =
-    _query1_knownByteHits_3_30_T & query1_sameWord_30 & _query1_storeMask_T_91[0];
+    _query1_pendingDataByteHits_3_30_T & entries_30_data_ready & query1_sameWord_30
+    & _query1_storeMask_T_91[0];
   wire        query1_knownByteHits_1_30 =
-    _query1_knownByteHits_3_30_T & query1_sameWord_30 & _query1_storeMask_T_91[1];
+    _query1_pendingDataByteHits_3_30_T & entries_30_data_ready & query1_sameWord_30
+    & _query1_storeMask_T_91[1];
   wire        query1_knownByteHits_2_30 =
-    _query1_knownByteHits_3_30_T & query1_sameWord_30 & _query1_storeMask_T_91[2];
+    _query1_pendingDataByteHits_3_30_T & entries_30_data_ready & query1_sameWord_30
+    & _query1_storeMask_T_91[2];
   wire        query1_knownByteHits_3_30 =
-    _query1_knownByteHits_3_30_T & query1_sameWord_30 & _query1_storeMask_T_91[3];
+    _query1_pendingDataByteHits_3_30_T & entries_30_data_ready & query1_sameWord_30
+    & _query1_storeMask_T_91[3];
   wire        query1_olderStore_31 =
     entries_31_valid & _query1_eAge_T_62 < _query1_ldAge_T;
   wire        query1_sameWord_31 =
@@ -7041,15 +7657,19 @@ module StoreQueue(
   wire        query1_unknownHits_31 =
     io_ld1_valid & query1_olderStore_31 & ~entries_31_addr_ready;
   wire [62:0] _query1_normalizedData_31_T_1 = _GEN_125 << _GEN_126;
-  wire        _query1_knownByteHits_3_31_T = io_ld1_valid & query1_olderStore_31;
+  wire        _query1_pendingDataByteHits_3_31_T = io_ld1_valid & query1_olderStore_31;
   wire        query1_knownByteHits_0_31 =
-    _query1_knownByteHits_3_31_T & query1_sameWord_31 & _query1_storeMask_T_94[0];
+    _query1_pendingDataByteHits_3_31_T & entries_31_data_ready & query1_sameWord_31
+    & _query1_storeMask_T_94[0];
   wire        query1_knownByteHits_1_31 =
-    _query1_knownByteHits_3_31_T & query1_sameWord_31 & _query1_storeMask_T_94[1];
+    _query1_pendingDataByteHits_3_31_T & entries_31_data_ready & query1_sameWord_31
+    & _query1_storeMask_T_94[1];
   wire        query1_knownByteHits_2_31 =
-    _query1_knownByteHits_3_31_T & query1_sameWord_31 & _query1_storeMask_T_94[2];
+    _query1_pendingDataByteHits_3_31_T & entries_31_data_ready & query1_sameWord_31
+    & _query1_storeMask_T_94[2];
   wire        query1_knownByteHits_3_31 =
-    _query1_knownByteHits_3_31_T & query1_sameWord_31 & _query1_storeMask_T_94[3];
+    _query1_pendingDataByteHits_3_31_T & entries_31_data_ready & query1_sameWord_31
+    & _query1_storeMask_T_94[3];
   wire        _query1_youngerKnown_T_9122 = _query1_eAge_T_2 > idxAge;
   wire        _query1_youngerKnown_T_9124 = _query1_eAge_T_4 > idxAge;
   wire        _query1_youngerKnown_T_9126 = _query1_eAge_T_6 > idxAge;
@@ -12563,6 +13183,263 @@ module StoreQueue(
            ? 4'h1
            : io_ld1_mem_rd == 3'h3 ? 4'hF : {2'h0, io_ld1_mem_rd == 3'h2, 1'h1}}
     << io_ld1_addr[1:0];
+  wire [3:0]  query1_pendingDataMask =
+    {|{_query1_pendingDataByteHits_3_31_T & ~entries_31_data_ready & query1_sameWord_31
+         & _query1_storeMask_T_94[3],
+       _query1_pendingDataByteHits_3_30_T & ~entries_30_data_ready & query1_sameWord_30
+         & _query1_storeMask_T_91[3],
+       _query1_pendingDataByteHits_3_29_T & ~entries_29_data_ready & query1_sameWord_29
+         & _query1_storeMask_T_88[3],
+       _query1_pendingDataByteHits_3_28_T & ~entries_28_data_ready & query1_sameWord_28
+         & _query1_storeMask_T_85[3],
+       _query1_pendingDataByteHits_3_27_T & ~entries_27_data_ready & query1_sameWord_27
+         & _query1_storeMask_T_82[3],
+       _query1_pendingDataByteHits_3_26_T & ~entries_26_data_ready & query1_sameWord_26
+         & _query1_storeMask_T_79[3],
+       _query1_pendingDataByteHits_3_25_T & ~entries_25_data_ready & query1_sameWord_25
+         & _query1_storeMask_T_76[3],
+       _query1_pendingDataByteHits_3_24_T & ~entries_24_data_ready & query1_sameWord_24
+         & _query1_storeMask_T_73[3],
+       _query1_pendingDataByteHits_3_23_T & ~entries_23_data_ready & query1_sameWord_23
+         & _query1_storeMask_T_70[3],
+       _query1_pendingDataByteHits_3_22_T & ~entries_22_data_ready & query1_sameWord_22
+         & _query1_storeMask_T_67[3],
+       _query1_pendingDataByteHits_3_21_T & ~entries_21_data_ready & query1_sameWord_21
+         & _query1_storeMask_T_64[3],
+       _query1_pendingDataByteHits_3_20_T & ~entries_20_data_ready & query1_sameWord_20
+         & _query1_storeMask_T_61[3],
+       _query1_pendingDataByteHits_3_19_T & ~entries_19_data_ready & query1_sameWord_19
+         & _query1_storeMask_T_58[3],
+       _query1_pendingDataByteHits_3_18_T & ~entries_18_data_ready & query1_sameWord_18
+         & _query1_storeMask_T_55[3],
+       _query1_pendingDataByteHits_3_17_T & ~entries_17_data_ready & query1_sameWord_17
+         & _query1_storeMask_T_52[3],
+       _query1_pendingDataByteHits_3_16_T & ~entries_16_data_ready & query1_sameWord_16
+         & _query1_storeMask_T_49[3],
+       _query1_pendingDataByteHits_3_15_T & ~entries_15_data_ready & query1_sameWord_15
+         & _query1_storeMask_T_46[3],
+       _query1_pendingDataByteHits_3_14_T & ~entries_14_data_ready & query1_sameWord_14
+         & _query1_storeMask_T_43[3],
+       _query1_pendingDataByteHits_3_13_T & ~entries_13_data_ready & query1_sameWord_13
+         & _query1_storeMask_T_40[3],
+       _query1_pendingDataByteHits_3_12_T & ~entries_12_data_ready & query1_sameWord_12
+         & _query1_storeMask_T_37[3],
+       _query1_pendingDataByteHits_3_11_T & ~entries_11_data_ready & query1_sameWord_11
+         & _query1_storeMask_T_34[3],
+       _query1_pendingDataByteHits_3_10_T & ~entries_10_data_ready & query1_sameWord_10
+         & _query1_storeMask_T_31[3],
+       _query1_pendingDataByteHits_3_9_T & ~entries_9_data_ready & query1_sameWord_9
+         & _query1_storeMask_T_28[3],
+       _query1_pendingDataByteHits_3_8_T & ~entries_8_data_ready & query1_sameWord_8
+         & _query1_storeMask_T_25[3],
+       _query1_pendingDataByteHits_3_7_T & ~entries_7_data_ready & query1_sameWord_7
+         & _query1_storeMask_T_22[3],
+       _query1_pendingDataByteHits_3_6_T & ~entries_6_data_ready & query1_sameWord_6
+         & _query1_storeMask_T_19[3],
+       _query1_pendingDataByteHits_3_5_T & ~entries_5_data_ready & query1_sameWord_5
+         & _query1_storeMask_T_16[3],
+       _query1_pendingDataByteHits_3_4_T & ~entries_4_data_ready & query1_sameWord_4
+         & _query1_storeMask_T_13[3],
+       _query1_pendingDataByteHits_3_3_T & ~entries_3_data_ready & query1_sameWord_3
+         & _query1_storeMask_T_10[3],
+       _query1_pendingDataByteHits_3_2_T & ~entries_2_data_ready & query1_sameWord_2
+         & _query1_storeMask_T_7[3],
+       _query1_pendingDataByteHits_3_1_T & ~entries_1_data_ready & query1_sameWord_1
+         & _query1_storeMask_T_4[3],
+       _query1_pendingDataByteHits_3_0_T & ~entries_0_data_ready & query1_sameWord
+         & _query1_storeMask_T_1[3]},
+     |{_query1_pendingDataByteHits_3_31_T & ~entries_31_data_ready & query1_sameWord_31
+         & _query1_storeMask_T_94[2],
+       _query1_pendingDataByteHits_3_30_T & ~entries_30_data_ready & query1_sameWord_30
+         & _query1_storeMask_T_91[2],
+       _query1_pendingDataByteHits_3_29_T & ~entries_29_data_ready & query1_sameWord_29
+         & _query1_storeMask_T_88[2],
+       _query1_pendingDataByteHits_3_28_T & ~entries_28_data_ready & query1_sameWord_28
+         & _query1_storeMask_T_85[2],
+       _query1_pendingDataByteHits_3_27_T & ~entries_27_data_ready & query1_sameWord_27
+         & _query1_storeMask_T_82[2],
+       _query1_pendingDataByteHits_3_26_T & ~entries_26_data_ready & query1_sameWord_26
+         & _query1_storeMask_T_79[2],
+       _query1_pendingDataByteHits_3_25_T & ~entries_25_data_ready & query1_sameWord_25
+         & _query1_storeMask_T_76[2],
+       _query1_pendingDataByteHits_3_24_T & ~entries_24_data_ready & query1_sameWord_24
+         & _query1_storeMask_T_73[2],
+       _query1_pendingDataByteHits_3_23_T & ~entries_23_data_ready & query1_sameWord_23
+         & _query1_storeMask_T_70[2],
+       _query1_pendingDataByteHits_3_22_T & ~entries_22_data_ready & query1_sameWord_22
+         & _query1_storeMask_T_67[2],
+       _query1_pendingDataByteHits_3_21_T & ~entries_21_data_ready & query1_sameWord_21
+         & _query1_storeMask_T_64[2],
+       _query1_pendingDataByteHits_3_20_T & ~entries_20_data_ready & query1_sameWord_20
+         & _query1_storeMask_T_61[2],
+       _query1_pendingDataByteHits_3_19_T & ~entries_19_data_ready & query1_sameWord_19
+         & _query1_storeMask_T_58[2],
+       _query1_pendingDataByteHits_3_18_T & ~entries_18_data_ready & query1_sameWord_18
+         & _query1_storeMask_T_55[2],
+       _query1_pendingDataByteHits_3_17_T & ~entries_17_data_ready & query1_sameWord_17
+         & _query1_storeMask_T_52[2],
+       _query1_pendingDataByteHits_3_16_T & ~entries_16_data_ready & query1_sameWord_16
+         & _query1_storeMask_T_49[2],
+       _query1_pendingDataByteHits_3_15_T & ~entries_15_data_ready & query1_sameWord_15
+         & _query1_storeMask_T_46[2],
+       _query1_pendingDataByteHits_3_14_T & ~entries_14_data_ready & query1_sameWord_14
+         & _query1_storeMask_T_43[2],
+       _query1_pendingDataByteHits_3_13_T & ~entries_13_data_ready & query1_sameWord_13
+         & _query1_storeMask_T_40[2],
+       _query1_pendingDataByteHits_3_12_T & ~entries_12_data_ready & query1_sameWord_12
+         & _query1_storeMask_T_37[2],
+       _query1_pendingDataByteHits_3_11_T & ~entries_11_data_ready & query1_sameWord_11
+         & _query1_storeMask_T_34[2],
+       _query1_pendingDataByteHits_3_10_T & ~entries_10_data_ready & query1_sameWord_10
+         & _query1_storeMask_T_31[2],
+       _query1_pendingDataByteHits_3_9_T & ~entries_9_data_ready & query1_sameWord_9
+         & _query1_storeMask_T_28[2],
+       _query1_pendingDataByteHits_3_8_T & ~entries_8_data_ready & query1_sameWord_8
+         & _query1_storeMask_T_25[2],
+       _query1_pendingDataByteHits_3_7_T & ~entries_7_data_ready & query1_sameWord_7
+         & _query1_storeMask_T_22[2],
+       _query1_pendingDataByteHits_3_6_T & ~entries_6_data_ready & query1_sameWord_6
+         & _query1_storeMask_T_19[2],
+       _query1_pendingDataByteHits_3_5_T & ~entries_5_data_ready & query1_sameWord_5
+         & _query1_storeMask_T_16[2],
+       _query1_pendingDataByteHits_3_4_T & ~entries_4_data_ready & query1_sameWord_4
+         & _query1_storeMask_T_13[2],
+       _query1_pendingDataByteHits_3_3_T & ~entries_3_data_ready & query1_sameWord_3
+         & _query1_storeMask_T_10[2],
+       _query1_pendingDataByteHits_3_2_T & ~entries_2_data_ready & query1_sameWord_2
+         & _query1_storeMask_T_7[2],
+       _query1_pendingDataByteHits_3_1_T & ~entries_1_data_ready & query1_sameWord_1
+         & _query1_storeMask_T_4[2],
+       _query1_pendingDataByteHits_3_0_T & ~entries_0_data_ready & query1_sameWord
+         & _query1_storeMask_T_1[2]},
+     |{_query1_pendingDataByteHits_3_31_T & ~entries_31_data_ready & query1_sameWord_31
+         & _query1_storeMask_T_94[1],
+       _query1_pendingDataByteHits_3_30_T & ~entries_30_data_ready & query1_sameWord_30
+         & _query1_storeMask_T_91[1],
+       _query1_pendingDataByteHits_3_29_T & ~entries_29_data_ready & query1_sameWord_29
+         & _query1_storeMask_T_88[1],
+       _query1_pendingDataByteHits_3_28_T & ~entries_28_data_ready & query1_sameWord_28
+         & _query1_storeMask_T_85[1],
+       _query1_pendingDataByteHits_3_27_T & ~entries_27_data_ready & query1_sameWord_27
+         & _query1_storeMask_T_82[1],
+       _query1_pendingDataByteHits_3_26_T & ~entries_26_data_ready & query1_sameWord_26
+         & _query1_storeMask_T_79[1],
+       _query1_pendingDataByteHits_3_25_T & ~entries_25_data_ready & query1_sameWord_25
+         & _query1_storeMask_T_76[1],
+       _query1_pendingDataByteHits_3_24_T & ~entries_24_data_ready & query1_sameWord_24
+         & _query1_storeMask_T_73[1],
+       _query1_pendingDataByteHits_3_23_T & ~entries_23_data_ready & query1_sameWord_23
+         & _query1_storeMask_T_70[1],
+       _query1_pendingDataByteHits_3_22_T & ~entries_22_data_ready & query1_sameWord_22
+         & _query1_storeMask_T_67[1],
+       _query1_pendingDataByteHits_3_21_T & ~entries_21_data_ready & query1_sameWord_21
+         & _query1_storeMask_T_64[1],
+       _query1_pendingDataByteHits_3_20_T & ~entries_20_data_ready & query1_sameWord_20
+         & _query1_storeMask_T_61[1],
+       _query1_pendingDataByteHits_3_19_T & ~entries_19_data_ready & query1_sameWord_19
+         & _query1_storeMask_T_58[1],
+       _query1_pendingDataByteHits_3_18_T & ~entries_18_data_ready & query1_sameWord_18
+         & _query1_storeMask_T_55[1],
+       _query1_pendingDataByteHits_3_17_T & ~entries_17_data_ready & query1_sameWord_17
+         & _query1_storeMask_T_52[1],
+       _query1_pendingDataByteHits_3_16_T & ~entries_16_data_ready & query1_sameWord_16
+         & _query1_storeMask_T_49[1],
+       _query1_pendingDataByteHits_3_15_T & ~entries_15_data_ready & query1_sameWord_15
+         & _query1_storeMask_T_46[1],
+       _query1_pendingDataByteHits_3_14_T & ~entries_14_data_ready & query1_sameWord_14
+         & _query1_storeMask_T_43[1],
+       _query1_pendingDataByteHits_3_13_T & ~entries_13_data_ready & query1_sameWord_13
+         & _query1_storeMask_T_40[1],
+       _query1_pendingDataByteHits_3_12_T & ~entries_12_data_ready & query1_sameWord_12
+         & _query1_storeMask_T_37[1],
+       _query1_pendingDataByteHits_3_11_T & ~entries_11_data_ready & query1_sameWord_11
+         & _query1_storeMask_T_34[1],
+       _query1_pendingDataByteHits_3_10_T & ~entries_10_data_ready & query1_sameWord_10
+         & _query1_storeMask_T_31[1],
+       _query1_pendingDataByteHits_3_9_T & ~entries_9_data_ready & query1_sameWord_9
+         & _query1_storeMask_T_28[1],
+       _query1_pendingDataByteHits_3_8_T & ~entries_8_data_ready & query1_sameWord_8
+         & _query1_storeMask_T_25[1],
+       _query1_pendingDataByteHits_3_7_T & ~entries_7_data_ready & query1_sameWord_7
+         & _query1_storeMask_T_22[1],
+       _query1_pendingDataByteHits_3_6_T & ~entries_6_data_ready & query1_sameWord_6
+         & _query1_storeMask_T_19[1],
+       _query1_pendingDataByteHits_3_5_T & ~entries_5_data_ready & query1_sameWord_5
+         & _query1_storeMask_T_16[1],
+       _query1_pendingDataByteHits_3_4_T & ~entries_4_data_ready & query1_sameWord_4
+         & _query1_storeMask_T_13[1],
+       _query1_pendingDataByteHits_3_3_T & ~entries_3_data_ready & query1_sameWord_3
+         & _query1_storeMask_T_10[1],
+       _query1_pendingDataByteHits_3_2_T & ~entries_2_data_ready & query1_sameWord_2
+         & _query1_storeMask_T_7[1],
+       _query1_pendingDataByteHits_3_1_T & ~entries_1_data_ready & query1_sameWord_1
+         & _query1_storeMask_T_4[1],
+       _query1_pendingDataByteHits_3_0_T & ~entries_0_data_ready & query1_sameWord
+         & _query1_storeMask_T_1[1]},
+     |{_query1_pendingDataByteHits_3_31_T & ~entries_31_data_ready & query1_sameWord_31
+         & _query1_storeMask_T_94[0],
+       _query1_pendingDataByteHits_3_30_T & ~entries_30_data_ready & query1_sameWord_30
+         & _query1_storeMask_T_91[0],
+       _query1_pendingDataByteHits_3_29_T & ~entries_29_data_ready & query1_sameWord_29
+         & _query1_storeMask_T_88[0],
+       _query1_pendingDataByteHits_3_28_T & ~entries_28_data_ready & query1_sameWord_28
+         & _query1_storeMask_T_85[0],
+       _query1_pendingDataByteHits_3_27_T & ~entries_27_data_ready & query1_sameWord_27
+         & _query1_storeMask_T_82[0],
+       _query1_pendingDataByteHits_3_26_T & ~entries_26_data_ready & query1_sameWord_26
+         & _query1_storeMask_T_79[0],
+       _query1_pendingDataByteHits_3_25_T & ~entries_25_data_ready & query1_sameWord_25
+         & _query1_storeMask_T_76[0],
+       _query1_pendingDataByteHits_3_24_T & ~entries_24_data_ready & query1_sameWord_24
+         & _query1_storeMask_T_73[0],
+       _query1_pendingDataByteHits_3_23_T & ~entries_23_data_ready & query1_sameWord_23
+         & _query1_storeMask_T_70[0],
+       _query1_pendingDataByteHits_3_22_T & ~entries_22_data_ready & query1_sameWord_22
+         & _query1_storeMask_T_67[0],
+       _query1_pendingDataByteHits_3_21_T & ~entries_21_data_ready & query1_sameWord_21
+         & _query1_storeMask_T_64[0],
+       _query1_pendingDataByteHits_3_20_T & ~entries_20_data_ready & query1_sameWord_20
+         & _query1_storeMask_T_61[0],
+       _query1_pendingDataByteHits_3_19_T & ~entries_19_data_ready & query1_sameWord_19
+         & _query1_storeMask_T_58[0],
+       _query1_pendingDataByteHits_3_18_T & ~entries_18_data_ready & query1_sameWord_18
+         & _query1_storeMask_T_55[0],
+       _query1_pendingDataByteHits_3_17_T & ~entries_17_data_ready & query1_sameWord_17
+         & _query1_storeMask_T_52[0],
+       _query1_pendingDataByteHits_3_16_T & ~entries_16_data_ready & query1_sameWord_16
+         & _query1_storeMask_T_49[0],
+       _query1_pendingDataByteHits_3_15_T & ~entries_15_data_ready & query1_sameWord_15
+         & _query1_storeMask_T_46[0],
+       _query1_pendingDataByteHits_3_14_T & ~entries_14_data_ready & query1_sameWord_14
+         & _query1_storeMask_T_43[0],
+       _query1_pendingDataByteHits_3_13_T & ~entries_13_data_ready & query1_sameWord_13
+         & _query1_storeMask_T_40[0],
+       _query1_pendingDataByteHits_3_12_T & ~entries_12_data_ready & query1_sameWord_12
+         & _query1_storeMask_T_37[0],
+       _query1_pendingDataByteHits_3_11_T & ~entries_11_data_ready & query1_sameWord_11
+         & _query1_storeMask_T_34[0],
+       _query1_pendingDataByteHits_3_10_T & ~entries_10_data_ready & query1_sameWord_10
+         & _query1_storeMask_T_31[0],
+       _query1_pendingDataByteHits_3_9_T & ~entries_9_data_ready & query1_sameWord_9
+         & _query1_storeMask_T_28[0],
+       _query1_pendingDataByteHits_3_8_T & ~entries_8_data_ready & query1_sameWord_8
+         & _query1_storeMask_T_25[0],
+       _query1_pendingDataByteHits_3_7_T & ~entries_7_data_ready & query1_sameWord_7
+         & _query1_storeMask_T_22[0],
+       _query1_pendingDataByteHits_3_6_T & ~entries_6_data_ready & query1_sameWord_6
+         & _query1_storeMask_T_19[0],
+       _query1_pendingDataByteHits_3_5_T & ~entries_5_data_ready & query1_sameWord_5
+         & _query1_storeMask_T_16[0],
+       _query1_pendingDataByteHits_3_4_T & ~entries_4_data_ready & query1_sameWord_4
+         & _query1_storeMask_T_13[0],
+       _query1_pendingDataByteHits_3_3_T & ~entries_3_data_ready & query1_sameWord_3
+         & _query1_storeMask_T_10[0],
+       _query1_pendingDataByteHits_3_2_T & ~entries_2_data_ready & query1_sameWord_2
+         & _query1_storeMask_T_7[0],
+       _query1_pendingDataByteHits_3_1_T & ~entries_1_data_ready & query1_sameWord_1
+         & _query1_storeMask_T_4[0],
+       _query1_pendingDataByteHits_3_0_T & ~entries_0_data_ready & query1_sameWord
+         & _query1_storeMask_T_1[0]}};
   wire [4:0]  _flushAge_T = io_flush_idx - io_rob_head;
   wire        _GEN_191 = io_flush & entries_0_valid & idxAge > _flushAge_T;
   wire        _GEN_192 = io_flush & entries_1_valid & 5'h1 - io_rob_head > _flushAge_T;
@@ -12736,452 +13613,784 @@ module StoreQueue(
     io_commit_valid
       ? ~_GEN_254 & entries_31_addr_ready
       : ~_GEN_222 & entries_31_addr_ready;
-  wire        _GEN_287 = io_commit1_valid & io_commit1_rob == 5'h0;
+  wire        _GEN_287 =
+    io_commit_valid ? ~_GEN_223 & entries_0_data_ready : ~_GEN_191 & entries_0_data_ready;
   wire        _GEN_288 =
-    ~_GEN_287
-    & (io_commit_valid ? ~_GEN_223 & entries_0_valid : ~_GEN_191 & entries_0_valid);
-  wire        _GEN_289 = io_commit1_valid & io_commit1_rob == 5'h1;
+    io_commit_valid ? ~_GEN_224 & entries_1_data_ready : ~_GEN_192 & entries_1_data_ready;
+  wire        _GEN_289 =
+    io_commit_valid ? ~_GEN_225 & entries_2_data_ready : ~_GEN_193 & entries_2_data_ready;
   wire        _GEN_290 =
-    ~_GEN_289
-    & (io_commit_valid ? ~_GEN_224 & entries_1_valid : ~_GEN_192 & entries_1_valid);
-  wire        _GEN_291 = io_commit1_valid & io_commit1_rob == 5'h2;
+    io_commit_valid ? ~_GEN_226 & entries_3_data_ready : ~_GEN_194 & entries_3_data_ready;
+  wire        _GEN_291 =
+    io_commit_valid ? ~_GEN_227 & entries_4_data_ready : ~_GEN_195 & entries_4_data_ready;
   wire        _GEN_292 =
-    ~_GEN_291
-    & (io_commit_valid ? ~_GEN_225 & entries_2_valid : ~_GEN_193 & entries_2_valid);
-  wire        _GEN_293 = io_commit1_valid & io_commit1_rob == 5'h3;
+    io_commit_valid ? ~_GEN_228 & entries_5_data_ready : ~_GEN_196 & entries_5_data_ready;
+  wire        _GEN_293 =
+    io_commit_valid ? ~_GEN_229 & entries_6_data_ready : ~_GEN_197 & entries_6_data_ready;
   wire        _GEN_294 =
-    ~_GEN_293
-    & (io_commit_valid ? ~_GEN_226 & entries_3_valid : ~_GEN_194 & entries_3_valid);
-  wire        _GEN_295 = io_commit1_valid & io_commit1_rob == 5'h4;
+    io_commit_valid ? ~_GEN_230 & entries_7_data_ready : ~_GEN_198 & entries_7_data_ready;
+  wire        _GEN_295 =
+    io_commit_valid ? ~_GEN_231 & entries_8_data_ready : ~_GEN_199 & entries_8_data_ready;
   wire        _GEN_296 =
-    ~_GEN_295
-    & (io_commit_valid ? ~_GEN_227 & entries_4_valid : ~_GEN_195 & entries_4_valid);
-  wire        _GEN_297 = io_commit1_valid & io_commit1_rob == 5'h5;
+    io_commit_valid ? ~_GEN_232 & entries_9_data_ready : ~_GEN_200 & entries_9_data_ready;
+  wire        _GEN_297 =
+    io_commit_valid
+      ? ~_GEN_233 & entries_10_data_ready
+      : ~_GEN_201 & entries_10_data_ready;
   wire        _GEN_298 =
-    ~_GEN_297
-    & (io_commit_valid ? ~_GEN_228 & entries_5_valid : ~_GEN_196 & entries_5_valid);
-  wire        _GEN_299 = io_commit1_valid & io_commit1_rob == 5'h6;
+    io_commit_valid
+      ? ~_GEN_234 & entries_11_data_ready
+      : ~_GEN_202 & entries_11_data_ready;
+  wire        _GEN_299 =
+    io_commit_valid
+      ? ~_GEN_235 & entries_12_data_ready
+      : ~_GEN_203 & entries_12_data_ready;
   wire        _GEN_300 =
-    ~_GEN_299
-    & (io_commit_valid ? ~_GEN_229 & entries_6_valid : ~_GEN_197 & entries_6_valid);
-  wire        _GEN_301 = io_commit1_valid & io_commit1_rob == 5'h7;
+    io_commit_valid
+      ? ~_GEN_236 & entries_13_data_ready
+      : ~_GEN_204 & entries_13_data_ready;
+  wire        _GEN_301 =
+    io_commit_valid
+      ? ~_GEN_237 & entries_14_data_ready
+      : ~_GEN_205 & entries_14_data_ready;
   wire        _GEN_302 =
-    ~_GEN_301
-    & (io_commit_valid ? ~_GEN_230 & entries_7_valid : ~_GEN_198 & entries_7_valid);
-  wire        _GEN_303 = io_commit1_valid & io_commit1_rob == 5'h8;
+    io_commit_valid
+      ? ~_GEN_238 & entries_15_data_ready
+      : ~_GEN_206 & entries_15_data_ready;
+  wire        _GEN_303 =
+    io_commit_valid
+      ? ~_GEN_239 & entries_16_data_ready
+      : ~_GEN_207 & entries_16_data_ready;
   wire        _GEN_304 =
-    ~_GEN_303
-    & (io_commit_valid ? ~_GEN_231 & entries_8_valid : ~_GEN_199 & entries_8_valid);
-  wire        _GEN_305 = io_commit1_valid & io_commit1_rob == 5'h9;
+    io_commit_valid
+      ? ~_GEN_240 & entries_17_data_ready
+      : ~_GEN_208 & entries_17_data_ready;
+  wire        _GEN_305 =
+    io_commit_valid
+      ? ~_GEN_241 & entries_18_data_ready
+      : ~_GEN_209 & entries_18_data_ready;
   wire        _GEN_306 =
-    ~_GEN_305
-    & (io_commit_valid ? ~_GEN_232 & entries_9_valid : ~_GEN_200 & entries_9_valid);
-  wire        _GEN_307 = io_commit1_valid & io_commit1_rob == 5'hA;
+    io_commit_valid
+      ? ~_GEN_242 & entries_19_data_ready
+      : ~_GEN_210 & entries_19_data_ready;
+  wire        _GEN_307 =
+    io_commit_valid
+      ? ~_GEN_243 & entries_20_data_ready
+      : ~_GEN_211 & entries_20_data_ready;
   wire        _GEN_308 =
-    ~_GEN_307
-    & (io_commit_valid ? ~_GEN_233 & entries_10_valid : ~_GEN_201 & entries_10_valid);
-  wire        _GEN_309 = io_commit1_valid & io_commit1_rob == 5'hB;
+    io_commit_valid
+      ? ~_GEN_244 & entries_21_data_ready
+      : ~_GEN_212 & entries_21_data_ready;
+  wire        _GEN_309 =
+    io_commit_valid
+      ? ~_GEN_245 & entries_22_data_ready
+      : ~_GEN_213 & entries_22_data_ready;
   wire        _GEN_310 =
-    ~_GEN_309
-    & (io_commit_valid ? ~_GEN_234 & entries_11_valid : ~_GEN_202 & entries_11_valid);
-  wire        _GEN_311 = io_commit1_valid & io_commit1_rob == 5'hC;
+    io_commit_valid
+      ? ~_GEN_246 & entries_23_data_ready
+      : ~_GEN_214 & entries_23_data_ready;
+  wire        _GEN_311 =
+    io_commit_valid
+      ? ~_GEN_247 & entries_24_data_ready
+      : ~_GEN_215 & entries_24_data_ready;
   wire        _GEN_312 =
-    ~_GEN_311
-    & (io_commit_valid ? ~_GEN_235 & entries_12_valid : ~_GEN_203 & entries_12_valid);
-  wire        _GEN_313 = io_commit1_valid & io_commit1_rob == 5'hD;
+    io_commit_valid
+      ? ~_GEN_248 & entries_25_data_ready
+      : ~_GEN_216 & entries_25_data_ready;
+  wire        _GEN_313 =
+    io_commit_valid
+      ? ~_GEN_249 & entries_26_data_ready
+      : ~_GEN_217 & entries_26_data_ready;
   wire        _GEN_314 =
-    ~_GEN_313
-    & (io_commit_valid ? ~_GEN_236 & entries_13_valid : ~_GEN_204 & entries_13_valid);
-  wire        _GEN_315 = io_commit1_valid & io_commit1_rob == 5'hE;
+    io_commit_valid
+      ? ~_GEN_250 & entries_27_data_ready
+      : ~_GEN_218 & entries_27_data_ready;
+  wire        _GEN_315 =
+    io_commit_valid
+      ? ~_GEN_251 & entries_28_data_ready
+      : ~_GEN_219 & entries_28_data_ready;
   wire        _GEN_316 =
-    ~_GEN_315
-    & (io_commit_valid ? ~_GEN_237 & entries_14_valid : ~_GEN_205 & entries_14_valid);
-  wire        _GEN_317 = io_commit1_valid & io_commit1_rob == 5'hF;
+    io_commit_valid
+      ? ~_GEN_252 & entries_29_data_ready
+      : ~_GEN_220 & entries_29_data_ready;
+  wire        _GEN_317 =
+    io_commit_valid
+      ? ~_GEN_253 & entries_30_data_ready
+      : ~_GEN_221 & entries_30_data_ready;
   wire        _GEN_318 =
-    ~_GEN_317
-    & (io_commit_valid ? ~_GEN_238 & entries_15_valid : ~_GEN_206 & entries_15_valid);
-  wire        _GEN_319 = io_commit1_valid & io_commit1_rob == 5'h10;
+    io_commit_valid
+      ? ~_GEN_254 & entries_31_data_ready
+      : ~_GEN_222 & entries_31_data_ready;
+  wire        _GEN_319 = io_commit1_valid & io_commit1_rob == 5'h0;
   wire        _GEN_320 =
     ~_GEN_319
-    & (io_commit_valid ? ~_GEN_239 & entries_16_valid : ~_GEN_207 & entries_16_valid);
-  wire        _GEN_321 = io_commit1_valid & io_commit1_rob == 5'h11;
+    & (io_commit_valid ? ~_GEN_223 & entries_0_valid : ~_GEN_191 & entries_0_valid);
+  wire        _GEN_321 = io_commit1_valid & io_commit1_rob == 5'h1;
   wire        _GEN_322 =
     ~_GEN_321
-    & (io_commit_valid ? ~_GEN_240 & entries_17_valid : ~_GEN_208 & entries_17_valid);
-  wire        _GEN_323 = io_commit1_valid & io_commit1_rob == 5'h12;
+    & (io_commit_valid ? ~_GEN_224 & entries_1_valid : ~_GEN_192 & entries_1_valid);
+  wire        _GEN_323 = io_commit1_valid & io_commit1_rob == 5'h2;
   wire        _GEN_324 =
     ~_GEN_323
-    & (io_commit_valid ? ~_GEN_241 & entries_18_valid : ~_GEN_209 & entries_18_valid);
-  wire        _GEN_325 = io_commit1_valid & io_commit1_rob == 5'h13;
+    & (io_commit_valid ? ~_GEN_225 & entries_2_valid : ~_GEN_193 & entries_2_valid);
+  wire        _GEN_325 = io_commit1_valid & io_commit1_rob == 5'h3;
   wire        _GEN_326 =
     ~_GEN_325
-    & (io_commit_valid ? ~_GEN_242 & entries_19_valid : ~_GEN_210 & entries_19_valid);
-  wire        _GEN_327 = io_commit1_valid & io_commit1_rob == 5'h14;
+    & (io_commit_valid ? ~_GEN_226 & entries_3_valid : ~_GEN_194 & entries_3_valid);
+  wire        _GEN_327 = io_commit1_valid & io_commit1_rob == 5'h4;
   wire        _GEN_328 =
     ~_GEN_327
-    & (io_commit_valid ? ~_GEN_243 & entries_20_valid : ~_GEN_211 & entries_20_valid);
-  wire        _GEN_329 = io_commit1_valid & io_commit1_rob == 5'h15;
+    & (io_commit_valid ? ~_GEN_227 & entries_4_valid : ~_GEN_195 & entries_4_valid);
+  wire        _GEN_329 = io_commit1_valid & io_commit1_rob == 5'h5;
   wire        _GEN_330 =
     ~_GEN_329
-    & (io_commit_valid ? ~_GEN_244 & entries_21_valid : ~_GEN_212 & entries_21_valid);
-  wire        _GEN_331 = io_commit1_valid & io_commit1_rob == 5'h16;
+    & (io_commit_valid ? ~_GEN_228 & entries_5_valid : ~_GEN_196 & entries_5_valid);
+  wire        _GEN_331 = io_commit1_valid & io_commit1_rob == 5'h6;
   wire        _GEN_332 =
     ~_GEN_331
-    & (io_commit_valid ? ~_GEN_245 & entries_22_valid : ~_GEN_213 & entries_22_valid);
-  wire        _GEN_333 = io_commit1_valid & io_commit1_rob == 5'h17;
+    & (io_commit_valid ? ~_GEN_229 & entries_6_valid : ~_GEN_197 & entries_6_valid);
+  wire        _GEN_333 = io_commit1_valid & io_commit1_rob == 5'h7;
   wire        _GEN_334 =
     ~_GEN_333
-    & (io_commit_valid ? ~_GEN_246 & entries_23_valid : ~_GEN_214 & entries_23_valid);
-  wire        _GEN_335 = io_commit1_valid & io_commit1_rob == 5'h18;
+    & (io_commit_valid ? ~_GEN_230 & entries_7_valid : ~_GEN_198 & entries_7_valid);
+  wire        _GEN_335 = io_commit1_valid & io_commit1_rob == 5'h8;
   wire        _GEN_336 =
     ~_GEN_335
-    & (io_commit_valid ? ~_GEN_247 & entries_24_valid : ~_GEN_215 & entries_24_valid);
-  wire        _GEN_337 = io_commit1_valid & io_commit1_rob == 5'h19;
+    & (io_commit_valid ? ~_GEN_231 & entries_8_valid : ~_GEN_199 & entries_8_valid);
+  wire        _GEN_337 = io_commit1_valid & io_commit1_rob == 5'h9;
   wire        _GEN_338 =
     ~_GEN_337
-    & (io_commit_valid ? ~_GEN_248 & entries_25_valid : ~_GEN_216 & entries_25_valid);
-  wire        _GEN_339 = io_commit1_valid & io_commit1_rob == 5'h1A;
+    & (io_commit_valid ? ~_GEN_232 & entries_9_valid : ~_GEN_200 & entries_9_valid);
+  wire        _GEN_339 = io_commit1_valid & io_commit1_rob == 5'hA;
   wire        _GEN_340 =
     ~_GEN_339
-    & (io_commit_valid ? ~_GEN_249 & entries_26_valid : ~_GEN_217 & entries_26_valid);
-  wire        _GEN_341 = io_commit1_valid & io_commit1_rob == 5'h1B;
+    & (io_commit_valid ? ~_GEN_233 & entries_10_valid : ~_GEN_201 & entries_10_valid);
+  wire        _GEN_341 = io_commit1_valid & io_commit1_rob == 5'hB;
   wire        _GEN_342 =
     ~_GEN_341
-    & (io_commit_valid ? ~_GEN_250 & entries_27_valid : ~_GEN_218 & entries_27_valid);
-  wire        _GEN_343 = io_commit1_valid & io_commit1_rob == 5'h1C;
+    & (io_commit_valid ? ~_GEN_234 & entries_11_valid : ~_GEN_202 & entries_11_valid);
+  wire        _GEN_343 = io_commit1_valid & io_commit1_rob == 5'hC;
   wire        _GEN_344 =
     ~_GEN_343
-    & (io_commit_valid ? ~_GEN_251 & entries_28_valid : ~_GEN_219 & entries_28_valid);
-  wire        _GEN_345 = io_commit1_valid & io_commit1_rob == 5'h1D;
+    & (io_commit_valid ? ~_GEN_235 & entries_12_valid : ~_GEN_203 & entries_12_valid);
+  wire        _GEN_345 = io_commit1_valid & io_commit1_rob == 5'hD;
   wire        _GEN_346 =
     ~_GEN_345
-    & (io_commit_valid ? ~_GEN_252 & entries_29_valid : ~_GEN_220 & entries_29_valid);
-  wire        _GEN_347 = io_commit1_valid & io_commit1_rob == 5'h1E;
+    & (io_commit_valid ? ~_GEN_236 & entries_13_valid : ~_GEN_204 & entries_13_valid);
+  wire        _GEN_347 = io_commit1_valid & io_commit1_rob == 5'hE;
   wire        _GEN_348 =
     ~_GEN_347
-    & (io_commit_valid ? ~_GEN_253 & entries_30_valid : ~_GEN_221 & entries_30_valid);
-  wire        _GEN_349 = io_commit1_valid & (&io_commit1_rob);
+    & (io_commit_valid ? ~_GEN_237 & entries_14_valid : ~_GEN_205 & entries_14_valid);
+  wire        _GEN_349 = io_commit1_valid & io_commit1_rob == 5'hF;
   wire        _GEN_350 =
     ~_GEN_349
+    & (io_commit_valid ? ~_GEN_238 & entries_15_valid : ~_GEN_206 & entries_15_valid);
+  wire        _GEN_351 = io_commit1_valid & io_commit1_rob == 5'h10;
+  wire        _GEN_352 =
+    ~_GEN_351
+    & (io_commit_valid ? ~_GEN_239 & entries_16_valid : ~_GEN_207 & entries_16_valid);
+  wire        _GEN_353 = io_commit1_valid & io_commit1_rob == 5'h11;
+  wire        _GEN_354 =
+    ~_GEN_353
+    & (io_commit_valid ? ~_GEN_240 & entries_17_valid : ~_GEN_208 & entries_17_valid);
+  wire        _GEN_355 = io_commit1_valid & io_commit1_rob == 5'h12;
+  wire        _GEN_356 =
+    ~_GEN_355
+    & (io_commit_valid ? ~_GEN_241 & entries_18_valid : ~_GEN_209 & entries_18_valid);
+  wire        _GEN_357 = io_commit1_valid & io_commit1_rob == 5'h13;
+  wire        _GEN_358 =
+    ~_GEN_357
+    & (io_commit_valid ? ~_GEN_242 & entries_19_valid : ~_GEN_210 & entries_19_valid);
+  wire        _GEN_359 = io_commit1_valid & io_commit1_rob == 5'h14;
+  wire        _GEN_360 =
+    ~_GEN_359
+    & (io_commit_valid ? ~_GEN_243 & entries_20_valid : ~_GEN_211 & entries_20_valid);
+  wire        _GEN_361 = io_commit1_valid & io_commit1_rob == 5'h15;
+  wire        _GEN_362 =
+    ~_GEN_361
+    & (io_commit_valid ? ~_GEN_244 & entries_21_valid : ~_GEN_212 & entries_21_valid);
+  wire        _GEN_363 = io_commit1_valid & io_commit1_rob == 5'h16;
+  wire        _GEN_364 =
+    ~_GEN_363
+    & (io_commit_valid ? ~_GEN_245 & entries_22_valid : ~_GEN_213 & entries_22_valid);
+  wire        _GEN_365 = io_commit1_valid & io_commit1_rob == 5'h17;
+  wire        _GEN_366 =
+    ~_GEN_365
+    & (io_commit_valid ? ~_GEN_246 & entries_23_valid : ~_GEN_214 & entries_23_valid);
+  wire        _GEN_367 = io_commit1_valid & io_commit1_rob == 5'h18;
+  wire        _GEN_368 =
+    ~_GEN_367
+    & (io_commit_valid ? ~_GEN_247 & entries_24_valid : ~_GEN_215 & entries_24_valid);
+  wire        _GEN_369 = io_commit1_valid & io_commit1_rob == 5'h19;
+  wire        _GEN_370 =
+    ~_GEN_369
+    & (io_commit_valid ? ~_GEN_248 & entries_25_valid : ~_GEN_216 & entries_25_valid);
+  wire        _GEN_371 = io_commit1_valid & io_commit1_rob == 5'h1A;
+  wire        _GEN_372 =
+    ~_GEN_371
+    & (io_commit_valid ? ~_GEN_249 & entries_26_valid : ~_GEN_217 & entries_26_valid);
+  wire        _GEN_373 = io_commit1_valid & io_commit1_rob == 5'h1B;
+  wire        _GEN_374 =
+    ~_GEN_373
+    & (io_commit_valid ? ~_GEN_250 & entries_27_valid : ~_GEN_218 & entries_27_valid);
+  wire        _GEN_375 = io_commit1_valid & io_commit1_rob == 5'h1C;
+  wire        _GEN_376 =
+    ~_GEN_375
+    & (io_commit_valid ? ~_GEN_251 & entries_28_valid : ~_GEN_219 & entries_28_valid);
+  wire        _GEN_377 = io_commit1_valid & io_commit1_rob == 5'h1D;
+  wire        _GEN_378 =
+    ~_GEN_377
+    & (io_commit_valid ? ~_GEN_252 & entries_29_valid : ~_GEN_220 & entries_29_valid);
+  wire        _GEN_379 = io_commit1_valid & io_commit1_rob == 5'h1E;
+  wire        _GEN_380 =
+    ~_GEN_379
+    & (io_commit_valid ? ~_GEN_253 & entries_30_valid : ~_GEN_221 & entries_30_valid);
+  wire        _GEN_381 = io_commit1_valid & (&io_commit1_rob);
+  wire        _GEN_382 =
+    ~_GEN_381
     & (io_commit_valid ? ~_GEN_254 & entries_31_valid : ~_GEN_222 & entries_31_valid);
-  wire        _GEN_351 = io_alloc0_rob == 5'h0;
-  wire        _GEN_352 = io_alloc0_valid & _GEN_351;
-  wire        _GEN_353 = io_alloc0_rob == 5'h1;
-  wire        _GEN_354 = io_alloc0_valid & _GEN_353;
-  wire        _GEN_355 = io_alloc0_rob == 5'h2;
-  wire        _GEN_356 = io_alloc0_valid & _GEN_355;
-  wire        _GEN_357 = io_alloc0_rob == 5'h3;
-  wire        _GEN_358 = io_alloc0_valid & _GEN_357;
-  wire        _GEN_359 = io_alloc0_rob == 5'h4;
-  wire        _GEN_360 = io_alloc0_valid & _GEN_359;
-  wire        _GEN_361 = io_alloc0_rob == 5'h5;
-  wire        _GEN_362 = io_alloc0_valid & _GEN_361;
-  wire        _GEN_363 = io_alloc0_rob == 5'h6;
-  wire        _GEN_364 = io_alloc0_valid & _GEN_363;
-  wire        _GEN_365 = io_alloc0_rob == 5'h7;
-  wire        _GEN_366 = io_alloc0_valid & _GEN_365;
-  wire        _GEN_367 = io_alloc0_rob == 5'h8;
-  wire        _GEN_368 = io_alloc0_valid & _GEN_367;
-  wire        _GEN_369 = io_alloc0_rob == 5'h9;
-  wire        _GEN_370 = io_alloc0_valid & _GEN_369;
-  wire        _GEN_371 = io_alloc0_rob == 5'hA;
-  wire        _GEN_372 = io_alloc0_valid & _GEN_371;
-  wire        _GEN_373 = io_alloc0_rob == 5'hB;
-  wire        _GEN_374 = io_alloc0_valid & _GEN_373;
-  wire        _GEN_375 = io_alloc0_rob == 5'hC;
-  wire        _GEN_376 = io_alloc0_valid & _GEN_375;
-  wire        _GEN_377 = io_alloc0_rob == 5'hD;
-  wire        _GEN_378 = io_alloc0_valid & _GEN_377;
-  wire        _GEN_379 = io_alloc0_rob == 5'hE;
-  wire        _GEN_380 = io_alloc0_valid & _GEN_379;
-  wire        _GEN_381 = io_alloc0_rob == 5'hF;
-  wire        _GEN_382 = io_alloc0_valid & _GEN_381;
-  wire        _GEN_383 = io_alloc0_rob == 5'h10;
+  wire        _GEN_383 = io_alloc0_rob == 5'h0;
   wire        _GEN_384 = io_alloc0_valid & _GEN_383;
-  wire        _GEN_385 = io_alloc0_rob == 5'h11;
+  wire        _GEN_385 = io_alloc0_rob == 5'h1;
   wire        _GEN_386 = io_alloc0_valid & _GEN_385;
-  wire        _GEN_387 = io_alloc0_rob == 5'h12;
+  wire        _GEN_387 = io_alloc0_rob == 5'h2;
   wire        _GEN_388 = io_alloc0_valid & _GEN_387;
-  wire        _GEN_389 = io_alloc0_rob == 5'h13;
+  wire        _GEN_389 = io_alloc0_rob == 5'h3;
   wire        _GEN_390 = io_alloc0_valid & _GEN_389;
-  wire        _GEN_391 = io_alloc0_rob == 5'h14;
+  wire        _GEN_391 = io_alloc0_rob == 5'h4;
   wire        _GEN_392 = io_alloc0_valid & _GEN_391;
-  wire        _GEN_393 = io_alloc0_rob == 5'h15;
+  wire        _GEN_393 = io_alloc0_rob == 5'h5;
   wire        _GEN_394 = io_alloc0_valid & _GEN_393;
-  wire        _GEN_395 = io_alloc0_rob == 5'h16;
+  wire        _GEN_395 = io_alloc0_rob == 5'h6;
   wire        _GEN_396 = io_alloc0_valid & _GEN_395;
-  wire        _GEN_397 = io_alloc0_rob == 5'h17;
+  wire        _GEN_397 = io_alloc0_rob == 5'h7;
   wire        _GEN_398 = io_alloc0_valid & _GEN_397;
-  wire        _GEN_399 = io_alloc0_rob == 5'h18;
+  wire        _GEN_399 = io_alloc0_rob == 5'h8;
   wire        _GEN_400 = io_alloc0_valid & _GEN_399;
-  wire        _GEN_401 = io_alloc0_rob == 5'h19;
+  wire        _GEN_401 = io_alloc0_rob == 5'h9;
   wire        _GEN_402 = io_alloc0_valid & _GEN_401;
-  wire        _GEN_403 = io_alloc0_rob == 5'h1A;
+  wire        _GEN_403 = io_alloc0_rob == 5'hA;
   wire        _GEN_404 = io_alloc0_valid & _GEN_403;
-  wire        _GEN_405 = io_alloc0_rob == 5'h1B;
+  wire        _GEN_405 = io_alloc0_rob == 5'hB;
   wire        _GEN_406 = io_alloc0_valid & _GEN_405;
-  wire        _GEN_407 = io_alloc0_rob == 5'h1C;
+  wire        _GEN_407 = io_alloc0_rob == 5'hC;
   wire        _GEN_408 = io_alloc0_valid & _GEN_407;
-  wire        _GEN_409 = io_alloc0_rob == 5'h1D;
+  wire        _GEN_409 = io_alloc0_rob == 5'hD;
   wire        _GEN_410 = io_alloc0_valid & _GEN_409;
-  wire        _GEN_411 = io_alloc0_rob == 5'h1E;
+  wire        _GEN_411 = io_alloc0_rob == 5'hE;
   wire        _GEN_412 = io_alloc0_valid & _GEN_411;
-  wire        _GEN_413 = io_alloc0_valid & (&io_alloc0_rob);
-  wire        _GEN_414 = io_alloc1_rob == 5'h0;
-  wire        _GEN_415 = io_alloc1_rob == 5'h1;
-  wire        _GEN_416 = io_alloc1_rob == 5'h2;
-  wire        _GEN_417 = io_alloc1_rob == 5'h3;
-  wire        _GEN_418 = io_alloc1_rob == 5'h4;
-  wire        _GEN_419 = io_alloc1_rob == 5'h5;
-  wire        _GEN_420 = io_alloc1_rob == 5'h6;
-  wire        _GEN_421 = io_alloc1_rob == 5'h7;
-  wire        _GEN_422 = io_alloc1_rob == 5'h8;
-  wire        _GEN_423 = io_alloc1_rob == 5'h9;
-  wire        _GEN_424 = io_alloc1_rob == 5'hA;
-  wire        _GEN_425 = io_alloc1_rob == 5'hB;
-  wire        _GEN_426 = io_alloc1_rob == 5'hC;
-  wire        _GEN_427 = io_alloc1_rob == 5'hD;
-  wire        _GEN_428 = io_alloc1_rob == 5'hE;
-  wire        _GEN_429 = io_alloc1_rob == 5'hF;
-  wire        _GEN_430 = io_alloc1_rob == 5'h10;
-  wire        _GEN_431 = io_alloc1_rob == 5'h11;
-  wire        _GEN_432 = io_alloc1_rob == 5'h12;
-  wire        _GEN_433 = io_alloc1_rob == 5'h13;
-  wire        _GEN_434 = io_alloc1_rob == 5'h14;
-  wire        _GEN_435 = io_alloc1_rob == 5'h15;
-  wire        _GEN_436 = io_alloc1_rob == 5'h16;
-  wire        _GEN_437 = io_alloc1_rob == 5'h17;
-  wire        _GEN_438 = io_alloc1_rob == 5'h18;
-  wire        _GEN_439 = io_alloc1_rob == 5'h19;
-  wire        _GEN_440 = io_alloc1_rob == 5'h1A;
-  wire        _GEN_441 = io_alloc1_rob == 5'h1B;
-  wire        _GEN_442 = io_alloc1_rob == 5'h1C;
-  wire        _GEN_443 = io_alloc1_rob == 5'h1D;
-  wire        _GEN_444 = io_alloc1_rob == 5'h1E;
-  wire        _GEN_445 = io_alloc1_valid & _GEN_414;
-  wire        _GEN_446 = io_alloc1_valid & _GEN_415;
-  wire        _GEN_447 = io_alloc1_valid & _GEN_416;
-  wire        _GEN_448 = io_alloc1_valid & _GEN_417;
-  wire        _GEN_449 = io_alloc1_valid & _GEN_418;
-  wire        _GEN_450 = io_alloc1_valid & _GEN_419;
-  wire        _GEN_451 = io_alloc1_valid & _GEN_420;
-  wire        _GEN_452 = io_alloc1_valid & _GEN_421;
-  wire        _GEN_453 = io_alloc1_valid & _GEN_422;
-  wire        _GEN_454 = io_alloc1_valid & _GEN_423;
-  wire        _GEN_455 = io_alloc1_valid & _GEN_424;
-  wire        _GEN_456 = io_alloc1_valid & _GEN_425;
-  wire        _GEN_457 = io_alloc1_valid & _GEN_426;
-  wire        _GEN_458 = io_alloc1_valid & _GEN_427;
-  wire        _GEN_459 = io_alloc1_valid & _GEN_428;
-  wire        _GEN_460 = io_alloc1_valid & _GEN_429;
-  wire        _GEN_461 = io_alloc1_valid & _GEN_430;
-  wire        _GEN_462 = io_alloc1_valid & _GEN_431;
-  wire        _GEN_463 = io_alloc1_valid & _GEN_432;
-  wire        _GEN_464 = io_alloc1_valid & _GEN_433;
-  wire        _GEN_465 = io_alloc1_valid & _GEN_434;
-  wire        _GEN_466 = io_alloc1_valid & _GEN_435;
-  wire        _GEN_467 = io_alloc1_valid & _GEN_436;
-  wire        _GEN_468 = io_alloc1_valid & _GEN_437;
-  wire        _GEN_469 = io_alloc1_valid & _GEN_438;
-  wire        _GEN_470 = io_alloc1_valid & _GEN_439;
-  wire        _GEN_471 = io_alloc1_valid & _GEN_440;
-  wire        _GEN_472 = io_alloc1_valid & _GEN_441;
-  wire        _GEN_473 = io_alloc1_valid & _GEN_442;
-  wire        _GEN_474 = io_alloc1_valid & _GEN_443;
-  wire        _GEN_475 = io_alloc1_valid & _GEN_444;
-  wire        _GEN_476 = io_alloc1_valid & (&io_alloc1_rob);
-  wire        _GEN_477 = io_wb_valid & casez_tmp;
-  wire        _GEN_478 = _GEN_477 & io_wb_rob == 5'h0;
-  wire        _GEN_479 = _GEN_477 & io_wb_rob == 5'h1;
-  wire        _GEN_480 = _GEN_477 & io_wb_rob == 5'h2;
-  wire        _GEN_481 = _GEN_477 & io_wb_rob == 5'h3;
-  wire        _GEN_482 = _GEN_477 & io_wb_rob == 5'h4;
-  wire        _GEN_483 = _GEN_477 & io_wb_rob == 5'h5;
-  wire        _GEN_484 = _GEN_477 & io_wb_rob == 5'h6;
-  wire        _GEN_485 = _GEN_477 & io_wb_rob == 5'h7;
-  wire        _GEN_486 = _GEN_477 & io_wb_rob == 5'h8;
-  wire        _GEN_487 = _GEN_477 & io_wb_rob == 5'h9;
-  wire        _GEN_488 = _GEN_477 & io_wb_rob == 5'hA;
-  wire        _GEN_489 = _GEN_477 & io_wb_rob == 5'hB;
-  wire        _GEN_490 = _GEN_477 & io_wb_rob == 5'hC;
-  wire        _GEN_491 = _GEN_477 & io_wb_rob == 5'hD;
-  wire        _GEN_492 = _GEN_477 & io_wb_rob == 5'hE;
-  wire        _GEN_493 = _GEN_477 & io_wb_rob == 5'hF;
-  wire        _GEN_494 = _GEN_477 & io_wb_rob == 5'h10;
-  wire        _GEN_495 = _GEN_477 & io_wb_rob == 5'h11;
-  wire        _GEN_496 = _GEN_477 & io_wb_rob == 5'h12;
-  wire        _GEN_497 = _GEN_477 & io_wb_rob == 5'h13;
-  wire        _GEN_498 = _GEN_477 & io_wb_rob == 5'h14;
-  wire        _GEN_499 = _GEN_477 & io_wb_rob == 5'h15;
-  wire        _GEN_500 = _GEN_477 & io_wb_rob == 5'h16;
-  wire        _GEN_501 = _GEN_477 & io_wb_rob == 5'h17;
-  wire        _GEN_502 = _GEN_477 & io_wb_rob == 5'h18;
-  wire        _GEN_503 = _GEN_477 & io_wb_rob == 5'h19;
-  wire        _GEN_504 = _GEN_477 & io_wb_rob == 5'h1A;
-  wire        _GEN_505 = _GEN_477 & io_wb_rob == 5'h1B;
-  wire        _GEN_506 = _GEN_477 & io_wb_rob == 5'h1C;
-  wire        _GEN_507 = _GEN_477 & io_wb_rob == 5'h1D;
-  wire        _GEN_508 = _GEN_477 & io_wb_rob == 5'h1E;
-  wire        _GEN_509 = _GEN_477 & (&io_wb_rob);
+  wire        _GEN_413 = io_alloc0_rob == 5'hF;
+  wire        _GEN_414 = io_alloc0_valid & _GEN_413;
+  wire        _GEN_415 = io_alloc0_rob == 5'h10;
+  wire        _GEN_416 = io_alloc0_valid & _GEN_415;
+  wire        _GEN_417 = io_alloc0_rob == 5'h11;
+  wire        _GEN_418 = io_alloc0_valid & _GEN_417;
+  wire        _GEN_419 = io_alloc0_rob == 5'h12;
+  wire        _GEN_420 = io_alloc0_valid & _GEN_419;
+  wire        _GEN_421 = io_alloc0_rob == 5'h13;
+  wire        _GEN_422 = io_alloc0_valid & _GEN_421;
+  wire        _GEN_423 = io_alloc0_rob == 5'h14;
+  wire        _GEN_424 = io_alloc0_valid & _GEN_423;
+  wire        _GEN_425 = io_alloc0_rob == 5'h15;
+  wire        _GEN_426 = io_alloc0_valid & _GEN_425;
+  wire        _GEN_427 = io_alloc0_rob == 5'h16;
+  wire        _GEN_428 = io_alloc0_valid & _GEN_427;
+  wire        _GEN_429 = io_alloc0_rob == 5'h17;
+  wire        _GEN_430 = io_alloc0_valid & _GEN_429;
+  wire        _GEN_431 = io_alloc0_rob == 5'h18;
+  wire        _GEN_432 = io_alloc0_valid & _GEN_431;
+  wire        _GEN_433 = io_alloc0_rob == 5'h19;
+  wire        _GEN_434 = io_alloc0_valid & _GEN_433;
+  wire        _GEN_435 = io_alloc0_rob == 5'h1A;
+  wire        _GEN_436 = io_alloc0_valid & _GEN_435;
+  wire        _GEN_437 = io_alloc0_rob == 5'h1B;
+  wire        _GEN_438 = io_alloc0_valid & _GEN_437;
+  wire        _GEN_439 = io_alloc0_rob == 5'h1C;
+  wire        _GEN_440 = io_alloc0_valid & _GEN_439;
+  wire        _GEN_441 = io_alloc0_rob == 5'h1D;
+  wire        _GEN_442 = io_alloc0_valid & _GEN_441;
+  wire        _GEN_443 = io_alloc0_rob == 5'h1E;
+  wire        _GEN_444 = io_alloc0_valid & _GEN_443;
+  wire        _GEN_445 = io_alloc0_valid & (&io_alloc0_rob);
+  wire        _GEN_446 = _GEN_383 | _GEN_319;
+  wire        _GEN_447 = _GEN_385 | _GEN_321;
+  wire        _GEN_448 = _GEN_387 | _GEN_323;
+  wire        _GEN_449 = _GEN_389 | _GEN_325;
+  wire        _GEN_450 = _GEN_391 | _GEN_327;
+  wire        _GEN_451 = _GEN_393 | _GEN_329;
+  wire        _GEN_452 = _GEN_395 | _GEN_331;
+  wire        _GEN_453 = _GEN_397 | _GEN_333;
+  wire        _GEN_454 = _GEN_399 | _GEN_335;
+  wire        _GEN_455 = _GEN_401 | _GEN_337;
+  wire        _GEN_456 = _GEN_403 | _GEN_339;
+  wire        _GEN_457 = _GEN_405 | _GEN_341;
+  wire        _GEN_458 = _GEN_407 | _GEN_343;
+  wire        _GEN_459 = _GEN_409 | _GEN_345;
+  wire        _GEN_460 = _GEN_411 | _GEN_347;
+  wire        _GEN_461 = _GEN_413 | _GEN_349;
+  wire        _GEN_462 = _GEN_415 | _GEN_351;
+  wire        _GEN_463 = _GEN_417 | _GEN_353;
+  wire        _GEN_464 = _GEN_419 | _GEN_355;
+  wire        _GEN_465 = _GEN_421 | _GEN_357;
+  wire        _GEN_466 = _GEN_423 | _GEN_359;
+  wire        _GEN_467 = _GEN_425 | _GEN_361;
+  wire        _GEN_468 = _GEN_427 | _GEN_363;
+  wire        _GEN_469 = _GEN_429 | _GEN_365;
+  wire        _GEN_470 = _GEN_431 | _GEN_367;
+  wire        _GEN_471 = _GEN_433 | _GEN_369;
+  wire        _GEN_472 = _GEN_435 | _GEN_371;
+  wire        _GEN_473 = _GEN_437 | _GEN_373;
+  wire        _GEN_474 = _GEN_439 | _GEN_375;
+  wire        _GEN_475 = _GEN_441 | _GEN_377;
+  wire        _GEN_476 = _GEN_443 | _GEN_379;
+  wire        _GEN_477 = (&io_alloc0_rob) | _GEN_381;
+  wire        _GEN_478 = io_alloc1_rob == 5'h0;
+  wire        _GEN_479 = io_alloc1_rob == 5'h1;
+  wire        _GEN_480 = io_alloc1_rob == 5'h2;
+  wire        _GEN_481 = io_alloc1_rob == 5'h3;
+  wire        _GEN_482 = io_alloc1_rob == 5'h4;
+  wire        _GEN_483 = io_alloc1_rob == 5'h5;
+  wire        _GEN_484 = io_alloc1_rob == 5'h6;
+  wire        _GEN_485 = io_alloc1_rob == 5'h7;
+  wire        _GEN_486 = io_alloc1_rob == 5'h8;
+  wire        _GEN_487 = io_alloc1_rob == 5'h9;
+  wire        _GEN_488 = io_alloc1_rob == 5'hA;
+  wire        _GEN_489 = io_alloc1_rob == 5'hB;
+  wire        _GEN_490 = io_alloc1_rob == 5'hC;
+  wire        _GEN_491 = io_alloc1_rob == 5'hD;
+  wire        _GEN_492 = io_alloc1_rob == 5'hE;
+  wire        _GEN_493 = io_alloc1_rob == 5'hF;
+  wire        _GEN_494 = io_alloc1_rob == 5'h10;
+  wire        _GEN_495 = io_alloc1_rob == 5'h11;
+  wire        _GEN_496 = io_alloc1_rob == 5'h12;
+  wire        _GEN_497 = io_alloc1_rob == 5'h13;
+  wire        _GEN_498 = io_alloc1_rob == 5'h14;
+  wire        _GEN_499 = io_alloc1_rob == 5'h15;
+  wire        _GEN_500 = io_alloc1_rob == 5'h16;
+  wire        _GEN_501 = io_alloc1_rob == 5'h17;
+  wire        _GEN_502 = io_alloc1_rob == 5'h18;
+  wire        _GEN_503 = io_alloc1_rob == 5'h19;
+  wire        _GEN_504 = io_alloc1_rob == 5'h1A;
+  wire        _GEN_505 = io_alloc1_rob == 5'h1B;
+  wire        _GEN_506 = io_alloc1_rob == 5'h1C;
+  wire        _GEN_507 = io_alloc1_rob == 5'h1D;
+  wire        _GEN_508 = io_alloc1_rob == 5'h1E;
+  wire        _GEN_509 = io_alloc1_valid & _GEN_478;
+  wire        _GEN_510 =
+    ~_GEN_509 & (io_alloc0_valid ? ~_GEN_446 & _GEN_255 : ~_GEN_319 & _GEN_255);
+  wire        _GEN_511 = io_alloc1_valid & _GEN_479;
+  wire        _GEN_512 =
+    ~_GEN_511 & (io_alloc0_valid ? ~_GEN_447 & _GEN_256 : ~_GEN_321 & _GEN_256);
+  wire        _GEN_513 = io_alloc1_valid & _GEN_480;
+  wire        _GEN_514 =
+    ~_GEN_513 & (io_alloc0_valid ? ~_GEN_448 & _GEN_257 : ~_GEN_323 & _GEN_257);
+  wire        _GEN_515 = io_alloc1_valid & _GEN_481;
+  wire        _GEN_516 =
+    ~_GEN_515 & (io_alloc0_valid ? ~_GEN_449 & _GEN_258 : ~_GEN_325 & _GEN_258);
+  wire        _GEN_517 = io_alloc1_valid & _GEN_482;
+  wire        _GEN_518 =
+    ~_GEN_517 & (io_alloc0_valid ? ~_GEN_450 & _GEN_259 : ~_GEN_327 & _GEN_259);
+  wire        _GEN_519 = io_alloc1_valid & _GEN_483;
+  wire        _GEN_520 =
+    ~_GEN_519 & (io_alloc0_valid ? ~_GEN_451 & _GEN_260 : ~_GEN_329 & _GEN_260);
+  wire        _GEN_521 = io_alloc1_valid & _GEN_484;
+  wire        _GEN_522 =
+    ~_GEN_521 & (io_alloc0_valid ? ~_GEN_452 & _GEN_261 : ~_GEN_331 & _GEN_261);
+  wire        _GEN_523 = io_alloc1_valid & _GEN_485;
+  wire        _GEN_524 =
+    ~_GEN_523 & (io_alloc0_valid ? ~_GEN_453 & _GEN_262 : ~_GEN_333 & _GEN_262);
+  wire        _GEN_525 = io_alloc1_valid & _GEN_486;
+  wire        _GEN_526 =
+    ~_GEN_525 & (io_alloc0_valid ? ~_GEN_454 & _GEN_263 : ~_GEN_335 & _GEN_263);
+  wire        _GEN_527 = io_alloc1_valid & _GEN_487;
+  wire        _GEN_528 =
+    ~_GEN_527 & (io_alloc0_valid ? ~_GEN_455 & _GEN_264 : ~_GEN_337 & _GEN_264);
+  wire        _GEN_529 = io_alloc1_valid & _GEN_488;
+  wire        _GEN_530 =
+    ~_GEN_529 & (io_alloc0_valid ? ~_GEN_456 & _GEN_265 : ~_GEN_339 & _GEN_265);
+  wire        _GEN_531 = io_alloc1_valid & _GEN_489;
+  wire        _GEN_532 =
+    ~_GEN_531 & (io_alloc0_valid ? ~_GEN_457 & _GEN_266 : ~_GEN_341 & _GEN_266);
+  wire        _GEN_533 = io_alloc1_valid & _GEN_490;
+  wire        _GEN_534 =
+    ~_GEN_533 & (io_alloc0_valid ? ~_GEN_458 & _GEN_267 : ~_GEN_343 & _GEN_267);
+  wire        _GEN_535 = io_alloc1_valid & _GEN_491;
+  wire        _GEN_536 =
+    ~_GEN_535 & (io_alloc0_valid ? ~_GEN_459 & _GEN_268 : ~_GEN_345 & _GEN_268);
+  wire        _GEN_537 = io_alloc1_valid & _GEN_492;
+  wire        _GEN_538 =
+    ~_GEN_537 & (io_alloc0_valid ? ~_GEN_460 & _GEN_269 : ~_GEN_347 & _GEN_269);
+  wire        _GEN_539 = io_alloc1_valid & _GEN_493;
+  wire        _GEN_540 =
+    ~_GEN_539 & (io_alloc0_valid ? ~_GEN_461 & _GEN_270 : ~_GEN_349 & _GEN_270);
+  wire        _GEN_541 = io_alloc1_valid & _GEN_494;
+  wire        _GEN_542 =
+    ~_GEN_541 & (io_alloc0_valid ? ~_GEN_462 & _GEN_271 : ~_GEN_351 & _GEN_271);
+  wire        _GEN_543 = io_alloc1_valid & _GEN_495;
+  wire        _GEN_544 =
+    ~_GEN_543 & (io_alloc0_valid ? ~_GEN_463 & _GEN_272 : ~_GEN_353 & _GEN_272);
+  wire        _GEN_545 = io_alloc1_valid & _GEN_496;
+  wire        _GEN_546 =
+    ~_GEN_545 & (io_alloc0_valid ? ~_GEN_464 & _GEN_273 : ~_GEN_355 & _GEN_273);
+  wire        _GEN_547 = io_alloc1_valid & _GEN_497;
+  wire        _GEN_548 =
+    ~_GEN_547 & (io_alloc0_valid ? ~_GEN_465 & _GEN_274 : ~_GEN_357 & _GEN_274);
+  wire        _GEN_549 = io_alloc1_valid & _GEN_498;
+  wire        _GEN_550 =
+    ~_GEN_549 & (io_alloc0_valid ? ~_GEN_466 & _GEN_275 : ~_GEN_359 & _GEN_275);
+  wire        _GEN_551 = io_alloc1_valid & _GEN_499;
+  wire        _GEN_552 =
+    ~_GEN_551 & (io_alloc0_valid ? ~_GEN_467 & _GEN_276 : ~_GEN_361 & _GEN_276);
+  wire        _GEN_553 = io_alloc1_valid & _GEN_500;
+  wire        _GEN_554 =
+    ~_GEN_553 & (io_alloc0_valid ? ~_GEN_468 & _GEN_277 : ~_GEN_363 & _GEN_277);
+  wire        _GEN_555 = io_alloc1_valid & _GEN_501;
+  wire        _GEN_556 =
+    ~_GEN_555 & (io_alloc0_valid ? ~_GEN_469 & _GEN_278 : ~_GEN_365 & _GEN_278);
+  wire        _GEN_557 = io_alloc1_valid & _GEN_502;
+  wire        _GEN_558 =
+    ~_GEN_557 & (io_alloc0_valid ? ~_GEN_470 & _GEN_279 : ~_GEN_367 & _GEN_279);
+  wire        _GEN_559 = io_alloc1_valid & _GEN_503;
+  wire        _GEN_560 =
+    ~_GEN_559 & (io_alloc0_valid ? ~_GEN_471 & _GEN_280 : ~_GEN_369 & _GEN_280);
+  wire        _GEN_561 = io_alloc1_valid & _GEN_504;
+  wire        _GEN_562 =
+    ~_GEN_561 & (io_alloc0_valid ? ~_GEN_472 & _GEN_281 : ~_GEN_371 & _GEN_281);
+  wire        _GEN_563 = io_alloc1_valid & _GEN_505;
+  wire        _GEN_564 =
+    ~_GEN_563 & (io_alloc0_valid ? ~_GEN_473 & _GEN_282 : ~_GEN_373 & _GEN_282);
+  wire        _GEN_565 = io_alloc1_valid & _GEN_506;
+  wire        _GEN_566 =
+    ~_GEN_565 & (io_alloc0_valid ? ~_GEN_474 & _GEN_283 : ~_GEN_375 & _GEN_283);
+  wire        _GEN_567 = io_alloc1_valid & _GEN_507;
+  wire        _GEN_568 =
+    ~_GEN_567 & (io_alloc0_valid ? ~_GEN_475 & _GEN_284 : ~_GEN_377 & _GEN_284);
+  wire        _GEN_569 = io_alloc1_valid & _GEN_508;
+  wire        _GEN_570 =
+    ~_GEN_569 & (io_alloc0_valid ? ~_GEN_476 & _GEN_285 : ~_GEN_379 & _GEN_285);
+  wire        _GEN_571 = io_alloc1_valid & (&io_alloc1_rob);
+  wire        _GEN_572 =
+    ~_GEN_571 & (io_alloc0_valid ? ~_GEN_477 & _GEN_286 : ~_GEN_381 & _GEN_286);
+  wire        _GEN_573 = io_addr_wb_valid & casez_tmp;
+  wire        _GEN_574 = _GEN_573 & io_addr_wb_rob == 5'h0;
+  wire        _GEN_575 = _GEN_573 & io_addr_wb_rob == 5'h1;
+  wire        _GEN_576 = _GEN_573 & io_addr_wb_rob == 5'h2;
+  wire        _GEN_577 = _GEN_573 & io_addr_wb_rob == 5'h3;
+  wire        _GEN_578 = _GEN_573 & io_addr_wb_rob == 5'h4;
+  wire        _GEN_579 = _GEN_573 & io_addr_wb_rob == 5'h5;
+  wire        _GEN_580 = _GEN_573 & io_addr_wb_rob == 5'h6;
+  wire        _GEN_581 = _GEN_573 & io_addr_wb_rob == 5'h7;
+  wire        _GEN_582 = _GEN_573 & io_addr_wb_rob == 5'h8;
+  wire        _GEN_583 = _GEN_573 & io_addr_wb_rob == 5'h9;
+  wire        _GEN_584 = _GEN_573 & io_addr_wb_rob == 5'hA;
+  wire        _GEN_585 = _GEN_573 & io_addr_wb_rob == 5'hB;
+  wire        _GEN_586 = _GEN_573 & io_addr_wb_rob == 5'hC;
+  wire        _GEN_587 = _GEN_573 & io_addr_wb_rob == 5'hD;
+  wire        _GEN_588 = _GEN_573 & io_addr_wb_rob == 5'hE;
+  wire        _GEN_589 = _GEN_573 & io_addr_wb_rob == 5'hF;
+  wire        _GEN_590 = _GEN_573 & io_addr_wb_rob == 5'h10;
+  wire        _GEN_591 = _GEN_573 & io_addr_wb_rob == 5'h11;
+  wire        _GEN_592 = _GEN_573 & io_addr_wb_rob == 5'h12;
+  wire        _GEN_593 = _GEN_573 & io_addr_wb_rob == 5'h13;
+  wire        _GEN_594 = _GEN_573 & io_addr_wb_rob == 5'h14;
+  wire        _GEN_595 = _GEN_573 & io_addr_wb_rob == 5'h15;
+  wire        _GEN_596 = _GEN_573 & io_addr_wb_rob == 5'h16;
+  wire        _GEN_597 = _GEN_573 & io_addr_wb_rob == 5'h17;
+  wire        _GEN_598 = _GEN_573 & io_addr_wb_rob == 5'h18;
+  wire        _GEN_599 = _GEN_573 & io_addr_wb_rob == 5'h19;
+  wire        _GEN_600 = _GEN_573 & io_addr_wb_rob == 5'h1A;
+  wire        _GEN_601 = _GEN_573 & io_addr_wb_rob == 5'h1B;
+  wire        _GEN_602 = _GEN_573 & io_addr_wb_rob == 5'h1C;
+  wire        _GEN_603 = _GEN_573 & io_addr_wb_rob == 5'h1D;
+  wire        _GEN_604 = _GEN_573 & io_addr_wb_rob == 5'h1E;
+  wire        _GEN_605 = _GEN_573 & (&io_addr_wb_rob);
+  wire        _GEN_606 = io_wb_valid & casez_tmp_0;
+  wire        _GEN_607 = io_wb_rob == 5'h0;
+  wire        _GEN_608 = io_wb_rob == 5'h1;
+  wire        _GEN_609 = io_wb_rob == 5'h2;
+  wire        _GEN_610 = io_wb_rob == 5'h3;
+  wire        _GEN_611 = io_wb_rob == 5'h4;
+  wire        _GEN_612 = io_wb_rob == 5'h5;
+  wire        _GEN_613 = io_wb_rob == 5'h6;
+  wire        _GEN_614 = io_wb_rob == 5'h7;
+  wire        _GEN_615 = io_wb_rob == 5'h8;
+  wire        _GEN_616 = io_wb_rob == 5'h9;
+  wire        _GEN_617 = io_wb_rob == 5'hA;
+  wire        _GEN_618 = io_wb_rob == 5'hB;
+  wire        _GEN_619 = io_wb_rob == 5'hC;
+  wire        _GEN_620 = io_wb_rob == 5'hD;
+  wire        _GEN_621 = io_wb_rob == 5'hE;
+  wire        _GEN_622 = io_wb_rob == 5'hF;
+  wire        _GEN_623 = io_wb_rob == 5'h10;
+  wire        _GEN_624 = io_wb_rob == 5'h11;
+  wire        _GEN_625 = io_wb_rob == 5'h12;
+  wire        _GEN_626 = io_wb_rob == 5'h13;
+  wire        _GEN_627 = io_wb_rob == 5'h14;
+  wire        _GEN_628 = io_wb_rob == 5'h15;
+  wire        _GEN_629 = io_wb_rob == 5'h16;
+  wire        _GEN_630 = io_wb_rob == 5'h17;
+  wire        _GEN_631 = io_wb_rob == 5'h18;
+  wire        _GEN_632 = io_wb_rob == 5'h19;
+  wire        _GEN_633 = io_wb_rob == 5'h1A;
+  wire        _GEN_634 = io_wb_rob == 5'h1B;
+  wire        _GEN_635 = io_wb_rob == 5'h1C;
+  wire        _GEN_636 = io_wb_rob == 5'h1D;
+  wire        _GEN_637 = io_wb_rob == 5'h1E;
+  wire        _GEN_638 = _GEN_606 & _GEN_607;
+  wire        _GEN_639 = _GEN_606 & _GEN_608;
+  wire        _GEN_640 = _GEN_606 & _GEN_609;
+  wire        _GEN_641 = _GEN_606 & _GEN_610;
+  wire        _GEN_642 = _GEN_606 & _GEN_611;
+  wire        _GEN_643 = _GEN_606 & _GEN_612;
+  wire        _GEN_644 = _GEN_606 & _GEN_613;
+  wire        _GEN_645 = _GEN_606 & _GEN_614;
+  wire        _GEN_646 = _GEN_606 & _GEN_615;
+  wire        _GEN_647 = _GEN_606 & _GEN_616;
+  wire        _GEN_648 = _GEN_606 & _GEN_617;
+  wire        _GEN_649 = _GEN_606 & _GEN_618;
+  wire        _GEN_650 = _GEN_606 & _GEN_619;
+  wire        _GEN_651 = _GEN_606 & _GEN_620;
+  wire        _GEN_652 = _GEN_606 & _GEN_621;
+  wire        _GEN_653 = _GEN_606 & _GEN_622;
+  wire        _GEN_654 = _GEN_606 & _GEN_623;
+  wire        _GEN_655 = _GEN_606 & _GEN_624;
+  wire        _GEN_656 = _GEN_606 & _GEN_625;
+  wire        _GEN_657 = _GEN_606 & _GEN_626;
+  wire        _GEN_658 = _GEN_606 & _GEN_627;
+  wire        _GEN_659 = _GEN_606 & _GEN_628;
+  wire        _GEN_660 = _GEN_606 & _GEN_629;
+  wire        _GEN_661 = _GEN_606 & _GEN_630;
+  wire        _GEN_662 = _GEN_606 & _GEN_631;
+  wire        _GEN_663 = _GEN_606 & _GEN_632;
+  wire        _GEN_664 = _GEN_606 & _GEN_633;
+  wire        _GEN_665 = _GEN_606 & _GEN_634;
+  wire        _GEN_666 = _GEN_606 & _GEN_635;
+  wire        _GEN_667 = _GEN_606 & _GEN_636;
+  wire        _GEN_668 = _GEN_606 & _GEN_637;
+  wire        _GEN_669 = _GEN_606 & (&io_wb_rob);
+  wire        _GEN_670 = _GEN_509 | _GEN_384;
+  wire        _GEN_671 = _GEN_511 | _GEN_386;
+  wire        _GEN_672 = _GEN_513 | _GEN_388;
+  wire        _GEN_673 = _GEN_515 | _GEN_390;
+  wire        _GEN_674 = _GEN_517 | _GEN_392;
+  wire        _GEN_675 = _GEN_519 | _GEN_394;
+  wire        _GEN_676 = _GEN_521 | _GEN_396;
+  wire        _GEN_677 = _GEN_523 | _GEN_398;
+  wire        _GEN_678 = _GEN_525 | _GEN_400;
+  wire        _GEN_679 = _GEN_527 | _GEN_402;
+  wire        _GEN_680 = _GEN_529 | _GEN_404;
+  wire        _GEN_681 = _GEN_531 | _GEN_406;
+  wire        _GEN_682 = _GEN_533 | _GEN_408;
+  wire        _GEN_683 = _GEN_535 | _GEN_410;
+  wire        _GEN_684 = _GEN_537 | _GEN_412;
+  wire        _GEN_685 = _GEN_539 | _GEN_414;
+  wire        _GEN_686 = _GEN_541 | _GEN_416;
+  wire        _GEN_687 = _GEN_543 | _GEN_418;
+  wire        _GEN_688 = _GEN_545 | _GEN_420;
+  wire        _GEN_689 = _GEN_547 | _GEN_422;
+  wire        _GEN_690 = _GEN_549 | _GEN_424;
+  wire        _GEN_691 = _GEN_551 | _GEN_426;
+  wire        _GEN_692 = _GEN_553 | _GEN_428;
+  wire        _GEN_693 = _GEN_555 | _GEN_430;
+  wire        _GEN_694 = _GEN_557 | _GEN_432;
+  wire        _GEN_695 = _GEN_559 | _GEN_434;
+  wire        _GEN_696 = _GEN_561 | _GEN_436;
+  wire        _GEN_697 = _GEN_563 | _GEN_438;
+  wire        _GEN_698 = _GEN_565 | _GEN_440;
+  wire        _GEN_699 = _GEN_567 | _GEN_442;
+  wire        _GEN_700 = _GEN_569 | _GEN_444;
+  wire        _GEN_701 = _GEN_571 | _GEN_445;
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
       entries_0_addr_ready <= 1'h0;
+      entries_0_data_ready <= 1'h0;
       entries_0_addr <= 32'h0;
       entries_0_data <= 32'h0;
       entries_0_mask <= 4'h0;
       entries_1_valid <= 1'h0;
       entries_1_addr_ready <= 1'h0;
+      entries_1_data_ready <= 1'h0;
       entries_1_addr <= 32'h0;
       entries_1_data <= 32'h0;
       entries_1_mask <= 4'h0;
       entries_2_valid <= 1'h0;
       entries_2_addr_ready <= 1'h0;
+      entries_2_data_ready <= 1'h0;
       entries_2_addr <= 32'h0;
       entries_2_data <= 32'h0;
       entries_2_mask <= 4'h0;
       entries_3_valid <= 1'h0;
       entries_3_addr_ready <= 1'h0;
+      entries_3_data_ready <= 1'h0;
       entries_3_addr <= 32'h0;
       entries_3_data <= 32'h0;
       entries_3_mask <= 4'h0;
       entries_4_valid <= 1'h0;
       entries_4_addr_ready <= 1'h0;
+      entries_4_data_ready <= 1'h0;
       entries_4_addr <= 32'h0;
       entries_4_data <= 32'h0;
       entries_4_mask <= 4'h0;
       entries_5_valid <= 1'h0;
       entries_5_addr_ready <= 1'h0;
+      entries_5_data_ready <= 1'h0;
       entries_5_addr <= 32'h0;
       entries_5_data <= 32'h0;
       entries_5_mask <= 4'h0;
       entries_6_valid <= 1'h0;
       entries_6_addr_ready <= 1'h0;
+      entries_6_data_ready <= 1'h0;
       entries_6_addr <= 32'h0;
       entries_6_data <= 32'h0;
       entries_6_mask <= 4'h0;
       entries_7_valid <= 1'h0;
       entries_7_addr_ready <= 1'h0;
+      entries_7_data_ready <= 1'h0;
       entries_7_addr <= 32'h0;
       entries_7_data <= 32'h0;
       entries_7_mask <= 4'h0;
       entries_8_valid <= 1'h0;
       entries_8_addr_ready <= 1'h0;
+      entries_8_data_ready <= 1'h0;
       entries_8_addr <= 32'h0;
       entries_8_data <= 32'h0;
       entries_8_mask <= 4'h0;
       entries_9_valid <= 1'h0;
       entries_9_addr_ready <= 1'h0;
+      entries_9_data_ready <= 1'h0;
       entries_9_addr <= 32'h0;
       entries_9_data <= 32'h0;
       entries_9_mask <= 4'h0;
       entries_10_valid <= 1'h0;
       entries_10_addr_ready <= 1'h0;
+      entries_10_data_ready <= 1'h0;
       entries_10_addr <= 32'h0;
       entries_10_data <= 32'h0;
       entries_10_mask <= 4'h0;
       entries_11_valid <= 1'h0;
       entries_11_addr_ready <= 1'h0;
+      entries_11_data_ready <= 1'h0;
       entries_11_addr <= 32'h0;
       entries_11_data <= 32'h0;
       entries_11_mask <= 4'h0;
       entries_12_valid <= 1'h0;
       entries_12_addr_ready <= 1'h0;
+      entries_12_data_ready <= 1'h0;
       entries_12_addr <= 32'h0;
       entries_12_data <= 32'h0;
       entries_12_mask <= 4'h0;
       entries_13_valid <= 1'h0;
       entries_13_addr_ready <= 1'h0;
+      entries_13_data_ready <= 1'h0;
       entries_13_addr <= 32'h0;
       entries_13_data <= 32'h0;
       entries_13_mask <= 4'h0;
       entries_14_valid <= 1'h0;
       entries_14_addr_ready <= 1'h0;
+      entries_14_data_ready <= 1'h0;
       entries_14_addr <= 32'h0;
       entries_14_data <= 32'h0;
       entries_14_mask <= 4'h0;
       entries_15_valid <= 1'h0;
       entries_15_addr_ready <= 1'h0;
+      entries_15_data_ready <= 1'h0;
       entries_15_addr <= 32'h0;
       entries_15_data <= 32'h0;
       entries_15_mask <= 4'h0;
       entries_16_valid <= 1'h0;
       entries_16_addr_ready <= 1'h0;
+      entries_16_data_ready <= 1'h0;
       entries_16_addr <= 32'h0;
       entries_16_data <= 32'h0;
       entries_16_mask <= 4'h0;
       entries_17_valid <= 1'h0;
       entries_17_addr_ready <= 1'h0;
+      entries_17_data_ready <= 1'h0;
       entries_17_addr <= 32'h0;
       entries_17_data <= 32'h0;
       entries_17_mask <= 4'h0;
       entries_18_valid <= 1'h0;
       entries_18_addr_ready <= 1'h0;
+      entries_18_data_ready <= 1'h0;
       entries_18_addr <= 32'h0;
       entries_18_data <= 32'h0;
       entries_18_mask <= 4'h0;
       entries_19_valid <= 1'h0;
       entries_19_addr_ready <= 1'h0;
+      entries_19_data_ready <= 1'h0;
       entries_19_addr <= 32'h0;
       entries_19_data <= 32'h0;
       entries_19_mask <= 4'h0;
       entries_20_valid <= 1'h0;
       entries_20_addr_ready <= 1'h0;
+      entries_20_data_ready <= 1'h0;
       entries_20_addr <= 32'h0;
       entries_20_data <= 32'h0;
       entries_20_mask <= 4'h0;
       entries_21_valid <= 1'h0;
       entries_21_addr_ready <= 1'h0;
+      entries_21_data_ready <= 1'h0;
       entries_21_addr <= 32'h0;
       entries_21_data <= 32'h0;
       entries_21_mask <= 4'h0;
       entries_22_valid <= 1'h0;
       entries_22_addr_ready <= 1'h0;
+      entries_22_data_ready <= 1'h0;
       entries_22_addr <= 32'h0;
       entries_22_data <= 32'h0;
       entries_22_mask <= 4'h0;
       entries_23_valid <= 1'h0;
       entries_23_addr_ready <= 1'h0;
+      entries_23_data_ready <= 1'h0;
       entries_23_addr <= 32'h0;
       entries_23_data <= 32'h0;
       entries_23_mask <= 4'h0;
       entries_24_valid <= 1'h0;
       entries_24_addr_ready <= 1'h0;
+      entries_24_data_ready <= 1'h0;
       entries_24_addr <= 32'h0;
       entries_24_data <= 32'h0;
       entries_24_mask <= 4'h0;
       entries_25_valid <= 1'h0;
       entries_25_addr_ready <= 1'h0;
+      entries_25_data_ready <= 1'h0;
       entries_25_addr <= 32'h0;
       entries_25_data <= 32'h0;
       entries_25_mask <= 4'h0;
       entries_26_valid <= 1'h0;
       entries_26_addr_ready <= 1'h0;
+      entries_26_data_ready <= 1'h0;
       entries_26_addr <= 32'h0;
       entries_26_data <= 32'h0;
       entries_26_mask <= 4'h0;
       entries_27_valid <= 1'h0;
       entries_27_addr_ready <= 1'h0;
+      entries_27_data_ready <= 1'h0;
       entries_27_addr <= 32'h0;
       entries_27_data <= 32'h0;
       entries_27_mask <= 4'h0;
       entries_28_valid <= 1'h0;
       entries_28_addr_ready <= 1'h0;
+      entries_28_data_ready <= 1'h0;
       entries_28_addr <= 32'h0;
       entries_28_data <= 32'h0;
       entries_28_mask <= 4'h0;
       entries_29_valid <= 1'h0;
       entries_29_addr_ready <= 1'h0;
+      entries_29_data_ready <= 1'h0;
       entries_29_addr <= 32'h0;
       entries_29_data <= 32'h0;
       entries_29_mask <= 4'h0;
       entries_30_valid <= 1'h0;
       entries_30_addr_ready <= 1'h0;
+      entries_30_data_ready <= 1'h0;
       entries_30_addr <= 32'h0;
       entries_30_data <= 32'h0;
       entries_30_mask <= 4'h0;
       entries_31_valid <= 1'h0;
       entries_31_addr_ready <= 1'h0;
+      entries_31_data_ready <= 1'h0;
       entries_31_addr <= 32'h0;
       entries_31_data <= 32'h0;
       entries_31_mask <= 4'h0;
@@ -13189,778 +14398,843 @@ module StoreQueue(
     else begin
       entries_0_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_414 | _GEN_352 | _GEN_288 : _GEN_352 | _GEN_288);
+        & (io_alloc1_valid ? _GEN_478 | _GEN_384 | _GEN_320 : _GEN_384 | _GEN_320);
       entries_0_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_607 | _GEN_574 | _GEN_510 : _GEN_574 | _GEN_510);
+      entries_0_data_ready <=
         ~io_flush_all
-        & (_GEN_478 | ~_GEN_445
-           & (io_alloc0_valid
-                ? ~(_GEN_351 | _GEN_287) & _GEN_255
-                : ~_GEN_287 & _GEN_255));
+        & (_GEN_638 | ~_GEN_509
+           & (io_alloc0_valid ? ~_GEN_446 & _GEN_287 : ~_GEN_319 & _GEN_287));
       if (io_flush_all) begin
       end
       else begin
-        if (_GEN_478) begin
+        if (_GEN_638) begin
           entries_0_addr <= io_wb_addr;
           entries_0_data <= io_wb_data;
           entries_0_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_445 | _GEN_352) begin
+          if (_GEN_574)
+            entries_0_addr <= io_addr_wb_addr;
+          else if (_GEN_670)
             entries_0_addr <= 32'h0;
+          if (_GEN_670)
             entries_0_data <= 32'h0;
-          end
-          if (_GEN_445)
+          if (_GEN_509)
             entries_0_mask <= io_alloc1_mask;
-          else if (_GEN_352)
+          else if (_GEN_384)
             entries_0_mask <= io_alloc0_mask;
         end
-        if (_GEN_479) begin
+        if (_GEN_639) begin
           entries_1_addr <= io_wb_addr;
           entries_1_data <= io_wb_data;
           entries_1_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_446 | _GEN_354) begin
+          if (_GEN_575)
+            entries_1_addr <= io_addr_wb_addr;
+          else if (_GEN_671)
             entries_1_addr <= 32'h0;
+          if (_GEN_671)
             entries_1_data <= 32'h0;
-          end
-          if (_GEN_446)
+          if (_GEN_511)
             entries_1_mask <= io_alloc1_mask;
-          else if (_GEN_354)
+          else if (_GEN_386)
             entries_1_mask <= io_alloc0_mask;
         end
-        if (_GEN_480) begin
+        if (_GEN_640) begin
           entries_2_addr <= io_wb_addr;
           entries_2_data <= io_wb_data;
           entries_2_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_447 | _GEN_356) begin
+          if (_GEN_576)
+            entries_2_addr <= io_addr_wb_addr;
+          else if (_GEN_672)
             entries_2_addr <= 32'h0;
+          if (_GEN_672)
             entries_2_data <= 32'h0;
-          end
-          if (_GEN_447)
+          if (_GEN_513)
             entries_2_mask <= io_alloc1_mask;
-          else if (_GEN_356)
+          else if (_GEN_388)
             entries_2_mask <= io_alloc0_mask;
         end
-        if (_GEN_481) begin
+        if (_GEN_641) begin
           entries_3_addr <= io_wb_addr;
           entries_3_data <= io_wb_data;
           entries_3_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_448 | _GEN_358) begin
+          if (_GEN_577)
+            entries_3_addr <= io_addr_wb_addr;
+          else if (_GEN_673)
             entries_3_addr <= 32'h0;
+          if (_GEN_673)
             entries_3_data <= 32'h0;
-          end
-          if (_GEN_448)
+          if (_GEN_515)
             entries_3_mask <= io_alloc1_mask;
-          else if (_GEN_358)
+          else if (_GEN_390)
             entries_3_mask <= io_alloc0_mask;
         end
-        if (_GEN_482) begin
+        if (_GEN_642) begin
           entries_4_addr <= io_wb_addr;
           entries_4_data <= io_wb_data;
           entries_4_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_449 | _GEN_360) begin
+          if (_GEN_578)
+            entries_4_addr <= io_addr_wb_addr;
+          else if (_GEN_674)
             entries_4_addr <= 32'h0;
+          if (_GEN_674)
             entries_4_data <= 32'h0;
-          end
-          if (_GEN_449)
+          if (_GEN_517)
             entries_4_mask <= io_alloc1_mask;
-          else if (_GEN_360)
+          else if (_GEN_392)
             entries_4_mask <= io_alloc0_mask;
         end
-        if (_GEN_483) begin
+        if (_GEN_643) begin
           entries_5_addr <= io_wb_addr;
           entries_5_data <= io_wb_data;
           entries_5_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_450 | _GEN_362) begin
+          if (_GEN_579)
+            entries_5_addr <= io_addr_wb_addr;
+          else if (_GEN_675)
             entries_5_addr <= 32'h0;
+          if (_GEN_675)
             entries_5_data <= 32'h0;
-          end
-          if (_GEN_450)
+          if (_GEN_519)
             entries_5_mask <= io_alloc1_mask;
-          else if (_GEN_362)
+          else if (_GEN_394)
             entries_5_mask <= io_alloc0_mask;
         end
-        if (_GEN_484) begin
+        if (_GEN_644) begin
           entries_6_addr <= io_wb_addr;
           entries_6_data <= io_wb_data;
           entries_6_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_451 | _GEN_364) begin
+          if (_GEN_580)
+            entries_6_addr <= io_addr_wb_addr;
+          else if (_GEN_676)
             entries_6_addr <= 32'h0;
+          if (_GEN_676)
             entries_6_data <= 32'h0;
-          end
-          if (_GEN_451)
+          if (_GEN_521)
             entries_6_mask <= io_alloc1_mask;
-          else if (_GEN_364)
+          else if (_GEN_396)
             entries_6_mask <= io_alloc0_mask;
         end
-        if (_GEN_485) begin
+        if (_GEN_645) begin
           entries_7_addr <= io_wb_addr;
           entries_7_data <= io_wb_data;
           entries_7_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_452 | _GEN_366) begin
+          if (_GEN_581)
+            entries_7_addr <= io_addr_wb_addr;
+          else if (_GEN_677)
             entries_7_addr <= 32'h0;
+          if (_GEN_677)
             entries_7_data <= 32'h0;
-          end
-          if (_GEN_452)
+          if (_GEN_523)
             entries_7_mask <= io_alloc1_mask;
-          else if (_GEN_366)
+          else if (_GEN_398)
             entries_7_mask <= io_alloc0_mask;
         end
-        if (_GEN_486) begin
+        if (_GEN_646) begin
           entries_8_addr <= io_wb_addr;
           entries_8_data <= io_wb_data;
           entries_8_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_453 | _GEN_368) begin
+          if (_GEN_582)
+            entries_8_addr <= io_addr_wb_addr;
+          else if (_GEN_678)
             entries_8_addr <= 32'h0;
+          if (_GEN_678)
             entries_8_data <= 32'h0;
-          end
-          if (_GEN_453)
+          if (_GEN_525)
             entries_8_mask <= io_alloc1_mask;
-          else if (_GEN_368)
+          else if (_GEN_400)
             entries_8_mask <= io_alloc0_mask;
         end
-        if (_GEN_487) begin
+        if (_GEN_647) begin
           entries_9_addr <= io_wb_addr;
           entries_9_data <= io_wb_data;
           entries_9_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_454 | _GEN_370) begin
+          if (_GEN_583)
+            entries_9_addr <= io_addr_wb_addr;
+          else if (_GEN_679)
             entries_9_addr <= 32'h0;
+          if (_GEN_679)
             entries_9_data <= 32'h0;
-          end
-          if (_GEN_454)
+          if (_GEN_527)
             entries_9_mask <= io_alloc1_mask;
-          else if (_GEN_370)
+          else if (_GEN_402)
             entries_9_mask <= io_alloc0_mask;
         end
-        if (_GEN_488) begin
+        if (_GEN_648) begin
           entries_10_addr <= io_wb_addr;
           entries_10_data <= io_wb_data;
           entries_10_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_455 | _GEN_372) begin
+          if (_GEN_584)
+            entries_10_addr <= io_addr_wb_addr;
+          else if (_GEN_680)
             entries_10_addr <= 32'h0;
+          if (_GEN_680)
             entries_10_data <= 32'h0;
-          end
-          if (_GEN_455)
+          if (_GEN_529)
             entries_10_mask <= io_alloc1_mask;
-          else if (_GEN_372)
+          else if (_GEN_404)
             entries_10_mask <= io_alloc0_mask;
         end
-        if (_GEN_489) begin
+        if (_GEN_649) begin
           entries_11_addr <= io_wb_addr;
           entries_11_data <= io_wb_data;
           entries_11_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_456 | _GEN_374) begin
+          if (_GEN_585)
+            entries_11_addr <= io_addr_wb_addr;
+          else if (_GEN_681)
             entries_11_addr <= 32'h0;
+          if (_GEN_681)
             entries_11_data <= 32'h0;
-          end
-          if (_GEN_456)
+          if (_GEN_531)
             entries_11_mask <= io_alloc1_mask;
-          else if (_GEN_374)
+          else if (_GEN_406)
             entries_11_mask <= io_alloc0_mask;
         end
-        if (_GEN_490) begin
+        if (_GEN_650) begin
           entries_12_addr <= io_wb_addr;
           entries_12_data <= io_wb_data;
           entries_12_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_457 | _GEN_376) begin
+          if (_GEN_586)
+            entries_12_addr <= io_addr_wb_addr;
+          else if (_GEN_682)
             entries_12_addr <= 32'h0;
+          if (_GEN_682)
             entries_12_data <= 32'h0;
-          end
-          if (_GEN_457)
+          if (_GEN_533)
             entries_12_mask <= io_alloc1_mask;
-          else if (_GEN_376)
+          else if (_GEN_408)
             entries_12_mask <= io_alloc0_mask;
         end
-        if (_GEN_491) begin
+        if (_GEN_651) begin
           entries_13_addr <= io_wb_addr;
           entries_13_data <= io_wb_data;
           entries_13_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_458 | _GEN_378) begin
+          if (_GEN_587)
+            entries_13_addr <= io_addr_wb_addr;
+          else if (_GEN_683)
             entries_13_addr <= 32'h0;
+          if (_GEN_683)
             entries_13_data <= 32'h0;
-          end
-          if (_GEN_458)
+          if (_GEN_535)
             entries_13_mask <= io_alloc1_mask;
-          else if (_GEN_378)
+          else if (_GEN_410)
             entries_13_mask <= io_alloc0_mask;
         end
-        if (_GEN_492) begin
+        if (_GEN_652) begin
           entries_14_addr <= io_wb_addr;
           entries_14_data <= io_wb_data;
           entries_14_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_459 | _GEN_380) begin
+          if (_GEN_588)
+            entries_14_addr <= io_addr_wb_addr;
+          else if (_GEN_684)
             entries_14_addr <= 32'h0;
+          if (_GEN_684)
             entries_14_data <= 32'h0;
-          end
-          if (_GEN_459)
+          if (_GEN_537)
             entries_14_mask <= io_alloc1_mask;
-          else if (_GEN_380)
+          else if (_GEN_412)
             entries_14_mask <= io_alloc0_mask;
         end
-        if (_GEN_493) begin
+        if (_GEN_653) begin
           entries_15_addr <= io_wb_addr;
           entries_15_data <= io_wb_data;
           entries_15_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_460 | _GEN_382) begin
+          if (_GEN_589)
+            entries_15_addr <= io_addr_wb_addr;
+          else if (_GEN_685)
             entries_15_addr <= 32'h0;
+          if (_GEN_685)
             entries_15_data <= 32'h0;
-          end
-          if (_GEN_460)
+          if (_GEN_539)
             entries_15_mask <= io_alloc1_mask;
-          else if (_GEN_382)
+          else if (_GEN_414)
             entries_15_mask <= io_alloc0_mask;
         end
-        if (_GEN_494) begin
+        if (_GEN_654) begin
           entries_16_addr <= io_wb_addr;
           entries_16_data <= io_wb_data;
           entries_16_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_461 | _GEN_384) begin
+          if (_GEN_590)
+            entries_16_addr <= io_addr_wb_addr;
+          else if (_GEN_686)
             entries_16_addr <= 32'h0;
+          if (_GEN_686)
             entries_16_data <= 32'h0;
-          end
-          if (_GEN_461)
+          if (_GEN_541)
             entries_16_mask <= io_alloc1_mask;
-          else if (_GEN_384)
+          else if (_GEN_416)
             entries_16_mask <= io_alloc0_mask;
         end
-        if (_GEN_495) begin
+        if (_GEN_655) begin
           entries_17_addr <= io_wb_addr;
           entries_17_data <= io_wb_data;
           entries_17_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_462 | _GEN_386) begin
+          if (_GEN_591)
+            entries_17_addr <= io_addr_wb_addr;
+          else if (_GEN_687)
             entries_17_addr <= 32'h0;
+          if (_GEN_687)
             entries_17_data <= 32'h0;
-          end
-          if (_GEN_462)
+          if (_GEN_543)
             entries_17_mask <= io_alloc1_mask;
-          else if (_GEN_386)
+          else if (_GEN_418)
             entries_17_mask <= io_alloc0_mask;
         end
-        if (_GEN_496) begin
+        if (_GEN_656) begin
           entries_18_addr <= io_wb_addr;
           entries_18_data <= io_wb_data;
           entries_18_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_463 | _GEN_388) begin
+          if (_GEN_592)
+            entries_18_addr <= io_addr_wb_addr;
+          else if (_GEN_688)
             entries_18_addr <= 32'h0;
+          if (_GEN_688)
             entries_18_data <= 32'h0;
-          end
-          if (_GEN_463)
+          if (_GEN_545)
             entries_18_mask <= io_alloc1_mask;
-          else if (_GEN_388)
+          else if (_GEN_420)
             entries_18_mask <= io_alloc0_mask;
         end
-        if (_GEN_497) begin
+        if (_GEN_657) begin
           entries_19_addr <= io_wb_addr;
           entries_19_data <= io_wb_data;
           entries_19_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_464 | _GEN_390) begin
+          if (_GEN_593)
+            entries_19_addr <= io_addr_wb_addr;
+          else if (_GEN_689)
             entries_19_addr <= 32'h0;
+          if (_GEN_689)
             entries_19_data <= 32'h0;
-          end
-          if (_GEN_464)
+          if (_GEN_547)
             entries_19_mask <= io_alloc1_mask;
-          else if (_GEN_390)
+          else if (_GEN_422)
             entries_19_mask <= io_alloc0_mask;
         end
-        if (_GEN_498) begin
+        if (_GEN_658) begin
           entries_20_addr <= io_wb_addr;
           entries_20_data <= io_wb_data;
           entries_20_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_465 | _GEN_392) begin
+          if (_GEN_594)
+            entries_20_addr <= io_addr_wb_addr;
+          else if (_GEN_690)
             entries_20_addr <= 32'h0;
+          if (_GEN_690)
             entries_20_data <= 32'h0;
-          end
-          if (_GEN_465)
+          if (_GEN_549)
             entries_20_mask <= io_alloc1_mask;
-          else if (_GEN_392)
+          else if (_GEN_424)
             entries_20_mask <= io_alloc0_mask;
         end
-        if (_GEN_499) begin
+        if (_GEN_659) begin
           entries_21_addr <= io_wb_addr;
           entries_21_data <= io_wb_data;
           entries_21_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_466 | _GEN_394) begin
+          if (_GEN_595)
+            entries_21_addr <= io_addr_wb_addr;
+          else if (_GEN_691)
             entries_21_addr <= 32'h0;
+          if (_GEN_691)
             entries_21_data <= 32'h0;
-          end
-          if (_GEN_466)
+          if (_GEN_551)
             entries_21_mask <= io_alloc1_mask;
-          else if (_GEN_394)
+          else if (_GEN_426)
             entries_21_mask <= io_alloc0_mask;
         end
-        if (_GEN_500) begin
+        if (_GEN_660) begin
           entries_22_addr <= io_wb_addr;
           entries_22_data <= io_wb_data;
           entries_22_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_467 | _GEN_396) begin
+          if (_GEN_596)
+            entries_22_addr <= io_addr_wb_addr;
+          else if (_GEN_692)
             entries_22_addr <= 32'h0;
+          if (_GEN_692)
             entries_22_data <= 32'h0;
-          end
-          if (_GEN_467)
+          if (_GEN_553)
             entries_22_mask <= io_alloc1_mask;
-          else if (_GEN_396)
+          else if (_GEN_428)
             entries_22_mask <= io_alloc0_mask;
         end
-        if (_GEN_501) begin
+        if (_GEN_661) begin
           entries_23_addr <= io_wb_addr;
           entries_23_data <= io_wb_data;
           entries_23_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_468 | _GEN_398) begin
+          if (_GEN_597)
+            entries_23_addr <= io_addr_wb_addr;
+          else if (_GEN_693)
             entries_23_addr <= 32'h0;
+          if (_GEN_693)
             entries_23_data <= 32'h0;
-          end
-          if (_GEN_468)
+          if (_GEN_555)
             entries_23_mask <= io_alloc1_mask;
-          else if (_GEN_398)
+          else if (_GEN_430)
             entries_23_mask <= io_alloc0_mask;
         end
-        if (_GEN_502) begin
+        if (_GEN_662) begin
           entries_24_addr <= io_wb_addr;
           entries_24_data <= io_wb_data;
           entries_24_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_469 | _GEN_400) begin
+          if (_GEN_598)
+            entries_24_addr <= io_addr_wb_addr;
+          else if (_GEN_694)
             entries_24_addr <= 32'h0;
+          if (_GEN_694)
             entries_24_data <= 32'h0;
-          end
-          if (_GEN_469)
+          if (_GEN_557)
             entries_24_mask <= io_alloc1_mask;
-          else if (_GEN_400)
+          else if (_GEN_432)
             entries_24_mask <= io_alloc0_mask;
         end
-        if (_GEN_503) begin
+        if (_GEN_663) begin
           entries_25_addr <= io_wb_addr;
           entries_25_data <= io_wb_data;
           entries_25_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_470 | _GEN_402) begin
+          if (_GEN_599)
+            entries_25_addr <= io_addr_wb_addr;
+          else if (_GEN_695)
             entries_25_addr <= 32'h0;
+          if (_GEN_695)
             entries_25_data <= 32'h0;
-          end
-          if (_GEN_470)
+          if (_GEN_559)
             entries_25_mask <= io_alloc1_mask;
-          else if (_GEN_402)
+          else if (_GEN_434)
             entries_25_mask <= io_alloc0_mask;
         end
-        if (_GEN_504) begin
+        if (_GEN_664) begin
           entries_26_addr <= io_wb_addr;
           entries_26_data <= io_wb_data;
           entries_26_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_471 | _GEN_404) begin
+          if (_GEN_600)
+            entries_26_addr <= io_addr_wb_addr;
+          else if (_GEN_696)
             entries_26_addr <= 32'h0;
+          if (_GEN_696)
             entries_26_data <= 32'h0;
-          end
-          if (_GEN_471)
+          if (_GEN_561)
             entries_26_mask <= io_alloc1_mask;
-          else if (_GEN_404)
+          else if (_GEN_436)
             entries_26_mask <= io_alloc0_mask;
         end
-        if (_GEN_505) begin
+        if (_GEN_665) begin
           entries_27_addr <= io_wb_addr;
           entries_27_data <= io_wb_data;
           entries_27_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_472 | _GEN_406) begin
+          if (_GEN_601)
+            entries_27_addr <= io_addr_wb_addr;
+          else if (_GEN_697)
             entries_27_addr <= 32'h0;
+          if (_GEN_697)
             entries_27_data <= 32'h0;
-          end
-          if (_GEN_472)
+          if (_GEN_563)
             entries_27_mask <= io_alloc1_mask;
-          else if (_GEN_406)
+          else if (_GEN_438)
             entries_27_mask <= io_alloc0_mask;
         end
-        if (_GEN_506) begin
+        if (_GEN_666) begin
           entries_28_addr <= io_wb_addr;
           entries_28_data <= io_wb_data;
           entries_28_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_473 | _GEN_408) begin
+          if (_GEN_602)
+            entries_28_addr <= io_addr_wb_addr;
+          else if (_GEN_698)
             entries_28_addr <= 32'h0;
+          if (_GEN_698)
             entries_28_data <= 32'h0;
-          end
-          if (_GEN_473)
+          if (_GEN_565)
             entries_28_mask <= io_alloc1_mask;
-          else if (_GEN_408)
+          else if (_GEN_440)
             entries_28_mask <= io_alloc0_mask;
         end
-        if (_GEN_507) begin
+        if (_GEN_667) begin
           entries_29_addr <= io_wb_addr;
           entries_29_data <= io_wb_data;
           entries_29_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_474 | _GEN_410) begin
+          if (_GEN_603)
+            entries_29_addr <= io_addr_wb_addr;
+          else if (_GEN_699)
             entries_29_addr <= 32'h0;
+          if (_GEN_699)
             entries_29_data <= 32'h0;
-          end
-          if (_GEN_474)
+          if (_GEN_567)
             entries_29_mask <= io_alloc1_mask;
-          else if (_GEN_410)
+          else if (_GEN_442)
             entries_29_mask <= io_alloc0_mask;
         end
-        if (_GEN_508) begin
+        if (_GEN_668) begin
           entries_30_addr <= io_wb_addr;
           entries_30_data <= io_wb_data;
           entries_30_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_475 | _GEN_412) begin
+          if (_GEN_604)
+            entries_30_addr <= io_addr_wb_addr;
+          else if (_GEN_700)
             entries_30_addr <= 32'h0;
+          if (_GEN_700)
             entries_30_data <= 32'h0;
-          end
-          if (_GEN_475)
+          if (_GEN_569)
             entries_30_mask <= io_alloc1_mask;
-          else if (_GEN_412)
+          else if (_GEN_444)
             entries_30_mask <= io_alloc0_mask;
         end
-        if (_GEN_509) begin
+        if (_GEN_669) begin
           entries_31_addr <= io_wb_addr;
           entries_31_data <= io_wb_data;
           entries_31_mask <= io_wb_mask;
         end
         else begin
-          if (_GEN_476 | _GEN_413) begin
+          if (_GEN_605)
+            entries_31_addr <= io_addr_wb_addr;
+          else if (_GEN_701)
             entries_31_addr <= 32'h0;
+          if (_GEN_701)
             entries_31_data <= 32'h0;
-          end
-          if (_GEN_476)
+          if (_GEN_571)
             entries_31_mask <= io_alloc1_mask;
-          else if (_GEN_413)
+          else if (_GEN_445)
             entries_31_mask <= io_alloc0_mask;
         end
       end
       entries_1_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_415 | _GEN_354 | _GEN_290 : _GEN_354 | _GEN_290);
+        & (io_alloc1_valid ? _GEN_479 | _GEN_386 | _GEN_322 : _GEN_386 | _GEN_322);
       entries_1_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_608 | _GEN_575 | _GEN_512 : _GEN_575 | _GEN_512);
+      entries_1_data_ready <=
         ~io_flush_all
-        & (_GEN_479 | ~_GEN_446
-           & (io_alloc0_valid
-                ? ~(_GEN_353 | _GEN_289) & _GEN_256
-                : ~_GEN_289 & _GEN_256));
+        & (_GEN_639 | ~_GEN_511
+           & (io_alloc0_valid ? ~_GEN_447 & _GEN_288 : ~_GEN_321 & _GEN_288));
       entries_2_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_416 | _GEN_356 | _GEN_292 : _GEN_356 | _GEN_292);
+        & (io_alloc1_valid ? _GEN_480 | _GEN_388 | _GEN_324 : _GEN_388 | _GEN_324);
       entries_2_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_609 | _GEN_576 | _GEN_514 : _GEN_576 | _GEN_514);
+      entries_2_data_ready <=
         ~io_flush_all
-        & (_GEN_480 | ~_GEN_447
-           & (io_alloc0_valid
-                ? ~(_GEN_355 | _GEN_291) & _GEN_257
-                : ~_GEN_291 & _GEN_257));
+        & (_GEN_640 | ~_GEN_513
+           & (io_alloc0_valid ? ~_GEN_448 & _GEN_289 : ~_GEN_323 & _GEN_289));
       entries_3_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_417 | _GEN_358 | _GEN_294 : _GEN_358 | _GEN_294);
+        & (io_alloc1_valid ? _GEN_481 | _GEN_390 | _GEN_326 : _GEN_390 | _GEN_326);
       entries_3_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_610 | _GEN_577 | _GEN_516 : _GEN_577 | _GEN_516);
+      entries_3_data_ready <=
         ~io_flush_all
-        & (_GEN_481 | ~_GEN_448
-           & (io_alloc0_valid
-                ? ~(_GEN_357 | _GEN_293) & _GEN_258
-                : ~_GEN_293 & _GEN_258));
+        & (_GEN_641 | ~_GEN_515
+           & (io_alloc0_valid ? ~_GEN_449 & _GEN_290 : ~_GEN_325 & _GEN_290));
       entries_4_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_418 | _GEN_360 | _GEN_296 : _GEN_360 | _GEN_296);
+        & (io_alloc1_valid ? _GEN_482 | _GEN_392 | _GEN_328 : _GEN_392 | _GEN_328);
       entries_4_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_611 | _GEN_578 | _GEN_518 : _GEN_578 | _GEN_518);
+      entries_4_data_ready <=
         ~io_flush_all
-        & (_GEN_482 | ~_GEN_449
-           & (io_alloc0_valid
-                ? ~(_GEN_359 | _GEN_295) & _GEN_259
-                : ~_GEN_295 & _GEN_259));
+        & (_GEN_642 | ~_GEN_517
+           & (io_alloc0_valid ? ~_GEN_450 & _GEN_291 : ~_GEN_327 & _GEN_291));
       entries_5_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_419 | _GEN_362 | _GEN_298 : _GEN_362 | _GEN_298);
+        & (io_alloc1_valid ? _GEN_483 | _GEN_394 | _GEN_330 : _GEN_394 | _GEN_330);
       entries_5_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_612 | _GEN_579 | _GEN_520 : _GEN_579 | _GEN_520);
+      entries_5_data_ready <=
         ~io_flush_all
-        & (_GEN_483 | ~_GEN_450
-           & (io_alloc0_valid
-                ? ~(_GEN_361 | _GEN_297) & _GEN_260
-                : ~_GEN_297 & _GEN_260));
+        & (_GEN_643 | ~_GEN_519
+           & (io_alloc0_valid ? ~_GEN_451 & _GEN_292 : ~_GEN_329 & _GEN_292));
       entries_6_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_420 | _GEN_364 | _GEN_300 : _GEN_364 | _GEN_300);
+        & (io_alloc1_valid ? _GEN_484 | _GEN_396 | _GEN_332 : _GEN_396 | _GEN_332);
       entries_6_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_613 | _GEN_580 | _GEN_522 : _GEN_580 | _GEN_522);
+      entries_6_data_ready <=
         ~io_flush_all
-        & (_GEN_484 | ~_GEN_451
-           & (io_alloc0_valid
-                ? ~(_GEN_363 | _GEN_299) & _GEN_261
-                : ~_GEN_299 & _GEN_261));
+        & (_GEN_644 | ~_GEN_521
+           & (io_alloc0_valid ? ~_GEN_452 & _GEN_293 : ~_GEN_331 & _GEN_293));
       entries_7_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_421 | _GEN_366 | _GEN_302 : _GEN_366 | _GEN_302);
+        & (io_alloc1_valid ? _GEN_485 | _GEN_398 | _GEN_334 : _GEN_398 | _GEN_334);
       entries_7_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_614 | _GEN_581 | _GEN_524 : _GEN_581 | _GEN_524);
+      entries_7_data_ready <=
         ~io_flush_all
-        & (_GEN_485 | ~_GEN_452
-           & (io_alloc0_valid
-                ? ~(_GEN_365 | _GEN_301) & _GEN_262
-                : ~_GEN_301 & _GEN_262));
+        & (_GEN_645 | ~_GEN_523
+           & (io_alloc0_valid ? ~_GEN_453 & _GEN_294 : ~_GEN_333 & _GEN_294));
       entries_8_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_422 | _GEN_368 | _GEN_304 : _GEN_368 | _GEN_304);
+        & (io_alloc1_valid ? _GEN_486 | _GEN_400 | _GEN_336 : _GEN_400 | _GEN_336);
       entries_8_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_615 | _GEN_582 | _GEN_526 : _GEN_582 | _GEN_526);
+      entries_8_data_ready <=
         ~io_flush_all
-        & (_GEN_486 | ~_GEN_453
-           & (io_alloc0_valid
-                ? ~(_GEN_367 | _GEN_303) & _GEN_263
-                : ~_GEN_303 & _GEN_263));
+        & (_GEN_646 | ~_GEN_525
+           & (io_alloc0_valid ? ~_GEN_454 & _GEN_295 : ~_GEN_335 & _GEN_295));
       entries_9_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_423 | _GEN_370 | _GEN_306 : _GEN_370 | _GEN_306);
+        & (io_alloc1_valid ? _GEN_487 | _GEN_402 | _GEN_338 : _GEN_402 | _GEN_338);
       entries_9_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_616 | _GEN_583 | _GEN_528 : _GEN_583 | _GEN_528);
+      entries_9_data_ready <=
         ~io_flush_all
-        & (_GEN_487 | ~_GEN_454
-           & (io_alloc0_valid
-                ? ~(_GEN_369 | _GEN_305) & _GEN_264
-                : ~_GEN_305 & _GEN_264));
+        & (_GEN_647 | ~_GEN_527
+           & (io_alloc0_valid ? ~_GEN_455 & _GEN_296 : ~_GEN_337 & _GEN_296));
       entries_10_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_424 | _GEN_372 | _GEN_308 : _GEN_372 | _GEN_308);
+        & (io_alloc1_valid ? _GEN_488 | _GEN_404 | _GEN_340 : _GEN_404 | _GEN_340);
       entries_10_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_617 | _GEN_584 | _GEN_530 : _GEN_584 | _GEN_530);
+      entries_10_data_ready <=
         ~io_flush_all
-        & (_GEN_488 | ~_GEN_455
-           & (io_alloc0_valid
-                ? ~(_GEN_371 | _GEN_307) & _GEN_265
-                : ~_GEN_307 & _GEN_265));
+        & (_GEN_648 | ~_GEN_529
+           & (io_alloc0_valid ? ~_GEN_456 & _GEN_297 : ~_GEN_339 & _GEN_297));
       entries_11_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_425 | _GEN_374 | _GEN_310 : _GEN_374 | _GEN_310);
+        & (io_alloc1_valid ? _GEN_489 | _GEN_406 | _GEN_342 : _GEN_406 | _GEN_342);
       entries_11_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_618 | _GEN_585 | _GEN_532 : _GEN_585 | _GEN_532);
+      entries_11_data_ready <=
         ~io_flush_all
-        & (_GEN_489 | ~_GEN_456
-           & (io_alloc0_valid
-                ? ~(_GEN_373 | _GEN_309) & _GEN_266
-                : ~_GEN_309 & _GEN_266));
+        & (_GEN_649 | ~_GEN_531
+           & (io_alloc0_valid ? ~_GEN_457 & _GEN_298 : ~_GEN_341 & _GEN_298));
       entries_12_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_426 | _GEN_376 | _GEN_312 : _GEN_376 | _GEN_312);
+        & (io_alloc1_valid ? _GEN_490 | _GEN_408 | _GEN_344 : _GEN_408 | _GEN_344);
       entries_12_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_619 | _GEN_586 | _GEN_534 : _GEN_586 | _GEN_534);
+      entries_12_data_ready <=
         ~io_flush_all
-        & (_GEN_490 | ~_GEN_457
-           & (io_alloc0_valid
-                ? ~(_GEN_375 | _GEN_311) & _GEN_267
-                : ~_GEN_311 & _GEN_267));
+        & (_GEN_650 | ~_GEN_533
+           & (io_alloc0_valid ? ~_GEN_458 & _GEN_299 : ~_GEN_343 & _GEN_299));
       entries_13_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_427 | _GEN_378 | _GEN_314 : _GEN_378 | _GEN_314);
+        & (io_alloc1_valid ? _GEN_491 | _GEN_410 | _GEN_346 : _GEN_410 | _GEN_346);
       entries_13_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_620 | _GEN_587 | _GEN_536 : _GEN_587 | _GEN_536);
+      entries_13_data_ready <=
         ~io_flush_all
-        & (_GEN_491 | ~_GEN_458
-           & (io_alloc0_valid
-                ? ~(_GEN_377 | _GEN_313) & _GEN_268
-                : ~_GEN_313 & _GEN_268));
+        & (_GEN_651 | ~_GEN_535
+           & (io_alloc0_valid ? ~_GEN_459 & _GEN_300 : ~_GEN_345 & _GEN_300));
       entries_14_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_428 | _GEN_380 | _GEN_316 : _GEN_380 | _GEN_316);
+        & (io_alloc1_valid ? _GEN_492 | _GEN_412 | _GEN_348 : _GEN_412 | _GEN_348);
       entries_14_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_621 | _GEN_588 | _GEN_538 : _GEN_588 | _GEN_538);
+      entries_14_data_ready <=
         ~io_flush_all
-        & (_GEN_492 | ~_GEN_459
-           & (io_alloc0_valid
-                ? ~(_GEN_379 | _GEN_315) & _GEN_269
-                : ~_GEN_315 & _GEN_269));
+        & (_GEN_652 | ~_GEN_537
+           & (io_alloc0_valid ? ~_GEN_460 & _GEN_301 : ~_GEN_347 & _GEN_301));
       entries_15_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_429 | _GEN_382 | _GEN_318 : _GEN_382 | _GEN_318);
+        & (io_alloc1_valid ? _GEN_493 | _GEN_414 | _GEN_350 : _GEN_414 | _GEN_350);
       entries_15_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_622 | _GEN_589 | _GEN_540 : _GEN_589 | _GEN_540);
+      entries_15_data_ready <=
         ~io_flush_all
-        & (_GEN_493 | ~_GEN_460
-           & (io_alloc0_valid
-                ? ~(_GEN_381 | _GEN_317) & _GEN_270
-                : ~_GEN_317 & _GEN_270));
+        & (_GEN_653 | ~_GEN_539
+           & (io_alloc0_valid ? ~_GEN_461 & _GEN_302 : ~_GEN_349 & _GEN_302));
       entries_16_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_430 | _GEN_384 | _GEN_320 : _GEN_384 | _GEN_320);
+        & (io_alloc1_valid ? _GEN_494 | _GEN_416 | _GEN_352 : _GEN_416 | _GEN_352);
       entries_16_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_623 | _GEN_590 | _GEN_542 : _GEN_590 | _GEN_542);
+      entries_16_data_ready <=
         ~io_flush_all
-        & (_GEN_494 | ~_GEN_461
-           & (io_alloc0_valid
-                ? ~(_GEN_383 | _GEN_319) & _GEN_271
-                : ~_GEN_319 & _GEN_271));
+        & (_GEN_654 | ~_GEN_541
+           & (io_alloc0_valid ? ~_GEN_462 & _GEN_303 : ~_GEN_351 & _GEN_303));
       entries_17_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_431 | _GEN_386 | _GEN_322 : _GEN_386 | _GEN_322);
+        & (io_alloc1_valid ? _GEN_495 | _GEN_418 | _GEN_354 : _GEN_418 | _GEN_354);
       entries_17_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_624 | _GEN_591 | _GEN_544 : _GEN_591 | _GEN_544);
+      entries_17_data_ready <=
         ~io_flush_all
-        & (_GEN_495 | ~_GEN_462
-           & (io_alloc0_valid
-                ? ~(_GEN_385 | _GEN_321) & _GEN_272
-                : ~_GEN_321 & _GEN_272));
+        & (_GEN_655 | ~_GEN_543
+           & (io_alloc0_valid ? ~_GEN_463 & _GEN_304 : ~_GEN_353 & _GEN_304));
       entries_18_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_432 | _GEN_388 | _GEN_324 : _GEN_388 | _GEN_324);
+        & (io_alloc1_valid ? _GEN_496 | _GEN_420 | _GEN_356 : _GEN_420 | _GEN_356);
       entries_18_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_625 | _GEN_592 | _GEN_546 : _GEN_592 | _GEN_546);
+      entries_18_data_ready <=
         ~io_flush_all
-        & (_GEN_496 | ~_GEN_463
-           & (io_alloc0_valid
-                ? ~(_GEN_387 | _GEN_323) & _GEN_273
-                : ~_GEN_323 & _GEN_273));
+        & (_GEN_656 | ~_GEN_545
+           & (io_alloc0_valid ? ~_GEN_464 & _GEN_305 : ~_GEN_355 & _GEN_305));
       entries_19_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_433 | _GEN_390 | _GEN_326 : _GEN_390 | _GEN_326);
+        & (io_alloc1_valid ? _GEN_497 | _GEN_422 | _GEN_358 : _GEN_422 | _GEN_358);
       entries_19_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_626 | _GEN_593 | _GEN_548 : _GEN_593 | _GEN_548);
+      entries_19_data_ready <=
         ~io_flush_all
-        & (_GEN_497 | ~_GEN_464
-           & (io_alloc0_valid
-                ? ~(_GEN_389 | _GEN_325) & _GEN_274
-                : ~_GEN_325 & _GEN_274));
+        & (_GEN_657 | ~_GEN_547
+           & (io_alloc0_valid ? ~_GEN_465 & _GEN_306 : ~_GEN_357 & _GEN_306));
       entries_20_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_434 | _GEN_392 | _GEN_328 : _GEN_392 | _GEN_328);
+        & (io_alloc1_valid ? _GEN_498 | _GEN_424 | _GEN_360 : _GEN_424 | _GEN_360);
       entries_20_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_627 | _GEN_594 | _GEN_550 : _GEN_594 | _GEN_550);
+      entries_20_data_ready <=
         ~io_flush_all
-        & (_GEN_498 | ~_GEN_465
-           & (io_alloc0_valid
-                ? ~(_GEN_391 | _GEN_327) & _GEN_275
-                : ~_GEN_327 & _GEN_275));
+        & (_GEN_658 | ~_GEN_549
+           & (io_alloc0_valid ? ~_GEN_466 & _GEN_307 : ~_GEN_359 & _GEN_307));
       entries_21_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_435 | _GEN_394 | _GEN_330 : _GEN_394 | _GEN_330);
+        & (io_alloc1_valid ? _GEN_499 | _GEN_426 | _GEN_362 : _GEN_426 | _GEN_362);
       entries_21_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_628 | _GEN_595 | _GEN_552 : _GEN_595 | _GEN_552);
+      entries_21_data_ready <=
         ~io_flush_all
-        & (_GEN_499 | ~_GEN_466
-           & (io_alloc0_valid
-                ? ~(_GEN_393 | _GEN_329) & _GEN_276
-                : ~_GEN_329 & _GEN_276));
+        & (_GEN_659 | ~_GEN_551
+           & (io_alloc0_valid ? ~_GEN_467 & _GEN_308 : ~_GEN_361 & _GEN_308));
       entries_22_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_436 | _GEN_396 | _GEN_332 : _GEN_396 | _GEN_332);
+        & (io_alloc1_valid ? _GEN_500 | _GEN_428 | _GEN_364 : _GEN_428 | _GEN_364);
       entries_22_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_629 | _GEN_596 | _GEN_554 : _GEN_596 | _GEN_554);
+      entries_22_data_ready <=
         ~io_flush_all
-        & (_GEN_500 | ~_GEN_467
-           & (io_alloc0_valid
-                ? ~(_GEN_395 | _GEN_331) & _GEN_277
-                : ~_GEN_331 & _GEN_277));
+        & (_GEN_660 | ~_GEN_553
+           & (io_alloc0_valid ? ~_GEN_468 & _GEN_309 : ~_GEN_363 & _GEN_309));
       entries_23_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_437 | _GEN_398 | _GEN_334 : _GEN_398 | _GEN_334);
+        & (io_alloc1_valid ? _GEN_501 | _GEN_430 | _GEN_366 : _GEN_430 | _GEN_366);
       entries_23_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_630 | _GEN_597 | _GEN_556 : _GEN_597 | _GEN_556);
+      entries_23_data_ready <=
         ~io_flush_all
-        & (_GEN_501 | ~_GEN_468
-           & (io_alloc0_valid
-                ? ~(_GEN_397 | _GEN_333) & _GEN_278
-                : ~_GEN_333 & _GEN_278));
+        & (_GEN_661 | ~_GEN_555
+           & (io_alloc0_valid ? ~_GEN_469 & _GEN_310 : ~_GEN_365 & _GEN_310));
       entries_24_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_438 | _GEN_400 | _GEN_336 : _GEN_400 | _GEN_336);
+        & (io_alloc1_valid ? _GEN_502 | _GEN_432 | _GEN_368 : _GEN_432 | _GEN_368);
       entries_24_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_631 | _GEN_598 | _GEN_558 : _GEN_598 | _GEN_558);
+      entries_24_data_ready <=
         ~io_flush_all
-        & (_GEN_502 | ~_GEN_469
-           & (io_alloc0_valid
-                ? ~(_GEN_399 | _GEN_335) & _GEN_279
-                : ~_GEN_335 & _GEN_279));
+        & (_GEN_662 | ~_GEN_557
+           & (io_alloc0_valid ? ~_GEN_470 & _GEN_311 : ~_GEN_367 & _GEN_311));
       entries_25_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_439 | _GEN_402 | _GEN_338 : _GEN_402 | _GEN_338);
+        & (io_alloc1_valid ? _GEN_503 | _GEN_434 | _GEN_370 : _GEN_434 | _GEN_370);
       entries_25_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_632 | _GEN_599 | _GEN_560 : _GEN_599 | _GEN_560);
+      entries_25_data_ready <=
         ~io_flush_all
-        & (_GEN_503 | ~_GEN_470
-           & (io_alloc0_valid
-                ? ~(_GEN_401 | _GEN_337) & _GEN_280
-                : ~_GEN_337 & _GEN_280));
+        & (_GEN_663 | ~_GEN_559
+           & (io_alloc0_valid ? ~_GEN_471 & _GEN_312 : ~_GEN_369 & _GEN_312));
       entries_26_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_440 | _GEN_404 | _GEN_340 : _GEN_404 | _GEN_340);
+        & (io_alloc1_valid ? _GEN_504 | _GEN_436 | _GEN_372 : _GEN_436 | _GEN_372);
       entries_26_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_633 | _GEN_600 | _GEN_562 : _GEN_600 | _GEN_562);
+      entries_26_data_ready <=
         ~io_flush_all
-        & (_GEN_504 | ~_GEN_471
-           & (io_alloc0_valid
-                ? ~(_GEN_403 | _GEN_339) & _GEN_281
-                : ~_GEN_339 & _GEN_281));
+        & (_GEN_664 | ~_GEN_561
+           & (io_alloc0_valid ? ~_GEN_472 & _GEN_313 : ~_GEN_371 & _GEN_313));
       entries_27_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_441 | _GEN_406 | _GEN_342 : _GEN_406 | _GEN_342);
+        & (io_alloc1_valid ? _GEN_505 | _GEN_438 | _GEN_374 : _GEN_438 | _GEN_374);
       entries_27_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_634 | _GEN_601 | _GEN_564 : _GEN_601 | _GEN_564);
+      entries_27_data_ready <=
         ~io_flush_all
-        & (_GEN_505 | ~_GEN_472
-           & (io_alloc0_valid
-                ? ~(_GEN_405 | _GEN_341) & _GEN_282
-                : ~_GEN_341 & _GEN_282));
+        & (_GEN_665 | ~_GEN_563
+           & (io_alloc0_valid ? ~_GEN_473 & _GEN_314 : ~_GEN_373 & _GEN_314));
       entries_28_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_442 | _GEN_408 | _GEN_344 : _GEN_408 | _GEN_344);
+        & (io_alloc1_valid ? _GEN_506 | _GEN_440 | _GEN_376 : _GEN_440 | _GEN_376);
       entries_28_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_635 | _GEN_602 | _GEN_566 : _GEN_602 | _GEN_566);
+      entries_28_data_ready <=
         ~io_flush_all
-        & (_GEN_506 | ~_GEN_473
-           & (io_alloc0_valid
-                ? ~(_GEN_407 | _GEN_343) & _GEN_283
-                : ~_GEN_343 & _GEN_283));
+        & (_GEN_666 | ~_GEN_565
+           & (io_alloc0_valid ? ~_GEN_474 & _GEN_315 : ~_GEN_375 & _GEN_315));
       entries_29_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_443 | _GEN_410 | _GEN_346 : _GEN_410 | _GEN_346);
+        & (io_alloc1_valid ? _GEN_507 | _GEN_442 | _GEN_378 : _GEN_442 | _GEN_378);
       entries_29_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_636 | _GEN_603 | _GEN_568 : _GEN_603 | _GEN_568);
+      entries_29_data_ready <=
         ~io_flush_all
-        & (_GEN_507 | ~_GEN_474
-           & (io_alloc0_valid
-                ? ~(_GEN_409 | _GEN_345) & _GEN_284
-                : ~_GEN_345 & _GEN_284));
+        & (_GEN_667 | ~_GEN_567
+           & (io_alloc0_valid ? ~_GEN_475 & _GEN_316 : ~_GEN_377 & _GEN_316));
       entries_30_valid <=
         ~io_flush_all
-        & (io_alloc1_valid ? _GEN_444 | _GEN_412 | _GEN_348 : _GEN_412 | _GEN_348);
+        & (io_alloc1_valid ? _GEN_508 | _GEN_444 | _GEN_380 : _GEN_444 | _GEN_380);
       entries_30_addr_ready <=
+        ~io_flush_all & (_GEN_606 ? _GEN_637 | _GEN_604 | _GEN_570 : _GEN_604 | _GEN_570);
+      entries_30_data_ready <=
         ~io_flush_all
-        & (_GEN_508 | ~_GEN_475
-           & (io_alloc0_valid
-                ? ~(_GEN_411 | _GEN_347) & _GEN_285
-                : ~_GEN_347 & _GEN_285));
+        & (_GEN_668 | ~_GEN_569
+           & (io_alloc0_valid ? ~_GEN_476 & _GEN_317 : ~_GEN_379 & _GEN_317));
       entries_31_valid <=
         ~io_flush_all
         & (io_alloc1_valid
-             ? (&io_alloc1_rob) | _GEN_413 | _GEN_350
-             : _GEN_413 | _GEN_350);
+             ? (&io_alloc1_rob) | _GEN_445 | _GEN_382
+             : _GEN_445 | _GEN_382);
       entries_31_addr_ready <=
         ~io_flush_all
-        & (_GEN_509 | ~_GEN_476
-           & (io_alloc0_valid
-                ? ~((&io_alloc0_rob) | _GEN_349) & _GEN_286
-                : ~_GEN_349 & _GEN_286));
+        & (_GEN_606 ? (&io_wb_rob) | _GEN_605 | _GEN_572 : _GEN_605 | _GEN_572);
+      entries_31_data_ready <=
+        ~io_flush_all
+        & (_GEN_669 | ~_GEN_571
+           & (io_alloc0_valid ? ~_GEN_477 & _GEN_318 : ~_GEN_381 & _GEN_318));
     end
   end // always @(posedge)
   assign io_unresolved_mask =
@@ -13997,7 +15271,8 @@ module StoreQueue(
      entries_1_valid & ~entries_1_addr_ready,
      entries_0_valid & ~entries_0_addr_ready};
   assign io_fwd_valid =
-    _query0_covered_T == _query0_loadMask_T[3:0] & ~(|_query0_waitUnknown_T);
+    _query0_covered_T == _query0_loadMask_T[3:0] & ~(|_query0_waitUnknown_T)
+    & ~(|_query0_waitData_T);
   assign io_partial_data =
     {_GEN_151 | _GEN_152 | _GEN_153 | _GEN_154 | _GEN_155 | _GEN_156 | _GEN_157
        | _GEN_158,
@@ -14009,9 +15284,42 @@ module StoreQueue(
        | _GEN_134};
   assign io_partial_mask = query0_10;
   assign io_wait_load =
-    (|_query0_waitUnknown_T) | (|_query0_covered_T)
+    (|{query0_unknownHits_31,
+       query0_unknownHits_30,
+       query0_unknownHits_29,
+       query0_unknownHits_28,
+       query0_unknownHits_27,
+       query0_unknownHits_26,
+       query0_unknownHits_25,
+       query0_unknownHits_24,
+       query0_unknownHits_23,
+       query0_unknownHits_22,
+       query0_unknownHits_21,
+       query0_unknownHits_20,
+       query0_unknownHits_19,
+       query0_unknownHits_18,
+       query0_unknownHits_17,
+       query0_unknownHits_16,
+       query0_unknownHits_15,
+       query0_unknownHits_14,
+       query0_unknownHits_13,
+       query0_unknownHits_12,
+       query0_unknownHits_11,
+       query0_unknownHits_10,
+       query0_unknownHits_9,
+       query0_unknownHits_8,
+       query0_unknownHits_7,
+       query0_unknownHits_6,
+       query0_unknownHits_5,
+       query0_unknownHits_4,
+       query0_unknownHits_3,
+       query0_unknownHits_2,
+       query0_unknownHits_1,
+       query0_unknownHits_0,
+       _query0_waitData_T}) | (|_query0_covered_T)
     & _query0_covered_T != _query0_loadMask_T[3:0];
   assign io_wait_unknown = |_query0_waitUnknown_T;
+  assign io_wait_data = |_query0_waitData_T;
   assign io_has_fwd_candidate = |_query0_covered_T;
   assign io_older_unresolved_mask =
     {query0_unknownHits_31,
@@ -14089,6 +15397,7 @@ module StoreQueue(
       query1_unknownHits_2,
       query1_unknownHits_1,
       query1_unknownHits_0};
+  assign io_wait1_data = |(query1_pendingDataMask & _query1_loadMask_T[3:0]);
   assign io_has_fwd1_candidate = |(query1_10 & _query1_loadMask_T[3:0]);
   assign io_older_unresolved1_mask =
     {query1_unknownHits_31,

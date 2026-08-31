@@ -8,6 +8,7 @@ import common.OoOParams
 class StoreQueueEntry extends Bundle {
   val valid = Bool()
   val addr_ready = Bool()
+  val data_ready = Bool()
   val addr = UInt(32.W)
   val data = UInt(32.W)
   val mask = UInt(4.W)
@@ -34,6 +35,9 @@ class StoreQueueIO extends Bundle {
   val wb1_data  = Input(UInt(32.W))
   val wb1_mask  = Input(UInt(4.W))
 
+  val addr_wb_valid = Input(Bool())
+  val addr_wb_rob = Input(UInt(OoOParams.ROB_PTR_W.W))
+  val addr_wb_addr = Input(UInt(32.W))
   val commit_valid = Input(Bool())
   val commit_rob   = Input(UInt(OoOParams.ROB_PTR_W.W))
   val commit1_valid = Input(Bool())
@@ -61,6 +65,7 @@ class StoreQueueIO extends Bundle {
   val wait_load = Output(Bool())
   val wait_unknown = Output(Bool())
   val wait_partial = Output(Bool())
+  val wait_data = Output(Bool())
   val has_fwd_candidate = Output(Bool())
   val older_unresolved_mask = Output(UInt(OoOParams.ROB_SIZE.W))
   val fwd1_valid = Output(Bool())
@@ -71,6 +76,7 @@ class StoreQueueIO extends Bundle {
   val wait1_load = Output(Bool())
   val wait1_unknown = Output(Bool())
   val wait1_partial = Output(Bool())
+  val wait1_data = Output(Bool())
   val has_fwd1_candidate = Output(Bool())
   val older_unresolved1_mask = Output(UInt(OoOParams.ROB_SIZE.W))
 }
@@ -111,6 +117,7 @@ class StoreQueue extends Module {
     for (i <- 0 until n) {
       entries(i).valid := false.B
       entries(i).addr_ready := false.B
+      entries(i).data_ready := false.B
     }
   }.otherwise {
     when(io.flush) {
@@ -121,6 +128,7 @@ class StoreQueue extends Module {
         when(entries(i).valid && (idxAge > flushAge)) {
           entries(i).valid := false.B
           entries(i).addr_ready := false.B
+          entries(i).data_ready := false.B
         }
       }
     }
@@ -128,15 +136,18 @@ class StoreQueue extends Module {
     when(io.commit_valid) {
       entries(io.commit_rob).valid := false.B
       entries(io.commit_rob).addr_ready := false.B
+      entries(io.commit_rob).data_ready := false.B
     }
     when(io.commit1_valid) {
       entries(io.commit1_rob).valid := false.B
       entries(io.commit1_rob).addr_ready := false.B
+      entries(io.commit1_rob).data_ready := false.B
     }
 
     when(io.alloc0_valid) {
       entries(io.alloc0_rob).valid := true.B
       entries(io.alloc0_rob).addr_ready := false.B
+      entries(io.alloc0_rob).data_ready := false.B
       entries(io.alloc0_rob).addr := 0.U
       entries(io.alloc0_rob).data := 0.U
       entries(io.alloc0_rob).mask := io.alloc0_mask
@@ -145,19 +156,26 @@ class StoreQueue extends Module {
     when(io.alloc1_valid) {
       entries(io.alloc1_rob).valid := true.B
       entries(io.alloc1_rob).addr_ready := false.B
+      entries(io.alloc1_rob).data_ready := false.B
       entries(io.alloc1_rob).addr := 0.U
       entries(io.alloc1_rob).data := 0.U
       entries(io.alloc1_rob).mask := io.alloc1_mask
     }
 
+    when(io.addr_wb_valid && entries(io.addr_wb_rob).valid) {
+      entries(io.addr_wb_rob).addr_ready := true.B
+      entries(io.addr_wb_rob).addr := io.addr_wb_addr
+    }
     when(io.wb_valid && entries(io.wb_rob).valid) {
       entries(io.wb_rob).addr_ready := true.B
+      entries(io.wb_rob).data_ready := true.B
       entries(io.wb_rob).addr := io.wb_addr
       entries(io.wb_rob).data := io.wb_data
       entries(io.wb_rob).mask := io.wb_mask
     }
     when(io.wb1_valid && entries(io.wb1_rob).valid) {
       entries(io.wb1_rob).addr_ready := true.B
+      entries(io.wb1_rob).data_ready := true.B
       entries(io.wb1_rob).addr := io.wb1_addr
       entries(io.wb1_rob).data := io.wb1_data
       entries(io.wb1_rob).mask := io.wb1_mask
@@ -168,10 +186,11 @@ class StoreQueue extends Module {
   }).asUInt
 
   def loadQuery(valid: Bool, rob: UInt, addr: UInt, memRd: UInt):
-      (Bool, Bool, Bool, Bool, UInt, Bool, UInt, Bool, UInt, UInt) = {
+      (Bool, Bool, Bool, Bool, UInt, Bool, UInt, Bool, UInt, UInt, Bool) = {
     val ldAge = age(rob)
     val unknownHits = Wire(Vec(n, Bool()))
     val knownByteHits = Wire(Vec(4, Vec(n, Bool())))
+    val pendingDataByteHits = Wire(Vec(4, Vec(n, Bool())))
     val normalizedData = Wire(Vec(n, UInt(32.W)))
     val storeAges = Wire(Vec(n, UInt(OoOParams.ROB_PTR_W.W)))
 
@@ -187,7 +206,10 @@ class StoreQueue extends Module {
       normalizedData(i) := storeShiftData(e.data, e.addr)
       storeAges(i) := eAge
       for (b <- 0 until 4) {
-        knownByteHits(b)(i) := valid && olderStore && sameWord && storeMask(b)
+        knownByteHits(b)(i) := valid && olderStore && e.data_ready &&
+          sameWord && storeMask(b)
+        pendingDataByteHits(b)(i) := valid && olderStore && !e.data_ready &&
+          sameWord && storeMask(b)
       }
     }
 
@@ -209,16 +231,19 @@ class StoreQueue extends Module {
     val mergedMaskUInt = mergedMask.asUInt
     val loadMask = loadMaskBytes(memRd, addr)
     val waitUnknown = unknownHits.asUInt.orR
+    val pendingDataMask = VecInit((0 until 4).map(b =>
+      pendingDataByteHits(b).asUInt.orR)).asUInt
+    val waitData = (pendingDataMask & loadMask).orR
     val overlap = (mergedMaskUInt & loadMask).orR
     val covered = (mergedMaskUInt & loadMask) === loadMask
     val waitPartial = overlap && !covered
-    val waitLoad = waitUnknown || waitPartial
-    val fwdValid = covered && !waitUnknown
+    val waitLoad = waitUnknown || waitData || waitPartial
+    val fwdValid = covered && !waitUnknown && !waitData
     val fwdData = mergedData >> (addr(1, 0) << 3)
     val partialValid = overlap && !covered
     (waitLoad, waitUnknown, waitPartial, overlap,
       unknownHits.asUInt, fwdValid, fwdData,
-      partialValid, mergedData, mergedMaskUInt)
+      partialValid, mergedData, mergedMaskUInt, waitData)
   }
 
   val query0 = loadQuery(io.ld_valid, io.ld_rob, io.ld_addr, io.ld_mem_rd)
@@ -232,6 +257,7 @@ class StoreQueue extends Module {
   io.partial_valid := query0._8
   io.partial_data := query0._9
   io.partial_mask := query0._10
+  io.wait_data := query0._11
 
   val query1 = loadQuery(io.ld1_valid, io.ld1_rob, io.ld1_addr, io.ld1_mem_rd)
   io.wait1_load := query1._1
@@ -244,4 +270,5 @@ class StoreQueue extends Module {
   io.partial1_valid := query1._8
   io.partial1_data := query1._9
   io.partial1_mask := query1._10
+  io.wait1_data := query1._11
 }

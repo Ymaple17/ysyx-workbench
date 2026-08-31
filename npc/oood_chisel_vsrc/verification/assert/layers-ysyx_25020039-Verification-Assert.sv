@@ -52,7 +52,7 @@ bind FTQ FTQ_Verification_Assert verification_assert (
   .willFree_0       (willFree_0),
   .willFree_3       (willFree_3),
   .willFree_2       (willFree_2),
-  .prefix           (casez_tmp_23),
+  .prefix           (casez_tmp_26),
   .io_commit0Valid  (io_commit0Valid),
   .io_commit1Valid  (io_commit1Valid),
   .io_commit2Valid  (io_commit2Valid),
@@ -62,10 +62,18 @@ bind FTQ FTQ_Verification_Assert verification_assert (
   .io_recoverSlot   (io_recoverSlot),
   ._GEN_1           (1'h1),
   ._GEN_2           (5'h1),
-  ._GEN_3           (casez_tmp_1),
-  ._GEN_4           (casez_tmp_22),
+  ._GEN_3           (casez_tmp_4),
+  ._GEN_4           (casez_tmp_25),
   ._GEN_5           (~io_recoverValid_0),
   .clock            (clock)
+);
+bind CommittedTraceCache CommittedTraceCache_Verification_Assert verification_assert (
+  .reset       (reset),
+  .io_hit      (casez_tmp_66 & casez_tmp == io_lookupPc & casez_tmp_0 == io_lookupContext
+                & casez_tmp_131[1]),
+  .io_pc_0     (casez_tmp_1),
+  .io_lookupPc (io_lookupPc),
+  .clock       (clock)
 );
 bind IFU IFU_Verification_Assert verification_assert (
   .reset               (reset),
@@ -74,6 +82,10 @@ bind IFU IFU_Verification_Assert verification_assert (
   ._GEN                (work),
   ._GEN_0              (~io_bp_recover_valid),
   .ftq_io_recoverValid (_ftq_io_recoverValid),
+  ._GEN_1              ({_ftq_io_recover_validMask[3]
+                           & _ftq_io_recover_lanePc_3 == io_bp_recover_pc,
+                         recoverLaneHit_2}),
+  ._GEN_2              ({recoverLaneHit_1, recoverLaneHit_0}),
   .clock               (clock)
 );
 bind SpecLoadTracker SpecLoadTracker_Verification_Assert verification_assert (
@@ -113,9 +125,9 @@ bind SpecLoadTracker SpecLoadTracker_Verification_Assert verification_assert (
   .valid_0          (valid_0),
   .io_track1_robIdx (io_track1_robIdx),
   .io_track0Valid   (io_track0Valid),
-  ._GEN             (_GEN_68),
+  ._GEN             (_GEN_103),
   .clock            (clock),
-  ._GEN_0           (_GEN_69)
+  ._GEN_0           (_GEN_104)
 );
 bind LoadQueue LoadQueue_Verification_Assert verification_assert (
   .reset                       (reset),
@@ -268,113 +280,117 @@ bind WideROB WideROB_Verification_Assert verification_assert (
   .clock             (clock)
 );
 bind WideRS WideRS_Verification_Assert verification_assert (
-  .reset                            (reset),
-  .io_enq_fire_0                    (io_enq_fire_0),
-  .allocAccept_0                    (allocAccept_0),
-  .io_enq_fire_1                    (io_enq_fire_1),
-  .allocAccept_1                    (allocAccept_1),
-  .io_enq_fire_2                    (io_enq_fire_2),
-  .allocAccept_2                    (allocAccept_2),
-  .io_enq_fire_3                    (io_enq_fire_3),
-  .allocAccept_3                    (allocAccept_3),
-  .io_issue_alu_bits_0_rob_idx      (io_issue_alu_bits_0_rob_idx_0),
-  .io_issue_alu_bits_1_rob_idx      (io_issue_alu_bits_1_rob_idx_0),
-  .io_issue_alu_fire_0              (io_issue_alu_fire_0),
-  .io_issue_alu_fire_1              (io_issue_alu_fire_1),
-  .io_issue_alu_bits_2_rob_idx      (io_issue_alu_bits_2_rob_idx_0),
-  .io_issue_alu_fire_2              (io_issue_alu_fire_2),
-  .io_issue_alu_bits_3_rob_idx      (io_issue_alu_bits_3_rob_idx_0),
-  .io_issue_alu_fire_3              (io_issue_alu_fire_3),
-  .io_issue_lsu1_bits_lsu_mem_write (lsu1Bits_lsu_mem_write),
-  .io_issue_lsu1_fire               (io_issue_lsu1_fire),
-  .io_issue_lsu_fire                (io_issue_lsu_fire),
-  .io_issue_lsu_idx                 ((|_residentLsu_T)
-                                       ? (lsuSelect_0
-                                            ? 4'h0
-                                            : lsuSelect_1
-                                                ? 4'h1
-                                                : lsuSelect_2
-                                                    ? 4'h2
-                                                    : lsuSelect_3
-                                                        ? 4'h3
-                                                        : lsuSelect_4
-                                                            ? 4'h4
-                                                            : lsuSelect_5
-                                                                ? 4'h5
-                                                                : lsuSelect_6
-                                                                    ? 4'h6
-                                                                    : lsuSelect_7
-                                                                        ? 4'h7
-                                                                        : lsuSelect_8
-                                                                            ? 4'h8
-                                                                            : lsuSelect_9
-                                                                                ? 4'h9
-                                                                                : lsuSelect_10
-                                                                                    ? 4'hA
-                                                                                    : lsuSelect_11
-                                                                                        ? 4'hB
-                                                                                        : lsuSelect_12
-                                                                                            ? 4'hC
-                                                                                            : lsuSelect_13
-                                                                                                ? 4'hD
-                                                                                                : {3'h7,
-                                                                                                   ~lsuSelect_14})
-                                       : (~(lsuFreshGrant[0]) | allocMask_0[0]
-                                            ? 4'h0
-                                            : _io_enq_idx_0_T_29)
-                                         | (~(lsuFreshGrant[1]) | allocMask_1[0]
-                                              ? 4'h0
-                                              : _io_enq_idx_1_T_29)
-                                         | (~(lsuFreshGrant[2]) | allocMask_2[0]
-                                              ? 4'h0
-                                              : _io_enq_idx_2_T_29)
-                                         | (~(lsuFreshGrant[3]) | allocMask_3[0]
-                                              ? 4'h0
-                                              : _io_enq_idx_3_T_29)),
-  .io_issue_lsu1_idx                ((|_residentLsu1_T)
-                                       ? (lsuSelect1_0
-                                            ? 4'h0
-                                            : lsuSelect1_1
-                                                ? 4'h1
-                                                : lsuSelect1_2
-                                                    ? 4'h2
-                                                    : lsuSelect1_3
-                                                        ? 4'h3
-                                                        : lsuSelect1_4
-                                                            ? 4'h4
-                                                            : lsuSelect1_5
-                                                                ? 4'h5
-                                                                : lsuSelect1_6
-                                                                    ? 4'h6
-                                                                    : lsuSelect1_7
-                                                                        ? 4'h7
-                                                                        : lsuSelect1_8
-                                                                            ? 4'h8
-                                                                            : lsuSelect1_9
-                                                                                ? 4'h9
-                                                                                : lsuSelect1_10
-                                                                                    ? 4'hA
-                                                                                    : lsuSelect1_11
-                                                                                        ? 4'hB
-                                                                                        : lsuSelect1_12
-                                                                                            ? 4'hC
-                                                                                            : lsuSelect1_13
-                                                                                                ? 4'hD
-                                                                                                : {3'h7,
-                                                                                                   ~lsuSelect1_14})
-                                       : (~(lsu1FreshGrant[0]) | allocMask_0[0]
-                                            ? 4'h0
-                                            : _io_enq_idx_0_T_29)
-                                         | (~(lsu1FreshGrant[1]) | allocMask_1[0]
-                                              ? 4'h0
-                                              : _io_enq_idx_1_T_29)
-                                         | (~(lsu1FreshGrant[2]) | allocMask_2[0]
-                                              ? 4'h0
-                                              : _io_enq_idx_2_T_29)
-                                         | (~(lsu1FreshGrant[3]) | allocMask_3[0]
-                                              ? 4'h0
-                                              : _io_enq_idx_3_T_29)),
-  .clock                            (clock)
+  .reset                                  (reset),
+  .io_enq_fire_0                          (io_enq_fire_0),
+  .allocAccept_0                          (allocAccept_0),
+  .io_enq_fire_1                          (io_enq_fire_1),
+  .allocAccept_1                          (allocAccept_1),
+  .io_enq_fire_2                          (io_enq_fire_2),
+  .allocAccept_2                          (allocAccept_2),
+  .io_enq_fire_3                          (io_enq_fire_3),
+  .allocAccept_3                          (allocAccept_3),
+  .io_issue_alu_bits_0_rob_idx            (io_issue_alu_bits_0_rob_idx_0),
+  .io_issue_alu_bits_1_rob_idx            (io_issue_alu_bits_1_rob_idx_0),
+  .io_issue_alu_fire_0                    (io_issue_alu_fire_0),
+  .io_issue_alu_fire_1                    (io_issue_alu_fire_1),
+  .io_issue_alu_bits_2_rob_idx            (io_issue_alu_bits_2_rob_idx_0),
+  .io_issue_alu_fire_2                    (io_issue_alu_fire_2),
+  .io_issue_alu_bits_3_rob_idx            (io_issue_alu_bits_3_rob_idx_0),
+  .io_issue_alu_fire_3                    (io_issue_alu_fire_3),
+  .io_issue_lsu1_bits_lsu_mem_write       (lsu1Bits_lsu_mem_write),
+  .io_issue_lsu1_fire                     (io_issue_lsu1_fire),
+  .io_issue_lsu_fire                      (io_issue_lsu_fire),
+  .io_issue_lsu_idx                       ((|_residentLsu_T)
+                                             ? (lsuSelect_0
+                                                  ? 4'h0
+                                                  : lsuSelect_1
+                                                      ? 4'h1
+                                                      : lsuSelect_2
+                                                          ? 4'h2
+                                                          : lsuSelect_3
+                                                              ? 4'h3
+                                                              : lsuSelect_4
+                                                                  ? 4'h4
+                                                                  : lsuSelect_5
+                                                                      ? 4'h5
+                                                                      : lsuSelect_6
+                                                                          ? 4'h6
+                                                                          : lsuSelect_7
+                                                                              ? 4'h7
+                                                                              : lsuSelect_8
+                                                                                  ? 4'h8
+                                                                                  : lsuSelect_9
+                                                                                      ? 4'h9
+                                                                                      : lsuSelect_10
+                                                                                          ? 4'hA
+                                                                                          : lsuSelect_11
+                                                                                              ? 4'hB
+                                                                                              : lsuSelect_12
+                                                                                                  ? 4'hC
+                                                                                                  : lsuSelect_13
+                                                                                                      ? 4'hD
+                                                                                                      : {3'h7,
+                                                                                                         ~lsuSelect_14})
+                                             : (~(lsuFreshGrant[0]) | allocMask_0[0]
+                                                  ? 4'h0
+                                                  : _io_enq_idx_0_T_29)
+                                               | (~(lsuFreshGrant[1]) | allocMask_1[0]
+                                                    ? 4'h0
+                                                    : _io_enq_idx_1_T_29)
+                                               | (~(lsuFreshGrant[2]) | allocMask_2[0]
+                                                    ? 4'h0
+                                                    : _io_enq_idx_2_T_29)
+                                               | (~(lsuFreshGrant[3]) | allocMask_3[0]
+                                                    ? 4'h0
+                                                    : _io_enq_idx_3_T_29)),
+  .io_issue_lsu1_idx                      ((|_residentLsu1_T)
+                                             ? (lsuSelect1_0
+                                                  ? 4'h0
+                                                  : lsuSelect1_1
+                                                      ? 4'h1
+                                                      : lsuSelect1_2
+                                                          ? 4'h2
+                                                          : lsuSelect1_3
+                                                              ? 4'h3
+                                                              : lsuSelect1_4
+                                                                  ? 4'h4
+                                                                  : lsuSelect1_5
+                                                                      ? 4'h5
+                                                                      : lsuSelect1_6
+                                                                          ? 4'h6
+                                                                          : lsuSelect1_7
+                                                                              ? 4'h7
+                                                                              : lsuSelect1_8
+                                                                                  ? 4'h8
+                                                                                  : lsuSelect1_9
+                                                                                      ? 4'h9
+                                                                                      : lsuSelect1_10
+                                                                                          ? 4'hA
+                                                                                          : lsuSelect1_11
+                                                                                              ? 4'hB
+                                                                                              : lsuSelect1_12
+                                                                                                  ? 4'hC
+                                                                                                  : lsuSelect1_13
+                                                                                                      ? 4'hD
+                                                                                                      : {3'h7,
+                                                                                                         ~lsuSelect1_14})
+                                             : (~(lsu1FreshGrant[0]) | allocMask_0[0]
+                                                  ? 4'h0
+                                                  : _io_enq_idx_0_T_29)
+                                               | (~(lsu1FreshGrant[1]) | allocMask_1[0]
+                                                    ? 4'h0
+                                                    : _io_enq_idx_1_T_29)
+                                               | (~(lsu1FreshGrant[2]) | allocMask_2[0]
+                                                    ? 4'h0
+                                                    : _io_enq_idx_2_T_29)
+                                               | (~(lsu1FreshGrant[3]) | allocMask_3[0]
+                                                    ? 4'h0
+                                                    : _io_enq_idx_3_T_29)),
+  .io_issue_store_addr_bits_src2_ready    (_io_issue_store_addr_bits_T_1126),
+  .io_issue_store_addr_bits_lsu_mem_write (_io_issue_store_addr_bits_T_189),
+  .io_issue_store_addr_bits_src1_ready    (_io_issue_store_addr_bits_T_1158),
+  .io_issue_store_addr_fire               (io_issue_store_addr_fire),
+  .clock                                  (clock)
 );
 bind FetchQueue FetchQueue_Verification_Assert verification_assert (
   .reset               (reset),
@@ -384,6 +400,23 @@ bind FetchQueue FetchQueue_Verification_Assert verification_assert (
   .io_enq_bits_valid_3 (io_enq_bits_valid_3),
   .clock               (clock)
 );
+bind StoreAddressSidecar StoreAddressSidecar_Verification_Assert verification_assert (
+  .reset                       (reset),
+  .io_issue_bits_lsu_mem_valid (io_issue_bits_lsu_mem_valid),
+  .io_issue_bits_lsu_mem_write (io_issue_bits_lsu_mem_write),
+  .io_issue_valid              (io_issue_valid),
+  .io_issue_bits_src2_ready    (io_issue_bits_src2_ready),
+  .io_issue_bits_src1_ready    (io_issue_bits_src1_ready),
+  .clock                       (clock)
+);
+bind StoreWritebackQueue StoreWritebackQueue_Verification_Assert verification_assert (
+  .reset  (reset),
+  .count  (count),
+  ._GEN   (3'h4),
+  ._GEN_0 (|state),
+  ._GEN_1 (io_empty_0),
+  .clock  (clock)
+);
 bind WriteCombiningStoreBuffer WriteCombiningStoreBuffer_Verification_Assert verification_assert (
   .reset         (reset),
   .io_enq1_ready (batchReady),
@@ -391,55 +424,39 @@ bind WriteCombiningStoreBuffer WriteCombiningStoreBuffer_Verification_Assert ver
   .io_enq_ready  (batchReady),
   .io_enq_valid  (io_enq_valid),
   ._GEN          (_pairSameLine_T),
-  .lineAddr_0    (lineAddr_0),
-  .lineAddr_1    (lineAddr_1),
+  .valid_2       (valid_2),
+  .valid_3       (valid_3),
   .valid_0       (valid_0),
   .valid_1       (valid_1),
-  ._GEN_0        (~(|activeIdx)),
-  ._GEN_1        (_query1_hit_T_5),
-  ._GEN_2        (activeValid),
-  .lineAddr_2    (lineAddr_2),
-  .valid_2       (valid_2),
-  ._GEN_3        (_query1_hit_T_10),
-  .lineAddr_3    (lineAddr_3),
-  .valid_3       (valid_3),
-  ._GEN_4        (_query1_hit_T_15),
-  .lineAddr_4    (lineAddr_4),
-  .valid_4       (valid_4),
-  ._GEN_5        (_query1_hit_T_20),
-  .lineAddr_5    (lineAddr_5),
-  .valid_5       (valid_5),
-  ._GEN_6        (_query1_hit_T_25),
-  .lineAddr_6    (lineAddr_6),
   .valid_6       (valid_6),
-  ._GEN_7        (_query1_hit_T_30),
-  .lineAddr_7    (lineAddr_7),
   .valid_7       (valid_7),
-  ._GEN_8        (_query1_hit_T_35),
-  .lineAddr_8    (lineAddr_8),
-  .valid_8       (valid_8),
-  ._GEN_9        (_query1_hit_T_40),
-  .lineAddr_9    (lineAddr_9),
-  .valid_9       (valid_9),
-  ._GEN_10       (_query1_hit_T_45),
-  .lineAddr_10   (lineAddr_10),
+  .valid_4       (valid_4),
+  .valid_5       (valid_5),
   .valid_10      (valid_10),
-  ._GEN_11       (_query1_hit_T_50),
-  .lineAddr_11   (lineAddr_11),
   .valid_11      (valid_11),
-  ._GEN_12       (_query1_hit_T_55),
-  .lineAddr_12   (lineAddr_12),
-  .valid_12      (valid_12),
-  ._GEN_13       (_query1_hit_T_60),
-  .lineAddr_13   (lineAddr_13),
-  .valid_13      (valid_13),
-  ._GEN_14       (_query1_hit_T_65),
-  .lineAddr_14   (lineAddr_14),
+  .valid_8       (valid_8),
+  .valid_9       (valid_9),
   .valid_14      (valid_14),
-  ._GEN_15       (_query1_hit_T_70),
-  .lineAddr_15   (lineAddr_15),
   .valid_15      (valid_15),
-  ._GEN_16       (&activeIdx),
+  .valid_12      (valid_12),
+  .valid_13      (valid_13),
+  .count         (count),
+  .lineAddr_0    (lineAddr_0),
+  .lineAddr_1    (lineAddr_1),
+  .lineAddr_2    (lineAddr_2),
+  .lineAddr_3    (lineAddr_3),
+  .lineAddr_4    (lineAddr_4),
+  .lineAddr_5    (lineAddr_5),
+  .lineAddr_6    (lineAddr_6),
+  .lineAddr_7    (lineAddr_7),
+  .lineAddr_8    (lineAddr_8),
+  .lineAddr_9    (lineAddr_9),
+  .lineAddr_10   (lineAddr_10),
+  .lineAddr_11   (lineAddr_11),
+  .lineAddr_12   (lineAddr_12),
+  .lineAddr_13   (lineAddr_13),
+  .lineAddr_14   (lineAddr_14),
+  .lineAddr_15   (lineAddr_15),
   .clock         (clock)
 );
 bind WritebackArbiter WritebackArbiter_Verification_Assert verification_assert (

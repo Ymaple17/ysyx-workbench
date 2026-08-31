@@ -9,6 +9,11 @@ FetchBuffer.sv
 verification/assert/FTQ_Verification_Assert.sv
 verification/FTQ_Verification.sv
 FTQ.sv
+CommittedTraceBuilder.sv
+verification/assert/CommittedTraceCache_Verification_Assert.sv
+verification/CommittedTraceCache_Verification.sv
+data_64x352.sv
+CommittedTraceCache.sv
 verification/assert/IFU_Verification_Assert.sv
 verification/IFU_Verification.sv
 IFU.sv
@@ -61,6 +66,12 @@ verification/assert/FetchQueue_Verification_Assert.sv
 verification/FetchQueue_Verification.sv
 FetchQueue.sv
 StoreQueue.sv
+verification/assert/StoreAddressSidecar_Verification_Assert.sv
+verification/StoreAddressSidecar_Verification.sv
+StoreAddressSidecar.sv
+verification/assert/StoreWritebackQueue_Verification_Assert.sv
+verification/StoreWritebackQueue_Verification.sv
+StoreWritebackQueue.sv
 verification/assert/WriteCombiningStoreBuffer_Verification_Assert.sv
 verification/WriteCombiningStoreBuffer_Verification.sv
 WriteCombiningStoreBuffer.sv

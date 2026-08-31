@@ -23,6 +23,7 @@ class DCacheMissQueueIO(words: Int, poisonPorts: Int) extends Bundle {
   val installValid = Output(Bool())
   val installAddr = Output(UInt(32.W))
   val installData = Output(Vec(words, UInt(32.W)))
+  val installReady = Input(Bool())
 
   val busy = Output(Bool())
   val allocPulse = Output(Bool())
@@ -58,7 +59,7 @@ class DCacheMissQueue(
 
   val io = IO(new DCacheMissQueueIO(words, poisonPorts))
 
-  private val sNeedAr :: sWaitR :: sComplete :: Nil = Enum(3)
+  private val sNeedAr :: sWaitR :: sInstall :: sComplete :: Nil = Enum(4)
   val valid = RegInit(VecInit(Seq.fill(entries)(false.B)))
   val cacheable = Reg(Vec(entries, Bool()))
   val addr = Reg(Vec(entries, UInt(32.W)))
@@ -255,10 +256,18 @@ class DCacheMissQueue(
     state(arGrantIdx) := sWaitR
   }
 
-  io.installValid := false.B
-  io.installAddr := 0.U
-  io.installData := VecInit(Seq.fill(words)(0.U(32.W)))
+  val installCandidates = VecInit((0 until entries).map(i =>
+    valid(i) && state(i) === sInstall))
+  val pendingInstallValid = installCandidates.asUInt.orR
+  val pendingInstallIdx = PriorityEncoder(installCandidates.asUInt)
+  io.installValid := pendingInstallValid
+  io.installAddr := addr(pendingInstallIdx)
+  io.installData := fillData(pendingInstallIdx)
   io.refillPulse := false.B
+
+  when(pendingInstallValid && io.installReady) {
+    state(pendingInstallIdx) := sComplete
+  }
 
   when(rFire && (activeValid || arFire)) {
     assert(rMatches, "DCache refill response must match the live MSHR generation")
@@ -307,13 +316,20 @@ class DCacheMissQueue(
       }.elsewhen(lineDone) {
         io.refillPulse := cacheable(responseEntry)
         val poisoned = killed(responseEntry) || poisonNow(responseEntry)
-        when(cacheable(responseEntry) && !poisoned &&
-            Mux(io.mem.rresp =/= 0.U, io.mem.rresp, refillResp(responseEntry)) === 0.U) {
-          io.installValid := true.B
-          io.installAddr := addr(responseEntry)
-          io.installData := nextLine
+        val installable = cacheable(responseEntry) && !poisoned &&
+          Mux(io.mem.rresp =/= 0.U, io.mem.rresp, refillResp(responseEntry)) === 0.U
+        when(installable) {
+          when(!pendingInstallValid) {
+            io.installValid := true.B
+            io.installAddr := addr(responseEntry)
+            io.installData := nextLine
+            state(responseEntry) := Mux(io.installReady, sComplete, sInstall)
+          }.otherwise {
+            state(responseEntry) := sInstall
+          }
+        }.otherwise {
+          state(responseEntry) := sComplete
         }
-        state(responseEntry) := sComplete
       }
     }.otherwise {
       fillIdx(responseEntry) := fillIdx(responseEntry) + 1.U

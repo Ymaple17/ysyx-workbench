@@ -18,13 +18,15 @@
   `endif // ASSERT_VERBOSE_COND
 `endif // not def ASSERT_VERBOSE_COND_
 module IFU_Verification_Assert(
-  input reset,
-        ftq_io_alloc_ready,
-        ftq_io_alloc_valid,
-        _GEN,
-        _GEN_0,
-        ftq_io_recoverValid,
-        clock
+  input       reset,
+              ftq_io_alloc_ready,
+              ftq_io_alloc_valid,
+              _GEN,
+              _GEN_0,
+              ftq_io_recoverValid,
+  input [1:0] _GEN_1,
+              _GEN_2,
+  input       clock
 );
 
   `ifndef SYNTHESIS
@@ -38,6 +40,12 @@ module IFU_Verification_Assert(
       if (~reset & ~(_GEN_0 | ftq_io_recoverValid)) begin
         if (`ASSERT_VERBOSE_COND_)
           $error("Assertion failed: branch recovery must find its FTQ generation\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & {_GEN_0, _GEN_1, _GEN_2} == 5'h0) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: branch recovery PC must identify a live FTQ lane\n");
         if (`STOP_COND_)
           $fatal;
       end

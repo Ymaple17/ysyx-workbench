@@ -88,6 +88,7 @@ class LSU_IO(xlen: Int) extends Bundle {
   val flush_idx = Input(UInt(OoOParams.ROB_PTR_W.W))
   val flush_all = Input(Bool())
   val mmio_ready = Input(Bool())
+  val mmio_drain_req = Output(Bool())
 
   val store_resolve0_valid = Input(Bool())
   val store_resolve0_rob = Input(UInt(OoOParams.ROB_PTR_W.W))
@@ -167,6 +168,7 @@ class LSU(val conf: CoreConfig) extends Module {
   lq.io.flushIdx := io.flush_idx
   lq.io.flushAll := io.flush_all
   lq.io.mmioReady := io.mmio_ready
+  io.mmio_drain_req := lq.io.mmioDrainReq
   lq.io.fwdWait := io.st_fwd_wait
   lq.io.fwdValid := io.st_fwd_valid
   lq.io.fwdData := io.st_fwd_data

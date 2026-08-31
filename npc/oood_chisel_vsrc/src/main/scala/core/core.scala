@@ -104,6 +104,7 @@ class Core(val conf: CoreConfig) extends Module {
   val brq    = Module(new BranchIssueQueue())
   val fq     = Module(new FetchQueue())
   val sq     = Module(new StoreQueue())
+  val storeAddrSidecar = Module(new StoreAddressSidecar())
   val stbuf = Module(new WriteCombiningStoreBuffer(
     lines = OoOParams.STORE_BUFFER_LINES,
     retentionCycles = OoOParams.STORE_BUFFER_RETENTION_CYCLES))
@@ -186,6 +187,7 @@ class Core(val conf: CoreConfig) extends Module {
     fq.io.enqSpace >= 3.U
   ifu.io.slot3_enable := OoOParams.WIDE_FETCH_ENABLE.B &&
     fq.io.enqSpace >= 4.U
+  ifu.io.fetch_queue_count := fq.io.count
   ifu.io.fetch_buffer_replace_ready := fq.io.space >= OoOParams.FETCH_WIDTH.U
   // flush 时必须装入 correct_pc（即使上一拍 in.valid=0），否则 irq/mispred 后取指饿死
   val ifu_in_en = ifu.io.is_flush || (ifu.io.in.valid && ifu.io.pc.ready)
@@ -194,6 +196,8 @@ class Core(val conf: CoreConfig) extends Module {
     RegEnable(ifu.io.pc.valid, false.B, ifu.io.in.ready))
   val is_bp_flush   = Wire(Bool())
   val is_mem_flush  = Wire(Bool())
+  val mis_predict_w = Wire(Bool())
+  val mis_rob_w     = Wire(UInt(OoOParams.ROB_PTR_W.W))
   // A memory-order violation at ROB head has no older live instruction to
   // preserve.  The normal flush_idx=violation-1 encoding wraps behind head,
   // so use the existing flush_all paths for this boundary case.
@@ -1137,6 +1141,7 @@ class Core(val conf: CoreConfig) extends Module {
   val take_div_issue = can_load_div && rs.io.issue_div_valid
   val take_lsu_issue = can_load_lsu && rs.io.issue_lsu_valid
   val take_lsu1_issue = can_load_lsu1 && rs.io.issue_lsu1_valid
+  val take_store_addr_issue = !stop_issue && rs.io.issue_store_addr_valid
 
   rs.io.issue_alu_fire := take_alu_issue
   rs.io.issue_alu1_fire := take_alu1_issue
@@ -1145,6 +1150,9 @@ class Core(val conf: CoreConfig) extends Module {
   rs.io.issue_div_fire := take_div_issue
   rs.io.issue_lsu_fire := take_lsu_issue
   rs.io.issue_lsu1_fire := take_lsu1_issue
+  rs.io.issue_store_addr_fire := take_store_addr_issue
+  storeAddrSidecar.io.issue.valid := take_store_addr_issue
+  storeAddrSidecar.io.issue.bits := rs.io.issue_store_addr_bits
   brq.io.issue.ready := can_load_bru
 
   when(flush_alu) {
@@ -1241,6 +1249,17 @@ class Core(val conf: CoreConfig) extends Module {
     }
   }
 
+  val storeAddrResultEntry = rob.io.entries(storeAddrSidecar.io.result.bits.rob_idx)
+  val storeAddrResultKilled = is_irq_w || fencei_flush || mret_flush ||
+    (mis_predict_w &&
+      robAge(storeAddrSidecar.io.result.bits.rob_idx, rob.io.head) >
+        robAge(bru_resolve_bits.rob_idx, rob.io.head))
+  val storeAddrResultValid = storeAddrSidecar.io.result.valid &&
+    !storeAddrResultKilled && storeAddrResultEntry.valid &&
+    storeAddrResultEntry.pc === storeAddrSidecar.io.result.bits.pc &&
+    storeAddrResultEntry.mem_valid && storeAddrResultEntry.mem_write &&
+    !storeAddrResultEntry.addr_ready
+
   private def connectStoreQueue(): Unit = {
   // ---------- 5: StoreQueue handles store -> load forward / wait ----------
   val id0_is_store = idu.io.out.bits.signals.lsu.mem_valid && idu.io.out.bits.signals.lsu.mem_write
@@ -1263,6 +1282,9 @@ class Core(val conf: CoreConfig) extends Module {
   sq.io.alloc1_valid := storeAlloc1OH.orR
   sq.io.alloc1_rob := Mux1H(storeAlloc1OH, storeRobIndices)
   sq.io.alloc1_mask := Mux1H(storeAlloc1OH, storeMasks)
+  sq.io.addr_wb_valid := storeAddrResultValid
+  sq.io.addr_wb_rob := storeAddrSidecar.io.result.bits.rob_idx
+  sq.io.addr_wb_addr := storeAddrSidecar.io.result.bits.addr
   sq.io.ld_valid := lsu.io.ld_query_valid
   sq.io.ld_rob   := lsu.io.ld_query_rob
   sq.io.ld_addr  := lsu.io.ld_query_addr
@@ -1307,7 +1329,7 @@ class Core(val conf: CoreConfig) extends Module {
   val knownCovered0 = (knownMask0 & neededMask0) === neededMask0
   val cacheable0 = cacheable(sq.io.ld_addr)
   val partialWait0 = knownOverlap0 && !knownCovered0 && !cacheable0
-  lsu.io.st_fwd_wait := partialWait0
+  lsu.io.st_fwd_wait := partialWait0 || sq.io.wait_data
   lsu.io.st_fwd_valid := knownCovered0
   lsu.io.st_fwd_data := knownData0 >> (sq.io.ld_addr(1, 0) << 3)
   lsu.io.st_partial_valid := cacheable0 &&
@@ -1330,7 +1352,7 @@ class Core(val conf: CoreConfig) extends Module {
   val knownCovered1 = (knownMask1 & neededMask1) === neededMask1
   val cacheable1 = cacheable(sq.io.ld1_addr)
   val partialWait1 = knownOverlap1 && !knownCovered1 && !cacheable1
-  lsu.io.st_fwd1_wait := partialWait1
+  lsu.io.st_fwd1_wait := partialWait1 || sq.io.wait1_data
   lsu.io.st_fwd1_valid := knownCovered1
   lsu.io.st_fwd1_data := knownData1 >> (sq.io.ld1_addr(1, 0) << 3)
   lsu.io.st_partial1_valid := cacheable1 &&
@@ -1486,8 +1508,6 @@ class Core(val conf: CoreConfig) extends Module {
   dontTouch(mem_violation_rob_w)
   dontTouch(mem_violation_pc_w)
 
-  val mis_predict_w = Wire(Bool())
-  val mis_rob_w     = Wire(UInt(OoOParams.ROB_PTR_W.W))
   val wb_fire  = wbu.io.in.valid && !wbu.io.is_flush
   wb_idx   := wbu.io.in.bits.rob_idx
   val wb1_fire = wbu1.io.in.valid && !wbu1.io.is_flush
@@ -1906,18 +1926,9 @@ class Core(val conf: CoreConfig) extends Module {
     !bp_commit3_block && cm3_path_ok && quad_bpu_ready && quad_store_ready &&
     (!cm3_is_load || !lsu.io.load_commit_wait3)
   val cm3_fire = rob.io.commit3_fire
-  ifu.io.ftq_commit0_valid := cm_fire
-  ifu.io.ftq_commit0_idx := cm_bits.ftq_idx
-  ifu.io.ftq_commit0_generation := cm_bits.ftq_generation
-  ifu.io.ftq_commit1_valid := cm1_fire
-  ifu.io.ftq_commit1_idx := cm1_bits.ftq_idx
-  ifu.io.ftq_commit1_generation := cm1_bits.ftq_generation
-  ifu.io.ftq_commit2_valid := cm2_fire
-  ifu.io.ftq_commit2_idx := cm2_bits.ftq_idx
-  ifu.io.ftq_commit2_generation := cm2_bits.ftq_generation
-  ifu.io.ftq_commit3_valid := cm3_fire
-  ifu.io.ftq_commit3_idx := cm3_bits.ftq_idx
-  ifu.io.ftq_commit3_generation := cm3_bits.ftq_generation
+  IFUCommitWiring.connect(ifu.io,
+    cm_fire, cm_bits, cm1_fire, cm1_bits,
+    cm2_fire, cm2_bits, cm3_fire, cm3_bits)
   val cm_do_ren = cm_fire && cm_bits.reg_write && (cm_bits.arch_rd =/= 0.U) && (cm_bits.new_phys =/= 0.U)
   val cm1_do_ren = cm1_fire && cm1_bits.reg_write && (cm1_bits.arch_rd =/= 0.U) && (cm1_bits.new_phys =/= 0.U)
   val cm2_do_ren = cm2_fire && cm2_bits.reg_write && (cm2_bits.arch_rd =/= 0.U) && (cm2_bits.new_phys =/= 0.U)
@@ -1965,18 +1976,18 @@ class Core(val conf: CoreConfig) extends Module {
   lsu.io.commit2_rob := rob.io.commit2_idx
   lsu.io.commit3_valid := cm3_fire && cm3_is_load
   lsu.io.commit3_rob := rob.io.commit3_idx
-  // Let the LQ observe address resolution in the same cycle as the private
-  // store-completion sideband.  This blocks a conflicting load response before
-  // it can enter a CDB; architectural ROB/SQ updates still use store_direct_fire.
-  val lq_store_resolve0_valid = store_direct_raw && !store_entry.done
-  val lq_store_resolve0_rob = lsu_store_wb.rob_idx
-  val lq_store_resolve0_addr = lsu_store_wb.alu_result
-  val lq_store_resolve0_mask = store_entry.mem_wmask(3, 0)
+  // The sidecar resolves unknown addresses before Store data is ready. The
+  // legacy full-Store path remains as a fallback for Stores that never used it.
+  val lq_store_resolve0_valid = storeAddrResultValid
+  val lq_store_resolve0_rob = storeAddrSidecar.io.result.bits.rob_idx
+  val lq_store_resolve0_addr = storeAddrSidecar.io.result.bits.addr
+  val lq_store_resolve0_mask = storeAddrSidecar.io.result.bits.mask
   val lq_store_resolve_head = rob.io.head
-  val lq_store_resolve1_valid = false.B
-  val lq_store_resolve1_rob = 0.U(OoOParams.ROB_PTR_W.W)
-  val lq_store_resolve1_addr = 0.U(32.W)
-  val lq_store_resolve1_mask = 0.U(4.W)
+  val lq_store_resolve1_valid = store_direct_raw && !store_entry.done &&
+    sq.io.unresolved_mask(lsu_store_wb.rob_idx)
+  val lq_store_resolve1_rob = lsu_store_wb.rob_idx
+  val lq_store_resolve1_addr = lsu_store_wb.alu_result
+  val lq_store_resolve1_mask = store_entry.mem_wmask(3, 0)
   lsu.io.store_resolve0_valid := lq_store_resolve0_valid
   lsu.io.store_resolve0_rob := lq_store_resolve0_rob
   lsu.io.store_resolve0_addr := lq_store_resolve0_addr
@@ -2093,6 +2104,21 @@ class Core(val conf: CoreConfig) extends Module {
       ifu.io.out.valid && ifu.io.out.bits.valid(0) && fq.io.space === 1.U)
     PM(conf, clock, EVENT_CONTROL_DIRECT_COMPLETE, 1.U, ctrl_direct_fire)
     PM(conf, clock, EVENT_STORE_DIRECT_COMPLETE, 1.U, store_direct_fire)
+    val primaryStoreIssue = take_lsu_issue && rs.io.issue_lsu_bits.lsu_mem_write
+    val storeAddrCandidate = rs.io.store_addr_candidate_count =/= 0.U
+    PM(conf, clock, EVENT_STORE_ADDR_CANDIDATE_CYCLE, 1.U, storeAddrCandidate)
+    PM(conf, clock, EVENT_STORE_ADDR_DATA_WAIT_SLOT,
+      rs.io.store_addr_data_wait_count, rs.io.store_addr_data_wait_count =/= 0.U)
+    PM(conf, clock, EVENT_STORE_DATA_ADDR_WAIT_SLOT,
+      rs.io.store_data_addr_wait_count, rs.io.store_data_addr_wait_count =/= 0.U)
+    PM(conf, clock, EVENT_STORE_READY_BLOCKED_CYCLE, 1.U,
+      !stop_issue && rs.io.store_ready_count =/= 0.U && !primaryStoreIssue)
+    PM(conf, clock, EVENT_STORE_ISSUE, 1.U, primaryStoreIssue)
+    PM(conf, clock, EVENT_STORE_ADDR_DUAL_LOAD_OPPORTUNITY, 1.U,
+      storeAddrCandidate && take_lsu_issue && !rs.io.issue_lsu_bits.lsu_mem_write &&
+        take_lsu1_issue)
+    PM(conf, clock, EVENT_STORE_ADDR_SIDECAR_ISSUE, 1.U, take_store_addr_issue)
+    PM(conf, clock, EVENT_STORE_ADDR_SIDECAR_RESOLVE, 1.U, storeAddrResultValid)
   }
   }
   connectPerformanceCounters()
@@ -2525,7 +2551,7 @@ class Core(val conf: CoreConfig) extends Module {
   // 4b：CSR 写口改由 commit 驱动；WBU.csr 闲置（wen=0）
 
   // ---------- 10a：StoreBuffer + dmem arbitration ----------
-  val s_CM_IDLE :: s_CM_W :: s_CM_B :: Nil = Enum(3)
+  val s_CM_IDLE :: s_CM_W :: s_CM_B :: s_CM_DONE :: Nil = Enum(4)
   val cm_st_state = RegInit(s_CM_IDLE)
   val cm_st_addr  = RegInit(0.U(32.W))
   val cm_st_wdata = RegInit(0.U(32.W))
@@ -2584,7 +2610,8 @@ class Core(val conf: CoreConfig) extends Module {
     // A completed younger cacheable load may remain in the LQ until commit;
     // waiting for the whole LSU to become empty would deadlock the head MMIO
     // store.  Only an active DCache transaction owns the external read bus.
-    when(head_store_direct && stbuf.io.empty && !stbuf.io.busy && !dcache.io.busy) {
+    when(head_store_direct && stbuf.io.empty && !stbuf.io.busy &&
+        !dcache.io.busy) {
       cm_st_addr   := head_st_addr
       cm_st_wdata  := head_st_data << (cm_st_off << 3)
       cm_st_wstrb  := (cm_st_mask4 << cm_st_off)(3, 0)
@@ -2603,13 +2630,24 @@ class Core(val conf: CoreConfig) extends Module {
     }
   }.elsewhen(cm_st_state === s_CM_B) {
     when(io.dmem.bvalid && io.dmem.bready) {
+      // AXI completion is not architectural retirement. Keep the captured
+      // transaction owned until this exact ROB store is allowed to commit.
+      cm_st_state := Mux(cm_fire, s_CM_IDLE, s_CM_DONE)
+      when(cm_fire) {
+        cm_st_aw_done := false.B
+        cm_st_w_done := false.B
+      }
+    }
+  }.elsewhen(cm_st_state === s_CM_DONE) {
+    when(cm_fire) {
       cm_st_state := s_CM_IDLE
       cm_st_aw_done := false.B
       cm_st_w_done := false.B
     }
   }
 
-  val direct_store_ready = (cm_st_state === s_CM_B) && io.dmem.bvalid && io.dmem.bready
+  val direct_store_ready = (cm_st_state === s_CM_DONE) ||
+    ((cm_st_state === s_CM_B) && io.dmem.bvalid && io.dmem.bready)
 
   val pmemStoreCommitMask = VecInit(Seq(
     cm_fire && cm_is_store && head_st_is_pmem,
@@ -2632,9 +2670,13 @@ class Core(val conf: CoreConfig) extends Module {
 
   store_commit_ready := head_addr_rdy &&
     Mux(head_st_is_pmem, stbuf.io.free >= 1.U, direct_store_ready)
-  val stbufDrainRequest = rob.io.commit_valid &&
-    (head_store_direct || cm_needs_store_drain || cm_is_fencei)
+  // MMIO must release older StoreBuffer ownership so the shared write channel
+  // can make progress. Only explicit architectural boundaries also drain L1.
+  val explicitStoreDrain = rob.io.commit_valid &&
+    (cm_needs_store_drain || cm_is_fencei)
+  val stbufDrainRequest = explicitStoreDrain || head_store_direct
   stbuf.io.drain_all := RegNext(stbufDrainRequest, false.B)
+  dcache.io.drain_all := RegNext(explicitStoreDrain, false.B)
 
   // 4f：head 是 fencei 且可提交时刷 ICache；Irrevocable 保持 valid 直到 ready
   // fencei/mret/ebreak/exception drain committed stores before changing control state.
@@ -2644,36 +2686,52 @@ class Core(val conf: CoreConfig) extends Module {
   stbuf.io.bus_busy := cm_writing
   val sb_writing = stbuf.io.busy
   val store_bus_busy = cm_writing || sb_writing
-  store_side_empty := stbuf.io.empty && !stbuf.io.busy && !cm_writing
-  lsu_mmio_ready := store_side_empty
-  cm_writing_gap := store_bus_busy || !stbuf.io.empty
+  store_side_empty := stbuf.io.empty && !stbuf.io.busy &&
+    dcache.io.dirty_empty && !cm_writing
+  // A normal MMIO read is ordered against the direct/uncached store path, but
+  // it need not write back unrelated cacheable dirty lines. Explicit drain
+  // boundaries (fence.i, trap/exit, or a direct store) still use drain_all.
+  lsu_mmio_ready := !cm_writing
+  cm_writing_gap := store_bus_busy || !stbuf.io.empty || !dcache.io.dirty_empty
   val head_fencei_pending = rob.io.commit_valid && !is_irq_early && !ext_irq_fire &&
     cm_is_fencei && store_side_empty
   icache.io.fencei.valid := head_fencei_pending
   icache.io.fencei.bits.is_fencei := true.B
   fencei_commit_ready := store_side_empty && icache.io.fencei.ready
 
-  // dmem：read <- LSU; write <- direct MMIO path or StoreBuffer.
-  lsu.io.dmem <> dcache.io.cpu
-  lsu.io.dmem1 <> dcache.io.cpu1
-  dcache.io.invalidate_valid := false.B
-  dcache.io.invalidate_addr  := 0.U
-  dcache.io.invalidate2_valid := false.B
-  dcache.io.invalidate2_addr  := 0.U
-  dcache.io.invalidate3_valid := false.B
-  dcache.io.invalidate3_addr  := 0.U
-  dcache.io.store_valid := stbuf.io.enq.fire
-  dcache.io.store_addr := stbuf.io.enq.bits.addr
-  dcache.io.store_data := stbuf.io.enq.bits.data
-  dcache.io.store_mask := stbuf.io.enq.bits.mask
-  dcache.io.store2_valid := stbuf.io.enq1.fire
-  dcache.io.store2_addr := stbuf.io.enq1.bits.addr
-  dcache.io.store2_data := stbuf.io.enq1.bits.data
-  dcache.io.store2_mask := stbuf.io.enq1.bits.mask
-  dcache.io.store3_valid := stbuf.io.drain_valid
-  dcache.io.store3_addr := stbuf.io.drain_addr
-  dcache.io.store3_data := stbuf.io.drain_data
-  dcache.io.store3_mask := stbuf.io.drain_mask
+  private def connectDCacheStorePath(): Unit = {
+    // dmem read ownership belongs to LSU; committed stores update L1 or retain
+    // ordered ownership in the StoreBuffer/writeback queue.
+    lsu.io.dmem <> dcache.io.cpu
+    lsu.io.dmem1 <> dcache.io.cpu1
+    dcache.io.invalidate_valid := false.B
+    dcache.io.invalidate_addr := 0.U
+    dcache.io.invalidate2_valid := false.B
+    dcache.io.invalidate2_addr := 0.U
+    dcache.io.invalidate3_valid := false.B
+    dcache.io.invalidate3_addr := 0.U
+    dcache.io.store_valid := stbuf.io.enq.fire
+    dcache.io.store_addr := stbuf.io.enq.bits.addr
+    dcache.io.store_data := stbuf.io.enq.bits.data
+    dcache.io.store_mask := stbuf.io.enq.bits.mask
+    stbuf.io.enq_cache_hit := dcache.io.store_probe_hit
+    dcache.io.store2_valid := stbuf.io.enq1.fire
+    dcache.io.store2_addr := stbuf.io.enq1.bits.addr
+    dcache.io.store2_data := stbuf.io.enq1.bits.data
+    dcache.io.store2_mask := stbuf.io.enq1.bits.mask
+    stbuf.io.enq1_cache_hit := dcache.io.store2_probe_hit
+    dcache.io.store3_valid := stbuf.io.drain_valid
+    dcache.io.store3_addr := stbuf.io.drain_addr
+    dcache.io.store3_data := stbuf.io.drain_data
+    dcache.io.store3_mask := stbuf.io.drain_mask
+    dcache.io.store_line.valid := stbuf.io.cache_line.valid
+    dcache.io.store_line.bits := stbuf.io.cache_line.bits
+    stbuf.io.cache_line.ready := dcache.io.store_line.ready
+    stbuf.io.l1_writeback.valid := dcache.io.dirty_writeback.valid
+    stbuf.io.l1_writeback.bits := dcache.io.dirty_writeback.bits
+    dcache.io.dirty_writeback.ready := stbuf.io.l1_writeback.ready
+  }
+  connectDCacheStorePath()
 
   dcache.io.mem.arready := io.dmem.arready
   dcache.io.mem.rdata   := io.dmem.rdata

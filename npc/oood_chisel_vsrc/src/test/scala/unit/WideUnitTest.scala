@@ -350,6 +350,7 @@ class WideUnitTest extends AnyFlatSpec {
       dut.io.issue_div_fire.poke(false.B)
       dut.io.issue_lsu_fire.poke(false.B)
       dut.io.issue_lsu1_fire.poke(false.B)
+      dut.io.issue_store_addr_fire.poke(false.B)
       dut.io.free_ctrl_fire.poke(false.B)
       dut.io.free_ctrl_idx.poke(0.U)
       dut.io.free_store_fire.poke(false.B)
@@ -399,6 +400,7 @@ class WideUnitTest extends AnyFlatSpec {
       dut.io.issue_div_fire.poke(false.B)
       dut.io.issue_lsu_fire.poke(false.B)
       dut.io.issue_lsu1_fire.poke(false.B)
+      dut.io.issue_store_addr_fire.poke(false.B)
       dut.io.free_ctrl_fire.poke(false.B)
       dut.io.free_ctrl_idx.poke(0.U)
       dut.io.free_store_fire.poke(false.B)
@@ -467,6 +469,98 @@ class WideUnitTest extends AnyFlatSpec {
       dut.io.issue_lsu_bits.rob_idx.expect(3.U)
       dut.io.issue_lsu_bits.lsu_mem_write.expect(true.B)
       dut.io.issue_lsu1_valid.expect(false.B)
+    }
+  }
+
+  it should "issue a Store address once while retaining the uop for data" in {
+    simulate(new WideRS()) { dut =>
+      for (i <- 0 until width) {
+        dut.io.enq_fire(i).poke(false.B)
+        zeroRsEntry(dut.io.enq_bits(i))
+        dut.io.issue_alu_fire(i).poke(false.B)
+        dut.io.free_data_fire(i).poke(false.B)
+        dut.io.free_data_idx(i).poke(0.U)
+        dut.io.cdb_valid(i).poke(false.B)
+        dut.io.cdb_pdest(i).poke(0.U)
+        dut.io.cdb_val(i).poke(0.U)
+      }
+      dut.io.rob_head.poke(0.U)
+      dut.io.rob_st_pending.poke(0.U)
+      dut.io.issue_div_fire.poke(false.B)
+      dut.io.issue_lsu_fire.poke(false.B)
+      dut.io.issue_lsu1_fire.poke(false.B)
+      dut.io.issue_store_addr_fire.poke(false.B)
+      dut.io.free_ctrl_fire.poke(false.B)
+      dut.io.free_ctrl_idx.poke(0.U)
+      dut.io.free_store_fire.poke(false.B)
+      dut.io.free_store_idx.poke(0.U)
+      dut.io.flush.poke(false.B)
+      dut.io.flush_idx.poke(0.U)
+      dut.io.flush_all.poke(false.B)
+      resetDut(dut.clock, dut.reset)
+
+      dut.io.enq_fire(0).poke(true.B)
+      dut.io.enq_bits(0).rob_idx.poke(3.U)
+      dut.io.enq_bits(0).pc.poke("h80000100".U)
+      dut.io.enq_bits(0).src1_ready.poke(true.B)
+      dut.io.enq_bits(0).src1_val.poke("h80001000".U)
+      dut.io.enq_bits(0).src2_ready.poke(false.B)
+      dut.io.enq_bits(0).src2_phys.poke(7.U)
+      dut.io.enq_bits(0).imm_ext.poke(12.U)
+      dut.io.enq_bits(0).lsu_mem_valid.poke(true.B)
+      dut.io.enq_bits(0).lsu_mem_write.poke(true.B)
+      dut.io.issue_store_addr_valid.expect(false.B)
+      dut.io.issue_lsu_valid.expect(false.B)
+      dut.clock.step()
+
+      dut.io.enq_fire(0).poke(false.B)
+      dut.io.issue_store_addr_valid.expect(true.B)
+      dut.io.issue_store_addr_bits.rob_idx.expect(3.U)
+      dut.io.issue_store_addr_bits.src1_val.expect("h80001000".U)
+      dut.io.issue_store_addr_fire.poke(true.B)
+      dut.clock.step()
+
+      dut.io.issue_store_addr_fire.poke(false.B)
+      dut.io.issue_store_addr_valid.expect(false.B)
+      dut.io.issue_lsu_valid.expect(false.B)
+      dut.io.cdb_valid(0).poke(true.B)
+      dut.io.cdb_pdest(0).poke(7.U)
+      dut.io.cdb_val(0).poke("hdeadbeef".U)
+      dut.io.issue_lsu_valid.expect(true.B)
+      dut.io.issue_lsu_bits.rob_idx.expect(3.U)
+      dut.io.issue_lsu_bits.src2_val.expect("hdeadbeef".U)
+      dut.clock.step()
+    }
+  }
+
+  behavior of "StoreAddressSidecar"
+
+  it should "produce a one-cycle address result" in {
+    simulate(new StoreAddressSidecar()) { dut =>
+      dut.io.issue.valid.poke(false.B)
+      zeroRsEntry(dut.io.issue.bits)
+      resetDut(dut.clock, dut.reset)
+
+      dut.io.issue.valid.poke(true.B)
+      dut.io.issue.bits.rob_idx.poke(5.U)
+      dut.io.issue.bits.pc.poke("h80000200".U)
+      dut.io.issue.bits.src1_ready.poke(true.B)
+      dut.io.issue.bits.src1_val.poke("h80002000".U)
+      dut.io.issue.bits.src2_ready.poke(false.B)
+      dut.io.issue.bits.imm_ext.poke(28.U)
+      dut.io.issue.bits.lsu_mem_valid.poke(true.B)
+      dut.io.issue.bits.lsu_mem_write.poke(true.B)
+      dut.io.issue.bits.lsu_mem_wmask.poke(15.U)
+      dut.clock.step()
+
+      dut.io.issue.valid.poke(false.B)
+      dut.io.result.valid.expect(true.B)
+      dut.io.result.bits.rob_idx.expect(5.U)
+      dut.io.result.bits.pc.expect("h80000200".U)
+      dut.io.result.bits.addr.expect("h8000201c".U)
+      dut.io.result.bits.mask.expect(15.U)
+      dut.clock.step()
+      dut.io.result.valid.expect(false.B)
     }
   }
 }

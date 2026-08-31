@@ -76,6 +76,7 @@ class LoadQueueIO(depth: Int) extends Bundle {
   val unknown1Mask = Input(UInt(OoOParams.ROB_SIZE.W))
   val unresolvedStores = Input(UInt(OoOParams.ROB_SIZE.W))
   val mmioReady = Input(Bool())
+  val mmioDrainReq = Output(Bool())
 
   val storeResolve0Valid = Input(Bool())
   val storeResolve0Rob = Input(UInt(OoOParams.ROB_PTR_W.W))
@@ -186,6 +187,9 @@ class LoadQueue(
   for (i <- 0 until depth) {
     alive(i) := entries(i).valid && !io.flushAll && !killedBySelectiveFlush(i)
   }
+  io.mmioDrainReq := VecInit((0 until depth).map(i =>
+    alive(i) && entries(i).state === sWait &&
+      entries(i).meta.rob_idx === io.robHead && !cacheable(entries(i).addr))).asUInt.orR
 
   // A flushed request may still own a response in DCache/MSHR queues. Keep its
   // slot quarantined until that response drains so the finite AXI ID cannot
@@ -218,12 +222,18 @@ class LoadQueue(
   val rotatedMask = (Cat(schedMask, schedMask) >> retryPtr)(depth - 1, 0)
   val entrySchedValid = schedMask.orR
   val schedOffset = PriorityEncoder(rotatedMask)
-  val entrySchedIdx = (retryPtr + schedOffset)(indexWidth - 1, 0)
+  val retrySchedIdx = (retryPtr + schedOffset)(indexWidth - 1, 0)
+  val headMmioMask = VecInit((0 until depth).map(i =>
+    schedEligible(i) && entries(i).meta.rob_idx === io.robHead &&
+      !cacheable(entries(i).addr))).asUInt
+  val entrySchedIdx = Mux(headMmioMask.orR,
+    PriorityEncoder(headMmioMask), retrySchedIdx)
   val sched1Eligible = Wire(Vec(depth, Bool()))
   for (i <- 0 until depth) {
-    val mmioCanRun = cacheable(entries(i).addr) ||
-      ((entries(i).meta.rob_idx === io.robHead) && io.mmioReady)
-    sched1Eligible(i) := alive(i) && entries(i).state === sWait && mmioCanRun &&
+    // DCache port 1 is cacheable-only.  An MMIO load selected here can never
+    // observe arready and may livelock behind a blocked primary candidate.
+    sched1Eligible(i) := alive(i) && entries(i).state === sWait &&
+      cacheable(entries(i).addr) &&
       (!entrySchedValid || i.U =/= entrySchedIdx)
   }
   val sched1Mask = sched1Eligible.asUInt
@@ -259,9 +269,8 @@ class LoadQueue(
   val fresh1AllocValid = fresh1Alloc0Valid || fresh1Alloc1Valid
   val fresh1AllocBits = Mux(fresh1Choose1, io.alloc1.bits, io.alloc.bits)
   val fresh1AllocIdx = Mux(fresh1Choose1, alloc1Idx, allocIdx)
-  val fresh1MmioCanRun = cacheable(fresh1AllocBits.addr) ||
-    ((fresh1AllocBits.meta.rob_idx === io.robHead) && io.mmioReady)
-  val freshSched1Valid = !entrySched1Valid && fresh1AllocValid && fresh1MmioCanRun
+  val freshSched1Valid = !entrySched1Valid && fresh1AllocValid &&
+    cacheable(fresh1AllocBits.addr)
   val fresh1Entry = WireDefault(entries(fresh1AllocIdx))
   fresh1Entry.valid := true.B
   fresh1Entry.meta := fresh1AllocBits.meta

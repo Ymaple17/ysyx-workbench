@@ -37,7 +37,10 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     val issue_lsu1_bits = Output(new RSEntry)
     val issue_lsu1_idx = Output(UInt(idxW.W))
     val issue_lsu1_fire = Input(Bool())
-
+    val issue_store_addr_valid = Output(Bool())
+    val issue_store_addr_bits = Output(new RSEntry)
+    val issue_store_addr_idx = Output(UInt(idxW.W))
+    val issue_store_addr_fire = Input(Bool())
     val free_data_fire = Input(Vec(width, Bool()))
     val free_data_idx = Input(Vec(width, UInt(OoOParams.ROB_PTR_W.W)))
     val free_ctrl_fire = Input(Bool())
@@ -53,9 +56,14 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     val flush_idx = Input(UInt(OoOParams.ROB_PTR_W.W))
     val flush_all = Input(Bool())
     val fresh_issue_count = Output(UInt(3.W))
+    val store_addr_candidate_count = Output(UInt(log2Ceil(n + 1).W))
+    val store_addr_data_wait_count = Output(UInt(log2Ceil(n + 1).W))
+    val store_data_addr_wait_count = Output(UInt(log2Ceil(n + 1).W))
+    val store_ready_count = Output(UInt(log2Ceil(n + 1).W))
   })
 
   val entries = RegInit(VecInit(Seq.fill(n)(0.U.asTypeOf(new RSEntry))))
+  val storeAddrIssued = RegInit(VecInit(Seq.fill(n)(false.B)))
   val validMask = VecInit(entries.map(_.valid)).asUInt
   io.count := PopCount(validMask)
   io.space := n.U - io.count
@@ -128,6 +136,22 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
       !freeByRob(i) && !loadWait
   }
 
+  val residentStore = VecInit((0 until n).map(i =>
+    entries(i).valid && !entries(i).issued && !freeByRob(i) &&
+      residentMem(i) && entries(i).lsu_mem_write))
+  val storeAddrCandidate = VecInit((0 until n).map(i =>
+    residentStore(i) && issueEntry(i).src1_ready))
+  val storeAddrDataWait = VecInit((0 until n).map(i =>
+    storeAddrCandidate(i) && !issueEntry(i).src2_ready))
+  val storeDataAddrWait = VecInit((0 until n).map(i =>
+    residentStore(i) && !issueEntry(i).src1_ready && issueEntry(i).src2_ready))
+  val storeReady = VecInit((0 until n).map(i =>
+    storeAddrCandidate(i) && issueEntry(i).src2_ready))
+  io.store_addr_candidate_count := PopCount(storeAddrCandidate)
+  io.store_addr_data_wait_count := PopCount(storeAddrDataWait)
+  io.store_data_addr_wait_count := PopCount(storeDataAddrWait)
+  io.store_ready_count := PopCount(storeReady)
+
   def oldest(mask: Vec[Bool]): Vec[Bool] = {
     val result = Wire(Vec(n, Bool()))
     for (i <- 0 until n) {
@@ -138,6 +162,13 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     }
     result
   }
+
+  val storeAddrSelect = oldest(VecInit((0 until n).map(i =>
+    storeAddrDataWait(i) && !storeAddrIssued(i))))
+  val residentStoreAddr = storeAddrSelect.asUInt.orR
+  io.issue_store_addr_valid := residentStoreAddr && !io.flush
+  io.issue_store_addr_bits := Mux1H(storeAddrSelect, issueEntry)
+  io.issue_store_addr_idx := PriorityEncoder(storeAddrSelect.asUInt)
 
   val residentSelect = Wire(Vec(width, Vec(n, Bool())))
   val residentUsed = Wire(Vec(width + 1, UInt(n.W)))
@@ -264,12 +295,14 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     for (i <- 0 until n) {
       when(io.flush_all || (entries(i).valid && age(entries(i).rob_idx) > age(io.flush_idx))) {
         entries(i).valid := false.B
+        storeAddrIssued(i) := false.B
       }
     }
   }.otherwise {
     for (i <- 0 until n) {
       when(freeByRob(i)) {
         entries(i).valid := false.B
+        storeAddrIssued(i) := false.B
       }
     }
     for (port <- 0 until width) {
@@ -286,12 +319,16 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     when(io.issue_lsu1_fire && residentLsu1) {
       entries(PriorityEncoder(lsuSelect1.asUInt)).issued := true.B
     }
+    when(io.issue_store_addr_fire && residentStoreAddr) {
+      storeAddrIssued(PriorityEncoder(storeAddrSelect.asUInt)) := true.B
+    }
     for (lane <- 0 until width) {
       when(allocAccept(lane)) {
         val entry = WireDefault(fresh(lane))
         entry.valid := true.B
         entry.issued := freshIssued(lane)
         entries(io.enq_idx(lane)) := entry
+        storeAddrIssued(io.enq_idx(lane)) := false.B
       }
     }
   }
@@ -311,5 +348,9 @@ class WideRS(n: Int = OoOParams.WIDE_RS_SIZE) extends Module {
     assert(!(io.issue_lsu_fire && io.issue_lsu1_fire) ||
       (io.issue_lsu_idx =/= io.issue_lsu1_idx),
       "the two LSU ports must not issue the same RS entry")
+    assert(!io.issue_store_addr_fire ||
+      (io.issue_store_addr_bits.lsu_mem_write && io.issue_store_addr_bits.src1_ready &&
+        !io.issue_store_addr_bits.src2_ready),
+      "Store address issue must be an address-ready/data-wait Store")
   }
 }

@@ -306,6 +306,8 @@ class WideRSCompat extends Module {
     val issue_div_valid = Output(Bool()); val issue_div_bits = Output(new RSEntry); val issue_div_fire = Input(Bool())
     val issue_lsu_valid = Output(Bool()); val issue_lsu_bits = Output(new RSEntry); val issue_lsu_fire = Input(Bool())
     val issue_lsu1_valid = Output(Bool()); val issue_lsu1_bits = Output(new RSEntry); val issue_lsu1_fire = Input(Bool())
+    val issue_store_addr_valid = Output(Bool()); val issue_store_addr_bits = Output(new RSEntry)
+    val issue_store_addr_fire = Input(Bool())
     val issue_fire = Input(Bool())
     val free_rob_fire = Input(Bool()); val free_rob_idx = Input(UInt(ptrW.W))
     val free_rob1_fire = Input(Bool()); val free_rob1_idx = Input(UInt(ptrW.W))
@@ -319,6 +321,10 @@ class WideRSCompat extends Module {
     val cdb3_valid = Input(Bool()); val cdb3_pdest = Input(UInt(OoOParams.PHYS_W.W)); val cdb3_val = Input(UInt(32.W))
     val flush = Input(Bool()); val flush_idx = Input(UInt(ptrW.W)); val flush_all = Input(Bool())
     val fresh_issue_count = Output(UInt(3.W))
+    val store_addr_candidate_count = Output(UInt(log2Ceil(OoOParams.WIDE_RS_SIZE + 1).W))
+    val store_addr_data_wait_count = Output(UInt(log2Ceil(OoOParams.WIDE_RS_SIZE + 1).W))
+    val store_data_addr_wait_count = Output(UInt(log2Ceil(OoOParams.WIDE_RS_SIZE + 1).W))
+    val store_ready_count = Output(UInt(log2Ceil(OoOParams.WIDE_RS_SIZE + 1).W))
   })
   val impl = Module(new WideRS())
   val enqFire = Seq(io.enq_fire, io.enq1_fire, io.enq2_fire, io.enq3_fire)
@@ -345,9 +351,16 @@ class WideRSCompat extends Module {
   impl.io.issue_lsu_fire := io.issue_lsu_fire
   io.issue_lsu1_valid := impl.io.issue_lsu1_valid; io.issue_lsu1_bits := impl.io.issue_lsu1_bits
   impl.io.issue_lsu1_fire := io.issue_lsu1_fire
+  io.issue_store_addr_valid := impl.io.issue_store_addr_valid
+  io.issue_store_addr_bits := impl.io.issue_store_addr_bits
+  impl.io.issue_store_addr_fire := io.issue_store_addr_fire
   impl.io.free_ctrl_fire := io.free_ctrl_fire; impl.io.free_ctrl_idx := io.free_ctrl_idx
   impl.io.free_store_fire := io.free_store_fire; impl.io.free_store_idx := io.free_store_idx
   impl.io.flush := io.flush; impl.io.flush_idx := io.flush_idx; impl.io.flush_all := io.flush_all
   io.space := impl.io.space; io.count := impl.io.count
   io.fresh_issue_count := impl.io.fresh_issue_count
+  io.store_addr_candidate_count := impl.io.store_addr_candidate_count
+  io.store_addr_data_wait_count := impl.io.store_addr_data_wait_count
+  io.store_data_addr_wait_count := impl.io.store_data_addr_wait_count
+  io.store_ready_count := impl.io.store_ready_count
 }

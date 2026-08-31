@@ -292,6 +292,7 @@ module WideROB(
   output        io_entries_0_is_ebreak,
                 io_entries_0_is_fencei,
                 io_entries_0_state_state,
+                io_entries_0_addr_ready,
                 io_entries_1_valid,
                 io_entries_1_done,
   output [31:0] io_entries_1_pc,
@@ -307,6 +308,7 @@ module WideROB(
   output        io_entries_1_is_ebreak,
                 io_entries_1_is_fencei,
                 io_entries_1_state_state,
+                io_entries_1_addr_ready,
                 io_entries_2_valid,
                 io_entries_2_done,
   output [31:0] io_entries_2_pc,
@@ -322,6 +324,7 @@ module WideROB(
   output        io_entries_2_is_ebreak,
                 io_entries_2_is_fencei,
                 io_entries_2_state_state,
+                io_entries_2_addr_ready,
                 io_entries_3_valid,
                 io_entries_3_done,
   output [31:0] io_entries_3_pc,
@@ -337,6 +340,7 @@ module WideROB(
   output        io_entries_3_is_ebreak,
                 io_entries_3_is_fencei,
                 io_entries_3_state_state,
+                io_entries_3_addr_ready,
                 io_entries_4_valid,
                 io_entries_4_done,
   output [31:0] io_entries_4_pc,
@@ -352,6 +356,7 @@ module WideROB(
   output        io_entries_4_is_ebreak,
                 io_entries_4_is_fencei,
                 io_entries_4_state_state,
+                io_entries_4_addr_ready,
                 io_entries_5_valid,
                 io_entries_5_done,
   output [31:0] io_entries_5_pc,
@@ -367,6 +372,7 @@ module WideROB(
   output        io_entries_5_is_ebreak,
                 io_entries_5_is_fencei,
                 io_entries_5_state_state,
+                io_entries_5_addr_ready,
                 io_entries_6_valid,
                 io_entries_6_done,
   output [31:0] io_entries_6_pc,
@@ -382,6 +388,7 @@ module WideROB(
   output        io_entries_6_is_ebreak,
                 io_entries_6_is_fencei,
                 io_entries_6_state_state,
+                io_entries_6_addr_ready,
                 io_entries_7_valid,
                 io_entries_7_done,
   output [31:0] io_entries_7_pc,
@@ -397,6 +404,7 @@ module WideROB(
   output        io_entries_7_is_ebreak,
                 io_entries_7_is_fencei,
                 io_entries_7_state_state,
+                io_entries_7_addr_ready,
                 io_entries_8_valid,
                 io_entries_8_done,
   output [31:0] io_entries_8_pc,
@@ -412,6 +420,7 @@ module WideROB(
   output        io_entries_8_is_ebreak,
                 io_entries_8_is_fencei,
                 io_entries_8_state_state,
+                io_entries_8_addr_ready,
                 io_entries_9_valid,
                 io_entries_9_done,
   output [31:0] io_entries_9_pc,
@@ -427,6 +436,7 @@ module WideROB(
   output        io_entries_9_is_ebreak,
                 io_entries_9_is_fencei,
                 io_entries_9_state_state,
+                io_entries_9_addr_ready,
                 io_entries_10_valid,
                 io_entries_10_done,
   output [31:0] io_entries_10_pc,
@@ -442,6 +452,7 @@ module WideROB(
   output        io_entries_10_is_ebreak,
                 io_entries_10_is_fencei,
                 io_entries_10_state_state,
+                io_entries_10_addr_ready,
                 io_entries_11_valid,
                 io_entries_11_done,
   output [31:0] io_entries_11_pc,
@@ -457,6 +468,7 @@ module WideROB(
   output        io_entries_11_is_ebreak,
                 io_entries_11_is_fencei,
                 io_entries_11_state_state,
+                io_entries_11_addr_ready,
                 io_entries_12_valid,
                 io_entries_12_done,
   output [31:0] io_entries_12_pc,
@@ -472,6 +484,7 @@ module WideROB(
   output        io_entries_12_is_ebreak,
                 io_entries_12_is_fencei,
                 io_entries_12_state_state,
+                io_entries_12_addr_ready,
                 io_entries_13_valid,
                 io_entries_13_done,
   output [31:0] io_entries_13_pc,
@@ -487,6 +500,7 @@ module WideROB(
   output        io_entries_13_is_ebreak,
                 io_entries_13_is_fencei,
                 io_entries_13_state_state,
+                io_entries_13_addr_ready,
                 io_entries_14_valid,
                 io_entries_14_done,
   output [31:0] io_entries_14_pc,
@@ -502,6 +516,7 @@ module WideROB(
   output        io_entries_14_is_ebreak,
                 io_entries_14_is_fencei,
                 io_entries_14_state_state,
+                io_entries_14_addr_ready,
                 io_entries_15_valid,
                 io_entries_15_done,
   output [31:0] io_entries_15_pc,
@@ -517,6 +532,7 @@ module WideROB(
   output        io_entries_15_is_ebreak,
                 io_entries_15_is_fencei,
                 io_entries_15_state_state,
+                io_entries_15_addr_ready,
                 io_entries_16_valid,
                 io_entries_16_done,
   output [31:0] io_entries_16_pc,
@@ -532,6 +548,7 @@ module WideROB(
   output        io_entries_16_is_ebreak,
                 io_entries_16_is_fencei,
                 io_entries_16_state_state,
+                io_entries_16_addr_ready,
                 io_entries_17_valid,
                 io_entries_17_done,
   output [31:0] io_entries_17_pc,
@@ -547,6 +564,7 @@ module WideROB(
   output        io_entries_17_is_ebreak,
                 io_entries_17_is_fencei,
                 io_entries_17_state_state,
+                io_entries_17_addr_ready,
                 io_entries_18_valid,
                 io_entries_18_done,
   output [31:0] io_entries_18_pc,
@@ -562,6 +580,7 @@ module WideROB(
   output        io_entries_18_is_ebreak,
                 io_entries_18_is_fencei,
                 io_entries_18_state_state,
+                io_entries_18_addr_ready,
                 io_entries_19_valid,
                 io_entries_19_done,
   output [31:0] io_entries_19_pc,
@@ -577,6 +596,7 @@ module WideROB(
   output        io_entries_19_is_ebreak,
                 io_entries_19_is_fencei,
                 io_entries_19_state_state,
+                io_entries_19_addr_ready,
                 io_entries_20_valid,
                 io_entries_20_done,
   output [31:0] io_entries_20_pc,
@@ -592,6 +612,7 @@ module WideROB(
   output        io_entries_20_is_ebreak,
                 io_entries_20_is_fencei,
                 io_entries_20_state_state,
+                io_entries_20_addr_ready,
                 io_entries_21_valid,
                 io_entries_21_done,
   output [31:0] io_entries_21_pc,
@@ -607,6 +628,7 @@ module WideROB(
   output        io_entries_21_is_ebreak,
                 io_entries_21_is_fencei,
                 io_entries_21_state_state,
+                io_entries_21_addr_ready,
                 io_entries_22_valid,
                 io_entries_22_done,
   output [31:0] io_entries_22_pc,
@@ -622,6 +644,7 @@ module WideROB(
   output        io_entries_22_is_ebreak,
                 io_entries_22_is_fencei,
                 io_entries_22_state_state,
+                io_entries_22_addr_ready,
                 io_entries_23_valid,
                 io_entries_23_done,
   output [31:0] io_entries_23_pc,
@@ -637,6 +660,7 @@ module WideROB(
   output        io_entries_23_is_ebreak,
                 io_entries_23_is_fencei,
                 io_entries_23_state_state,
+                io_entries_23_addr_ready,
                 io_entries_24_valid,
                 io_entries_24_done,
   output [31:0] io_entries_24_pc,
@@ -652,6 +676,7 @@ module WideROB(
   output        io_entries_24_is_ebreak,
                 io_entries_24_is_fencei,
                 io_entries_24_state_state,
+                io_entries_24_addr_ready,
                 io_entries_25_valid,
                 io_entries_25_done,
   output [31:0] io_entries_25_pc,
@@ -667,6 +692,7 @@ module WideROB(
   output        io_entries_25_is_ebreak,
                 io_entries_25_is_fencei,
                 io_entries_25_state_state,
+                io_entries_25_addr_ready,
                 io_entries_26_valid,
                 io_entries_26_done,
   output [31:0] io_entries_26_pc,
@@ -682,6 +708,7 @@ module WideROB(
   output        io_entries_26_is_ebreak,
                 io_entries_26_is_fencei,
                 io_entries_26_state_state,
+                io_entries_26_addr_ready,
                 io_entries_27_valid,
                 io_entries_27_done,
   output [31:0] io_entries_27_pc,
@@ -697,6 +724,7 @@ module WideROB(
   output        io_entries_27_is_ebreak,
                 io_entries_27_is_fencei,
                 io_entries_27_state_state,
+                io_entries_27_addr_ready,
                 io_entries_28_valid,
                 io_entries_28_done,
   output [31:0] io_entries_28_pc,
@@ -712,6 +740,7 @@ module WideROB(
   output        io_entries_28_is_ebreak,
                 io_entries_28_is_fencei,
                 io_entries_28_state_state,
+                io_entries_28_addr_ready,
                 io_entries_29_valid,
                 io_entries_29_done,
   output [31:0] io_entries_29_pc,
@@ -727,6 +756,7 @@ module WideROB(
   output        io_entries_29_is_ebreak,
                 io_entries_29_is_fencei,
                 io_entries_29_state_state,
+                io_entries_29_addr_ready,
                 io_entries_30_valid,
                 io_entries_30_done,
   output [31:0] io_entries_30_pc,
@@ -742,6 +772,7 @@ module WideROB(
   output        io_entries_30_is_ebreak,
                 io_entries_30_is_fencei,
                 io_entries_30_state_state,
+                io_entries_30_addr_ready,
                 io_entries_31_valid,
                 io_entries_31_done,
   output [31:0] io_entries_31_pc,
@@ -757,6 +788,7 @@ module WideROB(
   output        io_entries_31_is_ebreak,
                 io_entries_31_is_fencei,
                 io_entries_31_state_state,
+                io_entries_31_addr_ready,
   output [4:0]  io_head,
   output [5:0]  io_count
 );
@@ -19696,6 +19728,7 @@ module WideROB(
   assign io_entries_0_is_ebreak = entries_0_is_ebreak;
   assign io_entries_0_is_fencei = entries_0_is_fencei;
   assign io_entries_0_state_state = entries_0_state_state;
+  assign io_entries_0_addr_ready = entries_0_addr_ready;
   assign io_entries_1_valid = entries_1_valid;
   assign io_entries_1_done = entries_1_done;
   assign io_entries_1_pc = entries_1_pc;
@@ -19711,6 +19744,7 @@ module WideROB(
   assign io_entries_1_is_ebreak = entries_1_is_ebreak;
   assign io_entries_1_is_fencei = entries_1_is_fencei;
   assign io_entries_1_state_state = entries_1_state_state;
+  assign io_entries_1_addr_ready = entries_1_addr_ready;
   assign io_entries_2_valid = entries_2_valid;
   assign io_entries_2_done = entries_2_done;
   assign io_entries_2_pc = entries_2_pc;
@@ -19726,6 +19760,7 @@ module WideROB(
   assign io_entries_2_is_ebreak = entries_2_is_ebreak;
   assign io_entries_2_is_fencei = entries_2_is_fencei;
   assign io_entries_2_state_state = entries_2_state_state;
+  assign io_entries_2_addr_ready = entries_2_addr_ready;
   assign io_entries_3_valid = entries_3_valid;
   assign io_entries_3_done = entries_3_done;
   assign io_entries_3_pc = entries_3_pc;
@@ -19741,6 +19776,7 @@ module WideROB(
   assign io_entries_3_is_ebreak = entries_3_is_ebreak;
   assign io_entries_3_is_fencei = entries_3_is_fencei;
   assign io_entries_3_state_state = entries_3_state_state;
+  assign io_entries_3_addr_ready = entries_3_addr_ready;
   assign io_entries_4_valid = entries_4_valid;
   assign io_entries_4_done = entries_4_done;
   assign io_entries_4_pc = entries_4_pc;
@@ -19756,6 +19792,7 @@ module WideROB(
   assign io_entries_4_is_ebreak = entries_4_is_ebreak;
   assign io_entries_4_is_fencei = entries_4_is_fencei;
   assign io_entries_4_state_state = entries_4_state_state;
+  assign io_entries_4_addr_ready = entries_4_addr_ready;
   assign io_entries_5_valid = entries_5_valid;
   assign io_entries_5_done = entries_5_done;
   assign io_entries_5_pc = entries_5_pc;
@@ -19771,6 +19808,7 @@ module WideROB(
   assign io_entries_5_is_ebreak = entries_5_is_ebreak;
   assign io_entries_5_is_fencei = entries_5_is_fencei;
   assign io_entries_5_state_state = entries_5_state_state;
+  assign io_entries_5_addr_ready = entries_5_addr_ready;
   assign io_entries_6_valid = entries_6_valid;
   assign io_entries_6_done = entries_6_done;
   assign io_entries_6_pc = entries_6_pc;
@@ -19786,6 +19824,7 @@ module WideROB(
   assign io_entries_6_is_ebreak = entries_6_is_ebreak;
   assign io_entries_6_is_fencei = entries_6_is_fencei;
   assign io_entries_6_state_state = entries_6_state_state;
+  assign io_entries_6_addr_ready = entries_6_addr_ready;
   assign io_entries_7_valid = entries_7_valid;
   assign io_entries_7_done = entries_7_done;
   assign io_entries_7_pc = entries_7_pc;
@@ -19801,6 +19840,7 @@ module WideROB(
   assign io_entries_7_is_ebreak = entries_7_is_ebreak;
   assign io_entries_7_is_fencei = entries_7_is_fencei;
   assign io_entries_7_state_state = entries_7_state_state;
+  assign io_entries_7_addr_ready = entries_7_addr_ready;
   assign io_entries_8_valid = entries_8_valid;
   assign io_entries_8_done = entries_8_done;
   assign io_entries_8_pc = entries_8_pc;
@@ -19816,6 +19856,7 @@ module WideROB(
   assign io_entries_8_is_ebreak = entries_8_is_ebreak;
   assign io_entries_8_is_fencei = entries_8_is_fencei;
   assign io_entries_8_state_state = entries_8_state_state;
+  assign io_entries_8_addr_ready = entries_8_addr_ready;
   assign io_entries_9_valid = entries_9_valid;
   assign io_entries_9_done = entries_9_done;
   assign io_entries_9_pc = entries_9_pc;
@@ -19831,6 +19872,7 @@ module WideROB(
   assign io_entries_9_is_ebreak = entries_9_is_ebreak;
   assign io_entries_9_is_fencei = entries_9_is_fencei;
   assign io_entries_9_state_state = entries_9_state_state;
+  assign io_entries_9_addr_ready = entries_9_addr_ready;
   assign io_entries_10_valid = entries_10_valid;
   assign io_entries_10_done = entries_10_done;
   assign io_entries_10_pc = entries_10_pc;
@@ -19846,6 +19888,7 @@ module WideROB(
   assign io_entries_10_is_ebreak = entries_10_is_ebreak;
   assign io_entries_10_is_fencei = entries_10_is_fencei;
   assign io_entries_10_state_state = entries_10_state_state;
+  assign io_entries_10_addr_ready = entries_10_addr_ready;
   assign io_entries_11_valid = entries_11_valid;
   assign io_entries_11_done = entries_11_done;
   assign io_entries_11_pc = entries_11_pc;
@@ -19861,6 +19904,7 @@ module WideROB(
   assign io_entries_11_is_ebreak = entries_11_is_ebreak;
   assign io_entries_11_is_fencei = entries_11_is_fencei;
   assign io_entries_11_state_state = entries_11_state_state;
+  assign io_entries_11_addr_ready = entries_11_addr_ready;
   assign io_entries_12_valid = entries_12_valid;
   assign io_entries_12_done = entries_12_done;
   assign io_entries_12_pc = entries_12_pc;
@@ -19876,6 +19920,7 @@ module WideROB(
   assign io_entries_12_is_ebreak = entries_12_is_ebreak;
   assign io_entries_12_is_fencei = entries_12_is_fencei;
   assign io_entries_12_state_state = entries_12_state_state;
+  assign io_entries_12_addr_ready = entries_12_addr_ready;
   assign io_entries_13_valid = entries_13_valid;
   assign io_entries_13_done = entries_13_done;
   assign io_entries_13_pc = entries_13_pc;
@@ -19891,6 +19936,7 @@ module WideROB(
   assign io_entries_13_is_ebreak = entries_13_is_ebreak;
   assign io_entries_13_is_fencei = entries_13_is_fencei;
   assign io_entries_13_state_state = entries_13_state_state;
+  assign io_entries_13_addr_ready = entries_13_addr_ready;
   assign io_entries_14_valid = entries_14_valid;
   assign io_entries_14_done = entries_14_done;
   assign io_entries_14_pc = entries_14_pc;
@@ -19906,6 +19952,7 @@ module WideROB(
   assign io_entries_14_is_ebreak = entries_14_is_ebreak;
   assign io_entries_14_is_fencei = entries_14_is_fencei;
   assign io_entries_14_state_state = entries_14_state_state;
+  assign io_entries_14_addr_ready = entries_14_addr_ready;
   assign io_entries_15_valid = entries_15_valid;
   assign io_entries_15_done = entries_15_done;
   assign io_entries_15_pc = entries_15_pc;
@@ -19921,6 +19968,7 @@ module WideROB(
   assign io_entries_15_is_ebreak = entries_15_is_ebreak;
   assign io_entries_15_is_fencei = entries_15_is_fencei;
   assign io_entries_15_state_state = entries_15_state_state;
+  assign io_entries_15_addr_ready = entries_15_addr_ready;
   assign io_entries_16_valid = entries_16_valid;
   assign io_entries_16_done = entries_16_done;
   assign io_entries_16_pc = entries_16_pc;
@@ -19936,6 +19984,7 @@ module WideROB(
   assign io_entries_16_is_ebreak = entries_16_is_ebreak;
   assign io_entries_16_is_fencei = entries_16_is_fencei;
   assign io_entries_16_state_state = entries_16_state_state;
+  assign io_entries_16_addr_ready = entries_16_addr_ready;
   assign io_entries_17_valid = entries_17_valid;
   assign io_entries_17_done = entries_17_done;
   assign io_entries_17_pc = entries_17_pc;
@@ -19951,6 +20000,7 @@ module WideROB(
   assign io_entries_17_is_ebreak = entries_17_is_ebreak;
   assign io_entries_17_is_fencei = entries_17_is_fencei;
   assign io_entries_17_state_state = entries_17_state_state;
+  assign io_entries_17_addr_ready = entries_17_addr_ready;
   assign io_entries_18_valid = entries_18_valid;
   assign io_entries_18_done = entries_18_done;
   assign io_entries_18_pc = entries_18_pc;
@@ -19966,6 +20016,7 @@ module WideROB(
   assign io_entries_18_is_ebreak = entries_18_is_ebreak;
   assign io_entries_18_is_fencei = entries_18_is_fencei;
   assign io_entries_18_state_state = entries_18_state_state;
+  assign io_entries_18_addr_ready = entries_18_addr_ready;
   assign io_entries_19_valid = entries_19_valid;
   assign io_entries_19_done = entries_19_done;
   assign io_entries_19_pc = entries_19_pc;
@@ -19981,6 +20032,7 @@ module WideROB(
   assign io_entries_19_is_ebreak = entries_19_is_ebreak;
   assign io_entries_19_is_fencei = entries_19_is_fencei;
   assign io_entries_19_state_state = entries_19_state_state;
+  assign io_entries_19_addr_ready = entries_19_addr_ready;
   assign io_entries_20_valid = entries_20_valid;
   assign io_entries_20_done = entries_20_done;
   assign io_entries_20_pc = entries_20_pc;
@@ -19996,6 +20048,7 @@ module WideROB(
   assign io_entries_20_is_ebreak = entries_20_is_ebreak;
   assign io_entries_20_is_fencei = entries_20_is_fencei;
   assign io_entries_20_state_state = entries_20_state_state;
+  assign io_entries_20_addr_ready = entries_20_addr_ready;
   assign io_entries_21_valid = entries_21_valid;
   assign io_entries_21_done = entries_21_done;
   assign io_entries_21_pc = entries_21_pc;
@@ -20011,6 +20064,7 @@ module WideROB(
   assign io_entries_21_is_ebreak = entries_21_is_ebreak;
   assign io_entries_21_is_fencei = entries_21_is_fencei;
   assign io_entries_21_state_state = entries_21_state_state;
+  assign io_entries_21_addr_ready = entries_21_addr_ready;
   assign io_entries_22_valid = entries_22_valid;
   assign io_entries_22_done = entries_22_done;
   assign io_entries_22_pc = entries_22_pc;
@@ -20026,6 +20080,7 @@ module WideROB(
   assign io_entries_22_is_ebreak = entries_22_is_ebreak;
   assign io_entries_22_is_fencei = entries_22_is_fencei;
   assign io_entries_22_state_state = entries_22_state_state;
+  assign io_entries_22_addr_ready = entries_22_addr_ready;
   assign io_entries_23_valid = entries_23_valid;
   assign io_entries_23_done = entries_23_done;
   assign io_entries_23_pc = entries_23_pc;
@@ -20041,6 +20096,7 @@ module WideROB(
   assign io_entries_23_is_ebreak = entries_23_is_ebreak;
   assign io_entries_23_is_fencei = entries_23_is_fencei;
   assign io_entries_23_state_state = entries_23_state_state;
+  assign io_entries_23_addr_ready = entries_23_addr_ready;
   assign io_entries_24_valid = entries_24_valid;
   assign io_entries_24_done = entries_24_done;
   assign io_entries_24_pc = entries_24_pc;
@@ -20056,6 +20112,7 @@ module WideROB(
   assign io_entries_24_is_ebreak = entries_24_is_ebreak;
   assign io_entries_24_is_fencei = entries_24_is_fencei;
   assign io_entries_24_state_state = entries_24_state_state;
+  assign io_entries_24_addr_ready = entries_24_addr_ready;
   assign io_entries_25_valid = entries_25_valid;
   assign io_entries_25_done = entries_25_done;
   assign io_entries_25_pc = entries_25_pc;
@@ -20071,6 +20128,7 @@ module WideROB(
   assign io_entries_25_is_ebreak = entries_25_is_ebreak;
   assign io_entries_25_is_fencei = entries_25_is_fencei;
   assign io_entries_25_state_state = entries_25_state_state;
+  assign io_entries_25_addr_ready = entries_25_addr_ready;
   assign io_entries_26_valid = entries_26_valid;
   assign io_entries_26_done = entries_26_done;
   assign io_entries_26_pc = entries_26_pc;
@@ -20086,6 +20144,7 @@ module WideROB(
   assign io_entries_26_is_ebreak = entries_26_is_ebreak;
   assign io_entries_26_is_fencei = entries_26_is_fencei;
   assign io_entries_26_state_state = entries_26_state_state;
+  assign io_entries_26_addr_ready = entries_26_addr_ready;
   assign io_entries_27_valid = entries_27_valid;
   assign io_entries_27_done = entries_27_done;
   assign io_entries_27_pc = entries_27_pc;
@@ -20101,6 +20160,7 @@ module WideROB(
   assign io_entries_27_is_ebreak = entries_27_is_ebreak;
   assign io_entries_27_is_fencei = entries_27_is_fencei;
   assign io_entries_27_state_state = entries_27_state_state;
+  assign io_entries_27_addr_ready = entries_27_addr_ready;
   assign io_entries_28_valid = entries_28_valid;
   assign io_entries_28_done = entries_28_done;
   assign io_entries_28_pc = entries_28_pc;
@@ -20116,6 +20176,7 @@ module WideROB(
   assign io_entries_28_is_ebreak = entries_28_is_ebreak;
   assign io_entries_28_is_fencei = entries_28_is_fencei;
   assign io_entries_28_state_state = entries_28_state_state;
+  assign io_entries_28_addr_ready = entries_28_addr_ready;
   assign io_entries_29_valid = entries_29_valid;
   assign io_entries_29_done = entries_29_done;
   assign io_entries_29_pc = entries_29_pc;
@@ -20131,6 +20192,7 @@ module WideROB(
   assign io_entries_29_is_ebreak = entries_29_is_ebreak;
   assign io_entries_29_is_fencei = entries_29_is_fencei;
   assign io_entries_29_state_state = entries_29_state_state;
+  assign io_entries_29_addr_ready = entries_29_addr_ready;
   assign io_entries_30_valid = entries_30_valid;
   assign io_entries_30_done = entries_30_done;
   assign io_entries_30_pc = entries_30_pc;
@@ -20146,6 +20208,7 @@ module WideROB(
   assign io_entries_30_is_ebreak = entries_30_is_ebreak;
   assign io_entries_30_is_fencei = entries_30_is_fencei;
   assign io_entries_30_state_state = entries_30_state_state;
+  assign io_entries_30_addr_ready = entries_30_addr_ready;
   assign io_entries_31_valid = entries_31_valid;
   assign io_entries_31_done = entries_31_done;
   assign io_entries_31_pc = entries_31_pc;
@@ -20161,6 +20224,7 @@ module WideROB(
   assign io_entries_31_is_ebreak = entries_31_is_ebreak;
   assign io_entries_31_is_fencei = entries_31_is_fencei;
   assign io_entries_31_state_state = entries_31_state_state;
+  assign io_entries_31_addr_ready = entries_31_addr_ready;
   assign io_head = idx;
   assign io_count = count;
 endmodule

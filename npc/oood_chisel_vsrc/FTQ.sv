@@ -4,7 +4,10 @@ module FTQ(
                 reset,
   output        io_alloc_ready,
   input         io_alloc_valid,
-  input  [31:0] io_alloc_bits_basePc,
+  input  [31:0] io_alloc_bits_lanePc_0,
+                io_alloc_bits_lanePc_1,
+                io_alloc_bits_lanePc_2,
+                io_alloc_bits_lanePc_3,
   input  [3:0]  io_alloc_bits_validMask,
   input  [31:0] io_alloc_bits_ras_0,
                 io_alloc_bits_ras_1,
@@ -41,8 +44,12 @@ module FTQ(
   input  [3:0]  io_recoverIdx,
   input  [7:0]  io_recoverGeneration,
   output        io_recoverValid,
-  output [31:0] io_recover_basePc,
-                io_recover_ras_0,
+  output [31:0] io_recover_lanePc_0,
+                io_recover_lanePc_1,
+                io_recover_lanePc_2,
+                io_recover_lanePc_3,
+  output [3:0]  io_recover_validMask,
+  output [31:0] io_recover_ras_0,
                 io_recover_ras_1,
                 io_recover_ras_2,
                 io_recover_ras_3,
@@ -67,7 +74,10 @@ module FTQ(
   output        io_full
 );
 
-  reg  [31:0] entries_0_basePc;
+  reg  [31:0] entries_0_lanePc_0;
+  reg  [31:0] entries_0_lanePc_1;
+  reg  [31:0] entries_0_lanePc_2;
+  reg  [31:0] entries_0_lanePc_3;
   reg  [3:0]  entries_0_validMask;
   reg  [31:0] entries_0_ras_0;
   reg  [31:0] entries_0_ras_1;
@@ -90,7 +100,10 @@ module FTQ(
   reg         entries_0_valid;
   reg  [7:0]  entries_0_generation;
   reg  [2:0]  entries_0_pending;
-  reg  [31:0] entries_1_basePc;
+  reg  [31:0] entries_1_lanePc_0;
+  reg  [31:0] entries_1_lanePc_1;
+  reg  [31:0] entries_1_lanePc_2;
+  reg  [31:0] entries_1_lanePc_3;
   reg  [3:0]  entries_1_validMask;
   reg  [31:0] entries_1_ras_0;
   reg  [31:0] entries_1_ras_1;
@@ -113,7 +126,10 @@ module FTQ(
   reg         entries_1_valid;
   reg  [7:0]  entries_1_generation;
   reg  [2:0]  entries_1_pending;
-  reg  [31:0] entries_2_basePc;
+  reg  [31:0] entries_2_lanePc_0;
+  reg  [31:0] entries_2_lanePc_1;
+  reg  [31:0] entries_2_lanePc_2;
+  reg  [31:0] entries_2_lanePc_3;
   reg  [3:0]  entries_2_validMask;
   reg  [31:0] entries_2_ras_0;
   reg  [31:0] entries_2_ras_1;
@@ -136,7 +152,10 @@ module FTQ(
   reg         entries_2_valid;
   reg  [7:0]  entries_2_generation;
   reg  [2:0]  entries_2_pending;
-  reg  [31:0] entries_3_basePc;
+  reg  [31:0] entries_3_lanePc_0;
+  reg  [31:0] entries_3_lanePc_1;
+  reg  [31:0] entries_3_lanePc_2;
+  reg  [31:0] entries_3_lanePc_3;
   reg  [3:0]  entries_3_validMask;
   reg  [31:0] entries_3_ras_0;
   reg  [31:0] entries_3_ras_1;
@@ -159,7 +178,10 @@ module FTQ(
   reg         entries_3_valid;
   reg  [7:0]  entries_3_generation;
   reg  [2:0]  entries_3_pending;
-  reg  [31:0] entries_4_basePc;
+  reg  [31:0] entries_4_lanePc_0;
+  reg  [31:0] entries_4_lanePc_1;
+  reg  [31:0] entries_4_lanePc_2;
+  reg  [31:0] entries_4_lanePc_3;
   reg  [3:0]  entries_4_validMask;
   reg  [31:0] entries_4_ras_0;
   reg  [31:0] entries_4_ras_1;
@@ -182,7 +204,10 @@ module FTQ(
   reg         entries_4_valid;
   reg  [7:0]  entries_4_generation;
   reg  [2:0]  entries_4_pending;
-  reg  [31:0] entries_5_basePc;
+  reg  [31:0] entries_5_lanePc_0;
+  reg  [31:0] entries_5_lanePc_1;
+  reg  [31:0] entries_5_lanePc_2;
+  reg  [31:0] entries_5_lanePc_3;
   reg  [3:0]  entries_5_validMask;
   reg  [31:0] entries_5_ras_0;
   reg  [31:0] entries_5_ras_1;
@@ -205,7 +230,10 @@ module FTQ(
   reg         entries_5_valid;
   reg  [7:0]  entries_5_generation;
   reg  [2:0]  entries_5_pending;
-  reg  [31:0] entries_6_basePc;
+  reg  [31:0] entries_6_lanePc_0;
+  reg  [31:0] entries_6_lanePc_1;
+  reg  [31:0] entries_6_lanePc_2;
+  reg  [31:0] entries_6_lanePc_3;
   reg  [3:0]  entries_6_validMask;
   reg  [31:0] entries_6_ras_0;
   reg  [31:0] entries_6_ras_1;
@@ -228,7 +256,10 @@ module FTQ(
   reg         entries_6_valid;
   reg  [7:0]  entries_6_generation;
   reg  [2:0]  entries_6_pending;
-  reg  [31:0] entries_7_basePc;
+  reg  [31:0] entries_7_lanePc_0;
+  reg  [31:0] entries_7_lanePc_1;
+  reg  [31:0] entries_7_lanePc_2;
+  reg  [31:0] entries_7_lanePc_3;
   reg  [3:0]  entries_7_validMask;
   reg  [31:0] entries_7_ras_0;
   reg  [31:0] entries_7_ras_1;
@@ -251,7 +282,10 @@ module FTQ(
   reg         entries_7_valid;
   reg  [7:0]  entries_7_generation;
   reg  [2:0]  entries_7_pending;
-  reg  [31:0] entries_8_basePc;
+  reg  [31:0] entries_8_lanePc_0;
+  reg  [31:0] entries_8_lanePc_1;
+  reg  [31:0] entries_8_lanePc_2;
+  reg  [31:0] entries_8_lanePc_3;
   reg  [3:0]  entries_8_validMask;
   reg  [31:0] entries_8_ras_0;
   reg  [31:0] entries_8_ras_1;
@@ -274,7 +308,10 @@ module FTQ(
   reg         entries_8_valid;
   reg  [7:0]  entries_8_generation;
   reg  [2:0]  entries_8_pending;
-  reg  [31:0] entries_9_basePc;
+  reg  [31:0] entries_9_lanePc_0;
+  reg  [31:0] entries_9_lanePc_1;
+  reg  [31:0] entries_9_lanePc_2;
+  reg  [31:0] entries_9_lanePc_3;
   reg  [3:0]  entries_9_validMask;
   reg  [31:0] entries_9_ras_0;
   reg  [31:0] entries_9_ras_1;
@@ -297,7 +334,10 @@ module FTQ(
   reg         entries_9_valid;
   reg  [7:0]  entries_9_generation;
   reg  [2:0]  entries_9_pending;
-  reg  [31:0] entries_10_basePc;
+  reg  [31:0] entries_10_lanePc_0;
+  reg  [31:0] entries_10_lanePc_1;
+  reg  [31:0] entries_10_lanePc_2;
+  reg  [31:0] entries_10_lanePc_3;
   reg  [3:0]  entries_10_validMask;
   reg  [31:0] entries_10_ras_0;
   reg  [31:0] entries_10_ras_1;
@@ -320,7 +360,10 @@ module FTQ(
   reg         entries_10_valid;
   reg  [7:0]  entries_10_generation;
   reg  [2:0]  entries_10_pending;
-  reg  [31:0] entries_11_basePc;
+  reg  [31:0] entries_11_lanePc_0;
+  reg  [31:0] entries_11_lanePc_1;
+  reg  [31:0] entries_11_lanePc_2;
+  reg  [31:0] entries_11_lanePc_3;
   reg  [3:0]  entries_11_validMask;
   reg  [31:0] entries_11_ras_0;
   reg  [31:0] entries_11_ras_1;
@@ -343,7 +386,10 @@ module FTQ(
   reg         entries_11_valid;
   reg  [7:0]  entries_11_generation;
   reg  [2:0]  entries_11_pending;
-  reg  [31:0] entries_12_basePc;
+  reg  [31:0] entries_12_lanePc_0;
+  reg  [31:0] entries_12_lanePc_1;
+  reg  [31:0] entries_12_lanePc_2;
+  reg  [31:0] entries_12_lanePc_3;
   reg  [3:0]  entries_12_validMask;
   reg  [31:0] entries_12_ras_0;
   reg  [31:0] entries_12_ras_1;
@@ -366,7 +412,10 @@ module FTQ(
   reg         entries_12_valid;
   reg  [7:0]  entries_12_generation;
   reg  [2:0]  entries_12_pending;
-  reg  [31:0] entries_13_basePc;
+  reg  [31:0] entries_13_lanePc_0;
+  reg  [31:0] entries_13_lanePc_1;
+  reg  [31:0] entries_13_lanePc_2;
+  reg  [31:0] entries_13_lanePc_3;
   reg  [3:0]  entries_13_validMask;
   reg  [31:0] entries_13_ras_0;
   reg  [31:0] entries_13_ras_1;
@@ -389,7 +438,10 @@ module FTQ(
   reg         entries_13_valid;
   reg  [7:0]  entries_13_generation;
   reg  [2:0]  entries_13_pending;
-  reg  [31:0] entries_14_basePc;
+  reg  [31:0] entries_14_lanePc_0;
+  reg  [31:0] entries_14_lanePc_1;
+  reg  [31:0] entries_14_lanePc_2;
+  reg  [31:0] entries_14_lanePc_3;
   reg  [3:0]  entries_14_validMask;
   reg  [31:0] entries_14_ras_0;
   reg  [31:0] entries_14_ras_1;
@@ -412,7 +464,10 @@ module FTQ(
   reg         entries_14_valid;
   reg  [7:0]  entries_14_generation;
   reg  [2:0]  entries_14_pending;
-  reg  [31:0] entries_15_basePc;
+  reg  [31:0] entries_15_lanePc_0;
+  reg  [31:0] entries_15_lanePc_1;
+  reg  [31:0] entries_15_lanePc_2;
+  reg  [31:0] entries_15_lanePc_3;
   reg  [3:0]  entries_15_validMask;
   reg  [31:0] entries_15_ras_0;
   reg  [31:0] entries_15_ras_1;
@@ -498,855 +553,966 @@ module FTQ(
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_0 = entries_0_basePc;
+        casez_tmp_0 = entries_0_lanePc_0;
       4'b0001:
-        casez_tmp_0 = entries_1_basePc;
+        casez_tmp_0 = entries_1_lanePc_0;
       4'b0010:
-        casez_tmp_0 = entries_2_basePc;
+        casez_tmp_0 = entries_2_lanePc_0;
       4'b0011:
-        casez_tmp_0 = entries_3_basePc;
+        casez_tmp_0 = entries_3_lanePc_0;
       4'b0100:
-        casez_tmp_0 = entries_4_basePc;
+        casez_tmp_0 = entries_4_lanePc_0;
       4'b0101:
-        casez_tmp_0 = entries_5_basePc;
+        casez_tmp_0 = entries_5_lanePc_0;
       4'b0110:
-        casez_tmp_0 = entries_6_basePc;
+        casez_tmp_0 = entries_6_lanePc_0;
       4'b0111:
-        casez_tmp_0 = entries_7_basePc;
+        casez_tmp_0 = entries_7_lanePc_0;
       4'b1000:
-        casez_tmp_0 = entries_8_basePc;
+        casez_tmp_0 = entries_8_lanePc_0;
       4'b1001:
-        casez_tmp_0 = entries_9_basePc;
+        casez_tmp_0 = entries_9_lanePc_0;
       4'b1010:
-        casez_tmp_0 = entries_10_basePc;
+        casez_tmp_0 = entries_10_lanePc_0;
       4'b1011:
-        casez_tmp_0 = entries_11_basePc;
+        casez_tmp_0 = entries_11_lanePc_0;
       4'b1100:
-        casez_tmp_0 = entries_12_basePc;
+        casez_tmp_0 = entries_12_lanePc_0;
       4'b1101:
-        casez_tmp_0 = entries_13_basePc;
+        casez_tmp_0 = entries_13_lanePc_0;
       4'b1110:
-        casez_tmp_0 = entries_14_basePc;
+        casez_tmp_0 = entries_14_lanePc_0;
       default:
-        casez_tmp_0 = entries_15_basePc;
+        casez_tmp_0 = entries_15_lanePc_0;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_1;
+  reg  [31:0] casez_tmp_1;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_1 = entries_0_validMask;
+        casez_tmp_1 = entries_0_lanePc_1;
       4'b0001:
-        casez_tmp_1 = entries_1_validMask;
+        casez_tmp_1 = entries_1_lanePc_1;
       4'b0010:
-        casez_tmp_1 = entries_2_validMask;
+        casez_tmp_1 = entries_2_lanePc_1;
       4'b0011:
-        casez_tmp_1 = entries_3_validMask;
+        casez_tmp_1 = entries_3_lanePc_1;
       4'b0100:
-        casez_tmp_1 = entries_4_validMask;
+        casez_tmp_1 = entries_4_lanePc_1;
       4'b0101:
-        casez_tmp_1 = entries_5_validMask;
+        casez_tmp_1 = entries_5_lanePc_1;
       4'b0110:
-        casez_tmp_1 = entries_6_validMask;
+        casez_tmp_1 = entries_6_lanePc_1;
       4'b0111:
-        casez_tmp_1 = entries_7_validMask;
+        casez_tmp_1 = entries_7_lanePc_1;
       4'b1000:
-        casez_tmp_1 = entries_8_validMask;
+        casez_tmp_1 = entries_8_lanePc_1;
       4'b1001:
-        casez_tmp_1 = entries_9_validMask;
+        casez_tmp_1 = entries_9_lanePc_1;
       4'b1010:
-        casez_tmp_1 = entries_10_validMask;
+        casez_tmp_1 = entries_10_lanePc_1;
       4'b1011:
-        casez_tmp_1 = entries_11_validMask;
+        casez_tmp_1 = entries_11_lanePc_1;
       4'b1100:
-        casez_tmp_1 = entries_12_validMask;
+        casez_tmp_1 = entries_12_lanePc_1;
       4'b1101:
-        casez_tmp_1 = entries_13_validMask;
+        casez_tmp_1 = entries_13_lanePc_1;
       4'b1110:
-        casez_tmp_1 = entries_14_validMask;
+        casez_tmp_1 = entries_14_lanePc_1;
       default:
-        casez_tmp_1 = entries_15_validMask;
+        casez_tmp_1 = entries_15_lanePc_1;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_2;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_2 = entries_0_ras_0;
+        casez_tmp_2 = entries_0_lanePc_2;
       4'b0001:
-        casez_tmp_2 = entries_1_ras_0;
+        casez_tmp_2 = entries_1_lanePc_2;
       4'b0010:
-        casez_tmp_2 = entries_2_ras_0;
+        casez_tmp_2 = entries_2_lanePc_2;
       4'b0011:
-        casez_tmp_2 = entries_3_ras_0;
+        casez_tmp_2 = entries_3_lanePc_2;
       4'b0100:
-        casez_tmp_2 = entries_4_ras_0;
+        casez_tmp_2 = entries_4_lanePc_2;
       4'b0101:
-        casez_tmp_2 = entries_5_ras_0;
+        casez_tmp_2 = entries_5_lanePc_2;
       4'b0110:
-        casez_tmp_2 = entries_6_ras_0;
+        casez_tmp_2 = entries_6_lanePc_2;
       4'b0111:
-        casez_tmp_2 = entries_7_ras_0;
+        casez_tmp_2 = entries_7_lanePc_2;
       4'b1000:
-        casez_tmp_2 = entries_8_ras_0;
+        casez_tmp_2 = entries_8_lanePc_2;
       4'b1001:
-        casez_tmp_2 = entries_9_ras_0;
+        casez_tmp_2 = entries_9_lanePc_2;
       4'b1010:
-        casez_tmp_2 = entries_10_ras_0;
+        casez_tmp_2 = entries_10_lanePc_2;
       4'b1011:
-        casez_tmp_2 = entries_11_ras_0;
+        casez_tmp_2 = entries_11_lanePc_2;
       4'b1100:
-        casez_tmp_2 = entries_12_ras_0;
+        casez_tmp_2 = entries_12_lanePc_2;
       4'b1101:
-        casez_tmp_2 = entries_13_ras_0;
+        casez_tmp_2 = entries_13_lanePc_2;
       4'b1110:
-        casez_tmp_2 = entries_14_ras_0;
+        casez_tmp_2 = entries_14_lanePc_2;
       default:
-        casez_tmp_2 = entries_15_ras_0;
+        casez_tmp_2 = entries_15_lanePc_2;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_3;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_3 = entries_0_ras_1;
+        casez_tmp_3 = entries_0_lanePc_3;
       4'b0001:
-        casez_tmp_3 = entries_1_ras_1;
+        casez_tmp_3 = entries_1_lanePc_3;
       4'b0010:
-        casez_tmp_3 = entries_2_ras_1;
+        casez_tmp_3 = entries_2_lanePc_3;
       4'b0011:
-        casez_tmp_3 = entries_3_ras_1;
+        casez_tmp_3 = entries_3_lanePc_3;
       4'b0100:
-        casez_tmp_3 = entries_4_ras_1;
+        casez_tmp_3 = entries_4_lanePc_3;
       4'b0101:
-        casez_tmp_3 = entries_5_ras_1;
+        casez_tmp_3 = entries_5_lanePc_3;
       4'b0110:
-        casez_tmp_3 = entries_6_ras_1;
+        casez_tmp_3 = entries_6_lanePc_3;
       4'b0111:
-        casez_tmp_3 = entries_7_ras_1;
+        casez_tmp_3 = entries_7_lanePc_3;
       4'b1000:
-        casez_tmp_3 = entries_8_ras_1;
+        casez_tmp_3 = entries_8_lanePc_3;
       4'b1001:
-        casez_tmp_3 = entries_9_ras_1;
+        casez_tmp_3 = entries_9_lanePc_3;
       4'b1010:
-        casez_tmp_3 = entries_10_ras_1;
+        casez_tmp_3 = entries_10_lanePc_3;
       4'b1011:
-        casez_tmp_3 = entries_11_ras_1;
+        casez_tmp_3 = entries_11_lanePc_3;
       4'b1100:
-        casez_tmp_3 = entries_12_ras_1;
+        casez_tmp_3 = entries_12_lanePc_3;
       4'b1101:
-        casez_tmp_3 = entries_13_ras_1;
+        casez_tmp_3 = entries_13_lanePc_3;
       4'b1110:
-        casez_tmp_3 = entries_14_ras_1;
+        casez_tmp_3 = entries_14_lanePc_3;
       default:
-        casez_tmp_3 = entries_15_ras_1;
+        casez_tmp_3 = entries_15_lanePc_3;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_4;
+  reg  [3:0]  casez_tmp_4;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_4 = entries_0_ras_2;
+        casez_tmp_4 = entries_0_validMask;
       4'b0001:
-        casez_tmp_4 = entries_1_ras_2;
+        casez_tmp_4 = entries_1_validMask;
       4'b0010:
-        casez_tmp_4 = entries_2_ras_2;
+        casez_tmp_4 = entries_2_validMask;
       4'b0011:
-        casez_tmp_4 = entries_3_ras_2;
+        casez_tmp_4 = entries_3_validMask;
       4'b0100:
-        casez_tmp_4 = entries_4_ras_2;
+        casez_tmp_4 = entries_4_validMask;
       4'b0101:
-        casez_tmp_4 = entries_5_ras_2;
+        casez_tmp_4 = entries_5_validMask;
       4'b0110:
-        casez_tmp_4 = entries_6_ras_2;
+        casez_tmp_4 = entries_6_validMask;
       4'b0111:
-        casez_tmp_4 = entries_7_ras_2;
+        casez_tmp_4 = entries_7_validMask;
       4'b1000:
-        casez_tmp_4 = entries_8_ras_2;
+        casez_tmp_4 = entries_8_validMask;
       4'b1001:
-        casez_tmp_4 = entries_9_ras_2;
+        casez_tmp_4 = entries_9_validMask;
       4'b1010:
-        casez_tmp_4 = entries_10_ras_2;
+        casez_tmp_4 = entries_10_validMask;
       4'b1011:
-        casez_tmp_4 = entries_11_ras_2;
+        casez_tmp_4 = entries_11_validMask;
       4'b1100:
-        casez_tmp_4 = entries_12_ras_2;
+        casez_tmp_4 = entries_12_validMask;
       4'b1101:
-        casez_tmp_4 = entries_13_ras_2;
+        casez_tmp_4 = entries_13_validMask;
       4'b1110:
-        casez_tmp_4 = entries_14_ras_2;
+        casez_tmp_4 = entries_14_validMask;
       default:
-        casez_tmp_4 = entries_15_ras_2;
+        casez_tmp_4 = entries_15_validMask;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_5;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_5 = entries_0_ras_3;
+        casez_tmp_5 = entries_0_ras_0;
       4'b0001:
-        casez_tmp_5 = entries_1_ras_3;
+        casez_tmp_5 = entries_1_ras_0;
       4'b0010:
-        casez_tmp_5 = entries_2_ras_3;
+        casez_tmp_5 = entries_2_ras_0;
       4'b0011:
-        casez_tmp_5 = entries_3_ras_3;
+        casez_tmp_5 = entries_3_ras_0;
       4'b0100:
-        casez_tmp_5 = entries_4_ras_3;
+        casez_tmp_5 = entries_4_ras_0;
       4'b0101:
-        casez_tmp_5 = entries_5_ras_3;
+        casez_tmp_5 = entries_5_ras_0;
       4'b0110:
-        casez_tmp_5 = entries_6_ras_3;
+        casez_tmp_5 = entries_6_ras_0;
       4'b0111:
-        casez_tmp_5 = entries_7_ras_3;
+        casez_tmp_5 = entries_7_ras_0;
       4'b1000:
-        casez_tmp_5 = entries_8_ras_3;
+        casez_tmp_5 = entries_8_ras_0;
       4'b1001:
-        casez_tmp_5 = entries_9_ras_3;
+        casez_tmp_5 = entries_9_ras_0;
       4'b1010:
-        casez_tmp_5 = entries_10_ras_3;
+        casez_tmp_5 = entries_10_ras_0;
       4'b1011:
-        casez_tmp_5 = entries_11_ras_3;
+        casez_tmp_5 = entries_11_ras_0;
       4'b1100:
-        casez_tmp_5 = entries_12_ras_3;
+        casez_tmp_5 = entries_12_ras_0;
       4'b1101:
-        casez_tmp_5 = entries_13_ras_3;
+        casez_tmp_5 = entries_13_ras_0;
       4'b1110:
-        casez_tmp_5 = entries_14_ras_3;
+        casez_tmp_5 = entries_14_ras_0;
       default:
-        casez_tmp_5 = entries_15_ras_3;
+        casez_tmp_5 = entries_15_ras_0;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_6;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_6 = entries_0_ras_4;
+        casez_tmp_6 = entries_0_ras_1;
       4'b0001:
-        casez_tmp_6 = entries_1_ras_4;
+        casez_tmp_6 = entries_1_ras_1;
       4'b0010:
-        casez_tmp_6 = entries_2_ras_4;
+        casez_tmp_6 = entries_2_ras_1;
       4'b0011:
-        casez_tmp_6 = entries_3_ras_4;
+        casez_tmp_6 = entries_3_ras_1;
       4'b0100:
-        casez_tmp_6 = entries_4_ras_4;
+        casez_tmp_6 = entries_4_ras_1;
       4'b0101:
-        casez_tmp_6 = entries_5_ras_4;
+        casez_tmp_6 = entries_5_ras_1;
       4'b0110:
-        casez_tmp_6 = entries_6_ras_4;
+        casez_tmp_6 = entries_6_ras_1;
       4'b0111:
-        casez_tmp_6 = entries_7_ras_4;
+        casez_tmp_6 = entries_7_ras_1;
       4'b1000:
-        casez_tmp_6 = entries_8_ras_4;
+        casez_tmp_6 = entries_8_ras_1;
       4'b1001:
-        casez_tmp_6 = entries_9_ras_4;
+        casez_tmp_6 = entries_9_ras_1;
       4'b1010:
-        casez_tmp_6 = entries_10_ras_4;
+        casez_tmp_6 = entries_10_ras_1;
       4'b1011:
-        casez_tmp_6 = entries_11_ras_4;
+        casez_tmp_6 = entries_11_ras_1;
       4'b1100:
-        casez_tmp_6 = entries_12_ras_4;
+        casez_tmp_6 = entries_12_ras_1;
       4'b1101:
-        casez_tmp_6 = entries_13_ras_4;
+        casez_tmp_6 = entries_13_ras_1;
       4'b1110:
-        casez_tmp_6 = entries_14_ras_4;
+        casez_tmp_6 = entries_14_ras_1;
       default:
-        casez_tmp_6 = entries_15_ras_4;
+        casez_tmp_6 = entries_15_ras_1;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_7;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_7 = entries_0_ras_5;
+        casez_tmp_7 = entries_0_ras_2;
       4'b0001:
-        casez_tmp_7 = entries_1_ras_5;
+        casez_tmp_7 = entries_1_ras_2;
       4'b0010:
-        casez_tmp_7 = entries_2_ras_5;
+        casez_tmp_7 = entries_2_ras_2;
       4'b0011:
-        casez_tmp_7 = entries_3_ras_5;
+        casez_tmp_7 = entries_3_ras_2;
       4'b0100:
-        casez_tmp_7 = entries_4_ras_5;
+        casez_tmp_7 = entries_4_ras_2;
       4'b0101:
-        casez_tmp_7 = entries_5_ras_5;
+        casez_tmp_7 = entries_5_ras_2;
       4'b0110:
-        casez_tmp_7 = entries_6_ras_5;
+        casez_tmp_7 = entries_6_ras_2;
       4'b0111:
-        casez_tmp_7 = entries_7_ras_5;
+        casez_tmp_7 = entries_7_ras_2;
       4'b1000:
-        casez_tmp_7 = entries_8_ras_5;
+        casez_tmp_7 = entries_8_ras_2;
       4'b1001:
-        casez_tmp_7 = entries_9_ras_5;
+        casez_tmp_7 = entries_9_ras_2;
       4'b1010:
-        casez_tmp_7 = entries_10_ras_5;
+        casez_tmp_7 = entries_10_ras_2;
       4'b1011:
-        casez_tmp_7 = entries_11_ras_5;
+        casez_tmp_7 = entries_11_ras_2;
       4'b1100:
-        casez_tmp_7 = entries_12_ras_5;
+        casez_tmp_7 = entries_12_ras_2;
       4'b1101:
-        casez_tmp_7 = entries_13_ras_5;
+        casez_tmp_7 = entries_13_ras_2;
       4'b1110:
-        casez_tmp_7 = entries_14_ras_5;
+        casez_tmp_7 = entries_14_ras_2;
       default:
-        casez_tmp_7 = entries_15_ras_5;
+        casez_tmp_7 = entries_15_ras_2;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_8;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_8 = entries_0_ras_6;
+        casez_tmp_8 = entries_0_ras_3;
       4'b0001:
-        casez_tmp_8 = entries_1_ras_6;
+        casez_tmp_8 = entries_1_ras_3;
       4'b0010:
-        casez_tmp_8 = entries_2_ras_6;
+        casez_tmp_8 = entries_2_ras_3;
       4'b0011:
-        casez_tmp_8 = entries_3_ras_6;
+        casez_tmp_8 = entries_3_ras_3;
       4'b0100:
-        casez_tmp_8 = entries_4_ras_6;
+        casez_tmp_8 = entries_4_ras_3;
       4'b0101:
-        casez_tmp_8 = entries_5_ras_6;
+        casez_tmp_8 = entries_5_ras_3;
       4'b0110:
-        casez_tmp_8 = entries_6_ras_6;
+        casez_tmp_8 = entries_6_ras_3;
       4'b0111:
-        casez_tmp_8 = entries_7_ras_6;
+        casez_tmp_8 = entries_7_ras_3;
       4'b1000:
-        casez_tmp_8 = entries_8_ras_6;
+        casez_tmp_8 = entries_8_ras_3;
       4'b1001:
-        casez_tmp_8 = entries_9_ras_6;
+        casez_tmp_8 = entries_9_ras_3;
       4'b1010:
-        casez_tmp_8 = entries_10_ras_6;
+        casez_tmp_8 = entries_10_ras_3;
       4'b1011:
-        casez_tmp_8 = entries_11_ras_6;
+        casez_tmp_8 = entries_11_ras_3;
       4'b1100:
-        casez_tmp_8 = entries_12_ras_6;
+        casez_tmp_8 = entries_12_ras_3;
       4'b1101:
-        casez_tmp_8 = entries_13_ras_6;
+        casez_tmp_8 = entries_13_ras_3;
       4'b1110:
-        casez_tmp_8 = entries_14_ras_6;
+        casez_tmp_8 = entries_14_ras_3;
       default:
-        casez_tmp_8 = entries_15_ras_6;
+        casez_tmp_8 = entries_15_ras_3;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_9;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_9 = entries_0_ras_7;
+        casez_tmp_9 = entries_0_ras_4;
       4'b0001:
-        casez_tmp_9 = entries_1_ras_7;
+        casez_tmp_9 = entries_1_ras_4;
       4'b0010:
-        casez_tmp_9 = entries_2_ras_7;
+        casez_tmp_9 = entries_2_ras_4;
       4'b0011:
-        casez_tmp_9 = entries_3_ras_7;
+        casez_tmp_9 = entries_3_ras_4;
       4'b0100:
-        casez_tmp_9 = entries_4_ras_7;
+        casez_tmp_9 = entries_4_ras_4;
       4'b0101:
-        casez_tmp_9 = entries_5_ras_7;
+        casez_tmp_9 = entries_5_ras_4;
       4'b0110:
-        casez_tmp_9 = entries_6_ras_7;
+        casez_tmp_9 = entries_6_ras_4;
       4'b0111:
-        casez_tmp_9 = entries_7_ras_7;
+        casez_tmp_9 = entries_7_ras_4;
       4'b1000:
-        casez_tmp_9 = entries_8_ras_7;
+        casez_tmp_9 = entries_8_ras_4;
       4'b1001:
-        casez_tmp_9 = entries_9_ras_7;
+        casez_tmp_9 = entries_9_ras_4;
       4'b1010:
-        casez_tmp_9 = entries_10_ras_7;
+        casez_tmp_9 = entries_10_ras_4;
       4'b1011:
-        casez_tmp_9 = entries_11_ras_7;
+        casez_tmp_9 = entries_11_ras_4;
       4'b1100:
-        casez_tmp_9 = entries_12_ras_7;
+        casez_tmp_9 = entries_12_ras_4;
       4'b1101:
-        casez_tmp_9 = entries_13_ras_7;
+        casez_tmp_9 = entries_13_ras_4;
       4'b1110:
-        casez_tmp_9 = entries_14_ras_7;
+        casez_tmp_9 = entries_14_ras_4;
       default:
-        casez_tmp_9 = entries_15_ras_7;
+        casez_tmp_9 = entries_15_ras_4;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_10;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_10 = entries_0_ras_8;
+        casez_tmp_10 = entries_0_ras_5;
       4'b0001:
-        casez_tmp_10 = entries_1_ras_8;
+        casez_tmp_10 = entries_1_ras_5;
       4'b0010:
-        casez_tmp_10 = entries_2_ras_8;
+        casez_tmp_10 = entries_2_ras_5;
       4'b0011:
-        casez_tmp_10 = entries_3_ras_8;
+        casez_tmp_10 = entries_3_ras_5;
       4'b0100:
-        casez_tmp_10 = entries_4_ras_8;
+        casez_tmp_10 = entries_4_ras_5;
       4'b0101:
-        casez_tmp_10 = entries_5_ras_8;
+        casez_tmp_10 = entries_5_ras_5;
       4'b0110:
-        casez_tmp_10 = entries_6_ras_8;
+        casez_tmp_10 = entries_6_ras_5;
       4'b0111:
-        casez_tmp_10 = entries_7_ras_8;
+        casez_tmp_10 = entries_7_ras_5;
       4'b1000:
-        casez_tmp_10 = entries_8_ras_8;
+        casez_tmp_10 = entries_8_ras_5;
       4'b1001:
-        casez_tmp_10 = entries_9_ras_8;
+        casez_tmp_10 = entries_9_ras_5;
       4'b1010:
-        casez_tmp_10 = entries_10_ras_8;
+        casez_tmp_10 = entries_10_ras_5;
       4'b1011:
-        casez_tmp_10 = entries_11_ras_8;
+        casez_tmp_10 = entries_11_ras_5;
       4'b1100:
-        casez_tmp_10 = entries_12_ras_8;
+        casez_tmp_10 = entries_12_ras_5;
       4'b1101:
-        casez_tmp_10 = entries_13_ras_8;
+        casez_tmp_10 = entries_13_ras_5;
       4'b1110:
-        casez_tmp_10 = entries_14_ras_8;
+        casez_tmp_10 = entries_14_ras_5;
       default:
-        casez_tmp_10 = entries_15_ras_8;
+        casez_tmp_10 = entries_15_ras_5;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_11;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_11 = entries_0_ras_9;
+        casez_tmp_11 = entries_0_ras_6;
       4'b0001:
-        casez_tmp_11 = entries_1_ras_9;
+        casez_tmp_11 = entries_1_ras_6;
       4'b0010:
-        casez_tmp_11 = entries_2_ras_9;
+        casez_tmp_11 = entries_2_ras_6;
       4'b0011:
-        casez_tmp_11 = entries_3_ras_9;
+        casez_tmp_11 = entries_3_ras_6;
       4'b0100:
-        casez_tmp_11 = entries_4_ras_9;
+        casez_tmp_11 = entries_4_ras_6;
       4'b0101:
-        casez_tmp_11 = entries_5_ras_9;
+        casez_tmp_11 = entries_5_ras_6;
       4'b0110:
-        casez_tmp_11 = entries_6_ras_9;
+        casez_tmp_11 = entries_6_ras_6;
       4'b0111:
-        casez_tmp_11 = entries_7_ras_9;
+        casez_tmp_11 = entries_7_ras_6;
       4'b1000:
-        casez_tmp_11 = entries_8_ras_9;
+        casez_tmp_11 = entries_8_ras_6;
       4'b1001:
-        casez_tmp_11 = entries_9_ras_9;
+        casez_tmp_11 = entries_9_ras_6;
       4'b1010:
-        casez_tmp_11 = entries_10_ras_9;
+        casez_tmp_11 = entries_10_ras_6;
       4'b1011:
-        casez_tmp_11 = entries_11_ras_9;
+        casez_tmp_11 = entries_11_ras_6;
       4'b1100:
-        casez_tmp_11 = entries_12_ras_9;
+        casez_tmp_11 = entries_12_ras_6;
       4'b1101:
-        casez_tmp_11 = entries_13_ras_9;
+        casez_tmp_11 = entries_13_ras_6;
       4'b1110:
-        casez_tmp_11 = entries_14_ras_9;
+        casez_tmp_11 = entries_14_ras_6;
       default:
-        casez_tmp_11 = entries_15_ras_9;
+        casez_tmp_11 = entries_15_ras_6;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_12;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_12 = entries_0_ras_10;
+        casez_tmp_12 = entries_0_ras_7;
       4'b0001:
-        casez_tmp_12 = entries_1_ras_10;
+        casez_tmp_12 = entries_1_ras_7;
       4'b0010:
-        casez_tmp_12 = entries_2_ras_10;
+        casez_tmp_12 = entries_2_ras_7;
       4'b0011:
-        casez_tmp_12 = entries_3_ras_10;
+        casez_tmp_12 = entries_3_ras_7;
       4'b0100:
-        casez_tmp_12 = entries_4_ras_10;
+        casez_tmp_12 = entries_4_ras_7;
       4'b0101:
-        casez_tmp_12 = entries_5_ras_10;
+        casez_tmp_12 = entries_5_ras_7;
       4'b0110:
-        casez_tmp_12 = entries_6_ras_10;
+        casez_tmp_12 = entries_6_ras_7;
       4'b0111:
-        casez_tmp_12 = entries_7_ras_10;
+        casez_tmp_12 = entries_7_ras_7;
       4'b1000:
-        casez_tmp_12 = entries_8_ras_10;
+        casez_tmp_12 = entries_8_ras_7;
       4'b1001:
-        casez_tmp_12 = entries_9_ras_10;
+        casez_tmp_12 = entries_9_ras_7;
       4'b1010:
-        casez_tmp_12 = entries_10_ras_10;
+        casez_tmp_12 = entries_10_ras_7;
       4'b1011:
-        casez_tmp_12 = entries_11_ras_10;
+        casez_tmp_12 = entries_11_ras_7;
       4'b1100:
-        casez_tmp_12 = entries_12_ras_10;
+        casez_tmp_12 = entries_12_ras_7;
       4'b1101:
-        casez_tmp_12 = entries_13_ras_10;
+        casez_tmp_12 = entries_13_ras_7;
       4'b1110:
-        casez_tmp_12 = entries_14_ras_10;
+        casez_tmp_12 = entries_14_ras_7;
       default:
-        casez_tmp_12 = entries_15_ras_10;
+        casez_tmp_12 = entries_15_ras_7;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_13;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_13 = entries_0_ras_11;
+        casez_tmp_13 = entries_0_ras_8;
       4'b0001:
-        casez_tmp_13 = entries_1_ras_11;
+        casez_tmp_13 = entries_1_ras_8;
       4'b0010:
-        casez_tmp_13 = entries_2_ras_11;
+        casez_tmp_13 = entries_2_ras_8;
       4'b0011:
-        casez_tmp_13 = entries_3_ras_11;
+        casez_tmp_13 = entries_3_ras_8;
       4'b0100:
-        casez_tmp_13 = entries_4_ras_11;
+        casez_tmp_13 = entries_4_ras_8;
       4'b0101:
-        casez_tmp_13 = entries_5_ras_11;
+        casez_tmp_13 = entries_5_ras_8;
       4'b0110:
-        casez_tmp_13 = entries_6_ras_11;
+        casez_tmp_13 = entries_6_ras_8;
       4'b0111:
-        casez_tmp_13 = entries_7_ras_11;
+        casez_tmp_13 = entries_7_ras_8;
       4'b1000:
-        casez_tmp_13 = entries_8_ras_11;
+        casez_tmp_13 = entries_8_ras_8;
       4'b1001:
-        casez_tmp_13 = entries_9_ras_11;
+        casez_tmp_13 = entries_9_ras_8;
       4'b1010:
-        casez_tmp_13 = entries_10_ras_11;
+        casez_tmp_13 = entries_10_ras_8;
       4'b1011:
-        casez_tmp_13 = entries_11_ras_11;
+        casez_tmp_13 = entries_11_ras_8;
       4'b1100:
-        casez_tmp_13 = entries_12_ras_11;
+        casez_tmp_13 = entries_12_ras_8;
       4'b1101:
-        casez_tmp_13 = entries_13_ras_11;
+        casez_tmp_13 = entries_13_ras_8;
       4'b1110:
-        casez_tmp_13 = entries_14_ras_11;
+        casez_tmp_13 = entries_14_ras_8;
       default:
-        casez_tmp_13 = entries_15_ras_11;
+        casez_tmp_13 = entries_15_ras_8;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_14;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_14 = entries_0_ras_12;
+        casez_tmp_14 = entries_0_ras_9;
       4'b0001:
-        casez_tmp_14 = entries_1_ras_12;
+        casez_tmp_14 = entries_1_ras_9;
       4'b0010:
-        casez_tmp_14 = entries_2_ras_12;
+        casez_tmp_14 = entries_2_ras_9;
       4'b0011:
-        casez_tmp_14 = entries_3_ras_12;
+        casez_tmp_14 = entries_3_ras_9;
       4'b0100:
-        casez_tmp_14 = entries_4_ras_12;
+        casez_tmp_14 = entries_4_ras_9;
       4'b0101:
-        casez_tmp_14 = entries_5_ras_12;
+        casez_tmp_14 = entries_5_ras_9;
       4'b0110:
-        casez_tmp_14 = entries_6_ras_12;
+        casez_tmp_14 = entries_6_ras_9;
       4'b0111:
-        casez_tmp_14 = entries_7_ras_12;
+        casez_tmp_14 = entries_7_ras_9;
       4'b1000:
-        casez_tmp_14 = entries_8_ras_12;
+        casez_tmp_14 = entries_8_ras_9;
       4'b1001:
-        casez_tmp_14 = entries_9_ras_12;
+        casez_tmp_14 = entries_9_ras_9;
       4'b1010:
-        casez_tmp_14 = entries_10_ras_12;
+        casez_tmp_14 = entries_10_ras_9;
       4'b1011:
-        casez_tmp_14 = entries_11_ras_12;
+        casez_tmp_14 = entries_11_ras_9;
       4'b1100:
-        casez_tmp_14 = entries_12_ras_12;
+        casez_tmp_14 = entries_12_ras_9;
       4'b1101:
-        casez_tmp_14 = entries_13_ras_12;
+        casez_tmp_14 = entries_13_ras_9;
       4'b1110:
-        casez_tmp_14 = entries_14_ras_12;
+        casez_tmp_14 = entries_14_ras_9;
       default:
-        casez_tmp_14 = entries_15_ras_12;
+        casez_tmp_14 = entries_15_ras_9;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_15;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_15 = entries_0_ras_13;
+        casez_tmp_15 = entries_0_ras_10;
       4'b0001:
-        casez_tmp_15 = entries_1_ras_13;
+        casez_tmp_15 = entries_1_ras_10;
       4'b0010:
-        casez_tmp_15 = entries_2_ras_13;
+        casez_tmp_15 = entries_2_ras_10;
       4'b0011:
-        casez_tmp_15 = entries_3_ras_13;
+        casez_tmp_15 = entries_3_ras_10;
       4'b0100:
-        casez_tmp_15 = entries_4_ras_13;
+        casez_tmp_15 = entries_4_ras_10;
       4'b0101:
-        casez_tmp_15 = entries_5_ras_13;
+        casez_tmp_15 = entries_5_ras_10;
       4'b0110:
-        casez_tmp_15 = entries_6_ras_13;
+        casez_tmp_15 = entries_6_ras_10;
       4'b0111:
-        casez_tmp_15 = entries_7_ras_13;
+        casez_tmp_15 = entries_7_ras_10;
       4'b1000:
-        casez_tmp_15 = entries_8_ras_13;
+        casez_tmp_15 = entries_8_ras_10;
       4'b1001:
-        casez_tmp_15 = entries_9_ras_13;
+        casez_tmp_15 = entries_9_ras_10;
       4'b1010:
-        casez_tmp_15 = entries_10_ras_13;
+        casez_tmp_15 = entries_10_ras_10;
       4'b1011:
-        casez_tmp_15 = entries_11_ras_13;
+        casez_tmp_15 = entries_11_ras_10;
       4'b1100:
-        casez_tmp_15 = entries_12_ras_13;
+        casez_tmp_15 = entries_12_ras_10;
       4'b1101:
-        casez_tmp_15 = entries_13_ras_13;
+        casez_tmp_15 = entries_13_ras_10;
       4'b1110:
-        casez_tmp_15 = entries_14_ras_13;
+        casez_tmp_15 = entries_14_ras_10;
       default:
-        casez_tmp_15 = entries_15_ras_13;
+        casez_tmp_15 = entries_15_ras_10;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_16;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_16 = entries_0_ras_14;
+        casez_tmp_16 = entries_0_ras_11;
       4'b0001:
-        casez_tmp_16 = entries_1_ras_14;
+        casez_tmp_16 = entries_1_ras_11;
       4'b0010:
-        casez_tmp_16 = entries_2_ras_14;
+        casez_tmp_16 = entries_2_ras_11;
       4'b0011:
-        casez_tmp_16 = entries_3_ras_14;
+        casez_tmp_16 = entries_3_ras_11;
       4'b0100:
-        casez_tmp_16 = entries_4_ras_14;
+        casez_tmp_16 = entries_4_ras_11;
       4'b0101:
-        casez_tmp_16 = entries_5_ras_14;
+        casez_tmp_16 = entries_5_ras_11;
       4'b0110:
-        casez_tmp_16 = entries_6_ras_14;
+        casez_tmp_16 = entries_6_ras_11;
       4'b0111:
-        casez_tmp_16 = entries_7_ras_14;
+        casez_tmp_16 = entries_7_ras_11;
       4'b1000:
-        casez_tmp_16 = entries_8_ras_14;
+        casez_tmp_16 = entries_8_ras_11;
       4'b1001:
-        casez_tmp_16 = entries_9_ras_14;
+        casez_tmp_16 = entries_9_ras_11;
       4'b1010:
-        casez_tmp_16 = entries_10_ras_14;
+        casez_tmp_16 = entries_10_ras_11;
       4'b1011:
-        casez_tmp_16 = entries_11_ras_14;
+        casez_tmp_16 = entries_11_ras_11;
       4'b1100:
-        casez_tmp_16 = entries_12_ras_14;
+        casez_tmp_16 = entries_12_ras_11;
       4'b1101:
-        casez_tmp_16 = entries_13_ras_14;
+        casez_tmp_16 = entries_13_ras_11;
       4'b1110:
-        casez_tmp_16 = entries_14_ras_14;
+        casez_tmp_16 = entries_14_ras_11;
       default:
-        casez_tmp_16 = entries_15_ras_14;
+        casez_tmp_16 = entries_15_ras_11;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_17;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_17 = entries_0_ras_15;
+        casez_tmp_17 = entries_0_ras_12;
       4'b0001:
-        casez_tmp_17 = entries_1_ras_15;
+        casez_tmp_17 = entries_1_ras_12;
       4'b0010:
-        casez_tmp_17 = entries_2_ras_15;
+        casez_tmp_17 = entries_2_ras_12;
       4'b0011:
-        casez_tmp_17 = entries_3_ras_15;
+        casez_tmp_17 = entries_3_ras_12;
       4'b0100:
-        casez_tmp_17 = entries_4_ras_15;
+        casez_tmp_17 = entries_4_ras_12;
       4'b0101:
-        casez_tmp_17 = entries_5_ras_15;
+        casez_tmp_17 = entries_5_ras_12;
       4'b0110:
-        casez_tmp_17 = entries_6_ras_15;
+        casez_tmp_17 = entries_6_ras_12;
       4'b0111:
-        casez_tmp_17 = entries_7_ras_15;
+        casez_tmp_17 = entries_7_ras_12;
       4'b1000:
-        casez_tmp_17 = entries_8_ras_15;
+        casez_tmp_17 = entries_8_ras_12;
       4'b1001:
-        casez_tmp_17 = entries_9_ras_15;
+        casez_tmp_17 = entries_9_ras_12;
       4'b1010:
-        casez_tmp_17 = entries_10_ras_15;
+        casez_tmp_17 = entries_10_ras_12;
       4'b1011:
-        casez_tmp_17 = entries_11_ras_15;
+        casez_tmp_17 = entries_11_ras_12;
       4'b1100:
-        casez_tmp_17 = entries_12_ras_15;
+        casez_tmp_17 = entries_12_ras_12;
       4'b1101:
-        casez_tmp_17 = entries_13_ras_15;
+        casez_tmp_17 = entries_13_ras_12;
       4'b1110:
-        casez_tmp_17 = entries_14_ras_15;
+        casez_tmp_17 = entries_14_ras_12;
       default:
-        casez_tmp_17 = entries_15_ras_15;
+        casez_tmp_17 = entries_15_ras_12;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_18;
+  reg  [31:0] casez_tmp_18;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_18 = entries_0_rasPtr;
+        casez_tmp_18 = entries_0_ras_13;
       4'b0001:
-        casez_tmp_18 = entries_1_rasPtr;
+        casez_tmp_18 = entries_1_ras_13;
       4'b0010:
-        casez_tmp_18 = entries_2_rasPtr;
+        casez_tmp_18 = entries_2_ras_13;
       4'b0011:
-        casez_tmp_18 = entries_3_rasPtr;
+        casez_tmp_18 = entries_3_ras_13;
       4'b0100:
-        casez_tmp_18 = entries_4_rasPtr;
+        casez_tmp_18 = entries_4_ras_13;
       4'b0101:
-        casez_tmp_18 = entries_5_rasPtr;
+        casez_tmp_18 = entries_5_ras_13;
       4'b0110:
-        casez_tmp_18 = entries_6_rasPtr;
+        casez_tmp_18 = entries_6_ras_13;
       4'b0111:
-        casez_tmp_18 = entries_7_rasPtr;
+        casez_tmp_18 = entries_7_ras_13;
       4'b1000:
-        casez_tmp_18 = entries_8_rasPtr;
+        casez_tmp_18 = entries_8_ras_13;
       4'b1001:
-        casez_tmp_18 = entries_9_rasPtr;
+        casez_tmp_18 = entries_9_ras_13;
       4'b1010:
-        casez_tmp_18 = entries_10_rasPtr;
+        casez_tmp_18 = entries_10_ras_13;
       4'b1011:
-        casez_tmp_18 = entries_11_rasPtr;
+        casez_tmp_18 = entries_11_ras_13;
       4'b1100:
-        casez_tmp_18 = entries_12_rasPtr;
+        casez_tmp_18 = entries_12_ras_13;
       4'b1101:
-        casez_tmp_18 = entries_13_rasPtr;
+        casez_tmp_18 = entries_13_ras_13;
       4'b1110:
-        casez_tmp_18 = entries_14_rasPtr;
+        casez_tmp_18 = entries_14_ras_13;
       default:
-        casez_tmp_18 = entries_15_rasPtr;
+        casez_tmp_18 = entries_15_ras_13;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_19;
+  reg  [31:0] casez_tmp_19;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_19 = entries_0_rasCount;
+        casez_tmp_19 = entries_0_ras_14;
       4'b0001:
-        casez_tmp_19 = entries_1_rasCount;
+        casez_tmp_19 = entries_1_ras_14;
       4'b0010:
-        casez_tmp_19 = entries_2_rasCount;
+        casez_tmp_19 = entries_2_ras_14;
       4'b0011:
-        casez_tmp_19 = entries_3_rasCount;
+        casez_tmp_19 = entries_3_ras_14;
       4'b0100:
-        casez_tmp_19 = entries_4_rasCount;
+        casez_tmp_19 = entries_4_ras_14;
       4'b0101:
-        casez_tmp_19 = entries_5_rasCount;
+        casez_tmp_19 = entries_5_ras_14;
       4'b0110:
-        casez_tmp_19 = entries_6_rasCount;
+        casez_tmp_19 = entries_6_ras_14;
       4'b0111:
-        casez_tmp_19 = entries_7_rasCount;
+        casez_tmp_19 = entries_7_ras_14;
       4'b1000:
-        casez_tmp_19 = entries_8_rasCount;
+        casez_tmp_19 = entries_8_ras_14;
       4'b1001:
-        casez_tmp_19 = entries_9_rasCount;
+        casez_tmp_19 = entries_9_ras_14;
       4'b1010:
-        casez_tmp_19 = entries_10_rasCount;
+        casez_tmp_19 = entries_10_ras_14;
       4'b1011:
-        casez_tmp_19 = entries_11_rasCount;
+        casez_tmp_19 = entries_11_ras_14;
       4'b1100:
-        casez_tmp_19 = entries_12_rasCount;
+        casez_tmp_19 = entries_12_ras_14;
       4'b1101:
-        casez_tmp_19 = entries_13_rasCount;
+        casez_tmp_19 = entries_13_ras_14;
       4'b1110:
-        casez_tmp_19 = entries_14_rasCount;
+        casez_tmp_19 = entries_14_ras_14;
       default:
-        casez_tmp_19 = entries_15_rasCount;
+        casez_tmp_19 = entries_15_ras_14;
     endcase
   end // always_comb
-  reg         casez_tmp_20;
+  reg  [31:0] casez_tmp_20;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_20 = entries_0_valid;
+        casez_tmp_20 = entries_0_ras_15;
       4'b0001:
-        casez_tmp_20 = entries_1_valid;
+        casez_tmp_20 = entries_1_ras_15;
       4'b0010:
-        casez_tmp_20 = entries_2_valid;
+        casez_tmp_20 = entries_2_ras_15;
       4'b0011:
-        casez_tmp_20 = entries_3_valid;
+        casez_tmp_20 = entries_3_ras_15;
       4'b0100:
-        casez_tmp_20 = entries_4_valid;
+        casez_tmp_20 = entries_4_ras_15;
       4'b0101:
-        casez_tmp_20 = entries_5_valid;
+        casez_tmp_20 = entries_5_ras_15;
       4'b0110:
-        casez_tmp_20 = entries_6_valid;
+        casez_tmp_20 = entries_6_ras_15;
       4'b0111:
-        casez_tmp_20 = entries_7_valid;
+        casez_tmp_20 = entries_7_ras_15;
       4'b1000:
-        casez_tmp_20 = entries_8_valid;
+        casez_tmp_20 = entries_8_ras_15;
       4'b1001:
-        casez_tmp_20 = entries_9_valid;
+        casez_tmp_20 = entries_9_ras_15;
       4'b1010:
-        casez_tmp_20 = entries_10_valid;
+        casez_tmp_20 = entries_10_ras_15;
       4'b1011:
-        casez_tmp_20 = entries_11_valid;
+        casez_tmp_20 = entries_11_ras_15;
       4'b1100:
-        casez_tmp_20 = entries_12_valid;
+        casez_tmp_20 = entries_12_ras_15;
       4'b1101:
-        casez_tmp_20 = entries_13_valid;
+        casez_tmp_20 = entries_13_ras_15;
       4'b1110:
-        casez_tmp_20 = entries_14_valid;
+        casez_tmp_20 = entries_14_ras_15;
       default:
-        casez_tmp_20 = entries_15_valid;
+        casez_tmp_20 = entries_15_ras_15;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_21;
+  reg  [3:0]  casez_tmp_21;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_21 = entries_0_generation;
+        casez_tmp_21 = entries_0_rasPtr;
       4'b0001:
-        casez_tmp_21 = entries_1_generation;
+        casez_tmp_21 = entries_1_rasPtr;
       4'b0010:
-        casez_tmp_21 = entries_2_generation;
+        casez_tmp_21 = entries_2_rasPtr;
       4'b0011:
-        casez_tmp_21 = entries_3_generation;
+        casez_tmp_21 = entries_3_rasPtr;
       4'b0100:
-        casez_tmp_21 = entries_4_generation;
+        casez_tmp_21 = entries_4_rasPtr;
       4'b0101:
-        casez_tmp_21 = entries_5_generation;
+        casez_tmp_21 = entries_5_rasPtr;
       4'b0110:
-        casez_tmp_21 = entries_6_generation;
+        casez_tmp_21 = entries_6_rasPtr;
       4'b0111:
-        casez_tmp_21 = entries_7_generation;
+        casez_tmp_21 = entries_7_rasPtr;
       4'b1000:
-        casez_tmp_21 = entries_8_generation;
+        casez_tmp_21 = entries_8_rasPtr;
       4'b1001:
-        casez_tmp_21 = entries_9_generation;
+        casez_tmp_21 = entries_9_rasPtr;
       4'b1010:
-        casez_tmp_21 = entries_10_generation;
+        casez_tmp_21 = entries_10_rasPtr;
       4'b1011:
-        casez_tmp_21 = entries_11_generation;
+        casez_tmp_21 = entries_11_rasPtr;
       4'b1100:
-        casez_tmp_21 = entries_12_generation;
+        casez_tmp_21 = entries_12_rasPtr;
       4'b1101:
-        casez_tmp_21 = entries_13_generation;
+        casez_tmp_21 = entries_13_rasPtr;
       4'b1110:
-        casez_tmp_21 = entries_14_generation;
+        casez_tmp_21 = entries_14_rasPtr;
       default:
-        casez_tmp_21 = entries_15_generation;
+        casez_tmp_21 = entries_15_rasPtr;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_22;
+  reg  [4:0]  casez_tmp_22;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_22 = entries_0_pending;
+        casez_tmp_22 = entries_0_rasCount;
       4'b0001:
-        casez_tmp_22 = entries_1_pending;
+        casez_tmp_22 = entries_1_rasCount;
       4'b0010:
-        casez_tmp_22 = entries_2_pending;
+        casez_tmp_22 = entries_2_rasCount;
       4'b0011:
-        casez_tmp_22 = entries_3_pending;
+        casez_tmp_22 = entries_3_rasCount;
       4'b0100:
-        casez_tmp_22 = entries_4_pending;
+        casez_tmp_22 = entries_4_rasCount;
       4'b0101:
-        casez_tmp_22 = entries_5_pending;
+        casez_tmp_22 = entries_5_rasCount;
       4'b0110:
-        casez_tmp_22 = entries_6_pending;
+        casez_tmp_22 = entries_6_rasCount;
       4'b0111:
-        casez_tmp_22 = entries_7_pending;
+        casez_tmp_22 = entries_7_rasCount;
       4'b1000:
-        casez_tmp_22 = entries_8_pending;
+        casez_tmp_22 = entries_8_rasCount;
       4'b1001:
-        casez_tmp_22 = entries_9_pending;
+        casez_tmp_22 = entries_9_rasCount;
       4'b1010:
-        casez_tmp_22 = entries_10_pending;
+        casez_tmp_22 = entries_10_rasCount;
       4'b1011:
-        casez_tmp_22 = entries_11_pending;
+        casez_tmp_22 = entries_11_rasCount;
       4'b1100:
-        casez_tmp_22 = entries_12_pending;
+        casez_tmp_22 = entries_12_rasCount;
       4'b1101:
-        casez_tmp_22 = entries_13_pending;
+        casez_tmp_22 = entries_13_rasCount;
       4'b1110:
-        casez_tmp_22 = entries_14_pending;
+        casez_tmp_22 = entries_14_rasCount;
       default:
-        casez_tmp_22 = entries_15_pending;
+        casez_tmp_22 = entries_15_rasCount;
+    endcase
+  end // always_comb
+  reg         casez_tmp_23;
+  always_comb begin
+    casez (io_recoverIdx)
+      4'b0000:
+        casez_tmp_23 = entries_0_valid;
+      4'b0001:
+        casez_tmp_23 = entries_1_valid;
+      4'b0010:
+        casez_tmp_23 = entries_2_valid;
+      4'b0011:
+        casez_tmp_23 = entries_3_valid;
+      4'b0100:
+        casez_tmp_23 = entries_4_valid;
+      4'b0101:
+        casez_tmp_23 = entries_5_valid;
+      4'b0110:
+        casez_tmp_23 = entries_6_valid;
+      4'b0111:
+        casez_tmp_23 = entries_7_valid;
+      4'b1000:
+        casez_tmp_23 = entries_8_valid;
+      4'b1001:
+        casez_tmp_23 = entries_9_valid;
+      4'b1010:
+        casez_tmp_23 = entries_10_valid;
+      4'b1011:
+        casez_tmp_23 = entries_11_valid;
+      4'b1100:
+        casez_tmp_23 = entries_12_valid;
+      4'b1101:
+        casez_tmp_23 = entries_13_valid;
+      4'b1110:
+        casez_tmp_23 = entries_14_valid;
+      default:
+        casez_tmp_23 = entries_15_valid;
+    endcase
+  end // always_comb
+  reg  [7:0]  casez_tmp_24;
+  always_comb begin
+    casez (io_recoverIdx)
+      4'b0000:
+        casez_tmp_24 = entries_0_generation;
+      4'b0001:
+        casez_tmp_24 = entries_1_generation;
+      4'b0010:
+        casez_tmp_24 = entries_2_generation;
+      4'b0011:
+        casez_tmp_24 = entries_3_generation;
+      4'b0100:
+        casez_tmp_24 = entries_4_generation;
+      4'b0101:
+        casez_tmp_24 = entries_5_generation;
+      4'b0110:
+        casez_tmp_24 = entries_6_generation;
+      4'b0111:
+        casez_tmp_24 = entries_7_generation;
+      4'b1000:
+        casez_tmp_24 = entries_8_generation;
+      4'b1001:
+        casez_tmp_24 = entries_9_generation;
+      4'b1010:
+        casez_tmp_24 = entries_10_generation;
+      4'b1011:
+        casez_tmp_24 = entries_11_generation;
+      4'b1100:
+        casez_tmp_24 = entries_12_generation;
+      4'b1101:
+        casez_tmp_24 = entries_13_generation;
+      4'b1110:
+        casez_tmp_24 = entries_14_generation;
+      default:
+        casez_tmp_24 = entries_15_generation;
+    endcase
+  end // always_comb
+  reg  [2:0]  casez_tmp_25;
+  always_comb begin
+    casez (io_recoverIdx)
+      4'b0000:
+        casez_tmp_25 = entries_0_pending;
+      4'b0001:
+        casez_tmp_25 = entries_1_pending;
+      4'b0010:
+        casez_tmp_25 = entries_2_pending;
+      4'b0011:
+        casez_tmp_25 = entries_3_pending;
+      4'b0100:
+        casez_tmp_25 = entries_4_pending;
+      4'b0101:
+        casez_tmp_25 = entries_5_pending;
+      4'b0110:
+        casez_tmp_25 = entries_6_pending;
+      4'b0111:
+        casez_tmp_25 = entries_7_pending;
+      4'b1000:
+        casez_tmp_25 = entries_8_pending;
+      4'b1001:
+        casez_tmp_25 = entries_9_pending;
+      4'b1010:
+        casez_tmp_25 = entries_10_pending;
+      4'b1011:
+        casez_tmp_25 = entries_11_pending;
+      4'b1100:
+        casez_tmp_25 = entries_12_pending;
+      4'b1101:
+        casez_tmp_25 = entries_13_pending;
+      4'b1110:
+        casez_tmp_25 = entries_14_pending;
+      default:
+        casez_tmp_25 = entries_15_pending;
     endcase
   end // always_comb
   wire        io_recoverValid_0 =
-    casez_tmp_20 & casez_tmp_21 == io_recoverGeneration & _GEN < count;
+    casez_tmp_23 & casez_tmp_24 == io_recoverGeneration & _GEN < count;
   wire [2:0]  commitHits_0 =
     {1'h0,
      {1'h0,
@@ -1619,120 +1785,9 @@ module FTQ(
               & entries_15_generation == io_commit3Generation}};
   wire        willFree_15 =
     entries_15_valid & (|commitHits_15) & entries_15_pending <= commitHits_15;
-  reg         casez_tmp_23;
-  always_comb begin
-    casez (head)
-      4'b0000:
-        casez_tmp_23 = willFree_0;
-      4'b0001:
-        casez_tmp_23 = willFree_1;
-      4'b0010:
-        casez_tmp_23 = willFree_2;
-      4'b0011:
-        casez_tmp_23 = willFree_3;
-      4'b0100:
-        casez_tmp_23 = willFree_4;
-      4'b0101:
-        casez_tmp_23 = willFree_5;
-      4'b0110:
-        casez_tmp_23 = willFree_6;
-      4'b0111:
-        casez_tmp_23 = willFree_7;
-      4'b1000:
-        casez_tmp_23 = willFree_8;
-      4'b1001:
-        casez_tmp_23 = willFree_9;
-      4'b1010:
-        casez_tmp_23 = willFree_10;
-      4'b1011:
-        casez_tmp_23 = willFree_11;
-      4'b1100:
-        casez_tmp_23 = willFree_12;
-      4'b1101:
-        casez_tmp_23 = willFree_13;
-      4'b1110:
-        casez_tmp_23 = willFree_14;
-      default:
-        casez_tmp_23 = willFree_15;
-    endcase
-  end // always_comb
-  reg         casez_tmp_24;
-  always_comb begin
-    casez (head + 4'h1)
-      4'b0000:
-        casez_tmp_24 = willFree_0;
-      4'b0001:
-        casez_tmp_24 = willFree_1;
-      4'b0010:
-        casez_tmp_24 = willFree_2;
-      4'b0011:
-        casez_tmp_24 = willFree_3;
-      4'b0100:
-        casez_tmp_24 = willFree_4;
-      4'b0101:
-        casez_tmp_24 = willFree_5;
-      4'b0110:
-        casez_tmp_24 = willFree_6;
-      4'b0111:
-        casez_tmp_24 = willFree_7;
-      4'b1000:
-        casez_tmp_24 = willFree_8;
-      4'b1001:
-        casez_tmp_24 = willFree_9;
-      4'b1010:
-        casez_tmp_24 = willFree_10;
-      4'b1011:
-        casez_tmp_24 = willFree_11;
-      4'b1100:
-        casez_tmp_24 = willFree_12;
-      4'b1101:
-        casez_tmp_24 = willFree_13;
-      4'b1110:
-        casez_tmp_24 = willFree_14;
-      default:
-        casez_tmp_24 = willFree_15;
-    endcase
-  end // always_comb
-  reg         casez_tmp_25;
-  always_comb begin
-    casez (head + 4'h2)
-      4'b0000:
-        casez_tmp_25 = willFree_0;
-      4'b0001:
-        casez_tmp_25 = willFree_1;
-      4'b0010:
-        casez_tmp_25 = willFree_2;
-      4'b0011:
-        casez_tmp_25 = willFree_3;
-      4'b0100:
-        casez_tmp_25 = willFree_4;
-      4'b0101:
-        casez_tmp_25 = willFree_5;
-      4'b0110:
-        casez_tmp_25 = willFree_6;
-      4'b0111:
-        casez_tmp_25 = willFree_7;
-      4'b1000:
-        casez_tmp_25 = willFree_8;
-      4'b1001:
-        casez_tmp_25 = willFree_9;
-      4'b1010:
-        casez_tmp_25 = willFree_10;
-      4'b1011:
-        casez_tmp_25 = willFree_11;
-      4'b1100:
-        casez_tmp_25 = willFree_12;
-      4'b1101:
-        casez_tmp_25 = willFree_13;
-      4'b1110:
-        casez_tmp_25 = willFree_14;
-      default:
-        casez_tmp_25 = willFree_15;
-    endcase
-  end // always_comb
   reg         casez_tmp_26;
   always_comb begin
-    casez (head + 4'h3)
+    casez (head)
       4'b0000:
         casez_tmp_26 = willFree_0;
       4'b0001:
@@ -1767,52 +1822,163 @@ module FTQ(
         casez_tmp_26 = willFree_15;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_27;
+  reg         casez_tmp_27;
+  always_comb begin
+    casez (head + 4'h1)
+      4'b0000:
+        casez_tmp_27 = willFree_0;
+      4'b0001:
+        casez_tmp_27 = willFree_1;
+      4'b0010:
+        casez_tmp_27 = willFree_2;
+      4'b0011:
+        casez_tmp_27 = willFree_3;
+      4'b0100:
+        casez_tmp_27 = willFree_4;
+      4'b0101:
+        casez_tmp_27 = willFree_5;
+      4'b0110:
+        casez_tmp_27 = willFree_6;
+      4'b0111:
+        casez_tmp_27 = willFree_7;
+      4'b1000:
+        casez_tmp_27 = willFree_8;
+      4'b1001:
+        casez_tmp_27 = willFree_9;
+      4'b1010:
+        casez_tmp_27 = willFree_10;
+      4'b1011:
+        casez_tmp_27 = willFree_11;
+      4'b1100:
+        casez_tmp_27 = willFree_12;
+      4'b1101:
+        casez_tmp_27 = willFree_13;
+      4'b1110:
+        casez_tmp_27 = willFree_14;
+      default:
+        casez_tmp_27 = willFree_15;
+    endcase
+  end // always_comb
+  reg         casez_tmp_28;
+  always_comb begin
+    casez (head + 4'h2)
+      4'b0000:
+        casez_tmp_28 = willFree_0;
+      4'b0001:
+        casez_tmp_28 = willFree_1;
+      4'b0010:
+        casez_tmp_28 = willFree_2;
+      4'b0011:
+        casez_tmp_28 = willFree_3;
+      4'b0100:
+        casez_tmp_28 = willFree_4;
+      4'b0101:
+        casez_tmp_28 = willFree_5;
+      4'b0110:
+        casez_tmp_28 = willFree_6;
+      4'b0111:
+        casez_tmp_28 = willFree_7;
+      4'b1000:
+        casez_tmp_28 = willFree_8;
+      4'b1001:
+        casez_tmp_28 = willFree_9;
+      4'b1010:
+        casez_tmp_28 = willFree_10;
+      4'b1011:
+        casez_tmp_28 = willFree_11;
+      4'b1100:
+        casez_tmp_28 = willFree_12;
+      4'b1101:
+        casez_tmp_28 = willFree_13;
+      4'b1110:
+        casez_tmp_28 = willFree_14;
+      default:
+        casez_tmp_28 = willFree_15;
+    endcase
+  end // always_comb
+  reg         casez_tmp_29;
+  always_comb begin
+    casez (head + 4'h3)
+      4'b0000:
+        casez_tmp_29 = willFree_0;
+      4'b0001:
+        casez_tmp_29 = willFree_1;
+      4'b0010:
+        casez_tmp_29 = willFree_2;
+      4'b0011:
+        casez_tmp_29 = willFree_3;
+      4'b0100:
+        casez_tmp_29 = willFree_4;
+      4'b0101:
+        casez_tmp_29 = willFree_5;
+      4'b0110:
+        casez_tmp_29 = willFree_6;
+      4'b0111:
+        casez_tmp_29 = willFree_7;
+      4'b1000:
+        casez_tmp_29 = willFree_8;
+      4'b1001:
+        casez_tmp_29 = willFree_9;
+      4'b1010:
+        casez_tmp_29 = willFree_10;
+      4'b1011:
+        casez_tmp_29 = willFree_11;
+      4'b1100:
+        casez_tmp_29 = willFree_12;
+      4'b1101:
+        casez_tmp_29 = willFree_13;
+      4'b1110:
+        casez_tmp_29 = willFree_14;
+      default:
+        casez_tmp_29 = willFree_15;
+    endcase
+  end // always_comb
+  reg  [7:0]  casez_tmp_30;
   always_comb begin
     casez (io_recoverIdx)
       4'b0000:
-        casez_tmp_27 = generations_0;
+        casez_tmp_30 = generations_0;
       4'b0001:
-        casez_tmp_27 = generations_1;
+        casez_tmp_30 = generations_1;
       4'b0010:
-        casez_tmp_27 = generations_2;
+        casez_tmp_30 = generations_2;
       4'b0011:
-        casez_tmp_27 = generations_3;
+        casez_tmp_30 = generations_3;
       4'b0100:
-        casez_tmp_27 = generations_4;
+        casez_tmp_30 = generations_4;
       4'b0101:
-        casez_tmp_27 = generations_5;
+        casez_tmp_30 = generations_5;
       4'b0110:
-        casez_tmp_27 = generations_6;
+        casez_tmp_30 = generations_6;
       4'b0111:
-        casez_tmp_27 = generations_7;
+        casez_tmp_30 = generations_7;
       4'b1000:
-        casez_tmp_27 = generations_8;
+        casez_tmp_30 = generations_8;
       4'b1001:
-        casez_tmp_27 = generations_9;
+        casez_tmp_30 = generations_9;
       4'b1010:
-        casez_tmp_27 = generations_10;
+        casez_tmp_30 = generations_10;
       4'b1011:
-        casez_tmp_27 = generations_11;
+        casez_tmp_30 = generations_11;
       4'b1100:
-        casez_tmp_27 = generations_12;
+        casez_tmp_30 = generations_12;
       4'b1101:
-        casez_tmp_27 = generations_13;
+        casez_tmp_30 = generations_13;
       4'b1110:
-        casez_tmp_27 = generations_14;
+        casez_tmp_30 = generations_14;
       default:
-        casez_tmp_27 = generations_15;
+        casez_tmp_30 = generations_15;
     endcase
   end // always_comb
-  wire [7:0]  _generations_T = casez_tmp_27 + 8'h1;
+  wire [7:0]  _generations_T = casez_tmp_30 + 8'h1;
   wire [2:0]  entry_pending =
     {1'h0, {1'h0, io_alloc_bits_validMask[0]} + {1'h0, io_alloc_bits_validMask[1]}}
     + {1'h0, {1'h0, io_alloc_bits_validMask[2]} + {1'h0, io_alloc_bits_validMask[3]}};
-  wire        freeHead_1 = casez_tmp_23 & casez_tmp_24;
-  wire        freeHead_2 = freeHead_1 & casez_tmp_25;
+  wire        freeHead_1 = casez_tmp_26 & casez_tmp_27;
+  wire        freeHead_2 = freeHead_1 & casez_tmp_28;
   wire [2:0]  freeCount =
-    {1'h0, {1'h0, casez_tmp_23} + {1'h0, freeHead_1}}
-    + {1'h0, {1'h0, freeHead_2} + {1'h0, freeHead_2 & casez_tmp_26}};
+    {1'h0, {1'h0, casez_tmp_26} + {1'h0, freeHead_1}}
+    + {1'h0, {1'h0, freeHead_2} + {1'h0, freeHead_2 & casez_tmp_29}};
   wire        _GEN_0 = io_flush | io_recoverFlush & ~io_recoverValid_0;
   wire        _GEN_1 = entries_0_valid & 4'h0 - head > _recoverAge_T;
   wire        _GEN_2 = entries_1_valid & 4'h1 - head > _recoverAge_T;
@@ -1832,15 +1998,15 @@ module FTQ(
   wire        _GEN_16 = entries_15_valid & 4'hF - head > _recoverAge_T;
   wire [11:0] _keepMask_T = 12'h1 << {1'h0, io_recoverSlot} + 3'h1;
   wire [3:0]  _keepMask_T_1 = _keepMask_T[3:0] - 4'h1;
-  wire [3:0]  recoveredMask = casez_tmp_1 & _keepMask_T_1;
+  wire [3:0]  recoveredMask = casez_tmp_4 & _keepMask_T_1;
   wire [3:0]  _removed_T = ~_keepMask_T_1;
   wire [2:0]  _recoveredPending_T =
-    casez_tmp_22
+    casez_tmp_25
     - ({1'h0,
-        {1'h0, casez_tmp_1[0] & _removed_T[0]} + {1'h0, casez_tmp_1[1] & _removed_T[1]}}
+        {1'h0, casez_tmp_4[0] & _removed_T[0]} + {1'h0, casez_tmp_4[1] & _removed_T[1]}}
        + {1'h0,
-          {1'h0, casez_tmp_1[2] & _removed_T[2]}
-            + {1'h0, casez_tmp_1[3] & _removed_T[3]}});
+          {1'h0, casez_tmp_4[2] & _removed_T[2]}
+            + {1'h0, casez_tmp_4[3] & _removed_T[3]}});
   wire        _GEN_17 = (|recoveredMask) & (|_recoveredPending_T);
   wire        _GEN_18 = io_recoverIdx == 4'h0;
   wire        _GEN_19 = io_recoverIdx == 4'h1;
@@ -1909,7 +2075,10 @@ module FTQ(
   wire        _GEN_81 = _GEN_50 | ~_GEN_80;
   always @(posedge clock) begin
     if (reset) begin
-      entries_0_basePc <= 32'h0;
+      entries_0_lanePc_0 <= 32'h0;
+      entries_0_lanePc_1 <= 32'h0;
+      entries_0_lanePc_2 <= 32'h0;
+      entries_0_lanePc_3 <= 32'h0;
       entries_0_validMask <= 4'h0;
       entries_0_ras_0 <= 32'h0;
       entries_0_ras_1 <= 32'h0;
@@ -1932,7 +2101,10 @@ module FTQ(
       entries_0_valid <= 1'h0;
       entries_0_generation <= 8'h0;
       entries_0_pending <= 3'h0;
-      entries_1_basePc <= 32'h0;
+      entries_1_lanePc_0 <= 32'h0;
+      entries_1_lanePc_1 <= 32'h0;
+      entries_1_lanePc_2 <= 32'h0;
+      entries_1_lanePc_3 <= 32'h0;
       entries_1_validMask <= 4'h0;
       entries_1_ras_0 <= 32'h0;
       entries_1_ras_1 <= 32'h0;
@@ -1955,7 +2127,10 @@ module FTQ(
       entries_1_valid <= 1'h0;
       entries_1_generation <= 8'h0;
       entries_1_pending <= 3'h0;
-      entries_2_basePc <= 32'h0;
+      entries_2_lanePc_0 <= 32'h0;
+      entries_2_lanePc_1 <= 32'h0;
+      entries_2_lanePc_2 <= 32'h0;
+      entries_2_lanePc_3 <= 32'h0;
       entries_2_validMask <= 4'h0;
       entries_2_ras_0 <= 32'h0;
       entries_2_ras_1 <= 32'h0;
@@ -1978,7 +2153,10 @@ module FTQ(
       entries_2_valid <= 1'h0;
       entries_2_generation <= 8'h0;
       entries_2_pending <= 3'h0;
-      entries_3_basePc <= 32'h0;
+      entries_3_lanePc_0 <= 32'h0;
+      entries_3_lanePc_1 <= 32'h0;
+      entries_3_lanePc_2 <= 32'h0;
+      entries_3_lanePc_3 <= 32'h0;
       entries_3_validMask <= 4'h0;
       entries_3_ras_0 <= 32'h0;
       entries_3_ras_1 <= 32'h0;
@@ -2001,7 +2179,10 @@ module FTQ(
       entries_3_valid <= 1'h0;
       entries_3_generation <= 8'h0;
       entries_3_pending <= 3'h0;
-      entries_4_basePc <= 32'h0;
+      entries_4_lanePc_0 <= 32'h0;
+      entries_4_lanePc_1 <= 32'h0;
+      entries_4_lanePc_2 <= 32'h0;
+      entries_4_lanePc_3 <= 32'h0;
       entries_4_validMask <= 4'h0;
       entries_4_ras_0 <= 32'h0;
       entries_4_ras_1 <= 32'h0;
@@ -2024,7 +2205,10 @@ module FTQ(
       entries_4_valid <= 1'h0;
       entries_4_generation <= 8'h0;
       entries_4_pending <= 3'h0;
-      entries_5_basePc <= 32'h0;
+      entries_5_lanePc_0 <= 32'h0;
+      entries_5_lanePc_1 <= 32'h0;
+      entries_5_lanePc_2 <= 32'h0;
+      entries_5_lanePc_3 <= 32'h0;
       entries_5_validMask <= 4'h0;
       entries_5_ras_0 <= 32'h0;
       entries_5_ras_1 <= 32'h0;
@@ -2047,7 +2231,10 @@ module FTQ(
       entries_5_valid <= 1'h0;
       entries_5_generation <= 8'h0;
       entries_5_pending <= 3'h0;
-      entries_6_basePc <= 32'h0;
+      entries_6_lanePc_0 <= 32'h0;
+      entries_6_lanePc_1 <= 32'h0;
+      entries_6_lanePc_2 <= 32'h0;
+      entries_6_lanePc_3 <= 32'h0;
       entries_6_validMask <= 4'h0;
       entries_6_ras_0 <= 32'h0;
       entries_6_ras_1 <= 32'h0;
@@ -2070,7 +2257,10 @@ module FTQ(
       entries_6_valid <= 1'h0;
       entries_6_generation <= 8'h0;
       entries_6_pending <= 3'h0;
-      entries_7_basePc <= 32'h0;
+      entries_7_lanePc_0 <= 32'h0;
+      entries_7_lanePc_1 <= 32'h0;
+      entries_7_lanePc_2 <= 32'h0;
+      entries_7_lanePc_3 <= 32'h0;
       entries_7_validMask <= 4'h0;
       entries_7_ras_0 <= 32'h0;
       entries_7_ras_1 <= 32'h0;
@@ -2093,7 +2283,10 @@ module FTQ(
       entries_7_valid <= 1'h0;
       entries_7_generation <= 8'h0;
       entries_7_pending <= 3'h0;
-      entries_8_basePc <= 32'h0;
+      entries_8_lanePc_0 <= 32'h0;
+      entries_8_lanePc_1 <= 32'h0;
+      entries_8_lanePc_2 <= 32'h0;
+      entries_8_lanePc_3 <= 32'h0;
       entries_8_validMask <= 4'h0;
       entries_8_ras_0 <= 32'h0;
       entries_8_ras_1 <= 32'h0;
@@ -2116,7 +2309,10 @@ module FTQ(
       entries_8_valid <= 1'h0;
       entries_8_generation <= 8'h0;
       entries_8_pending <= 3'h0;
-      entries_9_basePc <= 32'h0;
+      entries_9_lanePc_0 <= 32'h0;
+      entries_9_lanePc_1 <= 32'h0;
+      entries_9_lanePc_2 <= 32'h0;
+      entries_9_lanePc_3 <= 32'h0;
       entries_9_validMask <= 4'h0;
       entries_9_ras_0 <= 32'h0;
       entries_9_ras_1 <= 32'h0;
@@ -2139,7 +2335,10 @@ module FTQ(
       entries_9_valid <= 1'h0;
       entries_9_generation <= 8'h0;
       entries_9_pending <= 3'h0;
-      entries_10_basePc <= 32'h0;
+      entries_10_lanePc_0 <= 32'h0;
+      entries_10_lanePc_1 <= 32'h0;
+      entries_10_lanePc_2 <= 32'h0;
+      entries_10_lanePc_3 <= 32'h0;
       entries_10_validMask <= 4'h0;
       entries_10_ras_0 <= 32'h0;
       entries_10_ras_1 <= 32'h0;
@@ -2162,7 +2361,10 @@ module FTQ(
       entries_10_valid <= 1'h0;
       entries_10_generation <= 8'h0;
       entries_10_pending <= 3'h0;
-      entries_11_basePc <= 32'h0;
+      entries_11_lanePc_0 <= 32'h0;
+      entries_11_lanePc_1 <= 32'h0;
+      entries_11_lanePc_2 <= 32'h0;
+      entries_11_lanePc_3 <= 32'h0;
       entries_11_validMask <= 4'h0;
       entries_11_ras_0 <= 32'h0;
       entries_11_ras_1 <= 32'h0;
@@ -2185,7 +2387,10 @@ module FTQ(
       entries_11_valid <= 1'h0;
       entries_11_generation <= 8'h0;
       entries_11_pending <= 3'h0;
-      entries_12_basePc <= 32'h0;
+      entries_12_lanePc_0 <= 32'h0;
+      entries_12_lanePc_1 <= 32'h0;
+      entries_12_lanePc_2 <= 32'h0;
+      entries_12_lanePc_3 <= 32'h0;
       entries_12_validMask <= 4'h0;
       entries_12_ras_0 <= 32'h0;
       entries_12_ras_1 <= 32'h0;
@@ -2208,7 +2413,10 @@ module FTQ(
       entries_12_valid <= 1'h0;
       entries_12_generation <= 8'h0;
       entries_12_pending <= 3'h0;
-      entries_13_basePc <= 32'h0;
+      entries_13_lanePc_0 <= 32'h0;
+      entries_13_lanePc_1 <= 32'h0;
+      entries_13_lanePc_2 <= 32'h0;
+      entries_13_lanePc_3 <= 32'h0;
       entries_13_validMask <= 4'h0;
       entries_13_ras_0 <= 32'h0;
       entries_13_ras_1 <= 32'h0;
@@ -2231,7 +2439,10 @@ module FTQ(
       entries_13_valid <= 1'h0;
       entries_13_generation <= 8'h0;
       entries_13_pending <= 3'h0;
-      entries_14_basePc <= 32'h0;
+      entries_14_lanePc_0 <= 32'h0;
+      entries_14_lanePc_1 <= 32'h0;
+      entries_14_lanePc_2 <= 32'h0;
+      entries_14_lanePc_3 <= 32'h0;
       entries_14_validMask <= 4'h0;
       entries_14_ras_0 <= 32'h0;
       entries_14_ras_1 <= 32'h0;
@@ -2254,7 +2465,10 @@ module FTQ(
       entries_14_valid <= 1'h0;
       entries_14_generation <= 8'h0;
       entries_14_pending <= 3'h0;
-      entries_15_basePc <= 32'h0;
+      entries_15_lanePc_0 <= 32'h0;
+      entries_15_lanePc_1 <= 32'h0;
+      entries_15_lanePc_2 <= 32'h0;
+      entries_15_lanePc_3 <= 32'h0;
       entries_15_validMask <= 4'h0;
       entries_15_ras_0 <= 32'h0;
       entries_15_ras_1 <= 32'h0;
@@ -2300,8 +2514,12 @@ module FTQ(
     else begin
       if (_GEN_51) begin
       end
-      else
-        entries_0_basePc <= io_alloc_bits_basePc;
+      else begin
+        entries_0_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_0_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_0_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_0_lanePc_3 <= io_alloc_bits_lanePc_3;
+      end
       if (_GEN_0) begin
         generations_0 <= generations_0 + 8'h1;
         generations_1 <= generations_1 + 8'h1;
@@ -2725,7 +2943,10 @@ module FTQ(
       if (_GEN_53) begin
       end
       else begin
-        entries_1_basePc <= io_alloc_bits_basePc;
+        entries_1_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_1_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_1_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_1_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_1_ras_0 <= io_alloc_bits_ras_0;
         entries_1_ras_1 <= io_alloc_bits_ras_1;
         entries_1_ras_2 <= io_alloc_bits_ras_2;
@@ -2757,7 +2978,10 @@ module FTQ(
       if (_GEN_55) begin
       end
       else begin
-        entries_2_basePc <= io_alloc_bits_basePc;
+        entries_2_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_2_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_2_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_2_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_2_ras_0 <= io_alloc_bits_ras_0;
         entries_2_ras_1 <= io_alloc_bits_ras_1;
         entries_2_ras_2 <= io_alloc_bits_ras_2;
@@ -2789,7 +3013,10 @@ module FTQ(
       if (_GEN_57) begin
       end
       else begin
-        entries_3_basePc <= io_alloc_bits_basePc;
+        entries_3_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_3_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_3_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_3_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_3_ras_0 <= io_alloc_bits_ras_0;
         entries_3_ras_1 <= io_alloc_bits_ras_1;
         entries_3_ras_2 <= io_alloc_bits_ras_2;
@@ -2821,7 +3048,10 @@ module FTQ(
       if (_GEN_59) begin
       end
       else begin
-        entries_4_basePc <= io_alloc_bits_basePc;
+        entries_4_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_4_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_4_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_4_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_4_ras_0 <= io_alloc_bits_ras_0;
         entries_4_ras_1 <= io_alloc_bits_ras_1;
         entries_4_ras_2 <= io_alloc_bits_ras_2;
@@ -2853,7 +3083,10 @@ module FTQ(
       if (_GEN_61) begin
       end
       else begin
-        entries_5_basePc <= io_alloc_bits_basePc;
+        entries_5_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_5_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_5_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_5_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_5_ras_0 <= io_alloc_bits_ras_0;
         entries_5_ras_1 <= io_alloc_bits_ras_1;
         entries_5_ras_2 <= io_alloc_bits_ras_2;
@@ -2885,7 +3118,10 @@ module FTQ(
       if (_GEN_63) begin
       end
       else begin
-        entries_6_basePc <= io_alloc_bits_basePc;
+        entries_6_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_6_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_6_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_6_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_6_ras_0 <= io_alloc_bits_ras_0;
         entries_6_ras_1 <= io_alloc_bits_ras_1;
         entries_6_ras_2 <= io_alloc_bits_ras_2;
@@ -2917,7 +3153,10 @@ module FTQ(
       if (_GEN_65) begin
       end
       else begin
-        entries_7_basePc <= io_alloc_bits_basePc;
+        entries_7_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_7_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_7_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_7_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_7_ras_0 <= io_alloc_bits_ras_0;
         entries_7_ras_1 <= io_alloc_bits_ras_1;
         entries_7_ras_2 <= io_alloc_bits_ras_2;
@@ -2949,7 +3188,10 @@ module FTQ(
       if (_GEN_67) begin
       end
       else begin
-        entries_8_basePc <= io_alloc_bits_basePc;
+        entries_8_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_8_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_8_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_8_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_8_ras_0 <= io_alloc_bits_ras_0;
         entries_8_ras_1 <= io_alloc_bits_ras_1;
         entries_8_ras_2 <= io_alloc_bits_ras_2;
@@ -2981,7 +3223,10 @@ module FTQ(
       if (_GEN_69) begin
       end
       else begin
-        entries_9_basePc <= io_alloc_bits_basePc;
+        entries_9_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_9_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_9_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_9_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_9_ras_0 <= io_alloc_bits_ras_0;
         entries_9_ras_1 <= io_alloc_bits_ras_1;
         entries_9_ras_2 <= io_alloc_bits_ras_2;
@@ -3013,7 +3258,10 @@ module FTQ(
       if (_GEN_71) begin
       end
       else begin
-        entries_10_basePc <= io_alloc_bits_basePc;
+        entries_10_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_10_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_10_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_10_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_10_ras_0 <= io_alloc_bits_ras_0;
         entries_10_ras_1 <= io_alloc_bits_ras_1;
         entries_10_ras_2 <= io_alloc_bits_ras_2;
@@ -3045,7 +3293,10 @@ module FTQ(
       if (_GEN_73) begin
       end
       else begin
-        entries_11_basePc <= io_alloc_bits_basePc;
+        entries_11_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_11_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_11_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_11_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_11_ras_0 <= io_alloc_bits_ras_0;
         entries_11_ras_1 <= io_alloc_bits_ras_1;
         entries_11_ras_2 <= io_alloc_bits_ras_2;
@@ -3077,7 +3328,10 @@ module FTQ(
       if (_GEN_75) begin
       end
       else begin
-        entries_12_basePc <= io_alloc_bits_basePc;
+        entries_12_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_12_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_12_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_12_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_12_ras_0 <= io_alloc_bits_ras_0;
         entries_12_ras_1 <= io_alloc_bits_ras_1;
         entries_12_ras_2 <= io_alloc_bits_ras_2;
@@ -3109,7 +3363,10 @@ module FTQ(
       if (_GEN_77) begin
       end
       else begin
-        entries_13_basePc <= io_alloc_bits_basePc;
+        entries_13_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_13_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_13_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_13_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_13_ras_0 <= io_alloc_bits_ras_0;
         entries_13_ras_1 <= io_alloc_bits_ras_1;
         entries_13_ras_2 <= io_alloc_bits_ras_2;
@@ -3141,7 +3398,10 @@ module FTQ(
       if (_GEN_79) begin
       end
       else begin
-        entries_14_basePc <= io_alloc_bits_basePc;
+        entries_14_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_14_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_14_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_14_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_14_ras_0 <= io_alloc_bits_ras_0;
         entries_14_ras_1 <= io_alloc_bits_ras_1;
         entries_14_ras_2 <= io_alloc_bits_ras_2;
@@ -3173,7 +3433,10 @@ module FTQ(
       if (_GEN_81) begin
       end
       else begin
-        entries_15_basePc <= io_alloc_bits_basePc;
+        entries_15_lanePc_0 <= io_alloc_bits_lanePc_0;
+        entries_15_lanePc_1 <= io_alloc_bits_lanePc_1;
+        entries_15_lanePc_2 <= io_alloc_bits_lanePc_2;
+        entries_15_lanePc_3 <= io_alloc_bits_lanePc_3;
         entries_15_ras_0 <= io_alloc_bits_ras_0;
         entries_15_ras_1 <= io_alloc_bits_ras_1;
         entries_15_ras_2 <= io_alloc_bits_ras_2;
@@ -3214,25 +3477,29 @@ module FTQ(
   assign io_allocIdx = tail;
   assign io_allocGeneration = casez_tmp;
   assign io_recoverValid = io_recoverValid_0;
-  assign io_recover_basePc = casez_tmp_0;
-  assign io_recover_ras_0 = casez_tmp_2;
-  assign io_recover_ras_1 = casez_tmp_3;
-  assign io_recover_ras_2 = casez_tmp_4;
-  assign io_recover_ras_3 = casez_tmp_5;
-  assign io_recover_ras_4 = casez_tmp_6;
-  assign io_recover_ras_5 = casez_tmp_7;
-  assign io_recover_ras_6 = casez_tmp_8;
-  assign io_recover_ras_7 = casez_tmp_9;
-  assign io_recover_ras_8 = casez_tmp_10;
-  assign io_recover_ras_9 = casez_tmp_11;
-  assign io_recover_ras_10 = casez_tmp_12;
-  assign io_recover_ras_11 = casez_tmp_13;
-  assign io_recover_ras_12 = casez_tmp_14;
-  assign io_recover_ras_13 = casez_tmp_15;
-  assign io_recover_ras_14 = casez_tmp_16;
-  assign io_recover_ras_15 = casez_tmp_17;
-  assign io_recover_rasPtr = casez_tmp_18;
-  assign io_recover_rasCount = casez_tmp_19;
+  assign io_recover_lanePc_0 = casez_tmp_0;
+  assign io_recover_lanePc_1 = casez_tmp_1;
+  assign io_recover_lanePc_2 = casez_tmp_2;
+  assign io_recover_lanePc_3 = casez_tmp_3;
+  assign io_recover_validMask = casez_tmp_4;
+  assign io_recover_ras_0 = casez_tmp_5;
+  assign io_recover_ras_1 = casez_tmp_6;
+  assign io_recover_ras_2 = casez_tmp_7;
+  assign io_recover_ras_3 = casez_tmp_8;
+  assign io_recover_ras_4 = casez_tmp_9;
+  assign io_recover_ras_5 = casez_tmp_10;
+  assign io_recover_ras_6 = casez_tmp_11;
+  assign io_recover_ras_7 = casez_tmp_12;
+  assign io_recover_ras_8 = casez_tmp_13;
+  assign io_recover_ras_9 = casez_tmp_14;
+  assign io_recover_ras_10 = casez_tmp_15;
+  assign io_recover_ras_11 = casez_tmp_16;
+  assign io_recover_ras_12 = casez_tmp_17;
+  assign io_recover_ras_13 = casez_tmp_18;
+  assign io_recover_ras_14 = casez_tmp_19;
+  assign io_recover_ras_15 = casez_tmp_20;
+  assign io_recover_rasPtr = casez_tmp_21;
+  assign io_recover_rasCount = casez_tmp_22;
   assign io_count = count;
   assign io_full = count == 5'h10;
 endmodule

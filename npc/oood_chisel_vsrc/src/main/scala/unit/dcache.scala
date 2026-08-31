@@ -34,14 +34,20 @@ class DCacheIO extends Bundle {
   val store_addr  = Input(UInt(32.W))
   val store_data  = Input(UInt(32.W))
   val store_mask  = Input(UInt(4.W))
+  val store_probe_hit = Output(Bool())
   val store2_valid = Input(Bool())
   val store2_addr  = Input(UInt(32.W))
   val store2_data  = Input(UInt(32.W))
   val store2_mask  = Input(UInt(4.W))
+  val store2_probe_hit = Output(Bool())
   val store3_valid = Input(Bool())
   val store3_addr  = Input(UInt(32.W))
   val store3_data  = Input(UInt(32.W))
   val store3_mask  = Input(UInt(4.W))
+  val store_line = Flipped(Decoupled(new StoreWritebackLine))
+  val dirty_writeback = Decoupled(new StoreWritebackLine)
+  val drain_all = Input(Bool())
+  val dirty_empty = Output(Bool())
   val busy = Output(Bool())
 }
 
@@ -58,6 +64,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   private val tagW = 32 - offsetW - indexW
 
   val lines = RegInit(VecInit(Seq.fill(set)(0.U.asTypeOf(new DCacheLine(tagW, words)))))
+  val dirty = RegInit(VecInit(Seq.fill(set)(false.B)))
   val missQueue = Module(new DCacheMissQueue(blockSize))
 
   def cacheable(addr: UInt): Bool =
@@ -66,6 +73,8 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   def indexOf(addr: UInt): UInt = addr(offsetW + indexW - 1, offsetW)
   def wordOf(addr: UInt): UInt =
     if (words == 1) 0.U(wordW.W) else addr(offsetW - 1, 2)
+  def lineAddress(tag: UInt, index: UInt): UInt =
+    Cat(tag, index, 0.U(offsetW.W))
   def expandMask(mask: UInt): UInt =
     Cat((3 to 0 by -1).map(i => Fill(8, mask(i))))
   def storeWord(old: UInt, addr: UInt, data: UInt, rawMask: UInt): UInt = {
@@ -193,23 +202,45 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
 
   val installIndex = indexOf(missQueue.io.installAddr)
   val installTag = tagOf(missQueue.io.installAddr)
-  when(missQueue.io.installValid) {
+  val installVictimDirty = missQueue.io.installValid &&
+    lines(installIndex).valid && dirty(installIndex)
+  val drainCandidates = VecInit((0 until set).map(i => dirty(i)))
+  val drainVictimValid = io.drain_all && drainCandidates.asUInt.orR
+  val drainVictimIndex = PriorityEncoder(drainCandidates.asUInt)
+  val writebackIndex = Mux(installVictimDirty, installIndex, drainVictimIndex)
+  io.dirty_writeback.valid := installVictimDirty || drainVictimValid
+  io.dirty_writeback.bits.lineAddr := lineAddress(
+    lines(writebackIndex).tag, writebackIndex)
+  for (w <- 0 until words) {
+    io.dirty_writeback.bits.data(w) := lines(writebackIndex).data(w)
+    io.dirty_writeback.bits.masks(w) := "hf".U
+  }
+  missQueue.io.installReady := !installVictimDirty || io.dirty_writeback.ready
+
+  when(io.dirty_writeback.fire && !installVictimDirty) {
+    dirty(drainVictimIndex) := false.B
+  }
+  when(missQueue.io.installValid && missQueue.io.installReady) {
     lines(installIndex).valid := true.B
     lines(installIndex).tag := installTag
     lines(installIndex).data := missQueue.io.installData
+    dirty(installIndex) := false.B
   }
 
   when(io.invalidate_valid && invCacheable &&
       lines(invIndex).valid && lines(invIndex).tag === invTag) {
     lines(invIndex).valid := false.B
+    dirty(invIndex) := false.B
   }
   when(io.invalidate2_valid && inv2Cacheable &&
       lines(inv2Index).valid && lines(inv2Index).tag === inv2Tag) {
     lines(inv2Index).valid := false.B
+    dirty(inv2Index) := false.B
   }
   when(io.invalidate3_valid && inv3Cacheable &&
       lines(inv3Index).valid && lines(inv3Index).tag === inv3Tag) {
     lines(inv3Index).valid := false.B
+    dirty(inv3Index) := false.B
   }
 
   val storeCacheable = cacheable(io.store_addr)
@@ -227,12 +258,20 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   val installSameSet0 = missQueue.io.installValid && installIndex === storeIndex
   val installSameSet1 = missQueue.io.installValid && installIndex === store2Index
   val installSameSet2 = missQueue.io.installValid && installIndex === store3Index
-  val storeHit = io.store_valid && storeCacheable && lines(storeIndex).valid &&
+  io.store_probe_hit := storeCacheable && lines(storeIndex).valid &&
     lines(storeIndex).tag === storeTag && !installSameSet0
-  val store2Hit = io.store2_valid && store2Cacheable && lines(store2Index).valid &&
+  io.store2_probe_hit := store2Cacheable && lines(store2Index).valid &&
     lines(store2Index).tag === store2Tag && !installSameSet1
+  val storeHit = io.store_valid && io.store_probe_hit
+  val store2Hit = io.store2_valid && io.store2_probe_hit
   val store3Hit = io.store3_valid && store3Cacheable && lines(store3Index).valid &&
     lines(store3Index).tag === store3Tag && !installSameSet2
+  val absorbIndex = indexOf(io.store_line.bits.lineAddr)
+  val absorbTag = tagOf(io.store_line.bits.lineAddr)
+  val absorbInstallConflict = missQueue.io.installValid && installIndex === absorbIndex
+  val absorbHit = lines(absorbIndex).valid && lines(absorbIndex).tag === absorbTag &&
+    !absorbInstallConflict
+  io.store_line.ready := absorbHit
   val store3Updated = storeWord(lines(store3Index).data(store3WordIdx),
     io.store3_addr, io.store3_data, io.store3_mask)
   val store0Base = Mux(store3Hit && store3Index === storeIndex &&
@@ -244,6 +283,7 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
   }
   when(storeHit) {
     lines(storeIndex).data(storeWordIdx) := store0Updated
+    dirty(storeIndex) := true.B
   }
   when(store2Hit) {
     val afterStore3 = Mux(store3Hit && store3Index === store2Index &&
@@ -252,9 +292,21 @@ class DCache(set: Int = 64, blockSize: Int = 32, conf: CoreConfig) extends Modul
       storeWordIdx === store2WordIdx, store0Updated, afterStore3)
     lines(store2Index).data(store2WordIdx) := storeWord(afterStore0,
       io.store2_addr, io.store2_data, io.store2_mask)
+    dirty(store2Index) := true.B
+  }
+  when(io.store_line.fire) {
+    for (w <- 0 until words) {
+      val bits = expandMask(io.store_line.bits.masks(w))
+      lines(absorbIndex).data(w) :=
+        (lines(absorbIndex).data(w) & ~bits) |
+          (io.store_line.bits.data(w) & bits)
+    }
+    dirty(absorbIndex) := true.B
   }
 
-  io.busy := missQueue.io.busy || hitRespQ.io.deq.valid || hitRespQ1.io.deq.valid
+  io.dirty_empty := !dirty.asUInt.orR
+  io.busy := missQueue.io.busy || hitRespQ.io.deq.valid ||
+    hitRespQ1.io.deq.valid || io.dirty_writeback.valid
 
   if (conf.statistics) {
     val accessCount = PopCount(Seq(

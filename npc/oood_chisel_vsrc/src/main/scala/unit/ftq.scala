@@ -6,6 +6,7 @@ import common.{BPU_Config, OoOParams}
 
 class FTQAlloc extends Bundle {
   val basePc = UInt(32.W)
+  val lanePc = Vec(OoOParams.FETCH_WIDTH, UInt(32.W))
   val validMask = UInt(OoOParams.FETCH_WIDTH.W)
   val predictedNextPc = UInt(32.W)
   val cfiSlot = UInt(log2Ceil(OoOParams.FETCH_WIDTH + 1).W)
@@ -75,6 +76,7 @@ class FTQ(n: Int = OoOParams.FTQ_SIZE) extends Module {
   io.recoverValid := recoverEntry.valid &&
     recoverEntry.generation === io.recoverGeneration && recoverInWindow
   io.recover.basePc := recoverEntry.basePc
+  io.recover.lanePc := recoverEntry.lanePc
   io.recover.validMask := recoverEntry.validMask
   io.recover.predictedNextPc := recoverEntry.predictedNextPc
   io.recover.cfiSlot := recoverEntry.cfiSlot
@@ -162,6 +164,7 @@ class FTQ(n: Int = OoOParams.FTQ_SIZE) extends Module {
       entry.generation := generations(tail)
       entry.pending := PopCount(io.alloc.bits.validMask)
       entry.basePc := io.alloc.bits.basePc
+      entry.lanePc := io.alloc.bits.lanePc
       entry.validMask := io.alloc.bits.validMask
       entry.predictedNextPc := io.alloc.bits.predictedNextPc
       entry.cfiSlot := io.alloc.bits.cfiSlot

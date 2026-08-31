@@ -1,58 +1,118 @@
-# 阶段 15a：commit-filled Trace/Stream 前端
+# 阶段 15a：困难分支 Oracle 与路径型 Trace 前端
 
 ## 学习导航
-- **理论目标**：理解“预测下一块地址”和“直接提供一段已经验证过的动态指令流”的差别，以及 trace 身份、失效和恢复为何比容量更重要。
-- **最小实现**：先做 commit-filled 四字 L0 word stream：四个连续 PC tag 全命中且没有 control/system/fence 时，只替换 IFU 的指令字来源；BPU、FTQ、FetchBuffer 和 fallback 保持原路径。A/B 为正后再扩展带 path context 的 TraceEntry。
-- **当前参考核**：Stage14 只有四槽 IFU+ICache+FQ/FTQ，平均 fetch width `3.1895`，`FQ Empty=12567`，尚无 trace/stream cache。
-- **后续扩展**：多分支 trace、decoded-uop cache、way prediction、跨 trace stitching、loop stream；只有最小实现 A/B 为正才增加容量或路径数。
-- **验收方式**：定向覆盖 fill/hit/miss、taken branch 跨块、path alias、flush、fence.i、自修改代码失效、fallback、FQ partial ready；全核要求 difftest-clean 且降低 `FQ Empty` 或 redirect refill cycles。
+- **理论目标**：理解残余困难分支、instruction-word cache、loop stream 和跨控制流 Trace 的区别，以及为什么 predictor/trace 都必须携带可恢复的动态身份。
+- **最小实现**：先用提交/分支轨迹比较 local history、path history、loop phase 和 target context，只有离线 Oracle 预计可回收约 `3000` cycles 才实现通用 HardBranchHelper；随后以已验证的动态包模型为门，实现逐槽 PC 的 path Trace，而不重复 word cache。
+- **当前参考核**：Stage15 当前开发参考点为 Store Address Sidecar IPC `2.3005`，不启用 committed trace。修正 ICache owner 后的真实 path Trace 仍退化到 `166195` cycles、IPC `2.2192`，已拒绝；实验模块和 focused test 只作为教学负例保留。
+- **后续扩展**：15a 到此关闭，不扩大 Trace 表、不扫描置信度。banked dual-Load、macro-op fusion 和解耦多块前端均延期为冻结后的可选方向；纯 next-line prefetch 不单独施工。
+- **验收方式**：Oracle 采用按时间切分和冷启动模拟，禁止读取未来结果；RTL 禁止 benchmark-PC 特化。helper 和 Trace 分别做 focused test、TopMain、cpu-test+difftest、同二进制 A/B；任一性能候选低于 `0.5%` cycles 收益且一次结构修正后仍无效就回退。
 
 ---
 
-## 1. 两层数据结构
+## 1. 已完成的 15a0 实验
 
-### 1.1 15a0：四字 L0 word stream
+15a0 使用 commit-filled、direct-mapped 的四字 word buffer：
 
 ```scala
 class CommittedStreamWord extends Bundle {
   val pc   = UInt(32.W)
   val inst = UInt(32.W)
 }
-
-// 64-entry direct-mapped PC -> committed instruction word
-// lookup 同时验证 pc, pc+4, pc+8, pc+12 四个完整 tag
 ```
 
-它不缓存动态身份，也不自行拥有 redirect。命中只将 `fetchInst(0..3)` 从 ICache 响应切到已提交指令字；本拍 BPU 重新读取这些指令，随后仍原子分配 FetchBuffer 与 FTQ。四 tag 中任一 miss、包含 control/system/fence，或 IFU 已有未完成请求时，直接走旧 ICache 路径。
+两轮整核 A/B：
 
-### 1.2 15a1：带路径上下文的 TraceEntry
+| 候选 | stream hits | cycles | IPC | 结论 |
+|------|------------:|-------:|----:|------|
+| 只允许非 control 四字块 | 49168 | 167053 | 2.2078 | 中性，拒绝 |
+| 允许 committed control 指令字 | 85678 | 167053 | 2.2078 | 中性，拒绝 |
+
+原因不是 hit 太少，而是 16 KiB ICache 命中本来就能在同样时序内提供指令。commit-filled word buffer 既不能预取冷 miss，也没有跨动态控制路径，所以没有减少任何周期。
+
+**结论**：不要继续扫 word-buffer 容量、路数或替换策略。
+
+## 2. 困难分支离线 Oracle
+
+当前 `4574` 次错误预测中，方向错误 `3596`、目标错误 `978`；三个最热类别合计 `2306` 次。Stage14 的 statistical corrector 已用减少 `900` 次方向错误回收 `2402` cycles，说明继续针对残余模式比扩大整张 TAGE 更值得先验证。
+
+轨迹每条动态 control 至少记录：
+
+```text
+pc, actualTaken, actualTarget
+base/tage/sc/loop/itage prediction and confidence
+globalHistory, localHistory, targetPath, loopPhase
+fetchEpoch, robAge, resolve-to-FQ penalty
+```
+
+离线依次比较：
+
+1. `PC + local history`：寻找单分支自身相关性。
+2. `PC + path history`：区分到达同一分支的调用/控制路径。
+3. `PC + local + path + loop phase`：覆盖循环退出和嵌套模式。
+4. target context：只预测间接目标，不混入方向 owner。
+5. chooser：helper 仅在与现有 provider 分歧且自身置信度足够时接管。
+
+训练/测试必须按动态时间切分，并模拟有限表 tag/index、替换、冷启动和 commit-time update。无限字典只给理论上界，不能作为施工依据。进入 RTL 的门是：有限模型在多个 MicroBench 子项上净减少足够错误，按本核实测 penalty 预计回收约 `3000` cycles；否则直接记录拒绝并转真实 Trace。
+
+实际脚本 `scripts/stage15_branch_oracle.py` 对 `368782` 条退休 PC 做在线 replay，解码出 `52488` 条条件分支和 `7376` 条非 return JALR。所有预测都发生在当前 outcome 更新之前；256-entry、2-way、16-bit tag 的结果如下：
+
+| 类型 | 最好模型 | coverage | accuracy | 估计 cycles | 结论 |
+|------|----------|---------:|---------:|------------:|------|
+| direction | local context | `78.84%` | `99.26%` | `717.3` | 低于施工门 |
+| indirect target | path context | `92.10%` | `99.44%` | `1956.1` | 与现有 path-ITAGE 高度重叠 |
+
+两个估计不能直接相加：target helper 覆盖的正是现有 ITAGE 路线，而此前有限表 `GHR XOR path` 已把 IPC 从 `2.2533` 拉低到 `2.1792`。因此 HardBranchHelper 在本轮 **Oracle 拒绝，不进入 RTL**。详细模型结果见 [stage15_branch_oracle_results.csv](stage15_branch_oracle_results.csv)；脚本保留，后续 workload 或预测器结构变化时可重跑。
+
+候选结构保持通用：
 
 ```scala
-class TraceEntry extends Bundle {
-  val valid       = Bool()
-  val startPc     = UInt(32.W)
-  val pathTag     = UInt(PATH_TAG_W.W)
-  val length      = UInt(log2Ceil(TRACE_UOPS + 1).W)
-  val lanePc      = Vec(TRACE_UOPS, UInt(32.W))
-  val inst        = Vec(TRACE_UOPS, UInt(32.W))
-  val controlMask = UInt(TRACE_UOPS.W)
-  val predictedNextPc = UInt(32.W)
-  val exitKind    = UInt(TRACE_EXIT_W.W)
+class HardBranchEntry extends Bundle {
+  val tag        = UInt(...)
+  val signature  = UInt(...) // folded local/path/phase context
+  val direction  = Bool()
+  val target     = UInt(32.W)
+  val confidence = UInt(...)
+  val usefulness = UInt(...)
 }
 ```
 
-固定宽 RV32 也需要逐 lane PC：taken branch 之后的下一条动态指令不一定是 `startPc + lane*4`。第一版存原始 instruction 和最小预译码，不缓存 PRF/ROB/FU 身份；后者属于每次动态执行，不能跨实例复用。
+热点 PC 只用于解释收益，禁止写入 `pc === 0x...` 的特化条件。
 
-## 2. 为什么由 commit 填充
+## 3. 为什么 15a0 失败不否定真实 Trace
 
-```text
-fetch fill  -> 容易把错误路径长期写入 trace
-commit fill -> 只记录真实退休路径，训练慢一些但语义清楚
+真实 Trace 改变的是动态路径包：
+
+```scala
+class TraceEntry extends Bundle {
+  val valid           = Bool()
+  val startPc         = UInt(32.W)
+  val pathTag         = UInt(PATH_TAG_W.W)
+  val length          = UInt(log2Ceil(TRACE_UOPS + 1).W)
+  val lanePc          = Vec(TRACE_UOPS, UInt(32.W))
+  val inst            = Vec(TRACE_UOPS, UInt(32.W))
+  val controlMask     = UInt(TRACE_UOPS.W)
+  val predictedNextPc = UInt(32.W)
+  val exitKind        = UInt(TRACE_EXIT_W.W)
+}
 ```
 
-15a0 不需要 builder：四路 commit 各自按 PC 写 word array，同 index 冲突时年轻 lane 胜出。15a1 才按 lane0 到 lane3 顺序追加动态路径；遇到 control、容量上限、非连续上下文、异常/特殊指令或 fence.i 时结束 stream。两层都只收集指令字、PC、控制类型和实际 next PC，不复制动态 rename/预测训练身份。
+taken branch 后的下一条动态指令不一定是 `startPc + lane*4`，因此必须保存逐槽 PC。Trace 命中还必须生成本次动态实例的新 epoch 和预测身份，不能复用上次提交时已经过期的 TAGE/ITAGE metadata。
 
-## 3. lookup、所有权与 fallback
+## 4. 已做的路径上限分析
+
+提交轨迹离线建模得到：
+
+```text
+当前动态路径包平均宽度      3.2295
+256-entry confidence-2 模型 3.5163
+错误 trace hit             44
+```
+
+这证明跨控制流动态包存在供给空间，但不是硬件收益保证。有限 tag/index、错误 hit 恢复、FTQ lane-PC 身份和实际时序仍需付出成本。
+
+混合 `GHR XOR path` 的有限 ITAGE 已从 IPC `2.2533` 回退到 `2.1792`，说明离线无限字典的高准确率不能直接等价为有限硬件表。
+
+## 5. lookup 与恢复所有权
 
 ```text
 fetch PC + path context
@@ -60,50 +120,76 @@ fetch PC + path context
   -> trace miss: existing IFU -> ICache/BPU -> FetchBuffer/FQ
 ```
 
-两条路径共享一个明确的 packet owner，不能同拍各自推进 PC。FQ backpressure 时命中结果必须保持稳定；redirect/exception/memory-order violation 由统一 recovery generation 杀死旧 packet。trace 只预测供给路径，branch execute 仍比较实际结果并产生最老 redirect。
+必须满足：
 
-## 4. BPU 与 trace 的边界
+- 同拍只有一个 PC owner。
+- FQ backpressure 时 packet 保持稳定。
+- Fast Redirect 提升 epoch 后，旧 trace/ICache response 都不能进入 FQ。
+- branch resolution 仍选择程序序最老 redirect。
+- trace 内 control 的 GHR/path/RAS 推测推进可恢复。
+- `fence.i` 清除 trace valid，并等待旧动态 packet 被 epoch 杀死。
 
-trace 命中不能拿“上次提交时的 provider index”训练当前 BPU，因为表项可能已被替换。最小实现采用独立 trace prediction metadata：
+## 6. 真实 Trace 的进入门槛
 
-- trace 自己只记录 pathTag、exit 与 predictedNextPc。
-- branch resolution 单独统计 `trace_correct/trace_miss/trace_exit_miss`。
-- TAGE/ITAGE 的训练仍使用本次动态指令携带的有效 metadata；无法提供新 metadata 的 control 不允许用旧快照更新 predictor。
+在 HardBranchHelper A/B 后重新测：
 
-第一版可以只让无内部 control 的短 stream 命中，先证明旁路合同；第二门再允许一个已提交 taken control 跨块。
+```text
+BP flush count
+FQ empty 的 mutually-exclusive 原因
+动态 path packet width 与有限表 wrong-hit
+helper 未覆盖的 direction/target miss
+trace hit 后可避免的 ICache/FQ/line-tail 等待
+```
 
-## 5. 失效规则
+有限 256-entry confidence-2 模型已经达到平均宽度 `3.5163`、wrong-hit `44`，允许进入第一版路径 Trace 设计；但整核保留门仍是至少 `0.5%` cycles。第一版只支持一个内部 taken control 和四个逐槽 PC，先验证恢复域，不直接扩大 trace 深度。
 
-- reset：全部 invalid。
-- `fence.i` 提交：全部 invalid，并等待旧 IFU/trace packet drain。
-- 写可执行内存：本教学核没有完善 I/D coherence，保守依赖 `fence.i` 全清。
-- flush：杀动态 packet，但不必删除由更早 committed path 填充的 entry。
-- pathTag 不匹配：miss，禁止猜测命中。
+## 7. 源码状态与计划落点
 
-## 6. 施工切片
+- `unit/committed_trace.scala`：实验性 builder/cache，当前命中使用路径禁用。
+- `core/ifu_commit_wiring.scala`：隔离 commit feedback，避免继续扩大 `Core.<init>`。
+- `core/ifu.scala`：保留原 IFU/BPU/FTQ owner。
+- `CommittedTraceTest.scala`：实验协议测试保留为反例和后续 Trace 基础。
+- `scripts/stage15_branch_oracle.py`：有限表在线 replay、冷启动/替换/置信度和收益报告；已完成并在 VM 重跑一致。
+- `unit/hard_branch_helper.scala`：本轮不新增；Oracle 没有通过约 `3000` cycles 的 RTL 施工门。
 
-| 步 | 内容 | 退出条件 |
-|----|------|----------|
-| 1 | 64-entry commit-filled word buffer | fill、完整 tag、alias、fence.i 单测通过 |
-| 2 | 无内部 control 的四字 lookup/fallback | 不发 ICache 请求；FTQ/BPU/FQ 所有权与旧 IFU 等价 |
-| 3 | 一个 taken control 的跨块 stream | per-lane PC/nextPc/flush 正确 |
-| 4 | fence.i/generation/pathTag | stale packet 不进入 FQ |
-| 5 | perf counters 与全核 A/B | cycles 下降才保留 |
+实验源码存在不代表当前核启用了 Trace；当前性能基线以 `traceUse=false` 为准。
 
-## 7. 计划源码落点
+## 8. 整核 A/B 与拒绝结论
 
-- `src/main/scala/unit/committed_stream_buffer.scala`：15a0 word/tag/valid 与四路 commit fill。
-- `src/main/scala/core/ifu.scala`：指令来源选择、ICache fallback、hit/miss 计数，继续复用现有 BPU/FTQ/FetchBuffer。
-- `src/main/scala/core/core.scala`：四路 commit fill 与 `fence.i` 失效。
-- `src/test/scala/unit/CommittedStreamBufferTest.scala`：fill/hit、direct-map alias 与 invalidate 定向测试。
-- `trace_cache.scala` / TracePacket：只在 15a0 A/B 为正且需要跨 taken control 时新增。
+第一版真实 Trace 已具备逐槽 PC、fresh BPU metadata、trace-selected GHR/path 推进、FTQ lane-PC 恢复和 `fence.i` invalidate。最初版本还允许 Trace 在 IFU `s_WORK` 状态抢占未完成 ICache 请求；结构修正把 Trace 限定到 `s_IDLE`，并用断言固定单一事务 owner。修正版结果为：
 
-## 8. 验收清单（学习者自勾）
+| 指标 | Sidecar 参考点 | path Trace | 变化 |
+|------|---------------:|-----------:|-----:|
+| cycles | `160304` | `166195` | `+5891` |
+| IPC | `2.3005` | `2.2192` | `-0.0813` |
+| average fetch width | `3.1557` | `3.3552` | `+0.1995` |
+| trace hits | `0` | `34055` | `+34055` |
+| target miss | `978` | `2021` | `+1043` |
+| BP flush | `4582` | `5633` | `+1051` |
+| FQ Full | `9951` | `15701` | `+5750` |
+| Fetch Wait Resource | `11582` | `16498` | `+4916` |
 
-- [ ] 能解释 commit fill 为什么不等于永不 flush
-- [ ] trace lane PC 能跨 taken branch
-- [ ] hit/miss/fallback 只有一个 PC owner
-- [ ] fence.i 与 generation 能杀死 stale packet
-- [ ] A/B 能证明前端事件与总 cycles 同时改善
+`CommittedTraceTest 4/4`、TopMain、`load-store` 与完整 MicroBench difftest 均通过，说明这是性能拒绝而不是功能失败。Trace 提高了局部供给宽度，却用更多错误目标和队列背压抵消收益；已经用完一次有明确原因的结构修正机会，因此按 Stage15 合同回退，不再扫描 entry 数、路数或 confidence。
+
+## 9. 公开设计依据
+
+- [Branch Prediction Is Not a Solved Problem](https://arxiv.org/abs/1906.08170)：残余错误集中在少数困难分支，单纯扩大预测器容量的边际收益有限。
+- [XiangShan V3 FTQ](https://docs.xiangshan.cc/projects/design/en/kunminghu-v3/frontend/FTQ/) 与 [ICache](https://docs.xiangshan.cc/projects/design/en/kunminghu-v3/frontend/ICache/)：BPU/FTQ 可在正式取指前运行并驱动预取，前端以显式队列和恢复身份解耦。
+- [Trace Cache](https://american.cs.ucdavis.edu/academic/readings/papers/s01_3.pdf)：跨动态基本块供给需要记录路径，而不是只缓存顺序指令字。
+
+这些来源说明结构方向，不提供本核 IPC 承诺；本核只接受自身严格 A/B。
+
+## 10. 验收清单（学习者自勾）
+
+- [ ] 能解释为什么 85678 次 word hit 仍不省周期
+- [ ] Oracle 没有读取未来结果，有限表结果与无限字典上界分开
+- [ ] HardBranchHelper 没有 benchmark-PC 特化
+- [ ] 能根据 `717.3/1956.1` 的预算解释本轮为何跳过 helper
+- [ ] 能区分指令字缓存与动态路径 Trace
+- [ ] trace lane PC 可以跨 taken branch
+- [ ] 新动态实例不复用旧 predictor metadata
+- [ ] epoch 能杀死旧 trace/ICache packet
+- [ ] 能根据剩余周期预算决定是否继续 Trace
+- [ ] 能根据 `166195/2.2192` 解释为什么命中率和包宽提升不等于整核提速
 
 下一章：[16b_阶段15b_写回式双端口L1D.md](16b_阶段15b_写回式双端口L1D.md)。

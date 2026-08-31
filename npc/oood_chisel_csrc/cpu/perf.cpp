@@ -85,6 +85,7 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Fetch Redirect Bubble: %lld\n", counters[EVENT_FETCH_REDIRECT_BUBBLE]);
     printf("Fetch Blocks: %lld\n", counters[EVENT_FETCH_BLOCK]);
     printf("Fetch Valid Instructions: %lld\n", counters[EVENT_FETCH_VALID_INST]);
+    printf("Committed Trace Hits: %lld\n", counters[EVENT_TRACE_HIT]);
     printf("Fetch Two-Instruction Blocks: %lld\n", counters[EVENT_FETCH_BLOCK2]);
     printf("FetchBuffer Full Cycles: %lld\n", counters[EVENT_FETCH_BUFFER_FULL]);
     printf("FTQ Full Cycles: %lld\n", counters[EVENT_FTQ_FULL]);
@@ -137,6 +138,18 @@ void print_perf_stats(unsigned long long cycles) {
     printf("ITAGE Hits:        %lld\n", counters[EVENT_ITAGE_HIT]);
     printf("ITAGE Allocations: %lld\n", counters[EVENT_ITAGE_ALLOC]);
     printf("Loop Predictor Hits: %lld\n", counters[EVENT_LOOP_PREDICT_HIT]);
+    printf("Recover To Capture Cycles: %lld\n", counters[EVENT_BP_RECOVER_CAPTURE_CYCLE]);
+    printf("Recover To FQ Cycles:      %lld\n", counters[EVENT_BP_RECOVER_FQ_CYCLE]);
+    printf("Recover Stale Drain:       %lld\n", counters[EVENT_BP_RECOVER_STALE_CYCLE]);
+    printf("Recover ICache Wait:       %lld\n", counters[EVENT_BP_RECOVER_ICACHE_CYCLE]);
+    printf("Recover Resource Wait:     %lld\n", counters[EVENT_BP_RECOVER_RESOURCE_CYCLE]);
+    printf("Recover Capture Done:      %lld\n", counters[EVENT_BP_RECOVER_CAPTURE_DONE]);
+    printf("Recover FQ Done:           %lld\n", counters[EVENT_BP_RECOVER_FQ_DONE]);
+    if (counters[EVENT_BP_RECOVER_FQ_DONE] > 0) {
+        printf("Average Recover To FQ:     %.4f cycles\n",
+               (double)counters[EVENT_BP_RECOVER_FQ_CYCLE] /
+               counters[EVENT_BP_RECOVER_FQ_DONE]);
+    }
     if (bpu_predict > 0) {
         printf("Hit Rate:     %.2f%%\n", 100.0 * (bpu_predict - bpu_mispred) / bpu_predict);
         printf("Mispredict Rate: %.2f%%\n", 100.0 * bpu_mispred / bpu_predict);
@@ -237,6 +250,15 @@ void print_perf_stats(unsigned long long cycles) {
     printf("Replay CDB Busy: %lld\n", counters[EVENT_REPLAY_CDB_BUSY]);
     printf("Stale Load Resp: %lld\n", counters[EVENT_STALE_LOAD_RESP]);
     printf("Mem Order Violation: %lld\n", counters[EVENT_MEM_ORDER_VIOLATION]);
+    printf("Store Addr Candidate Cycles: %lld\n", counters[EVENT_STORE_ADDR_CANDIDATE_CYCLE]);
+    printf("Store Addr-Ready/Data-Wait Slots: %lld\n", counters[EVENT_STORE_ADDR_DATA_WAIT_SLOT]);
+    printf("Store Data-Ready/Addr-Wait Slots: %lld\n", counters[EVENT_STORE_DATA_ADDR_WAIT_SLOT]);
+    printf("Store Ready Blocked Cycles: %lld\n", counters[EVENT_STORE_READY_BLOCKED_CYCLE]);
+    printf("Store Issues: %lld\n", counters[EVENT_STORE_ISSUE]);
+    printf("Store Addr Dual-Load Opportunities: %lld\n",
+           counters[EVENT_STORE_ADDR_DUAL_LOAD_OPPORTUNITY]);
+    printf("Store Addr Sidecar Issues: %lld\n", counters[EVENT_STORE_ADDR_SIDECAR_ISSUE]);
+    printf("Store Addr Sidecar Resolves: %lld\n", counters[EVENT_STORE_ADDR_SIDECAR_RESOLVE]);
     if (total_access > 0) {
         printf("Average Latency: %.2f cycles\n", (double)counters[EVENT_LSU_LATENCY] / total_access);
     }

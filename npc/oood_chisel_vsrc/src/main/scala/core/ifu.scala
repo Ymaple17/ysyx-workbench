@@ -5,7 +5,8 @@ import chisel3.util._
 import common.IRQ_CTRL._
 import common.OoOParams
 import core.PerfEvents._
-import unit.{BPU, BPUUpdateQueue, FetchBuffer, FTQ}
+import unit.{BPU, BPUUpdateQueue, CommittedTraceBuilder, CommittedTraceCache,
+  FetchBuffer, FTQ, TraceCommit}
 import common.BPU_Config._
 
 class IFU_PC_IO extends Bundle{
@@ -64,6 +65,7 @@ class IFU_IO(xlen: Int) extends Bundle{
   val slot1_enable = Input(Bool())
   val slot2_enable = Input(Bool())
   val slot3_enable = Input(Bool())
+  val fetch_queue_count = Input(UInt(log2Ceil(OoOParams.FQ_SIZE + 1).W))
   val fetch_buffer_replace_ready = Input(Bool())
 
   val bpu_update_valid = Input(Bool())
@@ -98,6 +100,10 @@ class IFU_IO(xlen: Int) extends Bundle{
   val ftq_commit3_valid = Input(Bool())
   val ftq_commit3_idx = Input(UInt(OoOParams.FTQ_PTR_W.W))
   val ftq_commit3_generation = Input(UInt(OoOParams.FTQ_GEN_W.W))
+
+  val trace_commit = Input(Vec(OoOParams.COMMIT_WIDTH, Valid(new TraceCommit)))
+  val trace_invalidate = Input(Bool())
+  val trace_hit = Output(Bool())
 
   val bp_recover_valid = Input(Bool())
   val bp_recover_ftq_idx = Input(UInt(OoOParams.FTQ_PTR_W.W))
@@ -153,14 +159,39 @@ class IFU(val conf: CoreConfig) extends Module{
   val bpuUpdates = Module(new BPUUpdateQueue(depth = 8))
   val fetchBuffer = Module(new FetchBuffer())
   val ftq = Module(new FTQ())
-  bpu.io.predict_pc := fetchPc
-  bpu.io.predict_inst := io.imem.rdata
-  bpu.io.predict_pc1 := fetchPc1
-  bpu.io.predict_inst1 := io.imem.rdata1
-  bpu.io.predict_pc2 := fetchPc2
-  bpu.io.predict_inst2 := io.imem.rdata2
-  bpu.io.predict_pc3 := fetchPc3
-  bpu.io.predict_inst3 := io.imem.rdata3
+  val traceBuilder = Module(new CommittedTraceBuilder())
+  val traceCache = Module(new CommittedTraceCache())
+  traceBuilder.io.commit := io.trace_commit
+  traceBuilder.io.clear := io.trace_invalidate
+  traceCache.io.fill := traceBuilder.io.fill
+  traceCache.io.invalidate := io.trace_invalidate
+  traceCache.io.lookupPc := fetchPc
+  traceCache.io.lookupContext := bpu.io.spec_ghr ^ bpu.io.spec_path_history
+
+  // A trace may bypass the ICache only before this fetch PC owns a memory
+  // transaction. Once s_WORK is entered, the outstanding response must be
+  // consumed by that request before another frontend source can take over.
+  val traceBypassAllowed = state === s_IDLE && io.in.valid && !io.is_flush
+  val traceUse = false.B && traceBypassAllowed && traceCache.io.hit
+  io.trace_hit := traceUse
+  val sourcePc = Wire(Vec(4, UInt(32.W)))
+  val sourceInst = Wire(Vec(4, UInt(32.W)))
+  sourcePc(0) := Mux(traceUse, traceCache.io.pc(0), fetchPc)
+  sourcePc(1) := Mux(traceUse, traceCache.io.pc(1), fetchPc1)
+  sourcePc(2) := Mux(traceUse, traceCache.io.pc(2), fetchPc2)
+  sourcePc(3) := Mux(traceUse, traceCache.io.pc(3), fetchPc3)
+  sourceInst(0) := Mux(traceUse, traceCache.io.inst(0), io.imem.rdata)
+  sourceInst(1) := Mux(traceUse, traceCache.io.inst(1), io.imem.rdata1)
+  sourceInst(2) := Mux(traceUse, traceCache.io.inst(2), io.imem.rdata2)
+  sourceInst(3) := Mux(traceUse, traceCache.io.inst(3), io.imem.rdata3)
+  bpu.io.predict_pc := sourcePc(0)
+  bpu.io.predict_inst := sourceInst(0)
+  bpu.io.predict_pc1 := sourcePc(1)
+  bpu.io.predict_inst1 := sourceInst(1)
+  bpu.io.predict_pc2 := sourcePc(2)
+  bpu.io.predict_inst2 := sourceInst(2)
+  bpu.io.predict_pc3 := sourcePc(3)
+  bpu.io.predict_inst3 := sourceInst(3)
   bpuUpdates.io.enq(0).valid := io.bpu_update_valid
   bpuUpdates.io.enq(0).bits.pc := io.bpu_update_pc
   bpuUpdates.io.enq(0).bits.target := io.bpu_update_target
@@ -194,8 +225,9 @@ class IFU(val conf: CoreConfig) extends Module{
   fetchBuffer.io.replaceReady := io.fetch_buffer_replace_ready
   ftq.io.flush := io.is_flush && !io.bp_recover_valid
   ftq.io.recoverFlush := io.is_flush && io.bp_recover_valid
-  ftq.io.recoverSlot := ((io.bp_recover_pc - ftq.io.recover.basePc) >> 2)(
-    log2Ceil(OoOParams.FETCH_WIDTH) - 1, 0)
+  val recoverLaneHit = VecInit((0 until OoOParams.FETCH_WIDTH).map(lane =>
+    ftq.io.recover.validMask(lane) && ftq.io.recover.lanePc(lane) === io.bp_recover_pc))
+  ftq.io.recoverSlot := PriorityEncoder(recoverLaneHit.asUInt)
   ftq.io.commit0Valid := io.ftq_commit0_valid
   ftq.io.commit0Idx := io.ftq_commit0_idx
   ftq.io.commit0Generation := io.ftq_commit0_generation
@@ -224,64 +256,76 @@ class IFU(val conf: CoreConfig) extends Module{
   val slot3RawUse = io.imem.rvalid3 && slot2CanUse && !slot2Taken && !slot2Fault
   val slot3CanUse = io.slot3_enable && slot3RawUse
   val slot3Taken = slot3CanUse && bpu.io.bp3_valid && bpu.io.bp3_taken
+  val traceNext = Wire(Vec(4, UInt(32.W)))
+  traceNext(0) := traceCache.io.pc(1)
+  traceNext(1) := traceCache.io.pc(2)
+  traceNext(2) := traceCache.io.pc(3)
+  traceNext(3) := traceCache.io.nextPc
+  val traceControl = VecInit((0 until 4).map { lane =>
+    val opcode = sourceInst(lane)(6, 0)
+    opcode === "b1100011".U || opcode === "b1101111".U || opcode === "b1100111".U
+  })
+  val traceTaken = VecInit((0 until 4).map(lane =>
+    traceControl(lane) && traceNext(lane) =/= sourcePc(lane) + 4.U))
   val seqNext = Mux(slot3CanUse, fetchPc + 16.U,
     Mux(slot2CanUse, fetchPc + 12.U,
       Mux(slot1CanUse, fetchPc + 8.U, fetchPc + 4.U)))
-  val predictedNext = Mux(slot0Taken, bpu.io.bp_target,
+  val ordinaryPredictedNext = Mux(slot0Taken, bpu.io.bp_target,
     Mux(slot1Taken, bpu.io.bp1_target,
       Mux(slot2Taken, bpu.io.bp2_target,
         Mux(slot3Taken, bpu.io.bp3_target, seqNext))))
+  val predictedNext = Mux(traceUse, traceCache.io.nextPc, ordinaryPredictedNext)
 
   val fetchPacket = Wire(new IFUPacket)
   fetchPacket := 0.U.asTypeOf(new IFUPacket)
   fetchPacket.valid(0) := ready && io.in.valid
-  fetchPacket.bits(0).pc := fetchPc
-  fetchPacket.bits(0).inst := io.imem.rdata
+  fetchPacket.bits(0).pc := sourcePc(0)
+  fetchPacket.bits(0).inst := sourceInst(0)
   fetchPacket.bits(0).state := io.state
-  fetchPacket.bits(0).state.state := slot0Fault
-  fetchPacket.bits(0).state.state_num := Mux(slot0Fault, IRQ_IAF, 0.U)
-  fetchPacket.bits(0).bp_valid := bpu.io.bp_valid
-  fetchPacket.bits(0).bp_taken := bpu.io.bp_valid && bpu.io.bp_taken
-  fetchPacket.bits(0).bp_target := bpu.io.bp_target
+  fetchPacket.bits(0).state.state := !traceUse && slot0Fault
+  fetchPacket.bits(0).state.state_num := Mux(!traceUse && slot0Fault, IRQ_IAF, 0.U)
+  fetchPacket.bits(0).bp_valid := Mux(traceUse, traceControl(0), bpu.io.bp_valid)
+  fetchPacket.bits(0).bp_taken := Mux(traceUse, traceTaken(0), bpu.io.bp_valid && bpu.io.bp_taken)
+  fetchPacket.bits(0).bp_target := Mux(traceUse, traceNext(0), bpu.io.bp_target)
   fetchPacket.bits(0).bp_index := bpu.io.bp_index
   fetchPacket.bits(0).ftq_idx := ftq.io.allocIdx
   fetchPacket.bits(0).ftq_generation := ftq.io.allocGeneration
 
-  fetchPacket.valid(1) := ready && io.in.valid && slot1CanUse
-  fetchPacket.bits(1).pc := fetchPc1
-  fetchPacket.bits(1).inst := io.imem.rdata1
+  fetchPacket.valid(1) := ready && io.in.valid && (traceUse || slot1CanUse)
+  fetchPacket.bits(1).pc := sourcePc(1)
+  fetchPacket.bits(1).inst := sourceInst(1)
   fetchPacket.bits(1).state := io.state
-  fetchPacket.bits(1).state.state := io.imem.rresp1 =/= 0.U
-  fetchPacket.bits(1).state.state_num := Mux(io.imem.rresp1 =/= 0.U, IRQ_IAF, 0.U)
-  fetchPacket.bits(1).bp_valid := bpu.io.bp1_valid
-  fetchPacket.bits(1).bp_taken := bpu.io.bp1_valid && bpu.io.bp1_taken
-  fetchPacket.bits(1).bp_target := bpu.io.bp1_target
+  fetchPacket.bits(1).state.state := !traceUse && io.imem.rresp1 =/= 0.U
+  fetchPacket.bits(1).state.state_num := Mux(!traceUse && io.imem.rresp1 =/= 0.U, IRQ_IAF, 0.U)
+  fetchPacket.bits(1).bp_valid := Mux(traceUse, traceControl(1), bpu.io.bp1_valid)
+  fetchPacket.bits(1).bp_taken := Mux(traceUse, traceTaken(1), bpu.io.bp1_valid && bpu.io.bp1_taken)
+  fetchPacket.bits(1).bp_target := Mux(traceUse, traceNext(1), bpu.io.bp1_target)
   fetchPacket.bits(1).bp_index := bpu.io.bp1_index
   fetchPacket.bits(1).ftq_idx := ftq.io.allocIdx
   fetchPacket.bits(1).ftq_generation := ftq.io.allocGeneration
 
-  fetchPacket.valid(2) := ready && io.in.valid && slot2CanUse
-  fetchPacket.bits(2).pc := fetchPc2
-  fetchPacket.bits(2).inst := io.imem.rdata2
+  fetchPacket.valid(2) := ready && io.in.valid && (traceUse || slot2CanUse)
+  fetchPacket.bits(2).pc := sourcePc(2)
+  fetchPacket.bits(2).inst := sourceInst(2)
   fetchPacket.bits(2).state := io.state
-  fetchPacket.bits(2).state.state := slot2Fault
-  fetchPacket.bits(2).state.state_num := Mux(slot2Fault, IRQ_IAF, 0.U)
-  fetchPacket.bits(2).bp_valid := bpu.io.bp2_valid
-  fetchPacket.bits(2).bp_taken := bpu.io.bp2_valid && bpu.io.bp2_taken
-  fetchPacket.bits(2).bp_target := bpu.io.bp2_target
+  fetchPacket.bits(2).state.state := !traceUse && slot2Fault
+  fetchPacket.bits(2).state.state_num := Mux(!traceUse && slot2Fault, IRQ_IAF, 0.U)
+  fetchPacket.bits(2).bp_valid := Mux(traceUse, traceControl(2), bpu.io.bp2_valid)
+  fetchPacket.bits(2).bp_taken := Mux(traceUse, traceTaken(2), bpu.io.bp2_valid && bpu.io.bp2_taken)
+  fetchPacket.bits(2).bp_target := Mux(traceUse, traceNext(2), bpu.io.bp2_target)
   fetchPacket.bits(2).bp_index := bpu.io.bp2_index
   fetchPacket.bits(2).ftq_idx := ftq.io.allocIdx
   fetchPacket.bits(2).ftq_generation := ftq.io.allocGeneration
 
-  fetchPacket.valid(3) := ready && io.in.valid && slot3CanUse
-  fetchPacket.bits(3).pc := fetchPc3
-  fetchPacket.bits(3).inst := io.imem.rdata3
+  fetchPacket.valid(3) := ready && io.in.valid && (traceUse || slot3CanUse)
+  fetchPacket.bits(3).pc := sourcePc(3)
+  fetchPacket.bits(3).inst := sourceInst(3)
   fetchPacket.bits(3).state := io.state
-  fetchPacket.bits(3).state.state := io.imem.rresp3 =/= 0.U
-  fetchPacket.bits(3).state.state_num := Mux(io.imem.rresp3 =/= 0.U, IRQ_IAF, 0.U)
-  fetchPacket.bits(3).bp_valid := bpu.io.bp3_valid
-  fetchPacket.bits(3).bp_taken := bpu.io.bp3_valid && bpu.io.bp3_taken
-  fetchPacket.bits(3).bp_target := bpu.io.bp3_target
+  fetchPacket.bits(3).state.state := !traceUse && io.imem.rresp3 =/= 0.U
+  fetchPacket.bits(3).state.state_num := Mux(!traceUse && io.imem.rresp3 =/= 0.U, IRQ_IAF, 0.U)
+  fetchPacket.bits(3).bp_valid := Mux(traceUse, traceControl(3), bpu.io.bp3_valid)
+  fetchPacket.bits(3).bp_taken := Mux(traceUse, traceTaken(3), bpu.io.bp3_valid && bpu.io.bp3_taken)
+  fetchPacket.bits(3).bp_target := Mux(traceUse, traceNext(3), bpu.io.bp3_target)
   fetchPacket.bits(3).bp_index := bpu.io.bp3_index
   fetchPacket.bits(3).ftq_idx := ftq.io.allocIdx
   fetchPacket.bits(3).ftq_generation := ftq.io.allocGeneration
@@ -291,6 +335,9 @@ class IFU(val conf: CoreConfig) extends Module{
   fetchBuffer.io.in.bits := fetchPacket
   ftq.io.alloc.valid := captureCandidate && fetchBuffer.io.in.ready
   ftq.io.alloc.bits.basePc := fetchPc
+  for (lane <- 0 until OoOParams.FETCH_WIDTH) {
+    ftq.io.alloc.bits.lanePc(lane) := fetchPacket.bits(lane).pc
+  }
   ftq.io.alloc.bits.validMask := fetchPacket.valid.asUInt
   ftq.io.alloc.bits.predictedNextPc := predictedNext
   ftq.io.alloc.bits.cfiSlot := Mux(slot0Taken, 0.U,
@@ -309,6 +356,11 @@ class IFU(val conf: CoreConfig) extends Module{
 
   bpu.io.spec_advance_valid := captureFire
   bpu.io.spec_advance_mask := fetchPacket.valid.asUInt
+  bpu.io.spec_override_valid := traceUse
+  bpu.io.spec_override_taken := traceTaken.asUInt
+  for (lane <- 0 until 4) {
+    bpu.io.spec_override_target(lane) := traceNext(lane)
+  }
   bpu.io.recover_valid := io.bp_recover_valid && ftq.io.recoverValid
   bpu.io.recover_pc := io.bp_recover_pc
   bpu.io.recover_index := io.bp_recover_index
@@ -325,26 +377,44 @@ class IFU(val conf: CoreConfig) extends Module{
 
   io.pc.bits.next_pc := Mux(io.is_flush, io.correct_pc, predictedNext)
 
-  ready := io.imem.rvalid && (state =/= s_FLUSH)
+  ready := (traceUse || io.imem.rvalid) && (state =/= s_FLUSH)
   val fetchResourcesReady = fetchBuffer.io.in.ready && ftq.io.alloc.ready
-  io.imem.arvalid := io.in.valid && state === s_IDLE && !io.is_flush && fetchResourcesReady
+  io.imem.arvalid := io.in.valid && state === s_IDLE && !io.is_flush &&
+    fetchResourcesReady && !traceUse
   idle := io.imem.arvalid && io.imem.arready
   work := captureFire
-  io.imem.rready := captureFire || (state === s_FLUSH) ||
+  io.imem.rready := (captureFire && !traceUse) || (state === s_FLUSH) ||
     (state === s_WORK && io.is_flush)
   io.pc.valid := !reset.asBool && io.pc.ready
 
   io.in.ready := !io.in.valid || work || io.is_flush
 
   when(!reset.asBool) {
+    assert(!traceUse || state === s_IDLE,
+      "trace fetch must not bypass an outstanding ICache transaction")
     assert(captureFire === ftq.io.alloc.fire,
       "FetchBuffer and FTQ must allocate the same fetch block")
     assert(!io.bp_recover_valid || ftq.io.recoverValid,
       "branch recovery must find its FTQ generation")
+    assert(!io.bp_recover_valid || recoverLaneHit.asUInt.orR,
+      "branch recovery PC must identify a live FTQ lane")
   }
 
   if(conf.statistics){
     val packetFire = io.out.valid && io.out.ready
+    val bpCapturePending = RegInit(false.B)
+    val bpFqPending = RegInit(false.B)
+    when(io.bp_recover_valid) {
+      bpCapturePending := true.B
+      bpFqPending := true.B
+    }.elsewhen(bpCapturePending && captureFire) {
+      bpCapturePending := false.B
+    }.elsewhen(bpFqPending && packetFire) {
+      bpFqPending := false.B
+    }
+    when(!io.bp_recover_valid && bpFqPending && packetFire) {
+      bpFqPending := false.B
+    }
     val ftqHighWater = RegInit(0.U(log2Ceil(OoOParams.FTQ_SIZE + 1).W))
     when(ftq.io.count > ftqHighWater) {
       ftqHighWater := ftq.io.count
@@ -392,6 +462,7 @@ class IFU(val conf: CoreConfig) extends Module{
         (fetchPacket.valid(3) && bpu.io.bp3_loop_hit)))
     PM(conf, clock, EVENT_FETCH_BLOCK, 1.U, captureFire)
     PM(conf, clock, EVENT_FETCH_VALID_INST, PopCount(fetchPacket.valid), captureFire)
+    PM(conf, clock, EVENT_TRACE_HIT, 1.U, captureFire && traceUse)
     PM(conf, clock, EVENT_FETCH_BLOCK2, 1.U,
       captureFire && fetchPacket.valid(0) && fetchPacket.valid(1))
     PM(conf, clock, EVENT_FETCH_BUFFER_FULL, 1.U,
@@ -416,5 +487,17 @@ class IFU(val conf: CoreConfig) extends Module{
       captureFire && slot1RawUse && !io.slot1_enable)
     val redirectBubble = RegNext(io.is_flush, false.B) && !packetFire
     PM(conf, clock, EVENT_FETCH_REDIRECT_BUBBLE, 1.U, redirectBubble)
+    PM(conf, clock, EVENT_BP_RECOVER_CAPTURE_CYCLE, 1.U, bpCapturePending)
+    PM(conf, clock, EVENT_BP_RECOVER_FQ_CYCLE, 1.U, bpFqPending)
+    PM(conf, clock, EVENT_BP_RECOVER_STALE_CYCLE, 1.U,
+      bpFqPending && state === s_FLUSH)
+    PM(conf, clock, EVENT_BP_RECOVER_ICACHE_CYCLE, 1.U,
+      bpFqPending && state === s_WORK && !io.imem.rvalid)
+    PM(conf, clock, EVENT_BP_RECOVER_RESOURCE_CYCLE, 1.U,
+      bpFqPending && state === s_IDLE && io.in.valid && !fetchResourcesReady)
+    PM(conf, clock, EVENT_BP_RECOVER_CAPTURE_DONE, 1.U,
+      bpCapturePending && captureFire)
+    PM(conf, clock, EVENT_BP_RECOVER_FQ_DONE, 1.U,
+      bpFqPending && packetFire)
   }
 }

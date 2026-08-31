@@ -82,6 +82,9 @@ class BPU_IO(bhtSize: Int = BHT_SIZE, indirectSize: Int = INDIRECT_TARGET_SIZE) 
 
   val spec_advance_valid = Input(Bool())
   val spec_advance_mask = Input(UInt(OoOParams.CORE_WIDTH.W))
+  val spec_override_valid = Input(Bool())
+  val spec_override_taken = Input(UInt(OoOParams.CORE_WIDTH.W))
+  val spec_override_target = Input(Vec(OoOParams.CORE_WIDTH, UInt(32.W)))
   val recover_valid = Input(Bool())
   val recover_pc = Input(UInt(32.W))
   val recover_index = Input(UInt(BP_META_WIDTH.W))
@@ -416,7 +419,11 @@ class BPU(
     }
 
     val taggedReady = providerRank =/= 0.U && providerConf =/= 0.U
-    val baseReady = baseHit && itt_conf(baseIdx) =/= 0.U
+    // For an indirect jump, declining to predict already guarantees a
+    // redirect at execute. A tagged PC match with a low-confidence latest
+    // target is therefore still useful: a miss has the same recovery class,
+    // while a hit avoids the redirect entirely.
+    val baseReady = baseHit
     res.valid := taggedReady || baseReady
     res.target := Mux(taggedReady, providerTarget, itt_target(baseIdx))
     res.taggedHit := taggedReady
@@ -542,8 +549,7 @@ class BPU(
     val scSelected = statistical.strong && scChooser(pc(scW + 1, 2))(1)
     val branchTaken = Mux(scSelected, statistical.taken, branchBaseTaken)
     val baseIdx = ittIndex(pc)
-    val baseIndirectHit = itt_valid(baseIdx) && itt_tag(baseIdx) === pcTag(pc) &&
-      itt_conf(baseIdx) =/= 0.U
+    val baseIndirectHit = itt_valid(baseIdx) && itt_tag(baseIdx) === pcTag(pc)
     val rasEmpty = rasCount === 0.U
     val rasTopIdx = Mux(rasPtr === 0.U, (RAS_SIZE - 1).U(rasW.W),
       (rasPtr - 1.U)(rasW - 1, 0))
@@ -583,24 +589,32 @@ class BPU(
 
   val p0 = predict(io.predict_pc, io.predict_inst, specGhr, specPathHistory,
     specRas, specRasPtr, specRasCount)
+  val packetTaken0 = Mux(io.spec_override_valid, io.spec_override_taken(0), p0.taken)
+  val packetTarget0 = Mux(io.spec_override_valid, io.spec_override_target(0), p0.target)
   val historyAfterP0 = Mux(p0.isBranch,
-    Cat(specGhr(GHR_LENGTH - 2, 0), p0.taken), specGhr)
-  val pathAfterP0 = Mux(p0.isIndirect && p0.taken,
-    pathStep(specPathHistory, p0.target), specPathHistory)
+    Cat(specGhr(GHR_LENGTH - 2, 0), packetTaken0), specGhr)
+  val pathAfterP0 = Mux(p0.isIndirect && packetTaken0,
+    pathStep(specPathHistory, packetTarget0), specPathHistory)
   val p1 = predict(io.predict_pc1, io.predict_inst1, historyAfterP0, pathAfterP0,
     specRas, specRasPtr, specRasCount)
+  val packetTaken1 = Mux(io.spec_override_valid, io.spec_override_taken(1), p1.taken)
+  val packetTarget1 = Mux(io.spec_override_valid, io.spec_override_target(1), p1.target)
   val historyAfterP1 = Mux(p1.isBranch,
-    Cat(historyAfterP0(GHR_LENGTH - 2, 0), p1.taken), historyAfterP0)
-  val pathAfterP1 = Mux(p1.isIndirect && p1.taken,
-    pathStep(pathAfterP0, p1.target), pathAfterP0)
+    Cat(historyAfterP0(GHR_LENGTH - 2, 0), packetTaken1), historyAfterP0)
+  val pathAfterP1 = Mux(p1.isIndirect && packetTaken1,
+    pathStep(pathAfterP0, packetTarget1), pathAfterP0)
   val p2 = predictLite(io.predict_pc2, io.predict_inst2, historyAfterP1, pathAfterP1,
     specRas, specRasPtr, specRasCount)
+  val packetTaken2 = Mux(io.spec_override_valid, io.spec_override_taken(2), p2.taken)
+  val packetTarget2 = Mux(io.spec_override_valid, io.spec_override_target(2), p2.target)
   val historyAfterP2 = Mux(p2.isBranch,
-    Cat(historyAfterP1(GHR_LENGTH - 2, 0), p2.taken), historyAfterP1)
-  val pathAfterP2 = Mux(p2.isIndirect && p2.taken,
-    pathStep(pathAfterP1, p2.target), pathAfterP1)
+    Cat(historyAfterP1(GHR_LENGTH - 2, 0), packetTaken2), historyAfterP1)
+  val pathAfterP2 = Mux(p2.isIndirect && packetTaken2,
+    pathStep(pathAfterP1, packetTarget2), pathAfterP1)
   val p3 = predictLite(io.predict_pc3, io.predict_inst3, historyAfterP2, pathAfterP2,
     specRas, specRasPtr, specRasCount)
+  val packetTaken3 = Mux(io.spec_override_valid, io.spec_override_taken(3), p3.taken)
+  val packetTarget3 = Mux(io.spec_override_valid, io.spec_override_target(3), p3.target)
 
   io.bp_valid := p0.valid
   io.bp_taken := p0.valid && p0.taken
@@ -890,22 +904,24 @@ class BPU(
     Cat(commitGhr(GHR_LENGTH - 2, 0), io.update_taken), commitGhr)
   val commitPathAfter = Mux(io.update_valid && io.update_is_jalr && !io.update_is_ret,
     pathStep(commitPathHistory, io.update_target), commitPathHistory)
+  val specTaken = VecInit(Seq(packetTaken0, packetTaken1, packetTaken2, packetTaken3))
+  val specTarget = VecInit(Seq(packetTarget0, packetTarget1, packetTarget2, packetTarget3))
   val specHistory0 = Mux(io.spec_advance_mask(0) && p0.isBranch,
-    Cat(specGhr(GHR_LENGTH - 2, 0), p0.taken), specGhr)
+    Cat(specGhr(GHR_LENGTH - 2, 0), specTaken(0)), specGhr)
   val specHistory1 = Mux(io.spec_advance_mask(1) && p1.isBranch,
-    Cat(specHistory0(GHR_LENGTH - 2, 0), p1.taken), specHistory0)
+    Cat(specHistory0(GHR_LENGTH - 2, 0), specTaken(1)), specHistory0)
   val specHistory2 = Mux(io.spec_advance_mask(2) && p2.isBranch,
-    Cat(specHistory1(GHR_LENGTH - 2, 0), p2.taken), specHistory1)
+    Cat(specHistory1(GHR_LENGTH - 2, 0), specTaken(2)), specHistory1)
   val specHistory3 = Mux(io.spec_advance_mask(3) && p3.isBranch,
-    Cat(specHistory2(GHR_LENGTH - 2, 0), p3.taken), specHistory2)
-  val specPath0 = Mux(io.spec_advance_mask(0) && p0.isIndirect && p0.taken,
-    pathStep(specPathHistory, p0.target), specPathHistory)
-  val specPath1 = Mux(io.spec_advance_mask(1) && p1.isIndirect && p1.taken,
-    pathStep(specPath0, p1.target), specPath0)
-  val specPath2 = Mux(io.spec_advance_mask(2) && p2.isIndirect && p2.taken,
-    pathStep(specPath1, p2.target), specPath1)
-  val specPath3 = Mux(io.spec_advance_mask(3) && p3.isIndirect && p3.taken,
-    pathStep(specPath2, p3.target), specPath2)
+    Cat(specHistory2(GHR_LENGTH - 2, 0), specTaken(3)), specHistory2)
+  val specPath0 = Mux(io.spec_advance_mask(0) && p0.isIndirect && specTaken(0),
+    pathStep(specPathHistory, specTarget(0)), specPathHistory)
+  val specPath1 = Mux(io.spec_advance_mask(1) && p1.isIndirect && specTaken(1),
+    pathStep(specPath0, specTarget(1)), specPath0)
+  val specPath2 = Mux(io.spec_advance_mask(2) && p2.isIndirect && specTaken(2),
+    pathStep(specPath1, specTarget(2)), specPath1)
+  val specPath3 = Mux(io.spec_advance_mask(3) && p3.isIndirect && specTaken(3),
+    pathStep(specPath2, specTarget(3)), specPath2)
   val (specRasAfter0, specRasPtrAfter0, specRasCountAfter0) =
     rasStep(specRas, specRasPtr, specRasCount, io.predict_pc,
       io.spec_advance_mask(0) && p0.isCall,

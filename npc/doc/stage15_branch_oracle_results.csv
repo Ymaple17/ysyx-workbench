@@ -1,0 +1,10 @@
+kind,model,entries,ways,coverage,accuracy,wrong,estimated_corrected_misses,estimated_cycles,result
+direction,local,256,2,0.7884,0.9926,307,268.77,717.3,BEST_DIRECTION_BELOW_GATE
+direction,ghr_local,256,2,0.5705,0.9979,63,217.95,581.7,BELOW_GATE
+direction,local_path,256,2,0.7002,0.9919,296,260.89,696.3,BELOW_GATE
+direction,local_path_phase,256,2,0.5042,0.9933,177,198.68,530.2,BELOW_GATE
+direction,full,256,2,0.3999,0.9988,25,182.16,486.2,BELOW_GATE
+target,path,256,2,0.9210,0.9944,38,732.94,1956.1,BEST_TARGET_OVERLAPS_ITAGE
+target,ghr_path,256,2,0.8537,1.0000,0,710.15,1895.3,FINITE_MIXED_ITAGE_PREVIOUSLY_REGRESSED
+target,local_path,256,2,0.8624,0.9936,41,681.83,1819.7,BELOW_GATE
+target,full,256,2,0.8461,1.0000,0,703.84,1878.5,BELOW_GATE

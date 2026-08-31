@@ -24,56 +24,40 @@ module WriteCombiningStoreBuffer_Verification_Assert(
                io_enq_ready,
                io_enq_valid,
                _GEN,
+               valid_2,
+               valid_3,
+               valid_0,
+               valid_1,
+               valid_6,
+               valid_7,
+               valid_4,
+               valid_5,
+               valid_10,
+               valid_11,
+               valid_8,
+               valid_9,
+               valid_14,
+               valid_15,
+               valid_12,
+               valid_13,
+  input [4:0]  count,
   input [31:0] lineAddr_0,
                lineAddr_1,
-  input        valid_0,
-               valid_1,
-               _GEN_0,
-               _GEN_1,
-               _GEN_2,
-  input [31:0] lineAddr_2,
-  input        valid_2,
-               _GEN_3,
-  input [31:0] lineAddr_3,
-  input        valid_3,
-               _GEN_4,
-  input [31:0] lineAddr_4,
-  input        valid_4,
-               _GEN_5,
-  input [31:0] lineAddr_5,
-  input        valid_5,
-               _GEN_6,
-  input [31:0] lineAddr_6,
-  input        valid_6,
-               _GEN_7,
-  input [31:0] lineAddr_7,
-  input        valid_7,
-               _GEN_8,
-  input [31:0] lineAddr_8,
-  input        valid_8,
-               _GEN_9,
-  input [31:0] lineAddr_9,
-  input        valid_9,
-               _GEN_10,
-  input [31:0] lineAddr_10,
-  input        valid_10,
-               _GEN_11,
-  input [31:0] lineAddr_11,
-  input        valid_11,
-               _GEN_12,
-  input [31:0] lineAddr_12,
-  input        valid_12,
-               _GEN_13,
-  input [31:0] lineAddr_13,
-  input        valid_13,
-               _GEN_14,
-  input [31:0] lineAddr_14,
-  input        valid_14,
-               _GEN_15,
-  input [31:0] lineAddr_15,
-  input        valid_15,
-               _GEN_16,
-               clock
+               lineAddr_2,
+               lineAddr_3,
+               lineAddr_4,
+               lineAddr_5,
+               lineAddr_6,
+               lineAddr_7,
+               lineAddr_8,
+               lineAddr_9,
+               lineAddr_10,
+               lineAddr_11,
+               lineAddr_12,
+               lineAddr_13,
+               lineAddr_14,
+               lineAddr_15,
+  input        clock
 );
 
   `ifndef SYNTHESIS
@@ -86,843 +70,743 @@ module WriteCombiningStoreBuffer_Verification_Assert(
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_1 & lineAddr_0 == lineAddr_1
-          & ~(_GEN_2 & (_GEN_0 | _GEN_1))) begin
+      if (~reset
+          & count != {1'h0,
+                      {1'h0,
+                       {1'h0, {1'h0, valid_0} + {1'h0, valid_1}}
+                         + {1'h0, {1'h0, valid_2} + {1'h0, valid_3}}}
+                        + {1'h0,
+                           {1'h0, {1'h0, valid_4} + {1'h0, valid_5}}
+                             + {1'h0, {1'h0, valid_6} + {1'h0, valid_7}}}}
+          + {1'h0,
+             {1'h0,
+              {1'h0, {1'h0, valid_8} + {1'h0, valid_9}}
+                + {1'h0, {1'h0, valid_10} + {1'h0, valid_11}}}
+               + {1'h0,
+                  {1'h0, {1'h0, valid_12} + {1'h0, valid_13}}
+                    + {1'h0, {1'h0, valid_14} + {1'h0, valid_15}}}}) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: write-combining StoreBuffer count must match live combine owners\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_2 & lineAddr_0 == lineAddr_2
-          & ~(_GEN_2 & (_GEN_0 | _GEN_3))) begin
+      if (~reset & valid_0 & valid_1 & lineAddr_0 == lineAddr_1) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_3 & lineAddr_0 == lineAddr_3
-          & ~(_GEN_2 & (_GEN_0 | _GEN_4))) begin
+      if (~reset & valid_0 & valid_2 & lineAddr_0 == lineAddr_2) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_4 & lineAddr_0 == lineAddr_4
-          & ~(_GEN_2 & (_GEN_0 | _GEN_5))) begin
+      if (~reset & valid_0 & valid_3 & lineAddr_0 == lineAddr_3) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_5 & lineAddr_0 == lineAddr_5
-          & ~(_GEN_2 & (_GEN_0 | _GEN_6))) begin
+      if (~reset & valid_0 & valid_4 & lineAddr_0 == lineAddr_4) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_6 & lineAddr_0 == lineAddr_6
-          & ~(_GEN_2 & (_GEN_0 | _GEN_7))) begin
+      if (~reset & valid_0 & valid_5 & lineAddr_0 == lineAddr_5) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_7 & lineAddr_0 == lineAddr_7
-          & ~(_GEN_2 & (_GEN_0 | _GEN_8))) begin
+      if (~reset & valid_0 & valid_6 & lineAddr_0 == lineAddr_6) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_8 & lineAddr_0 == lineAddr_8
-          & ~(_GEN_2 & (_GEN_0 | _GEN_9))) begin
+      if (~reset & valid_0 & valid_7 & lineAddr_0 == lineAddr_7) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_9 & lineAddr_0 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_0 | _GEN_10))) begin
+      if (~reset & valid_0 & valid_8 & lineAddr_0 == lineAddr_8) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_10 & lineAddr_0 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_0 | _GEN_11))) begin
+      if (~reset & valid_0 & valid_9 & lineAddr_0 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_11 & lineAddr_0 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_0 | _GEN_12))) begin
+      if (~reset & valid_0 & valid_10 & lineAddr_0 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_12 & lineAddr_0 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_0 | _GEN_13))) begin
+      if (~reset & valid_0 & valid_11 & lineAddr_0 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_13 & lineAddr_0 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_0 | _GEN_14))) begin
+      if (~reset & valid_0 & valid_12 & lineAddr_0 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_14 & lineAddr_0 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_0 | _GEN_15))) begin
+      if (~reset & valid_0 & valid_13 & lineAddr_0 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_0 & valid_15 & lineAddr_0 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_0 | _GEN_16))) begin
+      if (~reset & valid_0 & valid_14 & lineAddr_0 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_2 & lineAddr_1 == lineAddr_2
-          & ~(_GEN_2 & (_GEN_1 | _GEN_3))) begin
+      if (~reset & valid_0 & valid_15 & lineAddr_0 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_3 & lineAddr_1 == lineAddr_3
-          & ~(_GEN_2 & (_GEN_1 | _GEN_4))) begin
+      if (~reset & valid_1 & valid_2 & lineAddr_1 == lineAddr_2) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_4 & lineAddr_1 == lineAddr_4
-          & ~(_GEN_2 & (_GEN_1 | _GEN_5))) begin
+      if (~reset & valid_1 & valid_3 & lineAddr_1 == lineAddr_3) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_5 & lineAddr_1 == lineAddr_5
-          & ~(_GEN_2 & (_GEN_1 | _GEN_6))) begin
+      if (~reset & valid_1 & valid_4 & lineAddr_1 == lineAddr_4) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_6 & lineAddr_1 == lineAddr_6
-          & ~(_GEN_2 & (_GEN_1 | _GEN_7))) begin
+      if (~reset & valid_1 & valid_5 & lineAddr_1 == lineAddr_5) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_7 & lineAddr_1 == lineAddr_7
-          & ~(_GEN_2 & (_GEN_1 | _GEN_8))) begin
+      if (~reset & valid_1 & valid_6 & lineAddr_1 == lineAddr_6) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_8 & lineAddr_1 == lineAddr_8
-          & ~(_GEN_2 & (_GEN_1 | _GEN_9))) begin
+      if (~reset & valid_1 & valid_7 & lineAddr_1 == lineAddr_7) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_9 & lineAddr_1 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_1 | _GEN_10))) begin
+      if (~reset & valid_1 & valid_8 & lineAddr_1 == lineAddr_8) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_10 & lineAddr_1 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_1 | _GEN_11))) begin
+      if (~reset & valid_1 & valid_9 & lineAddr_1 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_11 & lineAddr_1 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_1 | _GEN_12))) begin
+      if (~reset & valid_1 & valid_10 & lineAddr_1 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_12 & lineAddr_1 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_1 | _GEN_13))) begin
+      if (~reset & valid_1 & valid_11 & lineAddr_1 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_13 & lineAddr_1 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_1 | _GEN_14))) begin
+      if (~reset & valid_1 & valid_12 & lineAddr_1 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_14 & lineAddr_1 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_1 | _GEN_15))) begin
+      if (~reset & valid_1 & valid_13 & lineAddr_1 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_1 & valid_15 & lineAddr_1 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_1 | _GEN_16))) begin
+      if (~reset & valid_1 & valid_14 & lineAddr_1 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_3 & lineAddr_2 == lineAddr_3
-          & ~(_GEN_2 & (_GEN_3 | _GEN_4))) begin
+      if (~reset & valid_1 & valid_15 & lineAddr_1 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_4 & lineAddr_2 == lineAddr_4
-          & ~(_GEN_2 & (_GEN_3 | _GEN_5))) begin
+      if (~reset & valid_2 & valid_3 & lineAddr_2 == lineAddr_3) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_5 & lineAddr_2 == lineAddr_5
-          & ~(_GEN_2 & (_GEN_3 | _GEN_6))) begin
+      if (~reset & valid_2 & valid_4 & lineAddr_2 == lineAddr_4) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_6 & lineAddr_2 == lineAddr_6
-          & ~(_GEN_2 & (_GEN_3 | _GEN_7))) begin
+      if (~reset & valid_2 & valid_5 & lineAddr_2 == lineAddr_5) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_7 & lineAddr_2 == lineAddr_7
-          & ~(_GEN_2 & (_GEN_3 | _GEN_8))) begin
+      if (~reset & valid_2 & valid_6 & lineAddr_2 == lineAddr_6) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_8 & lineAddr_2 == lineAddr_8
-          & ~(_GEN_2 & (_GEN_3 | _GEN_9))) begin
+      if (~reset & valid_2 & valid_7 & lineAddr_2 == lineAddr_7) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_9 & lineAddr_2 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_3 | _GEN_10))) begin
+      if (~reset & valid_2 & valid_8 & lineAddr_2 == lineAddr_8) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_10 & lineAddr_2 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_3 | _GEN_11))) begin
+      if (~reset & valid_2 & valid_9 & lineAddr_2 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_11 & lineAddr_2 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_3 | _GEN_12))) begin
+      if (~reset & valid_2 & valid_10 & lineAddr_2 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_12 & lineAddr_2 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_3 | _GEN_13))) begin
+      if (~reset & valid_2 & valid_11 & lineAddr_2 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_13 & lineAddr_2 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_3 | _GEN_14))) begin
+      if (~reset & valid_2 & valid_12 & lineAddr_2 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_14 & lineAddr_2 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_3 | _GEN_15))) begin
+      if (~reset & valid_2 & valid_13 & lineAddr_2 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_2 & valid_15 & lineAddr_2 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_3 | _GEN_16))) begin
+      if (~reset & valid_2 & valid_14 & lineAddr_2 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_4 & lineAddr_3 == lineAddr_4
-          & ~(_GEN_2 & (_GEN_4 | _GEN_5))) begin
+      if (~reset & valid_2 & valid_15 & lineAddr_2 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_5 & lineAddr_3 == lineAddr_5
-          & ~(_GEN_2 & (_GEN_4 | _GEN_6))) begin
+      if (~reset & valid_3 & valid_4 & lineAddr_3 == lineAddr_4) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_6 & lineAddr_3 == lineAddr_6
-          & ~(_GEN_2 & (_GEN_4 | _GEN_7))) begin
+      if (~reset & valid_3 & valid_5 & lineAddr_3 == lineAddr_5) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_7 & lineAddr_3 == lineAddr_7
-          & ~(_GEN_2 & (_GEN_4 | _GEN_8))) begin
+      if (~reset & valid_3 & valid_6 & lineAddr_3 == lineAddr_6) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_8 & lineAddr_3 == lineAddr_8
-          & ~(_GEN_2 & (_GEN_4 | _GEN_9))) begin
+      if (~reset & valid_3 & valid_7 & lineAddr_3 == lineAddr_7) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_9 & lineAddr_3 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_4 | _GEN_10))) begin
+      if (~reset & valid_3 & valid_8 & lineAddr_3 == lineAddr_8) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_10 & lineAddr_3 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_4 | _GEN_11))) begin
+      if (~reset & valid_3 & valid_9 & lineAddr_3 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_11 & lineAddr_3 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_4 | _GEN_12))) begin
+      if (~reset & valid_3 & valid_10 & lineAddr_3 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_12 & lineAddr_3 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_4 | _GEN_13))) begin
+      if (~reset & valid_3 & valid_11 & lineAddr_3 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_13 & lineAddr_3 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_4 | _GEN_14))) begin
+      if (~reset & valid_3 & valid_12 & lineAddr_3 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_14 & lineAddr_3 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_4 | _GEN_15))) begin
+      if (~reset & valid_3 & valid_13 & lineAddr_3 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_3 & valid_15 & lineAddr_3 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_4 | _GEN_16))) begin
+      if (~reset & valid_3 & valid_14 & lineAddr_3 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_5 & lineAddr_4 == lineAddr_5
-          & ~(_GEN_2 & (_GEN_5 | _GEN_6))) begin
+      if (~reset & valid_3 & valid_15 & lineAddr_3 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_6 & lineAddr_4 == lineAddr_6
-          & ~(_GEN_2 & (_GEN_5 | _GEN_7))) begin
+      if (~reset & valid_4 & valid_5 & lineAddr_4 == lineAddr_5) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_7 & lineAddr_4 == lineAddr_7
-          & ~(_GEN_2 & (_GEN_5 | _GEN_8))) begin
+      if (~reset & valid_4 & valid_6 & lineAddr_4 == lineAddr_6) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_8 & lineAddr_4 == lineAddr_8
-          & ~(_GEN_2 & (_GEN_5 | _GEN_9))) begin
+      if (~reset & valid_4 & valid_7 & lineAddr_4 == lineAddr_7) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_9 & lineAddr_4 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_5 | _GEN_10))) begin
+      if (~reset & valid_4 & valid_8 & lineAddr_4 == lineAddr_8) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_10 & lineAddr_4 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_5 | _GEN_11))) begin
+      if (~reset & valid_4 & valid_9 & lineAddr_4 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_11 & lineAddr_4 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_5 | _GEN_12))) begin
+      if (~reset & valid_4 & valid_10 & lineAddr_4 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_12 & lineAddr_4 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_5 | _GEN_13))) begin
+      if (~reset & valid_4 & valid_11 & lineAddr_4 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_13 & lineAddr_4 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_5 | _GEN_14))) begin
+      if (~reset & valid_4 & valid_12 & lineAddr_4 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_14 & lineAddr_4 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_5 | _GEN_15))) begin
+      if (~reset & valid_4 & valid_13 & lineAddr_4 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_4 & valid_15 & lineAddr_4 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_5 | _GEN_16))) begin
+      if (~reset & valid_4 & valid_14 & lineAddr_4 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_6 & lineAddr_5 == lineAddr_6
-          & ~(_GEN_2 & (_GEN_6 | _GEN_7))) begin
+      if (~reset & valid_4 & valid_15 & lineAddr_4 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_7 & lineAddr_5 == lineAddr_7
-          & ~(_GEN_2 & (_GEN_6 | _GEN_8))) begin
+      if (~reset & valid_5 & valid_6 & lineAddr_5 == lineAddr_6) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_8 & lineAddr_5 == lineAddr_8
-          & ~(_GEN_2 & (_GEN_6 | _GEN_9))) begin
+      if (~reset & valid_5 & valid_7 & lineAddr_5 == lineAddr_7) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_9 & lineAddr_5 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_6 | _GEN_10))) begin
+      if (~reset & valid_5 & valid_8 & lineAddr_5 == lineAddr_8) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_10 & lineAddr_5 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_6 | _GEN_11))) begin
+      if (~reset & valid_5 & valid_9 & lineAddr_5 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_11 & lineAddr_5 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_6 | _GEN_12))) begin
+      if (~reset & valid_5 & valid_10 & lineAddr_5 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_12 & lineAddr_5 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_6 | _GEN_13))) begin
+      if (~reset & valid_5 & valid_11 & lineAddr_5 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_13 & lineAddr_5 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_6 | _GEN_14))) begin
+      if (~reset & valid_5 & valid_12 & lineAddr_5 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_14 & lineAddr_5 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_6 | _GEN_15))) begin
+      if (~reset & valid_5 & valid_13 & lineAddr_5 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_5 & valid_15 & lineAddr_5 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_6 | _GEN_16))) begin
+      if (~reset & valid_5 & valid_14 & lineAddr_5 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_7 & lineAddr_6 == lineAddr_7
-          & ~(_GEN_2 & (_GEN_7 | _GEN_8))) begin
+      if (~reset & valid_5 & valid_15 & lineAddr_5 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_8 & lineAddr_6 == lineAddr_8
-          & ~(_GEN_2 & (_GEN_7 | _GEN_9))) begin
+      if (~reset & valid_6 & valid_7 & lineAddr_6 == lineAddr_7) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_9 & lineAddr_6 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_7 | _GEN_10))) begin
+      if (~reset & valid_6 & valid_8 & lineAddr_6 == lineAddr_8) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_10 & lineAddr_6 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_7 | _GEN_11))) begin
+      if (~reset & valid_6 & valid_9 & lineAddr_6 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_11 & lineAddr_6 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_7 | _GEN_12))) begin
+      if (~reset & valid_6 & valid_10 & lineAddr_6 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_12 & lineAddr_6 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_7 | _GEN_13))) begin
+      if (~reset & valid_6 & valid_11 & lineAddr_6 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_13 & lineAddr_6 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_7 | _GEN_14))) begin
+      if (~reset & valid_6 & valid_12 & lineAddr_6 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_14 & lineAddr_6 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_7 | _GEN_15))) begin
+      if (~reset & valid_6 & valid_13 & lineAddr_6 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_6 & valid_15 & lineAddr_6 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_7 | _GEN_16))) begin
+      if (~reset & valid_6 & valid_14 & lineAddr_6 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_7 & valid_8 & lineAddr_7 == lineAddr_8
-          & ~(_GEN_2 & (_GEN_8 | _GEN_9))) begin
+      if (~reset & valid_6 & valid_15 & lineAddr_6 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_7 & valid_9 & lineAddr_7 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_8 | _GEN_10))) begin
+      if (~reset & valid_7 & valid_8 & lineAddr_7 == lineAddr_8) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_7 & valid_10 & lineAddr_7 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_8 | _GEN_11))) begin
+      if (~reset & valid_7 & valid_9 & lineAddr_7 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_7 & valid_11 & lineAddr_7 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_8 | _GEN_12))) begin
+      if (~reset & valid_7 & valid_10 & lineAddr_7 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_7 & valid_12 & lineAddr_7 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_8 | _GEN_13))) begin
+      if (~reset & valid_7 & valid_11 & lineAddr_7 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_7 & valid_13 & lineAddr_7 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_8 | _GEN_14))) begin
+      if (~reset & valid_7 & valid_12 & lineAddr_7 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_7 & valid_14 & lineAddr_7 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_8 | _GEN_15))) begin
+      if (~reset & valid_7 & valid_13 & lineAddr_7 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_7 & valid_15 & lineAddr_7 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_8 | _GEN_16))) begin
+      if (~reset & valid_7 & valid_14 & lineAddr_7 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_8 & valid_9 & lineAddr_8 == lineAddr_9
-          & ~(_GEN_2 & (_GEN_9 | _GEN_10))) begin
+      if (~reset & valid_7 & valid_15 & lineAddr_7 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_8 & valid_10 & lineAddr_8 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_9 | _GEN_11))) begin
+      if (~reset & valid_8 & valid_9 & lineAddr_8 == lineAddr_9) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_8 & valid_11 & lineAddr_8 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_9 | _GEN_12))) begin
+      if (~reset & valid_8 & valid_10 & lineAddr_8 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_8 & valid_12 & lineAddr_8 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_9 | _GEN_13))) begin
+      if (~reset & valid_8 & valid_11 & lineAddr_8 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_8 & valid_13 & lineAddr_8 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_9 | _GEN_14))) begin
+      if (~reset & valid_8 & valid_12 & lineAddr_8 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_8 & valid_14 & lineAddr_8 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_9 | _GEN_15))) begin
+      if (~reset & valid_8 & valid_13 & lineAddr_8 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_8 & valid_15 & lineAddr_8 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_9 | _GEN_16))) begin
+      if (~reset & valid_8 & valid_14 & lineAddr_8 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_9 & valid_10 & lineAddr_9 == lineAddr_10
-          & ~(_GEN_2 & (_GEN_10 | _GEN_11))) begin
+      if (~reset & valid_8 & valid_15 & lineAddr_8 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_9 & valid_11 & lineAddr_9 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_10 | _GEN_12))) begin
+      if (~reset & valid_9 & valid_10 & lineAddr_9 == lineAddr_10) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_9 & valid_12 & lineAddr_9 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_10 | _GEN_13))) begin
+      if (~reset & valid_9 & valid_11 & lineAddr_9 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_9 & valid_13 & lineAddr_9 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_10 | _GEN_14))) begin
+      if (~reset & valid_9 & valid_12 & lineAddr_9 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_9 & valid_14 & lineAddr_9 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_10 | _GEN_15))) begin
+      if (~reset & valid_9 & valid_13 & lineAddr_9 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_9 & valid_15 & lineAddr_9 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_10 | _GEN_16))) begin
+      if (~reset & valid_9 & valid_14 & lineAddr_9 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_10 & valid_11 & lineAddr_10 == lineAddr_11
-          & ~(_GEN_2 & (_GEN_11 | _GEN_12))) begin
+      if (~reset & valid_9 & valid_15 & lineAddr_9 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_10 & valid_12 & lineAddr_10 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_11 | _GEN_13))) begin
+      if (~reset & valid_10 & valid_11 & lineAddr_10 == lineAddr_11) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_10 & valid_13 & lineAddr_10 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_11 | _GEN_14))) begin
+      if (~reset & valid_10 & valid_12 & lineAddr_10 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_10 & valid_14 & lineAddr_10 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_11 | _GEN_15))) begin
+      if (~reset & valid_10 & valid_13 & lineAddr_10 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_10 & valid_15 & lineAddr_10 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_11 | _GEN_16))) begin
+      if (~reset & valid_10 & valid_14 & lineAddr_10 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_11 & valid_12 & lineAddr_11 == lineAddr_12
-          & ~(_GEN_2 & (_GEN_12 | _GEN_13))) begin
+      if (~reset & valid_10 & valid_15 & lineAddr_10 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_11 & valid_13 & lineAddr_11 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_12 | _GEN_14))) begin
+      if (~reset & valid_11 & valid_12 & lineAddr_11 == lineAddr_12) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_11 & valid_14 & lineAddr_11 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_12 | _GEN_15))) begin
+      if (~reset & valid_11 & valid_13 & lineAddr_11 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_11 & valid_15 & lineAddr_11 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_12 | _GEN_16))) begin
+      if (~reset & valid_11 & valid_14 & lineAddr_11 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_12 & valid_13 & lineAddr_12 == lineAddr_13
-          & ~(_GEN_2 & (_GEN_13 | _GEN_14))) begin
+      if (~reset & valid_11 & valid_15 & lineAddr_11 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_12 & valid_14 & lineAddr_12 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_13 | _GEN_15))) begin
+      if (~reset & valid_12 & valid_13 & lineAddr_12 == lineAddr_13) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_12 & valid_15 & lineAddr_12 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_13 | _GEN_16))) begin
+      if (~reset & valid_12 & valid_14 & lineAddr_12 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_13 & valid_14 & lineAddr_13 == lineAddr_14
-          & ~(_GEN_2 & (_GEN_14 | _GEN_15))) begin
+      if (~reset & valid_12 & valid_15 & lineAddr_12 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_13 & valid_15 & lineAddr_13 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_14 | _GEN_16))) begin
+      if (~reset & valid_13 & valid_14 & lineAddr_13 == lineAddr_14) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end
-      if (~reset & valid_14 & valid_15 & lineAddr_14 == lineAddr_15
-          & ~(_GEN_2 & (_GEN_15 | _GEN_16))) begin
+      if (~reset & valid_13 & valid_15 & lineAddr_13 == lineAddr_15) begin
         if (`ASSERT_VERBOSE_COND_)
-          $error("Assertion failed: only the immutable active line may have a younger line generation\n");
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
+        if (`STOP_COND_)
+          $fatal;
+      end
+      if (~reset & valid_14 & valid_15 & lineAddr_14 == lineAddr_15) begin
+        if (`ASSERT_VERBOSE_COND_)
+          $error("Assertion failed: each dirty line must have one mutable combine owner\n");
         if (`STOP_COND_)
           $fatal;
       end

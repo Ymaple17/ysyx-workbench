@@ -26,6 +26,7 @@ module WideRS(
                 io_enq_bits_0_exu_alu_srcB,
   input  [4:0]  io_enq_bits_0_exu_alu_control,
   input  [3:0]  io_enq_bits_0_exu_jump,
+  input  [7:0]  io_enq_bits_0_lsu_mem_wmask,
   input  [2:0]  io_enq_bits_0_lsu_mem_rd,
   input         io_enq_bits_0_lsu_mem_write,
                 io_enq_bits_0_lsu_mem_valid,
@@ -52,6 +53,7 @@ module WideRS(
                 io_enq_bits_1_exu_alu_srcB,
   input  [4:0]  io_enq_bits_1_exu_alu_control,
   input  [3:0]  io_enq_bits_1_exu_jump,
+  input  [7:0]  io_enq_bits_1_lsu_mem_wmask,
   input  [2:0]  io_enq_bits_1_lsu_mem_rd,
   input         io_enq_bits_1_lsu_mem_write,
                 io_enq_bits_1_lsu_mem_valid,
@@ -78,6 +80,7 @@ module WideRS(
                 io_enq_bits_2_exu_alu_srcB,
   input  [4:0]  io_enq_bits_2_exu_alu_control,
   input  [3:0]  io_enq_bits_2_exu_jump,
+  input  [7:0]  io_enq_bits_2_lsu_mem_wmask,
   input  [2:0]  io_enq_bits_2_lsu_mem_rd,
   input         io_enq_bits_2_lsu_mem_write,
                 io_enq_bits_2_lsu_mem_valid,
@@ -104,6 +107,7 @@ module WideRS(
                 io_enq_bits_3_exu_alu_srcB,
   input  [4:0]  io_enq_bits_3_exu_alu_control,
   input  [3:0]  io_enq_bits_3_exu_jump,
+  input  [7:0]  io_enq_bits_3_lsu_mem_wmask,
   input  [2:0]  io_enq_bits_3_lsu_mem_rd,
   input         io_enq_bits_3_lsu_mem_write,
                 io_enq_bits_3_lsu_mem_valid,
@@ -274,6 +278,17 @@ module WideRS(
                 io_issue_lsu1_bits_wbu_reg_write,
   output [2:0]  io_issue_lsu1_bits_wbu_reg_write_sel,
   input         io_issue_lsu1_fire,
+  output        io_issue_store_addr_valid,
+  output [4:0]  io_issue_store_addr_bits_rob_idx,
+  output        io_issue_store_addr_bits_src1_ready,
+                io_issue_store_addr_bits_src2_ready,
+  output [31:0] io_issue_store_addr_bits_src1_val,
+                io_issue_store_addr_bits_pc,
+                io_issue_store_addr_bits_imm_ext,
+  output [7:0]  io_issue_store_addr_bits_lsu_mem_wmask,
+  output        io_issue_store_addr_bits_lsu_mem_write,
+                io_issue_store_addr_bits_lsu_mem_valid,
+  input         io_issue_store_addr_fire,
                 io_free_data_fire_0,
                 io_free_data_fire_1,
                 io_free_data_fire_2,
@@ -301,7 +316,11 @@ module WideRS(
   input         io_flush,
   input  [4:0]  io_flush_idx,
   input         io_flush_all,
-  output [2:0]  io_fresh_issue_count
+  output [2:0]  io_fresh_issue_count,
+  output [4:0]  io_store_addr_candidate_count,
+                io_store_addr_data_wait_count,
+                io_store_data_addr_wait_count,
+                io_store_ready_count
 );
 
   reg         entries_0_valid;
@@ -326,6 +345,7 @@ module WideRS(
   reg  [1:0]  entries_0_exu_alu_srcB;
   reg  [4:0]  entries_0_exu_alu_control;
   reg  [3:0]  entries_0_exu_jump;
+  reg  [7:0]  entries_0_lsu_mem_wmask;
   reg  [2:0]  entries_0_lsu_mem_rd;
   reg         entries_0_lsu_mem_write;
   reg         entries_0_lsu_mem_valid;
@@ -354,6 +374,7 @@ module WideRS(
   reg  [1:0]  entries_1_exu_alu_srcB;
   reg  [4:0]  entries_1_exu_alu_control;
   reg  [3:0]  entries_1_exu_jump;
+  reg  [7:0]  entries_1_lsu_mem_wmask;
   reg  [2:0]  entries_1_lsu_mem_rd;
   reg         entries_1_lsu_mem_write;
   reg         entries_1_lsu_mem_valid;
@@ -382,6 +403,7 @@ module WideRS(
   reg  [1:0]  entries_2_exu_alu_srcB;
   reg  [4:0]  entries_2_exu_alu_control;
   reg  [3:0]  entries_2_exu_jump;
+  reg  [7:0]  entries_2_lsu_mem_wmask;
   reg  [2:0]  entries_2_lsu_mem_rd;
   reg         entries_2_lsu_mem_write;
   reg         entries_2_lsu_mem_valid;
@@ -410,6 +432,7 @@ module WideRS(
   reg  [1:0]  entries_3_exu_alu_srcB;
   reg  [4:0]  entries_3_exu_alu_control;
   reg  [3:0]  entries_3_exu_jump;
+  reg  [7:0]  entries_3_lsu_mem_wmask;
   reg  [2:0]  entries_3_lsu_mem_rd;
   reg         entries_3_lsu_mem_write;
   reg         entries_3_lsu_mem_valid;
@@ -438,6 +461,7 @@ module WideRS(
   reg  [1:0]  entries_4_exu_alu_srcB;
   reg  [4:0]  entries_4_exu_alu_control;
   reg  [3:0]  entries_4_exu_jump;
+  reg  [7:0]  entries_4_lsu_mem_wmask;
   reg  [2:0]  entries_4_lsu_mem_rd;
   reg         entries_4_lsu_mem_write;
   reg         entries_4_lsu_mem_valid;
@@ -466,6 +490,7 @@ module WideRS(
   reg  [1:0]  entries_5_exu_alu_srcB;
   reg  [4:0]  entries_5_exu_alu_control;
   reg  [3:0]  entries_5_exu_jump;
+  reg  [7:0]  entries_5_lsu_mem_wmask;
   reg  [2:0]  entries_5_lsu_mem_rd;
   reg         entries_5_lsu_mem_write;
   reg         entries_5_lsu_mem_valid;
@@ -494,6 +519,7 @@ module WideRS(
   reg  [1:0]  entries_6_exu_alu_srcB;
   reg  [4:0]  entries_6_exu_alu_control;
   reg  [3:0]  entries_6_exu_jump;
+  reg  [7:0]  entries_6_lsu_mem_wmask;
   reg  [2:0]  entries_6_lsu_mem_rd;
   reg         entries_6_lsu_mem_write;
   reg         entries_6_lsu_mem_valid;
@@ -522,6 +548,7 @@ module WideRS(
   reg  [1:0]  entries_7_exu_alu_srcB;
   reg  [4:0]  entries_7_exu_alu_control;
   reg  [3:0]  entries_7_exu_jump;
+  reg  [7:0]  entries_7_lsu_mem_wmask;
   reg  [2:0]  entries_7_lsu_mem_rd;
   reg         entries_7_lsu_mem_write;
   reg         entries_7_lsu_mem_valid;
@@ -550,6 +577,7 @@ module WideRS(
   reg  [1:0]  entries_8_exu_alu_srcB;
   reg  [4:0]  entries_8_exu_alu_control;
   reg  [3:0]  entries_8_exu_jump;
+  reg  [7:0]  entries_8_lsu_mem_wmask;
   reg  [2:0]  entries_8_lsu_mem_rd;
   reg         entries_8_lsu_mem_write;
   reg         entries_8_lsu_mem_valid;
@@ -578,6 +606,7 @@ module WideRS(
   reg  [1:0]  entries_9_exu_alu_srcB;
   reg  [4:0]  entries_9_exu_alu_control;
   reg  [3:0]  entries_9_exu_jump;
+  reg  [7:0]  entries_9_lsu_mem_wmask;
   reg  [2:0]  entries_9_lsu_mem_rd;
   reg         entries_9_lsu_mem_write;
   reg         entries_9_lsu_mem_valid;
@@ -606,6 +635,7 @@ module WideRS(
   reg  [1:0]  entries_10_exu_alu_srcB;
   reg  [4:0]  entries_10_exu_alu_control;
   reg  [3:0]  entries_10_exu_jump;
+  reg  [7:0]  entries_10_lsu_mem_wmask;
   reg  [2:0]  entries_10_lsu_mem_rd;
   reg         entries_10_lsu_mem_write;
   reg         entries_10_lsu_mem_valid;
@@ -634,6 +664,7 @@ module WideRS(
   reg  [1:0]  entries_11_exu_alu_srcB;
   reg  [4:0]  entries_11_exu_alu_control;
   reg  [3:0]  entries_11_exu_jump;
+  reg  [7:0]  entries_11_lsu_mem_wmask;
   reg  [2:0]  entries_11_lsu_mem_rd;
   reg         entries_11_lsu_mem_write;
   reg         entries_11_lsu_mem_valid;
@@ -662,6 +693,7 @@ module WideRS(
   reg  [1:0]  entries_12_exu_alu_srcB;
   reg  [4:0]  entries_12_exu_alu_control;
   reg  [3:0]  entries_12_exu_jump;
+  reg  [7:0]  entries_12_lsu_mem_wmask;
   reg  [2:0]  entries_12_lsu_mem_rd;
   reg         entries_12_lsu_mem_write;
   reg         entries_12_lsu_mem_valid;
@@ -690,6 +722,7 @@ module WideRS(
   reg  [1:0]  entries_13_exu_alu_srcB;
   reg  [4:0]  entries_13_exu_alu_control;
   reg  [3:0]  entries_13_exu_jump;
+  reg  [7:0]  entries_13_lsu_mem_wmask;
   reg  [2:0]  entries_13_lsu_mem_rd;
   reg         entries_13_lsu_mem_write;
   reg         entries_13_lsu_mem_valid;
@@ -718,6 +751,7 @@ module WideRS(
   reg  [1:0]  entries_14_exu_alu_srcB;
   reg  [4:0]  entries_14_exu_alu_control;
   reg  [3:0]  entries_14_exu_jump;
+  reg  [7:0]  entries_14_lsu_mem_wmask;
   reg  [2:0]  entries_14_lsu_mem_rd;
   reg         entries_14_lsu_mem_write;
   reg         entries_14_lsu_mem_valid;
@@ -746,12 +780,29 @@ module WideRS(
   reg  [1:0]  entries_15_exu_alu_srcB;
   reg  [4:0]  entries_15_exu_alu_control;
   reg  [3:0]  entries_15_exu_jump;
+  reg  [7:0]  entries_15_lsu_mem_wmask;
   reg  [2:0]  entries_15_lsu_mem_rd;
   reg         entries_15_lsu_mem_write;
   reg         entries_15_lsu_mem_valid;
   reg         entries_15_wbu_reg_write;
   reg  [2:0]  entries_15_wbu_reg_write_sel;
   reg         entries_15_wbu_csr_write;
+  reg         storeAddrIssued_0;
+  reg         storeAddrIssued_1;
+  reg         storeAddrIssued_2;
+  reg         storeAddrIssued_3;
+  reg         storeAddrIssued_4;
+  reg         storeAddrIssued_5;
+  reg         storeAddrIssued_6;
+  reg         storeAddrIssued_7;
+  reg         storeAddrIssued_8;
+  reg         storeAddrIssued_9;
+  reg         storeAddrIssued_10;
+  reg         storeAddrIssued_11;
+  reg         storeAddrIssued_12;
+  reg         storeAddrIssued_13;
+  reg         storeAddrIssued_14;
+  reg         storeAddrIssued_15;
   wire [4:0]  io_count_0 =
     {1'h0,
      {1'h0,
@@ -1085,6 +1136,18 @@ module WideRS(
   wire        issueEntry_0_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_0_src2_ready
     & _issueEntry_0_src2Hit_T_22;
+  wire [4:0]  _GEN =
+    {entries_0_src1_ready,
+     issueEntry_0_src1Hit_3,
+     issueEntry_0_src1Hit_2,
+     issueEntry_0_src1Hit_1,
+     issueEntry_0_src1Hit_0};
+  wire [4:0]  _GEN_0 =
+    {entries_0_src2_ready,
+     issueEntry_0_src2Hit_3,
+     issueEntry_0_src2Hit_2,
+     issueEntry_0_src2Hit_1,
+     issueEntry_0_src2Hit_0};
   wire [31:0] issueEntry_0_out_src1_val =
     (|{issueEntry_0_src1Hit_3,
        issueEntry_0_src1Hit_2,
@@ -1111,17 +1174,7 @@ module WideRS(
     | entries_0_exu_alu_control == 5'hE | entries_0_exu_alu_control == 5'hF
     | entries_0_exu_alu_control == 5'h10 | entries_0_exu_alu_control == 5'h11;
   wire        canIssue_0 =
-    entries_0_valid & ~entries_0_issued
-    & (|{entries_0_src1_ready,
-         issueEntry_0_src1Hit_3,
-         issueEntry_0_src1Hit_2,
-         issueEntry_0_src1Hit_1,
-         issueEntry_0_src1Hit_0})
-    & (|{entries_0_src2_ready,
-         issueEntry_0_src2Hit_3,
-         issueEntry_0_src2Hit_2,
-         issueEntry_0_src2Hit_1,
-         issueEntry_0_src2Hit_0}) & ~freeByRob_0;
+    entries_0_valid & ~entries_0_issued & (|_GEN) & (|_GEN_0) & ~freeByRob_0;
   wire        _issueEntry_1_src1Hit_T_4 = entries_1_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_1_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_1_src1_ready
@@ -1154,6 +1207,18 @@ module WideRS(
   wire        issueEntry_1_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_1_src2_ready
     & _issueEntry_1_src2Hit_T_22;
+  wire [4:0]  _GEN_1 =
+    {entries_1_src1_ready,
+     issueEntry_1_src1Hit_3,
+     issueEntry_1_src1Hit_2,
+     issueEntry_1_src1Hit_1,
+     issueEntry_1_src1Hit_0};
+  wire [4:0]  _GEN_2 =
+    {entries_1_src2_ready,
+     issueEntry_1_src2Hit_3,
+     issueEntry_1_src2Hit_2,
+     issueEntry_1_src2Hit_1,
+     issueEntry_1_src2Hit_0};
   wire [31:0] issueEntry_1_out_src1_val =
     (|{issueEntry_1_src1Hit_3,
        issueEntry_1_src1Hit_2,
@@ -1180,17 +1245,7 @@ module WideRS(
     | entries_1_exu_alu_control == 5'hE | entries_1_exu_alu_control == 5'hF
     | entries_1_exu_alu_control == 5'h10 | entries_1_exu_alu_control == 5'h11;
   wire        canIssue_1 =
-    entries_1_valid & ~entries_1_issued
-    & (|{entries_1_src1_ready,
-         issueEntry_1_src1Hit_3,
-         issueEntry_1_src1Hit_2,
-         issueEntry_1_src1Hit_1,
-         issueEntry_1_src1Hit_0})
-    & (|{entries_1_src2_ready,
-         issueEntry_1_src2Hit_3,
-         issueEntry_1_src2Hit_2,
-         issueEntry_1_src2Hit_1,
-         issueEntry_1_src2Hit_0}) & ~freeByRob_1;
+    entries_1_valid & ~entries_1_issued & (|_GEN_1) & (|_GEN_2) & ~freeByRob_1;
   wire        _issueEntry_2_src1Hit_T_4 = entries_2_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_2_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_2_src1_ready
@@ -1223,6 +1278,18 @@ module WideRS(
   wire        issueEntry_2_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_2_src2_ready
     & _issueEntry_2_src2Hit_T_22;
+  wire [4:0]  _GEN_3 =
+    {entries_2_src1_ready,
+     issueEntry_2_src1Hit_3,
+     issueEntry_2_src1Hit_2,
+     issueEntry_2_src1Hit_1,
+     issueEntry_2_src1Hit_0};
+  wire [4:0]  _GEN_4 =
+    {entries_2_src2_ready,
+     issueEntry_2_src2Hit_3,
+     issueEntry_2_src2Hit_2,
+     issueEntry_2_src2Hit_1,
+     issueEntry_2_src2Hit_0};
   wire [31:0] issueEntry_2_out_src1_val =
     (|{issueEntry_2_src1Hit_3,
        issueEntry_2_src1Hit_2,
@@ -1249,17 +1316,7 @@ module WideRS(
     | entries_2_exu_alu_control == 5'hE | entries_2_exu_alu_control == 5'hF
     | entries_2_exu_alu_control == 5'h10 | entries_2_exu_alu_control == 5'h11;
   wire        canIssue_2 =
-    entries_2_valid & ~entries_2_issued
-    & (|{entries_2_src1_ready,
-         issueEntry_2_src1Hit_3,
-         issueEntry_2_src1Hit_2,
-         issueEntry_2_src1Hit_1,
-         issueEntry_2_src1Hit_0})
-    & (|{entries_2_src2_ready,
-         issueEntry_2_src2Hit_3,
-         issueEntry_2_src2Hit_2,
-         issueEntry_2_src2Hit_1,
-         issueEntry_2_src2Hit_0}) & ~freeByRob_2;
+    entries_2_valid & ~entries_2_issued & (|_GEN_3) & (|_GEN_4) & ~freeByRob_2;
   wire        _issueEntry_3_src1Hit_T_4 = entries_3_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_3_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_3_src1_ready
@@ -1292,6 +1349,18 @@ module WideRS(
   wire        issueEntry_3_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_3_src2_ready
     & _issueEntry_3_src2Hit_T_22;
+  wire [4:0]  _GEN_5 =
+    {entries_3_src1_ready,
+     issueEntry_3_src1Hit_3,
+     issueEntry_3_src1Hit_2,
+     issueEntry_3_src1Hit_1,
+     issueEntry_3_src1Hit_0};
+  wire [4:0]  _GEN_6 =
+    {entries_3_src2_ready,
+     issueEntry_3_src2Hit_3,
+     issueEntry_3_src2Hit_2,
+     issueEntry_3_src2Hit_1,
+     issueEntry_3_src2Hit_0};
   wire [31:0] issueEntry_3_out_src1_val =
     (|{issueEntry_3_src1Hit_3,
        issueEntry_3_src1Hit_2,
@@ -1318,17 +1387,7 @@ module WideRS(
     | entries_3_exu_alu_control == 5'hE | entries_3_exu_alu_control == 5'hF
     | entries_3_exu_alu_control == 5'h10 | entries_3_exu_alu_control == 5'h11;
   wire        canIssue_3 =
-    entries_3_valid & ~entries_3_issued
-    & (|{entries_3_src1_ready,
-         issueEntry_3_src1Hit_3,
-         issueEntry_3_src1Hit_2,
-         issueEntry_3_src1Hit_1,
-         issueEntry_3_src1Hit_0})
-    & (|{entries_3_src2_ready,
-         issueEntry_3_src2Hit_3,
-         issueEntry_3_src2Hit_2,
-         issueEntry_3_src2Hit_1,
-         issueEntry_3_src2Hit_0}) & ~freeByRob_3;
+    entries_3_valid & ~entries_3_issued & (|_GEN_5) & (|_GEN_6) & ~freeByRob_3;
   wire        _issueEntry_4_src1Hit_T_4 = entries_4_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_4_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_4_src1_ready
@@ -1361,6 +1420,18 @@ module WideRS(
   wire        issueEntry_4_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_4_src2_ready
     & _issueEntry_4_src2Hit_T_22;
+  wire [4:0]  _GEN_7 =
+    {entries_4_src1_ready,
+     issueEntry_4_src1Hit_3,
+     issueEntry_4_src1Hit_2,
+     issueEntry_4_src1Hit_1,
+     issueEntry_4_src1Hit_0};
+  wire [4:0]  _GEN_8 =
+    {entries_4_src2_ready,
+     issueEntry_4_src2Hit_3,
+     issueEntry_4_src2Hit_2,
+     issueEntry_4_src2Hit_1,
+     issueEntry_4_src2Hit_0};
   wire [31:0] issueEntry_4_out_src1_val =
     (|{issueEntry_4_src1Hit_3,
        issueEntry_4_src1Hit_2,
@@ -1387,17 +1458,7 @@ module WideRS(
     | entries_4_exu_alu_control == 5'hE | entries_4_exu_alu_control == 5'hF
     | entries_4_exu_alu_control == 5'h10 | entries_4_exu_alu_control == 5'h11;
   wire        canIssue_4 =
-    entries_4_valid & ~entries_4_issued
-    & (|{entries_4_src1_ready,
-         issueEntry_4_src1Hit_3,
-         issueEntry_4_src1Hit_2,
-         issueEntry_4_src1Hit_1,
-         issueEntry_4_src1Hit_0})
-    & (|{entries_4_src2_ready,
-         issueEntry_4_src2Hit_3,
-         issueEntry_4_src2Hit_2,
-         issueEntry_4_src2Hit_1,
-         issueEntry_4_src2Hit_0}) & ~freeByRob_4;
+    entries_4_valid & ~entries_4_issued & (|_GEN_7) & (|_GEN_8) & ~freeByRob_4;
   wire        _issueEntry_5_src1Hit_T_4 = entries_5_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_5_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_5_src1_ready
@@ -1430,6 +1491,18 @@ module WideRS(
   wire        issueEntry_5_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_5_src2_ready
     & _issueEntry_5_src2Hit_T_22;
+  wire [4:0]  _GEN_9 =
+    {entries_5_src1_ready,
+     issueEntry_5_src1Hit_3,
+     issueEntry_5_src1Hit_2,
+     issueEntry_5_src1Hit_1,
+     issueEntry_5_src1Hit_0};
+  wire [4:0]  _GEN_10 =
+    {entries_5_src2_ready,
+     issueEntry_5_src2Hit_3,
+     issueEntry_5_src2Hit_2,
+     issueEntry_5_src2Hit_1,
+     issueEntry_5_src2Hit_0};
   wire [31:0] issueEntry_5_out_src1_val =
     (|{issueEntry_5_src1Hit_3,
        issueEntry_5_src1Hit_2,
@@ -1456,17 +1529,7 @@ module WideRS(
     | entries_5_exu_alu_control == 5'hE | entries_5_exu_alu_control == 5'hF
     | entries_5_exu_alu_control == 5'h10 | entries_5_exu_alu_control == 5'h11;
   wire        canIssue_5 =
-    entries_5_valid & ~entries_5_issued
-    & (|{entries_5_src1_ready,
-         issueEntry_5_src1Hit_3,
-         issueEntry_5_src1Hit_2,
-         issueEntry_5_src1Hit_1,
-         issueEntry_5_src1Hit_0})
-    & (|{entries_5_src2_ready,
-         issueEntry_5_src2Hit_3,
-         issueEntry_5_src2Hit_2,
-         issueEntry_5_src2Hit_1,
-         issueEntry_5_src2Hit_0}) & ~freeByRob_5;
+    entries_5_valid & ~entries_5_issued & (|_GEN_9) & (|_GEN_10) & ~freeByRob_5;
   wire        _issueEntry_6_src1Hit_T_4 = entries_6_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_6_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_6_src1_ready
@@ -1499,6 +1562,18 @@ module WideRS(
   wire        issueEntry_6_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_6_src2_ready
     & _issueEntry_6_src2Hit_T_22;
+  wire [4:0]  _GEN_11 =
+    {entries_6_src1_ready,
+     issueEntry_6_src1Hit_3,
+     issueEntry_6_src1Hit_2,
+     issueEntry_6_src1Hit_1,
+     issueEntry_6_src1Hit_0};
+  wire [4:0]  _GEN_12 =
+    {entries_6_src2_ready,
+     issueEntry_6_src2Hit_3,
+     issueEntry_6_src2Hit_2,
+     issueEntry_6_src2Hit_1,
+     issueEntry_6_src2Hit_0};
   wire [31:0] issueEntry_6_out_src1_val =
     (|{issueEntry_6_src1Hit_3,
        issueEntry_6_src1Hit_2,
@@ -1525,17 +1600,7 @@ module WideRS(
     | entries_6_exu_alu_control == 5'hE | entries_6_exu_alu_control == 5'hF
     | entries_6_exu_alu_control == 5'h10 | entries_6_exu_alu_control == 5'h11;
   wire        canIssue_6 =
-    entries_6_valid & ~entries_6_issued
-    & (|{entries_6_src1_ready,
-         issueEntry_6_src1Hit_3,
-         issueEntry_6_src1Hit_2,
-         issueEntry_6_src1Hit_1,
-         issueEntry_6_src1Hit_0})
-    & (|{entries_6_src2_ready,
-         issueEntry_6_src2Hit_3,
-         issueEntry_6_src2Hit_2,
-         issueEntry_6_src2Hit_1,
-         issueEntry_6_src2Hit_0}) & ~freeByRob_6;
+    entries_6_valid & ~entries_6_issued & (|_GEN_11) & (|_GEN_12) & ~freeByRob_6;
   wire        _issueEntry_7_src1Hit_T_4 = entries_7_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_7_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_7_src1_ready
@@ -1568,6 +1633,18 @@ module WideRS(
   wire        issueEntry_7_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_7_src2_ready
     & _issueEntry_7_src2Hit_T_22;
+  wire [4:0]  _GEN_13 =
+    {entries_7_src1_ready,
+     issueEntry_7_src1Hit_3,
+     issueEntry_7_src1Hit_2,
+     issueEntry_7_src1Hit_1,
+     issueEntry_7_src1Hit_0};
+  wire [4:0]  _GEN_14 =
+    {entries_7_src2_ready,
+     issueEntry_7_src2Hit_3,
+     issueEntry_7_src2Hit_2,
+     issueEntry_7_src2Hit_1,
+     issueEntry_7_src2Hit_0};
   wire [31:0] issueEntry_7_out_src1_val =
     (|{issueEntry_7_src1Hit_3,
        issueEntry_7_src1Hit_2,
@@ -1594,17 +1671,7 @@ module WideRS(
     | entries_7_exu_alu_control == 5'hE | entries_7_exu_alu_control == 5'hF
     | entries_7_exu_alu_control == 5'h10 | entries_7_exu_alu_control == 5'h11;
   wire        canIssue_7 =
-    entries_7_valid & ~entries_7_issued
-    & (|{entries_7_src1_ready,
-         issueEntry_7_src1Hit_3,
-         issueEntry_7_src1Hit_2,
-         issueEntry_7_src1Hit_1,
-         issueEntry_7_src1Hit_0})
-    & (|{entries_7_src2_ready,
-         issueEntry_7_src2Hit_3,
-         issueEntry_7_src2Hit_2,
-         issueEntry_7_src2Hit_1,
-         issueEntry_7_src2Hit_0}) & ~freeByRob_7;
+    entries_7_valid & ~entries_7_issued & (|_GEN_13) & (|_GEN_14) & ~freeByRob_7;
   wire        _issueEntry_8_src1Hit_T_4 = entries_8_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_8_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_8_src1_ready
@@ -1637,6 +1704,18 @@ module WideRS(
   wire        issueEntry_8_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_8_src2_ready
     & _issueEntry_8_src2Hit_T_22;
+  wire [4:0]  _GEN_15 =
+    {entries_8_src1_ready,
+     issueEntry_8_src1Hit_3,
+     issueEntry_8_src1Hit_2,
+     issueEntry_8_src1Hit_1,
+     issueEntry_8_src1Hit_0};
+  wire [4:0]  _GEN_16 =
+    {entries_8_src2_ready,
+     issueEntry_8_src2Hit_3,
+     issueEntry_8_src2Hit_2,
+     issueEntry_8_src2Hit_1,
+     issueEntry_8_src2Hit_0};
   wire [31:0] issueEntry_8_out_src1_val =
     (|{issueEntry_8_src1Hit_3,
        issueEntry_8_src1Hit_2,
@@ -1663,17 +1742,7 @@ module WideRS(
     | entries_8_exu_alu_control == 5'hE | entries_8_exu_alu_control == 5'hF
     | entries_8_exu_alu_control == 5'h10 | entries_8_exu_alu_control == 5'h11;
   wire        canIssue_8 =
-    entries_8_valid & ~entries_8_issued
-    & (|{entries_8_src1_ready,
-         issueEntry_8_src1Hit_3,
-         issueEntry_8_src1Hit_2,
-         issueEntry_8_src1Hit_1,
-         issueEntry_8_src1Hit_0})
-    & (|{entries_8_src2_ready,
-         issueEntry_8_src2Hit_3,
-         issueEntry_8_src2Hit_2,
-         issueEntry_8_src2Hit_1,
-         issueEntry_8_src2Hit_0}) & ~freeByRob_8;
+    entries_8_valid & ~entries_8_issued & (|_GEN_15) & (|_GEN_16) & ~freeByRob_8;
   wire        _issueEntry_9_src1Hit_T_4 = entries_9_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_9_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_9_src1_ready
@@ -1706,6 +1775,18 @@ module WideRS(
   wire        issueEntry_9_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_9_src2_ready
     & _issueEntry_9_src2Hit_T_22;
+  wire [4:0]  _GEN_17 =
+    {entries_9_src1_ready,
+     issueEntry_9_src1Hit_3,
+     issueEntry_9_src1Hit_2,
+     issueEntry_9_src1Hit_1,
+     issueEntry_9_src1Hit_0};
+  wire [4:0]  _GEN_18 =
+    {entries_9_src2_ready,
+     issueEntry_9_src2Hit_3,
+     issueEntry_9_src2Hit_2,
+     issueEntry_9_src2Hit_1,
+     issueEntry_9_src2Hit_0};
   wire [31:0] issueEntry_9_out_src1_val =
     (|{issueEntry_9_src1Hit_3,
        issueEntry_9_src1Hit_2,
@@ -1732,17 +1813,7 @@ module WideRS(
     | entries_9_exu_alu_control == 5'hE | entries_9_exu_alu_control == 5'hF
     | entries_9_exu_alu_control == 5'h10 | entries_9_exu_alu_control == 5'h11;
   wire        canIssue_9 =
-    entries_9_valid & ~entries_9_issued
-    & (|{entries_9_src1_ready,
-         issueEntry_9_src1Hit_3,
-         issueEntry_9_src1Hit_2,
-         issueEntry_9_src1Hit_1,
-         issueEntry_9_src1Hit_0})
-    & (|{entries_9_src2_ready,
-         issueEntry_9_src2Hit_3,
-         issueEntry_9_src2Hit_2,
-         issueEntry_9_src2Hit_1,
-         issueEntry_9_src2Hit_0}) & ~freeByRob_9;
+    entries_9_valid & ~entries_9_issued & (|_GEN_17) & (|_GEN_18) & ~freeByRob_9;
   wire        _issueEntry_10_src1Hit_T_4 = entries_10_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_10_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_10_src1_ready
@@ -1775,6 +1846,18 @@ module WideRS(
   wire        issueEntry_10_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_10_src2_ready
     & _issueEntry_10_src2Hit_T_22;
+  wire [4:0]  _GEN_19 =
+    {entries_10_src1_ready,
+     issueEntry_10_src1Hit_3,
+     issueEntry_10_src1Hit_2,
+     issueEntry_10_src1Hit_1,
+     issueEntry_10_src1Hit_0};
+  wire [4:0]  _GEN_20 =
+    {entries_10_src2_ready,
+     issueEntry_10_src2Hit_3,
+     issueEntry_10_src2Hit_2,
+     issueEntry_10_src2Hit_1,
+     issueEntry_10_src2Hit_0};
   wire [31:0] issueEntry_10_out_src1_val =
     (|{issueEntry_10_src1Hit_3,
        issueEntry_10_src1Hit_2,
@@ -1801,17 +1884,7 @@ module WideRS(
     | entries_10_exu_alu_control == 5'hE | entries_10_exu_alu_control == 5'hF
     | entries_10_exu_alu_control == 5'h10 | entries_10_exu_alu_control == 5'h11;
   wire        canIssue_10 =
-    entries_10_valid & ~entries_10_issued
-    & (|{entries_10_src1_ready,
-         issueEntry_10_src1Hit_3,
-         issueEntry_10_src1Hit_2,
-         issueEntry_10_src1Hit_1,
-         issueEntry_10_src1Hit_0})
-    & (|{entries_10_src2_ready,
-         issueEntry_10_src2Hit_3,
-         issueEntry_10_src2Hit_2,
-         issueEntry_10_src2Hit_1,
-         issueEntry_10_src2Hit_0}) & ~freeByRob_10;
+    entries_10_valid & ~entries_10_issued & (|_GEN_19) & (|_GEN_20) & ~freeByRob_10;
   wire        _issueEntry_11_src1Hit_T_4 = entries_11_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_11_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_11_src1_ready
@@ -1844,6 +1917,18 @@ module WideRS(
   wire        issueEntry_11_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_11_src2_ready
     & _issueEntry_11_src2Hit_T_22;
+  wire [4:0]  _GEN_21 =
+    {entries_11_src1_ready,
+     issueEntry_11_src1Hit_3,
+     issueEntry_11_src1Hit_2,
+     issueEntry_11_src1Hit_1,
+     issueEntry_11_src1Hit_0};
+  wire [4:0]  _GEN_22 =
+    {entries_11_src2_ready,
+     issueEntry_11_src2Hit_3,
+     issueEntry_11_src2Hit_2,
+     issueEntry_11_src2Hit_1,
+     issueEntry_11_src2Hit_0};
   wire [31:0] issueEntry_11_out_src1_val =
     (|{issueEntry_11_src1Hit_3,
        issueEntry_11_src1Hit_2,
@@ -1870,17 +1955,7 @@ module WideRS(
     | entries_11_exu_alu_control == 5'hE | entries_11_exu_alu_control == 5'hF
     | entries_11_exu_alu_control == 5'h10 | entries_11_exu_alu_control == 5'h11;
   wire        canIssue_11 =
-    entries_11_valid & ~entries_11_issued
-    & (|{entries_11_src1_ready,
-         issueEntry_11_src1Hit_3,
-         issueEntry_11_src1Hit_2,
-         issueEntry_11_src1Hit_1,
-         issueEntry_11_src1Hit_0})
-    & (|{entries_11_src2_ready,
-         issueEntry_11_src2Hit_3,
-         issueEntry_11_src2Hit_2,
-         issueEntry_11_src2Hit_1,
-         issueEntry_11_src2Hit_0}) & ~freeByRob_11;
+    entries_11_valid & ~entries_11_issued & (|_GEN_21) & (|_GEN_22) & ~freeByRob_11;
   wire        _issueEntry_12_src1Hit_T_4 = entries_12_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_12_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_12_src1_ready
@@ -1913,6 +1988,18 @@ module WideRS(
   wire        issueEntry_12_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_12_src2_ready
     & _issueEntry_12_src2Hit_T_22;
+  wire [4:0]  _GEN_23 =
+    {entries_12_src1_ready,
+     issueEntry_12_src1Hit_3,
+     issueEntry_12_src1Hit_2,
+     issueEntry_12_src1Hit_1,
+     issueEntry_12_src1Hit_0};
+  wire [4:0]  _GEN_24 =
+    {entries_12_src2_ready,
+     issueEntry_12_src2Hit_3,
+     issueEntry_12_src2Hit_2,
+     issueEntry_12_src2Hit_1,
+     issueEntry_12_src2Hit_0};
   wire [31:0] issueEntry_12_out_src1_val =
     (|{issueEntry_12_src1Hit_3,
        issueEntry_12_src1Hit_2,
@@ -1939,17 +2026,7 @@ module WideRS(
     | entries_12_exu_alu_control == 5'hE | entries_12_exu_alu_control == 5'hF
     | entries_12_exu_alu_control == 5'h10 | entries_12_exu_alu_control == 5'h11;
   wire        canIssue_12 =
-    entries_12_valid & ~entries_12_issued
-    & (|{entries_12_src1_ready,
-         issueEntry_12_src1Hit_3,
-         issueEntry_12_src1Hit_2,
-         issueEntry_12_src1Hit_1,
-         issueEntry_12_src1Hit_0})
-    & (|{entries_12_src2_ready,
-         issueEntry_12_src2Hit_3,
-         issueEntry_12_src2Hit_2,
-         issueEntry_12_src2Hit_1,
-         issueEntry_12_src2Hit_0}) & ~freeByRob_12;
+    entries_12_valid & ~entries_12_issued & (|_GEN_23) & (|_GEN_24) & ~freeByRob_12;
   wire        _issueEntry_13_src1Hit_T_4 = entries_13_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_13_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_13_src1_ready
@@ -1982,6 +2059,18 @@ module WideRS(
   wire        issueEntry_13_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_13_src2_ready
     & _issueEntry_13_src2Hit_T_22;
+  wire [4:0]  _GEN_25 =
+    {entries_13_src1_ready,
+     issueEntry_13_src1Hit_3,
+     issueEntry_13_src1Hit_2,
+     issueEntry_13_src1Hit_1,
+     issueEntry_13_src1Hit_0};
+  wire [4:0]  _GEN_26 =
+    {entries_13_src2_ready,
+     issueEntry_13_src2Hit_3,
+     issueEntry_13_src2Hit_2,
+     issueEntry_13_src2Hit_1,
+     issueEntry_13_src2Hit_0};
   wire [31:0] issueEntry_13_out_src1_val =
     (|{issueEntry_13_src1Hit_3,
        issueEntry_13_src1Hit_2,
@@ -2008,17 +2097,7 @@ module WideRS(
     | entries_13_exu_alu_control == 5'hE | entries_13_exu_alu_control == 5'hF
     | entries_13_exu_alu_control == 5'h10 | entries_13_exu_alu_control == 5'h11;
   wire        canIssue_13 =
-    entries_13_valid & ~entries_13_issued
-    & (|{entries_13_src1_ready,
-         issueEntry_13_src1Hit_3,
-         issueEntry_13_src1Hit_2,
-         issueEntry_13_src1Hit_1,
-         issueEntry_13_src1Hit_0})
-    & (|{entries_13_src2_ready,
-         issueEntry_13_src2Hit_3,
-         issueEntry_13_src2Hit_2,
-         issueEntry_13_src2Hit_1,
-         issueEntry_13_src2Hit_0}) & ~freeByRob_13;
+    entries_13_valid & ~entries_13_issued & (|_GEN_25) & (|_GEN_26) & ~freeByRob_13;
   wire        _issueEntry_14_src1Hit_T_4 = entries_14_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_14_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_14_src1_ready
@@ -2051,6 +2130,18 @@ module WideRS(
   wire        issueEntry_14_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_14_src2_ready
     & _issueEntry_14_src2Hit_T_22;
+  wire [4:0]  _GEN_27 =
+    {entries_14_src1_ready,
+     issueEntry_14_src1Hit_3,
+     issueEntry_14_src1Hit_2,
+     issueEntry_14_src1Hit_1,
+     issueEntry_14_src1Hit_0};
+  wire [4:0]  _GEN_28 =
+    {entries_14_src2_ready,
+     issueEntry_14_src2Hit_3,
+     issueEntry_14_src2Hit_2,
+     issueEntry_14_src2Hit_1,
+     issueEntry_14_src2Hit_0};
   wire [31:0] issueEntry_14_out_src1_val =
     (|{issueEntry_14_src1Hit_3,
        issueEntry_14_src1Hit_2,
@@ -2077,17 +2168,7 @@ module WideRS(
     | entries_14_exu_alu_control == 5'hE | entries_14_exu_alu_control == 5'hF
     | entries_14_exu_alu_control == 5'h10 | entries_14_exu_alu_control == 5'h11;
   wire        canIssue_14 =
-    entries_14_valid & ~entries_14_issued
-    & (|{entries_14_src1_ready,
-         issueEntry_14_src1Hit_3,
-         issueEntry_14_src1Hit_2,
-         issueEntry_14_src1Hit_1,
-         issueEntry_14_src1Hit_0})
-    & (|{entries_14_src2_ready,
-         issueEntry_14_src2Hit_3,
-         issueEntry_14_src2Hit_2,
-         issueEntry_14_src2Hit_1,
-         issueEntry_14_src2Hit_0}) & ~freeByRob_14;
+    entries_14_valid & ~entries_14_issued & (|_GEN_27) & (|_GEN_28) & ~freeByRob_14;
   wire        _issueEntry_15_src1Hit_T_4 = entries_15_src1_phys == io_cdb_pdest_0;
   wire        issueEntry_15_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~entries_15_src1_ready
@@ -2120,6 +2201,18 @@ module WideRS(
   wire        issueEntry_15_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~entries_15_src2_ready
     & _issueEntry_15_src2Hit_T_22;
+  wire [4:0]  _GEN_29 =
+    {entries_15_src1_ready,
+     issueEntry_15_src1Hit_3,
+     issueEntry_15_src1Hit_2,
+     issueEntry_15_src1Hit_1,
+     issueEntry_15_src1Hit_0};
+  wire [4:0]  _GEN_30 =
+    {entries_15_src2_ready,
+     issueEntry_15_src2Hit_3,
+     issueEntry_15_src2Hit_2,
+     issueEntry_15_src2Hit_1,
+     issueEntry_15_src2Hit_0};
   wire [31:0] issueEntry_15_out_src1_val =
     (|{issueEntry_15_src1Hit_3,
        issueEntry_15_src1Hit_2,
@@ -2146,33 +2239,103 @@ module WideRS(
     | entries_15_exu_alu_control == 5'hE | entries_15_exu_alu_control == 5'hF
     | entries_15_exu_alu_control == 5'h10 | entries_15_exu_alu_control == 5'h11;
   wire        canIssue_15 =
-    entries_15_valid & ~entries_15_issued
-    & (|{entries_15_src1_ready,
-         issueEntry_15_src1Hit_3,
-         issueEntry_15_src1Hit_2,
-         issueEntry_15_src1Hit_1,
-         issueEntry_15_src1Hit_0})
-    & (|{entries_15_src2_ready,
-         issueEntry_15_src2Hit_3,
-         issueEntry_15_src2Hit_2,
-         issueEntry_15_src2Hit_1,
-         issueEntry_15_src2Hit_0}) & ~freeByRob_15;
-  wire        ordinary = canIssue_0 & ~entries_0_lsu_mem_valid & ~residentMulDiv_0;
-  wire        eligible_1 = canIssue_1 & ~entries_1_lsu_mem_valid & ~residentMulDiv_1;
-  wire        eligible_2 = canIssue_2 & ~entries_2_lsu_mem_valid & ~residentMulDiv_2;
-  wire        eligible_3 = canIssue_3 & ~entries_3_lsu_mem_valid & ~residentMulDiv_3;
-  wire        eligible_4 = canIssue_4 & ~entries_4_lsu_mem_valid & ~residentMulDiv_4;
-  wire        eligible_5 = canIssue_5 & ~entries_5_lsu_mem_valid & ~residentMulDiv_5;
-  wire        eligible_6 = canIssue_6 & ~entries_6_lsu_mem_valid & ~residentMulDiv_6;
-  wire        eligible_7 = canIssue_7 & ~entries_7_lsu_mem_valid & ~residentMulDiv_7;
-  wire        eligible_8 = canIssue_8 & ~entries_8_lsu_mem_valid & ~residentMulDiv_8;
-  wire        eligible_9 = canIssue_9 & ~entries_9_lsu_mem_valid & ~residentMulDiv_9;
-  wire        eligible_10 = canIssue_10 & ~entries_10_lsu_mem_valid & ~residentMulDiv_10;
-  wire        eligible_11 = canIssue_11 & ~entries_11_lsu_mem_valid & ~residentMulDiv_11;
-  wire        eligible_12 = canIssue_12 & ~entries_12_lsu_mem_valid & ~residentMulDiv_12;
-  wire        eligible_13 = canIssue_13 & ~entries_13_lsu_mem_valid & ~residentMulDiv_13;
-  wire        eligible_14 = canIssue_14 & ~entries_14_lsu_mem_valid & ~residentMulDiv_14;
-  wire        eligible_15 = canIssue_15 & ~entries_15_lsu_mem_valid & ~residentMulDiv_15;
+    entries_15_valid & ~entries_15_issued & (|_GEN_29) & (|_GEN_30) & ~freeByRob_15;
+  wire        residentStore_0 =
+    entries_0_valid & ~entries_0_issued & ~freeByRob_0 & entries_0_lsu_mem_valid
+    & entries_0_lsu_mem_write;
+  wire        residentStore_1 =
+    entries_1_valid & ~entries_1_issued & ~freeByRob_1 & entries_1_lsu_mem_valid
+    & entries_1_lsu_mem_write;
+  wire        residentStore_2 =
+    entries_2_valid & ~entries_2_issued & ~freeByRob_2 & entries_2_lsu_mem_valid
+    & entries_2_lsu_mem_write;
+  wire        residentStore_3 =
+    entries_3_valid & ~entries_3_issued & ~freeByRob_3 & entries_3_lsu_mem_valid
+    & entries_3_lsu_mem_write;
+  wire        residentStore_4 =
+    entries_4_valid & ~entries_4_issued & ~freeByRob_4 & entries_4_lsu_mem_valid
+    & entries_4_lsu_mem_write;
+  wire        residentStore_5 =
+    entries_5_valid & ~entries_5_issued & ~freeByRob_5 & entries_5_lsu_mem_valid
+    & entries_5_lsu_mem_write;
+  wire        residentStore_6 =
+    entries_6_valid & ~entries_6_issued & ~freeByRob_6 & entries_6_lsu_mem_valid
+    & entries_6_lsu_mem_write;
+  wire        residentStore_7 =
+    entries_7_valid & ~entries_7_issued & ~freeByRob_7 & entries_7_lsu_mem_valid
+    & entries_7_lsu_mem_write;
+  wire        residentStore_8 =
+    entries_8_valid & ~entries_8_issued & ~freeByRob_8 & entries_8_lsu_mem_valid
+    & entries_8_lsu_mem_write;
+  wire        residentStore_9 =
+    entries_9_valid & ~entries_9_issued & ~freeByRob_9 & entries_9_lsu_mem_valid
+    & entries_9_lsu_mem_write;
+  wire        residentStore_10 =
+    entries_10_valid & ~entries_10_issued & ~freeByRob_10 & entries_10_lsu_mem_valid
+    & entries_10_lsu_mem_write;
+  wire        residentStore_11 =
+    entries_11_valid & ~entries_11_issued & ~freeByRob_11 & entries_11_lsu_mem_valid
+    & entries_11_lsu_mem_write;
+  wire        residentStore_12 =
+    entries_12_valid & ~entries_12_issued & ~freeByRob_12 & entries_12_lsu_mem_valid
+    & entries_12_lsu_mem_write;
+  wire        residentStore_13 =
+    entries_13_valid & ~entries_13_issued & ~freeByRob_13 & entries_13_lsu_mem_valid
+    & entries_13_lsu_mem_write;
+  wire        residentStore_14 =
+    entries_14_valid & ~entries_14_issued & ~freeByRob_14 & entries_14_lsu_mem_valid
+    & entries_14_lsu_mem_write;
+  wire        residentStore_15 =
+    entries_15_valid & ~entries_15_issued & ~freeByRob_15 & entries_15_lsu_mem_valid
+    & entries_15_lsu_mem_write;
+  wire        storeAddrCandidate_0 = residentStore_0 & (|_GEN);
+  wire        storeAddrCandidate_1 = residentStore_1 & (|_GEN_1);
+  wire        storeAddrCandidate_2 = residentStore_2 & (|_GEN_3);
+  wire        storeAddrCandidate_3 = residentStore_3 & (|_GEN_5);
+  wire        storeAddrCandidate_4 = residentStore_4 & (|_GEN_7);
+  wire        storeAddrCandidate_5 = residentStore_5 & (|_GEN_9);
+  wire        storeAddrCandidate_6 = residentStore_6 & (|_GEN_11);
+  wire        storeAddrCandidate_7 = residentStore_7 & (|_GEN_13);
+  wire        storeAddrCandidate_8 = residentStore_8 & (|_GEN_15);
+  wire        storeAddrCandidate_9 = residentStore_9 & (|_GEN_17);
+  wire        storeAddrCandidate_10 = residentStore_10 & (|_GEN_19);
+  wire        storeAddrCandidate_11 = residentStore_11 & (|_GEN_21);
+  wire        storeAddrCandidate_12 = residentStore_12 & (|_GEN_23);
+  wire        storeAddrCandidate_13 = residentStore_13 & (|_GEN_25);
+  wire        storeAddrCandidate_14 = residentStore_14 & (|_GEN_27);
+  wire        storeAddrCandidate_15 = residentStore_15 & (|_GEN_29);
+  wire        storeAddrDataWait_0 = storeAddrCandidate_0 & ~(|_GEN_0);
+  wire        storeAddrDataWait_1 = storeAddrCandidate_1 & ~(|_GEN_2);
+  wire        storeAddrDataWait_2 = storeAddrCandidate_2 & ~(|_GEN_4);
+  wire        storeAddrDataWait_3 = storeAddrCandidate_3 & ~(|_GEN_6);
+  wire        storeAddrDataWait_4 = storeAddrCandidate_4 & ~(|_GEN_8);
+  wire        storeAddrDataWait_5 = storeAddrCandidate_5 & ~(|_GEN_10);
+  wire        storeAddrDataWait_6 = storeAddrCandidate_6 & ~(|_GEN_12);
+  wire        storeAddrDataWait_7 = storeAddrCandidate_7 & ~(|_GEN_14);
+  wire        storeAddrDataWait_8 = storeAddrCandidate_8 & ~(|_GEN_16);
+  wire        storeAddrDataWait_9 = storeAddrCandidate_9 & ~(|_GEN_18);
+  wire        storeAddrDataWait_10 = storeAddrCandidate_10 & ~(|_GEN_20);
+  wire        storeAddrDataWait_11 = storeAddrCandidate_11 & ~(|_GEN_22);
+  wire        storeAddrDataWait_12 = storeAddrCandidate_12 & ~(|_GEN_24);
+  wire        storeAddrDataWait_13 = storeAddrCandidate_13 & ~(|_GEN_26);
+  wire        storeAddrDataWait_14 = storeAddrCandidate_14 & ~(|_GEN_28);
+  wire        storeAddrDataWait_15 = storeAddrCandidate_15 & ~(|_GEN_30);
+  wire        _storeAddrSelect_T_1 = storeAddrDataWait_0 & ~storeAddrIssued_0;
+  wire        _storeAddrSelect_T_3 = storeAddrDataWait_1 & ~storeAddrIssued_1;
+  wire        _storeAddrSelect_T_5 = storeAddrDataWait_2 & ~storeAddrIssued_2;
+  wire        _storeAddrSelect_T_7 = storeAddrDataWait_3 & ~storeAddrIssued_3;
+  wire        _storeAddrSelect_T_9 = storeAddrDataWait_4 & ~storeAddrIssued_4;
+  wire        _storeAddrSelect_T_11 = storeAddrDataWait_5 & ~storeAddrIssued_5;
+  wire        _storeAddrSelect_T_13 = storeAddrDataWait_6 & ~storeAddrIssued_6;
+  wire        _storeAddrSelect_T_15 = storeAddrDataWait_7 & ~storeAddrIssued_7;
+  wire        _storeAddrSelect_T_17 = storeAddrDataWait_8 & ~storeAddrIssued_8;
+  wire        _storeAddrSelect_T_19 = storeAddrDataWait_9 & ~storeAddrIssued_9;
+  wire        _storeAddrSelect_T_21 = storeAddrDataWait_10 & ~storeAddrIssued_10;
+  wire        _storeAddrSelect_T_23 = storeAddrDataWait_11 & ~storeAddrIssued_11;
+  wire        _storeAddrSelect_T_25 = storeAddrDataWait_12 & ~storeAddrIssued_12;
+  wire        _storeAddrSelect_T_27 = storeAddrDataWait_13 & ~storeAddrIssued_13;
+  wire        _storeAddrSelect_T_29 = storeAddrDataWait_14 & ~storeAddrIssued_14;
+  wire        _storeAddrSelect_T_31 = storeAddrDataWait_15 & ~storeAddrIssued_15;
   wire [4:0]  _lsuSelect1_older_T_2145 = entries_0_rob_idx - io_rob_head;
   wire [4:0]  _lsuSelect1_older_T_2153 = entries_1_rob_idx - io_rob_head;
   wire [4:0]  _lsuSelect1_older_T_2161 = entries_2_rob_idx - io_rob_head;
@@ -2189,6 +2352,339 @@ module WideRS(
   wire [4:0]  _lsuSelect1_older_T_2249 = entries_13_rob_idx - io_rob_head;
   wire [4:0]  _lsuSelect1_older_T_2257 = entries_14_rob_idx - io_rob_head;
   wire [4:0]  _lsuSelect1_older_T_2268 = entries_15_rob_idx - io_rob_head;
+  wire        storeAddrSelect_0 =
+    _storeAddrSelect_T_1
+    & ~(_storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2145
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2145);
+  wire        storeAddrSelect_1 =
+    _storeAddrSelect_T_3
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2153
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2153);
+  wire        storeAddrSelect_2 =
+    _storeAddrSelect_T_5
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2161
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2161);
+  wire        storeAddrSelect_3 =
+    _storeAddrSelect_T_7
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2169
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2169);
+  wire        storeAddrSelect_4 =
+    _storeAddrSelect_T_9
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2177
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2177);
+  wire        storeAddrSelect_5 =
+    _storeAddrSelect_T_11
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2185
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2185);
+  wire        storeAddrSelect_6 =
+    _storeAddrSelect_T_13
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2193
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2193);
+  wire        storeAddrSelect_7 =
+    _storeAddrSelect_T_15
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2201
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2201);
+  wire        storeAddrSelect_8 =
+    _storeAddrSelect_T_17
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2209
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2209);
+  wire        storeAddrSelect_9 =
+    _storeAddrSelect_T_19
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2217
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2217);
+  wire        storeAddrSelect_10 =
+    _storeAddrSelect_T_21
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2225
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2225);
+  wire        storeAddrSelect_11 =
+    _storeAddrSelect_T_23
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2233
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2233);
+  wire        storeAddrSelect_12 =
+    _storeAddrSelect_T_25
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2241
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2241);
+  wire        storeAddrSelect_13 =
+    _storeAddrSelect_T_27
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2249
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2249);
+  wire        storeAddrSelect_14 =
+    _storeAddrSelect_T_29
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2257
+        | _storeAddrSelect_T_31 & _lsuSelect1_older_T_2268 < _lsuSelect1_older_T_2257);
+  wire        storeAddrSelect_15 =
+    _storeAddrSelect_T_31
+    & ~(_storeAddrSelect_T_1 & _lsuSelect1_older_T_2145 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_3 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_5 & _lsuSelect1_older_T_2161 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_7 & _lsuSelect1_older_T_2169 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_9 & _lsuSelect1_older_T_2177 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_11 & _lsuSelect1_older_T_2185 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_13 & _lsuSelect1_older_T_2193 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_15 & _lsuSelect1_older_T_2201 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_17 & _lsuSelect1_older_T_2209 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_19 & _lsuSelect1_older_T_2217 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_21 & _lsuSelect1_older_T_2225 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_23 & _lsuSelect1_older_T_2233 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_25 & _lsuSelect1_older_T_2241 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_27 & _lsuSelect1_older_T_2249 < _lsuSelect1_older_T_2268
+        | _storeAddrSelect_T_29 & _lsuSelect1_older_T_2257 < _lsuSelect1_older_T_2268);
+  wire [15:0] _residentStoreAddr_T =
+    {storeAddrSelect_15,
+     storeAddrSelect_14,
+     storeAddrSelect_13,
+     storeAddrSelect_12,
+     storeAddrSelect_11,
+     storeAddrSelect_10,
+     storeAddrSelect_9,
+     storeAddrSelect_8,
+     storeAddrSelect_7,
+     storeAddrSelect_6,
+     storeAddrSelect_5,
+     storeAddrSelect_4,
+     storeAddrSelect_3,
+     storeAddrSelect_2,
+     storeAddrSelect_1,
+     storeAddrSelect_0};
+  wire        _io_issue_store_addr_bits_T_189 =
+    storeAddrSelect_0 & entries_0_lsu_mem_write | storeAddrSelect_1
+    & entries_1_lsu_mem_write | storeAddrSelect_2 & entries_2_lsu_mem_write
+    | storeAddrSelect_3 & entries_3_lsu_mem_write | storeAddrSelect_4
+    & entries_4_lsu_mem_write | storeAddrSelect_5 & entries_5_lsu_mem_write
+    | storeAddrSelect_6 & entries_6_lsu_mem_write | storeAddrSelect_7
+    & entries_7_lsu_mem_write | storeAddrSelect_8 & entries_8_lsu_mem_write
+    | storeAddrSelect_9 & entries_9_lsu_mem_write | storeAddrSelect_10
+    & entries_10_lsu_mem_write | storeAddrSelect_11 & entries_11_lsu_mem_write
+    | storeAddrSelect_12 & entries_12_lsu_mem_write | storeAddrSelect_13
+    & entries_13_lsu_mem_write | storeAddrSelect_14 & entries_14_lsu_mem_write
+    | storeAddrSelect_15 & entries_15_lsu_mem_write;
+  wire        _io_issue_store_addr_bits_T_1126 =
+    storeAddrSelect_0 & (|_GEN_0) | storeAddrSelect_1 & (|_GEN_2) | storeAddrSelect_2
+    & (|_GEN_4) | storeAddrSelect_3 & (|_GEN_6) | storeAddrSelect_4 & (|_GEN_8)
+    | storeAddrSelect_5 & (|_GEN_10) | storeAddrSelect_6 & (|_GEN_12) | storeAddrSelect_7
+    & (|_GEN_14) | storeAddrSelect_8 & (|_GEN_16) | storeAddrSelect_9 & (|_GEN_18)
+    | storeAddrSelect_10 & (|_GEN_20) | storeAddrSelect_11 & (|_GEN_22)
+    | storeAddrSelect_12 & (|_GEN_24) | storeAddrSelect_13 & (|_GEN_26)
+    | storeAddrSelect_14 & (|_GEN_28) | storeAddrSelect_15 & (|_GEN_30);
+  wire        _io_issue_store_addr_bits_T_1158 =
+    storeAddrSelect_0 & (|_GEN) | storeAddrSelect_1 & (|_GEN_1) | storeAddrSelect_2
+    & (|_GEN_3) | storeAddrSelect_3 & (|_GEN_5) | storeAddrSelect_4 & (|_GEN_7)
+    | storeAddrSelect_5 & (|_GEN_9) | storeAddrSelect_6 & (|_GEN_11) | storeAddrSelect_7
+    & (|_GEN_13) | storeAddrSelect_8 & (|_GEN_15) | storeAddrSelect_9 & (|_GEN_17)
+    | storeAddrSelect_10 & (|_GEN_19) | storeAddrSelect_11 & (|_GEN_21)
+    | storeAddrSelect_12 & (|_GEN_23) | storeAddrSelect_13 & (|_GEN_25)
+    | storeAddrSelect_14 & (|_GEN_27) | storeAddrSelect_15 & (|_GEN_29);
+  wire        ordinary = canIssue_0 & ~entries_0_lsu_mem_valid & ~residentMulDiv_0;
+  wire        eligible_1 = canIssue_1 & ~entries_1_lsu_mem_valid & ~residentMulDiv_1;
+  wire        eligible_2 = canIssue_2 & ~entries_2_lsu_mem_valid & ~residentMulDiv_2;
+  wire        eligible_3 = canIssue_3 & ~entries_3_lsu_mem_valid & ~residentMulDiv_3;
+  wire        eligible_4 = canIssue_4 & ~entries_4_lsu_mem_valid & ~residentMulDiv_4;
+  wire        eligible_5 = canIssue_5 & ~entries_5_lsu_mem_valid & ~residentMulDiv_5;
+  wire        eligible_6 = canIssue_6 & ~entries_6_lsu_mem_valid & ~residentMulDiv_6;
+  wire        eligible_7 = canIssue_7 & ~entries_7_lsu_mem_valid & ~residentMulDiv_7;
+  wire        eligible_8 = canIssue_8 & ~entries_8_lsu_mem_valid & ~residentMulDiv_8;
+  wire        eligible_9 = canIssue_9 & ~entries_9_lsu_mem_valid & ~residentMulDiv_9;
+  wire        eligible_10 = canIssue_10 & ~entries_10_lsu_mem_valid & ~residentMulDiv_10;
+  wire        eligible_11 = canIssue_11 & ~entries_11_lsu_mem_valid & ~residentMulDiv_11;
+  wire        eligible_12 = canIssue_12 & ~entries_12_lsu_mem_valid & ~residentMulDiv_12;
+  wire        eligible_13 = canIssue_13 & ~entries_13_lsu_mem_valid & ~residentMulDiv_13;
+  wire        eligible_14 = canIssue_14 & ~entries_14_lsu_mem_valid & ~residentMulDiv_14;
+  wire        eligible_15 = canIssue_15 & ~entries_15_lsu_mem_valid & ~residentMulDiv_15;
   wire        result_0 =
     ordinary
     & ~(eligible_1 & _lsuSelect1_older_T_2153 < _lsuSelect1_older_T_2145 | eligible_2
@@ -4422,13 +4918,13 @@ module WideRS(
   wire        fresh_0_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~io_enq_bits_0_src2_ready
     & io_enq_bits_0_src2_phys == io_cdb_pdest_3;
-  wire [4:0]  _GEN =
+  wire [4:0]  _GEN_31 =
     {io_enq_bits_0_src1_ready,
      fresh_0_src1Hit_3,
      fresh_0_src1Hit_2,
      fresh_0_src1Hit_1,
      fresh_0_src1Hit_0};
-  wire [4:0]  _GEN_0 =
+  wire [4:0]  _GEN_32 =
     {io_enq_bits_0_src2_ready,
      fresh_0_src2Hit_3,
      fresh_0_src2Hit_2,
@@ -4453,7 +4949,7 @@ module WideRS(
     | io_enq_bits_0_exu_alu_control == 5'hC | io_enq_bits_0_exu_alu_control == 5'hD
     | io_enq_bits_0_exu_alu_control == 5'hE | io_enq_bits_0_exu_alu_control == 5'hF
     | io_enq_bits_0_exu_alu_control == 5'h10 | io_enq_bits_0_exu_alu_control == 5'h11;
-  wire        freshReady_0 = allocAccept_0 & (|_GEN) & (|_GEN_0);
+  wire        freshReady_0 = allocAccept_0 & (|_GEN_31) & (|_GEN_32);
   wire        fresh_1_src1Hit_0 =
     io_cdb_valid_0 & (|io_cdb_pdest_0) & ~io_enq_bits_1_src1_ready
     & io_enq_bits_1_src1_phys == io_cdb_pdest_0;
@@ -4478,13 +4974,13 @@ module WideRS(
   wire        fresh_1_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~io_enq_bits_1_src2_ready
     & io_enq_bits_1_src2_phys == io_cdb_pdest_3;
-  wire [4:0]  _GEN_1 =
+  wire [4:0]  _GEN_33 =
     {io_enq_bits_1_src1_ready,
      fresh_1_src1Hit_3,
      fresh_1_src1Hit_2,
      fresh_1_src1Hit_1,
      fresh_1_src1Hit_0};
-  wire [4:0]  _GEN_2 =
+  wire [4:0]  _GEN_34 =
     {io_enq_bits_1_src2_ready,
      fresh_1_src2Hit_3,
      fresh_1_src2Hit_2,
@@ -4511,7 +5007,7 @@ module WideRS(
     | io_enq_bits_1_exu_alu_control == 5'h10 | io_enq_bits_1_exu_alu_control == 5'h11;
   wire        _olderFreshStore_T_7 = allocAccept_0 & io_enq_bits_0_lsu_mem_valid;
   wire        freshReady_1 =
-    allocAccept_1 & (|_GEN_1) & (|_GEN_2)
+    allocAccept_1 & (|_GEN_33) & (|_GEN_34)
     & ~(io_enq_bits_1_lsu_mem_valid & ~io_enq_bits_1_lsu_mem_write & _olderFreshStore_T_7
         & io_enq_bits_0_lsu_mem_write);
   wire        fresh_2_src1Hit_0 =
@@ -4538,13 +5034,13 @@ module WideRS(
   wire        fresh_2_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~io_enq_bits_2_src2_ready
     & io_enq_bits_2_src2_phys == io_cdb_pdest_3;
-  wire [4:0]  _GEN_3 =
+  wire [4:0]  _GEN_35 =
     {io_enq_bits_2_src1_ready,
      fresh_2_src1Hit_3,
      fresh_2_src1Hit_2,
      fresh_2_src1Hit_1,
      fresh_2_src1Hit_0};
-  wire [4:0]  _GEN_4 =
+  wire [4:0]  _GEN_36 =
     {io_enq_bits_2_src2_ready,
      fresh_2_src2Hit_3,
      fresh_2_src2Hit_2,
@@ -4571,7 +5067,7 @@ module WideRS(
     | io_enq_bits_2_exu_alu_control == 5'h10 | io_enq_bits_2_exu_alu_control == 5'h11;
   wire        _olderFreshStore_T_9 = allocAccept_1 & io_enq_bits_1_lsu_mem_valid;
   wire        freshReady_2 =
-    allocAccept_2 & (|_GEN_3) & (|_GEN_4)
+    allocAccept_2 & (|_GEN_35) & (|_GEN_36)
     & ~(io_enq_bits_2_lsu_mem_valid & ~io_enq_bits_2_lsu_mem_write
         & (_olderFreshStore_T_7 & io_enq_bits_0_lsu_mem_write | _olderFreshStore_T_9
            & io_enq_bits_1_lsu_mem_write));
@@ -4599,13 +5095,13 @@ module WideRS(
   wire        fresh_3_src2Hit_3 =
     io_cdb_valid_3 & (|io_cdb_pdest_3) & ~io_enq_bits_3_src2_ready
     & io_enq_bits_3_src2_phys == io_cdb_pdest_3;
-  wire [4:0]  _GEN_5 =
+  wire [4:0]  _GEN_37 =
     {io_enq_bits_3_src1_ready,
      fresh_3_src1Hit_3,
      fresh_3_src1Hit_2,
      fresh_3_src1Hit_1,
      fresh_3_src1Hit_0};
-  wire [4:0]  _GEN_6 =
+  wire [4:0]  _GEN_38 =
     {io_enq_bits_3_src2_ready,
      fresh_3_src2Hit_3,
      fresh_3_src2Hit_2,
@@ -4631,7 +5127,7 @@ module WideRS(
     | io_enq_bits_3_exu_alu_control == 5'hE | io_enq_bits_3_exu_alu_control == 5'hF
     | io_enq_bits_3_exu_alu_control == 5'h10 | io_enq_bits_3_exu_alu_control == 5'h11;
   wire        freshReady_3 =
-    allocAccept_3 & (|_GEN_5) & (|_GEN_6)
+    allocAccept_3 & (|_GEN_37) & (|_GEN_38)
     & ~(io_enq_bits_3_lsu_mem_valid & ~io_enq_bits_3_lsu_mem_write
         & (_olderFreshStore_T_7 & io_enq_bits_0_lsu_mem_write | _olderFreshStore_T_9
            & io_enq_bits_1_lsu_mem_write | allocAccept_2 & io_enq_bits_2_lsu_mem_valid
@@ -5049,7 +5545,7 @@ module WideRS(
     | io_issue_alu_fire_2 & freshAluGrant_2[3] | io_issue_alu_fire_3 & freshAluGrant_3[3]
     | io_issue_div_fire & ~(|_residentDiv_T) & freshDivGrant[3] | io_issue_lsu_fire
     & lsuFreshGrant[3] | io_issue_lsu1_fire & lsu1FreshGrant[3];
-  wire        _GEN_7 =
+  wire        _GEN_39 =
     io_issue_alu_fire_0
     & (|{result_15,
          result_14,
@@ -5067,7 +5563,7 @@ module WideRS(
          result_2,
          result_1,
          result_0});
-  wire [3:0]  _GEN_8 =
+  wire [3:0]  _GEN_40 =
     result_0
       ? 4'h0
       : result_1
@@ -5097,23 +5593,23 @@ module WideRS(
                                                       : result_13
                                                           ? 4'hD
                                                           : {3'h7, ~result_14};
-  wire        _GEN_9 = _GEN_7 & _GEN_8 == 4'h0;
-  wire        _GEN_10 = _GEN_7 & _GEN_8 == 4'h1;
-  wire        _GEN_11 = _GEN_7 & _GEN_8 == 4'h2;
-  wire        _GEN_12 = _GEN_7 & _GEN_8 == 4'h3;
-  wire        _GEN_13 = _GEN_7 & _GEN_8 == 4'h4;
-  wire        _GEN_14 = _GEN_7 & _GEN_8 == 4'h5;
-  wire        _GEN_15 = _GEN_7 & _GEN_8 == 4'h6;
-  wire        _GEN_16 = _GEN_7 & _GEN_8 == 4'h7;
-  wire        _GEN_17 = _GEN_7 & _GEN_8 == 4'h8;
-  wire        _GEN_18 = _GEN_7 & _GEN_8 == 4'h9;
-  wire        _GEN_19 = _GEN_7 & _GEN_8 == 4'hA;
-  wire        _GEN_20 = _GEN_7 & _GEN_8 == 4'hB;
-  wire        _GEN_21 = _GEN_7 & _GEN_8 == 4'hC;
-  wire        _GEN_22 = _GEN_7 & _GEN_8 == 4'hD;
-  wire        _GEN_23 = _GEN_7 & _GEN_8 == 4'hE;
-  wire        _GEN_24 = _GEN_7 & (&_GEN_8);
-  wire        _GEN_25 =
+  wire        _GEN_41 = _GEN_39 & _GEN_40 == 4'h0;
+  wire        _GEN_42 = _GEN_39 & _GEN_40 == 4'h1;
+  wire        _GEN_43 = _GEN_39 & _GEN_40 == 4'h2;
+  wire        _GEN_44 = _GEN_39 & _GEN_40 == 4'h3;
+  wire        _GEN_45 = _GEN_39 & _GEN_40 == 4'h4;
+  wire        _GEN_46 = _GEN_39 & _GEN_40 == 4'h5;
+  wire        _GEN_47 = _GEN_39 & _GEN_40 == 4'h6;
+  wire        _GEN_48 = _GEN_39 & _GEN_40 == 4'h7;
+  wire        _GEN_49 = _GEN_39 & _GEN_40 == 4'h8;
+  wire        _GEN_50 = _GEN_39 & _GEN_40 == 4'h9;
+  wire        _GEN_51 = _GEN_39 & _GEN_40 == 4'hA;
+  wire        _GEN_52 = _GEN_39 & _GEN_40 == 4'hB;
+  wire        _GEN_53 = _GEN_39 & _GEN_40 == 4'hC;
+  wire        _GEN_54 = _GEN_39 & _GEN_40 == 4'hD;
+  wire        _GEN_55 = _GEN_39 & _GEN_40 == 4'hE;
+  wire        _GEN_56 = _GEN_39 & (&_GEN_40);
+  wire        _GEN_57 =
     io_issue_alu_fire_1
     & (|{result_1_15,
          result_1_14,
@@ -5131,7 +5627,7 @@ module WideRS(
          result_1_2,
          result_1_1,
          result_1_0});
-  wire [3:0]  _GEN_26 =
+  wire [3:0]  _GEN_58 =
     result_1_0
       ? 4'h0
       : result_1_1
@@ -5161,39 +5657,39 @@ module WideRS(
                                                       : result_1_13
                                                           ? 4'hD
                                                           : {3'h7, ~result_1_14};
-  wire        _GEN_27 =
-    _GEN_25 ? _GEN_26 == 4'h0 | _GEN_9 | entries_0_issued : _GEN_9 | entries_0_issued;
-  wire        _GEN_28 =
-    _GEN_25 ? _GEN_26 == 4'h1 | _GEN_10 | entries_1_issued : _GEN_10 | entries_1_issued;
-  wire        _GEN_29 =
-    _GEN_25 ? _GEN_26 == 4'h2 | _GEN_11 | entries_2_issued : _GEN_11 | entries_2_issued;
-  wire        _GEN_30 =
-    _GEN_25 ? _GEN_26 == 4'h3 | _GEN_12 | entries_3_issued : _GEN_12 | entries_3_issued;
-  wire        _GEN_31 =
-    _GEN_25 ? _GEN_26 == 4'h4 | _GEN_13 | entries_4_issued : _GEN_13 | entries_4_issued;
-  wire        _GEN_32 =
-    _GEN_25 ? _GEN_26 == 4'h5 | _GEN_14 | entries_5_issued : _GEN_14 | entries_5_issued;
-  wire        _GEN_33 =
-    _GEN_25 ? _GEN_26 == 4'h6 | _GEN_15 | entries_6_issued : _GEN_15 | entries_6_issued;
-  wire        _GEN_34 =
-    _GEN_25 ? _GEN_26 == 4'h7 | _GEN_16 | entries_7_issued : _GEN_16 | entries_7_issued;
-  wire        _GEN_35 =
-    _GEN_25 ? _GEN_26 == 4'h8 | _GEN_17 | entries_8_issued : _GEN_17 | entries_8_issued;
-  wire        _GEN_36 =
-    _GEN_25 ? _GEN_26 == 4'h9 | _GEN_18 | entries_9_issued : _GEN_18 | entries_9_issued;
-  wire        _GEN_37 =
-    _GEN_25 ? _GEN_26 == 4'hA | _GEN_19 | entries_10_issued : _GEN_19 | entries_10_issued;
-  wire        _GEN_38 =
-    _GEN_25 ? _GEN_26 == 4'hB | _GEN_20 | entries_11_issued : _GEN_20 | entries_11_issued;
-  wire        _GEN_39 =
-    _GEN_25 ? _GEN_26 == 4'hC | _GEN_21 | entries_12_issued : _GEN_21 | entries_12_issued;
-  wire        _GEN_40 =
-    _GEN_25 ? _GEN_26 == 4'hD | _GEN_22 | entries_13_issued : _GEN_22 | entries_13_issued;
-  wire        _GEN_41 =
-    _GEN_25 ? _GEN_26 == 4'hE | _GEN_23 | entries_14_issued : _GEN_23 | entries_14_issued;
-  wire        _GEN_42 =
-    _GEN_25 ? (&_GEN_26) | _GEN_24 | entries_15_issued : _GEN_24 | entries_15_issued;
-  wire        _GEN_43 =
+  wire        _GEN_59 =
+    _GEN_57 ? _GEN_58 == 4'h0 | _GEN_41 | entries_0_issued : _GEN_41 | entries_0_issued;
+  wire        _GEN_60 =
+    _GEN_57 ? _GEN_58 == 4'h1 | _GEN_42 | entries_1_issued : _GEN_42 | entries_1_issued;
+  wire        _GEN_61 =
+    _GEN_57 ? _GEN_58 == 4'h2 | _GEN_43 | entries_2_issued : _GEN_43 | entries_2_issued;
+  wire        _GEN_62 =
+    _GEN_57 ? _GEN_58 == 4'h3 | _GEN_44 | entries_3_issued : _GEN_44 | entries_3_issued;
+  wire        _GEN_63 =
+    _GEN_57 ? _GEN_58 == 4'h4 | _GEN_45 | entries_4_issued : _GEN_45 | entries_4_issued;
+  wire        _GEN_64 =
+    _GEN_57 ? _GEN_58 == 4'h5 | _GEN_46 | entries_5_issued : _GEN_46 | entries_5_issued;
+  wire        _GEN_65 =
+    _GEN_57 ? _GEN_58 == 4'h6 | _GEN_47 | entries_6_issued : _GEN_47 | entries_6_issued;
+  wire        _GEN_66 =
+    _GEN_57 ? _GEN_58 == 4'h7 | _GEN_48 | entries_7_issued : _GEN_48 | entries_7_issued;
+  wire        _GEN_67 =
+    _GEN_57 ? _GEN_58 == 4'h8 | _GEN_49 | entries_8_issued : _GEN_49 | entries_8_issued;
+  wire        _GEN_68 =
+    _GEN_57 ? _GEN_58 == 4'h9 | _GEN_50 | entries_9_issued : _GEN_50 | entries_9_issued;
+  wire        _GEN_69 =
+    _GEN_57 ? _GEN_58 == 4'hA | _GEN_51 | entries_10_issued : _GEN_51 | entries_10_issued;
+  wire        _GEN_70 =
+    _GEN_57 ? _GEN_58 == 4'hB | _GEN_52 | entries_11_issued : _GEN_52 | entries_11_issued;
+  wire        _GEN_71 =
+    _GEN_57 ? _GEN_58 == 4'hC | _GEN_53 | entries_12_issued : _GEN_53 | entries_12_issued;
+  wire        _GEN_72 =
+    _GEN_57 ? _GEN_58 == 4'hD | _GEN_54 | entries_13_issued : _GEN_54 | entries_13_issued;
+  wire        _GEN_73 =
+    _GEN_57 ? _GEN_58 == 4'hE | _GEN_55 | entries_14_issued : _GEN_55 | entries_14_issued;
+  wire        _GEN_74 =
+    _GEN_57 ? (&_GEN_58) | _GEN_56 | entries_15_issued : _GEN_56 | entries_15_issued;
+  wire        _GEN_75 =
     io_issue_alu_fire_2
     & (|{result_2_15,
          result_2_14,
@@ -5211,7 +5707,7 @@ module WideRS(
          result_2_2,
          result_2_1,
          result_2_0});
-  wire [3:0]  _GEN_44 =
+  wire [3:0]  _GEN_76 =
     result_2_0
       ? 4'h0
       : result_2_1
@@ -5241,23 +5737,23 @@ module WideRS(
                                                       : result_2_13
                                                           ? 4'hD
                                                           : {3'h7, ~result_2_14};
-  wire        _GEN_45 = _GEN_43 & _GEN_44 == 4'h0;
-  wire        _GEN_46 = _GEN_43 & _GEN_44 == 4'h1;
-  wire        _GEN_47 = _GEN_43 & _GEN_44 == 4'h2;
-  wire        _GEN_48 = _GEN_43 & _GEN_44 == 4'h3;
-  wire        _GEN_49 = _GEN_43 & _GEN_44 == 4'h4;
-  wire        _GEN_50 = _GEN_43 & _GEN_44 == 4'h5;
-  wire        _GEN_51 = _GEN_43 & _GEN_44 == 4'h6;
-  wire        _GEN_52 = _GEN_43 & _GEN_44 == 4'h7;
-  wire        _GEN_53 = _GEN_43 & _GEN_44 == 4'h8;
-  wire        _GEN_54 = _GEN_43 & _GEN_44 == 4'h9;
-  wire        _GEN_55 = _GEN_43 & _GEN_44 == 4'hA;
-  wire        _GEN_56 = _GEN_43 & _GEN_44 == 4'hB;
-  wire        _GEN_57 = _GEN_43 & _GEN_44 == 4'hC;
-  wire        _GEN_58 = _GEN_43 & _GEN_44 == 4'hD;
-  wire        _GEN_59 = _GEN_43 & _GEN_44 == 4'hE;
-  wire        _GEN_60 = _GEN_43 & (&_GEN_44);
-  wire        _GEN_61 =
+  wire        _GEN_77 = _GEN_75 & _GEN_76 == 4'h0;
+  wire        _GEN_78 = _GEN_75 & _GEN_76 == 4'h1;
+  wire        _GEN_79 = _GEN_75 & _GEN_76 == 4'h2;
+  wire        _GEN_80 = _GEN_75 & _GEN_76 == 4'h3;
+  wire        _GEN_81 = _GEN_75 & _GEN_76 == 4'h4;
+  wire        _GEN_82 = _GEN_75 & _GEN_76 == 4'h5;
+  wire        _GEN_83 = _GEN_75 & _GEN_76 == 4'h6;
+  wire        _GEN_84 = _GEN_75 & _GEN_76 == 4'h7;
+  wire        _GEN_85 = _GEN_75 & _GEN_76 == 4'h8;
+  wire        _GEN_86 = _GEN_75 & _GEN_76 == 4'h9;
+  wire        _GEN_87 = _GEN_75 & _GEN_76 == 4'hA;
+  wire        _GEN_88 = _GEN_75 & _GEN_76 == 4'hB;
+  wire        _GEN_89 = _GEN_75 & _GEN_76 == 4'hC;
+  wire        _GEN_90 = _GEN_75 & _GEN_76 == 4'hD;
+  wire        _GEN_91 = _GEN_75 & _GEN_76 == 4'hE;
+  wire        _GEN_92 = _GEN_75 & (&_GEN_76);
+  wire        _GEN_93 =
     io_issue_alu_fire_3
     & (|{result_3_15,
          result_3_14,
@@ -5275,7 +5771,7 @@ module WideRS(
          result_3_2,
          result_3_1,
          result_3_0});
-  wire [3:0]  _GEN_62 =
+  wire [3:0]  _GEN_94 =
     result_3_0
       ? 4'h0
       : result_3_1
@@ -5305,24 +5801,34 @@ module WideRS(
                                                       : result_3_13
                                                           ? 4'hD
                                                           : {3'h7, ~result_3_14};
-  wire        _GEN_63 = _GEN_61 ? _GEN_62 == 4'h0 | _GEN_45 | _GEN_27 : _GEN_45 | _GEN_27;
-  wire        _GEN_64 = _GEN_61 ? _GEN_62 == 4'h1 | _GEN_46 | _GEN_28 : _GEN_46 | _GEN_28;
-  wire        _GEN_65 = _GEN_61 ? _GEN_62 == 4'h2 | _GEN_47 | _GEN_29 : _GEN_47 | _GEN_29;
-  wire        _GEN_66 = _GEN_61 ? _GEN_62 == 4'h3 | _GEN_48 | _GEN_30 : _GEN_48 | _GEN_30;
-  wire        _GEN_67 = _GEN_61 ? _GEN_62 == 4'h4 | _GEN_49 | _GEN_31 : _GEN_49 | _GEN_31;
-  wire        _GEN_68 = _GEN_61 ? _GEN_62 == 4'h5 | _GEN_50 | _GEN_32 : _GEN_50 | _GEN_32;
-  wire        _GEN_69 = _GEN_61 ? _GEN_62 == 4'h6 | _GEN_51 | _GEN_33 : _GEN_51 | _GEN_33;
-  wire        _GEN_70 = _GEN_61 ? _GEN_62 == 4'h7 | _GEN_52 | _GEN_34 : _GEN_52 | _GEN_34;
-  wire        _GEN_71 = _GEN_61 ? _GEN_62 == 4'h8 | _GEN_53 | _GEN_35 : _GEN_53 | _GEN_35;
-  wire        _GEN_72 = _GEN_61 ? _GEN_62 == 4'h9 | _GEN_54 | _GEN_36 : _GEN_54 | _GEN_36;
-  wire        _GEN_73 = _GEN_61 ? _GEN_62 == 4'hA | _GEN_55 | _GEN_37 : _GEN_55 | _GEN_37;
-  wire        _GEN_74 = _GEN_61 ? _GEN_62 == 4'hB | _GEN_56 | _GEN_38 : _GEN_56 | _GEN_38;
-  wire        _GEN_75 = _GEN_61 ? _GEN_62 == 4'hC | _GEN_57 | _GEN_39 : _GEN_57 | _GEN_39;
-  wire        _GEN_76 = _GEN_61 ? _GEN_62 == 4'hD | _GEN_58 | _GEN_40 : _GEN_58 | _GEN_40;
-  wire        _GEN_77 = _GEN_61 ? _GEN_62 == 4'hE | _GEN_59 | _GEN_41 : _GEN_59 | _GEN_41;
-  wire        _GEN_78 = _GEN_61 ? (&_GEN_62) | _GEN_60 | _GEN_42 : _GEN_60 | _GEN_42;
-  wire        _GEN_79 = io_issue_div_fire & (|_residentDiv_T);
-  wire [3:0]  _GEN_80 =
+  wire        _GEN_95 = _GEN_93 ? _GEN_94 == 4'h0 | _GEN_77 | _GEN_59 : _GEN_77 | _GEN_59;
+  wire        _GEN_96 = _GEN_93 ? _GEN_94 == 4'h1 | _GEN_78 | _GEN_60 : _GEN_78 | _GEN_60;
+  wire        _GEN_97 = _GEN_93 ? _GEN_94 == 4'h2 | _GEN_79 | _GEN_61 : _GEN_79 | _GEN_61;
+  wire        _GEN_98 = _GEN_93 ? _GEN_94 == 4'h3 | _GEN_80 | _GEN_62 : _GEN_80 | _GEN_62;
+  wire        _GEN_99 = _GEN_93 ? _GEN_94 == 4'h4 | _GEN_81 | _GEN_63 : _GEN_81 | _GEN_63;
+  wire        _GEN_100 =
+    _GEN_93 ? _GEN_94 == 4'h5 | _GEN_82 | _GEN_64 : _GEN_82 | _GEN_64;
+  wire        _GEN_101 =
+    _GEN_93 ? _GEN_94 == 4'h6 | _GEN_83 | _GEN_65 : _GEN_83 | _GEN_65;
+  wire        _GEN_102 =
+    _GEN_93 ? _GEN_94 == 4'h7 | _GEN_84 | _GEN_66 : _GEN_84 | _GEN_66;
+  wire        _GEN_103 =
+    _GEN_93 ? _GEN_94 == 4'h8 | _GEN_85 | _GEN_67 : _GEN_85 | _GEN_67;
+  wire        _GEN_104 =
+    _GEN_93 ? _GEN_94 == 4'h9 | _GEN_86 | _GEN_68 : _GEN_86 | _GEN_68;
+  wire        _GEN_105 =
+    _GEN_93 ? _GEN_94 == 4'hA | _GEN_87 | _GEN_69 : _GEN_87 | _GEN_69;
+  wire        _GEN_106 =
+    _GEN_93 ? _GEN_94 == 4'hB | _GEN_88 | _GEN_70 : _GEN_88 | _GEN_70;
+  wire        _GEN_107 =
+    _GEN_93 ? _GEN_94 == 4'hC | _GEN_89 | _GEN_71 : _GEN_89 | _GEN_71;
+  wire        _GEN_108 =
+    _GEN_93 ? _GEN_94 == 4'hD | _GEN_90 | _GEN_72 : _GEN_90 | _GEN_72;
+  wire        _GEN_109 =
+    _GEN_93 ? _GEN_94 == 4'hE | _GEN_91 | _GEN_73 : _GEN_91 | _GEN_73;
+  wire        _GEN_110 = _GEN_93 ? (&_GEN_94) | _GEN_92 | _GEN_74 : _GEN_92 | _GEN_74;
+  wire        _GEN_111 = io_issue_div_fire & (|_residentDiv_T);
+  wire [3:0]  _GEN_112 =
     divSelect_0
       ? 4'h0
       : divSelect_1
@@ -5352,24 +5858,24 @@ module WideRS(
                                                       : divSelect_13
                                                           ? 4'hD
                                                           : {3'h7, ~divSelect_14};
-  wire        _GEN_81 = _GEN_79 & _GEN_80 == 4'h0;
-  wire        _GEN_82 = _GEN_79 & _GEN_80 == 4'h1;
-  wire        _GEN_83 = _GEN_79 & _GEN_80 == 4'h2;
-  wire        _GEN_84 = _GEN_79 & _GEN_80 == 4'h3;
-  wire        _GEN_85 = _GEN_79 & _GEN_80 == 4'h4;
-  wire        _GEN_86 = _GEN_79 & _GEN_80 == 4'h5;
-  wire        _GEN_87 = _GEN_79 & _GEN_80 == 4'h6;
-  wire        _GEN_88 = _GEN_79 & _GEN_80 == 4'h7;
-  wire        _GEN_89 = _GEN_79 & _GEN_80 == 4'h8;
-  wire        _GEN_90 = _GEN_79 & _GEN_80 == 4'h9;
-  wire        _GEN_91 = _GEN_79 & _GEN_80 == 4'hA;
-  wire        _GEN_92 = _GEN_79 & _GEN_80 == 4'hB;
-  wire        _GEN_93 = _GEN_79 & _GEN_80 == 4'hC;
-  wire        _GEN_94 = _GEN_79 & _GEN_80 == 4'hD;
-  wire        _GEN_95 = _GEN_79 & _GEN_80 == 4'hE;
-  wire        _GEN_96 = _GEN_79 & (&_GEN_80);
-  wire        _GEN_97 = io_issue_lsu_fire & (|_residentLsu_T);
-  wire [3:0]  _GEN_98 =
+  wire        _GEN_113 = _GEN_111 & _GEN_112 == 4'h0;
+  wire        _GEN_114 = _GEN_111 & _GEN_112 == 4'h1;
+  wire        _GEN_115 = _GEN_111 & _GEN_112 == 4'h2;
+  wire        _GEN_116 = _GEN_111 & _GEN_112 == 4'h3;
+  wire        _GEN_117 = _GEN_111 & _GEN_112 == 4'h4;
+  wire        _GEN_118 = _GEN_111 & _GEN_112 == 4'h5;
+  wire        _GEN_119 = _GEN_111 & _GEN_112 == 4'h6;
+  wire        _GEN_120 = _GEN_111 & _GEN_112 == 4'h7;
+  wire        _GEN_121 = _GEN_111 & _GEN_112 == 4'h8;
+  wire        _GEN_122 = _GEN_111 & _GEN_112 == 4'h9;
+  wire        _GEN_123 = _GEN_111 & _GEN_112 == 4'hA;
+  wire        _GEN_124 = _GEN_111 & _GEN_112 == 4'hB;
+  wire        _GEN_125 = _GEN_111 & _GEN_112 == 4'hC;
+  wire        _GEN_126 = _GEN_111 & _GEN_112 == 4'hD;
+  wire        _GEN_127 = _GEN_111 & _GEN_112 == 4'hE;
+  wire        _GEN_128 = _GEN_111 & (&_GEN_112);
+  wire        _GEN_129 = io_issue_lsu_fire & (|_residentLsu_T);
+  wire [3:0]  _GEN_130 =
     lsuSelect_0
       ? 4'h0
       : lsuSelect_1
@@ -5399,8 +5905,8 @@ module WideRS(
                                                       : lsuSelect_13
                                                           ? 4'hD
                                                           : {3'h7, ~lsuSelect_14};
-  wire        _GEN_99 = io_issue_lsu1_fire & (|_residentLsu1_T);
-  wire [3:0]  _GEN_100 =
+  wire        _GEN_131 = io_issue_lsu1_fire & (|_residentLsu1_T);
+  wire [3:0]  _GEN_132 =
     lsuSelect1_0
       ? 4'h0
       : lsuSelect1_1
@@ -5431,539 +5937,648 @@ module WideRS(
                                                           ? 4'hD
                                                           : {3'h7, ~lsuSelect1_14};
   wire [3:0]  allocMask_4_shiftAmount = allocMask_3[0] ? 4'h0 : _io_enq_idx_3_T_29;
-  wire        _GEN_101 = io_cdb_valid_0 & (|io_cdb_pdest_0);
-  wire        _GEN_102 = entries_0_valid & ~entries_0_src1_ready;
-  wire        _GEN_103 = _GEN_101 & _GEN_102 & _issueEntry_0_src1Hit_T_4;
-  wire        _GEN_104 = entries_0_valid & ~entries_0_src2_ready;
-  wire        _GEN_105 = _GEN_101 & _GEN_104 & _issueEntry_0_src2Hit_T_4;
-  wire        _GEN_106 = entries_1_valid & ~entries_1_src1_ready;
-  wire        _GEN_107 = _GEN_101 & _GEN_106 & _issueEntry_1_src1Hit_T_4;
-  wire        _GEN_108 = entries_1_valid & ~entries_1_src2_ready;
-  wire        _GEN_109 = _GEN_101 & _GEN_108 & _issueEntry_1_src2Hit_T_4;
-  wire        _GEN_110 = entries_2_valid & ~entries_2_src1_ready;
-  wire        _GEN_111 = _GEN_101 & _GEN_110 & _issueEntry_2_src1Hit_T_4;
-  wire        _GEN_112 = entries_2_valid & ~entries_2_src2_ready;
-  wire        _GEN_113 = _GEN_101 & _GEN_112 & _issueEntry_2_src2Hit_T_4;
-  wire        _GEN_114 = entries_3_valid & ~entries_3_src1_ready;
-  wire        _GEN_115 = _GEN_101 & _GEN_114 & _issueEntry_3_src1Hit_T_4;
-  wire        _GEN_116 = entries_3_valid & ~entries_3_src2_ready;
-  wire        _GEN_117 = _GEN_101 & _GEN_116 & _issueEntry_3_src2Hit_T_4;
-  wire        _GEN_118 = entries_4_valid & ~entries_4_src1_ready;
-  wire        _GEN_119 = _GEN_101 & _GEN_118 & _issueEntry_4_src1Hit_T_4;
-  wire        _GEN_120 = entries_4_valid & ~entries_4_src2_ready;
-  wire        _GEN_121 = _GEN_101 & _GEN_120 & _issueEntry_4_src2Hit_T_4;
-  wire        _GEN_122 = entries_5_valid & ~entries_5_src1_ready;
-  wire        _GEN_123 = _GEN_101 & _GEN_122 & _issueEntry_5_src1Hit_T_4;
-  wire        _GEN_124 = entries_5_valid & ~entries_5_src2_ready;
-  wire        _GEN_125 = _GEN_101 & _GEN_124 & _issueEntry_5_src2Hit_T_4;
-  wire        _GEN_126 = entries_6_valid & ~entries_6_src1_ready;
-  wire        _GEN_127 = _GEN_101 & _GEN_126 & _issueEntry_6_src1Hit_T_4;
-  wire        _GEN_128 = entries_6_valid & ~entries_6_src2_ready;
-  wire        _GEN_129 = _GEN_101 & _GEN_128 & _issueEntry_6_src2Hit_T_4;
-  wire        _GEN_130 = entries_7_valid & ~entries_7_src1_ready;
-  wire        _GEN_131 = _GEN_101 & _GEN_130 & _issueEntry_7_src1Hit_T_4;
-  wire        _GEN_132 = entries_7_valid & ~entries_7_src2_ready;
-  wire        _GEN_133 = _GEN_101 & _GEN_132 & _issueEntry_7_src2Hit_T_4;
-  wire        _GEN_134 = entries_8_valid & ~entries_8_src1_ready;
-  wire        _GEN_135 = _GEN_101 & _GEN_134 & _issueEntry_8_src1Hit_T_4;
-  wire        _GEN_136 = entries_8_valid & ~entries_8_src2_ready;
-  wire        _GEN_137 = _GEN_101 & _GEN_136 & _issueEntry_8_src2Hit_T_4;
-  wire        _GEN_138 = entries_9_valid & ~entries_9_src1_ready;
-  wire        _GEN_139 = _GEN_101 & _GEN_138 & _issueEntry_9_src1Hit_T_4;
-  wire        _GEN_140 = entries_9_valid & ~entries_9_src2_ready;
-  wire        _GEN_141 = _GEN_101 & _GEN_140 & _issueEntry_9_src2Hit_T_4;
-  wire        _GEN_142 = entries_10_valid & ~entries_10_src1_ready;
-  wire        _GEN_143 = _GEN_101 & _GEN_142 & _issueEntry_10_src1Hit_T_4;
-  wire        _GEN_144 = entries_10_valid & ~entries_10_src2_ready;
-  wire        _GEN_145 = _GEN_101 & _GEN_144 & _issueEntry_10_src2Hit_T_4;
-  wire        _GEN_146 = entries_11_valid & ~entries_11_src1_ready;
-  wire        _GEN_147 = _GEN_101 & _GEN_146 & _issueEntry_11_src1Hit_T_4;
-  wire        _GEN_148 = entries_11_valid & ~entries_11_src2_ready;
-  wire        _GEN_149 = _GEN_101 & _GEN_148 & _issueEntry_11_src2Hit_T_4;
-  wire        _GEN_150 = entries_12_valid & ~entries_12_src1_ready;
-  wire        _GEN_151 = _GEN_101 & _GEN_150 & _issueEntry_12_src1Hit_T_4;
-  wire        _GEN_152 = entries_12_valid & ~entries_12_src2_ready;
-  wire        _GEN_153 = _GEN_101 & _GEN_152 & _issueEntry_12_src2Hit_T_4;
-  wire        _GEN_154 = entries_13_valid & ~entries_13_src1_ready;
-  wire        _GEN_155 = _GEN_101 & _GEN_154 & _issueEntry_13_src1Hit_T_4;
-  wire        _GEN_156 = entries_13_valid & ~entries_13_src2_ready;
-  wire        _GEN_157 = _GEN_101 & _GEN_156 & _issueEntry_13_src2Hit_T_4;
-  wire        _GEN_158 = entries_14_valid & ~entries_14_src1_ready;
-  wire        _GEN_159 = _GEN_101 & _GEN_158 & _issueEntry_14_src1Hit_T_4;
-  wire        _GEN_160 = entries_14_valid & ~entries_14_src2_ready;
-  wire        _GEN_161 = _GEN_101 & _GEN_160 & _issueEntry_14_src2Hit_T_4;
-  wire        _GEN_162 = entries_15_valid & ~entries_15_src1_ready;
-  wire        _GEN_163 = _GEN_101 & _GEN_162 & _issueEntry_15_src1Hit_T_4;
-  wire        _GEN_164 = entries_15_valid & ~entries_15_src2_ready;
-  wire        _GEN_165 = _GEN_101 & _GEN_164 & _issueEntry_15_src2Hit_T_4;
-  wire        _GEN_166 = io_cdb_valid_1 & (|io_cdb_pdest_1);
-  wire        _GEN_167 = _GEN_102 & _issueEntry_0_src1Hit_T_10;
-  wire        _GEN_168 =
-    _GEN_166
-      ? _GEN_167 | _GEN_103 | entries_0_src1_ready
-      : _GEN_103 | entries_0_src1_ready;
-  wire        _GEN_169 = _GEN_166 & _GEN_167;
-  wire        _GEN_170 = _GEN_104 & _issueEntry_0_src2Hit_T_10;
-  wire        _GEN_171 =
-    _GEN_166
-      ? _GEN_170 | _GEN_105 | entries_0_src2_ready
-      : _GEN_105 | entries_0_src2_ready;
-  wire        _GEN_172 = _GEN_166 & _GEN_170;
-  wire        _GEN_173 = _GEN_106 & _issueEntry_1_src1Hit_T_10;
-  wire        _GEN_174 =
-    _GEN_166
-      ? _GEN_173 | _GEN_107 | entries_1_src1_ready
-      : _GEN_107 | entries_1_src1_ready;
-  wire        _GEN_175 = _GEN_166 & _GEN_173;
-  wire        _GEN_176 = _GEN_108 & _issueEntry_1_src2Hit_T_10;
-  wire        _GEN_177 =
-    _GEN_166
-      ? _GEN_176 | _GEN_109 | entries_1_src2_ready
-      : _GEN_109 | entries_1_src2_ready;
-  wire        _GEN_178 = _GEN_166 & _GEN_176;
-  wire        _GEN_179 = _GEN_110 & _issueEntry_2_src1Hit_T_10;
-  wire        _GEN_180 =
-    _GEN_166
-      ? _GEN_179 | _GEN_111 | entries_2_src1_ready
-      : _GEN_111 | entries_2_src1_ready;
-  wire        _GEN_181 = _GEN_166 & _GEN_179;
-  wire        _GEN_182 = _GEN_112 & _issueEntry_2_src2Hit_T_10;
-  wire        _GEN_183 =
-    _GEN_166
-      ? _GEN_182 | _GEN_113 | entries_2_src2_ready
-      : _GEN_113 | entries_2_src2_ready;
-  wire        _GEN_184 = _GEN_166 & _GEN_182;
-  wire        _GEN_185 = _GEN_114 & _issueEntry_3_src1Hit_T_10;
-  wire        _GEN_186 =
-    _GEN_166
-      ? _GEN_185 | _GEN_115 | entries_3_src1_ready
-      : _GEN_115 | entries_3_src1_ready;
-  wire        _GEN_187 = _GEN_166 & _GEN_185;
-  wire        _GEN_188 = _GEN_116 & _issueEntry_3_src2Hit_T_10;
-  wire        _GEN_189 =
-    _GEN_166
-      ? _GEN_188 | _GEN_117 | entries_3_src2_ready
-      : _GEN_117 | entries_3_src2_ready;
-  wire        _GEN_190 = _GEN_166 & _GEN_188;
-  wire        _GEN_191 = _GEN_118 & _issueEntry_4_src1Hit_T_10;
-  wire        _GEN_192 =
-    _GEN_166
-      ? _GEN_191 | _GEN_119 | entries_4_src1_ready
-      : _GEN_119 | entries_4_src1_ready;
-  wire        _GEN_193 = _GEN_166 & _GEN_191;
-  wire        _GEN_194 = _GEN_120 & _issueEntry_4_src2Hit_T_10;
-  wire        _GEN_195 =
-    _GEN_166
-      ? _GEN_194 | _GEN_121 | entries_4_src2_ready
-      : _GEN_121 | entries_4_src2_ready;
-  wire        _GEN_196 = _GEN_166 & _GEN_194;
-  wire        _GEN_197 = _GEN_122 & _issueEntry_5_src1Hit_T_10;
-  wire        _GEN_198 =
-    _GEN_166
-      ? _GEN_197 | _GEN_123 | entries_5_src1_ready
-      : _GEN_123 | entries_5_src1_ready;
-  wire        _GEN_199 = _GEN_166 & _GEN_197;
-  wire        _GEN_200 = _GEN_124 & _issueEntry_5_src2Hit_T_10;
-  wire        _GEN_201 =
-    _GEN_166
-      ? _GEN_200 | _GEN_125 | entries_5_src2_ready
-      : _GEN_125 | entries_5_src2_ready;
-  wire        _GEN_202 = _GEN_166 & _GEN_200;
-  wire        _GEN_203 = _GEN_126 & _issueEntry_6_src1Hit_T_10;
-  wire        _GEN_204 =
-    _GEN_166
-      ? _GEN_203 | _GEN_127 | entries_6_src1_ready
-      : _GEN_127 | entries_6_src1_ready;
-  wire        _GEN_205 = _GEN_166 & _GEN_203;
-  wire        _GEN_206 = _GEN_128 & _issueEntry_6_src2Hit_T_10;
-  wire        _GEN_207 =
-    _GEN_166
-      ? _GEN_206 | _GEN_129 | entries_6_src2_ready
-      : _GEN_129 | entries_6_src2_ready;
-  wire        _GEN_208 = _GEN_166 & _GEN_206;
-  wire        _GEN_209 = _GEN_130 & _issueEntry_7_src1Hit_T_10;
-  wire        _GEN_210 =
-    _GEN_166
-      ? _GEN_209 | _GEN_131 | entries_7_src1_ready
-      : _GEN_131 | entries_7_src1_ready;
-  wire        _GEN_211 = _GEN_166 & _GEN_209;
-  wire        _GEN_212 = _GEN_132 & _issueEntry_7_src2Hit_T_10;
-  wire        _GEN_213 =
-    _GEN_166
-      ? _GEN_212 | _GEN_133 | entries_7_src2_ready
-      : _GEN_133 | entries_7_src2_ready;
-  wire        _GEN_214 = _GEN_166 & _GEN_212;
-  wire        _GEN_215 = _GEN_134 & _issueEntry_8_src1Hit_T_10;
-  wire        _GEN_216 =
-    _GEN_166
-      ? _GEN_215 | _GEN_135 | entries_8_src1_ready
-      : _GEN_135 | entries_8_src1_ready;
-  wire        _GEN_217 = _GEN_166 & _GEN_215;
-  wire        _GEN_218 = _GEN_136 & _issueEntry_8_src2Hit_T_10;
-  wire        _GEN_219 =
-    _GEN_166
-      ? _GEN_218 | _GEN_137 | entries_8_src2_ready
-      : _GEN_137 | entries_8_src2_ready;
-  wire        _GEN_220 = _GEN_166 & _GEN_218;
-  wire        _GEN_221 = _GEN_138 & _issueEntry_9_src1Hit_T_10;
-  wire        _GEN_222 =
-    _GEN_166
-      ? _GEN_221 | _GEN_139 | entries_9_src1_ready
-      : _GEN_139 | entries_9_src1_ready;
-  wire        _GEN_223 = _GEN_166 & _GEN_221;
-  wire        _GEN_224 = _GEN_140 & _issueEntry_9_src2Hit_T_10;
-  wire        _GEN_225 =
-    _GEN_166
-      ? _GEN_224 | _GEN_141 | entries_9_src2_ready
-      : _GEN_141 | entries_9_src2_ready;
-  wire        _GEN_226 = _GEN_166 & _GEN_224;
-  wire        _GEN_227 = _GEN_142 & _issueEntry_10_src1Hit_T_10;
-  wire        _GEN_228 =
-    _GEN_166
-      ? _GEN_227 | _GEN_143 | entries_10_src1_ready
-      : _GEN_143 | entries_10_src1_ready;
-  wire        _GEN_229 = _GEN_166 & _GEN_227;
-  wire        _GEN_230 = _GEN_144 & _issueEntry_10_src2Hit_T_10;
-  wire        _GEN_231 =
-    _GEN_166
-      ? _GEN_230 | _GEN_145 | entries_10_src2_ready
-      : _GEN_145 | entries_10_src2_ready;
-  wire        _GEN_232 = _GEN_166 & _GEN_230;
-  wire        _GEN_233 = _GEN_146 & _issueEntry_11_src1Hit_T_10;
-  wire        _GEN_234 =
-    _GEN_166
-      ? _GEN_233 | _GEN_147 | entries_11_src1_ready
-      : _GEN_147 | entries_11_src1_ready;
-  wire        _GEN_235 = _GEN_166 & _GEN_233;
-  wire        _GEN_236 = _GEN_148 & _issueEntry_11_src2Hit_T_10;
-  wire        _GEN_237 =
-    _GEN_166
-      ? _GEN_236 | _GEN_149 | entries_11_src2_ready
-      : _GEN_149 | entries_11_src2_ready;
-  wire        _GEN_238 = _GEN_166 & _GEN_236;
-  wire        _GEN_239 = _GEN_150 & _issueEntry_12_src1Hit_T_10;
-  wire        _GEN_240 =
-    _GEN_166
-      ? _GEN_239 | _GEN_151 | entries_12_src1_ready
-      : _GEN_151 | entries_12_src1_ready;
-  wire        _GEN_241 = _GEN_166 & _GEN_239;
-  wire        _GEN_242 = _GEN_152 & _issueEntry_12_src2Hit_T_10;
-  wire        _GEN_243 =
-    _GEN_166
-      ? _GEN_242 | _GEN_153 | entries_12_src2_ready
-      : _GEN_153 | entries_12_src2_ready;
-  wire        _GEN_244 = _GEN_166 & _GEN_242;
-  wire        _GEN_245 = _GEN_154 & _issueEntry_13_src1Hit_T_10;
-  wire        _GEN_246 =
-    _GEN_166
-      ? _GEN_245 | _GEN_155 | entries_13_src1_ready
-      : _GEN_155 | entries_13_src1_ready;
-  wire        _GEN_247 = _GEN_166 & _GEN_245;
-  wire        _GEN_248 = _GEN_156 & _issueEntry_13_src2Hit_T_10;
-  wire        _GEN_249 =
-    _GEN_166
-      ? _GEN_248 | _GEN_157 | entries_13_src2_ready
-      : _GEN_157 | entries_13_src2_ready;
-  wire        _GEN_250 = _GEN_166 & _GEN_248;
-  wire        _GEN_251 = _GEN_158 & _issueEntry_14_src1Hit_T_10;
-  wire        _GEN_252 =
-    _GEN_166
-      ? _GEN_251 | _GEN_159 | entries_14_src1_ready
-      : _GEN_159 | entries_14_src1_ready;
-  wire        _GEN_253 = _GEN_166 & _GEN_251;
-  wire        _GEN_254 = _GEN_160 & _issueEntry_14_src2Hit_T_10;
-  wire        _GEN_255 =
-    _GEN_166
-      ? _GEN_254 | _GEN_161 | entries_14_src2_ready
-      : _GEN_161 | entries_14_src2_ready;
-  wire        _GEN_256 = _GEN_166 & _GEN_254;
-  wire        _GEN_257 = _GEN_162 & _issueEntry_15_src1Hit_T_10;
-  wire        _GEN_258 =
-    _GEN_166
-      ? _GEN_257 | _GEN_163 | entries_15_src1_ready
-      : _GEN_163 | entries_15_src1_ready;
-  wire        _GEN_259 = _GEN_166 & _GEN_257;
-  wire        _GEN_260 = _GEN_164 & _issueEntry_15_src2Hit_T_10;
-  wire        _GEN_261 =
-    _GEN_166
-      ? _GEN_260 | _GEN_165 | entries_15_src2_ready
-      : _GEN_165 | entries_15_src2_ready;
-  wire        _GEN_262 = _GEN_166 & _GEN_260;
-  wire        _GEN_263 = io_cdb_valid_2 & (|io_cdb_pdest_2);
-  wire        _GEN_264 = _GEN_263 & _GEN_102 & _issueEntry_0_src1Hit_T_16;
-  wire        _GEN_265 = _GEN_263 & _GEN_104 & _issueEntry_0_src2Hit_T_16;
-  wire        _GEN_266 = _GEN_263 & _GEN_106 & _issueEntry_1_src1Hit_T_16;
-  wire        _GEN_267 = _GEN_263 & _GEN_108 & _issueEntry_1_src2Hit_T_16;
-  wire        _GEN_268 = _GEN_263 & _GEN_110 & _issueEntry_2_src1Hit_T_16;
-  wire        _GEN_269 = _GEN_263 & _GEN_112 & _issueEntry_2_src2Hit_T_16;
-  wire        _GEN_270 = _GEN_263 & _GEN_114 & _issueEntry_3_src1Hit_T_16;
-  wire        _GEN_271 = _GEN_263 & _GEN_116 & _issueEntry_3_src2Hit_T_16;
-  wire        _GEN_272 = _GEN_263 & _GEN_118 & _issueEntry_4_src1Hit_T_16;
-  wire        _GEN_273 = _GEN_263 & _GEN_120 & _issueEntry_4_src2Hit_T_16;
-  wire        _GEN_274 = _GEN_263 & _GEN_122 & _issueEntry_5_src1Hit_T_16;
-  wire        _GEN_275 = _GEN_263 & _GEN_124 & _issueEntry_5_src2Hit_T_16;
-  wire        _GEN_276 = _GEN_263 & _GEN_126 & _issueEntry_6_src1Hit_T_16;
-  wire        _GEN_277 = _GEN_263 & _GEN_128 & _issueEntry_6_src2Hit_T_16;
-  wire        _GEN_278 = _GEN_263 & _GEN_130 & _issueEntry_7_src1Hit_T_16;
-  wire        _GEN_279 = _GEN_263 & _GEN_132 & _issueEntry_7_src2Hit_T_16;
-  wire        _GEN_280 = _GEN_263 & _GEN_134 & _issueEntry_8_src1Hit_T_16;
-  wire        _GEN_281 = _GEN_263 & _GEN_136 & _issueEntry_8_src2Hit_T_16;
-  wire        _GEN_282 = _GEN_263 & _GEN_138 & _issueEntry_9_src1Hit_T_16;
-  wire        _GEN_283 = _GEN_263 & _GEN_140 & _issueEntry_9_src2Hit_T_16;
-  wire        _GEN_284 = _GEN_263 & _GEN_142 & _issueEntry_10_src1Hit_T_16;
-  wire        _GEN_285 = _GEN_263 & _GEN_144 & _issueEntry_10_src2Hit_T_16;
-  wire        _GEN_286 = _GEN_263 & _GEN_146 & _issueEntry_11_src1Hit_T_16;
-  wire        _GEN_287 = _GEN_263 & _GEN_148 & _issueEntry_11_src2Hit_T_16;
-  wire        _GEN_288 = _GEN_263 & _GEN_150 & _issueEntry_12_src1Hit_T_16;
-  wire        _GEN_289 = _GEN_263 & _GEN_152 & _issueEntry_12_src2Hit_T_16;
-  wire        _GEN_290 = _GEN_263 & _GEN_154 & _issueEntry_13_src1Hit_T_16;
-  wire        _GEN_291 = _GEN_263 & _GEN_156 & _issueEntry_13_src2Hit_T_16;
-  wire        _GEN_292 = _GEN_263 & _GEN_158 & _issueEntry_14_src1Hit_T_16;
-  wire        _GEN_293 = _GEN_263 & _GEN_160 & _issueEntry_14_src2Hit_T_16;
-  wire        _GEN_294 = _GEN_263 & _GEN_162 & _issueEntry_15_src1Hit_T_16;
-  wire        _GEN_295 = _GEN_263 & _GEN_164 & _issueEntry_15_src2Hit_T_16;
-  wire        _GEN_296 = io_cdb_valid_3 & (|io_cdb_pdest_3);
-  wire        _GEN_297 = _GEN_102 & _issueEntry_0_src1Hit_T_22;
-  wire        _GEN_298 = _GEN_296 ? _GEN_297 | _GEN_264 | _GEN_168 : _GEN_264 | _GEN_168;
-  wire        _GEN_299 = _GEN_296 & _GEN_297;
-  wire        _GEN_300 = _GEN_104 & _issueEntry_0_src2Hit_T_22;
-  wire        _GEN_301 = _GEN_296 ? _GEN_300 | _GEN_265 | _GEN_171 : _GEN_265 | _GEN_171;
-  wire        _GEN_302 = _GEN_296 & _GEN_300;
-  wire        _GEN_303 = _GEN_106 & _issueEntry_1_src1Hit_T_22;
-  wire        _GEN_304 = _GEN_296 ? _GEN_303 | _GEN_266 | _GEN_174 : _GEN_266 | _GEN_174;
-  wire        _GEN_305 = _GEN_296 & _GEN_303;
-  wire        _GEN_306 = _GEN_108 & _issueEntry_1_src2Hit_T_22;
-  wire        _GEN_307 = _GEN_296 ? _GEN_306 | _GEN_267 | _GEN_177 : _GEN_267 | _GEN_177;
-  wire        _GEN_308 = _GEN_296 & _GEN_306;
-  wire        _GEN_309 = _GEN_110 & _issueEntry_2_src1Hit_T_22;
-  wire        _GEN_310 = _GEN_296 ? _GEN_309 | _GEN_268 | _GEN_180 : _GEN_268 | _GEN_180;
-  wire        _GEN_311 = _GEN_296 & _GEN_309;
-  wire        _GEN_312 = _GEN_112 & _issueEntry_2_src2Hit_T_22;
-  wire        _GEN_313 = _GEN_296 ? _GEN_312 | _GEN_269 | _GEN_183 : _GEN_269 | _GEN_183;
-  wire        _GEN_314 = _GEN_296 & _GEN_312;
-  wire        _GEN_315 = _GEN_114 & _issueEntry_3_src1Hit_T_22;
-  wire        _GEN_316 = _GEN_296 ? _GEN_315 | _GEN_270 | _GEN_186 : _GEN_270 | _GEN_186;
-  wire        _GEN_317 = _GEN_296 & _GEN_315;
-  wire        _GEN_318 = _GEN_116 & _issueEntry_3_src2Hit_T_22;
-  wire        _GEN_319 = _GEN_296 ? _GEN_318 | _GEN_271 | _GEN_189 : _GEN_271 | _GEN_189;
-  wire        _GEN_320 = _GEN_296 & _GEN_318;
-  wire        _GEN_321 = _GEN_118 & _issueEntry_4_src1Hit_T_22;
-  wire        _GEN_322 = _GEN_296 ? _GEN_321 | _GEN_272 | _GEN_192 : _GEN_272 | _GEN_192;
-  wire        _GEN_323 = _GEN_296 & _GEN_321;
-  wire        _GEN_324 = _GEN_120 & _issueEntry_4_src2Hit_T_22;
-  wire        _GEN_325 = _GEN_296 ? _GEN_324 | _GEN_273 | _GEN_195 : _GEN_273 | _GEN_195;
-  wire        _GEN_326 = _GEN_296 & _GEN_324;
-  wire        _GEN_327 = _GEN_122 & _issueEntry_5_src1Hit_T_22;
-  wire        _GEN_328 = _GEN_296 ? _GEN_327 | _GEN_274 | _GEN_198 : _GEN_274 | _GEN_198;
-  wire        _GEN_329 = _GEN_296 & _GEN_327;
-  wire        _GEN_330 = _GEN_124 & _issueEntry_5_src2Hit_T_22;
-  wire        _GEN_331 = _GEN_296 ? _GEN_330 | _GEN_275 | _GEN_201 : _GEN_275 | _GEN_201;
-  wire        _GEN_332 = _GEN_296 & _GEN_330;
-  wire        _GEN_333 = _GEN_126 & _issueEntry_6_src1Hit_T_22;
-  wire        _GEN_334 = _GEN_296 ? _GEN_333 | _GEN_276 | _GEN_204 : _GEN_276 | _GEN_204;
-  wire        _GEN_335 = _GEN_296 & _GEN_333;
-  wire        _GEN_336 = _GEN_128 & _issueEntry_6_src2Hit_T_22;
-  wire        _GEN_337 = _GEN_296 ? _GEN_336 | _GEN_277 | _GEN_207 : _GEN_277 | _GEN_207;
-  wire        _GEN_338 = _GEN_296 & _GEN_336;
-  wire        _GEN_339 = _GEN_130 & _issueEntry_7_src1Hit_T_22;
-  wire        _GEN_340 = _GEN_296 ? _GEN_339 | _GEN_278 | _GEN_210 : _GEN_278 | _GEN_210;
-  wire        _GEN_341 = _GEN_296 & _GEN_339;
-  wire        _GEN_342 = _GEN_132 & _issueEntry_7_src2Hit_T_22;
-  wire        _GEN_343 = _GEN_296 ? _GEN_342 | _GEN_279 | _GEN_213 : _GEN_279 | _GEN_213;
-  wire        _GEN_344 = _GEN_296 & _GEN_342;
-  wire        _GEN_345 = _GEN_134 & _issueEntry_8_src1Hit_T_22;
-  wire        _GEN_346 = _GEN_296 ? _GEN_345 | _GEN_280 | _GEN_216 : _GEN_280 | _GEN_216;
-  wire        _GEN_347 = _GEN_296 & _GEN_345;
-  wire        _GEN_348 = _GEN_136 & _issueEntry_8_src2Hit_T_22;
-  wire        _GEN_349 = _GEN_296 ? _GEN_348 | _GEN_281 | _GEN_219 : _GEN_281 | _GEN_219;
-  wire        _GEN_350 = _GEN_296 & _GEN_348;
-  wire        _GEN_351 = _GEN_138 & _issueEntry_9_src1Hit_T_22;
-  wire        _GEN_352 = _GEN_296 ? _GEN_351 | _GEN_282 | _GEN_222 : _GEN_282 | _GEN_222;
-  wire        _GEN_353 = _GEN_296 & _GEN_351;
-  wire        _GEN_354 = _GEN_140 & _issueEntry_9_src2Hit_T_22;
-  wire        _GEN_355 = _GEN_296 ? _GEN_354 | _GEN_283 | _GEN_225 : _GEN_283 | _GEN_225;
-  wire        _GEN_356 = _GEN_296 & _GEN_354;
-  wire        _GEN_357 = _GEN_142 & _issueEntry_10_src1Hit_T_22;
-  wire        _GEN_358 = _GEN_296 ? _GEN_357 | _GEN_284 | _GEN_228 : _GEN_284 | _GEN_228;
-  wire        _GEN_359 = _GEN_296 & _GEN_357;
-  wire        _GEN_360 = _GEN_144 & _issueEntry_10_src2Hit_T_22;
-  wire        _GEN_361 = _GEN_296 ? _GEN_360 | _GEN_285 | _GEN_231 : _GEN_285 | _GEN_231;
-  wire        _GEN_362 = _GEN_296 & _GEN_360;
-  wire        _GEN_363 = _GEN_146 & _issueEntry_11_src1Hit_T_22;
-  wire        _GEN_364 = _GEN_296 ? _GEN_363 | _GEN_286 | _GEN_234 : _GEN_286 | _GEN_234;
-  wire        _GEN_365 = _GEN_296 & _GEN_363;
-  wire        _GEN_366 = _GEN_148 & _issueEntry_11_src2Hit_T_22;
-  wire        _GEN_367 = _GEN_296 ? _GEN_366 | _GEN_287 | _GEN_237 : _GEN_287 | _GEN_237;
-  wire        _GEN_368 = _GEN_296 & _GEN_366;
-  wire        _GEN_369 = _GEN_150 & _issueEntry_12_src1Hit_T_22;
-  wire        _GEN_370 = _GEN_296 ? _GEN_369 | _GEN_288 | _GEN_240 : _GEN_288 | _GEN_240;
-  wire        _GEN_371 = _GEN_296 & _GEN_369;
-  wire        _GEN_372 = _GEN_152 & _issueEntry_12_src2Hit_T_22;
-  wire        _GEN_373 = _GEN_296 ? _GEN_372 | _GEN_289 | _GEN_243 : _GEN_289 | _GEN_243;
-  wire        _GEN_374 = _GEN_296 & _GEN_372;
-  wire        _GEN_375 = _GEN_154 & _issueEntry_13_src1Hit_T_22;
-  wire        _GEN_376 = _GEN_296 ? _GEN_375 | _GEN_290 | _GEN_246 : _GEN_290 | _GEN_246;
-  wire        _GEN_377 = _GEN_296 & _GEN_375;
-  wire        _GEN_378 = _GEN_156 & _issueEntry_13_src2Hit_T_22;
-  wire        _GEN_379 = _GEN_296 ? _GEN_378 | _GEN_291 | _GEN_249 : _GEN_291 | _GEN_249;
-  wire        _GEN_380 = _GEN_296 & _GEN_378;
-  wire        _GEN_381 = _GEN_158 & _issueEntry_14_src1Hit_T_22;
-  wire        _GEN_382 = _GEN_296 ? _GEN_381 | _GEN_292 | _GEN_252 : _GEN_292 | _GEN_252;
-  wire        _GEN_383 = _GEN_296 & _GEN_381;
-  wire        _GEN_384 = _GEN_160 & _issueEntry_14_src2Hit_T_22;
-  wire        _GEN_385 = _GEN_296 ? _GEN_384 | _GEN_293 | _GEN_255 : _GEN_293 | _GEN_255;
-  wire        _GEN_386 = _GEN_296 & _GEN_384;
-  wire        _GEN_387 = _GEN_162 & _issueEntry_15_src1Hit_T_22;
-  wire        _GEN_388 = _GEN_296 ? _GEN_387 | _GEN_294 | _GEN_258 : _GEN_294 | _GEN_258;
-  wire        _GEN_389 = _GEN_296 & _GEN_387;
-  wire        _GEN_390 = _GEN_164 & _issueEntry_15_src2Hit_T_22;
-  wire        _GEN_391 = _GEN_296 ? _GEN_390 | _GEN_295 | _GEN_261 : _GEN_295 | _GEN_261;
-  wire        _GEN_392 = _GEN_296 & _GEN_390;
-  wire [4:0]  _GEN_393 = io_flush_idx - io_rob_head;
-  wire        _GEN_394 = ~freeByRob_0 & entries_0_valid;
-  wire        _GEN_395 = ~freeByRob_1 & entries_1_valid;
-  wire        _GEN_396 = ~freeByRob_2 & entries_2_valid;
-  wire        _GEN_397 = ~freeByRob_3 & entries_3_valid;
-  wire        _GEN_398 = ~freeByRob_4 & entries_4_valid;
-  wire        _GEN_399 = ~freeByRob_5 & entries_5_valid;
-  wire        _GEN_400 = ~freeByRob_6 & entries_6_valid;
-  wire        _GEN_401 = ~freeByRob_7 & entries_7_valid;
-  wire        _GEN_402 = ~freeByRob_8 & entries_8_valid;
-  wire        _GEN_403 = ~freeByRob_9 & entries_9_valid;
-  wire        _GEN_404 = ~freeByRob_10 & entries_10_valid;
-  wire        _GEN_405 = ~freeByRob_11 & entries_11_valid;
-  wire        _GEN_406 = ~freeByRob_12 & entries_12_valid;
-  wire        _GEN_407 = ~freeByRob_13 & entries_13_valid;
-  wire        _GEN_408 = ~freeByRob_14 & entries_14_valid;
-  wire        _GEN_409 = ~freeByRob_15 & entries_15_valid;
-  wire        _GEN_410 = allocAccept_0 & allocMask_1_shiftAmount == 4'h0;
-  wire        _GEN_411 = allocAccept_0 & allocMask_1_shiftAmount == 4'h1;
-  wire        _GEN_412 = allocAccept_0 & allocMask_1_shiftAmount == 4'h2;
-  wire        _GEN_413 = allocAccept_0 & allocMask_1_shiftAmount == 4'h3;
-  wire        _GEN_414 = allocAccept_0 & allocMask_1_shiftAmount == 4'h4;
-  wire        _GEN_415 = allocAccept_0 & allocMask_1_shiftAmount == 4'h5;
-  wire        _GEN_416 = allocAccept_0 & allocMask_1_shiftAmount == 4'h6;
-  wire        _GEN_417 = allocAccept_0 & allocMask_1_shiftAmount == 4'h7;
-  wire        _GEN_418 = allocAccept_0 & allocMask_1_shiftAmount == 4'h8;
-  wire        _GEN_419 = allocAccept_0 & allocMask_1_shiftAmount == 4'h9;
-  wire        _GEN_420 = allocAccept_0 & allocMask_1_shiftAmount == 4'hA;
-  wire        _GEN_421 = allocAccept_0 & allocMask_1_shiftAmount == 4'hB;
-  wire        _GEN_422 = allocAccept_0 & allocMask_1_shiftAmount == 4'hC;
-  wire        _GEN_423 = allocAccept_0 & allocMask_1_shiftAmount == 4'hD;
-  wire        _GEN_424 = allocAccept_0 & allocMask_1_shiftAmount == 4'hE;
-  wire        _GEN_425 = allocAccept_0 & (&allocMask_1_shiftAmount);
-  wire        _GEN_426 = allocMask_2_shiftAmount == 4'h0;
+  wire        _GEN_133 = io_cdb_valid_0 & (|io_cdb_pdest_0);
+  wire        _GEN_134 = entries_0_valid & ~entries_0_src1_ready;
+  wire        _GEN_135 = _GEN_133 & _GEN_134 & _issueEntry_0_src1Hit_T_4;
+  wire        _GEN_136 = entries_0_valid & ~entries_0_src2_ready;
+  wire        _GEN_137 = _GEN_133 & _GEN_136 & _issueEntry_0_src2Hit_T_4;
+  wire        _GEN_138 = entries_1_valid & ~entries_1_src1_ready;
+  wire        _GEN_139 = _GEN_133 & _GEN_138 & _issueEntry_1_src1Hit_T_4;
+  wire        _GEN_140 = entries_1_valid & ~entries_1_src2_ready;
+  wire        _GEN_141 = _GEN_133 & _GEN_140 & _issueEntry_1_src2Hit_T_4;
+  wire        _GEN_142 = entries_2_valid & ~entries_2_src1_ready;
+  wire        _GEN_143 = _GEN_133 & _GEN_142 & _issueEntry_2_src1Hit_T_4;
+  wire        _GEN_144 = entries_2_valid & ~entries_2_src2_ready;
+  wire        _GEN_145 = _GEN_133 & _GEN_144 & _issueEntry_2_src2Hit_T_4;
+  wire        _GEN_146 = entries_3_valid & ~entries_3_src1_ready;
+  wire        _GEN_147 = _GEN_133 & _GEN_146 & _issueEntry_3_src1Hit_T_4;
+  wire        _GEN_148 = entries_3_valid & ~entries_3_src2_ready;
+  wire        _GEN_149 = _GEN_133 & _GEN_148 & _issueEntry_3_src2Hit_T_4;
+  wire        _GEN_150 = entries_4_valid & ~entries_4_src1_ready;
+  wire        _GEN_151 = _GEN_133 & _GEN_150 & _issueEntry_4_src1Hit_T_4;
+  wire        _GEN_152 = entries_4_valid & ~entries_4_src2_ready;
+  wire        _GEN_153 = _GEN_133 & _GEN_152 & _issueEntry_4_src2Hit_T_4;
+  wire        _GEN_154 = entries_5_valid & ~entries_5_src1_ready;
+  wire        _GEN_155 = _GEN_133 & _GEN_154 & _issueEntry_5_src1Hit_T_4;
+  wire        _GEN_156 = entries_5_valid & ~entries_5_src2_ready;
+  wire        _GEN_157 = _GEN_133 & _GEN_156 & _issueEntry_5_src2Hit_T_4;
+  wire        _GEN_158 = entries_6_valid & ~entries_6_src1_ready;
+  wire        _GEN_159 = _GEN_133 & _GEN_158 & _issueEntry_6_src1Hit_T_4;
+  wire        _GEN_160 = entries_6_valid & ~entries_6_src2_ready;
+  wire        _GEN_161 = _GEN_133 & _GEN_160 & _issueEntry_6_src2Hit_T_4;
+  wire        _GEN_162 = entries_7_valid & ~entries_7_src1_ready;
+  wire        _GEN_163 = _GEN_133 & _GEN_162 & _issueEntry_7_src1Hit_T_4;
+  wire        _GEN_164 = entries_7_valid & ~entries_7_src2_ready;
+  wire        _GEN_165 = _GEN_133 & _GEN_164 & _issueEntry_7_src2Hit_T_4;
+  wire        _GEN_166 = entries_8_valid & ~entries_8_src1_ready;
+  wire        _GEN_167 = _GEN_133 & _GEN_166 & _issueEntry_8_src1Hit_T_4;
+  wire        _GEN_168 = entries_8_valid & ~entries_8_src2_ready;
+  wire        _GEN_169 = _GEN_133 & _GEN_168 & _issueEntry_8_src2Hit_T_4;
+  wire        _GEN_170 = entries_9_valid & ~entries_9_src1_ready;
+  wire        _GEN_171 = _GEN_133 & _GEN_170 & _issueEntry_9_src1Hit_T_4;
+  wire        _GEN_172 = entries_9_valid & ~entries_9_src2_ready;
+  wire        _GEN_173 = _GEN_133 & _GEN_172 & _issueEntry_9_src2Hit_T_4;
+  wire        _GEN_174 = entries_10_valid & ~entries_10_src1_ready;
+  wire        _GEN_175 = _GEN_133 & _GEN_174 & _issueEntry_10_src1Hit_T_4;
+  wire        _GEN_176 = entries_10_valid & ~entries_10_src2_ready;
+  wire        _GEN_177 = _GEN_133 & _GEN_176 & _issueEntry_10_src2Hit_T_4;
+  wire        _GEN_178 = entries_11_valid & ~entries_11_src1_ready;
+  wire        _GEN_179 = _GEN_133 & _GEN_178 & _issueEntry_11_src1Hit_T_4;
+  wire        _GEN_180 = entries_11_valid & ~entries_11_src2_ready;
+  wire        _GEN_181 = _GEN_133 & _GEN_180 & _issueEntry_11_src2Hit_T_4;
+  wire        _GEN_182 = entries_12_valid & ~entries_12_src1_ready;
+  wire        _GEN_183 = _GEN_133 & _GEN_182 & _issueEntry_12_src1Hit_T_4;
+  wire        _GEN_184 = entries_12_valid & ~entries_12_src2_ready;
+  wire        _GEN_185 = _GEN_133 & _GEN_184 & _issueEntry_12_src2Hit_T_4;
+  wire        _GEN_186 = entries_13_valid & ~entries_13_src1_ready;
+  wire        _GEN_187 = _GEN_133 & _GEN_186 & _issueEntry_13_src1Hit_T_4;
+  wire        _GEN_188 = entries_13_valid & ~entries_13_src2_ready;
+  wire        _GEN_189 = _GEN_133 & _GEN_188 & _issueEntry_13_src2Hit_T_4;
+  wire        _GEN_190 = entries_14_valid & ~entries_14_src1_ready;
+  wire        _GEN_191 = _GEN_133 & _GEN_190 & _issueEntry_14_src1Hit_T_4;
+  wire        _GEN_192 = entries_14_valid & ~entries_14_src2_ready;
+  wire        _GEN_193 = _GEN_133 & _GEN_192 & _issueEntry_14_src2Hit_T_4;
+  wire        _GEN_194 = entries_15_valid & ~entries_15_src1_ready;
+  wire        _GEN_195 = _GEN_133 & _GEN_194 & _issueEntry_15_src1Hit_T_4;
+  wire        _GEN_196 = entries_15_valid & ~entries_15_src2_ready;
+  wire        _GEN_197 = _GEN_133 & _GEN_196 & _issueEntry_15_src2Hit_T_4;
+  wire        _GEN_198 = io_cdb_valid_1 & (|io_cdb_pdest_1);
+  wire        _GEN_199 = _GEN_134 & _issueEntry_0_src1Hit_T_10;
+  wire        _GEN_200 =
+    _GEN_198
+      ? _GEN_199 | _GEN_135 | entries_0_src1_ready
+      : _GEN_135 | entries_0_src1_ready;
+  wire        _GEN_201 = _GEN_198 & _GEN_199;
+  wire        _GEN_202 = _GEN_136 & _issueEntry_0_src2Hit_T_10;
+  wire        _GEN_203 =
+    _GEN_198
+      ? _GEN_202 | _GEN_137 | entries_0_src2_ready
+      : _GEN_137 | entries_0_src2_ready;
+  wire        _GEN_204 = _GEN_198 & _GEN_202;
+  wire        _GEN_205 = _GEN_138 & _issueEntry_1_src1Hit_T_10;
+  wire        _GEN_206 =
+    _GEN_198
+      ? _GEN_205 | _GEN_139 | entries_1_src1_ready
+      : _GEN_139 | entries_1_src1_ready;
+  wire        _GEN_207 = _GEN_198 & _GEN_205;
+  wire        _GEN_208 = _GEN_140 & _issueEntry_1_src2Hit_T_10;
+  wire        _GEN_209 =
+    _GEN_198
+      ? _GEN_208 | _GEN_141 | entries_1_src2_ready
+      : _GEN_141 | entries_1_src2_ready;
+  wire        _GEN_210 = _GEN_198 & _GEN_208;
+  wire        _GEN_211 = _GEN_142 & _issueEntry_2_src1Hit_T_10;
+  wire        _GEN_212 =
+    _GEN_198
+      ? _GEN_211 | _GEN_143 | entries_2_src1_ready
+      : _GEN_143 | entries_2_src1_ready;
+  wire        _GEN_213 = _GEN_198 & _GEN_211;
+  wire        _GEN_214 = _GEN_144 & _issueEntry_2_src2Hit_T_10;
+  wire        _GEN_215 =
+    _GEN_198
+      ? _GEN_214 | _GEN_145 | entries_2_src2_ready
+      : _GEN_145 | entries_2_src2_ready;
+  wire        _GEN_216 = _GEN_198 & _GEN_214;
+  wire        _GEN_217 = _GEN_146 & _issueEntry_3_src1Hit_T_10;
+  wire        _GEN_218 =
+    _GEN_198
+      ? _GEN_217 | _GEN_147 | entries_3_src1_ready
+      : _GEN_147 | entries_3_src1_ready;
+  wire        _GEN_219 = _GEN_198 & _GEN_217;
+  wire        _GEN_220 = _GEN_148 & _issueEntry_3_src2Hit_T_10;
+  wire        _GEN_221 =
+    _GEN_198
+      ? _GEN_220 | _GEN_149 | entries_3_src2_ready
+      : _GEN_149 | entries_3_src2_ready;
+  wire        _GEN_222 = _GEN_198 & _GEN_220;
+  wire        _GEN_223 = _GEN_150 & _issueEntry_4_src1Hit_T_10;
+  wire        _GEN_224 =
+    _GEN_198
+      ? _GEN_223 | _GEN_151 | entries_4_src1_ready
+      : _GEN_151 | entries_4_src1_ready;
+  wire        _GEN_225 = _GEN_198 & _GEN_223;
+  wire        _GEN_226 = _GEN_152 & _issueEntry_4_src2Hit_T_10;
+  wire        _GEN_227 =
+    _GEN_198
+      ? _GEN_226 | _GEN_153 | entries_4_src2_ready
+      : _GEN_153 | entries_4_src2_ready;
+  wire        _GEN_228 = _GEN_198 & _GEN_226;
+  wire        _GEN_229 = _GEN_154 & _issueEntry_5_src1Hit_T_10;
+  wire        _GEN_230 =
+    _GEN_198
+      ? _GEN_229 | _GEN_155 | entries_5_src1_ready
+      : _GEN_155 | entries_5_src1_ready;
+  wire        _GEN_231 = _GEN_198 & _GEN_229;
+  wire        _GEN_232 = _GEN_156 & _issueEntry_5_src2Hit_T_10;
+  wire        _GEN_233 =
+    _GEN_198
+      ? _GEN_232 | _GEN_157 | entries_5_src2_ready
+      : _GEN_157 | entries_5_src2_ready;
+  wire        _GEN_234 = _GEN_198 & _GEN_232;
+  wire        _GEN_235 = _GEN_158 & _issueEntry_6_src1Hit_T_10;
+  wire        _GEN_236 =
+    _GEN_198
+      ? _GEN_235 | _GEN_159 | entries_6_src1_ready
+      : _GEN_159 | entries_6_src1_ready;
+  wire        _GEN_237 = _GEN_198 & _GEN_235;
+  wire        _GEN_238 = _GEN_160 & _issueEntry_6_src2Hit_T_10;
+  wire        _GEN_239 =
+    _GEN_198
+      ? _GEN_238 | _GEN_161 | entries_6_src2_ready
+      : _GEN_161 | entries_6_src2_ready;
+  wire        _GEN_240 = _GEN_198 & _GEN_238;
+  wire        _GEN_241 = _GEN_162 & _issueEntry_7_src1Hit_T_10;
+  wire        _GEN_242 =
+    _GEN_198
+      ? _GEN_241 | _GEN_163 | entries_7_src1_ready
+      : _GEN_163 | entries_7_src1_ready;
+  wire        _GEN_243 = _GEN_198 & _GEN_241;
+  wire        _GEN_244 = _GEN_164 & _issueEntry_7_src2Hit_T_10;
+  wire        _GEN_245 =
+    _GEN_198
+      ? _GEN_244 | _GEN_165 | entries_7_src2_ready
+      : _GEN_165 | entries_7_src2_ready;
+  wire        _GEN_246 = _GEN_198 & _GEN_244;
+  wire        _GEN_247 = _GEN_166 & _issueEntry_8_src1Hit_T_10;
+  wire        _GEN_248 =
+    _GEN_198
+      ? _GEN_247 | _GEN_167 | entries_8_src1_ready
+      : _GEN_167 | entries_8_src1_ready;
+  wire        _GEN_249 = _GEN_198 & _GEN_247;
+  wire        _GEN_250 = _GEN_168 & _issueEntry_8_src2Hit_T_10;
+  wire        _GEN_251 =
+    _GEN_198
+      ? _GEN_250 | _GEN_169 | entries_8_src2_ready
+      : _GEN_169 | entries_8_src2_ready;
+  wire        _GEN_252 = _GEN_198 & _GEN_250;
+  wire        _GEN_253 = _GEN_170 & _issueEntry_9_src1Hit_T_10;
+  wire        _GEN_254 =
+    _GEN_198
+      ? _GEN_253 | _GEN_171 | entries_9_src1_ready
+      : _GEN_171 | entries_9_src1_ready;
+  wire        _GEN_255 = _GEN_198 & _GEN_253;
+  wire        _GEN_256 = _GEN_172 & _issueEntry_9_src2Hit_T_10;
+  wire        _GEN_257 =
+    _GEN_198
+      ? _GEN_256 | _GEN_173 | entries_9_src2_ready
+      : _GEN_173 | entries_9_src2_ready;
+  wire        _GEN_258 = _GEN_198 & _GEN_256;
+  wire        _GEN_259 = _GEN_174 & _issueEntry_10_src1Hit_T_10;
+  wire        _GEN_260 =
+    _GEN_198
+      ? _GEN_259 | _GEN_175 | entries_10_src1_ready
+      : _GEN_175 | entries_10_src1_ready;
+  wire        _GEN_261 = _GEN_198 & _GEN_259;
+  wire        _GEN_262 = _GEN_176 & _issueEntry_10_src2Hit_T_10;
+  wire        _GEN_263 =
+    _GEN_198
+      ? _GEN_262 | _GEN_177 | entries_10_src2_ready
+      : _GEN_177 | entries_10_src2_ready;
+  wire        _GEN_264 = _GEN_198 & _GEN_262;
+  wire        _GEN_265 = _GEN_178 & _issueEntry_11_src1Hit_T_10;
+  wire        _GEN_266 =
+    _GEN_198
+      ? _GEN_265 | _GEN_179 | entries_11_src1_ready
+      : _GEN_179 | entries_11_src1_ready;
+  wire        _GEN_267 = _GEN_198 & _GEN_265;
+  wire        _GEN_268 = _GEN_180 & _issueEntry_11_src2Hit_T_10;
+  wire        _GEN_269 =
+    _GEN_198
+      ? _GEN_268 | _GEN_181 | entries_11_src2_ready
+      : _GEN_181 | entries_11_src2_ready;
+  wire        _GEN_270 = _GEN_198 & _GEN_268;
+  wire        _GEN_271 = _GEN_182 & _issueEntry_12_src1Hit_T_10;
+  wire        _GEN_272 =
+    _GEN_198
+      ? _GEN_271 | _GEN_183 | entries_12_src1_ready
+      : _GEN_183 | entries_12_src1_ready;
+  wire        _GEN_273 = _GEN_198 & _GEN_271;
+  wire        _GEN_274 = _GEN_184 & _issueEntry_12_src2Hit_T_10;
+  wire        _GEN_275 =
+    _GEN_198
+      ? _GEN_274 | _GEN_185 | entries_12_src2_ready
+      : _GEN_185 | entries_12_src2_ready;
+  wire        _GEN_276 = _GEN_198 & _GEN_274;
+  wire        _GEN_277 = _GEN_186 & _issueEntry_13_src1Hit_T_10;
+  wire        _GEN_278 =
+    _GEN_198
+      ? _GEN_277 | _GEN_187 | entries_13_src1_ready
+      : _GEN_187 | entries_13_src1_ready;
+  wire        _GEN_279 = _GEN_198 & _GEN_277;
+  wire        _GEN_280 = _GEN_188 & _issueEntry_13_src2Hit_T_10;
+  wire        _GEN_281 =
+    _GEN_198
+      ? _GEN_280 | _GEN_189 | entries_13_src2_ready
+      : _GEN_189 | entries_13_src2_ready;
+  wire        _GEN_282 = _GEN_198 & _GEN_280;
+  wire        _GEN_283 = _GEN_190 & _issueEntry_14_src1Hit_T_10;
+  wire        _GEN_284 =
+    _GEN_198
+      ? _GEN_283 | _GEN_191 | entries_14_src1_ready
+      : _GEN_191 | entries_14_src1_ready;
+  wire        _GEN_285 = _GEN_198 & _GEN_283;
+  wire        _GEN_286 = _GEN_192 & _issueEntry_14_src2Hit_T_10;
+  wire        _GEN_287 =
+    _GEN_198
+      ? _GEN_286 | _GEN_193 | entries_14_src2_ready
+      : _GEN_193 | entries_14_src2_ready;
+  wire        _GEN_288 = _GEN_198 & _GEN_286;
+  wire        _GEN_289 = _GEN_194 & _issueEntry_15_src1Hit_T_10;
+  wire        _GEN_290 =
+    _GEN_198
+      ? _GEN_289 | _GEN_195 | entries_15_src1_ready
+      : _GEN_195 | entries_15_src1_ready;
+  wire        _GEN_291 = _GEN_198 & _GEN_289;
+  wire        _GEN_292 = _GEN_196 & _issueEntry_15_src2Hit_T_10;
+  wire        _GEN_293 =
+    _GEN_198
+      ? _GEN_292 | _GEN_197 | entries_15_src2_ready
+      : _GEN_197 | entries_15_src2_ready;
+  wire        _GEN_294 = _GEN_198 & _GEN_292;
+  wire        _GEN_295 = io_cdb_valid_2 & (|io_cdb_pdest_2);
+  wire        _GEN_296 = _GEN_295 & _GEN_134 & _issueEntry_0_src1Hit_T_16;
+  wire        _GEN_297 = _GEN_295 & _GEN_136 & _issueEntry_0_src2Hit_T_16;
+  wire        _GEN_298 = _GEN_295 & _GEN_138 & _issueEntry_1_src1Hit_T_16;
+  wire        _GEN_299 = _GEN_295 & _GEN_140 & _issueEntry_1_src2Hit_T_16;
+  wire        _GEN_300 = _GEN_295 & _GEN_142 & _issueEntry_2_src1Hit_T_16;
+  wire        _GEN_301 = _GEN_295 & _GEN_144 & _issueEntry_2_src2Hit_T_16;
+  wire        _GEN_302 = _GEN_295 & _GEN_146 & _issueEntry_3_src1Hit_T_16;
+  wire        _GEN_303 = _GEN_295 & _GEN_148 & _issueEntry_3_src2Hit_T_16;
+  wire        _GEN_304 = _GEN_295 & _GEN_150 & _issueEntry_4_src1Hit_T_16;
+  wire        _GEN_305 = _GEN_295 & _GEN_152 & _issueEntry_4_src2Hit_T_16;
+  wire        _GEN_306 = _GEN_295 & _GEN_154 & _issueEntry_5_src1Hit_T_16;
+  wire        _GEN_307 = _GEN_295 & _GEN_156 & _issueEntry_5_src2Hit_T_16;
+  wire        _GEN_308 = _GEN_295 & _GEN_158 & _issueEntry_6_src1Hit_T_16;
+  wire        _GEN_309 = _GEN_295 & _GEN_160 & _issueEntry_6_src2Hit_T_16;
+  wire        _GEN_310 = _GEN_295 & _GEN_162 & _issueEntry_7_src1Hit_T_16;
+  wire        _GEN_311 = _GEN_295 & _GEN_164 & _issueEntry_7_src2Hit_T_16;
+  wire        _GEN_312 = _GEN_295 & _GEN_166 & _issueEntry_8_src1Hit_T_16;
+  wire        _GEN_313 = _GEN_295 & _GEN_168 & _issueEntry_8_src2Hit_T_16;
+  wire        _GEN_314 = _GEN_295 & _GEN_170 & _issueEntry_9_src1Hit_T_16;
+  wire        _GEN_315 = _GEN_295 & _GEN_172 & _issueEntry_9_src2Hit_T_16;
+  wire        _GEN_316 = _GEN_295 & _GEN_174 & _issueEntry_10_src1Hit_T_16;
+  wire        _GEN_317 = _GEN_295 & _GEN_176 & _issueEntry_10_src2Hit_T_16;
+  wire        _GEN_318 = _GEN_295 & _GEN_178 & _issueEntry_11_src1Hit_T_16;
+  wire        _GEN_319 = _GEN_295 & _GEN_180 & _issueEntry_11_src2Hit_T_16;
+  wire        _GEN_320 = _GEN_295 & _GEN_182 & _issueEntry_12_src1Hit_T_16;
+  wire        _GEN_321 = _GEN_295 & _GEN_184 & _issueEntry_12_src2Hit_T_16;
+  wire        _GEN_322 = _GEN_295 & _GEN_186 & _issueEntry_13_src1Hit_T_16;
+  wire        _GEN_323 = _GEN_295 & _GEN_188 & _issueEntry_13_src2Hit_T_16;
+  wire        _GEN_324 = _GEN_295 & _GEN_190 & _issueEntry_14_src1Hit_T_16;
+  wire        _GEN_325 = _GEN_295 & _GEN_192 & _issueEntry_14_src2Hit_T_16;
+  wire        _GEN_326 = _GEN_295 & _GEN_194 & _issueEntry_15_src1Hit_T_16;
+  wire        _GEN_327 = _GEN_295 & _GEN_196 & _issueEntry_15_src2Hit_T_16;
+  wire        _GEN_328 = io_cdb_valid_3 & (|io_cdb_pdest_3);
+  wire        _GEN_329 = _GEN_134 & _issueEntry_0_src1Hit_T_22;
+  wire        _GEN_330 = _GEN_328 ? _GEN_329 | _GEN_296 | _GEN_200 : _GEN_296 | _GEN_200;
+  wire        _GEN_331 = _GEN_328 & _GEN_329;
+  wire        _GEN_332 = _GEN_136 & _issueEntry_0_src2Hit_T_22;
+  wire        _GEN_333 = _GEN_328 ? _GEN_332 | _GEN_297 | _GEN_203 : _GEN_297 | _GEN_203;
+  wire        _GEN_334 = _GEN_328 & _GEN_332;
+  wire        _GEN_335 = _GEN_138 & _issueEntry_1_src1Hit_T_22;
+  wire        _GEN_336 = _GEN_328 ? _GEN_335 | _GEN_298 | _GEN_206 : _GEN_298 | _GEN_206;
+  wire        _GEN_337 = _GEN_328 & _GEN_335;
+  wire        _GEN_338 = _GEN_140 & _issueEntry_1_src2Hit_T_22;
+  wire        _GEN_339 = _GEN_328 ? _GEN_338 | _GEN_299 | _GEN_209 : _GEN_299 | _GEN_209;
+  wire        _GEN_340 = _GEN_328 & _GEN_338;
+  wire        _GEN_341 = _GEN_142 & _issueEntry_2_src1Hit_T_22;
+  wire        _GEN_342 = _GEN_328 ? _GEN_341 | _GEN_300 | _GEN_212 : _GEN_300 | _GEN_212;
+  wire        _GEN_343 = _GEN_328 & _GEN_341;
+  wire        _GEN_344 = _GEN_144 & _issueEntry_2_src2Hit_T_22;
+  wire        _GEN_345 = _GEN_328 ? _GEN_344 | _GEN_301 | _GEN_215 : _GEN_301 | _GEN_215;
+  wire        _GEN_346 = _GEN_328 & _GEN_344;
+  wire        _GEN_347 = _GEN_146 & _issueEntry_3_src1Hit_T_22;
+  wire        _GEN_348 = _GEN_328 ? _GEN_347 | _GEN_302 | _GEN_218 : _GEN_302 | _GEN_218;
+  wire        _GEN_349 = _GEN_328 & _GEN_347;
+  wire        _GEN_350 = _GEN_148 & _issueEntry_3_src2Hit_T_22;
+  wire        _GEN_351 = _GEN_328 ? _GEN_350 | _GEN_303 | _GEN_221 : _GEN_303 | _GEN_221;
+  wire        _GEN_352 = _GEN_328 & _GEN_350;
+  wire        _GEN_353 = _GEN_150 & _issueEntry_4_src1Hit_T_22;
+  wire        _GEN_354 = _GEN_328 ? _GEN_353 | _GEN_304 | _GEN_224 : _GEN_304 | _GEN_224;
+  wire        _GEN_355 = _GEN_328 & _GEN_353;
+  wire        _GEN_356 = _GEN_152 & _issueEntry_4_src2Hit_T_22;
+  wire        _GEN_357 = _GEN_328 ? _GEN_356 | _GEN_305 | _GEN_227 : _GEN_305 | _GEN_227;
+  wire        _GEN_358 = _GEN_328 & _GEN_356;
+  wire        _GEN_359 = _GEN_154 & _issueEntry_5_src1Hit_T_22;
+  wire        _GEN_360 = _GEN_328 ? _GEN_359 | _GEN_306 | _GEN_230 : _GEN_306 | _GEN_230;
+  wire        _GEN_361 = _GEN_328 & _GEN_359;
+  wire        _GEN_362 = _GEN_156 & _issueEntry_5_src2Hit_T_22;
+  wire        _GEN_363 = _GEN_328 ? _GEN_362 | _GEN_307 | _GEN_233 : _GEN_307 | _GEN_233;
+  wire        _GEN_364 = _GEN_328 & _GEN_362;
+  wire        _GEN_365 = _GEN_158 & _issueEntry_6_src1Hit_T_22;
+  wire        _GEN_366 = _GEN_328 ? _GEN_365 | _GEN_308 | _GEN_236 : _GEN_308 | _GEN_236;
+  wire        _GEN_367 = _GEN_328 & _GEN_365;
+  wire        _GEN_368 = _GEN_160 & _issueEntry_6_src2Hit_T_22;
+  wire        _GEN_369 = _GEN_328 ? _GEN_368 | _GEN_309 | _GEN_239 : _GEN_309 | _GEN_239;
+  wire        _GEN_370 = _GEN_328 & _GEN_368;
+  wire        _GEN_371 = _GEN_162 & _issueEntry_7_src1Hit_T_22;
+  wire        _GEN_372 = _GEN_328 ? _GEN_371 | _GEN_310 | _GEN_242 : _GEN_310 | _GEN_242;
+  wire        _GEN_373 = _GEN_328 & _GEN_371;
+  wire        _GEN_374 = _GEN_164 & _issueEntry_7_src2Hit_T_22;
+  wire        _GEN_375 = _GEN_328 ? _GEN_374 | _GEN_311 | _GEN_245 : _GEN_311 | _GEN_245;
+  wire        _GEN_376 = _GEN_328 & _GEN_374;
+  wire        _GEN_377 = _GEN_166 & _issueEntry_8_src1Hit_T_22;
+  wire        _GEN_378 = _GEN_328 ? _GEN_377 | _GEN_312 | _GEN_248 : _GEN_312 | _GEN_248;
+  wire        _GEN_379 = _GEN_328 & _GEN_377;
+  wire        _GEN_380 = _GEN_168 & _issueEntry_8_src2Hit_T_22;
+  wire        _GEN_381 = _GEN_328 ? _GEN_380 | _GEN_313 | _GEN_251 : _GEN_313 | _GEN_251;
+  wire        _GEN_382 = _GEN_328 & _GEN_380;
+  wire        _GEN_383 = _GEN_170 & _issueEntry_9_src1Hit_T_22;
+  wire        _GEN_384 = _GEN_328 ? _GEN_383 | _GEN_314 | _GEN_254 : _GEN_314 | _GEN_254;
+  wire        _GEN_385 = _GEN_328 & _GEN_383;
+  wire        _GEN_386 = _GEN_172 & _issueEntry_9_src2Hit_T_22;
+  wire        _GEN_387 = _GEN_328 ? _GEN_386 | _GEN_315 | _GEN_257 : _GEN_315 | _GEN_257;
+  wire        _GEN_388 = _GEN_328 & _GEN_386;
+  wire        _GEN_389 = _GEN_174 & _issueEntry_10_src1Hit_T_22;
+  wire        _GEN_390 = _GEN_328 ? _GEN_389 | _GEN_316 | _GEN_260 : _GEN_316 | _GEN_260;
+  wire        _GEN_391 = _GEN_328 & _GEN_389;
+  wire        _GEN_392 = _GEN_176 & _issueEntry_10_src2Hit_T_22;
+  wire        _GEN_393 = _GEN_328 ? _GEN_392 | _GEN_317 | _GEN_263 : _GEN_317 | _GEN_263;
+  wire        _GEN_394 = _GEN_328 & _GEN_392;
+  wire        _GEN_395 = _GEN_178 & _issueEntry_11_src1Hit_T_22;
+  wire        _GEN_396 = _GEN_328 ? _GEN_395 | _GEN_318 | _GEN_266 : _GEN_318 | _GEN_266;
+  wire        _GEN_397 = _GEN_328 & _GEN_395;
+  wire        _GEN_398 = _GEN_180 & _issueEntry_11_src2Hit_T_22;
+  wire        _GEN_399 = _GEN_328 ? _GEN_398 | _GEN_319 | _GEN_269 : _GEN_319 | _GEN_269;
+  wire        _GEN_400 = _GEN_328 & _GEN_398;
+  wire        _GEN_401 = _GEN_182 & _issueEntry_12_src1Hit_T_22;
+  wire        _GEN_402 = _GEN_328 ? _GEN_401 | _GEN_320 | _GEN_272 : _GEN_320 | _GEN_272;
+  wire        _GEN_403 = _GEN_328 & _GEN_401;
+  wire        _GEN_404 = _GEN_184 & _issueEntry_12_src2Hit_T_22;
+  wire        _GEN_405 = _GEN_328 ? _GEN_404 | _GEN_321 | _GEN_275 : _GEN_321 | _GEN_275;
+  wire        _GEN_406 = _GEN_328 & _GEN_404;
+  wire        _GEN_407 = _GEN_186 & _issueEntry_13_src1Hit_T_22;
+  wire        _GEN_408 = _GEN_328 ? _GEN_407 | _GEN_322 | _GEN_278 : _GEN_322 | _GEN_278;
+  wire        _GEN_409 = _GEN_328 & _GEN_407;
+  wire        _GEN_410 = _GEN_188 & _issueEntry_13_src2Hit_T_22;
+  wire        _GEN_411 = _GEN_328 ? _GEN_410 | _GEN_323 | _GEN_281 : _GEN_323 | _GEN_281;
+  wire        _GEN_412 = _GEN_328 & _GEN_410;
+  wire        _GEN_413 = _GEN_190 & _issueEntry_14_src1Hit_T_22;
+  wire        _GEN_414 = _GEN_328 ? _GEN_413 | _GEN_324 | _GEN_284 : _GEN_324 | _GEN_284;
+  wire        _GEN_415 = _GEN_328 & _GEN_413;
+  wire        _GEN_416 = _GEN_192 & _issueEntry_14_src2Hit_T_22;
+  wire        _GEN_417 = _GEN_328 ? _GEN_416 | _GEN_325 | _GEN_287 : _GEN_325 | _GEN_287;
+  wire        _GEN_418 = _GEN_328 & _GEN_416;
+  wire        _GEN_419 = _GEN_194 & _issueEntry_15_src1Hit_T_22;
+  wire        _GEN_420 = _GEN_328 ? _GEN_419 | _GEN_326 | _GEN_290 : _GEN_326 | _GEN_290;
+  wire        _GEN_421 = _GEN_328 & _GEN_419;
+  wire        _GEN_422 = _GEN_196 & _issueEntry_15_src2Hit_T_22;
+  wire        _GEN_423 = _GEN_328 ? _GEN_422 | _GEN_327 | _GEN_293 : _GEN_327 | _GEN_293;
+  wire        _GEN_424 = _GEN_328 & _GEN_422;
+  wire [4:0]  _GEN_425 = io_flush_idx - io_rob_head;
+  wire        _GEN_426 =
+    io_flush_all | entries_0_valid & _lsuSelect1_older_T_2145 > _GEN_425;
   wire        _GEN_427 =
-    allocAccept_1 ? _GEN_426 | _GEN_410 | _GEN_394 : _GEN_410 | _GEN_394;
-  wire        _GEN_428 = allocAccept_1 & _GEN_426;
-  wire        _GEN_429 = allocMask_2_shiftAmount == 4'h1;
+    io_flush_all | entries_1_valid & _lsuSelect1_older_T_2153 > _GEN_425;
+  wire        _GEN_428 =
+    io_flush_all | entries_2_valid & _lsuSelect1_older_T_2161 > _GEN_425;
+  wire        _GEN_429 =
+    io_flush_all | entries_3_valid & _lsuSelect1_older_T_2169 > _GEN_425;
   wire        _GEN_430 =
-    allocAccept_1 ? _GEN_429 | _GEN_411 | _GEN_395 : _GEN_411 | _GEN_395;
-  wire        _GEN_431 = allocAccept_1 & _GEN_429;
-  wire        _GEN_432 = allocMask_2_shiftAmount == 4'h2;
+    io_flush_all | entries_4_valid & _lsuSelect1_older_T_2177 > _GEN_425;
+  wire        _GEN_431 =
+    io_flush_all | entries_5_valid & _lsuSelect1_older_T_2185 > _GEN_425;
+  wire        _GEN_432 =
+    io_flush_all | entries_6_valid & _lsuSelect1_older_T_2193 > _GEN_425;
   wire        _GEN_433 =
-    allocAccept_1 ? _GEN_432 | _GEN_412 | _GEN_396 : _GEN_412 | _GEN_396;
-  wire        _GEN_434 = allocAccept_1 & _GEN_432;
-  wire        _GEN_435 = allocMask_2_shiftAmount == 4'h3;
+    io_flush_all | entries_7_valid & _lsuSelect1_older_T_2201 > _GEN_425;
+  wire        _GEN_434 =
+    io_flush_all | entries_8_valid & _lsuSelect1_older_T_2209 > _GEN_425;
+  wire        _GEN_435 =
+    io_flush_all | entries_9_valid & _lsuSelect1_older_T_2217 > _GEN_425;
   wire        _GEN_436 =
-    allocAccept_1 ? _GEN_435 | _GEN_413 | _GEN_397 : _GEN_413 | _GEN_397;
-  wire        _GEN_437 = allocAccept_1 & _GEN_435;
-  wire        _GEN_438 = allocMask_2_shiftAmount == 4'h4;
+    io_flush_all | entries_10_valid & _lsuSelect1_older_T_2225 > _GEN_425;
+  wire        _GEN_437 =
+    io_flush_all | entries_11_valid & _lsuSelect1_older_T_2233 > _GEN_425;
+  wire        _GEN_438 =
+    io_flush_all | entries_12_valid & _lsuSelect1_older_T_2241 > _GEN_425;
   wire        _GEN_439 =
-    allocAccept_1 ? _GEN_438 | _GEN_414 | _GEN_398 : _GEN_414 | _GEN_398;
-  wire        _GEN_440 = allocAccept_1 & _GEN_438;
-  wire        _GEN_441 = allocMask_2_shiftAmount == 4'h5;
-  wire        _GEN_442 =
-    allocAccept_1 ? _GEN_441 | _GEN_415 | _GEN_399 : _GEN_415 | _GEN_399;
-  wire        _GEN_443 = allocAccept_1 & _GEN_441;
-  wire        _GEN_444 = allocMask_2_shiftAmount == 4'h6;
-  wire        _GEN_445 =
-    allocAccept_1 ? _GEN_444 | _GEN_416 | _GEN_400 : _GEN_416 | _GEN_400;
-  wire        _GEN_446 = allocAccept_1 & _GEN_444;
-  wire        _GEN_447 = allocMask_2_shiftAmount == 4'h7;
-  wire        _GEN_448 =
-    allocAccept_1 ? _GEN_447 | _GEN_417 | _GEN_401 : _GEN_417 | _GEN_401;
-  wire        _GEN_449 = allocAccept_1 & _GEN_447;
-  wire        _GEN_450 = allocMask_2_shiftAmount == 4'h8;
-  wire        _GEN_451 =
-    allocAccept_1 ? _GEN_450 | _GEN_418 | _GEN_402 : _GEN_418 | _GEN_402;
-  wire        _GEN_452 = allocAccept_1 & _GEN_450;
-  wire        _GEN_453 = allocMask_2_shiftAmount == 4'h9;
-  wire        _GEN_454 =
-    allocAccept_1 ? _GEN_453 | _GEN_419 | _GEN_403 : _GEN_419 | _GEN_403;
-  wire        _GEN_455 = allocAccept_1 & _GEN_453;
-  wire        _GEN_456 = allocMask_2_shiftAmount == 4'hA;
-  wire        _GEN_457 =
-    allocAccept_1 ? _GEN_456 | _GEN_420 | _GEN_404 : _GEN_420 | _GEN_404;
-  wire        _GEN_458 = allocAccept_1 & _GEN_456;
-  wire        _GEN_459 = allocMask_2_shiftAmount == 4'hB;
-  wire        _GEN_460 =
-    allocAccept_1 ? _GEN_459 | _GEN_421 | _GEN_405 : _GEN_421 | _GEN_405;
-  wire        _GEN_461 = allocAccept_1 & _GEN_459;
-  wire        _GEN_462 = allocMask_2_shiftAmount == 4'hC;
-  wire        _GEN_463 =
-    allocAccept_1 ? _GEN_462 | _GEN_422 | _GEN_406 : _GEN_422 | _GEN_406;
-  wire        _GEN_464 = allocAccept_1 & _GEN_462;
-  wire        _GEN_465 = allocMask_2_shiftAmount == 4'hD;
-  wire        _GEN_466 =
-    allocAccept_1 ? _GEN_465 | _GEN_423 | _GEN_407 : _GEN_423 | _GEN_407;
-  wire        _GEN_467 = allocAccept_1 & _GEN_465;
-  wire        _GEN_468 = allocMask_2_shiftAmount == 4'hE;
-  wire        _GEN_469 =
-    allocAccept_1 ? _GEN_468 | _GEN_424 | _GEN_408 : _GEN_424 | _GEN_408;
-  wire        _GEN_470 = allocAccept_1 & _GEN_468;
-  wire        _GEN_471 =
-    allocAccept_1
-      ? (&allocMask_2_shiftAmount) | _GEN_425 | _GEN_409
-      : _GEN_425 | _GEN_409;
-  wire        _GEN_472 = allocAccept_1 & (&allocMask_2_shiftAmount);
-  wire        _GEN_473 = allocAccept_2 & allocMask_3_shiftAmount == 4'h0;
-  wire        _GEN_474 = allocAccept_2 & allocMask_3_shiftAmount == 4'h1;
-  wire        _GEN_475 = allocAccept_2 & allocMask_3_shiftAmount == 4'h2;
-  wire        _GEN_476 = allocAccept_2 & allocMask_3_shiftAmount == 4'h3;
-  wire        _GEN_477 = allocAccept_2 & allocMask_3_shiftAmount == 4'h4;
-  wire        _GEN_478 = allocAccept_2 & allocMask_3_shiftAmount == 4'h5;
-  wire        _GEN_479 = allocAccept_2 & allocMask_3_shiftAmount == 4'h6;
-  wire        _GEN_480 = allocAccept_2 & allocMask_3_shiftAmount == 4'h7;
-  wire        _GEN_481 = allocAccept_2 & allocMask_3_shiftAmount == 4'h8;
-  wire        _GEN_482 = allocAccept_2 & allocMask_3_shiftAmount == 4'h9;
-  wire        _GEN_483 = allocAccept_2 & allocMask_3_shiftAmount == 4'hA;
-  wire        _GEN_484 = allocAccept_2 & allocMask_3_shiftAmount == 4'hB;
-  wire        _GEN_485 = allocAccept_2 & allocMask_3_shiftAmount == 4'hC;
-  wire        _GEN_486 = allocAccept_2 & allocMask_3_shiftAmount == 4'hD;
-  wire        _GEN_487 = allocAccept_2 & allocMask_3_shiftAmount == 4'hE;
-  wire        _GEN_488 = allocAccept_2 & (&allocMask_3_shiftAmount);
-  wire        _GEN_489 = allocMask_4_shiftAmount == 4'h0;
-  wire        _GEN_490 = allocAccept_3 & _GEN_489;
-  wire        _GEN_491 = allocMask_4_shiftAmount == 4'h1;
-  wire        _GEN_492 = allocAccept_3 & _GEN_491;
-  wire        _GEN_493 = allocMask_4_shiftAmount == 4'h2;
-  wire        _GEN_494 = allocAccept_3 & _GEN_493;
-  wire        _GEN_495 = allocMask_4_shiftAmount == 4'h3;
-  wire        _GEN_496 = allocAccept_3 & _GEN_495;
-  wire        _GEN_497 = allocMask_4_shiftAmount == 4'h4;
-  wire        _GEN_498 = allocAccept_3 & _GEN_497;
-  wire        _GEN_499 = allocMask_4_shiftAmount == 4'h5;
-  wire        _GEN_500 = allocAccept_3 & _GEN_499;
-  wire        _GEN_501 = allocMask_4_shiftAmount == 4'h6;
-  wire        _GEN_502 = allocAccept_3 & _GEN_501;
-  wire        _GEN_503 = allocMask_4_shiftAmount == 4'h7;
-  wire        _GEN_504 = allocAccept_3 & _GEN_503;
-  wire        _GEN_505 = allocMask_4_shiftAmount == 4'h8;
-  wire        _GEN_506 = allocAccept_3 & _GEN_505;
-  wire        _GEN_507 = allocMask_4_shiftAmount == 4'h9;
-  wire        _GEN_508 = allocAccept_3 & _GEN_507;
-  wire        _GEN_509 = allocMask_4_shiftAmount == 4'hA;
-  wire        _GEN_510 = allocAccept_3 & _GEN_509;
-  wire        _GEN_511 = allocMask_4_shiftAmount == 4'hB;
-  wire        _GEN_512 = allocAccept_3 & _GEN_511;
-  wire        _GEN_513 = allocMask_4_shiftAmount == 4'hC;
-  wire        _GEN_514 = allocAccept_3 & _GEN_513;
-  wire        _GEN_515 = allocMask_4_shiftAmount == 4'hD;
-  wire        _GEN_516 = allocAccept_3 & _GEN_515;
-  wire        _GEN_517 = allocMask_4_shiftAmount == 4'hE;
-  wire        _GEN_518 = allocAccept_3 & _GEN_517;
-  wire        _GEN_519 = allocAccept_3 & (&allocMask_4_shiftAmount);
+    io_flush_all | entries_13_valid & _lsuSelect1_older_T_2249 > _GEN_425;
+  wire        _GEN_440 =
+    io_flush_all | entries_14_valid & _lsuSelect1_older_T_2257 > _GEN_425;
+  wire        _GEN_441 =
+    io_flush_all | entries_15_valid & _lsuSelect1_older_T_2268 > _GEN_425;
+  wire        _GEN_442 = ~freeByRob_0 & entries_0_valid;
+  wire        _GEN_443 = ~freeByRob_1 & entries_1_valid;
+  wire        _GEN_444 = ~freeByRob_2 & entries_2_valid;
+  wire        _GEN_445 = ~freeByRob_3 & entries_3_valid;
+  wire        _GEN_446 = ~freeByRob_4 & entries_4_valid;
+  wire        _GEN_447 = ~freeByRob_5 & entries_5_valid;
+  wire        _GEN_448 = ~freeByRob_6 & entries_6_valid;
+  wire        _GEN_449 = ~freeByRob_7 & entries_7_valid;
+  wire        _GEN_450 = ~freeByRob_8 & entries_8_valid;
+  wire        _GEN_451 = ~freeByRob_9 & entries_9_valid;
+  wire        _GEN_452 = ~freeByRob_10 & entries_10_valid;
+  wire        _GEN_453 = ~freeByRob_11 & entries_11_valid;
+  wire        _GEN_454 = ~freeByRob_12 & entries_12_valid;
+  wire        _GEN_455 = ~freeByRob_13 & entries_13_valid;
+  wire        _GEN_456 = ~freeByRob_14 & entries_14_valid;
+  wire        _GEN_457 = ~freeByRob_15 & entries_15_valid;
+  wire        _GEN_458 = io_issue_store_addr_fire & (|_residentStoreAddr_T);
+  wire [3:0]  _GEN_459 =
+    storeAddrSelect_0
+      ? 4'h0
+      : storeAddrSelect_1
+          ? 4'h1
+          : storeAddrSelect_2
+              ? 4'h2
+              : storeAddrSelect_3
+                  ? 4'h3
+                  : storeAddrSelect_4
+                      ? 4'h4
+                      : storeAddrSelect_5
+                          ? 4'h5
+                          : storeAddrSelect_6
+                              ? 4'h6
+                              : storeAddrSelect_7
+                                  ? 4'h7
+                                  : storeAddrSelect_8
+                                      ? 4'h8
+                                      : storeAddrSelect_9
+                                          ? 4'h9
+                                          : storeAddrSelect_10
+                                              ? 4'hA
+                                              : storeAddrSelect_11
+                                                  ? 4'hB
+                                                  : storeAddrSelect_12
+                                                      ? 4'hC
+                                                      : storeAddrSelect_13
+                                                          ? 4'hD
+                                                          : {3'h7, ~storeAddrSelect_14};
+  wire        _GEN_460 = _GEN_458 & _GEN_459 == 4'h0 | ~freeByRob_0 & storeAddrIssued_0;
+  wire        _GEN_461 = _GEN_458 & _GEN_459 == 4'h1 | ~freeByRob_1 & storeAddrIssued_1;
+  wire        _GEN_462 = _GEN_458 & _GEN_459 == 4'h2 | ~freeByRob_2 & storeAddrIssued_2;
+  wire        _GEN_463 = _GEN_458 & _GEN_459 == 4'h3 | ~freeByRob_3 & storeAddrIssued_3;
+  wire        _GEN_464 = _GEN_458 & _GEN_459 == 4'h4 | ~freeByRob_4 & storeAddrIssued_4;
+  wire        _GEN_465 = _GEN_458 & _GEN_459 == 4'h5 | ~freeByRob_5 & storeAddrIssued_5;
+  wire        _GEN_466 = _GEN_458 & _GEN_459 == 4'h6 | ~freeByRob_6 & storeAddrIssued_6;
+  wire        _GEN_467 = _GEN_458 & _GEN_459 == 4'h7 | ~freeByRob_7 & storeAddrIssued_7;
+  wire        _GEN_468 = _GEN_458 & _GEN_459 == 4'h8 | ~freeByRob_8 & storeAddrIssued_8;
+  wire        _GEN_469 = _GEN_458 & _GEN_459 == 4'h9 | ~freeByRob_9 & storeAddrIssued_9;
+  wire        _GEN_470 = _GEN_458 & _GEN_459 == 4'hA | ~freeByRob_10 & storeAddrIssued_10;
+  wire        _GEN_471 = _GEN_458 & _GEN_459 == 4'hB | ~freeByRob_11 & storeAddrIssued_11;
+  wire        _GEN_472 = _GEN_458 & _GEN_459 == 4'hC | ~freeByRob_12 & storeAddrIssued_12;
+  wire        _GEN_473 = _GEN_458 & _GEN_459 == 4'hD | ~freeByRob_13 & storeAddrIssued_13;
+  wire        _GEN_474 = _GEN_458 & _GEN_459 == 4'hE | ~freeByRob_14 & storeAddrIssued_14;
+  wire        _GEN_475 = _GEN_458 & (&_GEN_459) | ~freeByRob_15 & storeAddrIssued_15;
+  wire        _GEN_476 = allocAccept_0 & allocMask_1_shiftAmount == 4'h0;
+  wire        _GEN_477 = allocAccept_0 & allocMask_1_shiftAmount == 4'h1;
+  wire        _GEN_478 = allocAccept_0 & allocMask_1_shiftAmount == 4'h2;
+  wire        _GEN_479 = allocAccept_0 & allocMask_1_shiftAmount == 4'h3;
+  wire        _GEN_480 = allocAccept_0 & allocMask_1_shiftAmount == 4'h4;
+  wire        _GEN_481 = allocAccept_0 & allocMask_1_shiftAmount == 4'h5;
+  wire        _GEN_482 = allocAccept_0 & allocMask_1_shiftAmount == 4'h6;
+  wire        _GEN_483 = allocAccept_0 & allocMask_1_shiftAmount == 4'h7;
+  wire        _GEN_484 = allocAccept_0 & allocMask_1_shiftAmount == 4'h8;
+  wire        _GEN_485 = allocAccept_0 & allocMask_1_shiftAmount == 4'h9;
+  wire        _GEN_486 = allocAccept_0 & allocMask_1_shiftAmount == 4'hA;
+  wire        _GEN_487 = allocAccept_0 & allocMask_1_shiftAmount == 4'hB;
+  wire        _GEN_488 = allocAccept_0 & allocMask_1_shiftAmount == 4'hC;
+  wire        _GEN_489 = allocAccept_0 & allocMask_1_shiftAmount == 4'hD;
+  wire        _GEN_490 = allocAccept_0 & allocMask_1_shiftAmount == 4'hE;
+  wire        _GEN_491 = allocAccept_0 & (&allocMask_1_shiftAmount);
+  wire        _GEN_492 = allocMask_2_shiftAmount == 4'h0;
+  wire        _GEN_493 = _GEN_492 | _GEN_476;
+  wire        _GEN_494 = allocAccept_1 ? _GEN_493 | _GEN_442 : _GEN_476 | _GEN_442;
+  wire        _GEN_495 = allocAccept_1 & _GEN_492;
+  wire        _GEN_496 = allocMask_2_shiftAmount == 4'h1;
+  wire        _GEN_497 = _GEN_496 | _GEN_477;
+  wire        _GEN_498 = allocAccept_1 ? _GEN_497 | _GEN_443 : _GEN_477 | _GEN_443;
+  wire        _GEN_499 = allocAccept_1 & _GEN_496;
+  wire        _GEN_500 = allocMask_2_shiftAmount == 4'h2;
+  wire        _GEN_501 = _GEN_500 | _GEN_478;
+  wire        _GEN_502 = allocAccept_1 ? _GEN_501 | _GEN_444 : _GEN_478 | _GEN_444;
+  wire        _GEN_503 = allocAccept_1 & _GEN_500;
+  wire        _GEN_504 = allocMask_2_shiftAmount == 4'h3;
+  wire        _GEN_505 = _GEN_504 | _GEN_479;
+  wire        _GEN_506 = allocAccept_1 ? _GEN_505 | _GEN_445 : _GEN_479 | _GEN_445;
+  wire        _GEN_507 = allocAccept_1 & _GEN_504;
+  wire        _GEN_508 = allocMask_2_shiftAmount == 4'h4;
+  wire        _GEN_509 = _GEN_508 | _GEN_480;
+  wire        _GEN_510 = allocAccept_1 ? _GEN_509 | _GEN_446 : _GEN_480 | _GEN_446;
+  wire        _GEN_511 = allocAccept_1 & _GEN_508;
+  wire        _GEN_512 = allocMask_2_shiftAmount == 4'h5;
+  wire        _GEN_513 = _GEN_512 | _GEN_481;
+  wire        _GEN_514 = allocAccept_1 ? _GEN_513 | _GEN_447 : _GEN_481 | _GEN_447;
+  wire        _GEN_515 = allocAccept_1 & _GEN_512;
+  wire        _GEN_516 = allocMask_2_shiftAmount == 4'h6;
+  wire        _GEN_517 = _GEN_516 | _GEN_482;
+  wire        _GEN_518 = allocAccept_1 ? _GEN_517 | _GEN_448 : _GEN_482 | _GEN_448;
+  wire        _GEN_519 = allocAccept_1 & _GEN_516;
+  wire        _GEN_520 = allocMask_2_shiftAmount == 4'h7;
+  wire        _GEN_521 = _GEN_520 | _GEN_483;
+  wire        _GEN_522 = allocAccept_1 ? _GEN_521 | _GEN_449 : _GEN_483 | _GEN_449;
+  wire        _GEN_523 = allocAccept_1 & _GEN_520;
+  wire        _GEN_524 = allocMask_2_shiftAmount == 4'h8;
+  wire        _GEN_525 = _GEN_524 | _GEN_484;
+  wire        _GEN_526 = allocAccept_1 ? _GEN_525 | _GEN_450 : _GEN_484 | _GEN_450;
+  wire        _GEN_527 = allocAccept_1 & _GEN_524;
+  wire        _GEN_528 = allocMask_2_shiftAmount == 4'h9;
+  wire        _GEN_529 = _GEN_528 | _GEN_485;
+  wire        _GEN_530 = allocAccept_1 ? _GEN_529 | _GEN_451 : _GEN_485 | _GEN_451;
+  wire        _GEN_531 = allocAccept_1 & _GEN_528;
+  wire        _GEN_532 = allocMask_2_shiftAmount == 4'hA;
+  wire        _GEN_533 = _GEN_532 | _GEN_486;
+  wire        _GEN_534 = allocAccept_1 ? _GEN_533 | _GEN_452 : _GEN_486 | _GEN_452;
+  wire        _GEN_535 = allocAccept_1 & _GEN_532;
+  wire        _GEN_536 = allocMask_2_shiftAmount == 4'hB;
+  wire        _GEN_537 = _GEN_536 | _GEN_487;
+  wire        _GEN_538 = allocAccept_1 ? _GEN_537 | _GEN_453 : _GEN_487 | _GEN_453;
+  wire        _GEN_539 = allocAccept_1 & _GEN_536;
+  wire        _GEN_540 = allocMask_2_shiftAmount == 4'hC;
+  wire        _GEN_541 = _GEN_540 | _GEN_488;
+  wire        _GEN_542 = allocAccept_1 ? _GEN_541 | _GEN_454 : _GEN_488 | _GEN_454;
+  wire        _GEN_543 = allocAccept_1 & _GEN_540;
+  wire        _GEN_544 = allocMask_2_shiftAmount == 4'hD;
+  wire        _GEN_545 = _GEN_544 | _GEN_489;
+  wire        _GEN_546 = allocAccept_1 ? _GEN_545 | _GEN_455 : _GEN_489 | _GEN_455;
+  wire        _GEN_547 = allocAccept_1 & _GEN_544;
+  wire        _GEN_548 = allocMask_2_shiftAmount == 4'hE;
+  wire        _GEN_549 = _GEN_548 | _GEN_490;
+  wire        _GEN_550 = allocAccept_1 ? _GEN_549 | _GEN_456 : _GEN_490 | _GEN_456;
+  wire        _GEN_551 = allocAccept_1 & _GEN_548;
+  wire        _GEN_552 = (&allocMask_2_shiftAmount) | _GEN_491;
+  wire        _GEN_553 = allocAccept_1 ? _GEN_552 | _GEN_457 : _GEN_491 | _GEN_457;
+  wire        _GEN_554 = allocAccept_1 & (&allocMask_2_shiftAmount);
+  wire        _GEN_555 = allocAccept_1 ? ~_GEN_493 & _GEN_460 : ~_GEN_476 & _GEN_460;
+  wire        _GEN_556 = allocAccept_1 ? ~_GEN_497 & _GEN_461 : ~_GEN_477 & _GEN_461;
+  wire        _GEN_557 = allocAccept_1 ? ~_GEN_501 & _GEN_462 : ~_GEN_478 & _GEN_462;
+  wire        _GEN_558 = allocAccept_1 ? ~_GEN_505 & _GEN_463 : ~_GEN_479 & _GEN_463;
+  wire        _GEN_559 = allocAccept_1 ? ~_GEN_509 & _GEN_464 : ~_GEN_480 & _GEN_464;
+  wire        _GEN_560 = allocAccept_1 ? ~_GEN_513 & _GEN_465 : ~_GEN_481 & _GEN_465;
+  wire        _GEN_561 = allocAccept_1 ? ~_GEN_517 & _GEN_466 : ~_GEN_482 & _GEN_466;
+  wire        _GEN_562 = allocAccept_1 ? ~_GEN_521 & _GEN_467 : ~_GEN_483 & _GEN_467;
+  wire        _GEN_563 = allocAccept_1 ? ~_GEN_525 & _GEN_468 : ~_GEN_484 & _GEN_468;
+  wire        _GEN_564 = allocAccept_1 ? ~_GEN_529 & _GEN_469 : ~_GEN_485 & _GEN_469;
+  wire        _GEN_565 = allocAccept_1 ? ~_GEN_533 & _GEN_470 : ~_GEN_486 & _GEN_470;
+  wire        _GEN_566 = allocAccept_1 ? ~_GEN_537 & _GEN_471 : ~_GEN_487 & _GEN_471;
+  wire        _GEN_567 = allocAccept_1 ? ~_GEN_541 & _GEN_472 : ~_GEN_488 & _GEN_472;
+  wire        _GEN_568 = allocAccept_1 ? ~_GEN_545 & _GEN_473 : ~_GEN_489 & _GEN_473;
+  wire        _GEN_569 = allocAccept_1 ? ~_GEN_549 & _GEN_474 : ~_GEN_490 & _GEN_474;
+  wire        _GEN_570 = allocAccept_1 ? ~_GEN_552 & _GEN_475 : ~_GEN_491 & _GEN_475;
+  wire        _GEN_571 = allocAccept_2 & allocMask_3_shiftAmount == 4'h0;
+  wire        _GEN_572 = allocAccept_2 & allocMask_3_shiftAmount == 4'h1;
+  wire        _GEN_573 = allocAccept_2 & allocMask_3_shiftAmount == 4'h2;
+  wire        _GEN_574 = allocAccept_2 & allocMask_3_shiftAmount == 4'h3;
+  wire        _GEN_575 = allocAccept_2 & allocMask_3_shiftAmount == 4'h4;
+  wire        _GEN_576 = allocAccept_2 & allocMask_3_shiftAmount == 4'h5;
+  wire        _GEN_577 = allocAccept_2 & allocMask_3_shiftAmount == 4'h6;
+  wire        _GEN_578 = allocAccept_2 & allocMask_3_shiftAmount == 4'h7;
+  wire        _GEN_579 = allocAccept_2 & allocMask_3_shiftAmount == 4'h8;
+  wire        _GEN_580 = allocAccept_2 & allocMask_3_shiftAmount == 4'h9;
+  wire        _GEN_581 = allocAccept_2 & allocMask_3_shiftAmount == 4'hA;
+  wire        _GEN_582 = allocAccept_2 & allocMask_3_shiftAmount == 4'hB;
+  wire        _GEN_583 = allocAccept_2 & allocMask_3_shiftAmount == 4'hC;
+  wire        _GEN_584 = allocAccept_2 & allocMask_3_shiftAmount == 4'hD;
+  wire        _GEN_585 = allocAccept_2 & allocMask_3_shiftAmount == 4'hE;
+  wire        _GEN_586 = allocAccept_2 & (&allocMask_3_shiftAmount);
+  wire        _GEN_587 = allocMask_4_shiftAmount == 4'h0;
+  wire        _GEN_588 = _GEN_587 | _GEN_571;
+  wire        _GEN_589 = allocAccept_3 & _GEN_587;
+  wire        _GEN_590 = allocMask_4_shiftAmount == 4'h1;
+  wire        _GEN_591 = _GEN_590 | _GEN_572;
+  wire        _GEN_592 = allocAccept_3 & _GEN_590;
+  wire        _GEN_593 = allocMask_4_shiftAmount == 4'h2;
+  wire        _GEN_594 = _GEN_593 | _GEN_573;
+  wire        _GEN_595 = allocAccept_3 & _GEN_593;
+  wire        _GEN_596 = allocMask_4_shiftAmount == 4'h3;
+  wire        _GEN_597 = _GEN_596 | _GEN_574;
+  wire        _GEN_598 = allocAccept_3 & _GEN_596;
+  wire        _GEN_599 = allocMask_4_shiftAmount == 4'h4;
+  wire        _GEN_600 = _GEN_599 | _GEN_575;
+  wire        _GEN_601 = allocAccept_3 & _GEN_599;
+  wire        _GEN_602 = allocMask_4_shiftAmount == 4'h5;
+  wire        _GEN_603 = _GEN_602 | _GEN_576;
+  wire        _GEN_604 = allocAccept_3 & _GEN_602;
+  wire        _GEN_605 = allocMask_4_shiftAmount == 4'h6;
+  wire        _GEN_606 = _GEN_605 | _GEN_577;
+  wire        _GEN_607 = allocAccept_3 & _GEN_605;
+  wire        _GEN_608 = allocMask_4_shiftAmount == 4'h7;
+  wire        _GEN_609 = _GEN_608 | _GEN_578;
+  wire        _GEN_610 = allocAccept_3 & _GEN_608;
+  wire        _GEN_611 = allocMask_4_shiftAmount == 4'h8;
+  wire        _GEN_612 = _GEN_611 | _GEN_579;
+  wire        _GEN_613 = allocAccept_3 & _GEN_611;
+  wire        _GEN_614 = allocMask_4_shiftAmount == 4'h9;
+  wire        _GEN_615 = _GEN_614 | _GEN_580;
+  wire        _GEN_616 = allocAccept_3 & _GEN_614;
+  wire        _GEN_617 = allocMask_4_shiftAmount == 4'hA;
+  wire        _GEN_618 = _GEN_617 | _GEN_581;
+  wire        _GEN_619 = allocAccept_3 & _GEN_617;
+  wire        _GEN_620 = allocMask_4_shiftAmount == 4'hB;
+  wire        _GEN_621 = _GEN_620 | _GEN_582;
+  wire        _GEN_622 = allocAccept_3 & _GEN_620;
+  wire        _GEN_623 = allocMask_4_shiftAmount == 4'hC;
+  wire        _GEN_624 = _GEN_623 | _GEN_583;
+  wire        _GEN_625 = allocAccept_3 & _GEN_623;
+  wire        _GEN_626 = allocMask_4_shiftAmount == 4'hD;
+  wire        _GEN_627 = _GEN_626 | _GEN_584;
+  wire        _GEN_628 = allocAccept_3 & _GEN_626;
+  wire        _GEN_629 = allocMask_4_shiftAmount == 4'hE;
+  wire        _GEN_630 = _GEN_629 | _GEN_585;
+  wire        _GEN_631 = allocAccept_3 & _GEN_629;
+  wire        _GEN_632 = (&allocMask_4_shiftAmount) | _GEN_586;
+  wire        _GEN_633 = allocAccept_3 & (&allocMask_4_shiftAmount);
   always @(posedge clock) begin
     if (reset) begin
       entries_0_valid <= 1'h0;
@@ -5988,6 +6603,7 @@ module WideRS(
       entries_0_exu_alu_srcB <= 2'h0;
       entries_0_exu_alu_control <= 5'h0;
       entries_0_exu_jump <= 4'h0;
+      entries_0_lsu_mem_wmask <= 8'h0;
       entries_0_lsu_mem_rd <= 3'h0;
       entries_0_lsu_mem_write <= 1'h0;
       entries_0_lsu_mem_valid <= 1'h0;
@@ -6016,6 +6632,7 @@ module WideRS(
       entries_1_exu_alu_srcB <= 2'h0;
       entries_1_exu_alu_control <= 5'h0;
       entries_1_exu_jump <= 4'h0;
+      entries_1_lsu_mem_wmask <= 8'h0;
       entries_1_lsu_mem_rd <= 3'h0;
       entries_1_lsu_mem_write <= 1'h0;
       entries_1_lsu_mem_valid <= 1'h0;
@@ -6044,6 +6661,7 @@ module WideRS(
       entries_2_exu_alu_srcB <= 2'h0;
       entries_2_exu_alu_control <= 5'h0;
       entries_2_exu_jump <= 4'h0;
+      entries_2_lsu_mem_wmask <= 8'h0;
       entries_2_lsu_mem_rd <= 3'h0;
       entries_2_lsu_mem_write <= 1'h0;
       entries_2_lsu_mem_valid <= 1'h0;
@@ -6072,6 +6690,7 @@ module WideRS(
       entries_3_exu_alu_srcB <= 2'h0;
       entries_3_exu_alu_control <= 5'h0;
       entries_3_exu_jump <= 4'h0;
+      entries_3_lsu_mem_wmask <= 8'h0;
       entries_3_lsu_mem_rd <= 3'h0;
       entries_3_lsu_mem_write <= 1'h0;
       entries_3_lsu_mem_valid <= 1'h0;
@@ -6100,6 +6719,7 @@ module WideRS(
       entries_4_exu_alu_srcB <= 2'h0;
       entries_4_exu_alu_control <= 5'h0;
       entries_4_exu_jump <= 4'h0;
+      entries_4_lsu_mem_wmask <= 8'h0;
       entries_4_lsu_mem_rd <= 3'h0;
       entries_4_lsu_mem_write <= 1'h0;
       entries_4_lsu_mem_valid <= 1'h0;
@@ -6128,6 +6748,7 @@ module WideRS(
       entries_5_exu_alu_srcB <= 2'h0;
       entries_5_exu_alu_control <= 5'h0;
       entries_5_exu_jump <= 4'h0;
+      entries_5_lsu_mem_wmask <= 8'h0;
       entries_5_lsu_mem_rd <= 3'h0;
       entries_5_lsu_mem_write <= 1'h0;
       entries_5_lsu_mem_valid <= 1'h0;
@@ -6156,6 +6777,7 @@ module WideRS(
       entries_6_exu_alu_srcB <= 2'h0;
       entries_6_exu_alu_control <= 5'h0;
       entries_6_exu_jump <= 4'h0;
+      entries_6_lsu_mem_wmask <= 8'h0;
       entries_6_lsu_mem_rd <= 3'h0;
       entries_6_lsu_mem_write <= 1'h0;
       entries_6_lsu_mem_valid <= 1'h0;
@@ -6184,6 +6806,7 @@ module WideRS(
       entries_7_exu_alu_srcB <= 2'h0;
       entries_7_exu_alu_control <= 5'h0;
       entries_7_exu_jump <= 4'h0;
+      entries_7_lsu_mem_wmask <= 8'h0;
       entries_7_lsu_mem_rd <= 3'h0;
       entries_7_lsu_mem_write <= 1'h0;
       entries_7_lsu_mem_valid <= 1'h0;
@@ -6212,6 +6835,7 @@ module WideRS(
       entries_8_exu_alu_srcB <= 2'h0;
       entries_8_exu_alu_control <= 5'h0;
       entries_8_exu_jump <= 4'h0;
+      entries_8_lsu_mem_wmask <= 8'h0;
       entries_8_lsu_mem_rd <= 3'h0;
       entries_8_lsu_mem_write <= 1'h0;
       entries_8_lsu_mem_valid <= 1'h0;
@@ -6240,6 +6864,7 @@ module WideRS(
       entries_9_exu_alu_srcB <= 2'h0;
       entries_9_exu_alu_control <= 5'h0;
       entries_9_exu_jump <= 4'h0;
+      entries_9_lsu_mem_wmask <= 8'h0;
       entries_9_lsu_mem_rd <= 3'h0;
       entries_9_lsu_mem_write <= 1'h0;
       entries_9_lsu_mem_valid <= 1'h0;
@@ -6268,6 +6893,7 @@ module WideRS(
       entries_10_exu_alu_srcB <= 2'h0;
       entries_10_exu_alu_control <= 5'h0;
       entries_10_exu_jump <= 4'h0;
+      entries_10_lsu_mem_wmask <= 8'h0;
       entries_10_lsu_mem_rd <= 3'h0;
       entries_10_lsu_mem_write <= 1'h0;
       entries_10_lsu_mem_valid <= 1'h0;
@@ -6296,6 +6922,7 @@ module WideRS(
       entries_11_exu_alu_srcB <= 2'h0;
       entries_11_exu_alu_control <= 5'h0;
       entries_11_exu_jump <= 4'h0;
+      entries_11_lsu_mem_wmask <= 8'h0;
       entries_11_lsu_mem_rd <= 3'h0;
       entries_11_lsu_mem_write <= 1'h0;
       entries_11_lsu_mem_valid <= 1'h0;
@@ -6324,6 +6951,7 @@ module WideRS(
       entries_12_exu_alu_srcB <= 2'h0;
       entries_12_exu_alu_control <= 5'h0;
       entries_12_exu_jump <= 4'h0;
+      entries_12_lsu_mem_wmask <= 8'h0;
       entries_12_lsu_mem_rd <= 3'h0;
       entries_12_lsu_mem_write <= 1'h0;
       entries_12_lsu_mem_valid <= 1'h0;
@@ -6352,6 +6980,7 @@ module WideRS(
       entries_13_exu_alu_srcB <= 2'h0;
       entries_13_exu_alu_control <= 5'h0;
       entries_13_exu_jump <= 4'h0;
+      entries_13_lsu_mem_wmask <= 8'h0;
       entries_13_lsu_mem_rd <= 3'h0;
       entries_13_lsu_mem_write <= 1'h0;
       entries_13_lsu_mem_valid <= 1'h0;
@@ -6380,6 +7009,7 @@ module WideRS(
       entries_14_exu_alu_srcB <= 2'h0;
       entries_14_exu_alu_control <= 5'h0;
       entries_14_exu_jump <= 4'h0;
+      entries_14_lsu_mem_wmask <= 8'h0;
       entries_14_lsu_mem_rd <= 3'h0;
       entries_14_lsu_mem_write <= 1'h0;
       entries_14_lsu_mem_valid <= 1'h0;
@@ -6408,292 +7038,308 @@ module WideRS(
       entries_15_exu_alu_srcB <= 2'h0;
       entries_15_exu_alu_control <= 5'h0;
       entries_15_exu_jump <= 4'h0;
+      entries_15_lsu_mem_wmask <= 8'h0;
       entries_15_lsu_mem_rd <= 3'h0;
       entries_15_lsu_mem_write <= 1'h0;
       entries_15_lsu_mem_valid <= 1'h0;
       entries_15_wbu_reg_write <= 1'h0;
       entries_15_wbu_reg_write_sel <= 3'h0;
       entries_15_wbu_csr_write <= 1'h0;
+      storeAddrIssued_0 <= 1'h0;
+      storeAddrIssued_1 <= 1'h0;
+      storeAddrIssued_2 <= 1'h0;
+      storeAddrIssued_3 <= 1'h0;
+      storeAddrIssued_4 <= 1'h0;
+      storeAddrIssued_5 <= 1'h0;
+      storeAddrIssued_6 <= 1'h0;
+      storeAddrIssued_7 <= 1'h0;
+      storeAddrIssued_8 <= 1'h0;
+      storeAddrIssued_9 <= 1'h0;
+      storeAddrIssued_10 <= 1'h0;
+      storeAddrIssued_11 <= 1'h0;
+      storeAddrIssued_12 <= 1'h0;
+      storeAddrIssued_13 <= 1'h0;
+      storeAddrIssued_14 <= 1'h0;
+      storeAddrIssued_15 <= 1'h0;
     end
     else begin
       entries_0_valid <=
         io_flush
-          ? ~(io_flush_all | entries_0_valid & _lsuSelect1_older_T_2145 > _GEN_393)
-            & entries_0_valid
-          : allocAccept_3 ? _GEN_489 | _GEN_473 | _GEN_427 : _GEN_473 | _GEN_427;
+          ? ~_GEN_426 & entries_0_valid
+          : allocAccept_3 ? _GEN_588 | _GEN_494 : _GEN_571 | _GEN_494;
       if (io_flush) begin
-        if (_GEN_299)
+        if (_GEN_331)
           entries_0_src1_val <= io_cdb_val_3;
-        else if (_GEN_264)
+        else if (_GEN_296)
           entries_0_src1_val <= io_cdb_val_2;
-        else if (_GEN_169)
+        else if (_GEN_201)
           entries_0_src1_val <= io_cdb_val_1;
-        else if (_GEN_103)
-          entries_0_src1_val <= io_cdb_val_0;
-        if (_GEN_302)
-          entries_0_src2_val <= io_cdb_val_3;
-        else if (_GEN_265)
-          entries_0_src2_val <= io_cdb_val_2;
-        else if (_GEN_172)
-          entries_0_src2_val <= io_cdb_val_1;
-        else if (_GEN_105)
-          entries_0_src2_val <= io_cdb_val_0;
-        if (_GEN_305)
-          entries_1_src1_val <= io_cdb_val_3;
-        else if (_GEN_266)
-          entries_1_src1_val <= io_cdb_val_2;
-        else if (_GEN_175)
-          entries_1_src1_val <= io_cdb_val_1;
-        else if (_GEN_107)
-          entries_1_src1_val <= io_cdb_val_0;
-        if (_GEN_308)
-          entries_1_src2_val <= io_cdb_val_3;
-        else if (_GEN_267)
-          entries_1_src2_val <= io_cdb_val_2;
-        else if (_GEN_178)
-          entries_1_src2_val <= io_cdb_val_1;
-        else if (_GEN_109)
-          entries_1_src2_val <= io_cdb_val_0;
-        if (_GEN_311)
-          entries_2_src1_val <= io_cdb_val_3;
-        else if (_GEN_268)
-          entries_2_src1_val <= io_cdb_val_2;
-        else if (_GEN_181)
-          entries_2_src1_val <= io_cdb_val_1;
-        else if (_GEN_111)
-          entries_2_src1_val <= io_cdb_val_0;
-        if (_GEN_314)
-          entries_2_src2_val <= io_cdb_val_3;
-        else if (_GEN_269)
-          entries_2_src2_val <= io_cdb_val_2;
-        else if (_GEN_184)
-          entries_2_src2_val <= io_cdb_val_1;
-        else if (_GEN_113)
-          entries_2_src2_val <= io_cdb_val_0;
-        if (_GEN_317)
-          entries_3_src1_val <= io_cdb_val_3;
-        else if (_GEN_270)
-          entries_3_src1_val <= io_cdb_val_2;
-        else if (_GEN_187)
-          entries_3_src1_val <= io_cdb_val_1;
-        else if (_GEN_115)
-          entries_3_src1_val <= io_cdb_val_0;
-        if (_GEN_320)
-          entries_3_src2_val <= io_cdb_val_3;
-        else if (_GEN_271)
-          entries_3_src2_val <= io_cdb_val_2;
-        else if (_GEN_190)
-          entries_3_src2_val <= io_cdb_val_1;
-        else if (_GEN_117)
-          entries_3_src2_val <= io_cdb_val_0;
-        if (_GEN_323)
-          entries_4_src1_val <= io_cdb_val_3;
-        else if (_GEN_272)
-          entries_4_src1_val <= io_cdb_val_2;
-        else if (_GEN_193)
-          entries_4_src1_val <= io_cdb_val_1;
-        else if (_GEN_119)
-          entries_4_src1_val <= io_cdb_val_0;
-        if (_GEN_326)
-          entries_4_src2_val <= io_cdb_val_3;
-        else if (_GEN_273)
-          entries_4_src2_val <= io_cdb_val_2;
-        else if (_GEN_196)
-          entries_4_src2_val <= io_cdb_val_1;
-        else if (_GEN_121)
-          entries_4_src2_val <= io_cdb_val_0;
-        if (_GEN_329)
-          entries_5_src1_val <= io_cdb_val_3;
-        else if (_GEN_274)
-          entries_5_src1_val <= io_cdb_val_2;
-        else if (_GEN_199)
-          entries_5_src1_val <= io_cdb_val_1;
-        else if (_GEN_123)
-          entries_5_src1_val <= io_cdb_val_0;
-        if (_GEN_332)
-          entries_5_src2_val <= io_cdb_val_3;
-        else if (_GEN_275)
-          entries_5_src2_val <= io_cdb_val_2;
-        else if (_GEN_202)
-          entries_5_src2_val <= io_cdb_val_1;
-        else if (_GEN_125)
-          entries_5_src2_val <= io_cdb_val_0;
-        if (_GEN_335)
-          entries_6_src1_val <= io_cdb_val_3;
-        else if (_GEN_276)
-          entries_6_src1_val <= io_cdb_val_2;
-        else if (_GEN_205)
-          entries_6_src1_val <= io_cdb_val_1;
-        else if (_GEN_127)
-          entries_6_src1_val <= io_cdb_val_0;
-        if (_GEN_338)
-          entries_6_src2_val <= io_cdb_val_3;
-        else if (_GEN_277)
-          entries_6_src2_val <= io_cdb_val_2;
-        else if (_GEN_208)
-          entries_6_src2_val <= io_cdb_val_1;
-        else if (_GEN_129)
-          entries_6_src2_val <= io_cdb_val_0;
-        if (_GEN_341)
-          entries_7_src1_val <= io_cdb_val_3;
-        else if (_GEN_278)
-          entries_7_src1_val <= io_cdb_val_2;
-        else if (_GEN_211)
-          entries_7_src1_val <= io_cdb_val_1;
-        else if (_GEN_131)
-          entries_7_src1_val <= io_cdb_val_0;
-        if (_GEN_344)
-          entries_7_src2_val <= io_cdb_val_3;
-        else if (_GEN_279)
-          entries_7_src2_val <= io_cdb_val_2;
-        else if (_GEN_214)
-          entries_7_src2_val <= io_cdb_val_1;
-        else if (_GEN_133)
-          entries_7_src2_val <= io_cdb_val_0;
-        if (_GEN_347)
-          entries_8_src1_val <= io_cdb_val_3;
-        else if (_GEN_280)
-          entries_8_src1_val <= io_cdb_val_2;
-        else if (_GEN_217)
-          entries_8_src1_val <= io_cdb_val_1;
         else if (_GEN_135)
-          entries_8_src1_val <= io_cdb_val_0;
-        if (_GEN_350)
-          entries_8_src2_val <= io_cdb_val_3;
-        else if (_GEN_281)
-          entries_8_src2_val <= io_cdb_val_2;
-        else if (_GEN_220)
-          entries_8_src2_val <= io_cdb_val_1;
+          entries_0_src1_val <= io_cdb_val_0;
+        if (_GEN_334)
+          entries_0_src2_val <= io_cdb_val_3;
+        else if (_GEN_297)
+          entries_0_src2_val <= io_cdb_val_2;
+        else if (_GEN_204)
+          entries_0_src2_val <= io_cdb_val_1;
         else if (_GEN_137)
-          entries_8_src2_val <= io_cdb_val_0;
-        if (_GEN_353)
-          entries_9_src1_val <= io_cdb_val_3;
-        else if (_GEN_282)
-          entries_9_src1_val <= io_cdb_val_2;
-        else if (_GEN_223)
-          entries_9_src1_val <= io_cdb_val_1;
+          entries_0_src2_val <= io_cdb_val_0;
+        if (_GEN_337)
+          entries_1_src1_val <= io_cdb_val_3;
+        else if (_GEN_298)
+          entries_1_src1_val <= io_cdb_val_2;
+        else if (_GEN_207)
+          entries_1_src1_val <= io_cdb_val_1;
         else if (_GEN_139)
-          entries_9_src1_val <= io_cdb_val_0;
-        if (_GEN_356)
-          entries_9_src2_val <= io_cdb_val_3;
-        else if (_GEN_283)
-          entries_9_src2_val <= io_cdb_val_2;
-        else if (_GEN_226)
-          entries_9_src2_val <= io_cdb_val_1;
+          entries_1_src1_val <= io_cdb_val_0;
+        if (_GEN_340)
+          entries_1_src2_val <= io_cdb_val_3;
+        else if (_GEN_299)
+          entries_1_src2_val <= io_cdb_val_2;
+        else if (_GEN_210)
+          entries_1_src2_val <= io_cdb_val_1;
         else if (_GEN_141)
-          entries_9_src2_val <= io_cdb_val_0;
-        if (_GEN_359)
-          entries_10_src1_val <= io_cdb_val_3;
-        else if (_GEN_284)
-          entries_10_src1_val <= io_cdb_val_2;
-        else if (_GEN_229)
-          entries_10_src1_val <= io_cdb_val_1;
+          entries_1_src2_val <= io_cdb_val_0;
+        if (_GEN_343)
+          entries_2_src1_val <= io_cdb_val_3;
+        else if (_GEN_300)
+          entries_2_src1_val <= io_cdb_val_2;
+        else if (_GEN_213)
+          entries_2_src1_val <= io_cdb_val_1;
         else if (_GEN_143)
-          entries_10_src1_val <= io_cdb_val_0;
-        if (_GEN_362)
-          entries_10_src2_val <= io_cdb_val_3;
-        else if (_GEN_285)
-          entries_10_src2_val <= io_cdb_val_2;
-        else if (_GEN_232)
-          entries_10_src2_val <= io_cdb_val_1;
+          entries_2_src1_val <= io_cdb_val_0;
+        if (_GEN_346)
+          entries_2_src2_val <= io_cdb_val_3;
+        else if (_GEN_301)
+          entries_2_src2_val <= io_cdb_val_2;
+        else if (_GEN_216)
+          entries_2_src2_val <= io_cdb_val_1;
         else if (_GEN_145)
-          entries_10_src2_val <= io_cdb_val_0;
-        if (_GEN_365)
-          entries_11_src1_val <= io_cdb_val_3;
-        else if (_GEN_286)
-          entries_11_src1_val <= io_cdb_val_2;
-        else if (_GEN_235)
-          entries_11_src1_val <= io_cdb_val_1;
+          entries_2_src2_val <= io_cdb_val_0;
+        if (_GEN_349)
+          entries_3_src1_val <= io_cdb_val_3;
+        else if (_GEN_302)
+          entries_3_src1_val <= io_cdb_val_2;
+        else if (_GEN_219)
+          entries_3_src1_val <= io_cdb_val_1;
         else if (_GEN_147)
-          entries_11_src1_val <= io_cdb_val_0;
-        if (_GEN_368)
-          entries_11_src2_val <= io_cdb_val_3;
-        else if (_GEN_287)
-          entries_11_src2_val <= io_cdb_val_2;
-        else if (_GEN_238)
-          entries_11_src2_val <= io_cdb_val_1;
+          entries_3_src1_val <= io_cdb_val_0;
+        if (_GEN_352)
+          entries_3_src2_val <= io_cdb_val_3;
+        else if (_GEN_303)
+          entries_3_src2_val <= io_cdb_val_2;
+        else if (_GEN_222)
+          entries_3_src2_val <= io_cdb_val_1;
         else if (_GEN_149)
-          entries_11_src2_val <= io_cdb_val_0;
-        if (_GEN_371)
-          entries_12_src1_val <= io_cdb_val_3;
-        else if (_GEN_288)
-          entries_12_src1_val <= io_cdb_val_2;
-        else if (_GEN_241)
-          entries_12_src1_val <= io_cdb_val_1;
+          entries_3_src2_val <= io_cdb_val_0;
+        if (_GEN_355)
+          entries_4_src1_val <= io_cdb_val_3;
+        else if (_GEN_304)
+          entries_4_src1_val <= io_cdb_val_2;
+        else if (_GEN_225)
+          entries_4_src1_val <= io_cdb_val_1;
         else if (_GEN_151)
-          entries_12_src1_val <= io_cdb_val_0;
-        if (_GEN_374)
-          entries_12_src2_val <= io_cdb_val_3;
-        else if (_GEN_289)
-          entries_12_src2_val <= io_cdb_val_2;
-        else if (_GEN_244)
-          entries_12_src2_val <= io_cdb_val_1;
+          entries_4_src1_val <= io_cdb_val_0;
+        if (_GEN_358)
+          entries_4_src2_val <= io_cdb_val_3;
+        else if (_GEN_305)
+          entries_4_src2_val <= io_cdb_val_2;
+        else if (_GEN_228)
+          entries_4_src2_val <= io_cdb_val_1;
         else if (_GEN_153)
-          entries_12_src2_val <= io_cdb_val_0;
-        if (_GEN_377)
-          entries_13_src1_val <= io_cdb_val_3;
-        else if (_GEN_290)
-          entries_13_src1_val <= io_cdb_val_2;
-        else if (_GEN_247)
-          entries_13_src1_val <= io_cdb_val_1;
+          entries_4_src2_val <= io_cdb_val_0;
+        if (_GEN_361)
+          entries_5_src1_val <= io_cdb_val_3;
+        else if (_GEN_306)
+          entries_5_src1_val <= io_cdb_val_2;
+        else if (_GEN_231)
+          entries_5_src1_val <= io_cdb_val_1;
         else if (_GEN_155)
-          entries_13_src1_val <= io_cdb_val_0;
-        if (_GEN_380)
-          entries_13_src2_val <= io_cdb_val_3;
-        else if (_GEN_291)
-          entries_13_src2_val <= io_cdb_val_2;
-        else if (_GEN_250)
-          entries_13_src2_val <= io_cdb_val_1;
+          entries_5_src1_val <= io_cdb_val_0;
+        if (_GEN_364)
+          entries_5_src2_val <= io_cdb_val_3;
+        else if (_GEN_307)
+          entries_5_src2_val <= io_cdb_val_2;
+        else if (_GEN_234)
+          entries_5_src2_val <= io_cdb_val_1;
         else if (_GEN_157)
-          entries_13_src2_val <= io_cdb_val_0;
-        if (_GEN_383)
-          entries_14_src1_val <= io_cdb_val_3;
-        else if (_GEN_292)
-          entries_14_src1_val <= io_cdb_val_2;
-        else if (_GEN_253)
-          entries_14_src1_val <= io_cdb_val_1;
+          entries_5_src2_val <= io_cdb_val_0;
+        if (_GEN_367)
+          entries_6_src1_val <= io_cdb_val_3;
+        else if (_GEN_308)
+          entries_6_src1_val <= io_cdb_val_2;
+        else if (_GEN_237)
+          entries_6_src1_val <= io_cdb_val_1;
         else if (_GEN_159)
-          entries_14_src1_val <= io_cdb_val_0;
-        if (_GEN_386)
-          entries_14_src2_val <= io_cdb_val_3;
-        else if (_GEN_293)
-          entries_14_src2_val <= io_cdb_val_2;
-        else if (_GEN_256)
-          entries_14_src2_val <= io_cdb_val_1;
+          entries_6_src1_val <= io_cdb_val_0;
+        if (_GEN_370)
+          entries_6_src2_val <= io_cdb_val_3;
+        else if (_GEN_309)
+          entries_6_src2_val <= io_cdb_val_2;
+        else if (_GEN_240)
+          entries_6_src2_val <= io_cdb_val_1;
         else if (_GEN_161)
-          entries_14_src2_val <= io_cdb_val_0;
-        if (_GEN_389)
-          entries_15_src1_val <= io_cdb_val_3;
-        else if (_GEN_294)
-          entries_15_src1_val <= io_cdb_val_2;
-        else if (_GEN_259)
-          entries_15_src1_val <= io_cdb_val_1;
+          entries_6_src2_val <= io_cdb_val_0;
+        if (_GEN_373)
+          entries_7_src1_val <= io_cdb_val_3;
+        else if (_GEN_310)
+          entries_7_src1_val <= io_cdb_val_2;
+        else if (_GEN_243)
+          entries_7_src1_val <= io_cdb_val_1;
         else if (_GEN_163)
-          entries_15_src1_val <= io_cdb_val_0;
-        if (_GEN_392)
-          entries_15_src2_val <= io_cdb_val_3;
-        else if (_GEN_295)
-          entries_15_src2_val <= io_cdb_val_2;
-        else if (_GEN_262)
-          entries_15_src2_val <= io_cdb_val_1;
+          entries_7_src1_val <= io_cdb_val_0;
+        if (_GEN_376)
+          entries_7_src2_val <= io_cdb_val_3;
+        else if (_GEN_311)
+          entries_7_src2_val <= io_cdb_val_2;
+        else if (_GEN_246)
+          entries_7_src2_val <= io_cdb_val_1;
         else if (_GEN_165)
+          entries_7_src2_val <= io_cdb_val_0;
+        if (_GEN_379)
+          entries_8_src1_val <= io_cdb_val_3;
+        else if (_GEN_312)
+          entries_8_src1_val <= io_cdb_val_2;
+        else if (_GEN_249)
+          entries_8_src1_val <= io_cdb_val_1;
+        else if (_GEN_167)
+          entries_8_src1_val <= io_cdb_val_0;
+        if (_GEN_382)
+          entries_8_src2_val <= io_cdb_val_3;
+        else if (_GEN_313)
+          entries_8_src2_val <= io_cdb_val_2;
+        else if (_GEN_252)
+          entries_8_src2_val <= io_cdb_val_1;
+        else if (_GEN_169)
+          entries_8_src2_val <= io_cdb_val_0;
+        if (_GEN_385)
+          entries_9_src1_val <= io_cdb_val_3;
+        else if (_GEN_314)
+          entries_9_src1_val <= io_cdb_val_2;
+        else if (_GEN_255)
+          entries_9_src1_val <= io_cdb_val_1;
+        else if (_GEN_171)
+          entries_9_src1_val <= io_cdb_val_0;
+        if (_GEN_388)
+          entries_9_src2_val <= io_cdb_val_3;
+        else if (_GEN_315)
+          entries_9_src2_val <= io_cdb_val_2;
+        else if (_GEN_258)
+          entries_9_src2_val <= io_cdb_val_1;
+        else if (_GEN_173)
+          entries_9_src2_val <= io_cdb_val_0;
+        if (_GEN_391)
+          entries_10_src1_val <= io_cdb_val_3;
+        else if (_GEN_316)
+          entries_10_src1_val <= io_cdb_val_2;
+        else if (_GEN_261)
+          entries_10_src1_val <= io_cdb_val_1;
+        else if (_GEN_175)
+          entries_10_src1_val <= io_cdb_val_0;
+        if (_GEN_394)
+          entries_10_src2_val <= io_cdb_val_3;
+        else if (_GEN_317)
+          entries_10_src2_val <= io_cdb_val_2;
+        else if (_GEN_264)
+          entries_10_src2_val <= io_cdb_val_1;
+        else if (_GEN_177)
+          entries_10_src2_val <= io_cdb_val_0;
+        if (_GEN_397)
+          entries_11_src1_val <= io_cdb_val_3;
+        else if (_GEN_318)
+          entries_11_src1_val <= io_cdb_val_2;
+        else if (_GEN_267)
+          entries_11_src1_val <= io_cdb_val_1;
+        else if (_GEN_179)
+          entries_11_src1_val <= io_cdb_val_0;
+        if (_GEN_400)
+          entries_11_src2_val <= io_cdb_val_3;
+        else if (_GEN_319)
+          entries_11_src2_val <= io_cdb_val_2;
+        else if (_GEN_270)
+          entries_11_src2_val <= io_cdb_val_1;
+        else if (_GEN_181)
+          entries_11_src2_val <= io_cdb_val_0;
+        if (_GEN_403)
+          entries_12_src1_val <= io_cdb_val_3;
+        else if (_GEN_320)
+          entries_12_src1_val <= io_cdb_val_2;
+        else if (_GEN_273)
+          entries_12_src1_val <= io_cdb_val_1;
+        else if (_GEN_183)
+          entries_12_src1_val <= io_cdb_val_0;
+        if (_GEN_406)
+          entries_12_src2_val <= io_cdb_val_3;
+        else if (_GEN_321)
+          entries_12_src2_val <= io_cdb_val_2;
+        else if (_GEN_276)
+          entries_12_src2_val <= io_cdb_val_1;
+        else if (_GEN_185)
+          entries_12_src2_val <= io_cdb_val_0;
+        if (_GEN_409)
+          entries_13_src1_val <= io_cdb_val_3;
+        else if (_GEN_322)
+          entries_13_src1_val <= io_cdb_val_2;
+        else if (_GEN_279)
+          entries_13_src1_val <= io_cdb_val_1;
+        else if (_GEN_187)
+          entries_13_src1_val <= io_cdb_val_0;
+        if (_GEN_412)
+          entries_13_src2_val <= io_cdb_val_3;
+        else if (_GEN_323)
+          entries_13_src2_val <= io_cdb_val_2;
+        else if (_GEN_282)
+          entries_13_src2_val <= io_cdb_val_1;
+        else if (_GEN_189)
+          entries_13_src2_val <= io_cdb_val_0;
+        if (_GEN_415)
+          entries_14_src1_val <= io_cdb_val_3;
+        else if (_GEN_324)
+          entries_14_src1_val <= io_cdb_val_2;
+        else if (_GEN_285)
+          entries_14_src1_val <= io_cdb_val_1;
+        else if (_GEN_191)
+          entries_14_src1_val <= io_cdb_val_0;
+        if (_GEN_418)
+          entries_14_src2_val <= io_cdb_val_3;
+        else if (_GEN_325)
+          entries_14_src2_val <= io_cdb_val_2;
+        else if (_GEN_288)
+          entries_14_src2_val <= io_cdb_val_1;
+        else if (_GEN_193)
+          entries_14_src2_val <= io_cdb_val_0;
+        if (_GEN_421)
+          entries_15_src1_val <= io_cdb_val_3;
+        else if (_GEN_326)
+          entries_15_src1_val <= io_cdb_val_2;
+        else if (_GEN_291)
+          entries_15_src1_val <= io_cdb_val_1;
+        else if (_GEN_195)
+          entries_15_src1_val <= io_cdb_val_0;
+        if (_GEN_424)
+          entries_15_src2_val <= io_cdb_val_3;
+        else if (_GEN_327)
+          entries_15_src2_val <= io_cdb_val_2;
+        else if (_GEN_294)
+          entries_15_src2_val <= io_cdb_val_1;
+        else if (_GEN_197)
           entries_15_src2_val <= io_cdb_val_0;
       end
       else begin
         entries_0_issued <=
-          _GEN_490
+          _GEN_589
             ? freshIssued_3
-            : _GEN_473
+            : _GEN_571
                 ? freshIssued_2
-                : _GEN_428
+                : _GEN_495
                     ? freshIssued_1
-                    : _GEN_410
+                    : _GEN_476
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h0
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h0 | _GEN_81 | _GEN_63
-                               : _GEN_81 | _GEN_63);
-        if (_GEN_490) begin
+                        : _GEN_131 & _GEN_132 == 4'h0
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h0 | _GEN_113 | _GEN_95
+                               : _GEN_113 | _GEN_95);
+        if (_GEN_589) begin
           entries_0_rob_idx <= io_enq_bits_3_rob_idx;
           entries_0_src1_phys <= io_enq_bits_3_src1_phys;
           entries_0_src2_phys <= io_enq_bits_3_src2_phys;
@@ -6712,6 +7358,7 @@ module WideRS(
           entries_0_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_0_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_0_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_0_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_0_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_0_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_0_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -6719,7 +7366,7 @@ module WideRS(
           entries_0_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_0_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_473) begin
+        else if (_GEN_571) begin
           entries_0_rob_idx <= io_enq_bits_2_rob_idx;
           entries_0_src1_phys <= io_enq_bits_2_src1_phys;
           entries_0_src2_phys <= io_enq_bits_2_src2_phys;
@@ -6738,6 +7385,7 @@ module WideRS(
           entries_0_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_0_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_0_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_0_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_0_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_0_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_0_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -6745,7 +7393,7 @@ module WideRS(
           entries_0_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_0_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_428) begin
+        else if (_GEN_495) begin
           entries_0_rob_idx <= io_enq_bits_1_rob_idx;
           entries_0_src1_phys <= io_enq_bits_1_src1_phys;
           entries_0_src2_phys <= io_enq_bits_1_src2_phys;
@@ -6764,6 +7412,7 @@ module WideRS(
           entries_0_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_0_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_0_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_0_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_0_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_0_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_0_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -6771,7 +7420,7 @@ module WideRS(
           entries_0_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_0_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_410) begin
+        else if (_GEN_476) begin
           entries_0_rob_idx <= io_enq_bits_0_rob_idx;
           entries_0_src1_phys <= io_enq_bits_0_src1_phys;
           entries_0_src2_phys <= io_enq_bits_0_src2_phys;
@@ -6790,6 +7439,7 @@ module WideRS(
           entries_0_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_0_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_0_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_0_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_0_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_0_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_0_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -6798,37 +7448,37 @@ module WideRS(
           entries_0_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_299)
+          if (_GEN_331)
             entries_0_src1_val <= io_cdb_val_3;
-          else if (_GEN_264)
+          else if (_GEN_296)
             entries_0_src1_val <= io_cdb_val_2;
-          else if (_GEN_169)
+          else if (_GEN_201)
             entries_0_src1_val <= io_cdb_val_1;
-          else if (_GEN_103)
+          else if (_GEN_135)
             entries_0_src1_val <= io_cdb_val_0;
-          if (_GEN_302)
+          if (_GEN_334)
             entries_0_src2_val <= io_cdb_val_3;
-          else if (_GEN_265)
+          else if (_GEN_297)
             entries_0_src2_val <= io_cdb_val_2;
-          else if (_GEN_172)
+          else if (_GEN_204)
             entries_0_src2_val <= io_cdb_val_1;
-          else if (_GEN_105)
+          else if (_GEN_137)
             entries_0_src2_val <= io_cdb_val_0;
         end
         entries_1_issued <=
-          _GEN_492
+          _GEN_592
             ? freshIssued_3
-            : _GEN_474
+            : _GEN_572
                 ? freshIssued_2
-                : _GEN_431
+                : _GEN_499
                     ? freshIssued_1
-                    : _GEN_411
+                    : _GEN_477
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h1
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h1 | _GEN_82 | _GEN_64
-                               : _GEN_82 | _GEN_64);
-        if (_GEN_492) begin
+                        : _GEN_131 & _GEN_132 == 4'h1
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h1 | _GEN_114 | _GEN_96
+                               : _GEN_114 | _GEN_96);
+        if (_GEN_592) begin
           entries_1_rob_idx <= io_enq_bits_3_rob_idx;
           entries_1_src1_phys <= io_enq_bits_3_src1_phys;
           entries_1_src2_phys <= io_enq_bits_3_src2_phys;
@@ -6847,6 +7497,7 @@ module WideRS(
           entries_1_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_1_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_1_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_1_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_1_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_1_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_1_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -6854,7 +7505,7 @@ module WideRS(
           entries_1_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_1_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_474) begin
+        else if (_GEN_572) begin
           entries_1_rob_idx <= io_enq_bits_2_rob_idx;
           entries_1_src1_phys <= io_enq_bits_2_src1_phys;
           entries_1_src2_phys <= io_enq_bits_2_src2_phys;
@@ -6873,6 +7524,7 @@ module WideRS(
           entries_1_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_1_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_1_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_1_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_1_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_1_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_1_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -6880,7 +7532,7 @@ module WideRS(
           entries_1_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_1_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_431) begin
+        else if (_GEN_499) begin
           entries_1_rob_idx <= io_enq_bits_1_rob_idx;
           entries_1_src1_phys <= io_enq_bits_1_src1_phys;
           entries_1_src2_phys <= io_enq_bits_1_src2_phys;
@@ -6899,6 +7551,7 @@ module WideRS(
           entries_1_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_1_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_1_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_1_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_1_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_1_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_1_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -6906,7 +7559,7 @@ module WideRS(
           entries_1_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_1_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_411) begin
+        else if (_GEN_477) begin
           entries_1_rob_idx <= io_enq_bits_0_rob_idx;
           entries_1_src1_phys <= io_enq_bits_0_src1_phys;
           entries_1_src2_phys <= io_enq_bits_0_src2_phys;
@@ -6925,6 +7578,7 @@ module WideRS(
           entries_1_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_1_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_1_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_1_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_1_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_1_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_1_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -6933,37 +7587,37 @@ module WideRS(
           entries_1_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_305)
+          if (_GEN_337)
             entries_1_src1_val <= io_cdb_val_3;
-          else if (_GEN_266)
+          else if (_GEN_298)
             entries_1_src1_val <= io_cdb_val_2;
-          else if (_GEN_175)
+          else if (_GEN_207)
             entries_1_src1_val <= io_cdb_val_1;
-          else if (_GEN_107)
+          else if (_GEN_139)
             entries_1_src1_val <= io_cdb_val_0;
-          if (_GEN_308)
+          if (_GEN_340)
             entries_1_src2_val <= io_cdb_val_3;
-          else if (_GEN_267)
+          else if (_GEN_299)
             entries_1_src2_val <= io_cdb_val_2;
-          else if (_GEN_178)
+          else if (_GEN_210)
             entries_1_src2_val <= io_cdb_val_1;
-          else if (_GEN_109)
+          else if (_GEN_141)
             entries_1_src2_val <= io_cdb_val_0;
         end
         entries_2_issued <=
-          _GEN_494
+          _GEN_595
             ? freshIssued_3
-            : _GEN_475
+            : _GEN_573
                 ? freshIssued_2
-                : _GEN_434
+                : _GEN_503
                     ? freshIssued_1
-                    : _GEN_412
+                    : _GEN_478
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h2
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h2 | _GEN_83 | _GEN_65
-                               : _GEN_83 | _GEN_65);
-        if (_GEN_494) begin
+                        : _GEN_131 & _GEN_132 == 4'h2
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h2 | _GEN_115 | _GEN_97
+                               : _GEN_115 | _GEN_97);
+        if (_GEN_595) begin
           entries_2_rob_idx <= io_enq_bits_3_rob_idx;
           entries_2_src1_phys <= io_enq_bits_3_src1_phys;
           entries_2_src2_phys <= io_enq_bits_3_src2_phys;
@@ -6982,6 +7636,7 @@ module WideRS(
           entries_2_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_2_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_2_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_2_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_2_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_2_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_2_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -6989,7 +7644,7 @@ module WideRS(
           entries_2_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_2_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_475) begin
+        else if (_GEN_573) begin
           entries_2_rob_idx <= io_enq_bits_2_rob_idx;
           entries_2_src1_phys <= io_enq_bits_2_src1_phys;
           entries_2_src2_phys <= io_enq_bits_2_src2_phys;
@@ -7008,6 +7663,7 @@ module WideRS(
           entries_2_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_2_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_2_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_2_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_2_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_2_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_2_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -7015,7 +7671,7 @@ module WideRS(
           entries_2_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_2_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_434) begin
+        else if (_GEN_503) begin
           entries_2_rob_idx <= io_enq_bits_1_rob_idx;
           entries_2_src1_phys <= io_enq_bits_1_src1_phys;
           entries_2_src2_phys <= io_enq_bits_1_src2_phys;
@@ -7034,6 +7690,7 @@ module WideRS(
           entries_2_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_2_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_2_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_2_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_2_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_2_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_2_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -7041,7 +7698,7 @@ module WideRS(
           entries_2_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_2_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_412) begin
+        else if (_GEN_478) begin
           entries_2_rob_idx <= io_enq_bits_0_rob_idx;
           entries_2_src1_phys <= io_enq_bits_0_src1_phys;
           entries_2_src2_phys <= io_enq_bits_0_src2_phys;
@@ -7060,6 +7717,7 @@ module WideRS(
           entries_2_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_2_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_2_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_2_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_2_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_2_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_2_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -7068,37 +7726,37 @@ module WideRS(
           entries_2_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_311)
+          if (_GEN_343)
             entries_2_src1_val <= io_cdb_val_3;
-          else if (_GEN_268)
+          else if (_GEN_300)
             entries_2_src1_val <= io_cdb_val_2;
-          else if (_GEN_181)
+          else if (_GEN_213)
             entries_2_src1_val <= io_cdb_val_1;
-          else if (_GEN_111)
+          else if (_GEN_143)
             entries_2_src1_val <= io_cdb_val_0;
-          if (_GEN_314)
+          if (_GEN_346)
             entries_2_src2_val <= io_cdb_val_3;
-          else if (_GEN_269)
+          else if (_GEN_301)
             entries_2_src2_val <= io_cdb_val_2;
-          else if (_GEN_184)
+          else if (_GEN_216)
             entries_2_src2_val <= io_cdb_val_1;
-          else if (_GEN_113)
+          else if (_GEN_145)
             entries_2_src2_val <= io_cdb_val_0;
         end
         entries_3_issued <=
-          _GEN_496
+          _GEN_598
             ? freshIssued_3
-            : _GEN_476
+            : _GEN_574
                 ? freshIssued_2
-                : _GEN_437
+                : _GEN_507
                     ? freshIssued_1
-                    : _GEN_413
+                    : _GEN_479
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h3
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h3 | _GEN_84 | _GEN_66
-                               : _GEN_84 | _GEN_66);
-        if (_GEN_496) begin
+                        : _GEN_131 & _GEN_132 == 4'h3
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h3 | _GEN_116 | _GEN_98
+                               : _GEN_116 | _GEN_98);
+        if (_GEN_598) begin
           entries_3_rob_idx <= io_enq_bits_3_rob_idx;
           entries_3_src1_phys <= io_enq_bits_3_src1_phys;
           entries_3_src2_phys <= io_enq_bits_3_src2_phys;
@@ -7117,6 +7775,7 @@ module WideRS(
           entries_3_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_3_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_3_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_3_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_3_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_3_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_3_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -7124,7 +7783,7 @@ module WideRS(
           entries_3_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_3_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_476) begin
+        else if (_GEN_574) begin
           entries_3_rob_idx <= io_enq_bits_2_rob_idx;
           entries_3_src1_phys <= io_enq_bits_2_src1_phys;
           entries_3_src2_phys <= io_enq_bits_2_src2_phys;
@@ -7143,6 +7802,7 @@ module WideRS(
           entries_3_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_3_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_3_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_3_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_3_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_3_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_3_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -7150,7 +7810,7 @@ module WideRS(
           entries_3_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_3_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_437) begin
+        else if (_GEN_507) begin
           entries_3_rob_idx <= io_enq_bits_1_rob_idx;
           entries_3_src1_phys <= io_enq_bits_1_src1_phys;
           entries_3_src2_phys <= io_enq_bits_1_src2_phys;
@@ -7169,6 +7829,7 @@ module WideRS(
           entries_3_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_3_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_3_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_3_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_3_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_3_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_3_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -7176,7 +7837,7 @@ module WideRS(
           entries_3_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_3_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_413) begin
+        else if (_GEN_479) begin
           entries_3_rob_idx <= io_enq_bits_0_rob_idx;
           entries_3_src1_phys <= io_enq_bits_0_src1_phys;
           entries_3_src2_phys <= io_enq_bits_0_src2_phys;
@@ -7195,6 +7856,7 @@ module WideRS(
           entries_3_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_3_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_3_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_3_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_3_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_3_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_3_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -7203,37 +7865,37 @@ module WideRS(
           entries_3_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_317)
+          if (_GEN_349)
             entries_3_src1_val <= io_cdb_val_3;
-          else if (_GEN_270)
+          else if (_GEN_302)
             entries_3_src1_val <= io_cdb_val_2;
-          else if (_GEN_187)
+          else if (_GEN_219)
             entries_3_src1_val <= io_cdb_val_1;
-          else if (_GEN_115)
+          else if (_GEN_147)
             entries_3_src1_val <= io_cdb_val_0;
-          if (_GEN_320)
+          if (_GEN_352)
             entries_3_src2_val <= io_cdb_val_3;
-          else if (_GEN_271)
+          else if (_GEN_303)
             entries_3_src2_val <= io_cdb_val_2;
-          else if (_GEN_190)
+          else if (_GEN_222)
             entries_3_src2_val <= io_cdb_val_1;
-          else if (_GEN_117)
+          else if (_GEN_149)
             entries_3_src2_val <= io_cdb_val_0;
         end
         entries_4_issued <=
-          _GEN_498
+          _GEN_601
             ? freshIssued_3
-            : _GEN_477
+            : _GEN_575
                 ? freshIssued_2
-                : _GEN_440
+                : _GEN_511
                     ? freshIssued_1
-                    : _GEN_414
+                    : _GEN_480
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h4
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h4 | _GEN_85 | _GEN_67
-                               : _GEN_85 | _GEN_67);
-        if (_GEN_498) begin
+                        : _GEN_131 & _GEN_132 == 4'h4
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h4 | _GEN_117 | _GEN_99
+                               : _GEN_117 | _GEN_99);
+        if (_GEN_601) begin
           entries_4_rob_idx <= io_enq_bits_3_rob_idx;
           entries_4_src1_phys <= io_enq_bits_3_src1_phys;
           entries_4_src2_phys <= io_enq_bits_3_src2_phys;
@@ -7252,6 +7914,7 @@ module WideRS(
           entries_4_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_4_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_4_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_4_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_4_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_4_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_4_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -7259,7 +7922,7 @@ module WideRS(
           entries_4_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_4_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_477) begin
+        else if (_GEN_575) begin
           entries_4_rob_idx <= io_enq_bits_2_rob_idx;
           entries_4_src1_phys <= io_enq_bits_2_src1_phys;
           entries_4_src2_phys <= io_enq_bits_2_src2_phys;
@@ -7278,6 +7941,7 @@ module WideRS(
           entries_4_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_4_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_4_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_4_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_4_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_4_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_4_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -7285,7 +7949,7 @@ module WideRS(
           entries_4_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_4_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_440) begin
+        else if (_GEN_511) begin
           entries_4_rob_idx <= io_enq_bits_1_rob_idx;
           entries_4_src1_phys <= io_enq_bits_1_src1_phys;
           entries_4_src2_phys <= io_enq_bits_1_src2_phys;
@@ -7304,6 +7968,7 @@ module WideRS(
           entries_4_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_4_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_4_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_4_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_4_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_4_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_4_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -7311,7 +7976,7 @@ module WideRS(
           entries_4_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_4_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_414) begin
+        else if (_GEN_480) begin
           entries_4_rob_idx <= io_enq_bits_0_rob_idx;
           entries_4_src1_phys <= io_enq_bits_0_src1_phys;
           entries_4_src2_phys <= io_enq_bits_0_src2_phys;
@@ -7330,6 +7995,7 @@ module WideRS(
           entries_4_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_4_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_4_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_4_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_4_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_4_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_4_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -7338,37 +8004,37 @@ module WideRS(
           entries_4_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_323)
+          if (_GEN_355)
             entries_4_src1_val <= io_cdb_val_3;
-          else if (_GEN_272)
+          else if (_GEN_304)
             entries_4_src1_val <= io_cdb_val_2;
-          else if (_GEN_193)
+          else if (_GEN_225)
             entries_4_src1_val <= io_cdb_val_1;
-          else if (_GEN_119)
+          else if (_GEN_151)
             entries_4_src1_val <= io_cdb_val_0;
-          if (_GEN_326)
+          if (_GEN_358)
             entries_4_src2_val <= io_cdb_val_3;
-          else if (_GEN_273)
+          else if (_GEN_305)
             entries_4_src2_val <= io_cdb_val_2;
-          else if (_GEN_196)
+          else if (_GEN_228)
             entries_4_src2_val <= io_cdb_val_1;
-          else if (_GEN_121)
+          else if (_GEN_153)
             entries_4_src2_val <= io_cdb_val_0;
         end
         entries_5_issued <=
-          _GEN_500
+          _GEN_604
             ? freshIssued_3
-            : _GEN_478
+            : _GEN_576
                 ? freshIssued_2
-                : _GEN_443
+                : _GEN_515
                     ? freshIssued_1
-                    : _GEN_415
+                    : _GEN_481
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h5
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h5 | _GEN_86 | _GEN_68
-                               : _GEN_86 | _GEN_68);
-        if (_GEN_500) begin
+                        : _GEN_131 & _GEN_132 == 4'h5
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h5 | _GEN_118 | _GEN_100
+                               : _GEN_118 | _GEN_100);
+        if (_GEN_604) begin
           entries_5_rob_idx <= io_enq_bits_3_rob_idx;
           entries_5_src1_phys <= io_enq_bits_3_src1_phys;
           entries_5_src2_phys <= io_enq_bits_3_src2_phys;
@@ -7387,6 +8053,7 @@ module WideRS(
           entries_5_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_5_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_5_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_5_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_5_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_5_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_5_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -7394,7 +8061,7 @@ module WideRS(
           entries_5_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_5_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_478) begin
+        else if (_GEN_576) begin
           entries_5_rob_idx <= io_enq_bits_2_rob_idx;
           entries_5_src1_phys <= io_enq_bits_2_src1_phys;
           entries_5_src2_phys <= io_enq_bits_2_src2_phys;
@@ -7413,6 +8080,7 @@ module WideRS(
           entries_5_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_5_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_5_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_5_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_5_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_5_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_5_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -7420,7 +8088,7 @@ module WideRS(
           entries_5_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_5_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_443) begin
+        else if (_GEN_515) begin
           entries_5_rob_idx <= io_enq_bits_1_rob_idx;
           entries_5_src1_phys <= io_enq_bits_1_src1_phys;
           entries_5_src2_phys <= io_enq_bits_1_src2_phys;
@@ -7439,6 +8107,7 @@ module WideRS(
           entries_5_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_5_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_5_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_5_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_5_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_5_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_5_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -7446,7 +8115,7 @@ module WideRS(
           entries_5_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_5_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_415) begin
+        else if (_GEN_481) begin
           entries_5_rob_idx <= io_enq_bits_0_rob_idx;
           entries_5_src1_phys <= io_enq_bits_0_src1_phys;
           entries_5_src2_phys <= io_enq_bits_0_src2_phys;
@@ -7465,6 +8134,7 @@ module WideRS(
           entries_5_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_5_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_5_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_5_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_5_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_5_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_5_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -7473,37 +8143,37 @@ module WideRS(
           entries_5_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_329)
+          if (_GEN_361)
             entries_5_src1_val <= io_cdb_val_3;
-          else if (_GEN_274)
+          else if (_GEN_306)
             entries_5_src1_val <= io_cdb_val_2;
-          else if (_GEN_199)
+          else if (_GEN_231)
             entries_5_src1_val <= io_cdb_val_1;
-          else if (_GEN_123)
+          else if (_GEN_155)
             entries_5_src1_val <= io_cdb_val_0;
-          if (_GEN_332)
+          if (_GEN_364)
             entries_5_src2_val <= io_cdb_val_3;
-          else if (_GEN_275)
+          else if (_GEN_307)
             entries_5_src2_val <= io_cdb_val_2;
-          else if (_GEN_202)
+          else if (_GEN_234)
             entries_5_src2_val <= io_cdb_val_1;
-          else if (_GEN_125)
+          else if (_GEN_157)
             entries_5_src2_val <= io_cdb_val_0;
         end
         entries_6_issued <=
-          _GEN_502
+          _GEN_607
             ? freshIssued_3
-            : _GEN_479
+            : _GEN_577
                 ? freshIssued_2
-                : _GEN_446
+                : _GEN_519
                     ? freshIssued_1
-                    : _GEN_416
+                    : _GEN_482
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h6
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h6 | _GEN_87 | _GEN_69
-                               : _GEN_87 | _GEN_69);
-        if (_GEN_502) begin
+                        : _GEN_131 & _GEN_132 == 4'h6
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h6 | _GEN_119 | _GEN_101
+                               : _GEN_119 | _GEN_101);
+        if (_GEN_607) begin
           entries_6_rob_idx <= io_enq_bits_3_rob_idx;
           entries_6_src1_phys <= io_enq_bits_3_src1_phys;
           entries_6_src2_phys <= io_enq_bits_3_src2_phys;
@@ -7522,6 +8192,7 @@ module WideRS(
           entries_6_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_6_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_6_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_6_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_6_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_6_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_6_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -7529,7 +8200,7 @@ module WideRS(
           entries_6_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_6_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_479) begin
+        else if (_GEN_577) begin
           entries_6_rob_idx <= io_enq_bits_2_rob_idx;
           entries_6_src1_phys <= io_enq_bits_2_src1_phys;
           entries_6_src2_phys <= io_enq_bits_2_src2_phys;
@@ -7548,6 +8219,7 @@ module WideRS(
           entries_6_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_6_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_6_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_6_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_6_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_6_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_6_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -7555,7 +8227,7 @@ module WideRS(
           entries_6_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_6_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_446) begin
+        else if (_GEN_519) begin
           entries_6_rob_idx <= io_enq_bits_1_rob_idx;
           entries_6_src1_phys <= io_enq_bits_1_src1_phys;
           entries_6_src2_phys <= io_enq_bits_1_src2_phys;
@@ -7574,6 +8246,7 @@ module WideRS(
           entries_6_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_6_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_6_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_6_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_6_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_6_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_6_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -7581,7 +8254,7 @@ module WideRS(
           entries_6_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_6_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_416) begin
+        else if (_GEN_482) begin
           entries_6_rob_idx <= io_enq_bits_0_rob_idx;
           entries_6_src1_phys <= io_enq_bits_0_src1_phys;
           entries_6_src2_phys <= io_enq_bits_0_src2_phys;
@@ -7600,6 +8273,7 @@ module WideRS(
           entries_6_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_6_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_6_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_6_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_6_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_6_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_6_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -7608,37 +8282,37 @@ module WideRS(
           entries_6_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_335)
+          if (_GEN_367)
             entries_6_src1_val <= io_cdb_val_3;
-          else if (_GEN_276)
+          else if (_GEN_308)
             entries_6_src1_val <= io_cdb_val_2;
-          else if (_GEN_205)
+          else if (_GEN_237)
             entries_6_src1_val <= io_cdb_val_1;
-          else if (_GEN_127)
+          else if (_GEN_159)
             entries_6_src1_val <= io_cdb_val_0;
-          if (_GEN_338)
+          if (_GEN_370)
             entries_6_src2_val <= io_cdb_val_3;
-          else if (_GEN_277)
+          else if (_GEN_309)
             entries_6_src2_val <= io_cdb_val_2;
-          else if (_GEN_208)
+          else if (_GEN_240)
             entries_6_src2_val <= io_cdb_val_1;
-          else if (_GEN_129)
+          else if (_GEN_161)
             entries_6_src2_val <= io_cdb_val_0;
         end
         entries_7_issued <=
-          _GEN_504
+          _GEN_610
             ? freshIssued_3
-            : _GEN_480
+            : _GEN_578
                 ? freshIssued_2
-                : _GEN_449
+                : _GEN_523
                     ? freshIssued_1
-                    : _GEN_417
+                    : _GEN_483
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h7
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h7 | _GEN_88 | _GEN_70
-                               : _GEN_88 | _GEN_70);
-        if (_GEN_504) begin
+                        : _GEN_131 & _GEN_132 == 4'h7
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h7 | _GEN_120 | _GEN_102
+                               : _GEN_120 | _GEN_102);
+        if (_GEN_610) begin
           entries_7_rob_idx <= io_enq_bits_3_rob_idx;
           entries_7_src1_phys <= io_enq_bits_3_src1_phys;
           entries_7_src2_phys <= io_enq_bits_3_src2_phys;
@@ -7657,6 +8331,7 @@ module WideRS(
           entries_7_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_7_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_7_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_7_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_7_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_7_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_7_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -7664,7 +8339,7 @@ module WideRS(
           entries_7_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_7_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_480) begin
+        else if (_GEN_578) begin
           entries_7_rob_idx <= io_enq_bits_2_rob_idx;
           entries_7_src1_phys <= io_enq_bits_2_src1_phys;
           entries_7_src2_phys <= io_enq_bits_2_src2_phys;
@@ -7683,6 +8358,7 @@ module WideRS(
           entries_7_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_7_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_7_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_7_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_7_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_7_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_7_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -7690,7 +8366,7 @@ module WideRS(
           entries_7_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_7_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_449) begin
+        else if (_GEN_523) begin
           entries_7_rob_idx <= io_enq_bits_1_rob_idx;
           entries_7_src1_phys <= io_enq_bits_1_src1_phys;
           entries_7_src2_phys <= io_enq_bits_1_src2_phys;
@@ -7709,6 +8385,7 @@ module WideRS(
           entries_7_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_7_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_7_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_7_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_7_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_7_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_7_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -7716,7 +8393,7 @@ module WideRS(
           entries_7_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_7_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_417) begin
+        else if (_GEN_483) begin
           entries_7_rob_idx <= io_enq_bits_0_rob_idx;
           entries_7_src1_phys <= io_enq_bits_0_src1_phys;
           entries_7_src2_phys <= io_enq_bits_0_src2_phys;
@@ -7735,6 +8412,7 @@ module WideRS(
           entries_7_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_7_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_7_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_7_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_7_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_7_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_7_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -7743,37 +8421,37 @@ module WideRS(
           entries_7_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_341)
+          if (_GEN_373)
             entries_7_src1_val <= io_cdb_val_3;
-          else if (_GEN_278)
+          else if (_GEN_310)
             entries_7_src1_val <= io_cdb_val_2;
-          else if (_GEN_211)
+          else if (_GEN_243)
             entries_7_src1_val <= io_cdb_val_1;
-          else if (_GEN_131)
+          else if (_GEN_163)
             entries_7_src1_val <= io_cdb_val_0;
-          if (_GEN_344)
+          if (_GEN_376)
             entries_7_src2_val <= io_cdb_val_3;
-          else if (_GEN_279)
+          else if (_GEN_311)
             entries_7_src2_val <= io_cdb_val_2;
-          else if (_GEN_214)
+          else if (_GEN_246)
             entries_7_src2_val <= io_cdb_val_1;
-          else if (_GEN_133)
+          else if (_GEN_165)
             entries_7_src2_val <= io_cdb_val_0;
         end
         entries_8_issued <=
-          _GEN_506
+          _GEN_613
             ? freshIssued_3
-            : _GEN_481
+            : _GEN_579
                 ? freshIssued_2
-                : _GEN_452
+                : _GEN_527
                     ? freshIssued_1
-                    : _GEN_418
+                    : _GEN_484
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h8
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h8 | _GEN_89 | _GEN_71
-                               : _GEN_89 | _GEN_71);
-        if (_GEN_506) begin
+                        : _GEN_131 & _GEN_132 == 4'h8
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h8 | _GEN_121 | _GEN_103
+                               : _GEN_121 | _GEN_103);
+        if (_GEN_613) begin
           entries_8_rob_idx <= io_enq_bits_3_rob_idx;
           entries_8_src1_phys <= io_enq_bits_3_src1_phys;
           entries_8_src2_phys <= io_enq_bits_3_src2_phys;
@@ -7792,6 +8470,7 @@ module WideRS(
           entries_8_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_8_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_8_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_8_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_8_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_8_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_8_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -7799,7 +8478,7 @@ module WideRS(
           entries_8_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_8_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_481) begin
+        else if (_GEN_579) begin
           entries_8_rob_idx <= io_enq_bits_2_rob_idx;
           entries_8_src1_phys <= io_enq_bits_2_src1_phys;
           entries_8_src2_phys <= io_enq_bits_2_src2_phys;
@@ -7818,6 +8497,7 @@ module WideRS(
           entries_8_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_8_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_8_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_8_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_8_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_8_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_8_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -7825,7 +8505,7 @@ module WideRS(
           entries_8_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_8_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_452) begin
+        else if (_GEN_527) begin
           entries_8_rob_idx <= io_enq_bits_1_rob_idx;
           entries_8_src1_phys <= io_enq_bits_1_src1_phys;
           entries_8_src2_phys <= io_enq_bits_1_src2_phys;
@@ -7844,6 +8524,7 @@ module WideRS(
           entries_8_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_8_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_8_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_8_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_8_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_8_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_8_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -7851,7 +8532,7 @@ module WideRS(
           entries_8_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_8_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_418) begin
+        else if (_GEN_484) begin
           entries_8_rob_idx <= io_enq_bits_0_rob_idx;
           entries_8_src1_phys <= io_enq_bits_0_src1_phys;
           entries_8_src2_phys <= io_enq_bits_0_src2_phys;
@@ -7870,6 +8551,7 @@ module WideRS(
           entries_8_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_8_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_8_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_8_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_8_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_8_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_8_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -7878,37 +8560,37 @@ module WideRS(
           entries_8_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_347)
+          if (_GEN_379)
             entries_8_src1_val <= io_cdb_val_3;
-          else if (_GEN_280)
+          else if (_GEN_312)
             entries_8_src1_val <= io_cdb_val_2;
-          else if (_GEN_217)
+          else if (_GEN_249)
             entries_8_src1_val <= io_cdb_val_1;
-          else if (_GEN_135)
+          else if (_GEN_167)
             entries_8_src1_val <= io_cdb_val_0;
-          if (_GEN_350)
+          if (_GEN_382)
             entries_8_src2_val <= io_cdb_val_3;
-          else if (_GEN_281)
+          else if (_GEN_313)
             entries_8_src2_val <= io_cdb_val_2;
-          else if (_GEN_220)
+          else if (_GEN_252)
             entries_8_src2_val <= io_cdb_val_1;
-          else if (_GEN_137)
+          else if (_GEN_169)
             entries_8_src2_val <= io_cdb_val_0;
         end
         entries_9_issued <=
-          _GEN_508
+          _GEN_616
             ? freshIssued_3
-            : _GEN_482
+            : _GEN_580
                 ? freshIssued_2
-                : _GEN_455
+                : _GEN_531
                     ? freshIssued_1
-                    : _GEN_419
+                    : _GEN_485
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'h9
-                          | (_GEN_97
-                               ? _GEN_98 == 4'h9 | _GEN_90 | _GEN_72
-                               : _GEN_90 | _GEN_72);
-        if (_GEN_508) begin
+                        : _GEN_131 & _GEN_132 == 4'h9
+                          | (_GEN_129
+                               ? _GEN_130 == 4'h9 | _GEN_122 | _GEN_104
+                               : _GEN_122 | _GEN_104);
+        if (_GEN_616) begin
           entries_9_rob_idx <= io_enq_bits_3_rob_idx;
           entries_9_src1_phys <= io_enq_bits_3_src1_phys;
           entries_9_src2_phys <= io_enq_bits_3_src2_phys;
@@ -7927,6 +8609,7 @@ module WideRS(
           entries_9_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_9_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_9_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_9_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_9_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_9_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_9_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -7934,7 +8617,7 @@ module WideRS(
           entries_9_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_9_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_482) begin
+        else if (_GEN_580) begin
           entries_9_rob_idx <= io_enq_bits_2_rob_idx;
           entries_9_src1_phys <= io_enq_bits_2_src1_phys;
           entries_9_src2_phys <= io_enq_bits_2_src2_phys;
@@ -7953,6 +8636,7 @@ module WideRS(
           entries_9_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_9_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_9_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_9_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_9_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_9_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_9_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -7960,7 +8644,7 @@ module WideRS(
           entries_9_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_9_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_455) begin
+        else if (_GEN_531) begin
           entries_9_rob_idx <= io_enq_bits_1_rob_idx;
           entries_9_src1_phys <= io_enq_bits_1_src1_phys;
           entries_9_src2_phys <= io_enq_bits_1_src2_phys;
@@ -7979,6 +8663,7 @@ module WideRS(
           entries_9_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_9_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_9_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_9_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_9_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_9_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_9_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -7986,7 +8671,7 @@ module WideRS(
           entries_9_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_9_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_419) begin
+        else if (_GEN_485) begin
           entries_9_rob_idx <= io_enq_bits_0_rob_idx;
           entries_9_src1_phys <= io_enq_bits_0_src1_phys;
           entries_9_src2_phys <= io_enq_bits_0_src2_phys;
@@ -8005,6 +8690,7 @@ module WideRS(
           entries_9_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_9_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_9_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_9_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_9_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_9_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_9_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -8013,37 +8699,37 @@ module WideRS(
           entries_9_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_353)
+          if (_GEN_385)
             entries_9_src1_val <= io_cdb_val_3;
-          else if (_GEN_282)
+          else if (_GEN_314)
             entries_9_src1_val <= io_cdb_val_2;
-          else if (_GEN_223)
+          else if (_GEN_255)
             entries_9_src1_val <= io_cdb_val_1;
-          else if (_GEN_139)
+          else if (_GEN_171)
             entries_9_src1_val <= io_cdb_val_0;
-          if (_GEN_356)
+          if (_GEN_388)
             entries_9_src2_val <= io_cdb_val_3;
-          else if (_GEN_283)
+          else if (_GEN_315)
             entries_9_src2_val <= io_cdb_val_2;
-          else if (_GEN_226)
+          else if (_GEN_258)
             entries_9_src2_val <= io_cdb_val_1;
-          else if (_GEN_141)
+          else if (_GEN_173)
             entries_9_src2_val <= io_cdb_val_0;
         end
         entries_10_issued <=
-          _GEN_510
+          _GEN_619
             ? freshIssued_3
-            : _GEN_483
+            : _GEN_581
                 ? freshIssued_2
-                : _GEN_458
+                : _GEN_535
                     ? freshIssued_1
-                    : _GEN_420
+                    : _GEN_486
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'hA
-                          | (_GEN_97
-                               ? _GEN_98 == 4'hA | _GEN_91 | _GEN_73
-                               : _GEN_91 | _GEN_73);
-        if (_GEN_510) begin
+                        : _GEN_131 & _GEN_132 == 4'hA
+                          | (_GEN_129
+                               ? _GEN_130 == 4'hA | _GEN_123 | _GEN_105
+                               : _GEN_123 | _GEN_105);
+        if (_GEN_619) begin
           entries_10_rob_idx <= io_enq_bits_3_rob_idx;
           entries_10_src1_phys <= io_enq_bits_3_src1_phys;
           entries_10_src2_phys <= io_enq_bits_3_src2_phys;
@@ -8062,6 +8748,7 @@ module WideRS(
           entries_10_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_10_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_10_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_10_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_10_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_10_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_10_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -8069,7 +8756,7 @@ module WideRS(
           entries_10_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_10_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_483) begin
+        else if (_GEN_581) begin
           entries_10_rob_idx <= io_enq_bits_2_rob_idx;
           entries_10_src1_phys <= io_enq_bits_2_src1_phys;
           entries_10_src2_phys <= io_enq_bits_2_src2_phys;
@@ -8088,6 +8775,7 @@ module WideRS(
           entries_10_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_10_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_10_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_10_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_10_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_10_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_10_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -8095,7 +8783,7 @@ module WideRS(
           entries_10_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_10_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_458) begin
+        else if (_GEN_535) begin
           entries_10_rob_idx <= io_enq_bits_1_rob_idx;
           entries_10_src1_phys <= io_enq_bits_1_src1_phys;
           entries_10_src2_phys <= io_enq_bits_1_src2_phys;
@@ -8114,6 +8802,7 @@ module WideRS(
           entries_10_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_10_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_10_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_10_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_10_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_10_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_10_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -8121,7 +8810,7 @@ module WideRS(
           entries_10_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_10_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_420) begin
+        else if (_GEN_486) begin
           entries_10_rob_idx <= io_enq_bits_0_rob_idx;
           entries_10_src1_phys <= io_enq_bits_0_src1_phys;
           entries_10_src2_phys <= io_enq_bits_0_src2_phys;
@@ -8140,6 +8829,7 @@ module WideRS(
           entries_10_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_10_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_10_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_10_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_10_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_10_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_10_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -8148,37 +8838,37 @@ module WideRS(
           entries_10_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_359)
+          if (_GEN_391)
             entries_10_src1_val <= io_cdb_val_3;
-          else if (_GEN_284)
+          else if (_GEN_316)
             entries_10_src1_val <= io_cdb_val_2;
-          else if (_GEN_229)
+          else if (_GEN_261)
             entries_10_src1_val <= io_cdb_val_1;
-          else if (_GEN_143)
+          else if (_GEN_175)
             entries_10_src1_val <= io_cdb_val_0;
-          if (_GEN_362)
+          if (_GEN_394)
             entries_10_src2_val <= io_cdb_val_3;
-          else if (_GEN_285)
+          else if (_GEN_317)
             entries_10_src2_val <= io_cdb_val_2;
-          else if (_GEN_232)
+          else if (_GEN_264)
             entries_10_src2_val <= io_cdb_val_1;
-          else if (_GEN_145)
+          else if (_GEN_177)
             entries_10_src2_val <= io_cdb_val_0;
         end
         entries_11_issued <=
-          _GEN_512
+          _GEN_622
             ? freshIssued_3
-            : _GEN_484
+            : _GEN_582
                 ? freshIssued_2
-                : _GEN_461
+                : _GEN_539
                     ? freshIssued_1
-                    : _GEN_421
+                    : _GEN_487
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'hB
-                          | (_GEN_97
-                               ? _GEN_98 == 4'hB | _GEN_92 | _GEN_74
-                               : _GEN_92 | _GEN_74);
-        if (_GEN_512) begin
+                        : _GEN_131 & _GEN_132 == 4'hB
+                          | (_GEN_129
+                               ? _GEN_130 == 4'hB | _GEN_124 | _GEN_106
+                               : _GEN_124 | _GEN_106);
+        if (_GEN_622) begin
           entries_11_rob_idx <= io_enq_bits_3_rob_idx;
           entries_11_src1_phys <= io_enq_bits_3_src1_phys;
           entries_11_src2_phys <= io_enq_bits_3_src2_phys;
@@ -8197,6 +8887,7 @@ module WideRS(
           entries_11_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_11_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_11_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_11_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_11_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_11_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_11_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -8204,7 +8895,7 @@ module WideRS(
           entries_11_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_11_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_484) begin
+        else if (_GEN_582) begin
           entries_11_rob_idx <= io_enq_bits_2_rob_idx;
           entries_11_src1_phys <= io_enq_bits_2_src1_phys;
           entries_11_src2_phys <= io_enq_bits_2_src2_phys;
@@ -8223,6 +8914,7 @@ module WideRS(
           entries_11_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_11_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_11_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_11_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_11_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_11_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_11_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -8230,7 +8922,7 @@ module WideRS(
           entries_11_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_11_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_461) begin
+        else if (_GEN_539) begin
           entries_11_rob_idx <= io_enq_bits_1_rob_idx;
           entries_11_src1_phys <= io_enq_bits_1_src1_phys;
           entries_11_src2_phys <= io_enq_bits_1_src2_phys;
@@ -8249,6 +8941,7 @@ module WideRS(
           entries_11_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_11_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_11_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_11_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_11_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_11_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_11_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -8256,7 +8949,7 @@ module WideRS(
           entries_11_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_11_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_421) begin
+        else if (_GEN_487) begin
           entries_11_rob_idx <= io_enq_bits_0_rob_idx;
           entries_11_src1_phys <= io_enq_bits_0_src1_phys;
           entries_11_src2_phys <= io_enq_bits_0_src2_phys;
@@ -8275,6 +8968,7 @@ module WideRS(
           entries_11_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_11_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_11_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_11_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_11_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_11_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_11_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -8283,37 +8977,37 @@ module WideRS(
           entries_11_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_365)
+          if (_GEN_397)
             entries_11_src1_val <= io_cdb_val_3;
-          else if (_GEN_286)
+          else if (_GEN_318)
             entries_11_src1_val <= io_cdb_val_2;
-          else if (_GEN_235)
+          else if (_GEN_267)
             entries_11_src1_val <= io_cdb_val_1;
-          else if (_GEN_147)
+          else if (_GEN_179)
             entries_11_src1_val <= io_cdb_val_0;
-          if (_GEN_368)
+          if (_GEN_400)
             entries_11_src2_val <= io_cdb_val_3;
-          else if (_GEN_287)
+          else if (_GEN_319)
             entries_11_src2_val <= io_cdb_val_2;
-          else if (_GEN_238)
+          else if (_GEN_270)
             entries_11_src2_val <= io_cdb_val_1;
-          else if (_GEN_149)
+          else if (_GEN_181)
             entries_11_src2_val <= io_cdb_val_0;
         end
         entries_12_issued <=
-          _GEN_514
+          _GEN_625
             ? freshIssued_3
-            : _GEN_485
+            : _GEN_583
                 ? freshIssued_2
-                : _GEN_464
+                : _GEN_543
                     ? freshIssued_1
-                    : _GEN_422
+                    : _GEN_488
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'hC
-                          | (_GEN_97
-                               ? _GEN_98 == 4'hC | _GEN_93 | _GEN_75
-                               : _GEN_93 | _GEN_75);
-        if (_GEN_514) begin
+                        : _GEN_131 & _GEN_132 == 4'hC
+                          | (_GEN_129
+                               ? _GEN_130 == 4'hC | _GEN_125 | _GEN_107
+                               : _GEN_125 | _GEN_107);
+        if (_GEN_625) begin
           entries_12_rob_idx <= io_enq_bits_3_rob_idx;
           entries_12_src1_phys <= io_enq_bits_3_src1_phys;
           entries_12_src2_phys <= io_enq_bits_3_src2_phys;
@@ -8332,6 +9026,7 @@ module WideRS(
           entries_12_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_12_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_12_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_12_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_12_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_12_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_12_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -8339,7 +9034,7 @@ module WideRS(
           entries_12_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_12_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_485) begin
+        else if (_GEN_583) begin
           entries_12_rob_idx <= io_enq_bits_2_rob_idx;
           entries_12_src1_phys <= io_enq_bits_2_src1_phys;
           entries_12_src2_phys <= io_enq_bits_2_src2_phys;
@@ -8358,6 +9053,7 @@ module WideRS(
           entries_12_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_12_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_12_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_12_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_12_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_12_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_12_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -8365,7 +9061,7 @@ module WideRS(
           entries_12_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_12_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_464) begin
+        else if (_GEN_543) begin
           entries_12_rob_idx <= io_enq_bits_1_rob_idx;
           entries_12_src1_phys <= io_enq_bits_1_src1_phys;
           entries_12_src2_phys <= io_enq_bits_1_src2_phys;
@@ -8384,6 +9080,7 @@ module WideRS(
           entries_12_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_12_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_12_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_12_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_12_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_12_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_12_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -8391,7 +9088,7 @@ module WideRS(
           entries_12_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_12_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_422) begin
+        else if (_GEN_488) begin
           entries_12_rob_idx <= io_enq_bits_0_rob_idx;
           entries_12_src1_phys <= io_enq_bits_0_src1_phys;
           entries_12_src2_phys <= io_enq_bits_0_src2_phys;
@@ -8410,6 +9107,7 @@ module WideRS(
           entries_12_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_12_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_12_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_12_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_12_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_12_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_12_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -8418,37 +9116,37 @@ module WideRS(
           entries_12_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_371)
+          if (_GEN_403)
             entries_12_src1_val <= io_cdb_val_3;
-          else if (_GEN_288)
+          else if (_GEN_320)
             entries_12_src1_val <= io_cdb_val_2;
-          else if (_GEN_241)
+          else if (_GEN_273)
             entries_12_src1_val <= io_cdb_val_1;
-          else if (_GEN_151)
+          else if (_GEN_183)
             entries_12_src1_val <= io_cdb_val_0;
-          if (_GEN_374)
+          if (_GEN_406)
             entries_12_src2_val <= io_cdb_val_3;
-          else if (_GEN_289)
+          else if (_GEN_321)
             entries_12_src2_val <= io_cdb_val_2;
-          else if (_GEN_244)
+          else if (_GEN_276)
             entries_12_src2_val <= io_cdb_val_1;
-          else if (_GEN_153)
+          else if (_GEN_185)
             entries_12_src2_val <= io_cdb_val_0;
         end
         entries_13_issued <=
-          _GEN_516
+          _GEN_628
             ? freshIssued_3
-            : _GEN_486
+            : _GEN_584
                 ? freshIssued_2
-                : _GEN_467
+                : _GEN_547
                     ? freshIssued_1
-                    : _GEN_423
+                    : _GEN_489
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'hD
-                          | (_GEN_97
-                               ? _GEN_98 == 4'hD | _GEN_94 | _GEN_76
-                               : _GEN_94 | _GEN_76);
-        if (_GEN_516) begin
+                        : _GEN_131 & _GEN_132 == 4'hD
+                          | (_GEN_129
+                               ? _GEN_130 == 4'hD | _GEN_126 | _GEN_108
+                               : _GEN_126 | _GEN_108);
+        if (_GEN_628) begin
           entries_13_rob_idx <= io_enq_bits_3_rob_idx;
           entries_13_src1_phys <= io_enq_bits_3_src1_phys;
           entries_13_src2_phys <= io_enq_bits_3_src2_phys;
@@ -8467,6 +9165,7 @@ module WideRS(
           entries_13_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_13_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_13_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_13_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_13_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_13_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_13_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -8474,7 +9173,7 @@ module WideRS(
           entries_13_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_13_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_486) begin
+        else if (_GEN_584) begin
           entries_13_rob_idx <= io_enq_bits_2_rob_idx;
           entries_13_src1_phys <= io_enq_bits_2_src1_phys;
           entries_13_src2_phys <= io_enq_bits_2_src2_phys;
@@ -8493,6 +9192,7 @@ module WideRS(
           entries_13_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_13_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_13_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_13_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_13_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_13_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_13_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -8500,7 +9200,7 @@ module WideRS(
           entries_13_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_13_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_467) begin
+        else if (_GEN_547) begin
           entries_13_rob_idx <= io_enq_bits_1_rob_idx;
           entries_13_src1_phys <= io_enq_bits_1_src1_phys;
           entries_13_src2_phys <= io_enq_bits_1_src2_phys;
@@ -8519,6 +9219,7 @@ module WideRS(
           entries_13_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_13_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_13_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_13_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_13_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_13_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_13_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -8526,7 +9227,7 @@ module WideRS(
           entries_13_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_13_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_423) begin
+        else if (_GEN_489) begin
           entries_13_rob_idx <= io_enq_bits_0_rob_idx;
           entries_13_src1_phys <= io_enq_bits_0_src1_phys;
           entries_13_src2_phys <= io_enq_bits_0_src2_phys;
@@ -8545,6 +9246,7 @@ module WideRS(
           entries_13_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_13_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_13_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_13_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_13_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_13_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_13_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -8553,37 +9255,37 @@ module WideRS(
           entries_13_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_377)
+          if (_GEN_409)
             entries_13_src1_val <= io_cdb_val_3;
-          else if (_GEN_290)
+          else if (_GEN_322)
             entries_13_src1_val <= io_cdb_val_2;
-          else if (_GEN_247)
+          else if (_GEN_279)
             entries_13_src1_val <= io_cdb_val_1;
-          else if (_GEN_155)
+          else if (_GEN_187)
             entries_13_src1_val <= io_cdb_val_0;
-          if (_GEN_380)
+          if (_GEN_412)
             entries_13_src2_val <= io_cdb_val_3;
-          else if (_GEN_291)
+          else if (_GEN_323)
             entries_13_src2_val <= io_cdb_val_2;
-          else if (_GEN_250)
+          else if (_GEN_282)
             entries_13_src2_val <= io_cdb_val_1;
-          else if (_GEN_157)
+          else if (_GEN_189)
             entries_13_src2_val <= io_cdb_val_0;
         end
         entries_14_issued <=
-          _GEN_518
+          _GEN_631
             ? freshIssued_3
-            : _GEN_487
+            : _GEN_585
                 ? freshIssued_2
-                : _GEN_470
+                : _GEN_551
                     ? freshIssued_1
-                    : _GEN_424
+                    : _GEN_490
                         ? entry_issued
-                        : _GEN_99 & _GEN_100 == 4'hE
-                          | (_GEN_97
-                               ? _GEN_98 == 4'hE | _GEN_95 | _GEN_77
-                               : _GEN_95 | _GEN_77);
-        if (_GEN_518) begin
+                        : _GEN_131 & _GEN_132 == 4'hE
+                          | (_GEN_129
+                               ? _GEN_130 == 4'hE | _GEN_127 | _GEN_109
+                               : _GEN_127 | _GEN_109);
+        if (_GEN_631) begin
           entries_14_rob_idx <= io_enq_bits_3_rob_idx;
           entries_14_src1_phys <= io_enq_bits_3_src1_phys;
           entries_14_src2_phys <= io_enq_bits_3_src2_phys;
@@ -8602,6 +9304,7 @@ module WideRS(
           entries_14_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_14_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_14_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_14_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_14_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_14_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_14_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -8609,7 +9312,7 @@ module WideRS(
           entries_14_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_14_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_487) begin
+        else if (_GEN_585) begin
           entries_14_rob_idx <= io_enq_bits_2_rob_idx;
           entries_14_src1_phys <= io_enq_bits_2_src1_phys;
           entries_14_src2_phys <= io_enq_bits_2_src2_phys;
@@ -8628,6 +9331,7 @@ module WideRS(
           entries_14_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_14_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_14_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_14_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_14_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_14_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_14_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -8635,7 +9339,7 @@ module WideRS(
           entries_14_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_14_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_470) begin
+        else if (_GEN_551) begin
           entries_14_rob_idx <= io_enq_bits_1_rob_idx;
           entries_14_src1_phys <= io_enq_bits_1_src1_phys;
           entries_14_src2_phys <= io_enq_bits_1_src2_phys;
@@ -8654,6 +9358,7 @@ module WideRS(
           entries_14_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_14_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_14_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_14_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_14_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_14_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_14_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -8661,7 +9366,7 @@ module WideRS(
           entries_14_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_14_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_424) begin
+        else if (_GEN_490) begin
           entries_14_rob_idx <= io_enq_bits_0_rob_idx;
           entries_14_src1_phys <= io_enq_bits_0_src1_phys;
           entries_14_src2_phys <= io_enq_bits_0_src2_phys;
@@ -8680,6 +9385,7 @@ module WideRS(
           entries_14_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_14_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_14_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_14_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_14_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_14_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_14_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -8688,37 +9394,37 @@ module WideRS(
           entries_14_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_383)
+          if (_GEN_415)
             entries_14_src1_val <= io_cdb_val_3;
-          else if (_GEN_292)
+          else if (_GEN_324)
             entries_14_src1_val <= io_cdb_val_2;
-          else if (_GEN_253)
+          else if (_GEN_285)
             entries_14_src1_val <= io_cdb_val_1;
-          else if (_GEN_159)
+          else if (_GEN_191)
             entries_14_src1_val <= io_cdb_val_0;
-          if (_GEN_386)
+          if (_GEN_418)
             entries_14_src2_val <= io_cdb_val_3;
-          else if (_GEN_293)
+          else if (_GEN_325)
             entries_14_src2_val <= io_cdb_val_2;
-          else if (_GEN_256)
+          else if (_GEN_288)
             entries_14_src2_val <= io_cdb_val_1;
-          else if (_GEN_161)
+          else if (_GEN_193)
             entries_14_src2_val <= io_cdb_val_0;
         end
         entries_15_issued <=
-          _GEN_519
+          _GEN_633
             ? freshIssued_3
-            : _GEN_488
+            : _GEN_586
                 ? freshIssued_2
-                : _GEN_472
+                : _GEN_554
                     ? freshIssued_1
-                    : _GEN_425
+                    : _GEN_491
                         ? entry_issued
-                        : _GEN_99 & (&_GEN_100)
-                          | (_GEN_97
-                               ? (&_GEN_98) | _GEN_96 | _GEN_78
-                               : _GEN_96 | _GEN_78);
-        if (_GEN_519) begin
+                        : _GEN_131 & (&_GEN_132)
+                          | (_GEN_129
+                               ? (&_GEN_130) | _GEN_128 | _GEN_110
+                               : _GEN_128 | _GEN_110);
+        if (_GEN_633) begin
           entries_15_rob_idx <= io_enq_bits_3_rob_idx;
           entries_15_src1_phys <= io_enq_bits_3_src1_phys;
           entries_15_src2_phys <= io_enq_bits_3_src2_phys;
@@ -8737,6 +9443,7 @@ module WideRS(
           entries_15_exu_alu_srcB <= io_enq_bits_3_exu_alu_srcB;
           entries_15_exu_alu_control <= io_enq_bits_3_exu_alu_control;
           entries_15_exu_jump <= io_enq_bits_3_exu_jump;
+          entries_15_lsu_mem_wmask <= io_enq_bits_3_lsu_mem_wmask;
           entries_15_lsu_mem_rd <= io_enq_bits_3_lsu_mem_rd;
           entries_15_lsu_mem_write <= io_enq_bits_3_lsu_mem_write;
           entries_15_lsu_mem_valid <= io_enq_bits_3_lsu_mem_valid;
@@ -8744,7 +9451,7 @@ module WideRS(
           entries_15_wbu_reg_write_sel <= io_enq_bits_3_wbu_reg_write_sel;
           entries_15_wbu_csr_write <= io_enq_bits_3_wbu_csr_write;
         end
-        else if (_GEN_488) begin
+        else if (_GEN_586) begin
           entries_15_rob_idx <= io_enq_bits_2_rob_idx;
           entries_15_src1_phys <= io_enq_bits_2_src1_phys;
           entries_15_src2_phys <= io_enq_bits_2_src2_phys;
@@ -8763,6 +9470,7 @@ module WideRS(
           entries_15_exu_alu_srcB <= io_enq_bits_2_exu_alu_srcB;
           entries_15_exu_alu_control <= io_enq_bits_2_exu_alu_control;
           entries_15_exu_jump <= io_enq_bits_2_exu_jump;
+          entries_15_lsu_mem_wmask <= io_enq_bits_2_lsu_mem_wmask;
           entries_15_lsu_mem_rd <= io_enq_bits_2_lsu_mem_rd;
           entries_15_lsu_mem_write <= io_enq_bits_2_lsu_mem_write;
           entries_15_lsu_mem_valid <= io_enq_bits_2_lsu_mem_valid;
@@ -8770,7 +9478,7 @@ module WideRS(
           entries_15_wbu_reg_write_sel <= io_enq_bits_2_wbu_reg_write_sel;
           entries_15_wbu_csr_write <= io_enq_bits_2_wbu_csr_write;
         end
-        else if (_GEN_472) begin
+        else if (_GEN_554) begin
           entries_15_rob_idx <= io_enq_bits_1_rob_idx;
           entries_15_src1_phys <= io_enq_bits_1_src1_phys;
           entries_15_src2_phys <= io_enq_bits_1_src2_phys;
@@ -8789,6 +9497,7 @@ module WideRS(
           entries_15_exu_alu_srcB <= io_enq_bits_1_exu_alu_srcB;
           entries_15_exu_alu_control <= io_enq_bits_1_exu_alu_control;
           entries_15_exu_jump <= io_enq_bits_1_exu_jump;
+          entries_15_lsu_mem_wmask <= io_enq_bits_1_lsu_mem_wmask;
           entries_15_lsu_mem_rd <= io_enq_bits_1_lsu_mem_rd;
           entries_15_lsu_mem_write <= io_enq_bits_1_lsu_mem_write;
           entries_15_lsu_mem_valid <= io_enq_bits_1_lsu_mem_valid;
@@ -8796,7 +9505,7 @@ module WideRS(
           entries_15_wbu_reg_write_sel <= io_enq_bits_1_wbu_reg_write_sel;
           entries_15_wbu_csr_write <= io_enq_bits_1_wbu_csr_write;
         end
-        else if (_GEN_425) begin
+        else if (_GEN_491) begin
           entries_15_rob_idx <= io_enq_bits_0_rob_idx;
           entries_15_src1_phys <= io_enq_bits_0_src1_phys;
           entries_15_src2_phys <= io_enq_bits_0_src2_phys;
@@ -8815,6 +9524,7 @@ module WideRS(
           entries_15_exu_alu_srcB <= io_enq_bits_0_exu_alu_srcB;
           entries_15_exu_alu_control <= io_enq_bits_0_exu_alu_control;
           entries_15_exu_jump <= io_enq_bits_0_exu_jump;
+          entries_15_lsu_mem_wmask <= io_enq_bits_0_lsu_mem_wmask;
           entries_15_lsu_mem_rd <= io_enq_bits_0_lsu_mem_rd;
           entries_15_lsu_mem_write <= io_enq_bits_0_lsu_mem_write;
           entries_15_lsu_mem_valid <= io_enq_bits_0_lsu_mem_valid;
@@ -8823,357 +9533,404 @@ module WideRS(
           entries_15_wbu_csr_write <= io_enq_bits_0_wbu_csr_write;
         end
         else begin
-          if (_GEN_389)
+          if (_GEN_421)
             entries_15_src1_val <= io_cdb_val_3;
-          else if (_GEN_294)
+          else if (_GEN_326)
             entries_15_src1_val <= io_cdb_val_2;
-          else if (_GEN_259)
+          else if (_GEN_291)
             entries_15_src1_val <= io_cdb_val_1;
-          else if (_GEN_163)
+          else if (_GEN_195)
             entries_15_src1_val <= io_cdb_val_0;
-          if (_GEN_392)
+          if (_GEN_424)
             entries_15_src2_val <= io_cdb_val_3;
-          else if (_GEN_295)
+          else if (_GEN_327)
             entries_15_src2_val <= io_cdb_val_2;
-          else if (_GEN_262)
+          else if (_GEN_294)
             entries_15_src2_val <= io_cdb_val_1;
-          else if (_GEN_165)
+          else if (_GEN_197)
             entries_15_src2_val <= io_cdb_val_0;
         end
       end
       entries_0_src1_ready <=
         io_flush
-          ? _GEN_298
-          : _GEN_490
-              ? (|_GEN_5)
-              : _GEN_473
-                  ? (|_GEN_3)
-                  : _GEN_428 ? (|_GEN_1) : _GEN_410 ? (|_GEN) : _GEN_298;
+          ? _GEN_330
+          : _GEN_589
+              ? (|_GEN_37)
+              : _GEN_571
+                  ? (|_GEN_35)
+                  : _GEN_495 ? (|_GEN_33) : _GEN_476 ? (|_GEN_31) : _GEN_330;
       entries_0_src2_ready <=
         io_flush
-          ? _GEN_301
-          : _GEN_490
-              ? (|_GEN_6)
-              : _GEN_473
-                  ? (|_GEN_4)
-                  : _GEN_428 ? (|_GEN_2) : _GEN_410 ? (|_GEN_0) : _GEN_301;
+          ? _GEN_333
+          : _GEN_589
+              ? (|_GEN_38)
+              : _GEN_571
+                  ? (|_GEN_36)
+                  : _GEN_495 ? (|_GEN_34) : _GEN_476 ? (|_GEN_32) : _GEN_333;
       entries_1_valid <=
         io_flush
-          ? ~(io_flush_all | entries_1_valid & _lsuSelect1_older_T_2153 > _GEN_393)
-            & entries_1_valid
-          : allocAccept_3 ? _GEN_491 | _GEN_474 | _GEN_430 : _GEN_474 | _GEN_430;
+          ? ~_GEN_427 & entries_1_valid
+          : allocAccept_3 ? _GEN_591 | _GEN_498 : _GEN_572 | _GEN_498;
       entries_1_src1_ready <=
         io_flush
-          ? _GEN_304
-          : _GEN_492
-              ? (|_GEN_5)
-              : _GEN_474
-                  ? (|_GEN_3)
-                  : _GEN_431 ? (|_GEN_1) : _GEN_411 ? (|_GEN) : _GEN_304;
+          ? _GEN_336
+          : _GEN_592
+              ? (|_GEN_37)
+              : _GEN_572
+                  ? (|_GEN_35)
+                  : _GEN_499 ? (|_GEN_33) : _GEN_477 ? (|_GEN_31) : _GEN_336;
       entries_1_src2_ready <=
         io_flush
-          ? _GEN_307
-          : _GEN_492
-              ? (|_GEN_6)
-              : _GEN_474
-                  ? (|_GEN_4)
-                  : _GEN_431 ? (|_GEN_2) : _GEN_411 ? (|_GEN_0) : _GEN_307;
+          ? _GEN_339
+          : _GEN_592
+              ? (|_GEN_38)
+              : _GEN_572
+                  ? (|_GEN_36)
+                  : _GEN_499 ? (|_GEN_34) : _GEN_477 ? (|_GEN_32) : _GEN_339;
       entries_2_valid <=
         io_flush
-          ? ~(io_flush_all | entries_2_valid & _lsuSelect1_older_T_2161 > _GEN_393)
-            & entries_2_valid
-          : allocAccept_3 ? _GEN_493 | _GEN_475 | _GEN_433 : _GEN_475 | _GEN_433;
+          ? ~_GEN_428 & entries_2_valid
+          : allocAccept_3 ? _GEN_594 | _GEN_502 : _GEN_573 | _GEN_502;
       entries_2_src1_ready <=
         io_flush
-          ? _GEN_310
-          : _GEN_494
-              ? (|_GEN_5)
-              : _GEN_475
-                  ? (|_GEN_3)
-                  : _GEN_434 ? (|_GEN_1) : _GEN_412 ? (|_GEN) : _GEN_310;
+          ? _GEN_342
+          : _GEN_595
+              ? (|_GEN_37)
+              : _GEN_573
+                  ? (|_GEN_35)
+                  : _GEN_503 ? (|_GEN_33) : _GEN_478 ? (|_GEN_31) : _GEN_342;
       entries_2_src2_ready <=
         io_flush
-          ? _GEN_313
-          : _GEN_494
-              ? (|_GEN_6)
-              : _GEN_475
-                  ? (|_GEN_4)
-                  : _GEN_434 ? (|_GEN_2) : _GEN_412 ? (|_GEN_0) : _GEN_313;
+          ? _GEN_345
+          : _GEN_595
+              ? (|_GEN_38)
+              : _GEN_573
+                  ? (|_GEN_36)
+                  : _GEN_503 ? (|_GEN_34) : _GEN_478 ? (|_GEN_32) : _GEN_345;
       entries_3_valid <=
         io_flush
-          ? ~(io_flush_all | entries_3_valid & _lsuSelect1_older_T_2169 > _GEN_393)
-            & entries_3_valid
-          : allocAccept_3 ? _GEN_495 | _GEN_476 | _GEN_436 : _GEN_476 | _GEN_436;
+          ? ~_GEN_429 & entries_3_valid
+          : allocAccept_3 ? _GEN_597 | _GEN_506 : _GEN_574 | _GEN_506;
       entries_3_src1_ready <=
         io_flush
-          ? _GEN_316
-          : _GEN_496
-              ? (|_GEN_5)
-              : _GEN_476
-                  ? (|_GEN_3)
-                  : _GEN_437 ? (|_GEN_1) : _GEN_413 ? (|_GEN) : _GEN_316;
+          ? _GEN_348
+          : _GEN_598
+              ? (|_GEN_37)
+              : _GEN_574
+                  ? (|_GEN_35)
+                  : _GEN_507 ? (|_GEN_33) : _GEN_479 ? (|_GEN_31) : _GEN_348;
       entries_3_src2_ready <=
         io_flush
-          ? _GEN_319
-          : _GEN_496
-              ? (|_GEN_6)
-              : _GEN_476
-                  ? (|_GEN_4)
-                  : _GEN_437 ? (|_GEN_2) : _GEN_413 ? (|_GEN_0) : _GEN_319;
+          ? _GEN_351
+          : _GEN_598
+              ? (|_GEN_38)
+              : _GEN_574
+                  ? (|_GEN_36)
+                  : _GEN_507 ? (|_GEN_34) : _GEN_479 ? (|_GEN_32) : _GEN_351;
       entries_4_valid <=
         io_flush
-          ? ~(io_flush_all | entries_4_valid & _lsuSelect1_older_T_2177 > _GEN_393)
-            & entries_4_valid
-          : allocAccept_3 ? _GEN_497 | _GEN_477 | _GEN_439 : _GEN_477 | _GEN_439;
+          ? ~_GEN_430 & entries_4_valid
+          : allocAccept_3 ? _GEN_600 | _GEN_510 : _GEN_575 | _GEN_510;
       entries_4_src1_ready <=
         io_flush
-          ? _GEN_322
-          : _GEN_498
-              ? (|_GEN_5)
-              : _GEN_477
-                  ? (|_GEN_3)
-                  : _GEN_440 ? (|_GEN_1) : _GEN_414 ? (|_GEN) : _GEN_322;
+          ? _GEN_354
+          : _GEN_601
+              ? (|_GEN_37)
+              : _GEN_575
+                  ? (|_GEN_35)
+                  : _GEN_511 ? (|_GEN_33) : _GEN_480 ? (|_GEN_31) : _GEN_354;
       entries_4_src2_ready <=
         io_flush
-          ? _GEN_325
-          : _GEN_498
-              ? (|_GEN_6)
-              : _GEN_477
-                  ? (|_GEN_4)
-                  : _GEN_440 ? (|_GEN_2) : _GEN_414 ? (|_GEN_0) : _GEN_325;
+          ? _GEN_357
+          : _GEN_601
+              ? (|_GEN_38)
+              : _GEN_575
+                  ? (|_GEN_36)
+                  : _GEN_511 ? (|_GEN_34) : _GEN_480 ? (|_GEN_32) : _GEN_357;
       entries_5_valid <=
         io_flush
-          ? ~(io_flush_all | entries_5_valid & _lsuSelect1_older_T_2185 > _GEN_393)
-            & entries_5_valid
-          : allocAccept_3 ? _GEN_499 | _GEN_478 | _GEN_442 : _GEN_478 | _GEN_442;
+          ? ~_GEN_431 & entries_5_valid
+          : allocAccept_3 ? _GEN_603 | _GEN_514 : _GEN_576 | _GEN_514;
       entries_5_src1_ready <=
         io_flush
-          ? _GEN_328
-          : _GEN_500
-              ? (|_GEN_5)
-              : _GEN_478
-                  ? (|_GEN_3)
-                  : _GEN_443 ? (|_GEN_1) : _GEN_415 ? (|_GEN) : _GEN_328;
+          ? _GEN_360
+          : _GEN_604
+              ? (|_GEN_37)
+              : _GEN_576
+                  ? (|_GEN_35)
+                  : _GEN_515 ? (|_GEN_33) : _GEN_481 ? (|_GEN_31) : _GEN_360;
       entries_5_src2_ready <=
         io_flush
-          ? _GEN_331
-          : _GEN_500
-              ? (|_GEN_6)
-              : _GEN_478
-                  ? (|_GEN_4)
-                  : _GEN_443 ? (|_GEN_2) : _GEN_415 ? (|_GEN_0) : _GEN_331;
+          ? _GEN_363
+          : _GEN_604
+              ? (|_GEN_38)
+              : _GEN_576
+                  ? (|_GEN_36)
+                  : _GEN_515 ? (|_GEN_34) : _GEN_481 ? (|_GEN_32) : _GEN_363;
       entries_6_valid <=
         io_flush
-          ? ~(io_flush_all | entries_6_valid & _lsuSelect1_older_T_2193 > _GEN_393)
-            & entries_6_valid
-          : allocAccept_3 ? _GEN_501 | _GEN_479 | _GEN_445 : _GEN_479 | _GEN_445;
+          ? ~_GEN_432 & entries_6_valid
+          : allocAccept_3 ? _GEN_606 | _GEN_518 : _GEN_577 | _GEN_518;
       entries_6_src1_ready <=
         io_flush
-          ? _GEN_334
-          : _GEN_502
-              ? (|_GEN_5)
-              : _GEN_479
-                  ? (|_GEN_3)
-                  : _GEN_446 ? (|_GEN_1) : _GEN_416 ? (|_GEN) : _GEN_334;
+          ? _GEN_366
+          : _GEN_607
+              ? (|_GEN_37)
+              : _GEN_577
+                  ? (|_GEN_35)
+                  : _GEN_519 ? (|_GEN_33) : _GEN_482 ? (|_GEN_31) : _GEN_366;
       entries_6_src2_ready <=
         io_flush
-          ? _GEN_337
-          : _GEN_502
-              ? (|_GEN_6)
-              : _GEN_479
-                  ? (|_GEN_4)
-                  : _GEN_446 ? (|_GEN_2) : _GEN_416 ? (|_GEN_0) : _GEN_337;
+          ? _GEN_369
+          : _GEN_607
+              ? (|_GEN_38)
+              : _GEN_577
+                  ? (|_GEN_36)
+                  : _GEN_519 ? (|_GEN_34) : _GEN_482 ? (|_GEN_32) : _GEN_369;
       entries_7_valid <=
         io_flush
-          ? ~(io_flush_all | entries_7_valid & _lsuSelect1_older_T_2201 > _GEN_393)
-            & entries_7_valid
-          : allocAccept_3 ? _GEN_503 | _GEN_480 | _GEN_448 : _GEN_480 | _GEN_448;
+          ? ~_GEN_433 & entries_7_valid
+          : allocAccept_3 ? _GEN_609 | _GEN_522 : _GEN_578 | _GEN_522;
       entries_7_src1_ready <=
         io_flush
-          ? _GEN_340
-          : _GEN_504
-              ? (|_GEN_5)
-              : _GEN_480
-                  ? (|_GEN_3)
-                  : _GEN_449 ? (|_GEN_1) : _GEN_417 ? (|_GEN) : _GEN_340;
+          ? _GEN_372
+          : _GEN_610
+              ? (|_GEN_37)
+              : _GEN_578
+                  ? (|_GEN_35)
+                  : _GEN_523 ? (|_GEN_33) : _GEN_483 ? (|_GEN_31) : _GEN_372;
       entries_7_src2_ready <=
         io_flush
-          ? _GEN_343
-          : _GEN_504
-              ? (|_GEN_6)
-              : _GEN_480
-                  ? (|_GEN_4)
-                  : _GEN_449 ? (|_GEN_2) : _GEN_417 ? (|_GEN_0) : _GEN_343;
+          ? _GEN_375
+          : _GEN_610
+              ? (|_GEN_38)
+              : _GEN_578
+                  ? (|_GEN_36)
+                  : _GEN_523 ? (|_GEN_34) : _GEN_483 ? (|_GEN_32) : _GEN_375;
       entries_8_valid <=
         io_flush
-          ? ~(io_flush_all | entries_8_valid & _lsuSelect1_older_T_2209 > _GEN_393)
-            & entries_8_valid
-          : allocAccept_3 ? _GEN_505 | _GEN_481 | _GEN_451 : _GEN_481 | _GEN_451;
+          ? ~_GEN_434 & entries_8_valid
+          : allocAccept_3 ? _GEN_612 | _GEN_526 : _GEN_579 | _GEN_526;
       entries_8_src1_ready <=
         io_flush
-          ? _GEN_346
-          : _GEN_506
-              ? (|_GEN_5)
-              : _GEN_481
-                  ? (|_GEN_3)
-                  : _GEN_452 ? (|_GEN_1) : _GEN_418 ? (|_GEN) : _GEN_346;
+          ? _GEN_378
+          : _GEN_613
+              ? (|_GEN_37)
+              : _GEN_579
+                  ? (|_GEN_35)
+                  : _GEN_527 ? (|_GEN_33) : _GEN_484 ? (|_GEN_31) : _GEN_378;
       entries_8_src2_ready <=
         io_flush
-          ? _GEN_349
-          : _GEN_506
-              ? (|_GEN_6)
-              : _GEN_481
-                  ? (|_GEN_4)
-                  : _GEN_452 ? (|_GEN_2) : _GEN_418 ? (|_GEN_0) : _GEN_349;
+          ? _GEN_381
+          : _GEN_613
+              ? (|_GEN_38)
+              : _GEN_579
+                  ? (|_GEN_36)
+                  : _GEN_527 ? (|_GEN_34) : _GEN_484 ? (|_GEN_32) : _GEN_381;
       entries_9_valid <=
         io_flush
-          ? ~(io_flush_all | entries_9_valid & _lsuSelect1_older_T_2217 > _GEN_393)
-            & entries_9_valid
-          : allocAccept_3 ? _GEN_507 | _GEN_482 | _GEN_454 : _GEN_482 | _GEN_454;
+          ? ~_GEN_435 & entries_9_valid
+          : allocAccept_3 ? _GEN_615 | _GEN_530 : _GEN_580 | _GEN_530;
       entries_9_src1_ready <=
         io_flush
-          ? _GEN_352
-          : _GEN_508
-              ? (|_GEN_5)
-              : _GEN_482
-                  ? (|_GEN_3)
-                  : _GEN_455 ? (|_GEN_1) : _GEN_419 ? (|_GEN) : _GEN_352;
+          ? _GEN_384
+          : _GEN_616
+              ? (|_GEN_37)
+              : _GEN_580
+                  ? (|_GEN_35)
+                  : _GEN_531 ? (|_GEN_33) : _GEN_485 ? (|_GEN_31) : _GEN_384;
       entries_9_src2_ready <=
         io_flush
-          ? _GEN_355
-          : _GEN_508
-              ? (|_GEN_6)
-              : _GEN_482
-                  ? (|_GEN_4)
-                  : _GEN_455 ? (|_GEN_2) : _GEN_419 ? (|_GEN_0) : _GEN_355;
+          ? _GEN_387
+          : _GEN_616
+              ? (|_GEN_38)
+              : _GEN_580
+                  ? (|_GEN_36)
+                  : _GEN_531 ? (|_GEN_34) : _GEN_485 ? (|_GEN_32) : _GEN_387;
       entries_10_valid <=
         io_flush
-          ? ~(io_flush_all | entries_10_valid & _lsuSelect1_older_T_2225 > _GEN_393)
-            & entries_10_valid
-          : allocAccept_3 ? _GEN_509 | _GEN_483 | _GEN_457 : _GEN_483 | _GEN_457;
+          ? ~_GEN_436 & entries_10_valid
+          : allocAccept_3 ? _GEN_618 | _GEN_534 : _GEN_581 | _GEN_534;
       entries_10_src1_ready <=
         io_flush
-          ? _GEN_358
-          : _GEN_510
-              ? (|_GEN_5)
-              : _GEN_483
-                  ? (|_GEN_3)
-                  : _GEN_458 ? (|_GEN_1) : _GEN_420 ? (|_GEN) : _GEN_358;
+          ? _GEN_390
+          : _GEN_619
+              ? (|_GEN_37)
+              : _GEN_581
+                  ? (|_GEN_35)
+                  : _GEN_535 ? (|_GEN_33) : _GEN_486 ? (|_GEN_31) : _GEN_390;
       entries_10_src2_ready <=
         io_flush
-          ? _GEN_361
-          : _GEN_510
-              ? (|_GEN_6)
-              : _GEN_483
-                  ? (|_GEN_4)
-                  : _GEN_458 ? (|_GEN_2) : _GEN_420 ? (|_GEN_0) : _GEN_361;
+          ? _GEN_393
+          : _GEN_619
+              ? (|_GEN_38)
+              : _GEN_581
+                  ? (|_GEN_36)
+                  : _GEN_535 ? (|_GEN_34) : _GEN_486 ? (|_GEN_32) : _GEN_393;
       entries_11_valid <=
         io_flush
-          ? ~(io_flush_all | entries_11_valid & _lsuSelect1_older_T_2233 > _GEN_393)
-            & entries_11_valid
-          : allocAccept_3 ? _GEN_511 | _GEN_484 | _GEN_460 : _GEN_484 | _GEN_460;
+          ? ~_GEN_437 & entries_11_valid
+          : allocAccept_3 ? _GEN_621 | _GEN_538 : _GEN_582 | _GEN_538;
       entries_11_src1_ready <=
         io_flush
-          ? _GEN_364
-          : _GEN_512
-              ? (|_GEN_5)
-              : _GEN_484
-                  ? (|_GEN_3)
-                  : _GEN_461 ? (|_GEN_1) : _GEN_421 ? (|_GEN) : _GEN_364;
+          ? _GEN_396
+          : _GEN_622
+              ? (|_GEN_37)
+              : _GEN_582
+                  ? (|_GEN_35)
+                  : _GEN_539 ? (|_GEN_33) : _GEN_487 ? (|_GEN_31) : _GEN_396;
       entries_11_src2_ready <=
         io_flush
-          ? _GEN_367
-          : _GEN_512
-              ? (|_GEN_6)
-              : _GEN_484
-                  ? (|_GEN_4)
-                  : _GEN_461 ? (|_GEN_2) : _GEN_421 ? (|_GEN_0) : _GEN_367;
+          ? _GEN_399
+          : _GEN_622
+              ? (|_GEN_38)
+              : _GEN_582
+                  ? (|_GEN_36)
+                  : _GEN_539 ? (|_GEN_34) : _GEN_487 ? (|_GEN_32) : _GEN_399;
       entries_12_valid <=
         io_flush
-          ? ~(io_flush_all | entries_12_valid & _lsuSelect1_older_T_2241 > _GEN_393)
-            & entries_12_valid
-          : allocAccept_3 ? _GEN_513 | _GEN_485 | _GEN_463 : _GEN_485 | _GEN_463;
+          ? ~_GEN_438 & entries_12_valid
+          : allocAccept_3 ? _GEN_624 | _GEN_542 : _GEN_583 | _GEN_542;
       entries_12_src1_ready <=
         io_flush
-          ? _GEN_370
-          : _GEN_514
-              ? (|_GEN_5)
-              : _GEN_485
-                  ? (|_GEN_3)
-                  : _GEN_464 ? (|_GEN_1) : _GEN_422 ? (|_GEN) : _GEN_370;
+          ? _GEN_402
+          : _GEN_625
+              ? (|_GEN_37)
+              : _GEN_583
+                  ? (|_GEN_35)
+                  : _GEN_543 ? (|_GEN_33) : _GEN_488 ? (|_GEN_31) : _GEN_402;
       entries_12_src2_ready <=
         io_flush
-          ? _GEN_373
-          : _GEN_514
-              ? (|_GEN_6)
-              : _GEN_485
-                  ? (|_GEN_4)
-                  : _GEN_464 ? (|_GEN_2) : _GEN_422 ? (|_GEN_0) : _GEN_373;
+          ? _GEN_405
+          : _GEN_625
+              ? (|_GEN_38)
+              : _GEN_583
+                  ? (|_GEN_36)
+                  : _GEN_543 ? (|_GEN_34) : _GEN_488 ? (|_GEN_32) : _GEN_405;
       entries_13_valid <=
         io_flush
-          ? ~(io_flush_all | entries_13_valid & _lsuSelect1_older_T_2249 > _GEN_393)
-            & entries_13_valid
-          : allocAccept_3 ? _GEN_515 | _GEN_486 | _GEN_466 : _GEN_486 | _GEN_466;
+          ? ~_GEN_439 & entries_13_valid
+          : allocAccept_3 ? _GEN_627 | _GEN_546 : _GEN_584 | _GEN_546;
       entries_13_src1_ready <=
         io_flush
-          ? _GEN_376
-          : _GEN_516
-              ? (|_GEN_5)
-              : _GEN_486
-                  ? (|_GEN_3)
-                  : _GEN_467 ? (|_GEN_1) : _GEN_423 ? (|_GEN) : _GEN_376;
+          ? _GEN_408
+          : _GEN_628
+              ? (|_GEN_37)
+              : _GEN_584
+                  ? (|_GEN_35)
+                  : _GEN_547 ? (|_GEN_33) : _GEN_489 ? (|_GEN_31) : _GEN_408;
       entries_13_src2_ready <=
         io_flush
-          ? _GEN_379
-          : _GEN_516
-              ? (|_GEN_6)
-              : _GEN_486
-                  ? (|_GEN_4)
-                  : _GEN_467 ? (|_GEN_2) : _GEN_423 ? (|_GEN_0) : _GEN_379;
+          ? _GEN_411
+          : _GEN_628
+              ? (|_GEN_38)
+              : _GEN_584
+                  ? (|_GEN_36)
+                  : _GEN_547 ? (|_GEN_34) : _GEN_489 ? (|_GEN_32) : _GEN_411;
       entries_14_valid <=
         io_flush
-          ? ~(io_flush_all | entries_14_valid & _lsuSelect1_older_T_2257 > _GEN_393)
-            & entries_14_valid
-          : allocAccept_3 ? _GEN_517 | _GEN_487 | _GEN_469 : _GEN_487 | _GEN_469;
+          ? ~_GEN_440 & entries_14_valid
+          : allocAccept_3 ? _GEN_630 | _GEN_550 : _GEN_585 | _GEN_550;
       entries_14_src1_ready <=
         io_flush
-          ? _GEN_382
-          : _GEN_518
-              ? (|_GEN_5)
-              : _GEN_487
-                  ? (|_GEN_3)
-                  : _GEN_470 ? (|_GEN_1) : _GEN_424 ? (|_GEN) : _GEN_382;
+          ? _GEN_414
+          : _GEN_631
+              ? (|_GEN_37)
+              : _GEN_585
+                  ? (|_GEN_35)
+                  : _GEN_551 ? (|_GEN_33) : _GEN_490 ? (|_GEN_31) : _GEN_414;
       entries_14_src2_ready <=
         io_flush
-          ? _GEN_385
-          : _GEN_518
-              ? (|_GEN_6)
-              : _GEN_487
-                  ? (|_GEN_4)
-                  : _GEN_470 ? (|_GEN_2) : _GEN_424 ? (|_GEN_0) : _GEN_385;
+          ? _GEN_417
+          : _GEN_631
+              ? (|_GEN_38)
+              : _GEN_585
+                  ? (|_GEN_36)
+                  : _GEN_551 ? (|_GEN_34) : _GEN_490 ? (|_GEN_32) : _GEN_417;
       entries_15_valid <=
         io_flush
-          ? ~(io_flush_all | entries_15_valid & _lsuSelect1_older_T_2268 > _GEN_393)
-            & entries_15_valid
-          : allocAccept_3
-              ? (&allocMask_4_shiftAmount) | _GEN_488 | _GEN_471
-              : _GEN_488 | _GEN_471;
+          ? ~_GEN_441 & entries_15_valid
+          : allocAccept_3 ? _GEN_632 | _GEN_553 : _GEN_586 | _GEN_553;
       entries_15_src1_ready <=
         io_flush
-          ? _GEN_388
-          : _GEN_519
-              ? (|_GEN_5)
-              : _GEN_488
-                  ? (|_GEN_3)
-                  : _GEN_472 ? (|_GEN_1) : _GEN_425 ? (|_GEN) : _GEN_388;
+          ? _GEN_420
+          : _GEN_633
+              ? (|_GEN_37)
+              : _GEN_586
+                  ? (|_GEN_35)
+                  : _GEN_554 ? (|_GEN_33) : _GEN_491 ? (|_GEN_31) : _GEN_420;
       entries_15_src2_ready <=
         io_flush
-          ? _GEN_391
-          : _GEN_519
-              ? (|_GEN_6)
-              : _GEN_488
-                  ? (|_GEN_4)
-                  : _GEN_472 ? (|_GEN_2) : _GEN_425 ? (|_GEN_0) : _GEN_391;
+          ? _GEN_423
+          : _GEN_633
+              ? (|_GEN_38)
+              : _GEN_586
+                  ? (|_GEN_36)
+                  : _GEN_554 ? (|_GEN_34) : _GEN_491 ? (|_GEN_32) : _GEN_423;
+      storeAddrIssued_0 <=
+        io_flush
+          ? ~_GEN_426 & storeAddrIssued_0
+          : allocAccept_3 ? ~_GEN_588 & _GEN_555 : ~_GEN_571 & _GEN_555;
+      storeAddrIssued_1 <=
+        io_flush
+          ? ~_GEN_427 & storeAddrIssued_1
+          : allocAccept_3 ? ~_GEN_591 & _GEN_556 : ~_GEN_572 & _GEN_556;
+      storeAddrIssued_2 <=
+        io_flush
+          ? ~_GEN_428 & storeAddrIssued_2
+          : allocAccept_3 ? ~_GEN_594 & _GEN_557 : ~_GEN_573 & _GEN_557;
+      storeAddrIssued_3 <=
+        io_flush
+          ? ~_GEN_429 & storeAddrIssued_3
+          : allocAccept_3 ? ~_GEN_597 & _GEN_558 : ~_GEN_574 & _GEN_558;
+      storeAddrIssued_4 <=
+        io_flush
+          ? ~_GEN_430 & storeAddrIssued_4
+          : allocAccept_3 ? ~_GEN_600 & _GEN_559 : ~_GEN_575 & _GEN_559;
+      storeAddrIssued_5 <=
+        io_flush
+          ? ~_GEN_431 & storeAddrIssued_5
+          : allocAccept_3 ? ~_GEN_603 & _GEN_560 : ~_GEN_576 & _GEN_560;
+      storeAddrIssued_6 <=
+        io_flush
+          ? ~_GEN_432 & storeAddrIssued_6
+          : allocAccept_3 ? ~_GEN_606 & _GEN_561 : ~_GEN_577 & _GEN_561;
+      storeAddrIssued_7 <=
+        io_flush
+          ? ~_GEN_433 & storeAddrIssued_7
+          : allocAccept_3 ? ~_GEN_609 & _GEN_562 : ~_GEN_578 & _GEN_562;
+      storeAddrIssued_8 <=
+        io_flush
+          ? ~_GEN_434 & storeAddrIssued_8
+          : allocAccept_3 ? ~_GEN_612 & _GEN_563 : ~_GEN_579 & _GEN_563;
+      storeAddrIssued_9 <=
+        io_flush
+          ? ~_GEN_435 & storeAddrIssued_9
+          : allocAccept_3 ? ~_GEN_615 & _GEN_564 : ~_GEN_580 & _GEN_564;
+      storeAddrIssued_10 <=
+        io_flush
+          ? ~_GEN_436 & storeAddrIssued_10
+          : allocAccept_3 ? ~_GEN_618 & _GEN_565 : ~_GEN_581 & _GEN_565;
+      storeAddrIssued_11 <=
+        io_flush
+          ? ~_GEN_437 & storeAddrIssued_11
+          : allocAccept_3 ? ~_GEN_621 & _GEN_566 : ~_GEN_582 & _GEN_566;
+      storeAddrIssued_12 <=
+        io_flush
+          ? ~_GEN_438 & storeAddrIssued_12
+          : allocAccept_3 ? ~_GEN_624 & _GEN_567 : ~_GEN_583 & _GEN_567;
+      storeAddrIssued_13 <=
+        io_flush
+          ? ~_GEN_439 & storeAddrIssued_13
+          : allocAccept_3 ? ~_GEN_627 & _GEN_568 : ~_GEN_584 & _GEN_568;
+      storeAddrIssued_14 <=
+        io_flush
+          ? ~_GEN_440 & storeAddrIssued_14
+          : allocAccept_3 ? ~_GEN_630 & _GEN_569 : ~_GEN_585 & _GEN_569;
+      storeAddrIssued_15 <=
+        io_flush
+          ? ~_GEN_441 & storeAddrIssued_15
+          : allocAccept_3 ? ~_GEN_632 & _GEN_570 : ~_GEN_586 & _GEN_570;
     end
   end // always @(posedge)
   assign io_space = 5'h10 - io_count_0;
@@ -12063,8 +12820,201 @@ module WideRS(
         | (lsu1FreshGrant[1] ? io_enq_bits_1_wbu_reg_write_sel : 3'h0)
         | (lsu1FreshGrant[2] ? io_enq_bits_2_wbu_reg_write_sel : 3'h0)
         | (lsu1FreshGrant[3] ? io_enq_bits_3_wbu_reg_write_sel : 3'h0);
+  assign io_issue_store_addr_valid = (|_residentStoreAddr_T) & ~io_flush;
+  assign io_issue_store_addr_bits_rob_idx =
+    (storeAddrSelect_0 ? entries_0_rob_idx : 5'h0)
+    | (storeAddrSelect_1 ? entries_1_rob_idx : 5'h0)
+    | (storeAddrSelect_2 ? entries_2_rob_idx : 5'h0)
+    | (storeAddrSelect_3 ? entries_3_rob_idx : 5'h0)
+    | (storeAddrSelect_4 ? entries_4_rob_idx : 5'h0)
+    | (storeAddrSelect_5 ? entries_5_rob_idx : 5'h0)
+    | (storeAddrSelect_6 ? entries_6_rob_idx : 5'h0)
+    | (storeAddrSelect_7 ? entries_7_rob_idx : 5'h0)
+    | (storeAddrSelect_8 ? entries_8_rob_idx : 5'h0)
+    | (storeAddrSelect_9 ? entries_9_rob_idx : 5'h0)
+    | (storeAddrSelect_10 ? entries_10_rob_idx : 5'h0)
+    | (storeAddrSelect_11 ? entries_11_rob_idx : 5'h0)
+    | (storeAddrSelect_12 ? entries_12_rob_idx : 5'h0)
+    | (storeAddrSelect_13 ? entries_13_rob_idx : 5'h0)
+    | (storeAddrSelect_14 ? entries_14_rob_idx : 5'h0)
+    | (storeAddrSelect_15 ? entries_15_rob_idx : 5'h0);
+  assign io_issue_store_addr_bits_src1_ready = _io_issue_store_addr_bits_T_1158;
+  assign io_issue_store_addr_bits_src2_ready = _io_issue_store_addr_bits_T_1126;
+  assign io_issue_store_addr_bits_src1_val =
+    (storeAddrSelect_0 ? issueEntry_0_out_src1_val : 32'h0)
+    | (storeAddrSelect_1 ? issueEntry_1_out_src1_val : 32'h0)
+    | (storeAddrSelect_2 ? issueEntry_2_out_src1_val : 32'h0)
+    | (storeAddrSelect_3 ? issueEntry_3_out_src1_val : 32'h0)
+    | (storeAddrSelect_4 ? issueEntry_4_out_src1_val : 32'h0)
+    | (storeAddrSelect_5 ? issueEntry_5_out_src1_val : 32'h0)
+    | (storeAddrSelect_6 ? issueEntry_6_out_src1_val : 32'h0)
+    | (storeAddrSelect_7 ? issueEntry_7_out_src1_val : 32'h0)
+    | (storeAddrSelect_8 ? issueEntry_8_out_src1_val : 32'h0)
+    | (storeAddrSelect_9 ? issueEntry_9_out_src1_val : 32'h0)
+    | (storeAddrSelect_10 ? issueEntry_10_out_src1_val : 32'h0)
+    | (storeAddrSelect_11 ? issueEntry_11_out_src1_val : 32'h0)
+    | (storeAddrSelect_12 ? issueEntry_12_out_src1_val : 32'h0)
+    | (storeAddrSelect_13 ? issueEntry_13_out_src1_val : 32'h0)
+    | (storeAddrSelect_14 ? issueEntry_14_out_src1_val : 32'h0)
+    | (storeAddrSelect_15 ? issueEntry_15_out_src1_val : 32'h0);
+  assign io_issue_store_addr_bits_pc =
+    (storeAddrSelect_0 ? entries_0_pc : 32'h0)
+    | (storeAddrSelect_1 ? entries_1_pc : 32'h0)
+    | (storeAddrSelect_2 ? entries_2_pc : 32'h0)
+    | (storeAddrSelect_3 ? entries_3_pc : 32'h0)
+    | (storeAddrSelect_4 ? entries_4_pc : 32'h0)
+    | (storeAddrSelect_5 ? entries_5_pc : 32'h0)
+    | (storeAddrSelect_6 ? entries_6_pc : 32'h0)
+    | (storeAddrSelect_7 ? entries_7_pc : 32'h0)
+    | (storeAddrSelect_8 ? entries_8_pc : 32'h0)
+    | (storeAddrSelect_9 ? entries_9_pc : 32'h0)
+    | (storeAddrSelect_10 ? entries_10_pc : 32'h0)
+    | (storeAddrSelect_11 ? entries_11_pc : 32'h0)
+    | (storeAddrSelect_12 ? entries_12_pc : 32'h0)
+    | (storeAddrSelect_13 ? entries_13_pc : 32'h0)
+    | (storeAddrSelect_14 ? entries_14_pc : 32'h0)
+    | (storeAddrSelect_15 ? entries_15_pc : 32'h0);
+  assign io_issue_store_addr_bits_imm_ext =
+    (storeAddrSelect_0 ? entries_0_imm_ext : 32'h0)
+    | (storeAddrSelect_1 ? entries_1_imm_ext : 32'h0)
+    | (storeAddrSelect_2 ? entries_2_imm_ext : 32'h0)
+    | (storeAddrSelect_3 ? entries_3_imm_ext : 32'h0)
+    | (storeAddrSelect_4 ? entries_4_imm_ext : 32'h0)
+    | (storeAddrSelect_5 ? entries_5_imm_ext : 32'h0)
+    | (storeAddrSelect_6 ? entries_6_imm_ext : 32'h0)
+    | (storeAddrSelect_7 ? entries_7_imm_ext : 32'h0)
+    | (storeAddrSelect_8 ? entries_8_imm_ext : 32'h0)
+    | (storeAddrSelect_9 ? entries_9_imm_ext : 32'h0)
+    | (storeAddrSelect_10 ? entries_10_imm_ext : 32'h0)
+    | (storeAddrSelect_11 ? entries_11_imm_ext : 32'h0)
+    | (storeAddrSelect_12 ? entries_12_imm_ext : 32'h0)
+    | (storeAddrSelect_13 ? entries_13_imm_ext : 32'h0)
+    | (storeAddrSelect_14 ? entries_14_imm_ext : 32'h0)
+    | (storeAddrSelect_15 ? entries_15_imm_ext : 32'h0);
+  assign io_issue_store_addr_bits_lsu_mem_wmask =
+    (storeAddrSelect_0 ? entries_0_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_1 ? entries_1_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_2 ? entries_2_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_3 ? entries_3_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_4 ? entries_4_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_5 ? entries_5_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_6 ? entries_6_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_7 ? entries_7_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_8 ? entries_8_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_9 ? entries_9_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_10 ? entries_10_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_11 ? entries_11_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_12 ? entries_12_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_13 ? entries_13_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_14 ? entries_14_lsu_mem_wmask : 8'h0)
+    | (storeAddrSelect_15 ? entries_15_lsu_mem_wmask : 8'h0);
+  assign io_issue_store_addr_bits_lsu_mem_write = _io_issue_store_addr_bits_T_189;
+  assign io_issue_store_addr_bits_lsu_mem_valid =
+    storeAddrSelect_0 & entries_0_lsu_mem_valid | storeAddrSelect_1
+    & entries_1_lsu_mem_valid | storeAddrSelect_2 & entries_2_lsu_mem_valid
+    | storeAddrSelect_3 & entries_3_lsu_mem_valid | storeAddrSelect_4
+    & entries_4_lsu_mem_valid | storeAddrSelect_5 & entries_5_lsu_mem_valid
+    | storeAddrSelect_6 & entries_6_lsu_mem_valid | storeAddrSelect_7
+    & entries_7_lsu_mem_valid | storeAddrSelect_8 & entries_8_lsu_mem_valid
+    | storeAddrSelect_9 & entries_9_lsu_mem_valid | storeAddrSelect_10
+    & entries_10_lsu_mem_valid | storeAddrSelect_11 & entries_11_lsu_mem_valid
+    | storeAddrSelect_12 & entries_12_lsu_mem_valid | storeAddrSelect_13
+    & entries_13_lsu_mem_valid | storeAddrSelect_14 & entries_14_lsu_mem_valid
+    | storeAddrSelect_15 & entries_15_lsu_mem_valid;
   assign io_fresh_issue_count =
     {1'h0, {1'h0, entry_issued} + {1'h0, freshIssued_1}}
     + {1'h0, {1'h0, freshIssued_2} + {1'h0, freshIssued_3}};
+  assign io_store_addr_candidate_count =
+    {1'h0,
+     {1'h0,
+      {1'h0, {1'h0, storeAddrCandidate_0} + {1'h0, storeAddrCandidate_1}}
+        + {1'h0, {1'h0, storeAddrCandidate_2} + {1'h0, storeAddrCandidate_3}}}
+       + {1'h0,
+          {1'h0, {1'h0, storeAddrCandidate_4} + {1'h0, storeAddrCandidate_5}}
+            + {1'h0, {1'h0, storeAddrCandidate_6} + {1'h0, storeAddrCandidate_7}}}}
+    + {1'h0,
+       {1'h0,
+        {1'h0, {1'h0, storeAddrCandidate_8} + {1'h0, storeAddrCandidate_9}}
+          + {1'h0, {1'h0, storeAddrCandidate_10} + {1'h0, storeAddrCandidate_11}}}
+         + {1'h0,
+            {1'h0, {1'h0, storeAddrCandidate_12} + {1'h0, storeAddrCandidate_13}}
+              + {1'h0, {1'h0, storeAddrCandidate_14} + {1'h0, storeAddrCandidate_15}}}};
+  assign io_store_addr_data_wait_count =
+    {1'h0,
+     {1'h0,
+      {1'h0, {1'h0, storeAddrDataWait_0} + {1'h0, storeAddrDataWait_1}}
+        + {1'h0, {1'h0, storeAddrDataWait_2} + {1'h0, storeAddrDataWait_3}}}
+       + {1'h0,
+          {1'h0, {1'h0, storeAddrDataWait_4} + {1'h0, storeAddrDataWait_5}}
+            + {1'h0, {1'h0, storeAddrDataWait_6} + {1'h0, storeAddrDataWait_7}}}}
+    + {1'h0,
+       {1'h0,
+        {1'h0, {1'h0, storeAddrDataWait_8} + {1'h0, storeAddrDataWait_9}}
+          + {1'h0, {1'h0, storeAddrDataWait_10} + {1'h0, storeAddrDataWait_11}}}
+         + {1'h0,
+            {1'h0, {1'h0, storeAddrDataWait_12} + {1'h0, storeAddrDataWait_13}}
+              + {1'h0, {1'h0, storeAddrDataWait_14} + {1'h0, storeAddrDataWait_15}}}};
+  assign io_store_data_addr_wait_count =
+    {1'h0,
+     {1'h0,
+      {1'h0,
+       {1'h0, residentStore_0 & ~(|_GEN) & (|_GEN_0)}
+         + {1'h0, residentStore_1 & ~(|_GEN_1) & (|_GEN_2)}}
+        + {1'h0,
+           {1'h0, residentStore_2 & ~(|_GEN_3) & (|_GEN_4)}
+             + {1'h0, residentStore_3 & ~(|_GEN_5) & (|_GEN_6)}}}
+       + {1'h0,
+          {1'h0,
+           {1'h0, residentStore_4 & ~(|_GEN_7) & (|_GEN_8)}
+             + {1'h0, residentStore_5 & ~(|_GEN_9) & (|_GEN_10)}}
+            + {1'h0,
+               {1'h0, residentStore_6 & ~(|_GEN_11) & (|_GEN_12)}
+                 + {1'h0, residentStore_7 & ~(|_GEN_13) & (|_GEN_14)}}}}
+    + {1'h0,
+       {1'h0,
+        {1'h0,
+         {1'h0, residentStore_8 & ~(|_GEN_15) & (|_GEN_16)}
+           + {1'h0, residentStore_9 & ~(|_GEN_17) & (|_GEN_18)}}
+          + {1'h0,
+             {1'h0, residentStore_10 & ~(|_GEN_19) & (|_GEN_20)}
+               + {1'h0, residentStore_11 & ~(|_GEN_21) & (|_GEN_22)}}}
+         + {1'h0,
+            {1'h0,
+             {1'h0, residentStore_12 & ~(|_GEN_23) & (|_GEN_24)}
+               + {1'h0, residentStore_13 & ~(|_GEN_25) & (|_GEN_26)}}
+              + {1'h0,
+                 {1'h0, residentStore_14 & ~(|_GEN_27) & (|_GEN_28)}
+                   + {1'h0, residentStore_15 & ~(|_GEN_29) & (|_GEN_30)}}}};
+  assign io_store_ready_count =
+    {1'h0,
+     {1'h0,
+      {1'h0,
+       {1'h0, storeAddrCandidate_0 & (|_GEN_0)}
+         + {1'h0, storeAddrCandidate_1 & (|_GEN_2)}}
+        + {1'h0,
+           {1'h0, storeAddrCandidate_2 & (|_GEN_4)}
+             + {1'h0, storeAddrCandidate_3 & (|_GEN_6)}}}
+       + {1'h0,
+          {1'h0,
+           {1'h0, storeAddrCandidate_4 & (|_GEN_8)}
+             + {1'h0, storeAddrCandidate_5 & (|_GEN_10)}}
+            + {1'h0,
+               {1'h0, storeAddrCandidate_6 & (|_GEN_12)}
+                 + {1'h0, storeAddrCandidate_7 & (|_GEN_14)}}}}
+    + {1'h0,
+       {1'h0,
+        {1'h0,
+         {1'h0, storeAddrCandidate_8 & (|_GEN_16)}
+           + {1'h0, storeAddrCandidate_9 & (|_GEN_18)}}
+          + {1'h0,
+             {1'h0, storeAddrCandidate_10 & (|_GEN_20)}
+               + {1'h0, storeAddrCandidate_11 & (|_GEN_22)}}}
+         + {1'h0,
+            {1'h0,
+             {1'h0, storeAddrCandidate_12 & (|_GEN_24)}
+               + {1'h0, storeAddrCandidate_13 & (|_GEN_26)}}
+              + {1'h0,
+                 {1'h0, storeAddrCandidate_14 & (|_GEN_28)}
+                   + {1'h0, storeAddrCandidate_15 & (|_GEN_30)}}}};
 endmodule
 

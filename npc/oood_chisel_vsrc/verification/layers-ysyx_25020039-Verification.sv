@@ -4,6 +4,7 @@
 bind BPUUpdateQueue BPUUpdateQueue_Verification verification ();
 bind FetchBuffer FetchBuffer_Verification verification ();
 bind FTQ FTQ_Verification verification ();
+bind CommittedTraceCache CommittedTraceCache_Verification verification ();
 bind IFU IFU_Verification verification ();
 bind SpecLoadTracker SpecLoadTracker_Verification verification ();
 bind LoadQueue LoadQueue_Verification verification ();
@@ -14,6 +15,8 @@ bind WideRename WideRename_Verification verification ();
 bind WideROB WideROB_Verification verification ();
 bind WideRS WideRS_Verification verification ();
 bind FetchQueue FetchQueue_Verification verification ();
+bind StoreAddressSidecar StoreAddressSidecar_Verification verification ();
+bind StoreWritebackQueue StoreWritebackQueue_Verification verification ();
 bind WriteCombiningStoreBuffer WriteCombiningStoreBuffer_Verification verification ();
 bind WritebackArbiter WritebackArbiter_Verification verification ();
 bind Core Core_Verification verification ();

@@ -78,6 +78,7 @@ WriteCombiningStoreBuffer.sv
 verification/assert/WritebackArbiter_Verification_Assert.sv
 verification/WritebackArbiter_Verification.sv
 WritebackArbiter.sv
+RetirePathGuard.sv
 verification/assert/Core_Verification_Assert.sv
 verification/Core_Verification.sv
 Core.sv

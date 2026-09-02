@@ -18,3 +18,4 @@ module ram_4x38(
   end // always @(posedge)
   assign R0_data = R0_en ? Memory[R0_addr] : 38'bx;
 endmodule
+

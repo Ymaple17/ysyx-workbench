@@ -404,69 +404,69 @@ module WriteCombiningStoreBuffer(
   wire [31:0] in0Line = io_enq_bits_addr & 32'hFFFFFFE0;
   wire [31:0] in1Line = io_enq1_bits_addr & 32'hFFFFFFE0;
   wire        _match0OH_T = lineAddr_0 == in0Line;
+  wire        _match0OH_T_6 = lineAddr_1 == in0Line;
+  wire        _match0OH_T_12 = lineAddr_2 == in0Line;
+  wire        _match0OH_T_18 = lineAddr_3 == in0Line;
+  wire        _match0OH_T_24 = lineAddr_4 == in0Line;
+  wire        _match0OH_T_30 = lineAddr_5 == in0Line;
+  wire        _match0OH_T_36 = lineAddr_6 == in0Line;
+  wire        _match0OH_T_42 = lineAddr_7 == in0Line;
+  wire        _match0OH_T_48 = lineAddr_8 == in0Line;
+  wire        _match0OH_T_54 = lineAddr_9 == in0Line;
+  wire        _match0OH_T_60 = lineAddr_10 == in0Line;
+  wire        _match0OH_T_66 = lineAddr_11 == in0Line;
+  wire        _match0OH_T_72 = lineAddr_12 == in0Line;
+  wire        _match0OH_T_78 = lineAddr_13 == in0Line;
+  wire        _match0OH_T_84 = lineAddr_14 == in0Line;
+  wire        _match0OH_T_90 = lineAddr_15 == in0Line;
   wire        _match1OH_T = lineAddr_0 == in1Line;
+  wire        _match1OH_T_6 = lineAddr_1 == in1Line;
+  wire        _match1OH_T_12 = lineAddr_2 == in1Line;
+  wire        _match1OH_T_18 = lineAddr_3 == in1Line;
+  wire        _match1OH_T_24 = lineAddr_4 == in1Line;
+  wire        _match1OH_T_30 = lineAddr_5 == in1Line;
+  wire        _match1OH_T_36 = lineAddr_6 == in1Line;
+  wire        _match1OH_T_42 = lineAddr_7 == in1Line;
+  wire        _match1OH_T_48 = lineAddr_8 == in1Line;
+  wire        _match1OH_T_54 = lineAddr_9 == in1Line;
+  wire        _match1OH_T_60 = lineAddr_10 == in1Line;
+  wire        _match1OH_T_66 = lineAddr_11 == in1Line;
+  wire        _match1OH_T_72 = lineAddr_12 == in1Line;
+  wire        _match1OH_T_78 = lineAddr_13 == in1Line;
+  wire        _match1OH_T_84 = lineAddr_14 == in1Line;
+  wire        _match1OH_T_90 = lineAddr_15 == in1Line;
   wire        unprotected_0 =
     valid_0 & ~(io_enq_valid & _match0OH_T) & ~(io_enq1_valid & _match1OH_T);
-  wire        _match0OH_T_2 = lineAddr_1 == in0Line;
-  wire        _match1OH_T_2 = lineAddr_1 == in1Line;
   wire        unprotected_1 =
-    valid_1 & ~(io_enq_valid & _match0OH_T_2) & ~(io_enq1_valid & _match1OH_T_2);
-  wire        _match0OH_T_4 = lineAddr_2 == in0Line;
-  wire        _match1OH_T_4 = lineAddr_2 == in1Line;
+    valid_1 & ~(io_enq_valid & _match0OH_T_6) & ~(io_enq1_valid & _match1OH_T_6);
   wire        unprotected_2 =
-    valid_2 & ~(io_enq_valid & _match0OH_T_4) & ~(io_enq1_valid & _match1OH_T_4);
-  wire        _match0OH_T_6 = lineAddr_3 == in0Line;
-  wire        _match1OH_T_6 = lineAddr_3 == in1Line;
+    valid_2 & ~(io_enq_valid & _match0OH_T_12) & ~(io_enq1_valid & _match1OH_T_12);
   wire        unprotected_3 =
-    valid_3 & ~(io_enq_valid & _match0OH_T_6) & ~(io_enq1_valid & _match1OH_T_6);
-  wire        _match0OH_T_8 = lineAddr_4 == in0Line;
-  wire        _match1OH_T_8 = lineAddr_4 == in1Line;
+    valid_3 & ~(io_enq_valid & _match0OH_T_18) & ~(io_enq1_valid & _match1OH_T_18);
   wire        unprotected_4 =
-    valid_4 & ~(io_enq_valid & _match0OH_T_8) & ~(io_enq1_valid & _match1OH_T_8);
-  wire        _match0OH_T_10 = lineAddr_5 == in0Line;
-  wire        _match1OH_T_10 = lineAddr_5 == in1Line;
+    valid_4 & ~(io_enq_valid & _match0OH_T_24) & ~(io_enq1_valid & _match1OH_T_24);
   wire        unprotected_5 =
-    valid_5 & ~(io_enq_valid & _match0OH_T_10) & ~(io_enq1_valid & _match1OH_T_10);
-  wire        _match0OH_T_12 = lineAddr_6 == in0Line;
-  wire        _match1OH_T_12 = lineAddr_6 == in1Line;
+    valid_5 & ~(io_enq_valid & _match0OH_T_30) & ~(io_enq1_valid & _match1OH_T_30);
   wire        unprotected_6 =
-    valid_6 & ~(io_enq_valid & _match0OH_T_12) & ~(io_enq1_valid & _match1OH_T_12);
-  wire        _match0OH_T_14 = lineAddr_7 == in0Line;
-  wire        _match1OH_T_14 = lineAddr_7 == in1Line;
+    valid_6 & ~(io_enq_valid & _match0OH_T_36) & ~(io_enq1_valid & _match1OH_T_36);
   wire        unprotected_7 =
-    valid_7 & ~(io_enq_valid & _match0OH_T_14) & ~(io_enq1_valid & _match1OH_T_14);
-  wire        _match0OH_T_16 = lineAddr_8 == in0Line;
-  wire        _match1OH_T_16 = lineAddr_8 == in1Line;
+    valid_7 & ~(io_enq_valid & _match0OH_T_42) & ~(io_enq1_valid & _match1OH_T_42);
   wire        unprotected_8 =
-    valid_8 & ~(io_enq_valid & _match0OH_T_16) & ~(io_enq1_valid & _match1OH_T_16);
-  wire        _match0OH_T_18 = lineAddr_9 == in0Line;
-  wire        _match1OH_T_18 = lineAddr_9 == in1Line;
+    valid_8 & ~(io_enq_valid & _match0OH_T_48) & ~(io_enq1_valid & _match1OH_T_48);
   wire        unprotected_9 =
-    valid_9 & ~(io_enq_valid & _match0OH_T_18) & ~(io_enq1_valid & _match1OH_T_18);
-  wire        _match0OH_T_20 = lineAddr_10 == in0Line;
-  wire        _match1OH_T_20 = lineAddr_10 == in1Line;
+    valid_9 & ~(io_enq_valid & _match0OH_T_54) & ~(io_enq1_valid & _match1OH_T_54);
   wire        unprotected_10 =
-    valid_10 & ~(io_enq_valid & _match0OH_T_20) & ~(io_enq1_valid & _match1OH_T_20);
-  wire        _match0OH_T_22 = lineAddr_11 == in0Line;
-  wire        _match1OH_T_22 = lineAddr_11 == in1Line;
+    valid_10 & ~(io_enq_valid & _match0OH_T_60) & ~(io_enq1_valid & _match1OH_T_60);
   wire        unprotected_11 =
-    valid_11 & ~(io_enq_valid & _match0OH_T_22) & ~(io_enq1_valid & _match1OH_T_22);
-  wire        _match0OH_T_24 = lineAddr_12 == in0Line;
-  wire        _match1OH_T_24 = lineAddr_12 == in1Line;
+    valid_11 & ~(io_enq_valid & _match0OH_T_66) & ~(io_enq1_valid & _match1OH_T_66);
   wire        unprotected_12 =
-    valid_12 & ~(io_enq_valid & _match0OH_T_24) & ~(io_enq1_valid & _match1OH_T_24);
-  wire        _match0OH_T_26 = lineAddr_13 == in0Line;
-  wire        _match1OH_T_26 = lineAddr_13 == in1Line;
+    valid_12 & ~(io_enq_valid & _match0OH_T_72) & ~(io_enq1_valid & _match1OH_T_72);
   wire        unprotected_13 =
-    valid_13 & ~(io_enq_valid & _match0OH_T_26) & ~(io_enq1_valid & _match1OH_T_26);
-  wire        _match0OH_T_28 = lineAddr_14 == in0Line;
-  wire        _match1OH_T_28 = lineAddr_14 == in1Line;
+    valid_13 & ~(io_enq_valid & _match0OH_T_78) & ~(io_enq1_valid & _match1OH_T_78);
   wire        unprotected_14 =
-    valid_14 & ~(io_enq_valid & _match0OH_T_28) & ~(io_enq1_valid & _match1OH_T_28);
-  wire        _match0OH_T_30 = lineAddr_15 == in0Line;
-  wire        _match1OH_T_30 = lineAddr_15 == in1Line;
+    valid_14 & ~(io_enq_valid & _match0OH_T_84) & ~(io_enq1_valid & _match1OH_T_84);
   wire        unprotected_15 =
-    valid_15 & ~(io_enq_valid & _match0OH_T_30) & ~(io_enq1_valid & _match1OH_T_30);
+    valid_15 & ~(io_enq_valid & _match0OH_T_90) & ~(io_enq1_valid & _match1OH_T_90);
   wire        _oldestUnprotectedOH_olderExists_T_10 = age_1 > age_0;
   wire        _oldestUnprotectedOH_olderExists_T_114 = age_1 == age_0;
   wire        _oldestUnprotectedOH_olderExists_T_16 = age_2 > age_0;
@@ -497,6 +497,23 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1557 = age_14 == age_0;
   wire        _oldestUnprotectedOH_olderExists_T_94 = age_15 > age_0;
   wire        _oldestUnprotectedOH_olderExists_T_1668 = age_15 == age_0;
+  wire        oldestAnyOH_0 =
+    valid_0
+    & ~(valid_1 & _oldestUnprotectedOH_olderExists_T_10 | valid_2
+        & _oldestUnprotectedOH_olderExists_T_16 | valid_3
+        & _oldestUnprotectedOH_olderExists_T_22 | valid_4
+        & _oldestUnprotectedOH_olderExists_T_28 | valid_5
+        & _oldestUnprotectedOH_olderExists_T_34 | valid_6
+        & _oldestUnprotectedOH_olderExists_T_40 | valid_7
+        & _oldestUnprotectedOH_olderExists_T_46 | valid_8
+        & _oldestUnprotectedOH_olderExists_T_52 | valid_9
+        & _oldestUnprotectedOH_olderExists_T_58 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_64 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_70 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_76 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_82 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_88 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_94);
   wire        _oldestUnprotectedOH_olderExists_T_111 = age_0 > age_1;
   wire        _oldestUnprotectedOH_olderExists_T_127 = age_2 > age_1;
   wire        _oldestUnprotectedOH_olderExists_T_231 = age_2 == age_1;
@@ -526,6 +543,25 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1563 = age_14 == age_1;
   wire        _oldestUnprotectedOH_olderExists_T_205 = age_15 > age_1;
   wire        _oldestUnprotectedOH_olderExists_T_1674 = age_15 == age_1;
+  wire        oldestAnyOH_1 =
+    valid_1
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_111
+           | _oldestUnprotectedOH_olderExists_T_114) | valid_2
+        & _oldestUnprotectedOH_olderExists_T_127 | valid_3
+        & _oldestUnprotectedOH_olderExists_T_133 | valid_4
+        & _oldestUnprotectedOH_olderExists_T_139 | valid_5
+        & _oldestUnprotectedOH_olderExists_T_145 | valid_6
+        & _oldestUnprotectedOH_olderExists_T_151 | valid_7
+        & _oldestUnprotectedOH_olderExists_T_157 | valid_8
+        & _oldestUnprotectedOH_olderExists_T_163 | valid_9
+        & _oldestUnprotectedOH_olderExists_T_169 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_175 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_181 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_187 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_193 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_199 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_205);
   wire        _oldestUnprotectedOH_olderExists_T_222 = age_0 > age_2;
   wire        _oldestUnprotectedOH_olderExists_T_228 = age_1 > age_2;
   wire        _oldestUnprotectedOH_olderExists_T_244 = age_3 > age_2;
@@ -554,6 +590,26 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1569 = age_14 == age_2;
   wire        _oldestUnprotectedOH_olderExists_T_316 = age_15 > age_2;
   wire        _oldestUnprotectedOH_olderExists_T_1680 = age_15 == age_2;
+  wire        oldestAnyOH_2 =
+    valid_2
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_222
+           | _oldestUnprotectedOH_olderExists_T_225) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_228
+           | _oldestUnprotectedOH_olderExists_T_231) | valid_3
+        & _oldestUnprotectedOH_olderExists_T_244 | valid_4
+        & _oldestUnprotectedOH_olderExists_T_250 | valid_5
+        & _oldestUnprotectedOH_olderExists_T_256 | valid_6
+        & _oldestUnprotectedOH_olderExists_T_262 | valid_7
+        & _oldestUnprotectedOH_olderExists_T_268 | valid_8
+        & _oldestUnprotectedOH_olderExists_T_274 | valid_9
+        & _oldestUnprotectedOH_olderExists_T_280 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_286 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_292 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_298 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_304 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_310 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_316);
   wire        _oldestUnprotectedOH_olderExists_T_333 = age_0 > age_3;
   wire        _oldestUnprotectedOH_olderExists_T_339 = age_1 > age_3;
   wire        _oldestUnprotectedOH_olderExists_T_345 = age_2 > age_3;
@@ -581,6 +637,27 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1575 = age_14 == age_3;
   wire        _oldestUnprotectedOH_olderExists_T_427 = age_15 > age_3;
   wire        _oldestUnprotectedOH_olderExists_T_1686 = age_15 == age_3;
+  wire        oldestAnyOH_3 =
+    valid_3
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_333
+           | _oldestUnprotectedOH_olderExists_T_336) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_339
+           | _oldestUnprotectedOH_olderExists_T_342) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_345
+           | _oldestUnprotectedOH_olderExists_T_348) | valid_4
+        & _oldestUnprotectedOH_olderExists_T_361 | valid_5
+        & _oldestUnprotectedOH_olderExists_T_367 | valid_6
+        & _oldestUnprotectedOH_olderExists_T_373 | valid_7
+        & _oldestUnprotectedOH_olderExists_T_379 | valid_8
+        & _oldestUnprotectedOH_olderExists_T_385 | valid_9
+        & _oldestUnprotectedOH_olderExists_T_391 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_397 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_403 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_409 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_415 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_421 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_427);
   wire        _oldestUnprotectedOH_olderExists_T_444 = age_0 > age_4;
   wire        _oldestUnprotectedOH_olderExists_T_450 = age_1 > age_4;
   wire        _oldestUnprotectedOH_olderExists_T_456 = age_2 > age_4;
@@ -607,6 +684,28 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1581 = age_14 == age_4;
   wire        _oldestUnprotectedOH_olderExists_T_538 = age_15 > age_4;
   wire        _oldestUnprotectedOH_olderExists_T_1692 = age_15 == age_4;
+  wire        oldestAnyOH_4 =
+    valid_4
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_444
+           | _oldestUnprotectedOH_olderExists_T_447) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_450
+           | _oldestUnprotectedOH_olderExists_T_453) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_456
+           | _oldestUnprotectedOH_olderExists_T_459) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_462
+           | _oldestUnprotectedOH_olderExists_T_465) | valid_5
+        & _oldestUnprotectedOH_olderExists_T_478 | valid_6
+        & _oldestUnprotectedOH_olderExists_T_484 | valid_7
+        & _oldestUnprotectedOH_olderExists_T_490 | valid_8
+        & _oldestUnprotectedOH_olderExists_T_496 | valid_9
+        & _oldestUnprotectedOH_olderExists_T_502 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_508 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_514 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_520 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_526 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_532 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_538);
   wire        _oldestUnprotectedOH_olderExists_T_555 = age_0 > age_5;
   wire        _oldestUnprotectedOH_olderExists_T_561 = age_1 > age_5;
   wire        _oldestUnprotectedOH_olderExists_T_567 = age_2 > age_5;
@@ -632,6 +731,29 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1587 = age_14 == age_5;
   wire        _oldestUnprotectedOH_olderExists_T_649 = age_15 > age_5;
   wire        _oldestUnprotectedOH_olderExists_T_1698 = age_15 == age_5;
+  wire        oldestAnyOH_5 =
+    valid_5
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_555
+           | _oldestUnprotectedOH_olderExists_T_558) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_561
+           | _oldestUnprotectedOH_olderExists_T_564) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_567
+           | _oldestUnprotectedOH_olderExists_T_570) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_573
+           | _oldestUnprotectedOH_olderExists_T_576) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_579
+           | _oldestUnprotectedOH_olderExists_T_582) | valid_6
+        & _oldestUnprotectedOH_olderExists_T_595 | valid_7
+        & _oldestUnprotectedOH_olderExists_T_601 | valid_8
+        & _oldestUnprotectedOH_olderExists_T_607 | valid_9
+        & _oldestUnprotectedOH_olderExists_T_613 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_619 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_625 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_631 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_637 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_643 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_649);
   wire        _oldestUnprotectedOH_olderExists_T_666 = age_0 > age_6;
   wire        _oldestUnprotectedOH_olderExists_T_672 = age_1 > age_6;
   wire        _oldestUnprotectedOH_olderExists_T_678 = age_2 > age_6;
@@ -656,6 +778,30 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1593 = age_14 == age_6;
   wire        _oldestUnprotectedOH_olderExists_T_760 = age_15 > age_6;
   wire        _oldestUnprotectedOH_olderExists_T_1704 = age_15 == age_6;
+  wire        oldestAnyOH_6 =
+    valid_6
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_666
+           | _oldestUnprotectedOH_olderExists_T_669) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_672
+           | _oldestUnprotectedOH_olderExists_T_675) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_678
+           | _oldestUnprotectedOH_olderExists_T_681) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_684
+           | _oldestUnprotectedOH_olderExists_T_687) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_690
+           | _oldestUnprotectedOH_olderExists_T_693) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_696
+           | _oldestUnprotectedOH_olderExists_T_699) | valid_7
+        & _oldestUnprotectedOH_olderExists_T_712 | valid_8
+        & _oldestUnprotectedOH_olderExists_T_718 | valid_9
+        & _oldestUnprotectedOH_olderExists_T_724 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_730 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_736 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_742 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_748 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_754 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_760);
   wire        _oldestUnprotectedOH_olderExists_T_777 = age_0 > age_7;
   wire        _oldestUnprotectedOH_olderExists_T_783 = age_1 > age_7;
   wire        _oldestUnprotectedOH_olderExists_T_789 = age_2 > age_7;
@@ -679,6 +825,31 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1599 = age_14 == age_7;
   wire        _oldestUnprotectedOH_olderExists_T_871 = age_15 > age_7;
   wire        _oldestUnprotectedOH_olderExists_T_1710 = age_15 == age_7;
+  wire        oldestAnyOH_7 =
+    valid_7
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_777
+           | _oldestUnprotectedOH_olderExists_T_780) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_783
+           | _oldestUnprotectedOH_olderExists_T_786) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_789
+           | _oldestUnprotectedOH_olderExists_T_792) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_795
+           | _oldestUnprotectedOH_olderExists_T_798) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_801
+           | _oldestUnprotectedOH_olderExists_T_804) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_807
+           | _oldestUnprotectedOH_olderExists_T_810) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_813
+           | _oldestUnprotectedOH_olderExists_T_816) | valid_8
+        & _oldestUnprotectedOH_olderExists_T_829 | valid_9
+        & _oldestUnprotectedOH_olderExists_T_835 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_841 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_847 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_853 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_859 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_865 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_871);
   wire        _oldestUnprotectedOH_olderExists_T_888 = age_0 > age_8;
   wire        _oldestUnprotectedOH_olderExists_T_894 = age_1 > age_8;
   wire        _oldestUnprotectedOH_olderExists_T_900 = age_2 > age_8;
@@ -701,6 +872,32 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1605 = age_14 == age_8;
   wire        _oldestUnprotectedOH_olderExists_T_982 = age_15 > age_8;
   wire        _oldestUnprotectedOH_olderExists_T_1716 = age_15 == age_8;
+  wire        oldestAnyOH_8 =
+    valid_8
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_888
+           | _oldestUnprotectedOH_olderExists_T_891) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_894
+           | _oldestUnprotectedOH_olderExists_T_897) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_900
+           | _oldestUnprotectedOH_olderExists_T_903) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_906
+           | _oldestUnprotectedOH_olderExists_T_909) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_912
+           | _oldestUnprotectedOH_olderExists_T_915) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_918
+           | _oldestUnprotectedOH_olderExists_T_921) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_924
+           | _oldestUnprotectedOH_olderExists_T_927) | valid_7
+        & (_oldestUnprotectedOH_olderExists_T_930
+           | _oldestUnprotectedOH_olderExists_T_933) | valid_9
+        & _oldestUnprotectedOH_olderExists_T_946 | valid_10
+        & _oldestUnprotectedOH_olderExists_T_952 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_958 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_964 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_970 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_976 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_982);
   wire        _oldestUnprotectedOH_olderExists_T_999 = age_0 > age_9;
   wire        _oldestUnprotectedOH_olderExists_T_1005 = age_1 > age_9;
   wire        _oldestUnprotectedOH_olderExists_T_1011 = age_2 > age_9;
@@ -722,6 +919,33 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1611 = age_14 == age_9;
   wire        _oldestUnprotectedOH_olderExists_T_1093 = age_15 > age_9;
   wire        _oldestUnprotectedOH_olderExists_T_1722 = age_15 == age_9;
+  wire        oldestAnyOH_9 =
+    valid_9
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_999
+           | _oldestUnprotectedOH_olderExists_T_1002) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_1005
+           | _oldestUnprotectedOH_olderExists_T_1008) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_1011
+           | _oldestUnprotectedOH_olderExists_T_1014) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_1017
+           | _oldestUnprotectedOH_olderExists_T_1020) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_1023
+           | _oldestUnprotectedOH_olderExists_T_1026) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_1029
+           | _oldestUnprotectedOH_olderExists_T_1032) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_1035
+           | _oldestUnprotectedOH_olderExists_T_1038) | valid_7
+        & (_oldestUnprotectedOH_olderExists_T_1041
+           | _oldestUnprotectedOH_olderExists_T_1044) | valid_8
+        & (_oldestUnprotectedOH_olderExists_T_1047
+           | _oldestUnprotectedOH_olderExists_T_1050) | valid_10
+        & _oldestUnprotectedOH_olderExists_T_1063 | valid_11
+        & _oldestUnprotectedOH_olderExists_T_1069 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_1075 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_1081 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_1087 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_1093);
   wire        _oldestUnprotectedOH_olderExists_T_1110 = age_0 > age_10;
   wire        _oldestUnprotectedOH_olderExists_T_1116 = age_1 > age_10;
   wire        _oldestUnprotectedOH_olderExists_T_1122 = age_2 > age_10;
@@ -742,6 +966,34 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1617 = age_14 == age_10;
   wire        _oldestUnprotectedOH_olderExists_T_1204 = age_15 > age_10;
   wire        _oldestUnprotectedOH_olderExists_T_1728 = age_15 == age_10;
+  wire        oldestAnyOH_10 =
+    valid_10
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_1110
+           | _oldestUnprotectedOH_olderExists_T_1113) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_1116
+           | _oldestUnprotectedOH_olderExists_T_1119) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_1122
+           | _oldestUnprotectedOH_olderExists_T_1125) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_1128
+           | _oldestUnprotectedOH_olderExists_T_1131) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_1134
+           | _oldestUnprotectedOH_olderExists_T_1137) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_1140
+           | _oldestUnprotectedOH_olderExists_T_1143) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_1146
+           | _oldestUnprotectedOH_olderExists_T_1149) | valid_7
+        & (_oldestUnprotectedOH_olderExists_T_1152
+           | _oldestUnprotectedOH_olderExists_T_1155) | valid_8
+        & (_oldestUnprotectedOH_olderExists_T_1158
+           | _oldestUnprotectedOH_olderExists_T_1161) | valid_9
+        & (_oldestUnprotectedOH_olderExists_T_1164
+           | _oldestUnprotectedOH_olderExists_T_1167) | valid_11
+        & _oldestUnprotectedOH_olderExists_T_1180 | valid_12
+        & _oldestUnprotectedOH_olderExists_T_1186 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_1192 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_1198 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_1204);
   wire        _oldestUnprotectedOH_olderExists_T_1221 = age_0 > age_11;
   wire        _oldestUnprotectedOH_olderExists_T_1227 = age_1 > age_11;
   wire        _oldestUnprotectedOH_olderExists_T_1233 = age_2 > age_11;
@@ -761,6 +1013,35 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1623 = age_14 == age_11;
   wire        _oldestUnprotectedOH_olderExists_T_1315 = age_15 > age_11;
   wire        _oldestUnprotectedOH_olderExists_T_1734 = age_15 == age_11;
+  wire        oldestAnyOH_11 =
+    valid_11
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_1221
+           | _oldestUnprotectedOH_olderExists_T_1224) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_1227
+           | _oldestUnprotectedOH_olderExists_T_1230) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_1233
+           | _oldestUnprotectedOH_olderExists_T_1236) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_1239
+           | _oldestUnprotectedOH_olderExists_T_1242) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_1245
+           | _oldestUnprotectedOH_olderExists_T_1248) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_1251
+           | _oldestUnprotectedOH_olderExists_T_1254) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_1257
+           | _oldestUnprotectedOH_olderExists_T_1260) | valid_7
+        & (_oldestUnprotectedOH_olderExists_T_1263
+           | _oldestUnprotectedOH_olderExists_T_1266) | valid_8
+        & (_oldestUnprotectedOH_olderExists_T_1269
+           | _oldestUnprotectedOH_olderExists_T_1272) | valid_9
+        & (_oldestUnprotectedOH_olderExists_T_1275
+           | _oldestUnprotectedOH_olderExists_T_1278) | valid_10
+        & (_oldestUnprotectedOH_olderExists_T_1281
+           | _oldestUnprotectedOH_olderExists_T_1284) | valid_12
+        & _oldestUnprotectedOH_olderExists_T_1297 | valid_13
+        & _oldestUnprotectedOH_olderExists_T_1303 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_1309 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_1315);
   wire        _oldestUnprotectedOH_olderExists_T_1332 = age_0 > age_12;
   wire        _oldestUnprotectedOH_olderExists_T_1338 = age_1 > age_12;
   wire        _oldestUnprotectedOH_olderExists_T_1344 = age_2 > age_12;
@@ -779,6 +1060,36 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1629 = age_14 == age_12;
   wire        _oldestUnprotectedOH_olderExists_T_1426 = age_15 > age_12;
   wire        _oldestUnprotectedOH_olderExists_T_1740 = age_15 == age_12;
+  wire        oldestAnyOH_12 =
+    valid_12
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_1332
+           | _oldestUnprotectedOH_olderExists_T_1335) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_1338
+           | _oldestUnprotectedOH_olderExists_T_1341) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_1344
+           | _oldestUnprotectedOH_olderExists_T_1347) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_1350
+           | _oldestUnprotectedOH_olderExists_T_1353) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_1356
+           | _oldestUnprotectedOH_olderExists_T_1359) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_1362
+           | _oldestUnprotectedOH_olderExists_T_1365) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_1368
+           | _oldestUnprotectedOH_olderExists_T_1371) | valid_7
+        & (_oldestUnprotectedOH_olderExists_T_1374
+           | _oldestUnprotectedOH_olderExists_T_1377) | valid_8
+        & (_oldestUnprotectedOH_olderExists_T_1380
+           | _oldestUnprotectedOH_olderExists_T_1383) | valid_9
+        & (_oldestUnprotectedOH_olderExists_T_1386
+           | _oldestUnprotectedOH_olderExists_T_1389) | valid_10
+        & (_oldestUnprotectedOH_olderExists_T_1392
+           | _oldestUnprotectedOH_olderExists_T_1395) | valid_11
+        & (_oldestUnprotectedOH_olderExists_T_1398
+           | _oldestUnprotectedOH_olderExists_T_1401) | valid_13
+        & _oldestUnprotectedOH_olderExists_T_1414 | valid_14
+        & _oldestUnprotectedOH_olderExists_T_1420 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_1426);
   wire        _oldestUnprotectedOH_olderExists_T_1443 = age_0 > age_13;
   wire        _oldestUnprotectedOH_olderExists_T_1449 = age_1 > age_13;
   wire        _oldestUnprotectedOH_olderExists_T_1455 = age_2 > age_13;
@@ -796,6 +1107,37 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1635 = age_14 == age_13;
   wire        _oldestUnprotectedOH_olderExists_T_1537 = age_15 > age_13;
   wire        _oldestUnprotectedOH_olderExists_T_1746 = age_15 == age_13;
+  wire        oldestAnyOH_13 =
+    valid_13
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_1443
+           | _oldestUnprotectedOH_olderExists_T_1446) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_1449
+           | _oldestUnprotectedOH_olderExists_T_1452) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_1455
+           | _oldestUnprotectedOH_olderExists_T_1458) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_1461
+           | _oldestUnprotectedOH_olderExists_T_1464) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_1467
+           | _oldestUnprotectedOH_olderExists_T_1470) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_1473
+           | _oldestUnprotectedOH_olderExists_T_1476) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_1479
+           | _oldestUnprotectedOH_olderExists_T_1482) | valid_7
+        & (_oldestUnprotectedOH_olderExists_T_1485
+           | _oldestUnprotectedOH_olderExists_T_1488) | valid_8
+        & (_oldestUnprotectedOH_olderExists_T_1491
+           | _oldestUnprotectedOH_olderExists_T_1494) | valid_9
+        & (_oldestUnprotectedOH_olderExists_T_1497
+           | _oldestUnprotectedOH_olderExists_T_1500) | valid_10
+        & (_oldestUnprotectedOH_olderExists_T_1503
+           | _oldestUnprotectedOH_olderExists_T_1506) | valid_11
+        & (_oldestUnprotectedOH_olderExists_T_1509
+           | _oldestUnprotectedOH_olderExists_T_1512) | valid_12
+        & (_oldestUnprotectedOH_olderExists_T_1515
+           | _oldestUnprotectedOH_olderExists_T_1518) | valid_14
+        & _oldestUnprotectedOH_olderExists_T_1531 | valid_15
+        & _oldestUnprotectedOH_olderExists_T_1537);
   wire        _oldestUnprotectedOH_olderExists_T_1554 = age_0 > age_14;
   wire        _oldestUnprotectedOH_olderExists_T_1560 = age_1 > age_14;
   wire        _oldestUnprotectedOH_olderExists_T_1566 = age_2 > age_14;
@@ -812,6 +1154,38 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1632 = age_13 > age_14;
   wire        _oldestUnprotectedOH_olderExists_T_1648 = age_15 > age_14;
   wire        _oldestUnprotectedOH_olderExists_T_1752 = age_15 == age_14;
+  wire        oldestAnyOH_14 =
+    valid_14
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_1554
+           | _oldestUnprotectedOH_olderExists_T_1557) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_1560
+           | _oldestUnprotectedOH_olderExists_T_1563) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_1566
+           | _oldestUnprotectedOH_olderExists_T_1569) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_1572
+           | _oldestUnprotectedOH_olderExists_T_1575) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_1578
+           | _oldestUnprotectedOH_olderExists_T_1581) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_1584
+           | _oldestUnprotectedOH_olderExists_T_1587) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_1590
+           | _oldestUnprotectedOH_olderExists_T_1593) | valid_7
+        & (_oldestUnprotectedOH_olderExists_T_1596
+           | _oldestUnprotectedOH_olderExists_T_1599) | valid_8
+        & (_oldestUnprotectedOH_olderExists_T_1602
+           | _oldestUnprotectedOH_olderExists_T_1605) | valid_9
+        & (_oldestUnprotectedOH_olderExists_T_1608
+           | _oldestUnprotectedOH_olderExists_T_1611) | valid_10
+        & (_oldestUnprotectedOH_olderExists_T_1614
+           | _oldestUnprotectedOH_olderExists_T_1617) | valid_11
+        & (_oldestUnprotectedOH_olderExists_T_1620
+           | _oldestUnprotectedOH_olderExists_T_1623) | valid_12
+        & (_oldestUnprotectedOH_olderExists_T_1626
+           | _oldestUnprotectedOH_olderExists_T_1629) | valid_13
+        & (_oldestUnprotectedOH_olderExists_T_1632
+           | _oldestUnprotectedOH_olderExists_T_1635) | valid_15
+        & _oldestUnprotectedOH_olderExists_T_1648);
   wire        _oldestUnprotectedOH_olderExists_T_1665 = age_0 > age_15;
   wire        _oldestUnprotectedOH_olderExists_T_1671 = age_1 > age_15;
   wire        _oldestUnprotectedOH_olderExists_T_1677 = age_2 > age_15;
@@ -827,7 +1201,40 @@ module WriteCombiningStoreBuffer(
   wire        _oldestUnprotectedOH_olderExists_T_1737 = age_12 > age_15;
   wire        _oldestUnprotectedOH_olderExists_T_1743 = age_13 > age_15;
   wire        _oldestUnprotectedOH_olderExists_T_1749 = age_14 > age_15;
-  wire [15:0] _victimBits_T =
+  wire        oldestAnyOH_15 =
+    valid_15
+    & ~(valid_0
+        & (_oldestUnprotectedOH_olderExists_T_1665
+           | _oldestUnprotectedOH_olderExists_T_1668) | valid_1
+        & (_oldestUnprotectedOH_olderExists_T_1671
+           | _oldestUnprotectedOH_olderExists_T_1674) | valid_2
+        & (_oldestUnprotectedOH_olderExists_T_1677
+           | _oldestUnprotectedOH_olderExists_T_1680) | valid_3
+        & (_oldestUnprotectedOH_olderExists_T_1683
+           | _oldestUnprotectedOH_olderExists_T_1686) | valid_4
+        & (_oldestUnprotectedOH_olderExists_T_1689
+           | _oldestUnprotectedOH_olderExists_T_1692) | valid_5
+        & (_oldestUnprotectedOH_olderExists_T_1695
+           | _oldestUnprotectedOH_olderExists_T_1698) | valid_6
+        & (_oldestUnprotectedOH_olderExists_T_1701
+           | _oldestUnprotectedOH_olderExists_T_1704) | valid_7
+        & (_oldestUnprotectedOH_olderExists_T_1707
+           | _oldestUnprotectedOH_olderExists_T_1710) | valid_8
+        & (_oldestUnprotectedOH_olderExists_T_1713
+           | _oldestUnprotectedOH_olderExists_T_1716) | valid_9
+        & (_oldestUnprotectedOH_olderExists_T_1719
+           | _oldestUnprotectedOH_olderExists_T_1722) | valid_10
+        & (_oldestUnprotectedOH_olderExists_T_1725
+           | _oldestUnprotectedOH_olderExists_T_1728) | valid_11
+        & (_oldestUnprotectedOH_olderExists_T_1731
+           | _oldestUnprotectedOH_olderExists_T_1734) | valid_12
+        & (_oldestUnprotectedOH_olderExists_T_1737
+           | _oldestUnprotectedOH_olderExists_T_1740) | valid_13
+        & (_oldestUnprotectedOH_olderExists_T_1743
+           | _oldestUnprotectedOH_olderExists_T_1746) | valid_14
+        & (_oldestUnprotectedOH_olderExists_T_1749
+           | _oldestUnprotectedOH_olderExists_T_1752));
+  wire [15:0] _victimBits_T_1 =
     {unprotected_15
        & ~(unprotected_0
            & (_oldestUnprotectedOH_olderExists_T_1665
@@ -1219,417 +1626,59 @@ module WriteCombiningStoreBuffer(
            & _oldestUnprotectedOH_olderExists_T_82 | unprotected_14
            & _oldestUnprotectedOH_olderExists_T_88 | unprotected_15
            & _oldestUnprotectedOH_olderExists_T_94)};
-  wire [15:0] _victimBits_T_2 =
-    {valid_15
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_1665
-              | _oldestUnprotectedOH_olderExists_T_1668) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_1671
-              | _oldestUnprotectedOH_olderExists_T_1674) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_1677
-              | _oldestUnprotectedOH_olderExists_T_1680) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_1683
-              | _oldestUnprotectedOH_olderExists_T_1686) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_1689
-              | _oldestUnprotectedOH_olderExists_T_1692) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_1695
-              | _oldestUnprotectedOH_olderExists_T_1698) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_1701
-              | _oldestUnprotectedOH_olderExists_T_1704) | valid_7
-           & (_oldestUnprotectedOH_olderExists_T_1707
-              | _oldestUnprotectedOH_olderExists_T_1710) | valid_8
-           & (_oldestUnprotectedOH_olderExists_T_1713
-              | _oldestUnprotectedOH_olderExists_T_1716) | valid_9
-           & (_oldestUnprotectedOH_olderExists_T_1719
-              | _oldestUnprotectedOH_olderExists_T_1722) | valid_10
-           & (_oldestUnprotectedOH_olderExists_T_1725
-              | _oldestUnprotectedOH_olderExists_T_1728) | valid_11
-           & (_oldestUnprotectedOH_olderExists_T_1731
-              | _oldestUnprotectedOH_olderExists_T_1734) | valid_12
-           & (_oldestUnprotectedOH_olderExists_T_1737
-              | _oldestUnprotectedOH_olderExists_T_1740) | valid_13
-           & (_oldestUnprotectedOH_olderExists_T_1743
-              | _oldestUnprotectedOH_olderExists_T_1746) | valid_14
-           & (_oldestUnprotectedOH_olderExists_T_1749
-              | _oldestUnprotectedOH_olderExists_T_1752)),
-     valid_14
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_1554
-              | _oldestUnprotectedOH_olderExists_T_1557) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_1560
-              | _oldestUnprotectedOH_olderExists_T_1563) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_1566
-              | _oldestUnprotectedOH_olderExists_T_1569) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_1572
-              | _oldestUnprotectedOH_olderExists_T_1575) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_1578
-              | _oldestUnprotectedOH_olderExists_T_1581) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_1584
-              | _oldestUnprotectedOH_olderExists_T_1587) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_1590
-              | _oldestUnprotectedOH_olderExists_T_1593) | valid_7
-           & (_oldestUnprotectedOH_olderExists_T_1596
-              | _oldestUnprotectedOH_olderExists_T_1599) | valid_8
-           & (_oldestUnprotectedOH_olderExists_T_1602
-              | _oldestUnprotectedOH_olderExists_T_1605) | valid_9
-           & (_oldestUnprotectedOH_olderExists_T_1608
-              | _oldestUnprotectedOH_olderExists_T_1611) | valid_10
-           & (_oldestUnprotectedOH_olderExists_T_1614
-              | _oldestUnprotectedOH_olderExists_T_1617) | valid_11
-           & (_oldestUnprotectedOH_olderExists_T_1620
-              | _oldestUnprotectedOH_olderExists_T_1623) | valid_12
-           & (_oldestUnprotectedOH_olderExists_T_1626
-              | _oldestUnprotectedOH_olderExists_T_1629) | valid_13
-           & (_oldestUnprotectedOH_olderExists_T_1632
-              | _oldestUnprotectedOH_olderExists_T_1635) | valid_15
-           & _oldestUnprotectedOH_olderExists_T_1648),
-     valid_13
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_1443
-              | _oldestUnprotectedOH_olderExists_T_1446) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_1449
-              | _oldestUnprotectedOH_olderExists_T_1452) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_1455
-              | _oldestUnprotectedOH_olderExists_T_1458) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_1461
-              | _oldestUnprotectedOH_olderExists_T_1464) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_1467
-              | _oldestUnprotectedOH_olderExists_T_1470) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_1473
-              | _oldestUnprotectedOH_olderExists_T_1476) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_1479
-              | _oldestUnprotectedOH_olderExists_T_1482) | valid_7
-           & (_oldestUnprotectedOH_olderExists_T_1485
-              | _oldestUnprotectedOH_olderExists_T_1488) | valid_8
-           & (_oldestUnprotectedOH_olderExists_T_1491
-              | _oldestUnprotectedOH_olderExists_T_1494) | valid_9
-           & (_oldestUnprotectedOH_olderExists_T_1497
-              | _oldestUnprotectedOH_olderExists_T_1500) | valid_10
-           & (_oldestUnprotectedOH_olderExists_T_1503
-              | _oldestUnprotectedOH_olderExists_T_1506) | valid_11
-           & (_oldestUnprotectedOH_olderExists_T_1509
-              | _oldestUnprotectedOH_olderExists_T_1512) | valid_12
-           & (_oldestUnprotectedOH_olderExists_T_1515
-              | _oldestUnprotectedOH_olderExists_T_1518) | valid_14
-           & _oldestUnprotectedOH_olderExists_T_1531 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_1537),
-     valid_12
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_1332
-              | _oldestUnprotectedOH_olderExists_T_1335) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_1338
-              | _oldestUnprotectedOH_olderExists_T_1341) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_1344
-              | _oldestUnprotectedOH_olderExists_T_1347) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_1350
-              | _oldestUnprotectedOH_olderExists_T_1353) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_1356
-              | _oldestUnprotectedOH_olderExists_T_1359) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_1362
-              | _oldestUnprotectedOH_olderExists_T_1365) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_1368
-              | _oldestUnprotectedOH_olderExists_T_1371) | valid_7
-           & (_oldestUnprotectedOH_olderExists_T_1374
-              | _oldestUnprotectedOH_olderExists_T_1377) | valid_8
-           & (_oldestUnprotectedOH_olderExists_T_1380
-              | _oldestUnprotectedOH_olderExists_T_1383) | valid_9
-           & (_oldestUnprotectedOH_olderExists_T_1386
-              | _oldestUnprotectedOH_olderExists_T_1389) | valid_10
-           & (_oldestUnprotectedOH_olderExists_T_1392
-              | _oldestUnprotectedOH_olderExists_T_1395) | valid_11
-           & (_oldestUnprotectedOH_olderExists_T_1398
-              | _oldestUnprotectedOH_olderExists_T_1401) | valid_13
-           & _oldestUnprotectedOH_olderExists_T_1414 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_1420 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_1426),
-     valid_11
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_1221
-              | _oldestUnprotectedOH_olderExists_T_1224) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_1227
-              | _oldestUnprotectedOH_olderExists_T_1230) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_1233
-              | _oldestUnprotectedOH_olderExists_T_1236) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_1239
-              | _oldestUnprotectedOH_olderExists_T_1242) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_1245
-              | _oldestUnprotectedOH_olderExists_T_1248) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_1251
-              | _oldestUnprotectedOH_olderExists_T_1254) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_1257
-              | _oldestUnprotectedOH_olderExists_T_1260) | valid_7
-           & (_oldestUnprotectedOH_olderExists_T_1263
-              | _oldestUnprotectedOH_olderExists_T_1266) | valid_8
-           & (_oldestUnprotectedOH_olderExists_T_1269
-              | _oldestUnprotectedOH_olderExists_T_1272) | valid_9
-           & (_oldestUnprotectedOH_olderExists_T_1275
-              | _oldestUnprotectedOH_olderExists_T_1278) | valid_10
-           & (_oldestUnprotectedOH_olderExists_T_1281
-              | _oldestUnprotectedOH_olderExists_T_1284) | valid_12
-           & _oldestUnprotectedOH_olderExists_T_1297 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_1303 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_1309 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_1315),
-     valid_10
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_1110
-              | _oldestUnprotectedOH_olderExists_T_1113) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_1116
-              | _oldestUnprotectedOH_olderExists_T_1119) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_1122
-              | _oldestUnprotectedOH_olderExists_T_1125) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_1128
-              | _oldestUnprotectedOH_olderExists_T_1131) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_1134
-              | _oldestUnprotectedOH_olderExists_T_1137) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_1140
-              | _oldestUnprotectedOH_olderExists_T_1143) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_1146
-              | _oldestUnprotectedOH_olderExists_T_1149) | valid_7
-           & (_oldestUnprotectedOH_olderExists_T_1152
-              | _oldestUnprotectedOH_olderExists_T_1155) | valid_8
-           & (_oldestUnprotectedOH_olderExists_T_1158
-              | _oldestUnprotectedOH_olderExists_T_1161) | valid_9
-           & (_oldestUnprotectedOH_olderExists_T_1164
-              | _oldestUnprotectedOH_olderExists_T_1167) | valid_11
-           & _oldestUnprotectedOH_olderExists_T_1180 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_1186 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_1192 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_1198 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_1204),
-     valid_9
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_999
-              | _oldestUnprotectedOH_olderExists_T_1002) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_1005
-              | _oldestUnprotectedOH_olderExists_T_1008) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_1011
-              | _oldestUnprotectedOH_olderExists_T_1014) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_1017
-              | _oldestUnprotectedOH_olderExists_T_1020) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_1023
-              | _oldestUnprotectedOH_olderExists_T_1026) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_1029
-              | _oldestUnprotectedOH_olderExists_T_1032) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_1035
-              | _oldestUnprotectedOH_olderExists_T_1038) | valid_7
-           & (_oldestUnprotectedOH_olderExists_T_1041
-              | _oldestUnprotectedOH_olderExists_T_1044) | valid_8
-           & (_oldestUnprotectedOH_olderExists_T_1047
-              | _oldestUnprotectedOH_olderExists_T_1050) | valid_10
-           & _oldestUnprotectedOH_olderExists_T_1063 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_1069 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_1075 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_1081 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_1087 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_1093),
-     valid_8
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_888
-              | _oldestUnprotectedOH_olderExists_T_891) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_894
-              | _oldestUnprotectedOH_olderExists_T_897) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_900
-              | _oldestUnprotectedOH_olderExists_T_903) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_906
-              | _oldestUnprotectedOH_olderExists_T_909) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_912
-              | _oldestUnprotectedOH_olderExists_T_915) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_918
-              | _oldestUnprotectedOH_olderExists_T_921) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_924
-              | _oldestUnprotectedOH_olderExists_T_927) | valid_7
-           & (_oldestUnprotectedOH_olderExists_T_930
-              | _oldestUnprotectedOH_olderExists_T_933) | valid_9
-           & _oldestUnprotectedOH_olderExists_T_946 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_952 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_958 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_964 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_970 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_976 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_982),
-     valid_7
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_777
-              | _oldestUnprotectedOH_olderExists_T_780) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_783
-              | _oldestUnprotectedOH_olderExists_T_786) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_789
-              | _oldestUnprotectedOH_olderExists_T_792) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_795
-              | _oldestUnprotectedOH_olderExists_T_798) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_801
-              | _oldestUnprotectedOH_olderExists_T_804) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_807
-              | _oldestUnprotectedOH_olderExists_T_810) | valid_6
-           & (_oldestUnprotectedOH_olderExists_T_813
-              | _oldestUnprotectedOH_olderExists_T_816) | valid_8
-           & _oldestUnprotectedOH_olderExists_T_829 | valid_9
-           & _oldestUnprotectedOH_olderExists_T_835 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_841 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_847 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_853 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_859 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_865 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_871),
-     valid_6
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_666
-              | _oldestUnprotectedOH_olderExists_T_669) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_672
-              | _oldestUnprotectedOH_olderExists_T_675) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_678
-              | _oldestUnprotectedOH_olderExists_T_681) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_684
-              | _oldestUnprotectedOH_olderExists_T_687) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_690
-              | _oldestUnprotectedOH_olderExists_T_693) | valid_5
-           & (_oldestUnprotectedOH_olderExists_T_696
-              | _oldestUnprotectedOH_olderExists_T_699) | valid_7
-           & _oldestUnprotectedOH_olderExists_T_712 | valid_8
-           & _oldestUnprotectedOH_olderExists_T_718 | valid_9
-           & _oldestUnprotectedOH_olderExists_T_724 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_730 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_736 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_742 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_748 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_754 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_760),
-     valid_5
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_555
-              | _oldestUnprotectedOH_olderExists_T_558) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_561
-              | _oldestUnprotectedOH_olderExists_T_564) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_567
-              | _oldestUnprotectedOH_olderExists_T_570) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_573
-              | _oldestUnprotectedOH_olderExists_T_576) | valid_4
-           & (_oldestUnprotectedOH_olderExists_T_579
-              | _oldestUnprotectedOH_olderExists_T_582) | valid_6
-           & _oldestUnprotectedOH_olderExists_T_595 | valid_7
-           & _oldestUnprotectedOH_olderExists_T_601 | valid_8
-           & _oldestUnprotectedOH_olderExists_T_607 | valid_9
-           & _oldestUnprotectedOH_olderExists_T_613 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_619 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_625 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_631 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_637 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_643 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_649),
-     valid_4
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_444
-              | _oldestUnprotectedOH_olderExists_T_447) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_450
-              | _oldestUnprotectedOH_olderExists_T_453) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_456
-              | _oldestUnprotectedOH_olderExists_T_459) | valid_3
-           & (_oldestUnprotectedOH_olderExists_T_462
-              | _oldestUnprotectedOH_olderExists_T_465) | valid_5
-           & _oldestUnprotectedOH_olderExists_T_478 | valid_6
-           & _oldestUnprotectedOH_olderExists_T_484 | valid_7
-           & _oldestUnprotectedOH_olderExists_T_490 | valid_8
-           & _oldestUnprotectedOH_olderExists_T_496 | valid_9
-           & _oldestUnprotectedOH_olderExists_T_502 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_508 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_514 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_520 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_526 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_532 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_538),
-     valid_3
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_333
-              | _oldestUnprotectedOH_olderExists_T_336) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_339
-              | _oldestUnprotectedOH_olderExists_T_342) | valid_2
-           & (_oldestUnprotectedOH_olderExists_T_345
-              | _oldestUnprotectedOH_olderExists_T_348) | valid_4
-           & _oldestUnprotectedOH_olderExists_T_361 | valid_5
-           & _oldestUnprotectedOH_olderExists_T_367 | valid_6
-           & _oldestUnprotectedOH_olderExists_T_373 | valid_7
-           & _oldestUnprotectedOH_olderExists_T_379 | valid_8
-           & _oldestUnprotectedOH_olderExists_T_385 | valid_9
-           & _oldestUnprotectedOH_olderExists_T_391 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_397 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_403 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_409 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_415 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_421 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_427),
-     valid_2
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_222
-              | _oldestUnprotectedOH_olderExists_T_225) | valid_1
-           & (_oldestUnprotectedOH_olderExists_T_228
-              | _oldestUnprotectedOH_olderExists_T_231) | valid_3
-           & _oldestUnprotectedOH_olderExists_T_244 | valid_4
-           & _oldestUnprotectedOH_olderExists_T_250 | valid_5
-           & _oldestUnprotectedOH_olderExists_T_256 | valid_6
-           & _oldestUnprotectedOH_olderExists_T_262 | valid_7
-           & _oldestUnprotectedOH_olderExists_T_268 | valid_8
-           & _oldestUnprotectedOH_olderExists_T_274 | valid_9
-           & _oldestUnprotectedOH_olderExists_T_280 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_286 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_292 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_298 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_304 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_310 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_316),
-     valid_1
-       & ~(valid_0
-           & (_oldestUnprotectedOH_olderExists_T_111
-              | _oldestUnprotectedOH_olderExists_T_114) | valid_2
-           & _oldestUnprotectedOH_olderExists_T_127 | valid_3
-           & _oldestUnprotectedOH_olderExists_T_133 | valid_4
-           & _oldestUnprotectedOH_olderExists_T_139 | valid_5
-           & _oldestUnprotectedOH_olderExists_T_145 | valid_6
-           & _oldestUnprotectedOH_olderExists_T_151 | valid_7
-           & _oldestUnprotectedOH_olderExists_T_157 | valid_8
-           & _oldestUnprotectedOH_olderExists_T_163 | valid_9
-           & _oldestUnprotectedOH_olderExists_T_169 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_175 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_181 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_187 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_193 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_199 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_205),
-     valid_0
-       & ~(valid_1 & _oldestUnprotectedOH_olderExists_T_10 | valid_2
-           & _oldestUnprotectedOH_olderExists_T_16 | valid_3
-           & _oldestUnprotectedOH_olderExists_T_22 | valid_4
-           & _oldestUnprotectedOH_olderExists_T_28 | valid_5
-           & _oldestUnprotectedOH_olderExists_T_34 | valid_6
-           & _oldestUnprotectedOH_olderExists_T_40 | valid_7
-           & _oldestUnprotectedOH_olderExists_T_46 | valid_8
-           & _oldestUnprotectedOH_olderExists_T_52 | valid_9
-           & _oldestUnprotectedOH_olderExists_T_58 | valid_10
-           & _oldestUnprotectedOH_olderExists_T_64 | valid_11
-           & _oldestUnprotectedOH_olderExists_T_70 | valid_12
-           & _oldestUnprotectedOH_olderExists_T_76 | valid_13
-           & _oldestUnprotectedOH_olderExists_T_82 | valid_14
-           & _oldestUnprotectedOH_olderExists_T_88 | valid_15
-           & _oldestUnprotectedOH_olderExists_T_94)};
   wire [15:0] victimBits =
-    (|{unprotected_15,
-       unprotected_14,
-       unprotected_13,
-       unprotected_12,
-       unprotected_11,
-       unprotected_10,
-       unprotected_9,
-       unprotected_8,
-       unprotected_7,
-       unprotected_6,
-       unprotected_5,
-       unprotected_4,
-       unprotected_3,
-       unprotected_2,
-       unprotected_1,
-       unprotected_0})
-      ? _victimBits_T
-      : io_enq_valid | io_enq1_valid ? 16'h0 : _victimBits_T_2;
+    io_drain_all
+      ? {oldestAnyOH_15,
+         oldestAnyOH_14,
+         oldestAnyOH_13,
+         oldestAnyOH_12,
+         oldestAnyOH_11,
+         oldestAnyOH_10,
+         oldestAnyOH_9,
+         oldestAnyOH_8,
+         oldestAnyOH_7,
+         oldestAnyOH_6,
+         oldestAnyOH_5,
+         oldestAnyOH_4,
+         oldestAnyOH_3,
+         oldestAnyOH_2,
+         oldestAnyOH_1,
+         oldestAnyOH_0}
+      : (|{unprotected_15,
+           unprotected_14,
+           unprotected_13,
+           unprotected_12,
+           unprotected_11,
+           unprotected_10,
+           unprotected_9,
+           unprotected_8,
+           unprotected_7,
+           unprotected_6,
+           unprotected_5,
+           unprotected_4,
+           unprotected_3,
+           unprotected_2,
+           unprotected_1,
+           unprotected_0})
+          ? _victimBits_T_1
+          : io_enq_valid | io_enq1_valid
+              ? 16'h0
+              : {oldestAnyOH_15,
+                 oldestAnyOH_14,
+                 oldestAnyOH_13,
+                 oldestAnyOH_12,
+                 oldestAnyOH_11,
+                 oldestAnyOH_10,
+                 oldestAnyOH_9,
+                 oldestAnyOH_8,
+                 oldestAnyOH_7,
+                 oldestAnyOH_6,
+                 oldestAnyOH_5,
+                 oldestAnyOH_4,
+                 oldestAnyOH_3,
+                 oldestAnyOH_2,
+                 oldestAnyOH_1,
+                 oldestAnyOH_0};
   wire [3:0]  victimIdx =
     victimBits[0]
       ? 4'h0
@@ -2291,38 +2340,55 @@ module WriteCombiningStoreBuffer(
     endcase
   end // always_comb
   wire        ownWritebackValid = migrateRequest & ~io_cache_line_ready;
-  wire        match0OH_0 = valid_0 & _match0OH_T;
-  wire        match0OH_1 = valid_1 & _match0OH_T_2;
-  wire        match0OH_2 = valid_2 & _match0OH_T_4;
-  wire        match0OH_3 = valid_3 & _match0OH_T_6;
-  wire        match0OH_4 = valid_4 & _match0OH_T_8;
-  wire        match0OH_5 = valid_5 & _match0OH_T_10;
-  wire        match0OH_6 = valid_6 & _match0OH_T_12;
-  wire        match0OH_7 = valid_7 & _match0OH_T_14;
-  wire        match0OH_8 = valid_8 & _match0OH_T_16;
-  wire        match0OH_9 = valid_9 & _match0OH_T_18;
-  wire        match0OH_10 = valid_10 & _match0OH_T_20;
-  wire        match0OH_11 = valid_11 & _match0OH_T_22;
-  wire        match0OH_12 = valid_12 & _match0OH_T_24;
-  wire        match0OH_13 = valid_13 & _match0OH_T_26;
-  wire        match0OH_14 = valid_14 & _match0OH_T_28;
-  wire        match1OH_0 = valid_0 & _match1OH_T;
-  wire        match1OH_1 = valid_1 & _match1OH_T_2;
-  wire        match1OH_2 = valid_2 & _match1OH_T_4;
-  wire        match1OH_3 = valid_3 & _match1OH_T_6;
-  wire        match1OH_4 = valid_4 & _match1OH_T_8;
-  wire        match1OH_5 = valid_5 & _match1OH_T_10;
-  wire        match1OH_6 = valid_6 & _match1OH_T_12;
-  wire        match1OH_7 = valid_7 & _match1OH_T_14;
-  wire        match1OH_8 = valid_8 & _match1OH_T_16;
-  wire        match1OH_9 = valid_9 & _match1OH_T_18;
-  wire        match1OH_10 = valid_10 & _match1OH_T_20;
-  wire        match1OH_11 = valid_11 & _match1OH_T_22;
-  wire        match1OH_12 = valid_12 & _match1OH_T_24;
-  wire        match1OH_13 = valid_13 & _match1OH_T_26;
-  wire        match1OH_14 = valid_14 & _match1OH_T_28;
+  wire        migrateFire =
+    io_cache_line_ready & migrateRequest | ownWritebackValid & ~io_l1_writeback_valid
+    & _writeback_io_enq_ready;
+  wire        match0OH_0 = valid_0 & _match0OH_T & ~(migrateFire & ~(|victimIdx));
+  wire        _match1OH_T_8 = victimIdx == 4'h1;
+  wire        match0OH_1 = valid_1 & _match0OH_T_6 & ~(migrateFire & _match1OH_T_8);
+  wire        _match1OH_T_14 = victimIdx == 4'h2;
+  wire        match0OH_2 = valid_2 & _match0OH_T_12 & ~(migrateFire & _match1OH_T_14);
+  wire        _match1OH_T_20 = victimIdx == 4'h3;
+  wire        match0OH_3 = valid_3 & _match0OH_T_18 & ~(migrateFire & _match1OH_T_20);
+  wire        _match1OH_T_26 = victimIdx == 4'h4;
+  wire        match0OH_4 = valid_4 & _match0OH_T_24 & ~(migrateFire & _match1OH_T_26);
+  wire        _match1OH_T_32 = victimIdx == 4'h5;
+  wire        match0OH_5 = valid_5 & _match0OH_T_30 & ~(migrateFire & _match1OH_T_32);
+  wire        _match1OH_T_38 = victimIdx == 4'h6;
+  wire        match0OH_6 = valid_6 & _match0OH_T_36 & ~(migrateFire & _match1OH_T_38);
+  wire        _match1OH_T_44 = victimIdx == 4'h7;
+  wire        match0OH_7 = valid_7 & _match0OH_T_42 & ~(migrateFire & _match1OH_T_44);
+  wire        _match1OH_T_50 = victimIdx == 4'h8;
+  wire        match0OH_8 = valid_8 & _match0OH_T_48 & ~(migrateFire & _match1OH_T_50);
+  wire        _match1OH_T_56 = victimIdx == 4'h9;
+  wire        match0OH_9 = valid_9 & _match0OH_T_54 & ~(migrateFire & _match1OH_T_56);
+  wire        _match1OH_T_62 = victimIdx == 4'hA;
+  wire        match0OH_10 = valid_10 & _match0OH_T_60 & ~(migrateFire & _match1OH_T_62);
+  wire        _match1OH_T_68 = victimIdx == 4'hB;
+  wire        match0OH_11 = valid_11 & _match0OH_T_66 & ~(migrateFire & _match1OH_T_68);
+  wire        _match1OH_T_74 = victimIdx == 4'hC;
+  wire        match0OH_12 = valid_12 & _match0OH_T_72 & ~(migrateFire & _match1OH_T_74);
+  wire        _match1OH_T_80 = victimIdx == 4'hD;
+  wire        match0OH_13 = valid_13 & _match0OH_T_78 & ~(migrateFire & _match1OH_T_80);
+  wire        _match1OH_T_86 = victimIdx == 4'hE;
+  wire        match0OH_14 = valid_14 & _match0OH_T_84 & ~(migrateFire & _match1OH_T_86);
+  wire        match1OH_0 = valid_0 & _match1OH_T & ~(migrateFire & ~(|victimIdx));
+  wire        match1OH_1 = valid_1 & _match1OH_T_6 & ~(migrateFire & _match1OH_T_8);
+  wire        match1OH_2 = valid_2 & _match1OH_T_12 & ~(migrateFire & _match1OH_T_14);
+  wire        match1OH_3 = valid_3 & _match1OH_T_18 & ~(migrateFire & _match1OH_T_20);
+  wire        match1OH_4 = valid_4 & _match1OH_T_24 & ~(migrateFire & _match1OH_T_26);
+  wire        match1OH_5 = valid_5 & _match1OH_T_30 & ~(migrateFire & _match1OH_T_32);
+  wire        match1OH_6 = valid_6 & _match1OH_T_36 & ~(migrateFire & _match1OH_T_38);
+  wire        match1OH_7 = valid_7 & _match1OH_T_42 & ~(migrateFire & _match1OH_T_44);
+  wire        match1OH_8 = valid_8 & _match1OH_T_48 & ~(migrateFire & _match1OH_T_50);
+  wire        match1OH_9 = valid_9 & _match1OH_T_54 & ~(migrateFire & _match1OH_T_56);
+  wire        match1OH_10 = valid_10 & _match1OH_T_60 & ~(migrateFire & _match1OH_T_62);
+  wire        match1OH_11 = valid_11 & _match1OH_T_66 & ~(migrateFire & _match1OH_T_68);
+  wire        match1OH_12 = valid_12 & _match1OH_T_72 & ~(migrateFire & _match1OH_T_74);
+  wire        match1OH_13 = valid_13 & _match1OH_T_78 & ~(migrateFire & _match1OH_T_80);
+  wire        match1OH_14 = valid_14 & _match1OH_T_84 & ~(migrateFire & _match1OH_T_86);
   wire [15:0] _match0_T =
-    {valid_15 & _match0OH_T_30,
+    {valid_15 & _match0OH_T_90 & ~(migrateFire & (&victimIdx)),
      match0OH_14,
      match0OH_13,
      match0OH_12,
@@ -2339,7 +2405,7 @@ module WriteCombiningStoreBuffer(
      match0OH_1,
      match0OH_0};
   wire [15:0] _match1_T =
-    {valid_15 & _match1OH_T_30,
+    {valid_15 & _match1OH_T_90 & ~(migrateFire & (&victimIdx)),
      match1OH_14,
      match1OH_13,
      match1OH_12,
@@ -2387,17 +2453,20 @@ module WriteCombiningStoreBuffer(
                                                           : {3'h7, ~match0OH_14};
   wire        _pairSameLine_T = io_enq_valid & io_enq1_valid;
   wire        pairSameLine = _pairSameLine_T & in0Line == in1Line;
+  wire        migratingIn0Generation = migrateFire & casez_tmp == in0Line;
   wire        pairCacheBypass =
     pairSameLine & io_enq_cache_hit & io_enq1_cache_hit & ~(|_match0_T)
-    & ~_writeback_io_probe_pending;
+    & ~_writeback_io_probe_pending & ~migratingIn0Generation;
   wire        bypass0 =
     pairSameLine
       ? pairCacheBypass
-      : io_enq_valid & io_enq_cache_hit & ~(|_match0_T) & ~_writeback_io_probe_pending;
+      : io_enq_valid & io_enq_cache_hit & ~(|_match0_T) & ~_writeback_io_probe_pending
+        & ~migratingIn0Generation;
   wire        bypass1 =
     pairSameLine
       ? pairCacheBypass
-      : io_enq1_valid & io_enq1_cache_hit & ~(|_match1_T) & ~_writeback_io_probe1_pending;
+      : io_enq1_valid & io_enq1_cache_hit & ~(|_match1_T) & ~_writeback_io_probe1_pending
+        & ~(migrateFire & casez_tmp == in1Line);
   wire [1:0]  slotsNeeded =
     {1'h0, io_enq_valid & ~bypass0 & ~(|_match0_T)}
     + {1'h0, io_enq1_valid & ~bypass1 & ~pairSameLine & ~(|_match1_T)};
@@ -2419,13 +2488,49 @@ module WriteCombiningStoreBuffer(
   wire [1:0]  _GEN_14 = {1'h0, ~valid_15};
   wire        batchReady =
     {3'h0,
-     {1'h0, io_enq_valid & ~(|_match0_T)}
+     {1'h0,
+      io_enq_valid
+        & {valid_15 & _match0OH_T_90,
+           valid_14 & _match0OH_T_84,
+           valid_13 & _match0OH_T_78,
+           valid_12 & _match0OH_T_72,
+           valid_11 & _match0OH_T_66,
+           valid_10 & _match0OH_T_60,
+           valid_9 & _match0OH_T_54,
+           valid_8 & _match0OH_T_48,
+           valid_7 & _match0OH_T_42,
+           valid_6 & _match0OH_T_36,
+           valid_5 & _match0OH_T_30,
+           valid_4 & _match0OH_T_24,
+           valid_3 & _match0OH_T_18,
+           valid_2 & _match0OH_T_12,
+           valid_1 & _match0OH_T_6,
+           valid_0 & _match0OH_T} == 16'h0}
        + {1'h0,
           io_enq1_valid & ~pairSameLine
-            & ~(|_match1_T)}} <= {1'h0,
-                                  {1'h0, {1'h0, _GEN + _GEN_0} + {1'h0, _GEN_1 + _GEN_2}}
-                                    + {1'h0,
-                                       {1'h0, _GEN_3 + _GEN_4} + {1'h0, _GEN_5 + _GEN_6}}}
+            & {valid_15 & _match1OH_T_90,
+               valid_14 & _match1OH_T_84,
+               valid_13 & _match1OH_T_78,
+               valid_12 & _match1OH_T_72,
+               valid_11 & _match1OH_T_66,
+               valid_10 & _match1OH_T_60,
+               valid_9 & _match1OH_T_54,
+               valid_8 & _match1OH_T_48,
+               valid_7 & _match1OH_T_42,
+               valid_6 & _match1OH_T_36,
+               valid_5 & _match1OH_T_30,
+               valid_4 & _match1OH_T_24,
+               valid_3 & _match1OH_T_18,
+               valid_2 & _match1OH_T_12,
+               valid_1 & _match1OH_T_6,
+               valid_0
+                 & _match1OH_T} == 16'h0}} <= {1'h0,
+                                               {1'h0,
+                                                {1'h0, _GEN + _GEN_0}
+                                                  + {1'h0, _GEN_1 + _GEN_2}}
+                                                 + {1'h0,
+                                                    {1'h0, _GEN_3 + _GEN_4}
+                                                      + {1'h0, _GEN_5 + _GEN_6}}}
     + {1'h0,
        {1'h0, {1'h0, _GEN_7 + _GEN_8} + {1'h0, _GEN_9 + _GEN_10}}
          + {1'h0, {1'h0, _GEN_11 + _GEN_12} + {1'h0, _GEN_13 + _GEN_14}}};
@@ -6178,11 +6283,8 @@ module WriteCombiningStoreBuffer(
   wire        _GEN_17 = ~(|_match1_T) & (&target_2);
   wire [6:0]  _in0Mask_T_1 = {3'h0, io_enq_bits_mask} << io_enq_bits_addr[1:0];
   wire [6:0]  _in1Mask_T_1 = {3'h0, io_enq1_bits_mask} << io_enq1_bits_addr[1:0];
-  wire        migrateFire =
-    io_cache_line_ready & migrateRequest | ownWritebackValid & ~io_l1_writeback_valid
-    & _writeback_io_enq_ready;
   wire        doEnq1 = io_enq1_valid & batchReady & ~bypass1;
-  wire        _GEN_18 = ~(migrateFire & victimIdx == 4'h0) & valid_0;
+  wire        _GEN_18 = ~(migrateFire & ~(|victimIdx)) & valid_0;
   wire        _GEN_19 = ~(migrateFire & victimIdx == 4'h1) & valid_1;
   wire        _GEN_20 = ~(migrateFire & victimIdx == 4'h2) & valid_2;
   wire        _GEN_21 = ~(migrateFire & victimIdx == 4'h3) & valid_3;
@@ -13181,3 +13283,4 @@ module WriteCombiningStoreBuffer(
        {1'h0, {1'h0, _GEN_7 + _GEN_8} + {1'h0, _GEN_9 + _GEN_10}}
          + {1'h0, {1'h0, _GEN_11 + _GEN_12} + {1'h0, _GEN_13 + _GEN_14}}};
 endmodule
+

@@ -259,6 +259,7 @@ void print_perf_stats(unsigned long long cycles) {
            counters[EVENT_STORE_ADDR_DUAL_LOAD_OPPORTUNITY]);
     printf("Store Addr Sidecar Issues: %lld\n", counters[EVENT_STORE_ADDR_SIDECAR_ISSUE]);
     printf("Store Addr Sidecar Resolves: %lld\n", counters[EVENT_STORE_ADDR_SIDECAR_RESOLVE]);
+    printf("Retire Path Flushes: %lld\n", counters[EVENT_RETIRE_PATH_FLUSH]);
     if (total_access > 0) {
         printf("Average Latency: %.2f cycles\n", (double)counters[EVENT_LSU_LATENCY] / total_access);
     }

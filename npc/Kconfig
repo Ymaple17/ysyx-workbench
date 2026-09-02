@@ -16,8 +16,11 @@ config PIPELINE_CHISEL
 config IOID_CHISEL
     bool "Enable IOID Chisel implementation"
 
+config BOARD_PIPELINE_CHISEL
+    bool "Enable Board Pipeline Chisel implementation"
+
 config OOOD_CHISEL
-    bool "Enable OOOD Chisel (OoO single-issue) implementation"
+    bool "Enable OOOD Chisel (OoO 4-issue) implementation"
 
 config CHISEL_RISCV32E
     bool "Enable Chisel riscv32e implementation"
@@ -82,6 +85,19 @@ if IOID_CHISEL
             bool "SOC Mode"
 
         config IOID_CHISEL_NPC
+            bool "NPC Mode"
+    endchoice
+endif
+
+if BOARD_PIPELINE_CHISEL
+    choice
+        prompt "Board Pipeline Chisel Run Mode"
+        default BOARD_PIPELINE_CHISEL_NPC
+
+        config BOARD_PIPELINE_CHISEL_SOC
+            bool "SOC Mode"
+
+        config BOARD_PIPELINE_CHISEL_NPC
             bool "NPC Mode"
     endchoice
 endif

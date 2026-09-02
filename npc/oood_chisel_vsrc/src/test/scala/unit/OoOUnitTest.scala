@@ -841,7 +841,9 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.enq_bits.pc.poke("h80000004".U)
       dut.clock.step()
       dut.io.enq_fire.poke(false.B)
-      dut.io.count.expect(1.U)
+      // Issued entries remain resident until the matching completion frees
+      // their ROB identity, so both enqueued entries are still allocated.
+      dut.io.count.expect(2.U)
       dut.io.issue_valid.expect(true.B)
       dut.io.issue_bits.rob_idx.expect(0.U)
       dut.io.issue_fire.poke(true.B)
@@ -4938,6 +4940,7 @@ class OoOUnitTest extends AnyFlatSpec {
       dut.io.enq.valid.poke(true.B)
       dut.io.enq.bits.addr.poke("h80000004".U)
       dut.io.enq.bits.data.poke("h22222222".U)
+      dut.io.enq_cache_hit.poke(true.B)
       dut.io.dmem.awready.poke(true.B)
       dut.io.dmem.wready.poke(true.B)
       dut.io.write_burst.expect(false.B)
@@ -5746,7 +5749,7 @@ class OoOUnitTest extends AnyFlatSpec {
       idleBpu(dut)
       val target = BigInt("80001234", 16)
       dut.io.predict_pc.poke("h80000100".U)
-      dut.io.predict_inst.poke("h00008067".U) // jalr x0, x1, 0
+      dut.io.predict_inst.poke("h00028067".U) // jalr x0, x5, 0
       dut.io.predict_pc1.poke(target.U)
       dut.io.predict_inst1.poke("h00000013".U)
       dut.io.spec_override_valid.poke(true.B)

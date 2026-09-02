@@ -23,3 +23,4 @@ module data_64x352(
   assign R0_data = R0_en ? Memory[R0_addr] : 352'bx;
   assign R1_data = R1_en ? Memory[R1_addr] : 352'bx;
 endmodule
+

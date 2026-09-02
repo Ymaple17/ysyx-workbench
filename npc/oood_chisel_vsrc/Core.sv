@@ -122,6 +122,7 @@ module Core(
   wire         bp_commit2_block;
   wire         bp_commit1_block;
   wire         mem_flush_all;
+  wire         retirePathRecoveryWins;
   wire         memoryRecoveryWins;
   wire         branchRecoveryWins;
   wire         mis_predict_dbg;
@@ -142,6 +143,13 @@ module Core(
   wire         lane2_block;
   wire         lane1_block;
   wire         lane0_block;
+  wire         _retirePathGuard_io_flush;
+  wire         _retirePathGuard_io_waitForNext_0;
+  wire         _retirePathGuard_io_waitForNext_1;
+  wire         _retirePathGuard_io_waitForNext_2;
+  wire         _retirePathGuard_io_waitForNext_3;
+  wire [4:0]   _retirePathGuard_io_flushRobIdx;
+  wire [31:0]  _retirePathGuard_io_correctPc;
   wire         _wbArb_io_in_0_ready;
   wire         _wbArb_io_in_1_ready;
   wire         _wbArb_io_in_2_ready;
@@ -542,6 +550,8 @@ module Core(
   wire [5:0]   _rob_io_space;
   wire         _rob_io_commit_valid;
   wire [4:0]   _rob_io_commit_idx;
+  wire         _rob_io_commit_bits_valid;
+  wire         _rob_io_commit_bits_done;
   wire [31:0]  _rob_io_commit_bits_pc;
   wire [31:0]  _rob_io_commit_bits_inst;
   wire         _rob_io_commit_bits_reg_write;
@@ -555,7 +565,6 @@ module Core(
   wire [4:0]   _rob_io_commit_bits_arch_rd;
   wire [5:0]   _rob_io_commit_bits_old_phys;
   wire [5:0]   _rob_io_commit_bits_new_phys;
-  wire [31:0]  _rob_io_commit_bits_dest_val;
   wire         _rob_io_commit_bits_is_ebreak;
   wire         _rob_io_commit_bits_is_fencei;
   wire         _rob_io_commit_bits_state_state;
@@ -574,6 +583,8 @@ module Core(
   wire         _rob_io_commit_bits_addr_ready;
   wire         _rob_io_commit1_valid;
   wire [4:0]   _rob_io_commit1_idx;
+  wire         _rob_io_commit1_bits_valid;
+  wire         _rob_io_commit1_bits_done;
   wire [31:0]  _rob_io_commit1_bits_pc;
   wire [31:0]  _rob_io_commit1_bits_inst;
   wire         _rob_io_commit1_bits_reg_write;
@@ -586,7 +597,6 @@ module Core(
   wire [4:0]   _rob_io_commit1_bits_arch_rd;
   wire [5:0]   _rob_io_commit1_bits_old_phys;
   wire [5:0]   _rob_io_commit1_bits_new_phys;
-  wire [31:0]  _rob_io_commit1_bits_dest_val;
   wire         _rob_io_commit1_bits_is_ebreak;
   wire         _rob_io_commit1_bits_is_fencei;
   wire         _rob_io_commit1_bits_state_state;
@@ -601,6 +611,8 @@ module Core(
   wire         _rob_io_commit1_bits_addr_ready;
   wire         _rob_io_commit2_valid;
   wire [4:0]   _rob_io_commit2_idx;
+  wire         _rob_io_commit2_bits_valid;
+  wire         _rob_io_commit2_bits_done;
   wire [31:0]  _rob_io_commit2_bits_pc;
   wire [31:0]  _rob_io_commit2_bits_inst;
   wire         _rob_io_commit2_bits_reg_write;
@@ -612,7 +624,6 @@ module Core(
   wire [4:0]   _rob_io_commit2_bits_arch_rd;
   wire [5:0]   _rob_io_commit2_bits_old_phys;
   wire [5:0]   _rob_io_commit2_bits_new_phys;
-  wire [31:0]  _rob_io_commit2_bits_dest_val;
   wire         _rob_io_commit2_bits_is_ebreak;
   wire         _rob_io_commit2_bits_is_fencei;
   wire         _rob_io_commit2_bits_state_state;
@@ -627,6 +638,8 @@ module Core(
   wire         _rob_io_commit2_bits_addr_ready;
   wire         _rob_io_commit3_valid;
   wire [4:0]   _rob_io_commit3_idx;
+  wire         _rob_io_commit3_bits_valid;
+  wire         _rob_io_commit3_bits_done;
   wire [31:0]  _rob_io_commit3_bits_pc;
   wire [31:0]  _rob_io_commit3_bits_inst;
   wire         _rob_io_commit3_bits_reg_write;
@@ -638,7 +651,6 @@ module Core(
   wire [4:0]   _rob_io_commit3_bits_arch_rd;
   wire [5:0]   _rob_io_commit3_bits_old_phys;
   wire [5:0]   _rob_io_commit3_bits_new_phys;
-  wire [31:0]  _rob_io_commit3_bits_dest_val;
   wire         _rob_io_commit3_bits_is_ebreak;
   wire         _rob_io_commit3_bits_is_fencei;
   wire         _rob_io_commit3_bits_state_state;
@@ -1714,37 +1726,6 @@ module Core(
   wire         id3_is_ctrl =
     _idu3_io_out_bits_signals_exu_jump != 4'hF
     & _idu3_io_out_bits_signals_exu_jump != 4'hA;
-  reg  [31:0]  arch_rf_1;
-  reg  [31:0]  arch_rf_2;
-  reg  [31:0]  arch_rf_3;
-  reg  [31:0]  arch_rf_4;
-  reg  [31:0]  arch_rf_5;
-  reg  [31:0]  arch_rf_6;
-  reg  [31:0]  arch_rf_7;
-  reg  [31:0]  arch_rf_8;
-  reg  [31:0]  arch_rf_9;
-  reg  [31:0]  arch_rf_10;
-  reg  [31:0]  arch_rf_11;
-  reg  [31:0]  arch_rf_12;
-  reg  [31:0]  arch_rf_13;
-  reg  [31:0]  arch_rf_14;
-  reg  [31:0]  arch_rf_15;
-  reg  [31:0]  arch_rf_16;
-  reg  [31:0]  arch_rf_17;
-  reg  [31:0]  arch_rf_18;
-  reg  [31:0]  arch_rf_19;
-  reg  [31:0]  arch_rf_20;
-  reg  [31:0]  arch_rf_21;
-  reg  [31:0]  arch_rf_22;
-  reg  [31:0]  arch_rf_23;
-  reg  [31:0]  arch_rf_24;
-  reg  [31:0]  arch_rf_25;
-  reg  [31:0]  arch_rf_26;
-  reg  [31:0]  arch_rf_27;
-  reg  [31:0]  arch_rf_28;
-  reg  [31:0]  arch_rf_29;
-  reg  [31:0]  arch_rf_30;
-  reg  [31:0]  arch_rf_31;
   reg  [5:0]   casez_tmp;
   always_comb begin
     casez (_fq_io_deq_bits_inst[19:15])
@@ -3287,29 +3268,36 @@ module Core(
   wire         _flush_now_T = branchRecoveryWins | memoryRecoveryWins;
   wire [4:0]   _after_flushAgeNow_T_126 = flush_idx - _rob_io_head;
   wire         flush_alu =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_alu_valid
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & d_alu_valid
     & (mem_flush_all | d_alu_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126);
   wire         flush_alu1 =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_alu1_valid
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & d_alu1_valid
     & (mem_flush_all | d_alu1_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126);
   wire         flush_alu2 =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_alu2_valid
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & d_alu2_valid
     & (mem_flush_all | d_alu2_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126);
   wire         flush_alu3 =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_alu3_valid
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & d_alu3_valid
     & (mem_flush_all | d_alu3_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126);
-  wire [4:0]   _memoryRecoveryWins_T_4 = d_bru_bits_rob_idx - _rob_io_head;
+  wire [4:0]   _branchRecoveryAge_T = d_bru_bits_rob_idx - _rob_io_head;
   wire         flush_bru =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_bru_valid
-    & (mem_flush_all | _memoryRecoveryWins_T_4 > _after_flushAgeNow_T_126);
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & d_bru_valid & (mem_flush_all | _branchRecoveryAge_T > _after_flushAgeNow_T_126);
   wire         flush_div =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_div_valid
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & d_div_valid
     & (mem_flush_all | d_div_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126);
   wire         flush_lsu_d =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_lsu_valid
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & d_lsu_valid
     & (mem_flush_all | d_lsu_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126);
   wire         flush_lsu1_d =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & d_lsu1_valid
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & d_lsu1_valid
     & (mem_flush_all | d_lsu1_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126);
   assign hold_alu = d_alu_valid & ~flush_alu;
   wire         hold_alu1 = d_alu1_valid & ~flush_alu1;
@@ -3458,9 +3446,9 @@ module Core(
     endcase
   end // always_comb
   wire         lsu_stage_drop =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & lsu_stage_valid
-    & lsu_stage_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126 | lsu_stage_valid
-    & (~casez_tmp_6 | casez_tmp_7 != lsu_stage_bits_pc);
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & lsu_stage_valid & lsu_stage_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126
+    | lsu_stage_valid & (~casez_tmp_6 | casez_tmp_7 != lsu_stage_bits_pc);
   wire         lsu_stage_usable = lsu_stage_valid & ~lsu_stage_drop;
   wire         lsu_addr_usable = _exu_lsu_io_out_valid & ~flush_lsu_d;
   wire         lsu_io_in_valid = lsu_stage_usable | ~lsu_stage_usable & lsu_addr_usable;
@@ -3606,9 +3594,9 @@ module Core(
     endcase
   end // always_comb
   wire         lsu_stage1_drop =
-    is_irq | (_flush_now_T | fencei_flush_REG | mret_flush_REG) & lsu_stage1_valid
-    & lsu_stage1_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126 | lsu_stage1_valid
-    & (~casez_tmp_8 | casez_tmp_9 != lsu_stage1_bits_pc);
+    is_irq | (_flush_now_T | retirePathRecoveryWins | fencei_flush_REG | mret_flush_REG)
+    & lsu_stage1_valid & lsu_stage1_bits_rob_idx - _rob_io_head > _after_flushAgeNow_T_126
+    | lsu_stage1_valid & (~casez_tmp_8 | casez_tmp_9 != lsu_stage1_bits_pc);
   wire         lsu_stage1_usable = lsu_stage1_valid & ~lsu_stage1_drop;
   wire         lsu_addr1_usable = _exu_lsu1_io_out_valid & ~flush_lsu1_d;
   wire         lsu_io_in1_valid =
@@ -3857,6 +3845,9 @@ module Core(
     & _rs_io_issue_lsu1_valid;
   wire         storeAddrSidecar_io_issue_valid =
     ~stop_issue & _rs_io_issue_store_addr_valid;
+  wire [4:0]   _storeAddrResultKilled_T_11 =
+    _storeAddrSidecar_io_result_bits_rob_idx - _rob_io_head;
+  wire [4:0]   _retirePathRecoveryAge_T = _retirePathGuard_io_flushRobIdx - _rob_io_head;
   reg          casez_tmp_13;
   always_comb begin
     casez (_storeAddrSidecar_io_result_bits_rob_idx)
@@ -4205,8 +4196,8 @@ module Core(
   wire         storeAddrResultValid =
     _storeAddrSidecar_io_result_valid
     & ~(is_irq | fencei_flush_REG | mret_flush_REG | mis_predict_dbg
-        & _storeAddrSidecar_io_result_bits_rob_idx
-        - _rob_io_head > _memoryRecoveryWins_T_4) & casez_tmp_13
+        & _storeAddrResultKilled_T_11 > _branchRecoveryAge_T | _retirePathGuard_io_flush
+        & _storeAddrResultKilled_T_11 > _retirePathRecoveryAge_T) & casez_tmp_13
     & casez_tmp_14 == _storeAddrSidecar_io_result_bits_pc & casez_tmp_15 & casez_tmp_16
     & ~casez_tmp_17;
   wire         _storeAllocMask_T =
@@ -7471,17 +7462,15 @@ module Core(
   wire         _arch_rf_T_2 = _wbArb_io_out_0_bits_rob_idx == _rob_io_commit2_idx;
   wire         _arch_rf_T_4 = _wbArb_io_out_1_bits_rob_idx == _rob_io_commit2_idx;
   wire         _arch_rf_T_6 = _wbArb_io_out_2_bits_rob_idx == _rob_io_commit2_idx;
-  wire         _cm2_wb_same_T_8 = _wbArb_io_out_3_bits_rob_idx == _rob_io_commit2_idx;
   wire         cm2_wb_valid =
     can_wb & _arch_rf_T_2 | can_wb1 & _arch_rf_T_4 | can_wb2 & _arch_rf_T_6 | can_wb3
-    & _cm2_wb_same_T_8;
+    & _wbArb_io_out_3_bits_rob_idx == _rob_io_commit2_idx;
   wire         _arch_rf_T_12 = _wbArb_io_out_0_bits_rob_idx == _rob_io_commit3_idx;
   wire         _arch_rf_T_14 = _wbArb_io_out_1_bits_rob_idx == _rob_io_commit3_idx;
   wire         _arch_rf_T_16 = _wbArb_io_out_2_bits_rob_idx == _rob_io_commit3_idx;
-  wire         _cm3_wb_same_T_8 = _wbArb_io_out_3_bits_rob_idx == _rob_io_commit3_idx;
   wire         cm3_wb_valid =
     can_wb & _arch_rf_T_12 | can_wb1 & _arch_rf_T_14 | can_wb2 & _arch_rf_T_16 | can_wb3
-    & _cm3_wb_same_T_8;
+    & _wbArb_io_out_3_bits_rob_idx == _rob_io_commit3_idx;
   wire         _cm2_wb_bits_T_1 = can_wb & _arch_rf_T_2;
   wire         _cm2_wb_bits_T_3 = can_wb1 & _arch_rf_T_4;
   wire         _cm2_wb_bits_T_5 = can_wb2 & _arch_rf_T_6;
@@ -7654,6 +7643,563 @@ module Core(
                        ? _wbArb_io_out_2_bits_next_pc
                        : _wbArb_io_out_3_bits_next_pc)
           : _rob_io_commit3_bits_actual_target;
+  wire         _cm_bpu_update_T = _rob_io_commit_bits_jump != 4'hA;
+  wire [4:0]   _nextIdx_T = _rob_io_head + 5'h1;
+  reg          casez_tmp_61;
+  always_comb begin
+    casez (_nextIdx_T)
+      5'b00000:
+        casez_tmp_61 = _rob_io_entries_0_valid;
+      5'b00001:
+        casez_tmp_61 = _rob_io_entries_1_valid;
+      5'b00010:
+        casez_tmp_61 = _rob_io_entries_2_valid;
+      5'b00011:
+        casez_tmp_61 = _rob_io_entries_3_valid;
+      5'b00100:
+        casez_tmp_61 = _rob_io_entries_4_valid;
+      5'b00101:
+        casez_tmp_61 = _rob_io_entries_5_valid;
+      5'b00110:
+        casez_tmp_61 = _rob_io_entries_6_valid;
+      5'b00111:
+        casez_tmp_61 = _rob_io_entries_7_valid;
+      5'b01000:
+        casez_tmp_61 = _rob_io_entries_8_valid;
+      5'b01001:
+        casez_tmp_61 = _rob_io_entries_9_valid;
+      5'b01010:
+        casez_tmp_61 = _rob_io_entries_10_valid;
+      5'b01011:
+        casez_tmp_61 = _rob_io_entries_11_valid;
+      5'b01100:
+        casez_tmp_61 = _rob_io_entries_12_valid;
+      5'b01101:
+        casez_tmp_61 = _rob_io_entries_13_valid;
+      5'b01110:
+        casez_tmp_61 = _rob_io_entries_14_valid;
+      5'b01111:
+        casez_tmp_61 = _rob_io_entries_15_valid;
+      5'b10000:
+        casez_tmp_61 = _rob_io_entries_16_valid;
+      5'b10001:
+        casez_tmp_61 = _rob_io_entries_17_valid;
+      5'b10010:
+        casez_tmp_61 = _rob_io_entries_18_valid;
+      5'b10011:
+        casez_tmp_61 = _rob_io_entries_19_valid;
+      5'b10100:
+        casez_tmp_61 = _rob_io_entries_20_valid;
+      5'b10101:
+        casez_tmp_61 = _rob_io_entries_21_valid;
+      5'b10110:
+        casez_tmp_61 = _rob_io_entries_22_valid;
+      5'b10111:
+        casez_tmp_61 = _rob_io_entries_23_valid;
+      5'b11000:
+        casez_tmp_61 = _rob_io_entries_24_valid;
+      5'b11001:
+        casez_tmp_61 = _rob_io_entries_25_valid;
+      5'b11010:
+        casez_tmp_61 = _rob_io_entries_26_valid;
+      5'b11011:
+        casez_tmp_61 = _rob_io_entries_27_valid;
+      5'b11100:
+        casez_tmp_61 = _rob_io_entries_28_valid;
+      5'b11101:
+        casez_tmp_61 = _rob_io_entries_29_valid;
+      5'b11110:
+        casez_tmp_61 = _rob_io_entries_30_valid;
+      default:
+        casez_tmp_61 = _rob_io_entries_31_valid;
+    endcase
+  end // always_comb
+  reg  [31:0]  casez_tmp_62;
+  always_comb begin
+    casez (_nextIdx_T)
+      5'b00000:
+        casez_tmp_62 = _rob_io_entries_0_pc;
+      5'b00001:
+        casez_tmp_62 = _rob_io_entries_1_pc;
+      5'b00010:
+        casez_tmp_62 = _rob_io_entries_2_pc;
+      5'b00011:
+        casez_tmp_62 = _rob_io_entries_3_pc;
+      5'b00100:
+        casez_tmp_62 = _rob_io_entries_4_pc;
+      5'b00101:
+        casez_tmp_62 = _rob_io_entries_5_pc;
+      5'b00110:
+        casez_tmp_62 = _rob_io_entries_6_pc;
+      5'b00111:
+        casez_tmp_62 = _rob_io_entries_7_pc;
+      5'b01000:
+        casez_tmp_62 = _rob_io_entries_8_pc;
+      5'b01001:
+        casez_tmp_62 = _rob_io_entries_9_pc;
+      5'b01010:
+        casez_tmp_62 = _rob_io_entries_10_pc;
+      5'b01011:
+        casez_tmp_62 = _rob_io_entries_11_pc;
+      5'b01100:
+        casez_tmp_62 = _rob_io_entries_12_pc;
+      5'b01101:
+        casez_tmp_62 = _rob_io_entries_13_pc;
+      5'b01110:
+        casez_tmp_62 = _rob_io_entries_14_pc;
+      5'b01111:
+        casez_tmp_62 = _rob_io_entries_15_pc;
+      5'b10000:
+        casez_tmp_62 = _rob_io_entries_16_pc;
+      5'b10001:
+        casez_tmp_62 = _rob_io_entries_17_pc;
+      5'b10010:
+        casez_tmp_62 = _rob_io_entries_18_pc;
+      5'b10011:
+        casez_tmp_62 = _rob_io_entries_19_pc;
+      5'b10100:
+        casez_tmp_62 = _rob_io_entries_20_pc;
+      5'b10101:
+        casez_tmp_62 = _rob_io_entries_21_pc;
+      5'b10110:
+        casez_tmp_62 = _rob_io_entries_22_pc;
+      5'b10111:
+        casez_tmp_62 = _rob_io_entries_23_pc;
+      5'b11000:
+        casez_tmp_62 = _rob_io_entries_24_pc;
+      5'b11001:
+        casez_tmp_62 = _rob_io_entries_25_pc;
+      5'b11010:
+        casez_tmp_62 = _rob_io_entries_26_pc;
+      5'b11011:
+        casez_tmp_62 = _rob_io_entries_27_pc;
+      5'b11100:
+        casez_tmp_62 = _rob_io_entries_28_pc;
+      5'b11101:
+        casez_tmp_62 = _rob_io_entries_29_pc;
+      5'b11110:
+        casez_tmp_62 = _rob_io_entries_30_pc;
+      default:
+        casez_tmp_62 = _rob_io_entries_31_pc;
+    endcase
+  end // always_comb
+  wire [4:0]   _nextIdx_T_2 = _rob_io_head + 5'h2;
+  reg          casez_tmp_63;
+  always_comb begin
+    casez (_nextIdx_T_2)
+      5'b00000:
+        casez_tmp_63 = _rob_io_entries_0_valid;
+      5'b00001:
+        casez_tmp_63 = _rob_io_entries_1_valid;
+      5'b00010:
+        casez_tmp_63 = _rob_io_entries_2_valid;
+      5'b00011:
+        casez_tmp_63 = _rob_io_entries_3_valid;
+      5'b00100:
+        casez_tmp_63 = _rob_io_entries_4_valid;
+      5'b00101:
+        casez_tmp_63 = _rob_io_entries_5_valid;
+      5'b00110:
+        casez_tmp_63 = _rob_io_entries_6_valid;
+      5'b00111:
+        casez_tmp_63 = _rob_io_entries_7_valid;
+      5'b01000:
+        casez_tmp_63 = _rob_io_entries_8_valid;
+      5'b01001:
+        casez_tmp_63 = _rob_io_entries_9_valid;
+      5'b01010:
+        casez_tmp_63 = _rob_io_entries_10_valid;
+      5'b01011:
+        casez_tmp_63 = _rob_io_entries_11_valid;
+      5'b01100:
+        casez_tmp_63 = _rob_io_entries_12_valid;
+      5'b01101:
+        casez_tmp_63 = _rob_io_entries_13_valid;
+      5'b01110:
+        casez_tmp_63 = _rob_io_entries_14_valid;
+      5'b01111:
+        casez_tmp_63 = _rob_io_entries_15_valid;
+      5'b10000:
+        casez_tmp_63 = _rob_io_entries_16_valid;
+      5'b10001:
+        casez_tmp_63 = _rob_io_entries_17_valid;
+      5'b10010:
+        casez_tmp_63 = _rob_io_entries_18_valid;
+      5'b10011:
+        casez_tmp_63 = _rob_io_entries_19_valid;
+      5'b10100:
+        casez_tmp_63 = _rob_io_entries_20_valid;
+      5'b10101:
+        casez_tmp_63 = _rob_io_entries_21_valid;
+      5'b10110:
+        casez_tmp_63 = _rob_io_entries_22_valid;
+      5'b10111:
+        casez_tmp_63 = _rob_io_entries_23_valid;
+      5'b11000:
+        casez_tmp_63 = _rob_io_entries_24_valid;
+      5'b11001:
+        casez_tmp_63 = _rob_io_entries_25_valid;
+      5'b11010:
+        casez_tmp_63 = _rob_io_entries_26_valid;
+      5'b11011:
+        casez_tmp_63 = _rob_io_entries_27_valid;
+      5'b11100:
+        casez_tmp_63 = _rob_io_entries_28_valid;
+      5'b11101:
+        casez_tmp_63 = _rob_io_entries_29_valid;
+      5'b11110:
+        casez_tmp_63 = _rob_io_entries_30_valid;
+      default:
+        casez_tmp_63 = _rob_io_entries_31_valid;
+    endcase
+  end // always_comb
+  reg  [31:0]  casez_tmp_64;
+  always_comb begin
+    casez (_nextIdx_T_2)
+      5'b00000:
+        casez_tmp_64 = _rob_io_entries_0_pc;
+      5'b00001:
+        casez_tmp_64 = _rob_io_entries_1_pc;
+      5'b00010:
+        casez_tmp_64 = _rob_io_entries_2_pc;
+      5'b00011:
+        casez_tmp_64 = _rob_io_entries_3_pc;
+      5'b00100:
+        casez_tmp_64 = _rob_io_entries_4_pc;
+      5'b00101:
+        casez_tmp_64 = _rob_io_entries_5_pc;
+      5'b00110:
+        casez_tmp_64 = _rob_io_entries_6_pc;
+      5'b00111:
+        casez_tmp_64 = _rob_io_entries_7_pc;
+      5'b01000:
+        casez_tmp_64 = _rob_io_entries_8_pc;
+      5'b01001:
+        casez_tmp_64 = _rob_io_entries_9_pc;
+      5'b01010:
+        casez_tmp_64 = _rob_io_entries_10_pc;
+      5'b01011:
+        casez_tmp_64 = _rob_io_entries_11_pc;
+      5'b01100:
+        casez_tmp_64 = _rob_io_entries_12_pc;
+      5'b01101:
+        casez_tmp_64 = _rob_io_entries_13_pc;
+      5'b01110:
+        casez_tmp_64 = _rob_io_entries_14_pc;
+      5'b01111:
+        casez_tmp_64 = _rob_io_entries_15_pc;
+      5'b10000:
+        casez_tmp_64 = _rob_io_entries_16_pc;
+      5'b10001:
+        casez_tmp_64 = _rob_io_entries_17_pc;
+      5'b10010:
+        casez_tmp_64 = _rob_io_entries_18_pc;
+      5'b10011:
+        casez_tmp_64 = _rob_io_entries_19_pc;
+      5'b10100:
+        casez_tmp_64 = _rob_io_entries_20_pc;
+      5'b10101:
+        casez_tmp_64 = _rob_io_entries_21_pc;
+      5'b10110:
+        casez_tmp_64 = _rob_io_entries_22_pc;
+      5'b10111:
+        casez_tmp_64 = _rob_io_entries_23_pc;
+      5'b11000:
+        casez_tmp_64 = _rob_io_entries_24_pc;
+      5'b11001:
+        casez_tmp_64 = _rob_io_entries_25_pc;
+      5'b11010:
+        casez_tmp_64 = _rob_io_entries_26_pc;
+      5'b11011:
+        casez_tmp_64 = _rob_io_entries_27_pc;
+      5'b11100:
+        casez_tmp_64 = _rob_io_entries_28_pc;
+      5'b11101:
+        casez_tmp_64 = _rob_io_entries_29_pc;
+      5'b11110:
+        casez_tmp_64 = _rob_io_entries_30_pc;
+      default:
+        casez_tmp_64 = _rob_io_entries_31_pc;
+    endcase
+  end // always_comb
+  wire [4:0]   _nextIdx_T_4 = _rob_io_head + 5'h3;
+  reg          casez_tmp_65;
+  always_comb begin
+    casez (_nextIdx_T_4)
+      5'b00000:
+        casez_tmp_65 = _rob_io_entries_0_valid;
+      5'b00001:
+        casez_tmp_65 = _rob_io_entries_1_valid;
+      5'b00010:
+        casez_tmp_65 = _rob_io_entries_2_valid;
+      5'b00011:
+        casez_tmp_65 = _rob_io_entries_3_valid;
+      5'b00100:
+        casez_tmp_65 = _rob_io_entries_4_valid;
+      5'b00101:
+        casez_tmp_65 = _rob_io_entries_5_valid;
+      5'b00110:
+        casez_tmp_65 = _rob_io_entries_6_valid;
+      5'b00111:
+        casez_tmp_65 = _rob_io_entries_7_valid;
+      5'b01000:
+        casez_tmp_65 = _rob_io_entries_8_valid;
+      5'b01001:
+        casez_tmp_65 = _rob_io_entries_9_valid;
+      5'b01010:
+        casez_tmp_65 = _rob_io_entries_10_valid;
+      5'b01011:
+        casez_tmp_65 = _rob_io_entries_11_valid;
+      5'b01100:
+        casez_tmp_65 = _rob_io_entries_12_valid;
+      5'b01101:
+        casez_tmp_65 = _rob_io_entries_13_valid;
+      5'b01110:
+        casez_tmp_65 = _rob_io_entries_14_valid;
+      5'b01111:
+        casez_tmp_65 = _rob_io_entries_15_valid;
+      5'b10000:
+        casez_tmp_65 = _rob_io_entries_16_valid;
+      5'b10001:
+        casez_tmp_65 = _rob_io_entries_17_valid;
+      5'b10010:
+        casez_tmp_65 = _rob_io_entries_18_valid;
+      5'b10011:
+        casez_tmp_65 = _rob_io_entries_19_valid;
+      5'b10100:
+        casez_tmp_65 = _rob_io_entries_20_valid;
+      5'b10101:
+        casez_tmp_65 = _rob_io_entries_21_valid;
+      5'b10110:
+        casez_tmp_65 = _rob_io_entries_22_valid;
+      5'b10111:
+        casez_tmp_65 = _rob_io_entries_23_valid;
+      5'b11000:
+        casez_tmp_65 = _rob_io_entries_24_valid;
+      5'b11001:
+        casez_tmp_65 = _rob_io_entries_25_valid;
+      5'b11010:
+        casez_tmp_65 = _rob_io_entries_26_valid;
+      5'b11011:
+        casez_tmp_65 = _rob_io_entries_27_valid;
+      5'b11100:
+        casez_tmp_65 = _rob_io_entries_28_valid;
+      5'b11101:
+        casez_tmp_65 = _rob_io_entries_29_valid;
+      5'b11110:
+        casez_tmp_65 = _rob_io_entries_30_valid;
+      default:
+        casez_tmp_65 = _rob_io_entries_31_valid;
+    endcase
+  end // always_comb
+  reg  [31:0]  casez_tmp_66;
+  always_comb begin
+    casez (_nextIdx_T_4)
+      5'b00000:
+        casez_tmp_66 = _rob_io_entries_0_pc;
+      5'b00001:
+        casez_tmp_66 = _rob_io_entries_1_pc;
+      5'b00010:
+        casez_tmp_66 = _rob_io_entries_2_pc;
+      5'b00011:
+        casez_tmp_66 = _rob_io_entries_3_pc;
+      5'b00100:
+        casez_tmp_66 = _rob_io_entries_4_pc;
+      5'b00101:
+        casez_tmp_66 = _rob_io_entries_5_pc;
+      5'b00110:
+        casez_tmp_66 = _rob_io_entries_6_pc;
+      5'b00111:
+        casez_tmp_66 = _rob_io_entries_7_pc;
+      5'b01000:
+        casez_tmp_66 = _rob_io_entries_8_pc;
+      5'b01001:
+        casez_tmp_66 = _rob_io_entries_9_pc;
+      5'b01010:
+        casez_tmp_66 = _rob_io_entries_10_pc;
+      5'b01011:
+        casez_tmp_66 = _rob_io_entries_11_pc;
+      5'b01100:
+        casez_tmp_66 = _rob_io_entries_12_pc;
+      5'b01101:
+        casez_tmp_66 = _rob_io_entries_13_pc;
+      5'b01110:
+        casez_tmp_66 = _rob_io_entries_14_pc;
+      5'b01111:
+        casez_tmp_66 = _rob_io_entries_15_pc;
+      5'b10000:
+        casez_tmp_66 = _rob_io_entries_16_pc;
+      5'b10001:
+        casez_tmp_66 = _rob_io_entries_17_pc;
+      5'b10010:
+        casez_tmp_66 = _rob_io_entries_18_pc;
+      5'b10011:
+        casez_tmp_66 = _rob_io_entries_19_pc;
+      5'b10100:
+        casez_tmp_66 = _rob_io_entries_20_pc;
+      5'b10101:
+        casez_tmp_66 = _rob_io_entries_21_pc;
+      5'b10110:
+        casez_tmp_66 = _rob_io_entries_22_pc;
+      5'b10111:
+        casez_tmp_66 = _rob_io_entries_23_pc;
+      5'b11000:
+        casez_tmp_66 = _rob_io_entries_24_pc;
+      5'b11001:
+        casez_tmp_66 = _rob_io_entries_25_pc;
+      5'b11010:
+        casez_tmp_66 = _rob_io_entries_26_pc;
+      5'b11011:
+        casez_tmp_66 = _rob_io_entries_27_pc;
+      5'b11100:
+        casez_tmp_66 = _rob_io_entries_28_pc;
+      5'b11101:
+        casez_tmp_66 = _rob_io_entries_29_pc;
+      5'b11110:
+        casez_tmp_66 = _rob_io_entries_30_pc;
+      default:
+        casez_tmp_66 = _rob_io_entries_31_pc;
+    endcase
+  end // always_comb
+  wire [4:0]   _nextIdx_T_6 = _rob_io_head + 5'h4;
+  reg          casez_tmp_67;
+  always_comb begin
+    casez (_nextIdx_T_6)
+      5'b00000:
+        casez_tmp_67 = _rob_io_entries_0_valid;
+      5'b00001:
+        casez_tmp_67 = _rob_io_entries_1_valid;
+      5'b00010:
+        casez_tmp_67 = _rob_io_entries_2_valid;
+      5'b00011:
+        casez_tmp_67 = _rob_io_entries_3_valid;
+      5'b00100:
+        casez_tmp_67 = _rob_io_entries_4_valid;
+      5'b00101:
+        casez_tmp_67 = _rob_io_entries_5_valid;
+      5'b00110:
+        casez_tmp_67 = _rob_io_entries_6_valid;
+      5'b00111:
+        casez_tmp_67 = _rob_io_entries_7_valid;
+      5'b01000:
+        casez_tmp_67 = _rob_io_entries_8_valid;
+      5'b01001:
+        casez_tmp_67 = _rob_io_entries_9_valid;
+      5'b01010:
+        casez_tmp_67 = _rob_io_entries_10_valid;
+      5'b01011:
+        casez_tmp_67 = _rob_io_entries_11_valid;
+      5'b01100:
+        casez_tmp_67 = _rob_io_entries_12_valid;
+      5'b01101:
+        casez_tmp_67 = _rob_io_entries_13_valid;
+      5'b01110:
+        casez_tmp_67 = _rob_io_entries_14_valid;
+      5'b01111:
+        casez_tmp_67 = _rob_io_entries_15_valid;
+      5'b10000:
+        casez_tmp_67 = _rob_io_entries_16_valid;
+      5'b10001:
+        casez_tmp_67 = _rob_io_entries_17_valid;
+      5'b10010:
+        casez_tmp_67 = _rob_io_entries_18_valid;
+      5'b10011:
+        casez_tmp_67 = _rob_io_entries_19_valid;
+      5'b10100:
+        casez_tmp_67 = _rob_io_entries_20_valid;
+      5'b10101:
+        casez_tmp_67 = _rob_io_entries_21_valid;
+      5'b10110:
+        casez_tmp_67 = _rob_io_entries_22_valid;
+      5'b10111:
+        casez_tmp_67 = _rob_io_entries_23_valid;
+      5'b11000:
+        casez_tmp_67 = _rob_io_entries_24_valid;
+      5'b11001:
+        casez_tmp_67 = _rob_io_entries_25_valid;
+      5'b11010:
+        casez_tmp_67 = _rob_io_entries_26_valid;
+      5'b11011:
+        casez_tmp_67 = _rob_io_entries_27_valid;
+      5'b11100:
+        casez_tmp_67 = _rob_io_entries_28_valid;
+      5'b11101:
+        casez_tmp_67 = _rob_io_entries_29_valid;
+      5'b11110:
+        casez_tmp_67 = _rob_io_entries_30_valid;
+      default:
+        casez_tmp_67 = _rob_io_entries_31_valid;
+    endcase
+  end // always_comb
+  reg  [31:0]  casez_tmp_68;
+  always_comb begin
+    casez (_nextIdx_T_6)
+      5'b00000:
+        casez_tmp_68 = _rob_io_entries_0_pc;
+      5'b00001:
+        casez_tmp_68 = _rob_io_entries_1_pc;
+      5'b00010:
+        casez_tmp_68 = _rob_io_entries_2_pc;
+      5'b00011:
+        casez_tmp_68 = _rob_io_entries_3_pc;
+      5'b00100:
+        casez_tmp_68 = _rob_io_entries_4_pc;
+      5'b00101:
+        casez_tmp_68 = _rob_io_entries_5_pc;
+      5'b00110:
+        casez_tmp_68 = _rob_io_entries_6_pc;
+      5'b00111:
+        casez_tmp_68 = _rob_io_entries_7_pc;
+      5'b01000:
+        casez_tmp_68 = _rob_io_entries_8_pc;
+      5'b01001:
+        casez_tmp_68 = _rob_io_entries_9_pc;
+      5'b01010:
+        casez_tmp_68 = _rob_io_entries_10_pc;
+      5'b01011:
+        casez_tmp_68 = _rob_io_entries_11_pc;
+      5'b01100:
+        casez_tmp_68 = _rob_io_entries_12_pc;
+      5'b01101:
+        casez_tmp_68 = _rob_io_entries_13_pc;
+      5'b01110:
+        casez_tmp_68 = _rob_io_entries_14_pc;
+      5'b01111:
+        casez_tmp_68 = _rob_io_entries_15_pc;
+      5'b10000:
+        casez_tmp_68 = _rob_io_entries_16_pc;
+      5'b10001:
+        casez_tmp_68 = _rob_io_entries_17_pc;
+      5'b10010:
+        casez_tmp_68 = _rob_io_entries_18_pc;
+      5'b10011:
+        casez_tmp_68 = _rob_io_entries_19_pc;
+      5'b10100:
+        casez_tmp_68 = _rob_io_entries_20_pc;
+      5'b10101:
+        casez_tmp_68 = _rob_io_entries_21_pc;
+      5'b10110:
+        casez_tmp_68 = _rob_io_entries_22_pc;
+      5'b10111:
+        casez_tmp_68 = _rob_io_entries_23_pc;
+      5'b11000:
+        casez_tmp_68 = _rob_io_entries_24_pc;
+      5'b11001:
+        casez_tmp_68 = _rob_io_entries_25_pc;
+      5'b11010:
+        casez_tmp_68 = _rob_io_entries_26_pc;
+      5'b11011:
+        casez_tmp_68 = _rob_io_entries_27_pc;
+      5'b11100:
+        casez_tmp_68 = _rob_io_entries_28_pc;
+      5'b11101:
+        casez_tmp_68 = _rob_io_entries_29_pc;
+      5'b11110:
+        casez_tmp_68 = _rob_io_entries_30_pc;
+      default:
+        casez_tmp_68 = _rob_io_entries_31_pc;
+    endcase
+  end // always_comb
   wire [31:0]  _cm_mmio_mem_T =
     (head_store_wb
        ? _lsu_io_storeComplete_bits_alu_result
@@ -7688,7 +8234,7 @@ module Core(
                               ? _wbArb_io_out_2_bits_state_state
                               : _wbArb_io_out_3_bits_state_state)
                  : _rob_io_commit1_bits_state_state) | cm1_mmio_mem;
-  wire         cm_bpu_update = cm_is_ctrl & _rob_io_commit_bits_jump != 4'hA;
+  wire         cm_bpu_update = cm_is_ctrl & _cm_bpu_update_T;
   wire         cm1_bpu_update = cm1_is_ctrl & _cm1_bpu_update_T;
   wire         cm2_bpu_update = cm2_is_ctrl & _cm2_bpu_update_T;
   wire         cm3_bpu_update = cm3_is_ctrl & _cm3_bpu_update_T;
@@ -7726,7 +8272,8 @@ module Core(
   wire         bp_commit_block;
   wire         rob_io_commit_fire =
     _rob_io_commit_valid & ~is_irq & ~fencei_flush_REG & ~mret_flush_REG
-    & ~ext_irq_flush_REG & ~branchRecoveryWins & ~memoryRecoveryWins & ~bp_commit_block
+    & ~ext_irq_flush_REG & ~branchRecoveryWins & ~memoryRecoveryWins
+    & ~retirePathRecoveryWins & ~bp_commit_block & ~_retirePathGuard_io_waitForNext_0
     & cm_bpu_ready & (~cm_is_load | ~_lsu_io_load_commit_wait0)
     & (~cm_is_store | store_commit_ready)
     & (~_rob_io_commit_bits_is_fencei | fencei_commit_ready)
@@ -7735,7 +8282,7 @@ module Core(
   wire         rob_io_commit1_fire =
     cm1_slot_available & ~cm_exclusive & ~cm1_exclusive & ~bp_commit1_block
     & _ifu_io_bpu_update_free >= _GEN_13 & pair_store_ready & pair_control_path_ok
-    & (~cm1_is_load | ~_lsu_io_load_commit_wait1);
+    & ~_retirePathGuard_io_waitForNext_1 & (~cm1_is_load | ~_lsu_io_load_commit_wait1);
   wire         rob_io_commit2_fire =
     rob_io_commit1_fire & _rob_io_commit2_valid
     & ~(_rob_io_commit2_bits_csr_write | _rob_io_commit2_bits_is_fencei
@@ -7762,7 +8309,7 @@ module Core(
     & _ifu_io_bpu_update_free >= {2'h0, _triple_bpu_count_T_2}
     & _triple_store_count_T_8 != 2'h3 & _stbuf_io_free >= {3'h0, _triple_store_count_T_8}
     & (~cm1_is_store | cm1_store_addr_ready) & (~cm2_is_store | cm2_store_addr_ready)
-    & (~cm2_is_load | ~_lsu_io_load_commit_wait2);
+    & ~_retirePathGuard_io_waitForNext_2 & (~cm2_is_load | ~_lsu_io_load_commit_wait2);
   wire         rob_io_commit3_fire =
     rob_io_commit2_fire & _rob_io_commit3_valid
     & ~(_rob_io_commit3_bits_csr_write | _rob_io_commit3_bits_is_fencei
@@ -7789,7 +8336,7 @@ module Core(
     & quad_store_count < 3'h3 & _stbuf_io_free >= {2'h0, quad_store_count}
     & (~cm1_is_store | cm1_store_addr_ready) & (~cm2_is_store | cm2_store_addr_ready)
     & (~cm3_is_store | _rob_io_commit3_bits_addr_ready | cm3_store_wb | cm3_wb_store)
-    & (~cm3_is_load | ~_lsu_io_load_commit_wait3);
+    & ~_retirePathGuard_io_waitForNext_3 & (~cm3_is_load | ~_lsu_io_load_commit_wait3);
   wire         fencei_commit = rob_io_commit_fire & _rob_io_commit_bits_is_fencei;
   wire         cm_do_ren =
     rob_io_commit_fire & _rob_io_commit_bits_reg_write & (|_rob_io_commit_bits_arch_rd)
@@ -7969,18 +8516,17 @@ module Core(
   wire         rename_io_cm1_cp_valid = rob_io_commit1_fire & cm1_is_ctrl_not_mret;
   wire         _frontend_mepc_T = _ifu_io_out_valid & _ifu_io_out_bits_valid_0;
   wire         primaryStoreIssue = take_lsu_issue & _rs_io_issue_lsu_bits_lsu_mem_write;
-  wire         cm_wb_same = rob_io_commit_fire & head_wb_valid;
-  reg  [31:0]  casez_tmp_61;
+  reg  [31:0]  casez_tmp_69;
   always_comb begin
     casez (_rob_io_commit_bits_csr_sel)
       2'b00:
-        casez_tmp_61 = 32'h0;
+        casez_tmp_69 = 32'h0;
       2'b01:
-        casez_tmp_61 = _rob_io_commit_bits_rs1_val;
+        casez_tmp_69 = _rob_io_commit_bits_rs1_val;
       2'b10:
-        casez_tmp_61 = _rob_io_commit_bits_rs1_val | _rob_io_commit_bits_csr_rd1;
+        casez_tmp_69 = _rob_io_commit_bits_rs1_val | _rob_io_commit_bits_csr_rd1;
       default:
-        casez_tmp_61 = _rob_io_commit_bits_pc;
+        casez_tmp_69 = _rob_io_commit_bits_pc;
     endcase
   end // always_comb
   wire         irq_commit = rob_io_commit_fire & cm_state_state;
@@ -8004,13 +8550,17 @@ module Core(
   reg  [4:0]   mis_rob_r;
   wire [4:0]   mis_next_rob_r = (&mis_rob_r) ? 5'h0 : mis_rob_r + 5'h1;
   wire [4:0]   mem_violation_rob_w;
-  wire [4:0]   _memoryRecoveryWins_T_1 = mem_violation_rob_w - _rob_io_head;
+  wire [4:0]   _memoryRecoveryAge_T = mem_violation_rob_w - _rob_io_head;
   assign branchRecoveryWins =
-    mis_predict_dbg
-    & (~mem_violation_w | _memoryRecoveryWins_T_4 < _memoryRecoveryWins_T_1);
+    mis_predict_dbg & (~mem_violation_w | _branchRecoveryAge_T < _memoryRecoveryAge_T)
+    & (~_retirePathGuard_io_flush | _branchRecoveryAge_T <= _retirePathRecoveryAge_T);
   assign memoryRecoveryWins =
-    mem_violation_w
-    & (~mis_predict_dbg | _memoryRecoveryWins_T_1 <= _memoryRecoveryWins_T_4);
+    mem_violation_w & (~mis_predict_dbg | _memoryRecoveryAge_T <= _branchRecoveryAge_T)
+    & (~_retirePathGuard_io_flush | _memoryRecoveryAge_T <= _retirePathRecoveryAge_T);
+  assign retirePathRecoveryWins =
+    _retirePathGuard_io_flush
+    & (~mis_predict_dbg | _retirePathRecoveryAge_T < _branchRecoveryAge_T)
+    & (~mem_violation_w | _retirePathRecoveryAge_T < _memoryRecoveryAge_T);
   assign mem_flush_all = memoryRecoveryWins & _rob_io_head == mem_violation_rob_w;
   wire         ifu_io_bp_recover_is_jalr = d_bru_bits_signals_exu_jump == 4'h9;
   assign bp_commit_block = mis_predict_r & _rob_io_commit_idx == mis_next_rob_r;
@@ -8031,236 +8581,240 @@ module Core(
   wire         csr_io_irq = irq_commit | ext_irq_fire;
   reg  [31:0]  irq_mtvec_r;
   wire [31:0]  mem_violation_pc_w;
-  assign flush_now = _flush_now_T | is_irq | fencei_flush_REG | mret_flush_REG;
+  assign flush_now =
+    _flush_now_T | retirePathRecoveryWins | is_irq | fencei_flush_REG | mret_flush_REG;
   assign stop_issue =
     flush_now | mis_predict_dbg | mem_violation_w | irq_commit | fencei_commit
     | mret_commit | ext_irq_fire;
   assign fwd_ok =
-    ~mis_predict_dbg & ~mis_predict_r & ~mem_violation_w & ~is_irq & ~irq_commit
-    & ~fencei_commit & ~fencei_flush_REG & ~mret_commit & ~mret_flush_REG & ~ext_irq_fire
-    & ~ext_irq_flush_REG;
+    ~mis_predict_dbg & ~mis_predict_r & ~mem_violation_w & ~retirePathRecoveryWins
+    & ~is_irq & ~irq_commit & ~fencei_commit & ~fencei_flush_REG & ~mret_commit
+    & ~mret_flush_REG & ~ext_irq_fire & ~ext_irq_flush_REG;
   assign flush_idx =
     is_irq
       ? irq_rob_r
       : memoryRecoveryWins
           ? mem_violation_rob_w - 5'h1
-          : branchRecoveryWins ? d_bru_bits_rob_idx : mis_rob_r;
+          : branchRecoveryWins
+              ? d_bru_bits_rob_idx
+              : retirePathRecoveryWins ? _retirePathGuard_io_flushRobIdx : mis_rob_r;
   wire         _busy_io_rebuild_mask_T = is_irq | fencei_flush_REG;
   assign ifu_io_is_flush =
-    _busy_io_rebuild_mask_T | mret_flush_REG | branchRecoveryWins | memoryRecoveryWins;
+    _busy_io_rebuild_mask_T | mret_flush_REG | branchRecoveryWins | memoryRecoveryWins
+    | retirePathRecoveryWins;
   wire         sq_io_flush =
     flush_now & ~is_irq & ~fencei_flush_REG & ~mret_flush_REG & ~mem_flush_all;
   wire         cm_this = rob_io_commit_fire & casez_tmp_50;
-  reg          casez_tmp_62;
+  reg          casez_tmp_70;
   always_comb begin
     casez (_rob_io_commit1_idx)
       5'b00000:
-        casez_tmp_62 = _rob_io_entries_0_valid;
+        casez_tmp_70 = _rob_io_entries_0_valid;
       5'b00001:
-        casez_tmp_62 = _rob_io_entries_1_valid;
+        casez_tmp_70 = _rob_io_entries_1_valid;
       5'b00010:
-        casez_tmp_62 = _rob_io_entries_2_valid;
+        casez_tmp_70 = _rob_io_entries_2_valid;
       5'b00011:
-        casez_tmp_62 = _rob_io_entries_3_valid;
+        casez_tmp_70 = _rob_io_entries_3_valid;
       5'b00100:
-        casez_tmp_62 = _rob_io_entries_4_valid;
+        casez_tmp_70 = _rob_io_entries_4_valid;
       5'b00101:
-        casez_tmp_62 = _rob_io_entries_5_valid;
+        casez_tmp_70 = _rob_io_entries_5_valid;
       5'b00110:
-        casez_tmp_62 = _rob_io_entries_6_valid;
+        casez_tmp_70 = _rob_io_entries_6_valid;
       5'b00111:
-        casez_tmp_62 = _rob_io_entries_7_valid;
+        casez_tmp_70 = _rob_io_entries_7_valid;
       5'b01000:
-        casez_tmp_62 = _rob_io_entries_8_valid;
+        casez_tmp_70 = _rob_io_entries_8_valid;
       5'b01001:
-        casez_tmp_62 = _rob_io_entries_9_valid;
+        casez_tmp_70 = _rob_io_entries_9_valid;
       5'b01010:
-        casez_tmp_62 = _rob_io_entries_10_valid;
+        casez_tmp_70 = _rob_io_entries_10_valid;
       5'b01011:
-        casez_tmp_62 = _rob_io_entries_11_valid;
+        casez_tmp_70 = _rob_io_entries_11_valid;
       5'b01100:
-        casez_tmp_62 = _rob_io_entries_12_valid;
+        casez_tmp_70 = _rob_io_entries_12_valid;
       5'b01101:
-        casez_tmp_62 = _rob_io_entries_13_valid;
+        casez_tmp_70 = _rob_io_entries_13_valid;
       5'b01110:
-        casez_tmp_62 = _rob_io_entries_14_valid;
+        casez_tmp_70 = _rob_io_entries_14_valid;
       5'b01111:
-        casez_tmp_62 = _rob_io_entries_15_valid;
+        casez_tmp_70 = _rob_io_entries_15_valid;
       5'b10000:
-        casez_tmp_62 = _rob_io_entries_16_valid;
+        casez_tmp_70 = _rob_io_entries_16_valid;
       5'b10001:
-        casez_tmp_62 = _rob_io_entries_17_valid;
+        casez_tmp_70 = _rob_io_entries_17_valid;
       5'b10010:
-        casez_tmp_62 = _rob_io_entries_18_valid;
+        casez_tmp_70 = _rob_io_entries_18_valid;
       5'b10011:
-        casez_tmp_62 = _rob_io_entries_19_valid;
+        casez_tmp_70 = _rob_io_entries_19_valid;
       5'b10100:
-        casez_tmp_62 = _rob_io_entries_20_valid;
+        casez_tmp_70 = _rob_io_entries_20_valid;
       5'b10101:
-        casez_tmp_62 = _rob_io_entries_21_valid;
+        casez_tmp_70 = _rob_io_entries_21_valid;
       5'b10110:
-        casez_tmp_62 = _rob_io_entries_22_valid;
+        casez_tmp_70 = _rob_io_entries_22_valid;
       5'b10111:
-        casez_tmp_62 = _rob_io_entries_23_valid;
+        casez_tmp_70 = _rob_io_entries_23_valid;
       5'b11000:
-        casez_tmp_62 = _rob_io_entries_24_valid;
+        casez_tmp_70 = _rob_io_entries_24_valid;
       5'b11001:
-        casez_tmp_62 = _rob_io_entries_25_valid;
+        casez_tmp_70 = _rob_io_entries_25_valid;
       5'b11010:
-        casez_tmp_62 = _rob_io_entries_26_valid;
+        casez_tmp_70 = _rob_io_entries_26_valid;
       5'b11011:
-        casez_tmp_62 = _rob_io_entries_27_valid;
+        casez_tmp_70 = _rob_io_entries_27_valid;
       5'b11100:
-        casez_tmp_62 = _rob_io_entries_28_valid;
+        casez_tmp_70 = _rob_io_entries_28_valid;
       5'b11101:
-        casez_tmp_62 = _rob_io_entries_29_valid;
+        casez_tmp_70 = _rob_io_entries_29_valid;
       5'b11110:
-        casez_tmp_62 = _rob_io_entries_30_valid;
+        casez_tmp_70 = _rob_io_entries_30_valid;
       default:
-        casez_tmp_62 = _rob_io_entries_31_valid;
+        casez_tmp_70 = _rob_io_entries_31_valid;
     endcase
   end // always_comb
-  wire         cm1_this = rob_io_commit1_fire & casez_tmp_62;
-  reg          casez_tmp_63;
+  wire         cm1_this = rob_io_commit1_fire & casez_tmp_70;
+  reg          casez_tmp_71;
   always_comb begin
     casez (_rob_io_commit2_idx)
       5'b00000:
-        casez_tmp_63 = _rob_io_entries_0_valid;
+        casez_tmp_71 = _rob_io_entries_0_valid;
       5'b00001:
-        casez_tmp_63 = _rob_io_entries_1_valid;
+        casez_tmp_71 = _rob_io_entries_1_valid;
       5'b00010:
-        casez_tmp_63 = _rob_io_entries_2_valid;
+        casez_tmp_71 = _rob_io_entries_2_valid;
       5'b00011:
-        casez_tmp_63 = _rob_io_entries_3_valid;
+        casez_tmp_71 = _rob_io_entries_3_valid;
       5'b00100:
-        casez_tmp_63 = _rob_io_entries_4_valid;
+        casez_tmp_71 = _rob_io_entries_4_valid;
       5'b00101:
-        casez_tmp_63 = _rob_io_entries_5_valid;
+        casez_tmp_71 = _rob_io_entries_5_valid;
       5'b00110:
-        casez_tmp_63 = _rob_io_entries_6_valid;
+        casez_tmp_71 = _rob_io_entries_6_valid;
       5'b00111:
-        casez_tmp_63 = _rob_io_entries_7_valid;
+        casez_tmp_71 = _rob_io_entries_7_valid;
       5'b01000:
-        casez_tmp_63 = _rob_io_entries_8_valid;
+        casez_tmp_71 = _rob_io_entries_8_valid;
       5'b01001:
-        casez_tmp_63 = _rob_io_entries_9_valid;
+        casez_tmp_71 = _rob_io_entries_9_valid;
       5'b01010:
-        casez_tmp_63 = _rob_io_entries_10_valid;
+        casez_tmp_71 = _rob_io_entries_10_valid;
       5'b01011:
-        casez_tmp_63 = _rob_io_entries_11_valid;
+        casez_tmp_71 = _rob_io_entries_11_valid;
       5'b01100:
-        casez_tmp_63 = _rob_io_entries_12_valid;
+        casez_tmp_71 = _rob_io_entries_12_valid;
       5'b01101:
-        casez_tmp_63 = _rob_io_entries_13_valid;
+        casez_tmp_71 = _rob_io_entries_13_valid;
       5'b01110:
-        casez_tmp_63 = _rob_io_entries_14_valid;
+        casez_tmp_71 = _rob_io_entries_14_valid;
       5'b01111:
-        casez_tmp_63 = _rob_io_entries_15_valid;
+        casez_tmp_71 = _rob_io_entries_15_valid;
       5'b10000:
-        casez_tmp_63 = _rob_io_entries_16_valid;
+        casez_tmp_71 = _rob_io_entries_16_valid;
       5'b10001:
-        casez_tmp_63 = _rob_io_entries_17_valid;
+        casez_tmp_71 = _rob_io_entries_17_valid;
       5'b10010:
-        casez_tmp_63 = _rob_io_entries_18_valid;
+        casez_tmp_71 = _rob_io_entries_18_valid;
       5'b10011:
-        casez_tmp_63 = _rob_io_entries_19_valid;
+        casez_tmp_71 = _rob_io_entries_19_valid;
       5'b10100:
-        casez_tmp_63 = _rob_io_entries_20_valid;
+        casez_tmp_71 = _rob_io_entries_20_valid;
       5'b10101:
-        casez_tmp_63 = _rob_io_entries_21_valid;
+        casez_tmp_71 = _rob_io_entries_21_valid;
       5'b10110:
-        casez_tmp_63 = _rob_io_entries_22_valid;
+        casez_tmp_71 = _rob_io_entries_22_valid;
       5'b10111:
-        casez_tmp_63 = _rob_io_entries_23_valid;
+        casez_tmp_71 = _rob_io_entries_23_valid;
       5'b11000:
-        casez_tmp_63 = _rob_io_entries_24_valid;
+        casez_tmp_71 = _rob_io_entries_24_valid;
       5'b11001:
-        casez_tmp_63 = _rob_io_entries_25_valid;
+        casez_tmp_71 = _rob_io_entries_25_valid;
       5'b11010:
-        casez_tmp_63 = _rob_io_entries_26_valid;
+        casez_tmp_71 = _rob_io_entries_26_valid;
       5'b11011:
-        casez_tmp_63 = _rob_io_entries_27_valid;
+        casez_tmp_71 = _rob_io_entries_27_valid;
       5'b11100:
-        casez_tmp_63 = _rob_io_entries_28_valid;
+        casez_tmp_71 = _rob_io_entries_28_valid;
       5'b11101:
-        casez_tmp_63 = _rob_io_entries_29_valid;
+        casez_tmp_71 = _rob_io_entries_29_valid;
       5'b11110:
-        casez_tmp_63 = _rob_io_entries_30_valid;
+        casez_tmp_71 = _rob_io_entries_30_valid;
       default:
-        casez_tmp_63 = _rob_io_entries_31_valid;
+        casez_tmp_71 = _rob_io_entries_31_valid;
     endcase
   end // always_comb
-  wire         cm2_this = rob_io_commit2_fire & casez_tmp_63;
-  reg          casez_tmp_64;
+  wire         cm2_this = rob_io_commit2_fire & casez_tmp_71;
+  reg          casez_tmp_72;
   always_comb begin
     casez (_rob_io_commit3_idx)
       5'b00000:
-        casez_tmp_64 = _rob_io_entries_0_valid;
+        casez_tmp_72 = _rob_io_entries_0_valid;
       5'b00001:
-        casez_tmp_64 = _rob_io_entries_1_valid;
+        casez_tmp_72 = _rob_io_entries_1_valid;
       5'b00010:
-        casez_tmp_64 = _rob_io_entries_2_valid;
+        casez_tmp_72 = _rob_io_entries_2_valid;
       5'b00011:
-        casez_tmp_64 = _rob_io_entries_3_valid;
+        casez_tmp_72 = _rob_io_entries_3_valid;
       5'b00100:
-        casez_tmp_64 = _rob_io_entries_4_valid;
+        casez_tmp_72 = _rob_io_entries_4_valid;
       5'b00101:
-        casez_tmp_64 = _rob_io_entries_5_valid;
+        casez_tmp_72 = _rob_io_entries_5_valid;
       5'b00110:
-        casez_tmp_64 = _rob_io_entries_6_valid;
+        casez_tmp_72 = _rob_io_entries_6_valid;
       5'b00111:
-        casez_tmp_64 = _rob_io_entries_7_valid;
+        casez_tmp_72 = _rob_io_entries_7_valid;
       5'b01000:
-        casez_tmp_64 = _rob_io_entries_8_valid;
+        casez_tmp_72 = _rob_io_entries_8_valid;
       5'b01001:
-        casez_tmp_64 = _rob_io_entries_9_valid;
+        casez_tmp_72 = _rob_io_entries_9_valid;
       5'b01010:
-        casez_tmp_64 = _rob_io_entries_10_valid;
+        casez_tmp_72 = _rob_io_entries_10_valid;
       5'b01011:
-        casez_tmp_64 = _rob_io_entries_11_valid;
+        casez_tmp_72 = _rob_io_entries_11_valid;
       5'b01100:
-        casez_tmp_64 = _rob_io_entries_12_valid;
+        casez_tmp_72 = _rob_io_entries_12_valid;
       5'b01101:
-        casez_tmp_64 = _rob_io_entries_13_valid;
+        casez_tmp_72 = _rob_io_entries_13_valid;
       5'b01110:
-        casez_tmp_64 = _rob_io_entries_14_valid;
+        casez_tmp_72 = _rob_io_entries_14_valid;
       5'b01111:
-        casez_tmp_64 = _rob_io_entries_15_valid;
+        casez_tmp_72 = _rob_io_entries_15_valid;
       5'b10000:
-        casez_tmp_64 = _rob_io_entries_16_valid;
+        casez_tmp_72 = _rob_io_entries_16_valid;
       5'b10001:
-        casez_tmp_64 = _rob_io_entries_17_valid;
+        casez_tmp_72 = _rob_io_entries_17_valid;
       5'b10010:
-        casez_tmp_64 = _rob_io_entries_18_valid;
+        casez_tmp_72 = _rob_io_entries_18_valid;
       5'b10011:
-        casez_tmp_64 = _rob_io_entries_19_valid;
+        casez_tmp_72 = _rob_io_entries_19_valid;
       5'b10100:
-        casez_tmp_64 = _rob_io_entries_20_valid;
+        casez_tmp_72 = _rob_io_entries_20_valid;
       5'b10101:
-        casez_tmp_64 = _rob_io_entries_21_valid;
+        casez_tmp_72 = _rob_io_entries_21_valid;
       5'b10110:
-        casez_tmp_64 = _rob_io_entries_22_valid;
+        casez_tmp_72 = _rob_io_entries_22_valid;
       5'b10111:
-        casez_tmp_64 = _rob_io_entries_23_valid;
+        casez_tmp_72 = _rob_io_entries_23_valid;
       5'b11000:
-        casez_tmp_64 = _rob_io_entries_24_valid;
+        casez_tmp_72 = _rob_io_entries_24_valid;
       5'b11001:
-        casez_tmp_64 = _rob_io_entries_25_valid;
+        casez_tmp_72 = _rob_io_entries_25_valid;
       5'b11010:
-        casez_tmp_64 = _rob_io_entries_26_valid;
+        casez_tmp_72 = _rob_io_entries_26_valid;
       5'b11011:
-        casez_tmp_64 = _rob_io_entries_27_valid;
+        casez_tmp_72 = _rob_io_entries_27_valid;
       5'b11100:
-        casez_tmp_64 = _rob_io_entries_28_valid;
+        casez_tmp_72 = _rob_io_entries_28_valid;
       5'b11101:
-        casez_tmp_64 = _rob_io_entries_29_valid;
+        casez_tmp_72 = _rob_io_entries_29_valid;
       5'b11110:
-        casez_tmp_64 = _rob_io_entries_30_valid;
+        casez_tmp_72 = _rob_io_entries_30_valid;
       default:
-        casez_tmp_64 = _rob_io_entries_31_valid;
+        casez_tmp_72 = _rob_io_entries_31_valid;
     endcase
   end // always_comb
-  wire         cm3_this = rob_io_commit3_fire & casez_tmp_64;
+  wire         cm3_this = rob_io_commit3_fire & casez_tmp_72;
   wire [4:0]   idx =
     _rob_io_head
     + {2'h0,
@@ -8271,9 +8825,7 @@ module Core(
     & _rob_io_head == flush_idx | cm1_this & _rob_io_commit1_idx == flush_idx | cm2_this
     & _rob_io_commit2_idx == flush_idx | cm3_this & _rob_io_commit3_idx == flush_idx
       ? 6'h0
-      : flush_idx >= idx
-          ? {1'h0, flush_idx - idx + 5'h1}
-          : 6'h20 - {1'h0, idx} + {1'h0, flush_idx} + 6'h1;
+      : {1'h0, flush_idx - idx} + 6'h1;
   wire [5:0]   rb_base_1 =
     cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h1
       ? _rob_io_commit3_bits_new_phys
@@ -8584,566 +9136,9 @@ module Core(
               : cm_do_ren & (&_rob_io_commit_bits_arch_rd)
                   ? _rob_io_commit_bits_new_phys
                   : _rename_io_arch_rat_out_31;
-  reg          casez_tmp_65;
-  always_comb begin
-    casez (idx)
-      5'b00000:
-        casez_tmp_65 = _rob_io_entries_0_valid;
-      5'b00001:
-        casez_tmp_65 = _rob_io_entries_1_valid;
-      5'b00010:
-        casez_tmp_65 = _rob_io_entries_2_valid;
-      5'b00011:
-        casez_tmp_65 = _rob_io_entries_3_valid;
-      5'b00100:
-        casez_tmp_65 = _rob_io_entries_4_valid;
-      5'b00101:
-        casez_tmp_65 = _rob_io_entries_5_valid;
-      5'b00110:
-        casez_tmp_65 = _rob_io_entries_6_valid;
-      5'b00111:
-        casez_tmp_65 = _rob_io_entries_7_valid;
-      5'b01000:
-        casez_tmp_65 = _rob_io_entries_8_valid;
-      5'b01001:
-        casez_tmp_65 = _rob_io_entries_9_valid;
-      5'b01010:
-        casez_tmp_65 = _rob_io_entries_10_valid;
-      5'b01011:
-        casez_tmp_65 = _rob_io_entries_11_valid;
-      5'b01100:
-        casez_tmp_65 = _rob_io_entries_12_valid;
-      5'b01101:
-        casez_tmp_65 = _rob_io_entries_13_valid;
-      5'b01110:
-        casez_tmp_65 = _rob_io_entries_14_valid;
-      5'b01111:
-        casez_tmp_65 = _rob_io_entries_15_valid;
-      5'b10000:
-        casez_tmp_65 = _rob_io_entries_16_valid;
-      5'b10001:
-        casez_tmp_65 = _rob_io_entries_17_valid;
-      5'b10010:
-        casez_tmp_65 = _rob_io_entries_18_valid;
-      5'b10011:
-        casez_tmp_65 = _rob_io_entries_19_valid;
-      5'b10100:
-        casez_tmp_65 = _rob_io_entries_20_valid;
-      5'b10101:
-        casez_tmp_65 = _rob_io_entries_21_valid;
-      5'b10110:
-        casez_tmp_65 = _rob_io_entries_22_valid;
-      5'b10111:
-        casez_tmp_65 = _rob_io_entries_23_valid;
-      5'b11000:
-        casez_tmp_65 = _rob_io_entries_24_valid;
-      5'b11001:
-        casez_tmp_65 = _rob_io_entries_25_valid;
-      5'b11010:
-        casez_tmp_65 = _rob_io_entries_26_valid;
-      5'b11011:
-        casez_tmp_65 = _rob_io_entries_27_valid;
-      5'b11100:
-        casez_tmp_65 = _rob_io_entries_28_valid;
-      5'b11101:
-        casez_tmp_65 = _rob_io_entries_29_valid;
-      5'b11110:
-        casez_tmp_65 = _rob_io_entries_30_valid;
-      default:
-        casez_tmp_65 = _rob_io_entries_31_valid;
-    endcase
-  end // always_comb
-  reg          casez_tmp_66;
-  always_comb begin
-    casez (idx)
-      5'b00000:
-        casez_tmp_66 = _rob_io_entries_0_reg_write;
-      5'b00001:
-        casez_tmp_66 = _rob_io_entries_1_reg_write;
-      5'b00010:
-        casez_tmp_66 = _rob_io_entries_2_reg_write;
-      5'b00011:
-        casez_tmp_66 = _rob_io_entries_3_reg_write;
-      5'b00100:
-        casez_tmp_66 = _rob_io_entries_4_reg_write;
-      5'b00101:
-        casez_tmp_66 = _rob_io_entries_5_reg_write;
-      5'b00110:
-        casez_tmp_66 = _rob_io_entries_6_reg_write;
-      5'b00111:
-        casez_tmp_66 = _rob_io_entries_7_reg_write;
-      5'b01000:
-        casez_tmp_66 = _rob_io_entries_8_reg_write;
-      5'b01001:
-        casez_tmp_66 = _rob_io_entries_9_reg_write;
-      5'b01010:
-        casez_tmp_66 = _rob_io_entries_10_reg_write;
-      5'b01011:
-        casez_tmp_66 = _rob_io_entries_11_reg_write;
-      5'b01100:
-        casez_tmp_66 = _rob_io_entries_12_reg_write;
-      5'b01101:
-        casez_tmp_66 = _rob_io_entries_13_reg_write;
-      5'b01110:
-        casez_tmp_66 = _rob_io_entries_14_reg_write;
-      5'b01111:
-        casez_tmp_66 = _rob_io_entries_15_reg_write;
-      5'b10000:
-        casez_tmp_66 = _rob_io_entries_16_reg_write;
-      5'b10001:
-        casez_tmp_66 = _rob_io_entries_17_reg_write;
-      5'b10010:
-        casez_tmp_66 = _rob_io_entries_18_reg_write;
-      5'b10011:
-        casez_tmp_66 = _rob_io_entries_19_reg_write;
-      5'b10100:
-        casez_tmp_66 = _rob_io_entries_20_reg_write;
-      5'b10101:
-        casez_tmp_66 = _rob_io_entries_21_reg_write;
-      5'b10110:
-        casez_tmp_66 = _rob_io_entries_22_reg_write;
-      5'b10111:
-        casez_tmp_66 = _rob_io_entries_23_reg_write;
-      5'b11000:
-        casez_tmp_66 = _rob_io_entries_24_reg_write;
-      5'b11001:
-        casez_tmp_66 = _rob_io_entries_25_reg_write;
-      5'b11010:
-        casez_tmp_66 = _rob_io_entries_26_reg_write;
-      5'b11011:
-        casez_tmp_66 = _rob_io_entries_27_reg_write;
-      5'b11100:
-        casez_tmp_66 = _rob_io_entries_28_reg_write;
-      5'b11101:
-        casez_tmp_66 = _rob_io_entries_29_reg_write;
-      5'b11110:
-        casez_tmp_66 = _rob_io_entries_30_reg_write;
-      default:
-        casez_tmp_66 = _rob_io_entries_31_reg_write;
-    endcase
-  end // always_comb
-  reg  [4:0]   casez_tmp_67;
-  always_comb begin
-    casez (idx)
-      5'b00000:
-        casez_tmp_67 = _rob_io_entries_0_arch_rd;
-      5'b00001:
-        casez_tmp_67 = _rob_io_entries_1_arch_rd;
-      5'b00010:
-        casez_tmp_67 = _rob_io_entries_2_arch_rd;
-      5'b00011:
-        casez_tmp_67 = _rob_io_entries_3_arch_rd;
-      5'b00100:
-        casez_tmp_67 = _rob_io_entries_4_arch_rd;
-      5'b00101:
-        casez_tmp_67 = _rob_io_entries_5_arch_rd;
-      5'b00110:
-        casez_tmp_67 = _rob_io_entries_6_arch_rd;
-      5'b00111:
-        casez_tmp_67 = _rob_io_entries_7_arch_rd;
-      5'b01000:
-        casez_tmp_67 = _rob_io_entries_8_arch_rd;
-      5'b01001:
-        casez_tmp_67 = _rob_io_entries_9_arch_rd;
-      5'b01010:
-        casez_tmp_67 = _rob_io_entries_10_arch_rd;
-      5'b01011:
-        casez_tmp_67 = _rob_io_entries_11_arch_rd;
-      5'b01100:
-        casez_tmp_67 = _rob_io_entries_12_arch_rd;
-      5'b01101:
-        casez_tmp_67 = _rob_io_entries_13_arch_rd;
-      5'b01110:
-        casez_tmp_67 = _rob_io_entries_14_arch_rd;
-      5'b01111:
-        casez_tmp_67 = _rob_io_entries_15_arch_rd;
-      5'b10000:
-        casez_tmp_67 = _rob_io_entries_16_arch_rd;
-      5'b10001:
-        casez_tmp_67 = _rob_io_entries_17_arch_rd;
-      5'b10010:
-        casez_tmp_67 = _rob_io_entries_18_arch_rd;
-      5'b10011:
-        casez_tmp_67 = _rob_io_entries_19_arch_rd;
-      5'b10100:
-        casez_tmp_67 = _rob_io_entries_20_arch_rd;
-      5'b10101:
-        casez_tmp_67 = _rob_io_entries_21_arch_rd;
-      5'b10110:
-        casez_tmp_67 = _rob_io_entries_22_arch_rd;
-      5'b10111:
-        casez_tmp_67 = _rob_io_entries_23_arch_rd;
-      5'b11000:
-        casez_tmp_67 = _rob_io_entries_24_arch_rd;
-      5'b11001:
-        casez_tmp_67 = _rob_io_entries_25_arch_rd;
-      5'b11010:
-        casez_tmp_67 = _rob_io_entries_26_arch_rd;
-      5'b11011:
-        casez_tmp_67 = _rob_io_entries_27_arch_rd;
-      5'b11100:
-        casez_tmp_67 = _rob_io_entries_28_arch_rd;
-      5'b11101:
-        casez_tmp_67 = _rob_io_entries_29_arch_rd;
-      5'b11110:
-        casez_tmp_67 = _rob_io_entries_30_arch_rd;
-      default:
-        casez_tmp_67 = _rob_io_entries_31_arch_rd;
-    endcase
-  end // always_comb
-  reg  [5:0]   casez_tmp_68;
-  always_comb begin
-    casez (idx)
-      5'b00000:
-        casez_tmp_68 = _rob_io_entries_0_new_phys;
-      5'b00001:
-        casez_tmp_68 = _rob_io_entries_1_new_phys;
-      5'b00010:
-        casez_tmp_68 = _rob_io_entries_2_new_phys;
-      5'b00011:
-        casez_tmp_68 = _rob_io_entries_3_new_phys;
-      5'b00100:
-        casez_tmp_68 = _rob_io_entries_4_new_phys;
-      5'b00101:
-        casez_tmp_68 = _rob_io_entries_5_new_phys;
-      5'b00110:
-        casez_tmp_68 = _rob_io_entries_6_new_phys;
-      5'b00111:
-        casez_tmp_68 = _rob_io_entries_7_new_phys;
-      5'b01000:
-        casez_tmp_68 = _rob_io_entries_8_new_phys;
-      5'b01001:
-        casez_tmp_68 = _rob_io_entries_9_new_phys;
-      5'b01010:
-        casez_tmp_68 = _rob_io_entries_10_new_phys;
-      5'b01011:
-        casez_tmp_68 = _rob_io_entries_11_new_phys;
-      5'b01100:
-        casez_tmp_68 = _rob_io_entries_12_new_phys;
-      5'b01101:
-        casez_tmp_68 = _rob_io_entries_13_new_phys;
-      5'b01110:
-        casez_tmp_68 = _rob_io_entries_14_new_phys;
-      5'b01111:
-        casez_tmp_68 = _rob_io_entries_15_new_phys;
-      5'b10000:
-        casez_tmp_68 = _rob_io_entries_16_new_phys;
-      5'b10001:
-        casez_tmp_68 = _rob_io_entries_17_new_phys;
-      5'b10010:
-        casez_tmp_68 = _rob_io_entries_18_new_phys;
-      5'b10011:
-        casez_tmp_68 = _rob_io_entries_19_new_phys;
-      5'b10100:
-        casez_tmp_68 = _rob_io_entries_20_new_phys;
-      5'b10101:
-        casez_tmp_68 = _rob_io_entries_21_new_phys;
-      5'b10110:
-        casez_tmp_68 = _rob_io_entries_22_new_phys;
-      5'b10111:
-        casez_tmp_68 = _rob_io_entries_23_new_phys;
-      5'b11000:
-        casez_tmp_68 = _rob_io_entries_24_new_phys;
-      5'b11001:
-        casez_tmp_68 = _rob_io_entries_25_new_phys;
-      5'b11010:
-        casez_tmp_68 = _rob_io_entries_26_new_phys;
-      5'b11011:
-        casez_tmp_68 = _rob_io_entries_27_new_phys;
-      5'b11100:
-        casez_tmp_68 = _rob_io_entries_28_new_phys;
-      5'b11101:
-        casez_tmp_68 = _rob_io_entries_29_new_phys;
-      5'b11110:
-        casez_tmp_68 = _rob_io_entries_30_new_phys;
-      default:
-        casez_tmp_68 = _rob_io_entries_31_new_phys;
-    endcase
-  end // always_comb
-  wire         take = (|kept_n) & casez_tmp_65 & casez_tmp_66 & (|casez_tmp_67);
-  wire [4:0]   _idx_T_66 = idx + 5'h1;
-  reg          casez_tmp_69;
-  always_comb begin
-    casez (_idx_T_66)
-      5'b00000:
-        casez_tmp_69 = _rob_io_entries_0_valid;
-      5'b00001:
-        casez_tmp_69 = _rob_io_entries_1_valid;
-      5'b00010:
-        casez_tmp_69 = _rob_io_entries_2_valid;
-      5'b00011:
-        casez_tmp_69 = _rob_io_entries_3_valid;
-      5'b00100:
-        casez_tmp_69 = _rob_io_entries_4_valid;
-      5'b00101:
-        casez_tmp_69 = _rob_io_entries_5_valid;
-      5'b00110:
-        casez_tmp_69 = _rob_io_entries_6_valid;
-      5'b00111:
-        casez_tmp_69 = _rob_io_entries_7_valid;
-      5'b01000:
-        casez_tmp_69 = _rob_io_entries_8_valid;
-      5'b01001:
-        casez_tmp_69 = _rob_io_entries_9_valid;
-      5'b01010:
-        casez_tmp_69 = _rob_io_entries_10_valid;
-      5'b01011:
-        casez_tmp_69 = _rob_io_entries_11_valid;
-      5'b01100:
-        casez_tmp_69 = _rob_io_entries_12_valid;
-      5'b01101:
-        casez_tmp_69 = _rob_io_entries_13_valid;
-      5'b01110:
-        casez_tmp_69 = _rob_io_entries_14_valid;
-      5'b01111:
-        casez_tmp_69 = _rob_io_entries_15_valid;
-      5'b10000:
-        casez_tmp_69 = _rob_io_entries_16_valid;
-      5'b10001:
-        casez_tmp_69 = _rob_io_entries_17_valid;
-      5'b10010:
-        casez_tmp_69 = _rob_io_entries_18_valid;
-      5'b10011:
-        casez_tmp_69 = _rob_io_entries_19_valid;
-      5'b10100:
-        casez_tmp_69 = _rob_io_entries_20_valid;
-      5'b10101:
-        casez_tmp_69 = _rob_io_entries_21_valid;
-      5'b10110:
-        casez_tmp_69 = _rob_io_entries_22_valid;
-      5'b10111:
-        casez_tmp_69 = _rob_io_entries_23_valid;
-      5'b11000:
-        casez_tmp_69 = _rob_io_entries_24_valid;
-      5'b11001:
-        casez_tmp_69 = _rob_io_entries_25_valid;
-      5'b11010:
-        casez_tmp_69 = _rob_io_entries_26_valid;
-      5'b11011:
-        casez_tmp_69 = _rob_io_entries_27_valid;
-      5'b11100:
-        casez_tmp_69 = _rob_io_entries_28_valid;
-      5'b11101:
-        casez_tmp_69 = _rob_io_entries_29_valid;
-      5'b11110:
-        casez_tmp_69 = _rob_io_entries_30_valid;
-      default:
-        casez_tmp_69 = _rob_io_entries_31_valid;
-    endcase
-  end // always_comb
-  reg          casez_tmp_70;
-  always_comb begin
-    casez (_idx_T_66)
-      5'b00000:
-        casez_tmp_70 = _rob_io_entries_0_reg_write;
-      5'b00001:
-        casez_tmp_70 = _rob_io_entries_1_reg_write;
-      5'b00010:
-        casez_tmp_70 = _rob_io_entries_2_reg_write;
-      5'b00011:
-        casez_tmp_70 = _rob_io_entries_3_reg_write;
-      5'b00100:
-        casez_tmp_70 = _rob_io_entries_4_reg_write;
-      5'b00101:
-        casez_tmp_70 = _rob_io_entries_5_reg_write;
-      5'b00110:
-        casez_tmp_70 = _rob_io_entries_6_reg_write;
-      5'b00111:
-        casez_tmp_70 = _rob_io_entries_7_reg_write;
-      5'b01000:
-        casez_tmp_70 = _rob_io_entries_8_reg_write;
-      5'b01001:
-        casez_tmp_70 = _rob_io_entries_9_reg_write;
-      5'b01010:
-        casez_tmp_70 = _rob_io_entries_10_reg_write;
-      5'b01011:
-        casez_tmp_70 = _rob_io_entries_11_reg_write;
-      5'b01100:
-        casez_tmp_70 = _rob_io_entries_12_reg_write;
-      5'b01101:
-        casez_tmp_70 = _rob_io_entries_13_reg_write;
-      5'b01110:
-        casez_tmp_70 = _rob_io_entries_14_reg_write;
-      5'b01111:
-        casez_tmp_70 = _rob_io_entries_15_reg_write;
-      5'b10000:
-        casez_tmp_70 = _rob_io_entries_16_reg_write;
-      5'b10001:
-        casez_tmp_70 = _rob_io_entries_17_reg_write;
-      5'b10010:
-        casez_tmp_70 = _rob_io_entries_18_reg_write;
-      5'b10011:
-        casez_tmp_70 = _rob_io_entries_19_reg_write;
-      5'b10100:
-        casez_tmp_70 = _rob_io_entries_20_reg_write;
-      5'b10101:
-        casez_tmp_70 = _rob_io_entries_21_reg_write;
-      5'b10110:
-        casez_tmp_70 = _rob_io_entries_22_reg_write;
-      5'b10111:
-        casez_tmp_70 = _rob_io_entries_23_reg_write;
-      5'b11000:
-        casez_tmp_70 = _rob_io_entries_24_reg_write;
-      5'b11001:
-        casez_tmp_70 = _rob_io_entries_25_reg_write;
-      5'b11010:
-        casez_tmp_70 = _rob_io_entries_26_reg_write;
-      5'b11011:
-        casez_tmp_70 = _rob_io_entries_27_reg_write;
-      5'b11100:
-        casez_tmp_70 = _rob_io_entries_28_reg_write;
-      5'b11101:
-        casez_tmp_70 = _rob_io_entries_29_reg_write;
-      5'b11110:
-        casez_tmp_70 = _rob_io_entries_30_reg_write;
-      default:
-        casez_tmp_70 = _rob_io_entries_31_reg_write;
-    endcase
-  end // always_comb
-  reg  [4:0]   casez_tmp_71;
-  always_comb begin
-    casez (_idx_T_66)
-      5'b00000:
-        casez_tmp_71 = _rob_io_entries_0_arch_rd;
-      5'b00001:
-        casez_tmp_71 = _rob_io_entries_1_arch_rd;
-      5'b00010:
-        casez_tmp_71 = _rob_io_entries_2_arch_rd;
-      5'b00011:
-        casez_tmp_71 = _rob_io_entries_3_arch_rd;
-      5'b00100:
-        casez_tmp_71 = _rob_io_entries_4_arch_rd;
-      5'b00101:
-        casez_tmp_71 = _rob_io_entries_5_arch_rd;
-      5'b00110:
-        casez_tmp_71 = _rob_io_entries_6_arch_rd;
-      5'b00111:
-        casez_tmp_71 = _rob_io_entries_7_arch_rd;
-      5'b01000:
-        casez_tmp_71 = _rob_io_entries_8_arch_rd;
-      5'b01001:
-        casez_tmp_71 = _rob_io_entries_9_arch_rd;
-      5'b01010:
-        casez_tmp_71 = _rob_io_entries_10_arch_rd;
-      5'b01011:
-        casez_tmp_71 = _rob_io_entries_11_arch_rd;
-      5'b01100:
-        casez_tmp_71 = _rob_io_entries_12_arch_rd;
-      5'b01101:
-        casez_tmp_71 = _rob_io_entries_13_arch_rd;
-      5'b01110:
-        casez_tmp_71 = _rob_io_entries_14_arch_rd;
-      5'b01111:
-        casez_tmp_71 = _rob_io_entries_15_arch_rd;
-      5'b10000:
-        casez_tmp_71 = _rob_io_entries_16_arch_rd;
-      5'b10001:
-        casez_tmp_71 = _rob_io_entries_17_arch_rd;
-      5'b10010:
-        casez_tmp_71 = _rob_io_entries_18_arch_rd;
-      5'b10011:
-        casez_tmp_71 = _rob_io_entries_19_arch_rd;
-      5'b10100:
-        casez_tmp_71 = _rob_io_entries_20_arch_rd;
-      5'b10101:
-        casez_tmp_71 = _rob_io_entries_21_arch_rd;
-      5'b10110:
-        casez_tmp_71 = _rob_io_entries_22_arch_rd;
-      5'b10111:
-        casez_tmp_71 = _rob_io_entries_23_arch_rd;
-      5'b11000:
-        casez_tmp_71 = _rob_io_entries_24_arch_rd;
-      5'b11001:
-        casez_tmp_71 = _rob_io_entries_25_arch_rd;
-      5'b11010:
-        casez_tmp_71 = _rob_io_entries_26_arch_rd;
-      5'b11011:
-        casez_tmp_71 = _rob_io_entries_27_arch_rd;
-      5'b11100:
-        casez_tmp_71 = _rob_io_entries_28_arch_rd;
-      5'b11101:
-        casez_tmp_71 = _rob_io_entries_29_arch_rd;
-      5'b11110:
-        casez_tmp_71 = _rob_io_entries_30_arch_rd;
-      default:
-        casez_tmp_71 = _rob_io_entries_31_arch_rd;
-    endcase
-  end // always_comb
-  reg  [5:0]   casez_tmp_72;
-  always_comb begin
-    casez (_idx_T_66)
-      5'b00000:
-        casez_tmp_72 = _rob_io_entries_0_new_phys;
-      5'b00001:
-        casez_tmp_72 = _rob_io_entries_1_new_phys;
-      5'b00010:
-        casez_tmp_72 = _rob_io_entries_2_new_phys;
-      5'b00011:
-        casez_tmp_72 = _rob_io_entries_3_new_phys;
-      5'b00100:
-        casez_tmp_72 = _rob_io_entries_4_new_phys;
-      5'b00101:
-        casez_tmp_72 = _rob_io_entries_5_new_phys;
-      5'b00110:
-        casez_tmp_72 = _rob_io_entries_6_new_phys;
-      5'b00111:
-        casez_tmp_72 = _rob_io_entries_7_new_phys;
-      5'b01000:
-        casez_tmp_72 = _rob_io_entries_8_new_phys;
-      5'b01001:
-        casez_tmp_72 = _rob_io_entries_9_new_phys;
-      5'b01010:
-        casez_tmp_72 = _rob_io_entries_10_new_phys;
-      5'b01011:
-        casez_tmp_72 = _rob_io_entries_11_new_phys;
-      5'b01100:
-        casez_tmp_72 = _rob_io_entries_12_new_phys;
-      5'b01101:
-        casez_tmp_72 = _rob_io_entries_13_new_phys;
-      5'b01110:
-        casez_tmp_72 = _rob_io_entries_14_new_phys;
-      5'b01111:
-        casez_tmp_72 = _rob_io_entries_15_new_phys;
-      5'b10000:
-        casez_tmp_72 = _rob_io_entries_16_new_phys;
-      5'b10001:
-        casez_tmp_72 = _rob_io_entries_17_new_phys;
-      5'b10010:
-        casez_tmp_72 = _rob_io_entries_18_new_phys;
-      5'b10011:
-        casez_tmp_72 = _rob_io_entries_19_new_phys;
-      5'b10100:
-        casez_tmp_72 = _rob_io_entries_20_new_phys;
-      5'b10101:
-        casez_tmp_72 = _rob_io_entries_21_new_phys;
-      5'b10110:
-        casez_tmp_72 = _rob_io_entries_22_new_phys;
-      5'b10111:
-        casez_tmp_72 = _rob_io_entries_23_new_phys;
-      5'b11000:
-        casez_tmp_72 = _rob_io_entries_24_new_phys;
-      5'b11001:
-        casez_tmp_72 = _rob_io_entries_25_new_phys;
-      5'b11010:
-        casez_tmp_72 = _rob_io_entries_26_new_phys;
-      5'b11011:
-        casez_tmp_72 = _rob_io_entries_27_new_phys;
-      5'b11100:
-        casez_tmp_72 = _rob_io_entries_28_new_phys;
-      5'b11101:
-        casez_tmp_72 = _rob_io_entries_29_new_phys;
-      5'b11110:
-        casez_tmp_72 = _rob_io_entries_30_new_phys;
-      default:
-        casez_tmp_72 = _rob_io_entries_31_new_phys;
-    endcase
-  end // always_comb
-  wire         take_1 = (|(kept_n[5:1])) & casez_tmp_69 & casez_tmp_70 & (|casez_tmp_71);
-  wire [4:0]   _idx_T_68 = idx + 5'h2;
-  wire         _take_T_136 = kept_n > 6'h2;
   reg          casez_tmp_73;
   always_comb begin
-    casez (_idx_T_68)
+    casez (idx)
       5'b00000:
         casez_tmp_73 = _rob_io_entries_0_valid;
       5'b00001:
@@ -9212,7 +9207,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_74;
   always_comb begin
-    casez (_idx_T_68)
+    casez (idx)
       5'b00000:
         casez_tmp_74 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -9281,7 +9276,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_75;
   always_comb begin
-    casez (_idx_T_68)
+    casez (idx)
       5'b00000:
         casez_tmp_75 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -9350,7 +9345,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_76;
   always_comb begin
-    casez (_idx_T_68)
+    casez (idx)
       5'b00000:
         casez_tmp_76 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -9417,11 +9412,11 @@ module Core(
         casez_tmp_76 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_2 = _take_T_136 & casez_tmp_73 & casez_tmp_74 & (|casez_tmp_75);
-  wire [4:0]   _idx_T_70 = idx + 5'h3;
+  wire         take = (|kept_n) & casez_tmp_73 & casez_tmp_74 & (|casez_tmp_75);
+  wire [4:0]   _idx_T_66 = idx + 5'h1;
   reg          casez_tmp_77;
   always_comb begin
-    casez (_idx_T_70)
+    casez (_idx_T_66)
       5'b00000:
         casez_tmp_77 = _rob_io_entries_0_valid;
       5'b00001:
@@ -9490,7 +9485,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_78;
   always_comb begin
-    casez (_idx_T_70)
+    casez (_idx_T_66)
       5'b00000:
         casez_tmp_78 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -9559,7 +9554,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_79;
   always_comb begin
-    casez (_idx_T_70)
+    casez (_idx_T_66)
       5'b00000:
         casez_tmp_79 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -9628,7 +9623,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_80;
   always_comb begin
-    casez (_idx_T_70)
+    casez (_idx_T_66)
       5'b00000:
         casez_tmp_80 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -9695,12 +9690,12 @@ module Core(
         casez_tmp_80 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_3 = (|(kept_n[5:2])) & casez_tmp_77 & casez_tmp_78 & (|casez_tmp_79);
-  wire [4:0]   _idx_T_72 = idx + 5'h4;
-  wire         _take_T_144 = kept_n > 6'h4;
+  wire         take_1 = (|(kept_n[5:1])) & casez_tmp_77 & casez_tmp_78 & (|casez_tmp_79);
+  wire [4:0]   _idx_T_68 = idx + 5'h2;
+  wire         _take_T_136 = kept_n > 6'h2;
   reg          casez_tmp_81;
   always_comb begin
-    casez (_idx_T_72)
+    casez (_idx_T_68)
       5'b00000:
         casez_tmp_81 = _rob_io_entries_0_valid;
       5'b00001:
@@ -9769,7 +9764,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_82;
   always_comb begin
-    casez (_idx_T_72)
+    casez (_idx_T_68)
       5'b00000:
         casez_tmp_82 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -9838,7 +9833,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_83;
   always_comb begin
-    casez (_idx_T_72)
+    casez (_idx_T_68)
       5'b00000:
         casez_tmp_83 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -9907,7 +9902,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_84;
   always_comb begin
-    casez (_idx_T_72)
+    casez (_idx_T_68)
       5'b00000:
         casez_tmp_84 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -9974,12 +9969,11 @@ module Core(
         casez_tmp_84 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_4 = _take_T_144 & casez_tmp_81 & casez_tmp_82 & (|casez_tmp_83);
-  wire [4:0]   _idx_T_74 = idx + 5'h5;
-  wire         _take_T_148 = kept_n > 6'h5;
+  wire         take_2 = _take_T_136 & casez_tmp_81 & casez_tmp_82 & (|casez_tmp_83);
+  wire [4:0]   _idx_T_70 = idx + 5'h3;
   reg          casez_tmp_85;
   always_comb begin
-    casez (_idx_T_74)
+    casez (_idx_T_70)
       5'b00000:
         casez_tmp_85 = _rob_io_entries_0_valid;
       5'b00001:
@@ -10048,7 +10042,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_86;
   always_comb begin
-    casez (_idx_T_74)
+    casez (_idx_T_70)
       5'b00000:
         casez_tmp_86 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -10117,7 +10111,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_87;
   always_comb begin
-    casez (_idx_T_74)
+    casez (_idx_T_70)
       5'b00000:
         casez_tmp_87 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -10186,7 +10180,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_88;
   always_comb begin
-    casez (_idx_T_74)
+    casez (_idx_T_70)
       5'b00000:
         casez_tmp_88 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -10253,12 +10247,12 @@ module Core(
         casez_tmp_88 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_5 = _take_T_148 & casez_tmp_85 & casez_tmp_86 & (|casez_tmp_87);
-  wire [4:0]   _idx_T_76 = idx + 5'h6;
-  wire         _take_T_152 = kept_n > 6'h6;
+  wire         take_3 = (|(kept_n[5:2])) & casez_tmp_85 & casez_tmp_86 & (|casez_tmp_87);
+  wire [4:0]   _idx_T_72 = idx + 5'h4;
+  wire         _take_T_144 = kept_n > 6'h4;
   reg          casez_tmp_89;
   always_comb begin
-    casez (_idx_T_76)
+    casez (_idx_T_72)
       5'b00000:
         casez_tmp_89 = _rob_io_entries_0_valid;
       5'b00001:
@@ -10327,7 +10321,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_90;
   always_comb begin
-    casez (_idx_T_76)
+    casez (_idx_T_72)
       5'b00000:
         casez_tmp_90 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -10396,7 +10390,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_91;
   always_comb begin
-    casez (_idx_T_76)
+    casez (_idx_T_72)
       5'b00000:
         casez_tmp_91 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -10465,7 +10459,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_92;
   always_comb begin
-    casez (_idx_T_76)
+    casez (_idx_T_72)
       5'b00000:
         casez_tmp_92 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -10532,11 +10526,12 @@ module Core(
         casez_tmp_92 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_6 = _take_T_152 & casez_tmp_89 & casez_tmp_90 & (|casez_tmp_91);
-  wire [4:0]   _idx_T_78 = idx + 5'h7;
+  wire         take_4 = _take_T_144 & casez_tmp_89 & casez_tmp_90 & (|casez_tmp_91);
+  wire [4:0]   _idx_T_74 = idx + 5'h5;
+  wire         _take_T_148 = kept_n > 6'h5;
   reg          casez_tmp_93;
   always_comb begin
-    casez (_idx_T_78)
+    casez (_idx_T_74)
       5'b00000:
         casez_tmp_93 = _rob_io_entries_0_valid;
       5'b00001:
@@ -10605,7 +10600,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_94;
   always_comb begin
-    casez (_idx_T_78)
+    casez (_idx_T_74)
       5'b00000:
         casez_tmp_94 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -10674,7 +10669,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_95;
   always_comb begin
-    casez (_idx_T_78)
+    casez (_idx_T_74)
       5'b00000:
         casez_tmp_95 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -10743,7 +10738,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_96;
   always_comb begin
-    casez (_idx_T_78)
+    casez (_idx_T_74)
       5'b00000:
         casez_tmp_96 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -10810,12 +10805,12 @@ module Core(
         casez_tmp_96 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_7 = (|(kept_n[5:3])) & casez_tmp_93 & casez_tmp_94 & (|casez_tmp_95);
-  wire [4:0]   _idx_T_80 = idx + 5'h8;
-  wire         _take_T_160 = kept_n > 6'h8;
+  wire         take_5 = _take_T_148 & casez_tmp_93 & casez_tmp_94 & (|casez_tmp_95);
+  wire [4:0]   _idx_T_76 = idx + 5'h6;
+  wire         _take_T_152 = kept_n > 6'h6;
   reg          casez_tmp_97;
   always_comb begin
-    casez (_idx_T_80)
+    casez (_idx_T_76)
       5'b00000:
         casez_tmp_97 = _rob_io_entries_0_valid;
       5'b00001:
@@ -10884,7 +10879,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_98;
   always_comb begin
-    casez (_idx_T_80)
+    casez (_idx_T_76)
       5'b00000:
         casez_tmp_98 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -10953,7 +10948,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_99;
   always_comb begin
-    casez (_idx_T_80)
+    casez (_idx_T_76)
       5'b00000:
         casez_tmp_99 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -11022,7 +11017,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_100;
   always_comb begin
-    casez (_idx_T_80)
+    casez (_idx_T_76)
       5'b00000:
         casez_tmp_100 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -11089,12 +11084,11 @@ module Core(
         casez_tmp_100 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_8 = _take_T_160 & casez_tmp_97 & casez_tmp_98 & (|casez_tmp_99);
-  wire [4:0]   _idx_T_82 = idx + 5'h9;
-  wire         _take_T_164 = kept_n > 6'h9;
+  wire         take_6 = _take_T_152 & casez_tmp_97 & casez_tmp_98 & (|casez_tmp_99);
+  wire [4:0]   _idx_T_78 = idx + 5'h7;
   reg          casez_tmp_101;
   always_comb begin
-    casez (_idx_T_82)
+    casez (_idx_T_78)
       5'b00000:
         casez_tmp_101 = _rob_io_entries_0_valid;
       5'b00001:
@@ -11163,7 +11157,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_102;
   always_comb begin
-    casez (_idx_T_82)
+    casez (_idx_T_78)
       5'b00000:
         casez_tmp_102 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -11232,7 +11226,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_103;
   always_comb begin
-    casez (_idx_T_82)
+    casez (_idx_T_78)
       5'b00000:
         casez_tmp_103 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -11301,7 +11295,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_104;
   always_comb begin
-    casez (_idx_T_82)
+    casez (_idx_T_78)
       5'b00000:
         casez_tmp_104 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -11368,12 +11362,13 @@ module Core(
         casez_tmp_104 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_9 = _take_T_164 & casez_tmp_101 & casez_tmp_102 & (|casez_tmp_103);
-  wire [4:0]   _idx_T_84 = idx + 5'hA;
-  wire         _take_T_168 = kept_n > 6'hA;
+  wire         take_7 =
+    (|(kept_n[5:3])) & casez_tmp_101 & casez_tmp_102 & (|casez_tmp_103);
+  wire [4:0]   _idx_T_80 = idx + 5'h8;
+  wire         _take_T_160 = kept_n > 6'h8;
   reg          casez_tmp_105;
   always_comb begin
-    casez (_idx_T_84)
+    casez (_idx_T_80)
       5'b00000:
         casez_tmp_105 = _rob_io_entries_0_valid;
       5'b00001:
@@ -11442,7 +11437,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_106;
   always_comb begin
-    casez (_idx_T_84)
+    casez (_idx_T_80)
       5'b00000:
         casez_tmp_106 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -11511,7 +11506,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_107;
   always_comb begin
-    casez (_idx_T_84)
+    casez (_idx_T_80)
       5'b00000:
         casez_tmp_107 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -11580,7 +11575,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_108;
   always_comb begin
-    casez (_idx_T_84)
+    casez (_idx_T_80)
       5'b00000:
         casez_tmp_108 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -11647,12 +11642,12 @@ module Core(
         casez_tmp_108 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_10 = _take_T_168 & casez_tmp_105 & casez_tmp_106 & (|casez_tmp_107);
-  wire [4:0]   _idx_T_86 = idx + 5'hB;
-  wire         _take_T_172 = kept_n > 6'hB;
+  wire         take_8 = _take_T_160 & casez_tmp_105 & casez_tmp_106 & (|casez_tmp_107);
+  wire [4:0]   _idx_T_82 = idx + 5'h9;
+  wire         _take_T_164 = kept_n > 6'h9;
   reg          casez_tmp_109;
   always_comb begin
-    casez (_idx_T_86)
+    casez (_idx_T_82)
       5'b00000:
         casez_tmp_109 = _rob_io_entries_0_valid;
       5'b00001:
@@ -11721,7 +11716,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_110;
   always_comb begin
-    casez (_idx_T_86)
+    casez (_idx_T_82)
       5'b00000:
         casez_tmp_110 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -11790,7 +11785,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_111;
   always_comb begin
-    casez (_idx_T_86)
+    casez (_idx_T_82)
       5'b00000:
         casez_tmp_111 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -11859,7 +11854,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_112;
   always_comb begin
-    casez (_idx_T_86)
+    casez (_idx_T_82)
       5'b00000:
         casez_tmp_112 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -11926,12 +11921,12 @@ module Core(
         casez_tmp_112 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_11 = _take_T_172 & casez_tmp_109 & casez_tmp_110 & (|casez_tmp_111);
-  wire [4:0]   _idx_T_88 = idx + 5'hC;
-  wire         _take_T_176 = kept_n > 6'hC;
+  wire         take_9 = _take_T_164 & casez_tmp_109 & casez_tmp_110 & (|casez_tmp_111);
+  wire [4:0]   _idx_T_84 = idx + 5'hA;
+  wire         _take_T_168 = kept_n > 6'hA;
   reg          casez_tmp_113;
   always_comb begin
-    casez (_idx_T_88)
+    casez (_idx_T_84)
       5'b00000:
         casez_tmp_113 = _rob_io_entries_0_valid;
       5'b00001:
@@ -12000,7 +11995,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_114;
   always_comb begin
-    casez (_idx_T_88)
+    casez (_idx_T_84)
       5'b00000:
         casez_tmp_114 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -12069,7 +12064,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_115;
   always_comb begin
-    casez (_idx_T_88)
+    casez (_idx_T_84)
       5'b00000:
         casez_tmp_115 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -12138,7 +12133,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_116;
   always_comb begin
-    casez (_idx_T_88)
+    casez (_idx_T_84)
       5'b00000:
         casez_tmp_116 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -12205,12 +12200,12 @@ module Core(
         casez_tmp_116 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_12 = _take_T_176 & casez_tmp_113 & casez_tmp_114 & (|casez_tmp_115);
-  wire [4:0]   _idx_T_90 = idx + 5'hD;
-  wire         _take_T_180 = kept_n > 6'hD;
+  wire         take_10 = _take_T_168 & casez_tmp_113 & casez_tmp_114 & (|casez_tmp_115);
+  wire [4:0]   _idx_T_86 = idx + 5'hB;
+  wire         _take_T_172 = kept_n > 6'hB;
   reg          casez_tmp_117;
   always_comb begin
-    casez (_idx_T_90)
+    casez (_idx_T_86)
       5'b00000:
         casez_tmp_117 = _rob_io_entries_0_valid;
       5'b00001:
@@ -12279,7 +12274,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_118;
   always_comb begin
-    casez (_idx_T_90)
+    casez (_idx_T_86)
       5'b00000:
         casez_tmp_118 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -12348,7 +12343,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_119;
   always_comb begin
-    casez (_idx_T_90)
+    casez (_idx_T_86)
       5'b00000:
         casez_tmp_119 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -12417,7 +12412,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_120;
   always_comb begin
-    casez (_idx_T_90)
+    casez (_idx_T_86)
       5'b00000:
         casez_tmp_120 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -12484,12 +12479,12 @@ module Core(
         casez_tmp_120 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_13 = _take_T_180 & casez_tmp_117 & casez_tmp_118 & (|casez_tmp_119);
-  wire [4:0]   _idx_T_92 = idx + 5'hE;
-  wire         _take_T_184 = kept_n > 6'hE;
+  wire         take_11 = _take_T_172 & casez_tmp_117 & casez_tmp_118 & (|casez_tmp_119);
+  wire [4:0]   _idx_T_88 = idx + 5'hC;
+  wire         _take_T_176 = kept_n > 6'hC;
   reg          casez_tmp_121;
   always_comb begin
-    casez (_idx_T_92)
+    casez (_idx_T_88)
       5'b00000:
         casez_tmp_121 = _rob_io_entries_0_valid;
       5'b00001:
@@ -12558,7 +12553,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_122;
   always_comb begin
-    casez (_idx_T_92)
+    casez (_idx_T_88)
       5'b00000:
         casez_tmp_122 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -12627,7 +12622,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_123;
   always_comb begin
-    casez (_idx_T_92)
+    casez (_idx_T_88)
       5'b00000:
         casez_tmp_123 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -12696,7 +12691,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_124;
   always_comb begin
-    casez (_idx_T_92)
+    casez (_idx_T_88)
       5'b00000:
         casez_tmp_124 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -12763,11 +12758,12 @@ module Core(
         casez_tmp_124 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_14 = _take_T_184 & casez_tmp_121 & casez_tmp_122 & (|casez_tmp_123);
-  wire [4:0]   _idx_T_94 = idx + 5'hF;
+  wire         take_12 = _take_T_176 & casez_tmp_121 & casez_tmp_122 & (|casez_tmp_123);
+  wire [4:0]   _idx_T_90 = idx + 5'hD;
+  wire         _take_T_180 = kept_n > 6'hD;
   reg          casez_tmp_125;
   always_comb begin
-    casez (_idx_T_94)
+    casez (_idx_T_90)
       5'b00000:
         casez_tmp_125 = _rob_io_entries_0_valid;
       5'b00001:
@@ -12836,7 +12832,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_126;
   always_comb begin
-    casez (_idx_T_94)
+    casez (_idx_T_90)
       5'b00000:
         casez_tmp_126 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -12905,7 +12901,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_127;
   always_comb begin
-    casez (_idx_T_94)
+    casez (_idx_T_90)
       5'b00000:
         casez_tmp_127 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -12974,7 +12970,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_128;
   always_comb begin
-    casez (_idx_T_94)
+    casez (_idx_T_90)
       5'b00000:
         casez_tmp_128 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -13041,13 +13037,12 @@ module Core(
         casez_tmp_128 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_15 =
-    (|(kept_n[5:4])) & casez_tmp_125 & casez_tmp_126 & (|casez_tmp_127);
-  wire [4:0]   _idx_T_96 = idx - 5'h10;
-  wire         _take_T_192 = kept_n > 6'h10;
+  wire         take_13 = _take_T_180 & casez_tmp_125 & casez_tmp_126 & (|casez_tmp_127);
+  wire [4:0]   _idx_T_92 = idx + 5'hE;
+  wire         _take_T_184 = kept_n > 6'hE;
   reg          casez_tmp_129;
   always_comb begin
-    casez (_idx_T_96)
+    casez (_idx_T_92)
       5'b00000:
         casez_tmp_129 = _rob_io_entries_0_valid;
       5'b00001:
@@ -13116,7 +13111,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_130;
   always_comb begin
-    casez (_idx_T_96)
+    casez (_idx_T_92)
       5'b00000:
         casez_tmp_130 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -13185,7 +13180,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_131;
   always_comb begin
-    casez (_idx_T_96)
+    casez (_idx_T_92)
       5'b00000:
         casez_tmp_131 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -13254,7 +13249,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_132;
   always_comb begin
-    casez (_idx_T_96)
+    casez (_idx_T_92)
       5'b00000:
         casez_tmp_132 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -13321,12 +13316,11 @@ module Core(
         casez_tmp_132 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_16 = _take_T_192 & casez_tmp_129 & casez_tmp_130 & (|casez_tmp_131);
-  wire [4:0]   _idx_T_98 = idx - 5'hF;
-  wire         _take_T_196 = kept_n > 6'h11;
+  wire         take_14 = _take_T_184 & casez_tmp_129 & casez_tmp_130 & (|casez_tmp_131);
+  wire [4:0]   _idx_T_94 = idx + 5'hF;
   reg          casez_tmp_133;
   always_comb begin
-    casez (_idx_T_98)
+    casez (_idx_T_94)
       5'b00000:
         casez_tmp_133 = _rob_io_entries_0_valid;
       5'b00001:
@@ -13395,7 +13389,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_134;
   always_comb begin
-    casez (_idx_T_98)
+    casez (_idx_T_94)
       5'b00000:
         casez_tmp_134 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -13464,7 +13458,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_135;
   always_comb begin
-    casez (_idx_T_98)
+    casez (_idx_T_94)
       5'b00000:
         casez_tmp_135 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -13533,7 +13527,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_136;
   always_comb begin
-    casez (_idx_T_98)
+    casez (_idx_T_94)
       5'b00000:
         casez_tmp_136 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -13600,12 +13594,13 @@ module Core(
         casez_tmp_136 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_17 = _take_T_196 & casez_tmp_133 & casez_tmp_134 & (|casez_tmp_135);
-  wire [4:0]   _idx_T_100 = idx - 5'hE;
-  wire         _take_T_200 = kept_n > 6'h12;
+  wire         take_15 =
+    (|(kept_n[5:4])) & casez_tmp_133 & casez_tmp_134 & (|casez_tmp_135);
+  wire [4:0]   _idx_T_96 = idx - 5'h10;
+  wire         _take_T_192 = kept_n > 6'h10;
   reg          casez_tmp_137;
   always_comb begin
-    casez (_idx_T_100)
+    casez (_idx_T_96)
       5'b00000:
         casez_tmp_137 = _rob_io_entries_0_valid;
       5'b00001:
@@ -13674,7 +13669,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_138;
   always_comb begin
-    casez (_idx_T_100)
+    casez (_idx_T_96)
       5'b00000:
         casez_tmp_138 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -13743,7 +13738,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_139;
   always_comb begin
-    casez (_idx_T_100)
+    casez (_idx_T_96)
       5'b00000:
         casez_tmp_139 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -13812,7 +13807,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_140;
   always_comb begin
-    casez (_idx_T_100)
+    casez (_idx_T_96)
       5'b00000:
         casez_tmp_140 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -13879,12 +13874,12 @@ module Core(
         casez_tmp_140 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_18 = _take_T_200 & casez_tmp_137 & casez_tmp_138 & (|casez_tmp_139);
-  wire [4:0]   _idx_T_102 = idx - 5'hD;
-  wire         _take_T_204 = kept_n > 6'h13;
+  wire         take_16 = _take_T_192 & casez_tmp_137 & casez_tmp_138 & (|casez_tmp_139);
+  wire [4:0]   _idx_T_98 = idx - 5'hF;
+  wire         _take_T_196 = kept_n > 6'h11;
   reg          casez_tmp_141;
   always_comb begin
-    casez (_idx_T_102)
+    casez (_idx_T_98)
       5'b00000:
         casez_tmp_141 = _rob_io_entries_0_valid;
       5'b00001:
@@ -13953,7 +13948,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_142;
   always_comb begin
-    casez (_idx_T_102)
+    casez (_idx_T_98)
       5'b00000:
         casez_tmp_142 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -14022,7 +14017,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_143;
   always_comb begin
-    casez (_idx_T_102)
+    casez (_idx_T_98)
       5'b00000:
         casez_tmp_143 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -14091,7 +14086,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_144;
   always_comb begin
-    casez (_idx_T_102)
+    casez (_idx_T_98)
       5'b00000:
         casez_tmp_144 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -14158,12 +14153,12 @@ module Core(
         casez_tmp_144 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_19 = _take_T_204 & casez_tmp_141 & casez_tmp_142 & (|casez_tmp_143);
-  wire [4:0]   _idx_T_104 = idx - 5'hC;
-  wire         _take_T_208 = kept_n > 6'h14;
+  wire         take_17 = _take_T_196 & casez_tmp_141 & casez_tmp_142 & (|casez_tmp_143);
+  wire [4:0]   _idx_T_100 = idx - 5'hE;
+  wire         _take_T_200 = kept_n > 6'h12;
   reg          casez_tmp_145;
   always_comb begin
-    casez (_idx_T_104)
+    casez (_idx_T_100)
       5'b00000:
         casez_tmp_145 = _rob_io_entries_0_valid;
       5'b00001:
@@ -14232,7 +14227,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_146;
   always_comb begin
-    casez (_idx_T_104)
+    casez (_idx_T_100)
       5'b00000:
         casez_tmp_146 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -14301,7 +14296,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_147;
   always_comb begin
-    casez (_idx_T_104)
+    casez (_idx_T_100)
       5'b00000:
         casez_tmp_147 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -14370,7 +14365,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_148;
   always_comb begin
-    casez (_idx_T_104)
+    casez (_idx_T_100)
       5'b00000:
         casez_tmp_148 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -14437,12 +14432,12 @@ module Core(
         casez_tmp_148 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_20 = _take_T_208 & casez_tmp_145 & casez_tmp_146 & (|casez_tmp_147);
-  wire [4:0]   _idx_T_106 = idx - 5'hB;
-  wire         _take_T_212 = kept_n > 6'h15;
+  wire         take_18 = _take_T_200 & casez_tmp_145 & casez_tmp_146 & (|casez_tmp_147);
+  wire [4:0]   _idx_T_102 = idx - 5'hD;
+  wire         _take_T_204 = kept_n > 6'h13;
   reg          casez_tmp_149;
   always_comb begin
-    casez (_idx_T_106)
+    casez (_idx_T_102)
       5'b00000:
         casez_tmp_149 = _rob_io_entries_0_valid;
       5'b00001:
@@ -14511,7 +14506,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_150;
   always_comb begin
-    casez (_idx_T_106)
+    casez (_idx_T_102)
       5'b00000:
         casez_tmp_150 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -14580,7 +14575,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_151;
   always_comb begin
-    casez (_idx_T_106)
+    casez (_idx_T_102)
       5'b00000:
         casez_tmp_151 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -14649,7 +14644,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_152;
   always_comb begin
-    casez (_idx_T_106)
+    casez (_idx_T_102)
       5'b00000:
         casez_tmp_152 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -14716,12 +14711,12 @@ module Core(
         casez_tmp_152 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_21 = _take_T_212 & casez_tmp_149 & casez_tmp_150 & (|casez_tmp_151);
-  wire [4:0]   _idx_T_108 = idx - 5'hA;
-  wire         _take_T_216 = kept_n > 6'h16;
+  wire         take_19 = _take_T_204 & casez_tmp_149 & casez_tmp_150 & (|casez_tmp_151);
+  wire [4:0]   _idx_T_104 = idx - 5'hC;
+  wire         _take_T_208 = kept_n > 6'h14;
   reg          casez_tmp_153;
   always_comb begin
-    casez (_idx_T_108)
+    casez (_idx_T_104)
       5'b00000:
         casez_tmp_153 = _rob_io_entries_0_valid;
       5'b00001:
@@ -14790,7 +14785,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_154;
   always_comb begin
-    casez (_idx_T_108)
+    casez (_idx_T_104)
       5'b00000:
         casez_tmp_154 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -14859,7 +14854,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_155;
   always_comb begin
-    casez (_idx_T_108)
+    casez (_idx_T_104)
       5'b00000:
         casez_tmp_155 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -14928,7 +14923,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_156;
   always_comb begin
-    casez (_idx_T_108)
+    casez (_idx_T_104)
       5'b00000:
         casez_tmp_156 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -14995,12 +14990,12 @@ module Core(
         casez_tmp_156 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_22 = _take_T_216 & casez_tmp_153 & casez_tmp_154 & (|casez_tmp_155);
-  wire [4:0]   _idx_T_110 = idx - 5'h9;
-  wire         _take_T_220 = kept_n > 6'h17;
+  wire         take_20 = _take_T_208 & casez_tmp_153 & casez_tmp_154 & (|casez_tmp_155);
+  wire [4:0]   _idx_T_106 = idx - 5'hB;
+  wire         _take_T_212 = kept_n > 6'h15;
   reg          casez_tmp_157;
   always_comb begin
-    casez (_idx_T_110)
+    casez (_idx_T_106)
       5'b00000:
         casez_tmp_157 = _rob_io_entries_0_valid;
       5'b00001:
@@ -15069,7 +15064,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_158;
   always_comb begin
-    casez (_idx_T_110)
+    casez (_idx_T_106)
       5'b00000:
         casez_tmp_158 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -15138,7 +15133,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_159;
   always_comb begin
-    casez (_idx_T_110)
+    casez (_idx_T_106)
       5'b00000:
         casez_tmp_159 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -15207,7 +15202,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_160;
   always_comb begin
-    casez (_idx_T_110)
+    casez (_idx_T_106)
       5'b00000:
         casez_tmp_160 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -15274,12 +15269,12 @@ module Core(
         casez_tmp_160 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_23 = _take_T_220 & casez_tmp_157 & casez_tmp_158 & (|casez_tmp_159);
-  wire [4:0]   _idx_T_112 = idx - 5'h8;
-  wire         _take_T_224 = kept_n > 6'h18;
+  wire         take_21 = _take_T_212 & casez_tmp_157 & casez_tmp_158 & (|casez_tmp_159);
+  wire [4:0]   _idx_T_108 = idx - 5'hA;
+  wire         _take_T_216 = kept_n > 6'h16;
   reg          casez_tmp_161;
   always_comb begin
-    casez (_idx_T_112)
+    casez (_idx_T_108)
       5'b00000:
         casez_tmp_161 = _rob_io_entries_0_valid;
       5'b00001:
@@ -15348,7 +15343,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_162;
   always_comb begin
-    casez (_idx_T_112)
+    casez (_idx_T_108)
       5'b00000:
         casez_tmp_162 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -15417,7 +15412,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_163;
   always_comb begin
-    casez (_idx_T_112)
+    casez (_idx_T_108)
       5'b00000:
         casez_tmp_163 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -15486,7 +15481,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_164;
   always_comb begin
-    casez (_idx_T_112)
+    casez (_idx_T_108)
       5'b00000:
         casez_tmp_164 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -15553,12 +15548,12 @@ module Core(
         casez_tmp_164 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_24 = _take_T_224 & casez_tmp_161 & casez_tmp_162 & (|casez_tmp_163);
-  wire [4:0]   _idx_T_114 = idx - 5'h7;
-  wire         _take_T_228 = kept_n > 6'h19;
+  wire         take_22 = _take_T_216 & casez_tmp_161 & casez_tmp_162 & (|casez_tmp_163);
+  wire [4:0]   _idx_T_110 = idx - 5'h9;
+  wire         _take_T_220 = kept_n > 6'h17;
   reg          casez_tmp_165;
   always_comb begin
-    casez (_idx_T_114)
+    casez (_idx_T_110)
       5'b00000:
         casez_tmp_165 = _rob_io_entries_0_valid;
       5'b00001:
@@ -15627,7 +15622,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_166;
   always_comb begin
-    casez (_idx_T_114)
+    casez (_idx_T_110)
       5'b00000:
         casez_tmp_166 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -15696,7 +15691,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_167;
   always_comb begin
-    casez (_idx_T_114)
+    casez (_idx_T_110)
       5'b00000:
         casez_tmp_167 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -15765,7 +15760,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_168;
   always_comb begin
-    casez (_idx_T_114)
+    casez (_idx_T_110)
       5'b00000:
         casez_tmp_168 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -15832,12 +15827,12 @@ module Core(
         casez_tmp_168 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_25 = _take_T_228 & casez_tmp_165 & casez_tmp_166 & (|casez_tmp_167);
-  wire [4:0]   _idx_T_116 = idx - 5'h6;
-  wire         _take_T_232 = kept_n > 6'h1A;
+  wire         take_23 = _take_T_220 & casez_tmp_165 & casez_tmp_166 & (|casez_tmp_167);
+  wire [4:0]   _idx_T_112 = idx - 5'h8;
+  wire         _take_T_224 = kept_n > 6'h18;
   reg          casez_tmp_169;
   always_comb begin
-    casez (_idx_T_116)
+    casez (_idx_T_112)
       5'b00000:
         casez_tmp_169 = _rob_io_entries_0_valid;
       5'b00001:
@@ -15906,7 +15901,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_170;
   always_comb begin
-    casez (_idx_T_116)
+    casez (_idx_T_112)
       5'b00000:
         casez_tmp_170 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -15975,7 +15970,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_171;
   always_comb begin
-    casez (_idx_T_116)
+    casez (_idx_T_112)
       5'b00000:
         casez_tmp_171 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -16044,7 +16039,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_172;
   always_comb begin
-    casez (_idx_T_116)
+    casez (_idx_T_112)
       5'b00000:
         casez_tmp_172 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -16111,12 +16106,12 @@ module Core(
         casez_tmp_172 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_26 = _take_T_232 & casez_tmp_169 & casez_tmp_170 & (|casez_tmp_171);
-  wire [4:0]   _idx_T_118 = idx - 5'h5;
-  wire         _take_T_236 = kept_n > 6'h1B;
+  wire         take_24 = _take_T_224 & casez_tmp_169 & casez_tmp_170 & (|casez_tmp_171);
+  wire [4:0]   _idx_T_114 = idx - 5'h7;
+  wire         _take_T_228 = kept_n > 6'h19;
   reg          casez_tmp_173;
   always_comb begin
-    casez (_idx_T_118)
+    casez (_idx_T_114)
       5'b00000:
         casez_tmp_173 = _rob_io_entries_0_valid;
       5'b00001:
@@ -16185,7 +16180,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_174;
   always_comb begin
-    casez (_idx_T_118)
+    casez (_idx_T_114)
       5'b00000:
         casez_tmp_174 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -16254,7 +16249,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_175;
   always_comb begin
-    casez (_idx_T_118)
+    casez (_idx_T_114)
       5'b00000:
         casez_tmp_175 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -16323,7 +16318,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_176;
   always_comb begin
-    casez (_idx_T_118)
+    casez (_idx_T_114)
       5'b00000:
         casez_tmp_176 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -16390,12 +16385,12 @@ module Core(
         casez_tmp_176 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_27 = _take_T_236 & casez_tmp_173 & casez_tmp_174 & (|casez_tmp_175);
-  wire [4:0]   _idx_T_120 = idx - 5'h4;
-  wire         _take_T_240 = kept_n > 6'h1C;
+  wire         take_25 = _take_T_228 & casez_tmp_173 & casez_tmp_174 & (|casez_tmp_175);
+  wire [4:0]   _idx_T_116 = idx - 5'h6;
+  wire         _take_T_232 = kept_n > 6'h1A;
   reg          casez_tmp_177;
   always_comb begin
-    casez (_idx_T_120)
+    casez (_idx_T_116)
       5'b00000:
         casez_tmp_177 = _rob_io_entries_0_valid;
       5'b00001:
@@ -16464,7 +16459,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_178;
   always_comb begin
-    casez (_idx_T_120)
+    casez (_idx_T_116)
       5'b00000:
         casez_tmp_178 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -16533,7 +16528,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_179;
   always_comb begin
-    casez (_idx_T_120)
+    casez (_idx_T_116)
       5'b00000:
         casez_tmp_179 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -16602,7 +16597,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_180;
   always_comb begin
-    casez (_idx_T_120)
+    casez (_idx_T_116)
       5'b00000:
         casez_tmp_180 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -16669,12 +16664,12 @@ module Core(
         casez_tmp_180 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_28 = _take_T_240 & casez_tmp_177 & casez_tmp_178 & (|casez_tmp_179);
-  wire [4:0]   _idx_T_122 = idx - 5'h3;
-  wire         _take_T_244 = kept_n > 6'h1D;
+  wire         take_26 = _take_T_232 & casez_tmp_177 & casez_tmp_178 & (|casez_tmp_179);
+  wire [4:0]   _idx_T_118 = idx - 5'h5;
+  wire         _take_T_236 = kept_n > 6'h1B;
   reg          casez_tmp_181;
   always_comb begin
-    casez (_idx_T_122)
+    casez (_idx_T_118)
       5'b00000:
         casez_tmp_181 = _rob_io_entries_0_valid;
       5'b00001:
@@ -16743,7 +16738,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_182;
   always_comb begin
-    casez (_idx_T_122)
+    casez (_idx_T_118)
       5'b00000:
         casez_tmp_182 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -16812,7 +16807,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_183;
   always_comb begin
-    casez (_idx_T_122)
+    casez (_idx_T_118)
       5'b00000:
         casez_tmp_183 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -16881,7 +16876,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_184;
   always_comb begin
-    casez (_idx_T_122)
+    casez (_idx_T_118)
       5'b00000:
         casez_tmp_184 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -16948,12 +16943,12 @@ module Core(
         casez_tmp_184 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_29 = _take_T_244 & casez_tmp_181 & casez_tmp_182 & (|casez_tmp_183);
-  wire [4:0]   _idx_T_124 = idx - 5'h2;
-  wire         _take_T_248 = kept_n > 6'h1E;
+  wire         take_27 = _take_T_236 & casez_tmp_181 & casez_tmp_182 & (|casez_tmp_183);
+  wire [4:0]   _idx_T_120 = idx - 5'h4;
+  wire         _take_T_240 = kept_n > 6'h1C;
   reg          casez_tmp_185;
   always_comb begin
-    casez (_idx_T_124)
+    casez (_idx_T_120)
       5'b00000:
         casez_tmp_185 = _rob_io_entries_0_valid;
       5'b00001:
@@ -17022,7 +17017,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_186;
   always_comb begin
-    casez (_idx_T_124)
+    casez (_idx_T_120)
       5'b00000:
         casez_tmp_186 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -17091,7 +17086,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_187;
   always_comb begin
-    casez (_idx_T_124)
+    casez (_idx_T_120)
       5'b00000:
         casez_tmp_187 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -17160,7 +17155,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_188;
   always_comb begin
-    casez (_idx_T_124)
+    casez (_idx_T_120)
       5'b00000:
         casez_tmp_188 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -17227,11 +17222,12 @@ module Core(
         casez_tmp_188 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_30 = _take_T_248 & casez_tmp_185 & casez_tmp_186 & (|casez_tmp_187);
-  wire [4:0]   _idx_T_126 = idx - 5'h1;
+  wire         take_28 = _take_T_240 & casez_tmp_185 & casez_tmp_186 & (|casez_tmp_187);
+  wire [4:0]   _idx_T_122 = idx - 5'h3;
+  wire         _take_T_244 = kept_n > 6'h1D;
   reg          casez_tmp_189;
   always_comb begin
-    casez (_idx_T_126)
+    casez (_idx_T_122)
       5'b00000:
         casez_tmp_189 = _rob_io_entries_0_valid;
       5'b00001:
@@ -17300,7 +17296,7 @@ module Core(
   end // always_comb
   reg          casez_tmp_190;
   always_comb begin
-    casez (_idx_T_126)
+    casez (_idx_T_122)
       5'b00000:
         casez_tmp_190 = _rob_io_entries_0_reg_write;
       5'b00001:
@@ -17369,7 +17365,7 @@ module Core(
   end // always_comb
   reg  [4:0]   casez_tmp_191;
   always_comb begin
-    casez (_idx_T_126)
+    casez (_idx_T_122)
       5'b00000:
         casez_tmp_191 = _rob_io_entries_0_arch_rd;
       5'b00001:
@@ -17438,7 +17434,7 @@ module Core(
   end // always_comb
   reg  [5:0]   casez_tmp_192;
   always_comb begin
-    casez (_idx_T_126)
+    casez (_idx_T_122)
       5'b00000:
         casez_tmp_192 = _rob_io_entries_0_new_phys;
       5'b00001:
@@ -17505,90 +17501,647 @@ module Core(
         casez_tmp_192 = _rob_io_entries_31_new_phys;
     endcase
   end // always_comb
-  wire         take_31 = kept_n[5] & casez_tmp_189 & casez_tmp_190 & (|casez_tmp_191);
+  wire         take_29 = _take_T_244 & casez_tmp_189 & casez_tmp_190 & (|casez_tmp_191);
+  wire [4:0]   _idx_T_124 = idx - 5'h2;
+  wire         _take_T_248 = kept_n > 6'h1E;
+  reg          casez_tmp_193;
+  always_comb begin
+    casez (_idx_T_124)
+      5'b00000:
+        casez_tmp_193 = _rob_io_entries_0_valid;
+      5'b00001:
+        casez_tmp_193 = _rob_io_entries_1_valid;
+      5'b00010:
+        casez_tmp_193 = _rob_io_entries_2_valid;
+      5'b00011:
+        casez_tmp_193 = _rob_io_entries_3_valid;
+      5'b00100:
+        casez_tmp_193 = _rob_io_entries_4_valid;
+      5'b00101:
+        casez_tmp_193 = _rob_io_entries_5_valid;
+      5'b00110:
+        casez_tmp_193 = _rob_io_entries_6_valid;
+      5'b00111:
+        casez_tmp_193 = _rob_io_entries_7_valid;
+      5'b01000:
+        casez_tmp_193 = _rob_io_entries_8_valid;
+      5'b01001:
+        casez_tmp_193 = _rob_io_entries_9_valid;
+      5'b01010:
+        casez_tmp_193 = _rob_io_entries_10_valid;
+      5'b01011:
+        casez_tmp_193 = _rob_io_entries_11_valid;
+      5'b01100:
+        casez_tmp_193 = _rob_io_entries_12_valid;
+      5'b01101:
+        casez_tmp_193 = _rob_io_entries_13_valid;
+      5'b01110:
+        casez_tmp_193 = _rob_io_entries_14_valid;
+      5'b01111:
+        casez_tmp_193 = _rob_io_entries_15_valid;
+      5'b10000:
+        casez_tmp_193 = _rob_io_entries_16_valid;
+      5'b10001:
+        casez_tmp_193 = _rob_io_entries_17_valid;
+      5'b10010:
+        casez_tmp_193 = _rob_io_entries_18_valid;
+      5'b10011:
+        casez_tmp_193 = _rob_io_entries_19_valid;
+      5'b10100:
+        casez_tmp_193 = _rob_io_entries_20_valid;
+      5'b10101:
+        casez_tmp_193 = _rob_io_entries_21_valid;
+      5'b10110:
+        casez_tmp_193 = _rob_io_entries_22_valid;
+      5'b10111:
+        casez_tmp_193 = _rob_io_entries_23_valid;
+      5'b11000:
+        casez_tmp_193 = _rob_io_entries_24_valid;
+      5'b11001:
+        casez_tmp_193 = _rob_io_entries_25_valid;
+      5'b11010:
+        casez_tmp_193 = _rob_io_entries_26_valid;
+      5'b11011:
+        casez_tmp_193 = _rob_io_entries_27_valid;
+      5'b11100:
+        casez_tmp_193 = _rob_io_entries_28_valid;
+      5'b11101:
+        casez_tmp_193 = _rob_io_entries_29_valid;
+      5'b11110:
+        casez_tmp_193 = _rob_io_entries_30_valid;
+      default:
+        casez_tmp_193 = _rob_io_entries_31_valid;
+    endcase
+  end // always_comb
+  reg          casez_tmp_194;
+  always_comb begin
+    casez (_idx_T_124)
+      5'b00000:
+        casez_tmp_194 = _rob_io_entries_0_reg_write;
+      5'b00001:
+        casez_tmp_194 = _rob_io_entries_1_reg_write;
+      5'b00010:
+        casez_tmp_194 = _rob_io_entries_2_reg_write;
+      5'b00011:
+        casez_tmp_194 = _rob_io_entries_3_reg_write;
+      5'b00100:
+        casez_tmp_194 = _rob_io_entries_4_reg_write;
+      5'b00101:
+        casez_tmp_194 = _rob_io_entries_5_reg_write;
+      5'b00110:
+        casez_tmp_194 = _rob_io_entries_6_reg_write;
+      5'b00111:
+        casez_tmp_194 = _rob_io_entries_7_reg_write;
+      5'b01000:
+        casez_tmp_194 = _rob_io_entries_8_reg_write;
+      5'b01001:
+        casez_tmp_194 = _rob_io_entries_9_reg_write;
+      5'b01010:
+        casez_tmp_194 = _rob_io_entries_10_reg_write;
+      5'b01011:
+        casez_tmp_194 = _rob_io_entries_11_reg_write;
+      5'b01100:
+        casez_tmp_194 = _rob_io_entries_12_reg_write;
+      5'b01101:
+        casez_tmp_194 = _rob_io_entries_13_reg_write;
+      5'b01110:
+        casez_tmp_194 = _rob_io_entries_14_reg_write;
+      5'b01111:
+        casez_tmp_194 = _rob_io_entries_15_reg_write;
+      5'b10000:
+        casez_tmp_194 = _rob_io_entries_16_reg_write;
+      5'b10001:
+        casez_tmp_194 = _rob_io_entries_17_reg_write;
+      5'b10010:
+        casez_tmp_194 = _rob_io_entries_18_reg_write;
+      5'b10011:
+        casez_tmp_194 = _rob_io_entries_19_reg_write;
+      5'b10100:
+        casez_tmp_194 = _rob_io_entries_20_reg_write;
+      5'b10101:
+        casez_tmp_194 = _rob_io_entries_21_reg_write;
+      5'b10110:
+        casez_tmp_194 = _rob_io_entries_22_reg_write;
+      5'b10111:
+        casez_tmp_194 = _rob_io_entries_23_reg_write;
+      5'b11000:
+        casez_tmp_194 = _rob_io_entries_24_reg_write;
+      5'b11001:
+        casez_tmp_194 = _rob_io_entries_25_reg_write;
+      5'b11010:
+        casez_tmp_194 = _rob_io_entries_26_reg_write;
+      5'b11011:
+        casez_tmp_194 = _rob_io_entries_27_reg_write;
+      5'b11100:
+        casez_tmp_194 = _rob_io_entries_28_reg_write;
+      5'b11101:
+        casez_tmp_194 = _rob_io_entries_29_reg_write;
+      5'b11110:
+        casez_tmp_194 = _rob_io_entries_30_reg_write;
+      default:
+        casez_tmp_194 = _rob_io_entries_31_reg_write;
+    endcase
+  end // always_comb
+  reg  [4:0]   casez_tmp_195;
+  always_comb begin
+    casez (_idx_T_124)
+      5'b00000:
+        casez_tmp_195 = _rob_io_entries_0_arch_rd;
+      5'b00001:
+        casez_tmp_195 = _rob_io_entries_1_arch_rd;
+      5'b00010:
+        casez_tmp_195 = _rob_io_entries_2_arch_rd;
+      5'b00011:
+        casez_tmp_195 = _rob_io_entries_3_arch_rd;
+      5'b00100:
+        casez_tmp_195 = _rob_io_entries_4_arch_rd;
+      5'b00101:
+        casez_tmp_195 = _rob_io_entries_5_arch_rd;
+      5'b00110:
+        casez_tmp_195 = _rob_io_entries_6_arch_rd;
+      5'b00111:
+        casez_tmp_195 = _rob_io_entries_7_arch_rd;
+      5'b01000:
+        casez_tmp_195 = _rob_io_entries_8_arch_rd;
+      5'b01001:
+        casez_tmp_195 = _rob_io_entries_9_arch_rd;
+      5'b01010:
+        casez_tmp_195 = _rob_io_entries_10_arch_rd;
+      5'b01011:
+        casez_tmp_195 = _rob_io_entries_11_arch_rd;
+      5'b01100:
+        casez_tmp_195 = _rob_io_entries_12_arch_rd;
+      5'b01101:
+        casez_tmp_195 = _rob_io_entries_13_arch_rd;
+      5'b01110:
+        casez_tmp_195 = _rob_io_entries_14_arch_rd;
+      5'b01111:
+        casez_tmp_195 = _rob_io_entries_15_arch_rd;
+      5'b10000:
+        casez_tmp_195 = _rob_io_entries_16_arch_rd;
+      5'b10001:
+        casez_tmp_195 = _rob_io_entries_17_arch_rd;
+      5'b10010:
+        casez_tmp_195 = _rob_io_entries_18_arch_rd;
+      5'b10011:
+        casez_tmp_195 = _rob_io_entries_19_arch_rd;
+      5'b10100:
+        casez_tmp_195 = _rob_io_entries_20_arch_rd;
+      5'b10101:
+        casez_tmp_195 = _rob_io_entries_21_arch_rd;
+      5'b10110:
+        casez_tmp_195 = _rob_io_entries_22_arch_rd;
+      5'b10111:
+        casez_tmp_195 = _rob_io_entries_23_arch_rd;
+      5'b11000:
+        casez_tmp_195 = _rob_io_entries_24_arch_rd;
+      5'b11001:
+        casez_tmp_195 = _rob_io_entries_25_arch_rd;
+      5'b11010:
+        casez_tmp_195 = _rob_io_entries_26_arch_rd;
+      5'b11011:
+        casez_tmp_195 = _rob_io_entries_27_arch_rd;
+      5'b11100:
+        casez_tmp_195 = _rob_io_entries_28_arch_rd;
+      5'b11101:
+        casez_tmp_195 = _rob_io_entries_29_arch_rd;
+      5'b11110:
+        casez_tmp_195 = _rob_io_entries_30_arch_rd;
+      default:
+        casez_tmp_195 = _rob_io_entries_31_arch_rd;
+    endcase
+  end // always_comb
+  reg  [5:0]   casez_tmp_196;
+  always_comb begin
+    casez (_idx_T_124)
+      5'b00000:
+        casez_tmp_196 = _rob_io_entries_0_new_phys;
+      5'b00001:
+        casez_tmp_196 = _rob_io_entries_1_new_phys;
+      5'b00010:
+        casez_tmp_196 = _rob_io_entries_2_new_phys;
+      5'b00011:
+        casez_tmp_196 = _rob_io_entries_3_new_phys;
+      5'b00100:
+        casez_tmp_196 = _rob_io_entries_4_new_phys;
+      5'b00101:
+        casez_tmp_196 = _rob_io_entries_5_new_phys;
+      5'b00110:
+        casez_tmp_196 = _rob_io_entries_6_new_phys;
+      5'b00111:
+        casez_tmp_196 = _rob_io_entries_7_new_phys;
+      5'b01000:
+        casez_tmp_196 = _rob_io_entries_8_new_phys;
+      5'b01001:
+        casez_tmp_196 = _rob_io_entries_9_new_phys;
+      5'b01010:
+        casez_tmp_196 = _rob_io_entries_10_new_phys;
+      5'b01011:
+        casez_tmp_196 = _rob_io_entries_11_new_phys;
+      5'b01100:
+        casez_tmp_196 = _rob_io_entries_12_new_phys;
+      5'b01101:
+        casez_tmp_196 = _rob_io_entries_13_new_phys;
+      5'b01110:
+        casez_tmp_196 = _rob_io_entries_14_new_phys;
+      5'b01111:
+        casez_tmp_196 = _rob_io_entries_15_new_phys;
+      5'b10000:
+        casez_tmp_196 = _rob_io_entries_16_new_phys;
+      5'b10001:
+        casez_tmp_196 = _rob_io_entries_17_new_phys;
+      5'b10010:
+        casez_tmp_196 = _rob_io_entries_18_new_phys;
+      5'b10011:
+        casez_tmp_196 = _rob_io_entries_19_new_phys;
+      5'b10100:
+        casez_tmp_196 = _rob_io_entries_20_new_phys;
+      5'b10101:
+        casez_tmp_196 = _rob_io_entries_21_new_phys;
+      5'b10110:
+        casez_tmp_196 = _rob_io_entries_22_new_phys;
+      5'b10111:
+        casez_tmp_196 = _rob_io_entries_23_new_phys;
+      5'b11000:
+        casez_tmp_196 = _rob_io_entries_24_new_phys;
+      5'b11001:
+        casez_tmp_196 = _rob_io_entries_25_new_phys;
+      5'b11010:
+        casez_tmp_196 = _rob_io_entries_26_new_phys;
+      5'b11011:
+        casez_tmp_196 = _rob_io_entries_27_new_phys;
+      5'b11100:
+        casez_tmp_196 = _rob_io_entries_28_new_phys;
+      5'b11101:
+        casez_tmp_196 = _rob_io_entries_29_new_phys;
+      5'b11110:
+        casez_tmp_196 = _rob_io_entries_30_new_phys;
+      default:
+        casez_tmp_196 = _rob_io_entries_31_new_phys;
+    endcase
+  end // always_comb
+  wire         take_30 = _take_T_248 & casez_tmp_193 & casez_tmp_194 & (|casez_tmp_195);
+  wire [4:0]   _idx_T_126 = idx - 5'h1;
+  reg          casez_tmp_197;
+  always_comb begin
+    casez (_idx_T_126)
+      5'b00000:
+        casez_tmp_197 = _rob_io_entries_0_valid;
+      5'b00001:
+        casez_tmp_197 = _rob_io_entries_1_valid;
+      5'b00010:
+        casez_tmp_197 = _rob_io_entries_2_valid;
+      5'b00011:
+        casez_tmp_197 = _rob_io_entries_3_valid;
+      5'b00100:
+        casez_tmp_197 = _rob_io_entries_4_valid;
+      5'b00101:
+        casez_tmp_197 = _rob_io_entries_5_valid;
+      5'b00110:
+        casez_tmp_197 = _rob_io_entries_6_valid;
+      5'b00111:
+        casez_tmp_197 = _rob_io_entries_7_valid;
+      5'b01000:
+        casez_tmp_197 = _rob_io_entries_8_valid;
+      5'b01001:
+        casez_tmp_197 = _rob_io_entries_9_valid;
+      5'b01010:
+        casez_tmp_197 = _rob_io_entries_10_valid;
+      5'b01011:
+        casez_tmp_197 = _rob_io_entries_11_valid;
+      5'b01100:
+        casez_tmp_197 = _rob_io_entries_12_valid;
+      5'b01101:
+        casez_tmp_197 = _rob_io_entries_13_valid;
+      5'b01110:
+        casez_tmp_197 = _rob_io_entries_14_valid;
+      5'b01111:
+        casez_tmp_197 = _rob_io_entries_15_valid;
+      5'b10000:
+        casez_tmp_197 = _rob_io_entries_16_valid;
+      5'b10001:
+        casez_tmp_197 = _rob_io_entries_17_valid;
+      5'b10010:
+        casez_tmp_197 = _rob_io_entries_18_valid;
+      5'b10011:
+        casez_tmp_197 = _rob_io_entries_19_valid;
+      5'b10100:
+        casez_tmp_197 = _rob_io_entries_20_valid;
+      5'b10101:
+        casez_tmp_197 = _rob_io_entries_21_valid;
+      5'b10110:
+        casez_tmp_197 = _rob_io_entries_22_valid;
+      5'b10111:
+        casez_tmp_197 = _rob_io_entries_23_valid;
+      5'b11000:
+        casez_tmp_197 = _rob_io_entries_24_valid;
+      5'b11001:
+        casez_tmp_197 = _rob_io_entries_25_valid;
+      5'b11010:
+        casez_tmp_197 = _rob_io_entries_26_valid;
+      5'b11011:
+        casez_tmp_197 = _rob_io_entries_27_valid;
+      5'b11100:
+        casez_tmp_197 = _rob_io_entries_28_valid;
+      5'b11101:
+        casez_tmp_197 = _rob_io_entries_29_valid;
+      5'b11110:
+        casez_tmp_197 = _rob_io_entries_30_valid;
+      default:
+        casez_tmp_197 = _rob_io_entries_31_valid;
+    endcase
+  end // always_comb
+  reg          casez_tmp_198;
+  always_comb begin
+    casez (_idx_T_126)
+      5'b00000:
+        casez_tmp_198 = _rob_io_entries_0_reg_write;
+      5'b00001:
+        casez_tmp_198 = _rob_io_entries_1_reg_write;
+      5'b00010:
+        casez_tmp_198 = _rob_io_entries_2_reg_write;
+      5'b00011:
+        casez_tmp_198 = _rob_io_entries_3_reg_write;
+      5'b00100:
+        casez_tmp_198 = _rob_io_entries_4_reg_write;
+      5'b00101:
+        casez_tmp_198 = _rob_io_entries_5_reg_write;
+      5'b00110:
+        casez_tmp_198 = _rob_io_entries_6_reg_write;
+      5'b00111:
+        casez_tmp_198 = _rob_io_entries_7_reg_write;
+      5'b01000:
+        casez_tmp_198 = _rob_io_entries_8_reg_write;
+      5'b01001:
+        casez_tmp_198 = _rob_io_entries_9_reg_write;
+      5'b01010:
+        casez_tmp_198 = _rob_io_entries_10_reg_write;
+      5'b01011:
+        casez_tmp_198 = _rob_io_entries_11_reg_write;
+      5'b01100:
+        casez_tmp_198 = _rob_io_entries_12_reg_write;
+      5'b01101:
+        casez_tmp_198 = _rob_io_entries_13_reg_write;
+      5'b01110:
+        casez_tmp_198 = _rob_io_entries_14_reg_write;
+      5'b01111:
+        casez_tmp_198 = _rob_io_entries_15_reg_write;
+      5'b10000:
+        casez_tmp_198 = _rob_io_entries_16_reg_write;
+      5'b10001:
+        casez_tmp_198 = _rob_io_entries_17_reg_write;
+      5'b10010:
+        casez_tmp_198 = _rob_io_entries_18_reg_write;
+      5'b10011:
+        casez_tmp_198 = _rob_io_entries_19_reg_write;
+      5'b10100:
+        casez_tmp_198 = _rob_io_entries_20_reg_write;
+      5'b10101:
+        casez_tmp_198 = _rob_io_entries_21_reg_write;
+      5'b10110:
+        casez_tmp_198 = _rob_io_entries_22_reg_write;
+      5'b10111:
+        casez_tmp_198 = _rob_io_entries_23_reg_write;
+      5'b11000:
+        casez_tmp_198 = _rob_io_entries_24_reg_write;
+      5'b11001:
+        casez_tmp_198 = _rob_io_entries_25_reg_write;
+      5'b11010:
+        casez_tmp_198 = _rob_io_entries_26_reg_write;
+      5'b11011:
+        casez_tmp_198 = _rob_io_entries_27_reg_write;
+      5'b11100:
+        casez_tmp_198 = _rob_io_entries_28_reg_write;
+      5'b11101:
+        casez_tmp_198 = _rob_io_entries_29_reg_write;
+      5'b11110:
+        casez_tmp_198 = _rob_io_entries_30_reg_write;
+      default:
+        casez_tmp_198 = _rob_io_entries_31_reg_write;
+    endcase
+  end // always_comb
+  reg  [4:0]   casez_tmp_199;
+  always_comb begin
+    casez (_idx_T_126)
+      5'b00000:
+        casez_tmp_199 = _rob_io_entries_0_arch_rd;
+      5'b00001:
+        casez_tmp_199 = _rob_io_entries_1_arch_rd;
+      5'b00010:
+        casez_tmp_199 = _rob_io_entries_2_arch_rd;
+      5'b00011:
+        casez_tmp_199 = _rob_io_entries_3_arch_rd;
+      5'b00100:
+        casez_tmp_199 = _rob_io_entries_4_arch_rd;
+      5'b00101:
+        casez_tmp_199 = _rob_io_entries_5_arch_rd;
+      5'b00110:
+        casez_tmp_199 = _rob_io_entries_6_arch_rd;
+      5'b00111:
+        casez_tmp_199 = _rob_io_entries_7_arch_rd;
+      5'b01000:
+        casez_tmp_199 = _rob_io_entries_8_arch_rd;
+      5'b01001:
+        casez_tmp_199 = _rob_io_entries_9_arch_rd;
+      5'b01010:
+        casez_tmp_199 = _rob_io_entries_10_arch_rd;
+      5'b01011:
+        casez_tmp_199 = _rob_io_entries_11_arch_rd;
+      5'b01100:
+        casez_tmp_199 = _rob_io_entries_12_arch_rd;
+      5'b01101:
+        casez_tmp_199 = _rob_io_entries_13_arch_rd;
+      5'b01110:
+        casez_tmp_199 = _rob_io_entries_14_arch_rd;
+      5'b01111:
+        casez_tmp_199 = _rob_io_entries_15_arch_rd;
+      5'b10000:
+        casez_tmp_199 = _rob_io_entries_16_arch_rd;
+      5'b10001:
+        casez_tmp_199 = _rob_io_entries_17_arch_rd;
+      5'b10010:
+        casez_tmp_199 = _rob_io_entries_18_arch_rd;
+      5'b10011:
+        casez_tmp_199 = _rob_io_entries_19_arch_rd;
+      5'b10100:
+        casez_tmp_199 = _rob_io_entries_20_arch_rd;
+      5'b10101:
+        casez_tmp_199 = _rob_io_entries_21_arch_rd;
+      5'b10110:
+        casez_tmp_199 = _rob_io_entries_22_arch_rd;
+      5'b10111:
+        casez_tmp_199 = _rob_io_entries_23_arch_rd;
+      5'b11000:
+        casez_tmp_199 = _rob_io_entries_24_arch_rd;
+      5'b11001:
+        casez_tmp_199 = _rob_io_entries_25_arch_rd;
+      5'b11010:
+        casez_tmp_199 = _rob_io_entries_26_arch_rd;
+      5'b11011:
+        casez_tmp_199 = _rob_io_entries_27_arch_rd;
+      5'b11100:
+        casez_tmp_199 = _rob_io_entries_28_arch_rd;
+      5'b11101:
+        casez_tmp_199 = _rob_io_entries_29_arch_rd;
+      5'b11110:
+        casez_tmp_199 = _rob_io_entries_30_arch_rd;
+      default:
+        casez_tmp_199 = _rob_io_entries_31_arch_rd;
+    endcase
+  end // always_comb
+  reg  [5:0]   casez_tmp_200;
+  always_comb begin
+    casez (_idx_T_126)
+      5'b00000:
+        casez_tmp_200 = _rob_io_entries_0_new_phys;
+      5'b00001:
+        casez_tmp_200 = _rob_io_entries_1_new_phys;
+      5'b00010:
+        casez_tmp_200 = _rob_io_entries_2_new_phys;
+      5'b00011:
+        casez_tmp_200 = _rob_io_entries_3_new_phys;
+      5'b00100:
+        casez_tmp_200 = _rob_io_entries_4_new_phys;
+      5'b00101:
+        casez_tmp_200 = _rob_io_entries_5_new_phys;
+      5'b00110:
+        casez_tmp_200 = _rob_io_entries_6_new_phys;
+      5'b00111:
+        casez_tmp_200 = _rob_io_entries_7_new_phys;
+      5'b01000:
+        casez_tmp_200 = _rob_io_entries_8_new_phys;
+      5'b01001:
+        casez_tmp_200 = _rob_io_entries_9_new_phys;
+      5'b01010:
+        casez_tmp_200 = _rob_io_entries_10_new_phys;
+      5'b01011:
+        casez_tmp_200 = _rob_io_entries_11_new_phys;
+      5'b01100:
+        casez_tmp_200 = _rob_io_entries_12_new_phys;
+      5'b01101:
+        casez_tmp_200 = _rob_io_entries_13_new_phys;
+      5'b01110:
+        casez_tmp_200 = _rob_io_entries_14_new_phys;
+      5'b01111:
+        casez_tmp_200 = _rob_io_entries_15_new_phys;
+      5'b10000:
+        casez_tmp_200 = _rob_io_entries_16_new_phys;
+      5'b10001:
+        casez_tmp_200 = _rob_io_entries_17_new_phys;
+      5'b10010:
+        casez_tmp_200 = _rob_io_entries_18_new_phys;
+      5'b10011:
+        casez_tmp_200 = _rob_io_entries_19_new_phys;
+      5'b10100:
+        casez_tmp_200 = _rob_io_entries_20_new_phys;
+      5'b10101:
+        casez_tmp_200 = _rob_io_entries_21_new_phys;
+      5'b10110:
+        casez_tmp_200 = _rob_io_entries_22_new_phys;
+      5'b10111:
+        casez_tmp_200 = _rob_io_entries_23_new_phys;
+      5'b11000:
+        casez_tmp_200 = _rob_io_entries_24_new_phys;
+      5'b11001:
+        casez_tmp_200 = _rob_io_entries_25_new_phys;
+      5'b11010:
+        casez_tmp_200 = _rob_io_entries_26_new_phys;
+      5'b11011:
+        casez_tmp_200 = _rob_io_entries_27_new_phys;
+      5'b11100:
+        casez_tmp_200 = _rob_io_entries_28_new_phys;
+      5'b11101:
+        casez_tmp_200 = _rob_io_entries_29_new_phys;
+      5'b11110:
+        casez_tmp_200 = _rob_io_entries_30_new_phys;
+      default:
+        casez_tmp_200 = _rob_io_entries_31_new_phys;
+    endcase
+  end // always_comb
+  wire         take_31 = kept_n[5] & casez_tmp_197 & casez_tmp_198 & (|casez_tmp_199);
   wire [5:0]   rb_steps_32_1 =
-    take_31 & casez_tmp_191 == 5'h1
-      ? casez_tmp_192
-      : take_30 & casez_tmp_187 == 5'h1
-          ? casez_tmp_188
-          : take_29 & casez_tmp_183 == 5'h1
-              ? casez_tmp_184
-              : take_28 & casez_tmp_179 == 5'h1
-                  ? casez_tmp_180
-                  : take_27 & casez_tmp_175 == 5'h1
-                      ? casez_tmp_176
-                      : take_26 & casez_tmp_171 == 5'h1
-                          ? casez_tmp_172
-                          : take_25 & casez_tmp_167 == 5'h1
-                              ? casez_tmp_168
-                              : take_24 & casez_tmp_163 == 5'h1
-                                  ? casez_tmp_164
-                                  : take_23 & casez_tmp_159 == 5'h1
-                                      ? casez_tmp_160
-                                      : take_22 & casez_tmp_155 == 5'h1
-                                          ? casez_tmp_156
-                                          : take_21 & casez_tmp_151 == 5'h1
-                                              ? casez_tmp_152
-                                              : take_20 & casez_tmp_147 == 5'h1
-                                                  ? casez_tmp_148
-                                                  : take_19 & casez_tmp_143 == 5'h1
-                                                      ? casez_tmp_144
-                                                      : take_18 & casez_tmp_139 == 5'h1
-                                                          ? casez_tmp_140
+    take_31 & casez_tmp_199 == 5'h1
+      ? casez_tmp_200
+      : take_30 & casez_tmp_195 == 5'h1
+          ? casez_tmp_196
+          : take_29 & casez_tmp_191 == 5'h1
+              ? casez_tmp_192
+              : take_28 & casez_tmp_187 == 5'h1
+                  ? casez_tmp_188
+                  : take_27 & casez_tmp_183 == 5'h1
+                      ? casez_tmp_184
+                      : take_26 & casez_tmp_179 == 5'h1
+                          ? casez_tmp_180
+                          : take_25 & casez_tmp_175 == 5'h1
+                              ? casez_tmp_176
+                              : take_24 & casez_tmp_171 == 5'h1
+                                  ? casez_tmp_172
+                                  : take_23 & casez_tmp_167 == 5'h1
+                                      ? casez_tmp_168
+                                      : take_22 & casez_tmp_163 == 5'h1
+                                          ? casez_tmp_164
+                                          : take_21 & casez_tmp_159 == 5'h1
+                                              ? casez_tmp_160
+                                              : take_20 & casez_tmp_155 == 5'h1
+                                                  ? casez_tmp_156
+                                                  : take_19 & casez_tmp_151 == 5'h1
+                                                      ? casez_tmp_152
+                                                      : take_18 & casez_tmp_147 == 5'h1
+                                                          ? casez_tmp_148
                                                           : take_17
-                                                            & casez_tmp_135 == 5'h1
-                                                              ? casez_tmp_136
+                                                            & casez_tmp_143 == 5'h1
+                                                              ? casez_tmp_144
                                                               : take_16
-                                                                & casez_tmp_131 == 5'h1
-                                                                  ? casez_tmp_132
+                                                                & casez_tmp_139 == 5'h1
+                                                                  ? casez_tmp_140
                                                                   : take_15
-                                                                    & casez_tmp_127 == 5'h1
-                                                                      ? casez_tmp_128
+                                                                    & casez_tmp_135 == 5'h1
+                                                                      ? casez_tmp_136
                                                                       : take_14
-                                                                        & casez_tmp_123 == 5'h1
-                                                                          ? casez_tmp_124
+                                                                        & casez_tmp_131 == 5'h1
+                                                                          ? casez_tmp_132
                                                                           : take_13
-                                                                            & casez_tmp_119 == 5'h1
-                                                                              ? casez_tmp_120
+                                                                            & casez_tmp_127 == 5'h1
+                                                                              ? casez_tmp_128
                                                                               : take_12
-                                                                                & casez_tmp_115 == 5'h1
-                                                                                  ? casez_tmp_116
+                                                                                & casez_tmp_123 == 5'h1
+                                                                                  ? casez_tmp_124
                                                                                   : take_11
-                                                                                    & casez_tmp_111 == 5'h1
-                                                                                      ? casez_tmp_112
+                                                                                    & casez_tmp_119 == 5'h1
+                                                                                      ? casez_tmp_120
                                                                                       : take_10
-                                                                                        & casez_tmp_107 == 5'h1
-                                                                                          ? casez_tmp_108
+                                                                                        & casez_tmp_115 == 5'h1
+                                                                                          ? casez_tmp_116
                                                                                           : take_9
-                                                                                            & casez_tmp_103 == 5'h1
-                                                                                              ? casez_tmp_104
+                                                                                            & casez_tmp_111 == 5'h1
+                                                                                              ? casez_tmp_112
                                                                                               : take_8
-                                                                                                & casez_tmp_99 == 5'h1
-                                                                                                  ? casez_tmp_100
+                                                                                                & casez_tmp_107 == 5'h1
+                                                                                                  ? casez_tmp_108
                                                                                                   : take_7
-                                                                                                    & casez_tmp_95 == 5'h1
-                                                                                                      ? casez_tmp_96
+                                                                                                    & casez_tmp_103 == 5'h1
+                                                                                                      ? casez_tmp_104
                                                                                                       : take_6
-                                                                                                        & casez_tmp_91 == 5'h1
-                                                                                                          ? casez_tmp_92
+                                                                                                        & casez_tmp_99 == 5'h1
+                                                                                                          ? casez_tmp_100
                                                                                                           : take_5
-                                                                                                            & casez_tmp_87 == 5'h1
-                                                                                                              ? casez_tmp_88
+                                                                                                            & casez_tmp_95 == 5'h1
+                                                                                                              ? casez_tmp_96
                                                                                                               : take_4
-                                                                                                                & casez_tmp_83 == 5'h1
-                                                                                                                  ? casez_tmp_84
+                                                                                                                & casez_tmp_91 == 5'h1
+                                                                                                                  ? casez_tmp_92
                                                                                                                   : take_3
-                                                                                                                    & casez_tmp_79 == 5'h1
-                                                                                                                      ? casez_tmp_80
+                                                                                                                    & casez_tmp_87 == 5'h1
+                                                                                                                      ? casez_tmp_88
                                                                                                                       : take_2
-                                                                                                                        & casez_tmp_75 == 5'h1
-                                                                                                                          ? casez_tmp_76
+                                                                                                                        & casez_tmp_83 == 5'h1
+                                                                                                                          ? casez_tmp_84
                                                                                                                           : take_1
-                                                                                                                            & casez_tmp_71 == 5'h1
-                                                                                                                              ? casez_tmp_72
+                                                                                                                            & casez_tmp_79 == 5'h1
+                                                                                                                              ? casez_tmp_80
                                                                                                                               : take
-                                                                                                                                & casez_tmp_67 == 5'h1
-                                                                                                                                  ? casez_tmp_68
+                                                                                                                                & casez_tmp_75 == 5'h1
+                                                                                                                                  ? casez_tmp_76
                                                                                                                                   : rb_base_1;
   wire [126:0] _archUsed_T = 127'h1 << rb_base_1;
   wire [126:0] _archUsed_T_2 = 127'h1 << rb_base_2;
@@ -17621,585 +18174,9 @@ module Core(
   wire [126:0] _archUsed_T_56 = 127'h1 << rb_base_29;
   wire [126:0] _archUsed_T_58 = 127'h1 << rb_base_30;
   wire [126:0] _archUsed_T_60 = 127'h1 << rb_base_31;
-  reg  [5:0]   casez_tmp_193;
-  always_comb begin
-    casez (idx)
-      5'b00000:
-        casez_tmp_193 = _rob_io_entries_0_old_phys;
-      5'b00001:
-        casez_tmp_193 = _rob_io_entries_1_old_phys;
-      5'b00010:
-        casez_tmp_193 = _rob_io_entries_2_old_phys;
-      5'b00011:
-        casez_tmp_193 = _rob_io_entries_3_old_phys;
-      5'b00100:
-        casez_tmp_193 = _rob_io_entries_4_old_phys;
-      5'b00101:
-        casez_tmp_193 = _rob_io_entries_5_old_phys;
-      5'b00110:
-        casez_tmp_193 = _rob_io_entries_6_old_phys;
-      5'b00111:
-        casez_tmp_193 = _rob_io_entries_7_old_phys;
-      5'b01000:
-        casez_tmp_193 = _rob_io_entries_8_old_phys;
-      5'b01001:
-        casez_tmp_193 = _rob_io_entries_9_old_phys;
-      5'b01010:
-        casez_tmp_193 = _rob_io_entries_10_old_phys;
-      5'b01011:
-        casez_tmp_193 = _rob_io_entries_11_old_phys;
-      5'b01100:
-        casez_tmp_193 = _rob_io_entries_12_old_phys;
-      5'b01101:
-        casez_tmp_193 = _rob_io_entries_13_old_phys;
-      5'b01110:
-        casez_tmp_193 = _rob_io_entries_14_old_phys;
-      5'b01111:
-        casez_tmp_193 = _rob_io_entries_15_old_phys;
-      5'b10000:
-        casez_tmp_193 = _rob_io_entries_16_old_phys;
-      5'b10001:
-        casez_tmp_193 = _rob_io_entries_17_old_phys;
-      5'b10010:
-        casez_tmp_193 = _rob_io_entries_18_old_phys;
-      5'b10011:
-        casez_tmp_193 = _rob_io_entries_19_old_phys;
-      5'b10100:
-        casez_tmp_193 = _rob_io_entries_20_old_phys;
-      5'b10101:
-        casez_tmp_193 = _rob_io_entries_21_old_phys;
-      5'b10110:
-        casez_tmp_193 = _rob_io_entries_22_old_phys;
-      5'b10111:
-        casez_tmp_193 = _rob_io_entries_23_old_phys;
-      5'b11000:
-        casez_tmp_193 = _rob_io_entries_24_old_phys;
-      5'b11001:
-        casez_tmp_193 = _rob_io_entries_25_old_phys;
-      5'b11010:
-        casez_tmp_193 = _rob_io_entries_26_old_phys;
-      5'b11011:
-        casez_tmp_193 = _rob_io_entries_27_old_phys;
-      5'b11100:
-        casez_tmp_193 = _rob_io_entries_28_old_phys;
-      5'b11101:
-        casez_tmp_193 = _rob_io_entries_29_old_phys;
-      5'b11110:
-        casez_tmp_193 = _rob_io_entries_30_old_phys;
-      default:
-        casez_tmp_193 = _rob_io_entries_31_old_phys;
-    endcase
-  end // always_comb
-  wire         take_32 = (|kept_n) & casez_tmp_65 & casez_tmp_66 & (|casez_tmp_67);
-  wire [126:0] _f1_T_2 = 127'h1 << casez_tmp_68;
-  wire [126:0] _freeSteps_1_T_2 = 127'h1 << casez_tmp_193;
-  reg  [5:0]   casez_tmp_194;
-  always_comb begin
-    casez (_idx_T_66)
-      5'b00000:
-        casez_tmp_194 = _rob_io_entries_0_old_phys;
-      5'b00001:
-        casez_tmp_194 = _rob_io_entries_1_old_phys;
-      5'b00010:
-        casez_tmp_194 = _rob_io_entries_2_old_phys;
-      5'b00011:
-        casez_tmp_194 = _rob_io_entries_3_old_phys;
-      5'b00100:
-        casez_tmp_194 = _rob_io_entries_4_old_phys;
-      5'b00101:
-        casez_tmp_194 = _rob_io_entries_5_old_phys;
-      5'b00110:
-        casez_tmp_194 = _rob_io_entries_6_old_phys;
-      5'b00111:
-        casez_tmp_194 = _rob_io_entries_7_old_phys;
-      5'b01000:
-        casez_tmp_194 = _rob_io_entries_8_old_phys;
-      5'b01001:
-        casez_tmp_194 = _rob_io_entries_9_old_phys;
-      5'b01010:
-        casez_tmp_194 = _rob_io_entries_10_old_phys;
-      5'b01011:
-        casez_tmp_194 = _rob_io_entries_11_old_phys;
-      5'b01100:
-        casez_tmp_194 = _rob_io_entries_12_old_phys;
-      5'b01101:
-        casez_tmp_194 = _rob_io_entries_13_old_phys;
-      5'b01110:
-        casez_tmp_194 = _rob_io_entries_14_old_phys;
-      5'b01111:
-        casez_tmp_194 = _rob_io_entries_15_old_phys;
-      5'b10000:
-        casez_tmp_194 = _rob_io_entries_16_old_phys;
-      5'b10001:
-        casez_tmp_194 = _rob_io_entries_17_old_phys;
-      5'b10010:
-        casez_tmp_194 = _rob_io_entries_18_old_phys;
-      5'b10011:
-        casez_tmp_194 = _rob_io_entries_19_old_phys;
-      5'b10100:
-        casez_tmp_194 = _rob_io_entries_20_old_phys;
-      5'b10101:
-        casez_tmp_194 = _rob_io_entries_21_old_phys;
-      5'b10110:
-        casez_tmp_194 = _rob_io_entries_22_old_phys;
-      5'b10111:
-        casez_tmp_194 = _rob_io_entries_23_old_phys;
-      5'b11000:
-        casez_tmp_194 = _rob_io_entries_24_old_phys;
-      5'b11001:
-        casez_tmp_194 = _rob_io_entries_25_old_phys;
-      5'b11010:
-        casez_tmp_194 = _rob_io_entries_26_old_phys;
-      5'b11011:
-        casez_tmp_194 = _rob_io_entries_27_old_phys;
-      5'b11100:
-        casez_tmp_194 = _rob_io_entries_28_old_phys;
-      5'b11101:
-        casez_tmp_194 = _rob_io_entries_29_old_phys;
-      5'b11110:
-        casez_tmp_194 = _rob_io_entries_30_old_phys;
-      default:
-        casez_tmp_194 = _rob_io_entries_31_old_phys;
-    endcase
-  end // always_comb
-  wire         take_33 = (|(kept_n[5:1])) & casez_tmp_69 & casez_tmp_70 & (|casez_tmp_71);
-  wire [126:0] _f1_T_7 = 127'h1 << casez_tmp_72;
-  wire [126:0] _freeSteps_2_T_2 = 127'h1 << casez_tmp_194;
-  reg  [5:0]   casez_tmp_195;
-  always_comb begin
-    casez (_idx_T_68)
-      5'b00000:
-        casez_tmp_195 = _rob_io_entries_0_old_phys;
-      5'b00001:
-        casez_tmp_195 = _rob_io_entries_1_old_phys;
-      5'b00010:
-        casez_tmp_195 = _rob_io_entries_2_old_phys;
-      5'b00011:
-        casez_tmp_195 = _rob_io_entries_3_old_phys;
-      5'b00100:
-        casez_tmp_195 = _rob_io_entries_4_old_phys;
-      5'b00101:
-        casez_tmp_195 = _rob_io_entries_5_old_phys;
-      5'b00110:
-        casez_tmp_195 = _rob_io_entries_6_old_phys;
-      5'b00111:
-        casez_tmp_195 = _rob_io_entries_7_old_phys;
-      5'b01000:
-        casez_tmp_195 = _rob_io_entries_8_old_phys;
-      5'b01001:
-        casez_tmp_195 = _rob_io_entries_9_old_phys;
-      5'b01010:
-        casez_tmp_195 = _rob_io_entries_10_old_phys;
-      5'b01011:
-        casez_tmp_195 = _rob_io_entries_11_old_phys;
-      5'b01100:
-        casez_tmp_195 = _rob_io_entries_12_old_phys;
-      5'b01101:
-        casez_tmp_195 = _rob_io_entries_13_old_phys;
-      5'b01110:
-        casez_tmp_195 = _rob_io_entries_14_old_phys;
-      5'b01111:
-        casez_tmp_195 = _rob_io_entries_15_old_phys;
-      5'b10000:
-        casez_tmp_195 = _rob_io_entries_16_old_phys;
-      5'b10001:
-        casez_tmp_195 = _rob_io_entries_17_old_phys;
-      5'b10010:
-        casez_tmp_195 = _rob_io_entries_18_old_phys;
-      5'b10011:
-        casez_tmp_195 = _rob_io_entries_19_old_phys;
-      5'b10100:
-        casez_tmp_195 = _rob_io_entries_20_old_phys;
-      5'b10101:
-        casez_tmp_195 = _rob_io_entries_21_old_phys;
-      5'b10110:
-        casez_tmp_195 = _rob_io_entries_22_old_phys;
-      5'b10111:
-        casez_tmp_195 = _rob_io_entries_23_old_phys;
-      5'b11000:
-        casez_tmp_195 = _rob_io_entries_24_old_phys;
-      5'b11001:
-        casez_tmp_195 = _rob_io_entries_25_old_phys;
-      5'b11010:
-        casez_tmp_195 = _rob_io_entries_26_old_phys;
-      5'b11011:
-        casez_tmp_195 = _rob_io_entries_27_old_phys;
-      5'b11100:
-        casez_tmp_195 = _rob_io_entries_28_old_phys;
-      5'b11101:
-        casez_tmp_195 = _rob_io_entries_29_old_phys;
-      5'b11110:
-        casez_tmp_195 = _rob_io_entries_30_old_phys;
-      default:
-        casez_tmp_195 = _rob_io_entries_31_old_phys;
-    endcase
-  end // always_comb
-  wire         take_34 = _take_T_136 & casez_tmp_73 & casez_tmp_74 & (|casez_tmp_75);
-  wire [126:0] _f1_T_12 = 127'h1 << casez_tmp_76;
-  wire [126:0] _freeSteps_3_T_2 = 127'h1 << casez_tmp_195;
-  reg  [5:0]   casez_tmp_196;
-  always_comb begin
-    casez (_idx_T_70)
-      5'b00000:
-        casez_tmp_196 = _rob_io_entries_0_old_phys;
-      5'b00001:
-        casez_tmp_196 = _rob_io_entries_1_old_phys;
-      5'b00010:
-        casez_tmp_196 = _rob_io_entries_2_old_phys;
-      5'b00011:
-        casez_tmp_196 = _rob_io_entries_3_old_phys;
-      5'b00100:
-        casez_tmp_196 = _rob_io_entries_4_old_phys;
-      5'b00101:
-        casez_tmp_196 = _rob_io_entries_5_old_phys;
-      5'b00110:
-        casez_tmp_196 = _rob_io_entries_6_old_phys;
-      5'b00111:
-        casez_tmp_196 = _rob_io_entries_7_old_phys;
-      5'b01000:
-        casez_tmp_196 = _rob_io_entries_8_old_phys;
-      5'b01001:
-        casez_tmp_196 = _rob_io_entries_9_old_phys;
-      5'b01010:
-        casez_tmp_196 = _rob_io_entries_10_old_phys;
-      5'b01011:
-        casez_tmp_196 = _rob_io_entries_11_old_phys;
-      5'b01100:
-        casez_tmp_196 = _rob_io_entries_12_old_phys;
-      5'b01101:
-        casez_tmp_196 = _rob_io_entries_13_old_phys;
-      5'b01110:
-        casez_tmp_196 = _rob_io_entries_14_old_phys;
-      5'b01111:
-        casez_tmp_196 = _rob_io_entries_15_old_phys;
-      5'b10000:
-        casez_tmp_196 = _rob_io_entries_16_old_phys;
-      5'b10001:
-        casez_tmp_196 = _rob_io_entries_17_old_phys;
-      5'b10010:
-        casez_tmp_196 = _rob_io_entries_18_old_phys;
-      5'b10011:
-        casez_tmp_196 = _rob_io_entries_19_old_phys;
-      5'b10100:
-        casez_tmp_196 = _rob_io_entries_20_old_phys;
-      5'b10101:
-        casez_tmp_196 = _rob_io_entries_21_old_phys;
-      5'b10110:
-        casez_tmp_196 = _rob_io_entries_22_old_phys;
-      5'b10111:
-        casez_tmp_196 = _rob_io_entries_23_old_phys;
-      5'b11000:
-        casez_tmp_196 = _rob_io_entries_24_old_phys;
-      5'b11001:
-        casez_tmp_196 = _rob_io_entries_25_old_phys;
-      5'b11010:
-        casez_tmp_196 = _rob_io_entries_26_old_phys;
-      5'b11011:
-        casez_tmp_196 = _rob_io_entries_27_old_phys;
-      5'b11100:
-        casez_tmp_196 = _rob_io_entries_28_old_phys;
-      5'b11101:
-        casez_tmp_196 = _rob_io_entries_29_old_phys;
-      5'b11110:
-        casez_tmp_196 = _rob_io_entries_30_old_phys;
-      default:
-        casez_tmp_196 = _rob_io_entries_31_old_phys;
-    endcase
-  end // always_comb
-  wire         take_35 = (|(kept_n[5:2])) & casez_tmp_77 & casez_tmp_78 & (|casez_tmp_79);
-  wire [126:0] _f1_T_17 = 127'h1 << casez_tmp_80;
-  wire [126:0] _freeSteps_4_T_2 = 127'h1 << casez_tmp_196;
-  reg  [5:0]   casez_tmp_197;
-  always_comb begin
-    casez (_idx_T_72)
-      5'b00000:
-        casez_tmp_197 = _rob_io_entries_0_old_phys;
-      5'b00001:
-        casez_tmp_197 = _rob_io_entries_1_old_phys;
-      5'b00010:
-        casez_tmp_197 = _rob_io_entries_2_old_phys;
-      5'b00011:
-        casez_tmp_197 = _rob_io_entries_3_old_phys;
-      5'b00100:
-        casez_tmp_197 = _rob_io_entries_4_old_phys;
-      5'b00101:
-        casez_tmp_197 = _rob_io_entries_5_old_phys;
-      5'b00110:
-        casez_tmp_197 = _rob_io_entries_6_old_phys;
-      5'b00111:
-        casez_tmp_197 = _rob_io_entries_7_old_phys;
-      5'b01000:
-        casez_tmp_197 = _rob_io_entries_8_old_phys;
-      5'b01001:
-        casez_tmp_197 = _rob_io_entries_9_old_phys;
-      5'b01010:
-        casez_tmp_197 = _rob_io_entries_10_old_phys;
-      5'b01011:
-        casez_tmp_197 = _rob_io_entries_11_old_phys;
-      5'b01100:
-        casez_tmp_197 = _rob_io_entries_12_old_phys;
-      5'b01101:
-        casez_tmp_197 = _rob_io_entries_13_old_phys;
-      5'b01110:
-        casez_tmp_197 = _rob_io_entries_14_old_phys;
-      5'b01111:
-        casez_tmp_197 = _rob_io_entries_15_old_phys;
-      5'b10000:
-        casez_tmp_197 = _rob_io_entries_16_old_phys;
-      5'b10001:
-        casez_tmp_197 = _rob_io_entries_17_old_phys;
-      5'b10010:
-        casez_tmp_197 = _rob_io_entries_18_old_phys;
-      5'b10011:
-        casez_tmp_197 = _rob_io_entries_19_old_phys;
-      5'b10100:
-        casez_tmp_197 = _rob_io_entries_20_old_phys;
-      5'b10101:
-        casez_tmp_197 = _rob_io_entries_21_old_phys;
-      5'b10110:
-        casez_tmp_197 = _rob_io_entries_22_old_phys;
-      5'b10111:
-        casez_tmp_197 = _rob_io_entries_23_old_phys;
-      5'b11000:
-        casez_tmp_197 = _rob_io_entries_24_old_phys;
-      5'b11001:
-        casez_tmp_197 = _rob_io_entries_25_old_phys;
-      5'b11010:
-        casez_tmp_197 = _rob_io_entries_26_old_phys;
-      5'b11011:
-        casez_tmp_197 = _rob_io_entries_27_old_phys;
-      5'b11100:
-        casez_tmp_197 = _rob_io_entries_28_old_phys;
-      5'b11101:
-        casez_tmp_197 = _rob_io_entries_29_old_phys;
-      5'b11110:
-        casez_tmp_197 = _rob_io_entries_30_old_phys;
-      default:
-        casez_tmp_197 = _rob_io_entries_31_old_phys;
-    endcase
-  end // always_comb
-  wire         take_36 = _take_T_144 & casez_tmp_81 & casez_tmp_82 & (|casez_tmp_83);
-  wire [126:0] _f1_T_22 = 127'h1 << casez_tmp_84;
-  wire [126:0] _freeSteps_5_T_2 = 127'h1 << casez_tmp_197;
-  reg  [5:0]   casez_tmp_198;
-  always_comb begin
-    casez (_idx_T_74)
-      5'b00000:
-        casez_tmp_198 = _rob_io_entries_0_old_phys;
-      5'b00001:
-        casez_tmp_198 = _rob_io_entries_1_old_phys;
-      5'b00010:
-        casez_tmp_198 = _rob_io_entries_2_old_phys;
-      5'b00011:
-        casez_tmp_198 = _rob_io_entries_3_old_phys;
-      5'b00100:
-        casez_tmp_198 = _rob_io_entries_4_old_phys;
-      5'b00101:
-        casez_tmp_198 = _rob_io_entries_5_old_phys;
-      5'b00110:
-        casez_tmp_198 = _rob_io_entries_6_old_phys;
-      5'b00111:
-        casez_tmp_198 = _rob_io_entries_7_old_phys;
-      5'b01000:
-        casez_tmp_198 = _rob_io_entries_8_old_phys;
-      5'b01001:
-        casez_tmp_198 = _rob_io_entries_9_old_phys;
-      5'b01010:
-        casez_tmp_198 = _rob_io_entries_10_old_phys;
-      5'b01011:
-        casez_tmp_198 = _rob_io_entries_11_old_phys;
-      5'b01100:
-        casez_tmp_198 = _rob_io_entries_12_old_phys;
-      5'b01101:
-        casez_tmp_198 = _rob_io_entries_13_old_phys;
-      5'b01110:
-        casez_tmp_198 = _rob_io_entries_14_old_phys;
-      5'b01111:
-        casez_tmp_198 = _rob_io_entries_15_old_phys;
-      5'b10000:
-        casez_tmp_198 = _rob_io_entries_16_old_phys;
-      5'b10001:
-        casez_tmp_198 = _rob_io_entries_17_old_phys;
-      5'b10010:
-        casez_tmp_198 = _rob_io_entries_18_old_phys;
-      5'b10011:
-        casez_tmp_198 = _rob_io_entries_19_old_phys;
-      5'b10100:
-        casez_tmp_198 = _rob_io_entries_20_old_phys;
-      5'b10101:
-        casez_tmp_198 = _rob_io_entries_21_old_phys;
-      5'b10110:
-        casez_tmp_198 = _rob_io_entries_22_old_phys;
-      5'b10111:
-        casez_tmp_198 = _rob_io_entries_23_old_phys;
-      5'b11000:
-        casez_tmp_198 = _rob_io_entries_24_old_phys;
-      5'b11001:
-        casez_tmp_198 = _rob_io_entries_25_old_phys;
-      5'b11010:
-        casez_tmp_198 = _rob_io_entries_26_old_phys;
-      5'b11011:
-        casez_tmp_198 = _rob_io_entries_27_old_phys;
-      5'b11100:
-        casez_tmp_198 = _rob_io_entries_28_old_phys;
-      5'b11101:
-        casez_tmp_198 = _rob_io_entries_29_old_phys;
-      5'b11110:
-        casez_tmp_198 = _rob_io_entries_30_old_phys;
-      default:
-        casez_tmp_198 = _rob_io_entries_31_old_phys;
-    endcase
-  end // always_comb
-  wire         take_37 = _take_T_148 & casez_tmp_85 & casez_tmp_86 & (|casez_tmp_87);
-  wire [126:0] _f1_T_27 = 127'h1 << casez_tmp_88;
-  wire [126:0] _freeSteps_6_T_2 = 127'h1 << casez_tmp_198;
-  reg  [5:0]   casez_tmp_199;
-  always_comb begin
-    casez (_idx_T_76)
-      5'b00000:
-        casez_tmp_199 = _rob_io_entries_0_old_phys;
-      5'b00001:
-        casez_tmp_199 = _rob_io_entries_1_old_phys;
-      5'b00010:
-        casez_tmp_199 = _rob_io_entries_2_old_phys;
-      5'b00011:
-        casez_tmp_199 = _rob_io_entries_3_old_phys;
-      5'b00100:
-        casez_tmp_199 = _rob_io_entries_4_old_phys;
-      5'b00101:
-        casez_tmp_199 = _rob_io_entries_5_old_phys;
-      5'b00110:
-        casez_tmp_199 = _rob_io_entries_6_old_phys;
-      5'b00111:
-        casez_tmp_199 = _rob_io_entries_7_old_phys;
-      5'b01000:
-        casez_tmp_199 = _rob_io_entries_8_old_phys;
-      5'b01001:
-        casez_tmp_199 = _rob_io_entries_9_old_phys;
-      5'b01010:
-        casez_tmp_199 = _rob_io_entries_10_old_phys;
-      5'b01011:
-        casez_tmp_199 = _rob_io_entries_11_old_phys;
-      5'b01100:
-        casez_tmp_199 = _rob_io_entries_12_old_phys;
-      5'b01101:
-        casez_tmp_199 = _rob_io_entries_13_old_phys;
-      5'b01110:
-        casez_tmp_199 = _rob_io_entries_14_old_phys;
-      5'b01111:
-        casez_tmp_199 = _rob_io_entries_15_old_phys;
-      5'b10000:
-        casez_tmp_199 = _rob_io_entries_16_old_phys;
-      5'b10001:
-        casez_tmp_199 = _rob_io_entries_17_old_phys;
-      5'b10010:
-        casez_tmp_199 = _rob_io_entries_18_old_phys;
-      5'b10011:
-        casez_tmp_199 = _rob_io_entries_19_old_phys;
-      5'b10100:
-        casez_tmp_199 = _rob_io_entries_20_old_phys;
-      5'b10101:
-        casez_tmp_199 = _rob_io_entries_21_old_phys;
-      5'b10110:
-        casez_tmp_199 = _rob_io_entries_22_old_phys;
-      5'b10111:
-        casez_tmp_199 = _rob_io_entries_23_old_phys;
-      5'b11000:
-        casez_tmp_199 = _rob_io_entries_24_old_phys;
-      5'b11001:
-        casez_tmp_199 = _rob_io_entries_25_old_phys;
-      5'b11010:
-        casez_tmp_199 = _rob_io_entries_26_old_phys;
-      5'b11011:
-        casez_tmp_199 = _rob_io_entries_27_old_phys;
-      5'b11100:
-        casez_tmp_199 = _rob_io_entries_28_old_phys;
-      5'b11101:
-        casez_tmp_199 = _rob_io_entries_29_old_phys;
-      5'b11110:
-        casez_tmp_199 = _rob_io_entries_30_old_phys;
-      default:
-        casez_tmp_199 = _rob_io_entries_31_old_phys;
-    endcase
-  end // always_comb
-  wire         take_38 = _take_T_152 & casez_tmp_89 & casez_tmp_90 & (|casez_tmp_91);
-  wire [126:0] _f1_T_32 = 127'h1 << casez_tmp_92;
-  wire [126:0] _freeSteps_7_T_2 = 127'h1 << casez_tmp_199;
-  reg  [5:0]   casez_tmp_200;
-  always_comb begin
-    casez (_idx_T_78)
-      5'b00000:
-        casez_tmp_200 = _rob_io_entries_0_old_phys;
-      5'b00001:
-        casez_tmp_200 = _rob_io_entries_1_old_phys;
-      5'b00010:
-        casez_tmp_200 = _rob_io_entries_2_old_phys;
-      5'b00011:
-        casez_tmp_200 = _rob_io_entries_3_old_phys;
-      5'b00100:
-        casez_tmp_200 = _rob_io_entries_4_old_phys;
-      5'b00101:
-        casez_tmp_200 = _rob_io_entries_5_old_phys;
-      5'b00110:
-        casez_tmp_200 = _rob_io_entries_6_old_phys;
-      5'b00111:
-        casez_tmp_200 = _rob_io_entries_7_old_phys;
-      5'b01000:
-        casez_tmp_200 = _rob_io_entries_8_old_phys;
-      5'b01001:
-        casez_tmp_200 = _rob_io_entries_9_old_phys;
-      5'b01010:
-        casez_tmp_200 = _rob_io_entries_10_old_phys;
-      5'b01011:
-        casez_tmp_200 = _rob_io_entries_11_old_phys;
-      5'b01100:
-        casez_tmp_200 = _rob_io_entries_12_old_phys;
-      5'b01101:
-        casez_tmp_200 = _rob_io_entries_13_old_phys;
-      5'b01110:
-        casez_tmp_200 = _rob_io_entries_14_old_phys;
-      5'b01111:
-        casez_tmp_200 = _rob_io_entries_15_old_phys;
-      5'b10000:
-        casez_tmp_200 = _rob_io_entries_16_old_phys;
-      5'b10001:
-        casez_tmp_200 = _rob_io_entries_17_old_phys;
-      5'b10010:
-        casez_tmp_200 = _rob_io_entries_18_old_phys;
-      5'b10011:
-        casez_tmp_200 = _rob_io_entries_19_old_phys;
-      5'b10100:
-        casez_tmp_200 = _rob_io_entries_20_old_phys;
-      5'b10101:
-        casez_tmp_200 = _rob_io_entries_21_old_phys;
-      5'b10110:
-        casez_tmp_200 = _rob_io_entries_22_old_phys;
-      5'b10111:
-        casez_tmp_200 = _rob_io_entries_23_old_phys;
-      5'b11000:
-        casez_tmp_200 = _rob_io_entries_24_old_phys;
-      5'b11001:
-        casez_tmp_200 = _rob_io_entries_25_old_phys;
-      5'b11010:
-        casez_tmp_200 = _rob_io_entries_26_old_phys;
-      5'b11011:
-        casez_tmp_200 = _rob_io_entries_27_old_phys;
-      5'b11100:
-        casez_tmp_200 = _rob_io_entries_28_old_phys;
-      5'b11101:
-        casez_tmp_200 = _rob_io_entries_29_old_phys;
-      5'b11110:
-        casez_tmp_200 = _rob_io_entries_30_old_phys;
-      default:
-        casez_tmp_200 = _rob_io_entries_31_old_phys;
-    endcase
-  end // always_comb
-  wire         take_39 = (|(kept_n[5:3])) & casez_tmp_93 & casez_tmp_94 & (|casez_tmp_95);
-  wire [126:0] _f1_T_37 = 127'h1 << casez_tmp_96;
-  wire [126:0] _freeSteps_8_T_2 = 127'h1 << casez_tmp_200;
   reg  [5:0]   casez_tmp_201;
   always_comb begin
-    casez (_idx_T_80)
+    casez (idx)
       5'b00000:
         casez_tmp_201 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18266,12 +18243,12 @@ module Core(
         casez_tmp_201 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_40 = _take_T_160 & casez_tmp_97 & casez_tmp_98 & (|casez_tmp_99);
-  wire [126:0] _f1_T_42 = 127'h1 << casez_tmp_100;
-  wire [126:0] _freeSteps_9_T_2 = 127'h1 << casez_tmp_201;
+  wire         take_32 = (|kept_n) & casez_tmp_73 & casez_tmp_74 & (|casez_tmp_75);
+  wire [126:0] _f1_T_2 = 127'h1 << casez_tmp_76;
+  wire [126:0] _freeSteps_1_T_2 = 127'h1 << casez_tmp_201;
   reg  [5:0]   casez_tmp_202;
   always_comb begin
-    casez (_idx_T_82)
+    casez (_idx_T_66)
       5'b00000:
         casez_tmp_202 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18338,12 +18315,12 @@ module Core(
         casez_tmp_202 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_41 = _take_T_164 & casez_tmp_101 & casez_tmp_102 & (|casez_tmp_103);
-  wire [126:0] _f1_T_47 = 127'h1 << casez_tmp_104;
-  wire [126:0] _freeSteps_10_T_2 = 127'h1 << casez_tmp_202;
+  wire         take_33 = (|(kept_n[5:1])) & casez_tmp_77 & casez_tmp_78 & (|casez_tmp_79);
+  wire [126:0] _f1_T_7 = 127'h1 << casez_tmp_80;
+  wire [126:0] _freeSteps_2_T_2 = 127'h1 << casez_tmp_202;
   reg  [5:0]   casez_tmp_203;
   always_comb begin
-    casez (_idx_T_84)
+    casez (_idx_T_68)
       5'b00000:
         casez_tmp_203 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18410,12 +18387,12 @@ module Core(
         casez_tmp_203 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_42 = _take_T_168 & casez_tmp_105 & casez_tmp_106 & (|casez_tmp_107);
-  wire [126:0] _f1_T_52 = 127'h1 << casez_tmp_108;
-  wire [126:0] _freeSteps_11_T_2 = 127'h1 << casez_tmp_203;
+  wire         take_34 = _take_T_136 & casez_tmp_81 & casez_tmp_82 & (|casez_tmp_83);
+  wire [126:0] _f1_T_12 = 127'h1 << casez_tmp_84;
+  wire [126:0] _freeSteps_3_T_2 = 127'h1 << casez_tmp_203;
   reg  [5:0]   casez_tmp_204;
   always_comb begin
-    casez (_idx_T_86)
+    casez (_idx_T_70)
       5'b00000:
         casez_tmp_204 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18482,12 +18459,12 @@ module Core(
         casez_tmp_204 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_43 = _take_T_172 & casez_tmp_109 & casez_tmp_110 & (|casez_tmp_111);
-  wire [126:0] _f1_T_57 = 127'h1 << casez_tmp_112;
-  wire [126:0] _freeSteps_12_T_2 = 127'h1 << casez_tmp_204;
+  wire         take_35 = (|(kept_n[5:2])) & casez_tmp_85 & casez_tmp_86 & (|casez_tmp_87);
+  wire [126:0] _f1_T_17 = 127'h1 << casez_tmp_88;
+  wire [126:0] _freeSteps_4_T_2 = 127'h1 << casez_tmp_204;
   reg  [5:0]   casez_tmp_205;
   always_comb begin
-    casez (_idx_T_88)
+    casez (_idx_T_72)
       5'b00000:
         casez_tmp_205 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18554,12 +18531,12 @@ module Core(
         casez_tmp_205 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_44 = _take_T_176 & casez_tmp_113 & casez_tmp_114 & (|casez_tmp_115);
-  wire [126:0] _f1_T_62 = 127'h1 << casez_tmp_116;
-  wire [126:0] _freeSteps_13_T_2 = 127'h1 << casez_tmp_205;
+  wire         take_36 = _take_T_144 & casez_tmp_89 & casez_tmp_90 & (|casez_tmp_91);
+  wire [126:0] _f1_T_22 = 127'h1 << casez_tmp_92;
+  wire [126:0] _freeSteps_5_T_2 = 127'h1 << casez_tmp_205;
   reg  [5:0]   casez_tmp_206;
   always_comb begin
-    casez (_idx_T_90)
+    casez (_idx_T_74)
       5'b00000:
         casez_tmp_206 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18626,12 +18603,12 @@ module Core(
         casez_tmp_206 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_45 = _take_T_180 & casez_tmp_117 & casez_tmp_118 & (|casez_tmp_119);
-  wire [126:0] _f1_T_67 = 127'h1 << casez_tmp_120;
-  wire [126:0] _freeSteps_14_T_2 = 127'h1 << casez_tmp_206;
+  wire         take_37 = _take_T_148 & casez_tmp_93 & casez_tmp_94 & (|casez_tmp_95);
+  wire [126:0] _f1_T_27 = 127'h1 << casez_tmp_96;
+  wire [126:0] _freeSteps_6_T_2 = 127'h1 << casez_tmp_206;
   reg  [5:0]   casez_tmp_207;
   always_comb begin
-    casez (_idx_T_92)
+    casez (_idx_T_76)
       5'b00000:
         casez_tmp_207 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18698,12 +18675,12 @@ module Core(
         casez_tmp_207 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_46 = _take_T_184 & casez_tmp_121 & casez_tmp_122 & (|casez_tmp_123);
-  wire [126:0] _f1_T_72 = 127'h1 << casez_tmp_124;
-  wire [126:0] _freeSteps_15_T_2 = 127'h1 << casez_tmp_207;
+  wire         take_38 = _take_T_152 & casez_tmp_97 & casez_tmp_98 & (|casez_tmp_99);
+  wire [126:0] _f1_T_32 = 127'h1 << casez_tmp_100;
+  wire [126:0] _freeSteps_7_T_2 = 127'h1 << casez_tmp_207;
   reg  [5:0]   casez_tmp_208;
   always_comb begin
-    casez (_idx_T_94)
+    casez (_idx_T_78)
       5'b00000:
         casez_tmp_208 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18770,13 +18747,13 @@ module Core(
         casez_tmp_208 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_47 =
-    (|(kept_n[5:4])) & casez_tmp_125 & casez_tmp_126 & (|casez_tmp_127);
-  wire [126:0] _f1_T_77 = 127'h1 << casez_tmp_128;
-  wire [126:0] _freeSteps_16_T_2 = 127'h1 << casez_tmp_208;
+  wire         take_39 =
+    (|(kept_n[5:3])) & casez_tmp_101 & casez_tmp_102 & (|casez_tmp_103);
+  wire [126:0] _f1_T_37 = 127'h1 << casez_tmp_104;
+  wire [126:0] _freeSteps_8_T_2 = 127'h1 << casez_tmp_208;
   reg  [5:0]   casez_tmp_209;
   always_comb begin
-    casez (_idx_T_96)
+    casez (_idx_T_80)
       5'b00000:
         casez_tmp_209 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18843,12 +18820,12 @@ module Core(
         casez_tmp_209 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_48 = _take_T_192 & casez_tmp_129 & casez_tmp_130 & (|casez_tmp_131);
-  wire [126:0] _f1_T_82 = 127'h1 << casez_tmp_132;
-  wire [126:0] _freeSteps_17_T_2 = 127'h1 << casez_tmp_209;
+  wire         take_40 = _take_T_160 & casez_tmp_105 & casez_tmp_106 & (|casez_tmp_107);
+  wire [126:0] _f1_T_42 = 127'h1 << casez_tmp_108;
+  wire [126:0] _freeSteps_9_T_2 = 127'h1 << casez_tmp_209;
   reg  [5:0]   casez_tmp_210;
   always_comb begin
-    casez (_idx_T_98)
+    casez (_idx_T_82)
       5'b00000:
         casez_tmp_210 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18915,12 +18892,12 @@ module Core(
         casez_tmp_210 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_49 = _take_T_196 & casez_tmp_133 & casez_tmp_134 & (|casez_tmp_135);
-  wire [126:0] _f1_T_87 = 127'h1 << casez_tmp_136;
-  wire [126:0] _freeSteps_18_T_2 = 127'h1 << casez_tmp_210;
+  wire         take_41 = _take_T_164 & casez_tmp_109 & casez_tmp_110 & (|casez_tmp_111);
+  wire [126:0] _f1_T_47 = 127'h1 << casez_tmp_112;
+  wire [126:0] _freeSteps_10_T_2 = 127'h1 << casez_tmp_210;
   reg  [5:0]   casez_tmp_211;
   always_comb begin
-    casez (_idx_T_100)
+    casez (_idx_T_84)
       5'b00000:
         casez_tmp_211 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -18987,12 +18964,12 @@ module Core(
         casez_tmp_211 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_50 = _take_T_200 & casez_tmp_137 & casez_tmp_138 & (|casez_tmp_139);
-  wire [126:0] _f1_T_92 = 127'h1 << casez_tmp_140;
-  wire [126:0] _freeSteps_19_T_2 = 127'h1 << casez_tmp_211;
+  wire         take_42 = _take_T_168 & casez_tmp_113 & casez_tmp_114 & (|casez_tmp_115);
+  wire [126:0] _f1_T_52 = 127'h1 << casez_tmp_116;
+  wire [126:0] _freeSteps_11_T_2 = 127'h1 << casez_tmp_211;
   reg  [5:0]   casez_tmp_212;
   always_comb begin
-    casez (_idx_T_102)
+    casez (_idx_T_86)
       5'b00000:
         casez_tmp_212 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19059,12 +19036,12 @@ module Core(
         casez_tmp_212 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_51 = _take_T_204 & casez_tmp_141 & casez_tmp_142 & (|casez_tmp_143);
-  wire [126:0] _f1_T_97 = 127'h1 << casez_tmp_144;
-  wire [126:0] _freeSteps_20_T_2 = 127'h1 << casez_tmp_212;
+  wire         take_43 = _take_T_172 & casez_tmp_117 & casez_tmp_118 & (|casez_tmp_119);
+  wire [126:0] _f1_T_57 = 127'h1 << casez_tmp_120;
+  wire [126:0] _freeSteps_12_T_2 = 127'h1 << casez_tmp_212;
   reg  [5:0]   casez_tmp_213;
   always_comb begin
-    casez (_idx_T_104)
+    casez (_idx_T_88)
       5'b00000:
         casez_tmp_213 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19131,12 +19108,12 @@ module Core(
         casez_tmp_213 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_52 = _take_T_208 & casez_tmp_145 & casez_tmp_146 & (|casez_tmp_147);
-  wire [126:0] _f1_T_102 = 127'h1 << casez_tmp_148;
-  wire [126:0] _freeSteps_21_T_2 = 127'h1 << casez_tmp_213;
+  wire         take_44 = _take_T_176 & casez_tmp_121 & casez_tmp_122 & (|casez_tmp_123);
+  wire [126:0] _f1_T_62 = 127'h1 << casez_tmp_124;
+  wire [126:0] _freeSteps_13_T_2 = 127'h1 << casez_tmp_213;
   reg  [5:0]   casez_tmp_214;
   always_comb begin
-    casez (_idx_T_106)
+    casez (_idx_T_90)
       5'b00000:
         casez_tmp_214 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19203,12 +19180,12 @@ module Core(
         casez_tmp_214 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_53 = _take_T_212 & casez_tmp_149 & casez_tmp_150 & (|casez_tmp_151);
-  wire [126:0] _f1_T_107 = 127'h1 << casez_tmp_152;
-  wire [126:0] _freeSteps_22_T_2 = 127'h1 << casez_tmp_214;
+  wire         take_45 = _take_T_180 & casez_tmp_125 & casez_tmp_126 & (|casez_tmp_127);
+  wire [126:0] _f1_T_67 = 127'h1 << casez_tmp_128;
+  wire [126:0] _freeSteps_14_T_2 = 127'h1 << casez_tmp_214;
   reg  [5:0]   casez_tmp_215;
   always_comb begin
-    casez (_idx_T_108)
+    casez (_idx_T_92)
       5'b00000:
         casez_tmp_215 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19275,12 +19252,12 @@ module Core(
         casez_tmp_215 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_54 = _take_T_216 & casez_tmp_153 & casez_tmp_154 & (|casez_tmp_155);
-  wire [126:0] _f1_T_112 = 127'h1 << casez_tmp_156;
-  wire [126:0] _freeSteps_23_T_2 = 127'h1 << casez_tmp_215;
+  wire         take_46 = _take_T_184 & casez_tmp_129 & casez_tmp_130 & (|casez_tmp_131);
+  wire [126:0] _f1_T_72 = 127'h1 << casez_tmp_132;
+  wire [126:0] _freeSteps_15_T_2 = 127'h1 << casez_tmp_215;
   reg  [5:0]   casez_tmp_216;
   always_comb begin
-    casez (_idx_T_110)
+    casez (_idx_T_94)
       5'b00000:
         casez_tmp_216 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19347,12 +19324,13 @@ module Core(
         casez_tmp_216 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_55 = _take_T_220 & casez_tmp_157 & casez_tmp_158 & (|casez_tmp_159);
-  wire [126:0] _f1_T_117 = 127'h1 << casez_tmp_160;
-  wire [126:0] _freeSteps_24_T_2 = 127'h1 << casez_tmp_216;
+  wire         take_47 =
+    (|(kept_n[5:4])) & casez_tmp_133 & casez_tmp_134 & (|casez_tmp_135);
+  wire [126:0] _f1_T_77 = 127'h1 << casez_tmp_136;
+  wire [126:0] _freeSteps_16_T_2 = 127'h1 << casez_tmp_216;
   reg  [5:0]   casez_tmp_217;
   always_comb begin
-    casez (_idx_T_112)
+    casez (_idx_T_96)
       5'b00000:
         casez_tmp_217 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19419,12 +19397,12 @@ module Core(
         casez_tmp_217 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_56 = _take_T_224 & casez_tmp_161 & casez_tmp_162 & (|casez_tmp_163);
-  wire [126:0] _f1_T_122 = 127'h1 << casez_tmp_164;
-  wire [126:0] _freeSteps_25_T_2 = 127'h1 << casez_tmp_217;
+  wire         take_48 = _take_T_192 & casez_tmp_137 & casez_tmp_138 & (|casez_tmp_139);
+  wire [126:0] _f1_T_82 = 127'h1 << casez_tmp_140;
+  wire [126:0] _freeSteps_17_T_2 = 127'h1 << casez_tmp_217;
   reg  [5:0]   casez_tmp_218;
   always_comb begin
-    casez (_idx_T_114)
+    casez (_idx_T_98)
       5'b00000:
         casez_tmp_218 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19491,12 +19469,12 @@ module Core(
         casez_tmp_218 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_57 = _take_T_228 & casez_tmp_165 & casez_tmp_166 & (|casez_tmp_167);
-  wire [126:0] _f1_T_127 = 127'h1 << casez_tmp_168;
-  wire [126:0] _freeSteps_26_T_2 = 127'h1 << casez_tmp_218;
+  wire         take_49 = _take_T_196 & casez_tmp_141 & casez_tmp_142 & (|casez_tmp_143);
+  wire [126:0] _f1_T_87 = 127'h1 << casez_tmp_144;
+  wire [126:0] _freeSteps_18_T_2 = 127'h1 << casez_tmp_218;
   reg  [5:0]   casez_tmp_219;
   always_comb begin
-    casez (_idx_T_116)
+    casez (_idx_T_100)
       5'b00000:
         casez_tmp_219 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19563,12 +19541,12 @@ module Core(
         casez_tmp_219 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_58 = _take_T_232 & casez_tmp_169 & casez_tmp_170 & (|casez_tmp_171);
-  wire [126:0] _f1_T_132 = 127'h1 << casez_tmp_172;
-  wire [126:0] _freeSteps_27_T_2 = 127'h1 << casez_tmp_219;
+  wire         take_50 = _take_T_200 & casez_tmp_145 & casez_tmp_146 & (|casez_tmp_147);
+  wire [126:0] _f1_T_92 = 127'h1 << casez_tmp_148;
+  wire [126:0] _freeSteps_19_T_2 = 127'h1 << casez_tmp_219;
   reg  [5:0]   casez_tmp_220;
   always_comb begin
-    casez (_idx_T_118)
+    casez (_idx_T_102)
       5'b00000:
         casez_tmp_220 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19635,12 +19613,12 @@ module Core(
         casez_tmp_220 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_59 = _take_T_236 & casez_tmp_173 & casez_tmp_174 & (|casez_tmp_175);
-  wire [126:0] _f1_T_137 = 127'h1 << casez_tmp_176;
-  wire [126:0] _freeSteps_28_T_2 = 127'h1 << casez_tmp_220;
+  wire         take_51 = _take_T_204 & casez_tmp_149 & casez_tmp_150 & (|casez_tmp_151);
+  wire [126:0] _f1_T_97 = 127'h1 << casez_tmp_152;
+  wire [126:0] _freeSteps_20_T_2 = 127'h1 << casez_tmp_220;
   reg  [5:0]   casez_tmp_221;
   always_comb begin
-    casez (_idx_T_120)
+    casez (_idx_T_104)
       5'b00000:
         casez_tmp_221 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19707,12 +19685,12 @@ module Core(
         casez_tmp_221 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_60 = _take_T_240 & casez_tmp_177 & casez_tmp_178 & (|casez_tmp_179);
-  wire [126:0] _f1_T_142 = 127'h1 << casez_tmp_180;
-  wire [126:0] _freeSteps_29_T_2 = 127'h1 << casez_tmp_221;
+  wire         take_52 = _take_T_208 & casez_tmp_153 & casez_tmp_154 & (|casez_tmp_155);
+  wire [126:0] _f1_T_102 = 127'h1 << casez_tmp_156;
+  wire [126:0] _freeSteps_21_T_2 = 127'h1 << casez_tmp_221;
   reg  [5:0]   casez_tmp_222;
   always_comb begin
-    casez (_idx_T_122)
+    casez (_idx_T_106)
       5'b00000:
         casez_tmp_222 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19779,12 +19757,12 @@ module Core(
         casez_tmp_222 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_61 = _take_T_244 & casez_tmp_181 & casez_tmp_182 & (|casez_tmp_183);
-  wire [126:0] _f1_T_147 = 127'h1 << casez_tmp_184;
-  wire [126:0] _freeSteps_30_T_2 = 127'h1 << casez_tmp_222;
+  wire         take_53 = _take_T_212 & casez_tmp_157 & casez_tmp_158 & (|casez_tmp_159);
+  wire [126:0] _f1_T_107 = 127'h1 << casez_tmp_160;
+  wire [126:0] _freeSteps_22_T_2 = 127'h1 << casez_tmp_222;
   reg  [5:0]   casez_tmp_223;
   always_comb begin
-    casez (_idx_T_124)
+    casez (_idx_T_108)
       5'b00000:
         casez_tmp_223 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19851,12 +19829,12 @@ module Core(
         casez_tmp_223 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_62 = _take_T_248 & casez_tmp_185 & casez_tmp_186 & (|casez_tmp_187);
-  wire [126:0] _f1_T_152 = 127'h1 << casez_tmp_188;
-  wire [126:0] _freeSteps_31_T_2 = 127'h1 << casez_tmp_223;
+  wire         take_54 = _take_T_216 & casez_tmp_161 & casez_tmp_162 & (|casez_tmp_163);
+  wire [126:0] _f1_T_112 = 127'h1 << casez_tmp_164;
+  wire [126:0] _freeSteps_23_T_2 = 127'h1 << casez_tmp_223;
   reg  [5:0]   casez_tmp_224;
   always_comb begin
-    casez (_idx_T_126)
+    casez (_idx_T_110)
       5'b00000:
         casez_tmp_224 = _rob_io_entries_0_old_phys;
       5'b00001:
@@ -19923,9 +19901,585 @@ module Core(
         casez_tmp_224 = _rob_io_entries_31_old_phys;
     endcase
   end // always_comb
-  wire         take_63 = kept_n[5] & casez_tmp_189 & casez_tmp_190 & (|casez_tmp_191);
-  wire [126:0] _f1_T_157 = 127'h1 << casez_tmp_192;
-  wire [126:0] _freeSteps_32_T_2 = 127'h1 << casez_tmp_224;
+  wire         take_55 = _take_T_220 & casez_tmp_165 & casez_tmp_166 & (|casez_tmp_167);
+  wire [126:0] _f1_T_117 = 127'h1 << casez_tmp_168;
+  wire [126:0] _freeSteps_24_T_2 = 127'h1 << casez_tmp_224;
+  reg  [5:0]   casez_tmp_225;
+  always_comb begin
+    casez (_idx_T_112)
+      5'b00000:
+        casez_tmp_225 = _rob_io_entries_0_old_phys;
+      5'b00001:
+        casez_tmp_225 = _rob_io_entries_1_old_phys;
+      5'b00010:
+        casez_tmp_225 = _rob_io_entries_2_old_phys;
+      5'b00011:
+        casez_tmp_225 = _rob_io_entries_3_old_phys;
+      5'b00100:
+        casez_tmp_225 = _rob_io_entries_4_old_phys;
+      5'b00101:
+        casez_tmp_225 = _rob_io_entries_5_old_phys;
+      5'b00110:
+        casez_tmp_225 = _rob_io_entries_6_old_phys;
+      5'b00111:
+        casez_tmp_225 = _rob_io_entries_7_old_phys;
+      5'b01000:
+        casez_tmp_225 = _rob_io_entries_8_old_phys;
+      5'b01001:
+        casez_tmp_225 = _rob_io_entries_9_old_phys;
+      5'b01010:
+        casez_tmp_225 = _rob_io_entries_10_old_phys;
+      5'b01011:
+        casez_tmp_225 = _rob_io_entries_11_old_phys;
+      5'b01100:
+        casez_tmp_225 = _rob_io_entries_12_old_phys;
+      5'b01101:
+        casez_tmp_225 = _rob_io_entries_13_old_phys;
+      5'b01110:
+        casez_tmp_225 = _rob_io_entries_14_old_phys;
+      5'b01111:
+        casez_tmp_225 = _rob_io_entries_15_old_phys;
+      5'b10000:
+        casez_tmp_225 = _rob_io_entries_16_old_phys;
+      5'b10001:
+        casez_tmp_225 = _rob_io_entries_17_old_phys;
+      5'b10010:
+        casez_tmp_225 = _rob_io_entries_18_old_phys;
+      5'b10011:
+        casez_tmp_225 = _rob_io_entries_19_old_phys;
+      5'b10100:
+        casez_tmp_225 = _rob_io_entries_20_old_phys;
+      5'b10101:
+        casez_tmp_225 = _rob_io_entries_21_old_phys;
+      5'b10110:
+        casez_tmp_225 = _rob_io_entries_22_old_phys;
+      5'b10111:
+        casez_tmp_225 = _rob_io_entries_23_old_phys;
+      5'b11000:
+        casez_tmp_225 = _rob_io_entries_24_old_phys;
+      5'b11001:
+        casez_tmp_225 = _rob_io_entries_25_old_phys;
+      5'b11010:
+        casez_tmp_225 = _rob_io_entries_26_old_phys;
+      5'b11011:
+        casez_tmp_225 = _rob_io_entries_27_old_phys;
+      5'b11100:
+        casez_tmp_225 = _rob_io_entries_28_old_phys;
+      5'b11101:
+        casez_tmp_225 = _rob_io_entries_29_old_phys;
+      5'b11110:
+        casez_tmp_225 = _rob_io_entries_30_old_phys;
+      default:
+        casez_tmp_225 = _rob_io_entries_31_old_phys;
+    endcase
+  end // always_comb
+  wire         take_56 = _take_T_224 & casez_tmp_169 & casez_tmp_170 & (|casez_tmp_171);
+  wire [126:0] _f1_T_122 = 127'h1 << casez_tmp_172;
+  wire [126:0] _freeSteps_25_T_2 = 127'h1 << casez_tmp_225;
+  reg  [5:0]   casez_tmp_226;
+  always_comb begin
+    casez (_idx_T_114)
+      5'b00000:
+        casez_tmp_226 = _rob_io_entries_0_old_phys;
+      5'b00001:
+        casez_tmp_226 = _rob_io_entries_1_old_phys;
+      5'b00010:
+        casez_tmp_226 = _rob_io_entries_2_old_phys;
+      5'b00011:
+        casez_tmp_226 = _rob_io_entries_3_old_phys;
+      5'b00100:
+        casez_tmp_226 = _rob_io_entries_4_old_phys;
+      5'b00101:
+        casez_tmp_226 = _rob_io_entries_5_old_phys;
+      5'b00110:
+        casez_tmp_226 = _rob_io_entries_6_old_phys;
+      5'b00111:
+        casez_tmp_226 = _rob_io_entries_7_old_phys;
+      5'b01000:
+        casez_tmp_226 = _rob_io_entries_8_old_phys;
+      5'b01001:
+        casez_tmp_226 = _rob_io_entries_9_old_phys;
+      5'b01010:
+        casez_tmp_226 = _rob_io_entries_10_old_phys;
+      5'b01011:
+        casez_tmp_226 = _rob_io_entries_11_old_phys;
+      5'b01100:
+        casez_tmp_226 = _rob_io_entries_12_old_phys;
+      5'b01101:
+        casez_tmp_226 = _rob_io_entries_13_old_phys;
+      5'b01110:
+        casez_tmp_226 = _rob_io_entries_14_old_phys;
+      5'b01111:
+        casez_tmp_226 = _rob_io_entries_15_old_phys;
+      5'b10000:
+        casez_tmp_226 = _rob_io_entries_16_old_phys;
+      5'b10001:
+        casez_tmp_226 = _rob_io_entries_17_old_phys;
+      5'b10010:
+        casez_tmp_226 = _rob_io_entries_18_old_phys;
+      5'b10011:
+        casez_tmp_226 = _rob_io_entries_19_old_phys;
+      5'b10100:
+        casez_tmp_226 = _rob_io_entries_20_old_phys;
+      5'b10101:
+        casez_tmp_226 = _rob_io_entries_21_old_phys;
+      5'b10110:
+        casez_tmp_226 = _rob_io_entries_22_old_phys;
+      5'b10111:
+        casez_tmp_226 = _rob_io_entries_23_old_phys;
+      5'b11000:
+        casez_tmp_226 = _rob_io_entries_24_old_phys;
+      5'b11001:
+        casez_tmp_226 = _rob_io_entries_25_old_phys;
+      5'b11010:
+        casez_tmp_226 = _rob_io_entries_26_old_phys;
+      5'b11011:
+        casez_tmp_226 = _rob_io_entries_27_old_phys;
+      5'b11100:
+        casez_tmp_226 = _rob_io_entries_28_old_phys;
+      5'b11101:
+        casez_tmp_226 = _rob_io_entries_29_old_phys;
+      5'b11110:
+        casez_tmp_226 = _rob_io_entries_30_old_phys;
+      default:
+        casez_tmp_226 = _rob_io_entries_31_old_phys;
+    endcase
+  end // always_comb
+  wire         take_57 = _take_T_228 & casez_tmp_173 & casez_tmp_174 & (|casez_tmp_175);
+  wire [126:0] _f1_T_127 = 127'h1 << casez_tmp_176;
+  wire [126:0] _freeSteps_26_T_2 = 127'h1 << casez_tmp_226;
+  reg  [5:0]   casez_tmp_227;
+  always_comb begin
+    casez (_idx_T_116)
+      5'b00000:
+        casez_tmp_227 = _rob_io_entries_0_old_phys;
+      5'b00001:
+        casez_tmp_227 = _rob_io_entries_1_old_phys;
+      5'b00010:
+        casez_tmp_227 = _rob_io_entries_2_old_phys;
+      5'b00011:
+        casez_tmp_227 = _rob_io_entries_3_old_phys;
+      5'b00100:
+        casez_tmp_227 = _rob_io_entries_4_old_phys;
+      5'b00101:
+        casez_tmp_227 = _rob_io_entries_5_old_phys;
+      5'b00110:
+        casez_tmp_227 = _rob_io_entries_6_old_phys;
+      5'b00111:
+        casez_tmp_227 = _rob_io_entries_7_old_phys;
+      5'b01000:
+        casez_tmp_227 = _rob_io_entries_8_old_phys;
+      5'b01001:
+        casez_tmp_227 = _rob_io_entries_9_old_phys;
+      5'b01010:
+        casez_tmp_227 = _rob_io_entries_10_old_phys;
+      5'b01011:
+        casez_tmp_227 = _rob_io_entries_11_old_phys;
+      5'b01100:
+        casez_tmp_227 = _rob_io_entries_12_old_phys;
+      5'b01101:
+        casez_tmp_227 = _rob_io_entries_13_old_phys;
+      5'b01110:
+        casez_tmp_227 = _rob_io_entries_14_old_phys;
+      5'b01111:
+        casez_tmp_227 = _rob_io_entries_15_old_phys;
+      5'b10000:
+        casez_tmp_227 = _rob_io_entries_16_old_phys;
+      5'b10001:
+        casez_tmp_227 = _rob_io_entries_17_old_phys;
+      5'b10010:
+        casez_tmp_227 = _rob_io_entries_18_old_phys;
+      5'b10011:
+        casez_tmp_227 = _rob_io_entries_19_old_phys;
+      5'b10100:
+        casez_tmp_227 = _rob_io_entries_20_old_phys;
+      5'b10101:
+        casez_tmp_227 = _rob_io_entries_21_old_phys;
+      5'b10110:
+        casez_tmp_227 = _rob_io_entries_22_old_phys;
+      5'b10111:
+        casez_tmp_227 = _rob_io_entries_23_old_phys;
+      5'b11000:
+        casez_tmp_227 = _rob_io_entries_24_old_phys;
+      5'b11001:
+        casez_tmp_227 = _rob_io_entries_25_old_phys;
+      5'b11010:
+        casez_tmp_227 = _rob_io_entries_26_old_phys;
+      5'b11011:
+        casez_tmp_227 = _rob_io_entries_27_old_phys;
+      5'b11100:
+        casez_tmp_227 = _rob_io_entries_28_old_phys;
+      5'b11101:
+        casez_tmp_227 = _rob_io_entries_29_old_phys;
+      5'b11110:
+        casez_tmp_227 = _rob_io_entries_30_old_phys;
+      default:
+        casez_tmp_227 = _rob_io_entries_31_old_phys;
+    endcase
+  end // always_comb
+  wire         take_58 = _take_T_232 & casez_tmp_177 & casez_tmp_178 & (|casez_tmp_179);
+  wire [126:0] _f1_T_132 = 127'h1 << casez_tmp_180;
+  wire [126:0] _freeSteps_27_T_2 = 127'h1 << casez_tmp_227;
+  reg  [5:0]   casez_tmp_228;
+  always_comb begin
+    casez (_idx_T_118)
+      5'b00000:
+        casez_tmp_228 = _rob_io_entries_0_old_phys;
+      5'b00001:
+        casez_tmp_228 = _rob_io_entries_1_old_phys;
+      5'b00010:
+        casez_tmp_228 = _rob_io_entries_2_old_phys;
+      5'b00011:
+        casez_tmp_228 = _rob_io_entries_3_old_phys;
+      5'b00100:
+        casez_tmp_228 = _rob_io_entries_4_old_phys;
+      5'b00101:
+        casez_tmp_228 = _rob_io_entries_5_old_phys;
+      5'b00110:
+        casez_tmp_228 = _rob_io_entries_6_old_phys;
+      5'b00111:
+        casez_tmp_228 = _rob_io_entries_7_old_phys;
+      5'b01000:
+        casez_tmp_228 = _rob_io_entries_8_old_phys;
+      5'b01001:
+        casez_tmp_228 = _rob_io_entries_9_old_phys;
+      5'b01010:
+        casez_tmp_228 = _rob_io_entries_10_old_phys;
+      5'b01011:
+        casez_tmp_228 = _rob_io_entries_11_old_phys;
+      5'b01100:
+        casez_tmp_228 = _rob_io_entries_12_old_phys;
+      5'b01101:
+        casez_tmp_228 = _rob_io_entries_13_old_phys;
+      5'b01110:
+        casez_tmp_228 = _rob_io_entries_14_old_phys;
+      5'b01111:
+        casez_tmp_228 = _rob_io_entries_15_old_phys;
+      5'b10000:
+        casez_tmp_228 = _rob_io_entries_16_old_phys;
+      5'b10001:
+        casez_tmp_228 = _rob_io_entries_17_old_phys;
+      5'b10010:
+        casez_tmp_228 = _rob_io_entries_18_old_phys;
+      5'b10011:
+        casez_tmp_228 = _rob_io_entries_19_old_phys;
+      5'b10100:
+        casez_tmp_228 = _rob_io_entries_20_old_phys;
+      5'b10101:
+        casez_tmp_228 = _rob_io_entries_21_old_phys;
+      5'b10110:
+        casez_tmp_228 = _rob_io_entries_22_old_phys;
+      5'b10111:
+        casez_tmp_228 = _rob_io_entries_23_old_phys;
+      5'b11000:
+        casez_tmp_228 = _rob_io_entries_24_old_phys;
+      5'b11001:
+        casez_tmp_228 = _rob_io_entries_25_old_phys;
+      5'b11010:
+        casez_tmp_228 = _rob_io_entries_26_old_phys;
+      5'b11011:
+        casez_tmp_228 = _rob_io_entries_27_old_phys;
+      5'b11100:
+        casez_tmp_228 = _rob_io_entries_28_old_phys;
+      5'b11101:
+        casez_tmp_228 = _rob_io_entries_29_old_phys;
+      5'b11110:
+        casez_tmp_228 = _rob_io_entries_30_old_phys;
+      default:
+        casez_tmp_228 = _rob_io_entries_31_old_phys;
+    endcase
+  end // always_comb
+  wire         take_59 = _take_T_236 & casez_tmp_181 & casez_tmp_182 & (|casez_tmp_183);
+  wire [126:0] _f1_T_137 = 127'h1 << casez_tmp_184;
+  wire [126:0] _freeSteps_28_T_2 = 127'h1 << casez_tmp_228;
+  reg  [5:0]   casez_tmp_229;
+  always_comb begin
+    casez (_idx_T_120)
+      5'b00000:
+        casez_tmp_229 = _rob_io_entries_0_old_phys;
+      5'b00001:
+        casez_tmp_229 = _rob_io_entries_1_old_phys;
+      5'b00010:
+        casez_tmp_229 = _rob_io_entries_2_old_phys;
+      5'b00011:
+        casez_tmp_229 = _rob_io_entries_3_old_phys;
+      5'b00100:
+        casez_tmp_229 = _rob_io_entries_4_old_phys;
+      5'b00101:
+        casez_tmp_229 = _rob_io_entries_5_old_phys;
+      5'b00110:
+        casez_tmp_229 = _rob_io_entries_6_old_phys;
+      5'b00111:
+        casez_tmp_229 = _rob_io_entries_7_old_phys;
+      5'b01000:
+        casez_tmp_229 = _rob_io_entries_8_old_phys;
+      5'b01001:
+        casez_tmp_229 = _rob_io_entries_9_old_phys;
+      5'b01010:
+        casez_tmp_229 = _rob_io_entries_10_old_phys;
+      5'b01011:
+        casez_tmp_229 = _rob_io_entries_11_old_phys;
+      5'b01100:
+        casez_tmp_229 = _rob_io_entries_12_old_phys;
+      5'b01101:
+        casez_tmp_229 = _rob_io_entries_13_old_phys;
+      5'b01110:
+        casez_tmp_229 = _rob_io_entries_14_old_phys;
+      5'b01111:
+        casez_tmp_229 = _rob_io_entries_15_old_phys;
+      5'b10000:
+        casez_tmp_229 = _rob_io_entries_16_old_phys;
+      5'b10001:
+        casez_tmp_229 = _rob_io_entries_17_old_phys;
+      5'b10010:
+        casez_tmp_229 = _rob_io_entries_18_old_phys;
+      5'b10011:
+        casez_tmp_229 = _rob_io_entries_19_old_phys;
+      5'b10100:
+        casez_tmp_229 = _rob_io_entries_20_old_phys;
+      5'b10101:
+        casez_tmp_229 = _rob_io_entries_21_old_phys;
+      5'b10110:
+        casez_tmp_229 = _rob_io_entries_22_old_phys;
+      5'b10111:
+        casez_tmp_229 = _rob_io_entries_23_old_phys;
+      5'b11000:
+        casez_tmp_229 = _rob_io_entries_24_old_phys;
+      5'b11001:
+        casez_tmp_229 = _rob_io_entries_25_old_phys;
+      5'b11010:
+        casez_tmp_229 = _rob_io_entries_26_old_phys;
+      5'b11011:
+        casez_tmp_229 = _rob_io_entries_27_old_phys;
+      5'b11100:
+        casez_tmp_229 = _rob_io_entries_28_old_phys;
+      5'b11101:
+        casez_tmp_229 = _rob_io_entries_29_old_phys;
+      5'b11110:
+        casez_tmp_229 = _rob_io_entries_30_old_phys;
+      default:
+        casez_tmp_229 = _rob_io_entries_31_old_phys;
+    endcase
+  end // always_comb
+  wire         take_60 = _take_T_240 & casez_tmp_185 & casez_tmp_186 & (|casez_tmp_187);
+  wire [126:0] _f1_T_142 = 127'h1 << casez_tmp_188;
+  wire [126:0] _freeSteps_29_T_2 = 127'h1 << casez_tmp_229;
+  reg  [5:0]   casez_tmp_230;
+  always_comb begin
+    casez (_idx_T_122)
+      5'b00000:
+        casez_tmp_230 = _rob_io_entries_0_old_phys;
+      5'b00001:
+        casez_tmp_230 = _rob_io_entries_1_old_phys;
+      5'b00010:
+        casez_tmp_230 = _rob_io_entries_2_old_phys;
+      5'b00011:
+        casez_tmp_230 = _rob_io_entries_3_old_phys;
+      5'b00100:
+        casez_tmp_230 = _rob_io_entries_4_old_phys;
+      5'b00101:
+        casez_tmp_230 = _rob_io_entries_5_old_phys;
+      5'b00110:
+        casez_tmp_230 = _rob_io_entries_6_old_phys;
+      5'b00111:
+        casez_tmp_230 = _rob_io_entries_7_old_phys;
+      5'b01000:
+        casez_tmp_230 = _rob_io_entries_8_old_phys;
+      5'b01001:
+        casez_tmp_230 = _rob_io_entries_9_old_phys;
+      5'b01010:
+        casez_tmp_230 = _rob_io_entries_10_old_phys;
+      5'b01011:
+        casez_tmp_230 = _rob_io_entries_11_old_phys;
+      5'b01100:
+        casez_tmp_230 = _rob_io_entries_12_old_phys;
+      5'b01101:
+        casez_tmp_230 = _rob_io_entries_13_old_phys;
+      5'b01110:
+        casez_tmp_230 = _rob_io_entries_14_old_phys;
+      5'b01111:
+        casez_tmp_230 = _rob_io_entries_15_old_phys;
+      5'b10000:
+        casez_tmp_230 = _rob_io_entries_16_old_phys;
+      5'b10001:
+        casez_tmp_230 = _rob_io_entries_17_old_phys;
+      5'b10010:
+        casez_tmp_230 = _rob_io_entries_18_old_phys;
+      5'b10011:
+        casez_tmp_230 = _rob_io_entries_19_old_phys;
+      5'b10100:
+        casez_tmp_230 = _rob_io_entries_20_old_phys;
+      5'b10101:
+        casez_tmp_230 = _rob_io_entries_21_old_phys;
+      5'b10110:
+        casez_tmp_230 = _rob_io_entries_22_old_phys;
+      5'b10111:
+        casez_tmp_230 = _rob_io_entries_23_old_phys;
+      5'b11000:
+        casez_tmp_230 = _rob_io_entries_24_old_phys;
+      5'b11001:
+        casez_tmp_230 = _rob_io_entries_25_old_phys;
+      5'b11010:
+        casez_tmp_230 = _rob_io_entries_26_old_phys;
+      5'b11011:
+        casez_tmp_230 = _rob_io_entries_27_old_phys;
+      5'b11100:
+        casez_tmp_230 = _rob_io_entries_28_old_phys;
+      5'b11101:
+        casez_tmp_230 = _rob_io_entries_29_old_phys;
+      5'b11110:
+        casez_tmp_230 = _rob_io_entries_30_old_phys;
+      default:
+        casez_tmp_230 = _rob_io_entries_31_old_phys;
+    endcase
+  end // always_comb
+  wire         take_61 = _take_T_244 & casez_tmp_189 & casez_tmp_190 & (|casez_tmp_191);
+  wire [126:0] _f1_T_147 = 127'h1 << casez_tmp_192;
+  wire [126:0] _freeSteps_30_T_2 = 127'h1 << casez_tmp_230;
+  reg  [5:0]   casez_tmp_231;
+  always_comb begin
+    casez (_idx_T_124)
+      5'b00000:
+        casez_tmp_231 = _rob_io_entries_0_old_phys;
+      5'b00001:
+        casez_tmp_231 = _rob_io_entries_1_old_phys;
+      5'b00010:
+        casez_tmp_231 = _rob_io_entries_2_old_phys;
+      5'b00011:
+        casez_tmp_231 = _rob_io_entries_3_old_phys;
+      5'b00100:
+        casez_tmp_231 = _rob_io_entries_4_old_phys;
+      5'b00101:
+        casez_tmp_231 = _rob_io_entries_5_old_phys;
+      5'b00110:
+        casez_tmp_231 = _rob_io_entries_6_old_phys;
+      5'b00111:
+        casez_tmp_231 = _rob_io_entries_7_old_phys;
+      5'b01000:
+        casez_tmp_231 = _rob_io_entries_8_old_phys;
+      5'b01001:
+        casez_tmp_231 = _rob_io_entries_9_old_phys;
+      5'b01010:
+        casez_tmp_231 = _rob_io_entries_10_old_phys;
+      5'b01011:
+        casez_tmp_231 = _rob_io_entries_11_old_phys;
+      5'b01100:
+        casez_tmp_231 = _rob_io_entries_12_old_phys;
+      5'b01101:
+        casez_tmp_231 = _rob_io_entries_13_old_phys;
+      5'b01110:
+        casez_tmp_231 = _rob_io_entries_14_old_phys;
+      5'b01111:
+        casez_tmp_231 = _rob_io_entries_15_old_phys;
+      5'b10000:
+        casez_tmp_231 = _rob_io_entries_16_old_phys;
+      5'b10001:
+        casez_tmp_231 = _rob_io_entries_17_old_phys;
+      5'b10010:
+        casez_tmp_231 = _rob_io_entries_18_old_phys;
+      5'b10011:
+        casez_tmp_231 = _rob_io_entries_19_old_phys;
+      5'b10100:
+        casez_tmp_231 = _rob_io_entries_20_old_phys;
+      5'b10101:
+        casez_tmp_231 = _rob_io_entries_21_old_phys;
+      5'b10110:
+        casez_tmp_231 = _rob_io_entries_22_old_phys;
+      5'b10111:
+        casez_tmp_231 = _rob_io_entries_23_old_phys;
+      5'b11000:
+        casez_tmp_231 = _rob_io_entries_24_old_phys;
+      5'b11001:
+        casez_tmp_231 = _rob_io_entries_25_old_phys;
+      5'b11010:
+        casez_tmp_231 = _rob_io_entries_26_old_phys;
+      5'b11011:
+        casez_tmp_231 = _rob_io_entries_27_old_phys;
+      5'b11100:
+        casez_tmp_231 = _rob_io_entries_28_old_phys;
+      5'b11101:
+        casez_tmp_231 = _rob_io_entries_29_old_phys;
+      5'b11110:
+        casez_tmp_231 = _rob_io_entries_30_old_phys;
+      default:
+        casez_tmp_231 = _rob_io_entries_31_old_phys;
+    endcase
+  end // always_comb
+  wire         take_62 = _take_T_248 & casez_tmp_193 & casez_tmp_194 & (|casez_tmp_195);
+  wire [126:0] _f1_T_152 = 127'h1 << casez_tmp_196;
+  wire [126:0] _freeSteps_31_T_2 = 127'h1 << casez_tmp_231;
+  reg  [5:0]   casez_tmp_232;
+  always_comb begin
+    casez (_idx_T_126)
+      5'b00000:
+        casez_tmp_232 = _rob_io_entries_0_old_phys;
+      5'b00001:
+        casez_tmp_232 = _rob_io_entries_1_old_phys;
+      5'b00010:
+        casez_tmp_232 = _rob_io_entries_2_old_phys;
+      5'b00011:
+        casez_tmp_232 = _rob_io_entries_3_old_phys;
+      5'b00100:
+        casez_tmp_232 = _rob_io_entries_4_old_phys;
+      5'b00101:
+        casez_tmp_232 = _rob_io_entries_5_old_phys;
+      5'b00110:
+        casez_tmp_232 = _rob_io_entries_6_old_phys;
+      5'b00111:
+        casez_tmp_232 = _rob_io_entries_7_old_phys;
+      5'b01000:
+        casez_tmp_232 = _rob_io_entries_8_old_phys;
+      5'b01001:
+        casez_tmp_232 = _rob_io_entries_9_old_phys;
+      5'b01010:
+        casez_tmp_232 = _rob_io_entries_10_old_phys;
+      5'b01011:
+        casez_tmp_232 = _rob_io_entries_11_old_phys;
+      5'b01100:
+        casez_tmp_232 = _rob_io_entries_12_old_phys;
+      5'b01101:
+        casez_tmp_232 = _rob_io_entries_13_old_phys;
+      5'b01110:
+        casez_tmp_232 = _rob_io_entries_14_old_phys;
+      5'b01111:
+        casez_tmp_232 = _rob_io_entries_15_old_phys;
+      5'b10000:
+        casez_tmp_232 = _rob_io_entries_16_old_phys;
+      5'b10001:
+        casez_tmp_232 = _rob_io_entries_17_old_phys;
+      5'b10010:
+        casez_tmp_232 = _rob_io_entries_18_old_phys;
+      5'b10011:
+        casez_tmp_232 = _rob_io_entries_19_old_phys;
+      5'b10100:
+        casez_tmp_232 = _rob_io_entries_20_old_phys;
+      5'b10101:
+        casez_tmp_232 = _rob_io_entries_21_old_phys;
+      5'b10110:
+        casez_tmp_232 = _rob_io_entries_22_old_phys;
+      5'b10111:
+        casez_tmp_232 = _rob_io_entries_23_old_phys;
+      5'b11000:
+        casez_tmp_232 = _rob_io_entries_24_old_phys;
+      5'b11001:
+        casez_tmp_232 = _rob_io_entries_25_old_phys;
+      5'b11010:
+        casez_tmp_232 = _rob_io_entries_26_old_phys;
+      5'b11011:
+        casez_tmp_232 = _rob_io_entries_27_old_phys;
+      5'b11100:
+        casez_tmp_232 = _rob_io_entries_28_old_phys;
+      5'b11101:
+        casez_tmp_232 = _rob_io_entries_29_old_phys;
+      5'b11110:
+        casez_tmp_232 = _rob_io_entries_30_old_phys;
+      default:
+        casez_tmp_232 = _rob_io_entries_31_old_phys;
+    endcase
+  end // always_comb
+  wire         take_63 = kept_n[5] & casez_tmp_197 & casez_tmp_198 & (|casez_tmp_199);
+  wire [126:0] _f1_T_157 = 127'h1 << casez_tmp_200;
+  wire [126:0] _freeSteps_32_T_2 = 127'h1 << casez_tmp_232;
   wire [126:0] _ratReserve_T_8 = 127'h1 << _rename_io_rat_out_1;
   wire [126:0] _ratReserve_T_13 = 127'h1 << _rename_io_rat_out_2;
   wire [126:0] _ratReserve_T_18 = 127'h1 << _rename_io_rat_out_3;
@@ -20635,44 +21189,44 @@ module Core(
   wire         _GEN_54 = io_dmem_bvalid & io_dmem_bready_0;
   wire         _GEN_55 = _GEN_54 & rob_io_commit_fire;
   wire         _GEN_56 = (&cm_st_state) & rob_io_commit_fire;
-  reg  [1:0]   casez_tmp_225;
+  reg  [1:0]   casez_tmp_233;
   always_comb begin
     casez (cm_st_state)
       2'b00:
-        casez_tmp_225 = _GEN_53 ? 2'h1 : cm_st_state;
+        casez_tmp_233 = _GEN_53 ? 2'h1 : cm_st_state;
       2'b01:
-        casez_tmp_225 =
+        casez_tmp_233 =
           (cm_st_aw_done | aw_fire) & (cm_st_w_done | w_fire) ? 2'h2 : cm_st_state;
       2'b10:
-        casez_tmp_225 = _GEN_54 ? (rob_io_commit_fire ? 2'h0 : 2'h3) : cm_st_state;
+        casez_tmp_233 = _GEN_54 ? (rob_io_commit_fire ? 2'h0 : 2'h3) : cm_st_state;
       default:
-        casez_tmp_225 = _GEN_56 ? 2'h0 : cm_st_state;
+        casez_tmp_233 = _GEN_56 ? 2'h0 : cm_st_state;
     endcase
   end // always_comb
-  reg          casez_tmp_226;
+  reg          casez_tmp_234;
   always_comb begin
     casez (cm_st_state)
       2'b00:
-        casez_tmp_226 = ~_GEN_53 & cm_st_aw_done;
+        casez_tmp_234 = ~_GEN_53 & cm_st_aw_done;
       2'b01:
-        casez_tmp_226 = aw_fire | cm_st_aw_done;
+        casez_tmp_234 = aw_fire | cm_st_aw_done;
       2'b10:
-        casez_tmp_226 = ~_GEN_55 & cm_st_aw_done;
+        casez_tmp_234 = ~_GEN_55 & cm_st_aw_done;
       default:
-        casez_tmp_226 = ~_GEN_56 & cm_st_aw_done;
+        casez_tmp_234 = ~_GEN_56 & cm_st_aw_done;
     endcase
   end // always_comb
-  reg          casez_tmp_227;
+  reg          casez_tmp_235;
   always_comb begin
     casez (cm_st_state)
       2'b00:
-        casez_tmp_227 = ~_GEN_53 & cm_st_w_done;
+        casez_tmp_235 = ~_GEN_53 & cm_st_w_done;
       2'b01:
-        casez_tmp_227 = w_fire | cm_st_w_done;
+        casez_tmp_235 = w_fire | cm_st_w_done;
       2'b10:
-        casez_tmp_227 = ~_GEN_55 & cm_st_w_done;
+        casez_tmp_235 = ~_GEN_55 & cm_st_w_done;
       default:
-        casez_tmp_227 = ~_GEN_56 & cm_st_w_done;
+        casez_tmp_235 = ~_GEN_56 & cm_st_w_done;
     endcase
   end // always_comb
   wire         _io_dmem_bready_T = cm_st_state == 2'h2;
@@ -20814,79 +21368,12 @@ module Core(
     {_wbRejectFlags_T_8, _wbRejectFlags_T_9, _wbRejectFlags_T_10, 1'h1};
   wire [3:0]   _wbRejectFlags_T_15 =
     {_wbRejectFlags_T_12, _wbRejectFlags_T_13, _wbRejectFlags_T_14, 1'h1};
-  wire [31:0]  _arch_rf_T =
-    cm_wb_same
-      ? (head_wb0
-           ? _wbu_io_refile_wdata
-           : head_wb1
-               ? _wbu1_io_refile_wdata
-               : head_wb2 ? _wbu2_io_refile_wdata : _wbu3_io_refile_wdata)
-      : _rob_io_commit_bits_dest_val;
-  wire [31:0]  _arch_rf_T_1 =
-    rob_io_commit1_fire & cm1_wb_valid
-      ? (cm1_wb0
-           ? _wbu_io_refile_wdata
-           : cm1_wb1
-               ? _wbu1_io_refile_wdata
-               : cm1_wb2 ? _wbu2_io_refile_wdata : _wbu3_io_refile_wdata)
-      : _rob_io_commit1_bits_dest_val;
-  wire [31:0]  _arch_rf_T_11 =
-    rob_io_commit2_fire
-    & (can_wb & _arch_rf_T_2 | can_wb1 & _arch_rf_T_4 | can_wb2 & _arch_rf_T_6 | can_wb3
-       & _cm2_wb_same_T_8)
-      ? (can_wb & _arch_rf_T_2
-           ? _wbu_io_refile_wdata
-           : can_wb1 & _arch_rf_T_4
-               ? _wbu1_io_refile_wdata
-               : can_wb2 & _arch_rf_T_6 ? _wbu2_io_refile_wdata : _wbu3_io_refile_wdata)
-      : _rob_io_commit2_bits_dest_val;
-  wire [31:0]  _arch_rf_T_21 =
-    rob_io_commit3_fire
-    & (can_wb & _arch_rf_T_12 | can_wb1 & _arch_rf_T_14 | can_wb2 & _arch_rf_T_16
-       | can_wb3 & _cm3_wb_same_T_8)
-      ? (can_wb & _arch_rf_T_12
-           ? _wbu_io_refile_wdata
-           : can_wb1 & _arch_rf_T_14
-               ? _wbu1_io_refile_wdata
-               : can_wb2 & _arch_rf_T_16 ? _wbu2_io_refile_wdata : _wbu3_io_refile_wdata)
-      : _rob_io_commit3_bits_dest_val;
   wire         explicitStoreDrain =
     _rob_io_commit_valid & (cm_needs_store_drain | _rob_io_commit_bits_is_fencei);
   always @(posedge clock) begin
     if (reset) begin
       ifu_io_in_bits_r_next_pc <= 32'h80000000;
       ifu_io_in_valid_r <= 1'h0;
-      arch_rf_1 <= 32'h0;
-      arch_rf_2 <= 32'h0;
-      arch_rf_3 <= 32'h0;
-      arch_rf_4 <= 32'h0;
-      arch_rf_5 <= 32'h0;
-      arch_rf_6 <= 32'h0;
-      arch_rf_7 <= 32'h0;
-      arch_rf_8 <= 32'h0;
-      arch_rf_9 <= 32'h0;
-      arch_rf_10 <= 32'h0;
-      arch_rf_11 <= 32'h0;
-      arch_rf_12 <= 32'h0;
-      arch_rf_13 <= 32'h0;
-      arch_rf_14 <= 32'h0;
-      arch_rf_15 <= 32'h0;
-      arch_rf_16 <= 32'h0;
-      arch_rf_17 <= 32'h0;
-      arch_rf_18 <= 32'h0;
-      arch_rf_19 <= 32'h0;
-      arch_rf_20 <= 32'h0;
-      arch_rf_21 <= 32'h0;
-      arch_rf_22 <= 32'h0;
-      arch_rf_23 <= 32'h0;
-      arch_rf_24 <= 32'h0;
-      arch_rf_25 <= 32'h0;
-      arch_rf_26 <= 32'h0;
-      arch_rf_27 <= 32'h0;
-      arch_rf_28 <= 32'h0;
-      arch_rf_29 <= 32'h0;
-      arch_rf_30 <= 32'h0;
-      arch_rf_31 <= 32'h0;
       d_alu_valid <= 1'h0;
       d_alu_bits_signals_exu_alu_srcA <= 2'h0;
       d_alu_bits_signals_exu_alu_srcB <= 2'h0;
@@ -21149,254 +21636,6 @@ module Core(
         ifu_io_in_bits_r_next_pc <= _ifu_io_pc_bits_next_pc;
       if (_ifu_io_in_ready)
         ifu_io_in_valid_r <= _ifu_io_pc_valid;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h1)
-        arch_rf_1 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h1)
-        arch_rf_1 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h1)
-        arch_rf_1 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h1)
-        arch_rf_1 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h2)
-        arch_rf_2 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h2)
-        arch_rf_2 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h2)
-        arch_rf_2 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h2)
-        arch_rf_2 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h3)
-        arch_rf_3 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h3)
-        arch_rf_3 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h3)
-        arch_rf_3 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h3)
-        arch_rf_3 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h4)
-        arch_rf_4 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h4)
-        arch_rf_4 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h4)
-        arch_rf_4 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h4)
-        arch_rf_4 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h5)
-        arch_rf_5 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h5)
-        arch_rf_5 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h5)
-        arch_rf_5 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h5)
-        arch_rf_5 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h6)
-        arch_rf_6 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h6)
-        arch_rf_6 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h6)
-        arch_rf_6 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h6)
-        arch_rf_6 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h7)
-        arch_rf_7 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h7)
-        arch_rf_7 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h7)
-        arch_rf_7 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h7)
-        arch_rf_7 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h8)
-        arch_rf_8 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h8)
-        arch_rf_8 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h8)
-        arch_rf_8 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h8)
-        arch_rf_8 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h9)
-        arch_rf_9 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h9)
-        arch_rf_9 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h9)
-        arch_rf_9 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h9)
-        arch_rf_9 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'hA)
-        arch_rf_10 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'hA)
-        arch_rf_10 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'hA)
-        arch_rf_10 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'hA)
-        arch_rf_10 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'hB)
-        arch_rf_11 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'hB)
-        arch_rf_11 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'hB)
-        arch_rf_11 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'hB)
-        arch_rf_11 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'hC)
-        arch_rf_12 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'hC)
-        arch_rf_12 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'hC)
-        arch_rf_12 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'hC)
-        arch_rf_12 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'hD)
-        arch_rf_13 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'hD)
-        arch_rf_13 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'hD)
-        arch_rf_13 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'hD)
-        arch_rf_13 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'hE)
-        arch_rf_14 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'hE)
-        arch_rf_14 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'hE)
-        arch_rf_14 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'hE)
-        arch_rf_14 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'hF)
-        arch_rf_15 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'hF)
-        arch_rf_15 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'hF)
-        arch_rf_15 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'hF)
-        arch_rf_15 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h10)
-        arch_rf_16 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h10)
-        arch_rf_16 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h10)
-        arch_rf_16 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h10)
-        arch_rf_16 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h11)
-        arch_rf_17 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h11)
-        arch_rf_17 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h11)
-        arch_rf_17 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h11)
-        arch_rf_17 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h12)
-        arch_rf_18 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h12)
-        arch_rf_18 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h12)
-        arch_rf_18 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h12)
-        arch_rf_18 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h13)
-        arch_rf_19 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h13)
-        arch_rf_19 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h13)
-        arch_rf_19 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h13)
-        arch_rf_19 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h14)
-        arch_rf_20 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h14)
-        arch_rf_20 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h14)
-        arch_rf_20 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h14)
-        arch_rf_20 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h15)
-        arch_rf_21 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h15)
-        arch_rf_21 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h15)
-        arch_rf_21 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h15)
-        arch_rf_21 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h16)
-        arch_rf_22 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h16)
-        arch_rf_22 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h16)
-        arch_rf_22 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h16)
-        arch_rf_22 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h17)
-        arch_rf_23 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h17)
-        arch_rf_23 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h17)
-        arch_rf_23 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h17)
-        arch_rf_23 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h18)
-        arch_rf_24 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h18)
-        arch_rf_24 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h18)
-        arch_rf_24 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h18)
-        arch_rf_24 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h19)
-        arch_rf_25 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h19)
-        arch_rf_25 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h19)
-        arch_rf_25 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h19)
-        arch_rf_25 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h1A)
-        arch_rf_26 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h1A)
-        arch_rf_26 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h1A)
-        arch_rf_26 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h1A)
-        arch_rf_26 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h1B)
-        arch_rf_27 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h1B)
-        arch_rf_27 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h1B)
-        arch_rf_27 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h1B)
-        arch_rf_27 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h1C)
-        arch_rf_28 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h1C)
-        arch_rf_28 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h1C)
-        arch_rf_28 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h1C)
-        arch_rf_28 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h1D)
-        arch_rf_29 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h1D)
-        arch_rf_29 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h1D)
-        arch_rf_29 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h1D)
-        arch_rf_29 <= _arch_rf_T;
-      if (cm3_do_ren & _rob_io_commit3_bits_arch_rd == 5'h1E)
-        arch_rf_30 <= _arch_rf_T_21;
-      else if (cm2_do_ren & _rob_io_commit2_bits_arch_rd == 5'h1E)
-        arch_rf_30 <= _arch_rf_T_11;
-      else if (cm1_do_ren & _rob_io_commit1_bits_arch_rd == 5'h1E)
-        arch_rf_30 <= _arch_rf_T_1;
-      else if (cm_do_ren & _rob_io_commit_bits_arch_rd == 5'h1E)
-        arch_rf_30 <= _arch_rf_T;
-      if (cm3_do_ren & (&_rob_io_commit3_bits_arch_rd))
-        arch_rf_31 <= _arch_rf_T_21;
-      else if (cm2_do_ren & (&_rob_io_commit2_bits_arch_rd))
-        arch_rf_31 <= _arch_rf_T_11;
-      else if (cm1_do_ren & (&_rob_io_commit1_bits_arch_rd))
-        arch_rf_31 <= _arch_rf_T_1;
-      else if (cm_do_ren & (&_rob_io_commit_bits_arch_rd))
-        arch_rf_31 <= _arch_rf_T;
       if (flush_alu | _GEN_57)
         d_alu_valid <= take_alu_issue;
       if ((flush_alu | _GEN_57) & take_alu_issue) begin
@@ -22020,7 +22259,7 @@ module Core(
       if (is_irq)
         cm_st_state <= 2'h0;
       else
-        cm_st_state <= casez_tmp_225;
+        cm_st_state <= casez_tmp_233;
       if (is_irq | ~(cm_st_state == 2'h0 & _GEN_53)) begin
       end
       else begin
@@ -22034,8 +22273,8 @@ module Core(
                 ? 3'h1
                 : {1'h0, _rob_io_commit_bits_mem_wmask[3:0] != 4'h1, 1'h0};
       end
-      cm_st_aw_done <= ~is_irq & casez_tmp_226;
-      cm_st_w_done <= ~is_irq & casez_tmp_227;
+      cm_st_aw_done <= ~is_irq & casez_tmp_234;
+      cm_st_w_done <= ~is_irq & casez_tmp_235;
       stbuf_io_drain_all_REG <= explicitStoreDrain | head_store_direct;
       dcache_io_drain_all_REG <= explicitStoreDrain;
     end
@@ -22119,9 +22358,11 @@ module Core(
              ? mem_violation_pc_w
              : branchRecoveryWins
                  ? correct_pc
-                 : fencei_flush_REG
-                     ? fencei_pc_r + 32'h4
-                     : mret_flush_REG ? mret_mepc_r : 32'h0),
+                 : retirePathRecoveryWins
+                     ? _retirePathGuard_io_correctPc
+                     : fencei_flush_REG
+                         ? fencei_pc_r + 32'h4
+                         : mret_flush_REG ? mret_mepc_r : 32'h0),
     .io_slot1_enable                    (|(_fq_io_enqSpace[4:1])),
     .io_slot2_enable                    (_fq_io_enqSpace > 5'h2),
     .io_slot3_enable                    (|(_fq_io_enqSpace[4:2])),
@@ -23149,7 +23390,7 @@ module Core(
     .io_read_mepc   (_csr_io_read_mepc),
     .io_read1_raddr (_idu1_io_csr_raddr),
     .io_read1_rdata (_csr_io_read1_rdata),
-    .io_write_wdata (casez_tmp_61),
+    .io_write_wdata (casez_tmp_69),
     .io_write_waddr (_rob_io_commit_bits_csr_waddr),
     .io_write_wen   (rob_io_commit_fire & _rob_io_commit_bits_csr_write)
   );
@@ -23265,36 +23506,98 @@ module Core(
     .io_busy                          (_dcache_io_busy)
   );
   WidePRFCompat prf (
-    .clock     (clock),
-    .reset     (reset),
-    .io_raddr1 (id_psrc1),
-    .io_rdata1 (_prf_io_rdata1),
-    .io_raddr2 (id_psrc2),
-    .io_rdata2 (_prf_io_rdata2),
-    .io_raddr3 (id1_psrc1),
-    .io_rdata3 (_prf_io_rdata3),
-    .io_raddr4 (id1_psrc2),
-    .io_rdata4 (_prf_io_rdata4),
-    .io_raddr5 (_rename_io_rs1_phys2),
-    .io_rdata5 (_prf_io_rdata5),
-    .io_raddr6 (_rename_io_rs2_phys2),
-    .io_rdata6 (_prf_io_rdata6),
-    .io_raddr7 (_rename_io_rs1_phys3),
-    .io_rdata7 (_prf_io_rdata7),
-    .io_raddr8 (_rename_io_rs2_phys3),
-    .io_rdata8 (_prf_io_rdata8),
-    .io_wen1   (wb_wen),
-    .io_waddr1 (_wbArb_io_out_0_bits_pdest),
-    .io_wdata1 (_wbu_io_refile_wdata),
-    .io_wen2   (wb1_wen),
-    .io_waddr2 (_wbArb_io_out_1_bits_pdest),
-    .io_wdata2 (_wbu1_io_refile_wdata),
-    .io_wen3   (wb2_wen),
-    .io_waddr3 (_wbArb_io_out_2_bits_pdest),
-    .io_wdata3 (_wbu2_io_refile_wdata),
-    .io_wen4   (wb3_wen),
-    .io_waddr4 (_wbArb_io_out_3_bits_pdest),
-    .io_wdata4 (_wbu3_io_refile_wdata)
+    .clock            (clock),
+    .reset            (reset),
+    .io_raddr1        (id_psrc1),
+    .io_rdata1        (_prf_io_rdata1),
+    .io_raddr2        (id_psrc2),
+    .io_rdata2        (_prf_io_rdata2),
+    .io_raddr3        (id1_psrc1),
+    .io_rdata3        (_prf_io_rdata3),
+    .io_raddr4        (id1_psrc2),
+    .io_rdata4        (_prf_io_rdata4),
+    .io_raddr5        (_rename_io_rs1_phys2),
+    .io_rdata5        (_prf_io_rdata5),
+    .io_raddr6        (_rename_io_rs2_phys2),
+    .io_rdata6        (_prf_io_rdata6),
+    .io_raddr7        (_rename_io_rs1_phys3),
+    .io_rdata7        (_prf_io_rdata7),
+    .io_raddr8        (_rename_io_rs2_phys3),
+    .io_rdata8        (_prf_io_rdata8),
+    .io_wen1          (wb_wen),
+    .io_waddr1        (_wbArb_io_out_0_bits_pdest),
+    .io_wdata1        (_wbu_io_refile_wdata),
+    .io_wen2          (wb1_wen),
+    .io_waddr2        (_wbArb_io_out_1_bits_pdest),
+    .io_wdata2        (_wbu1_io_refile_wdata),
+    .io_wen3          (wb2_wen),
+    .io_waddr3        (_wbArb_io_out_2_bits_pdest),
+    .io_wdata3        (_wbu2_io_refile_wdata),
+    .io_wen4          (wb3_wen),
+    .io_waddr4        (_wbArb_io_out_3_bits_pdest),
+    .io_wdata4        (_wbu3_io_refile_wdata),
+    .io_arch_raddr_1  (_rename_io_arch_rat_out_1),
+    .io_arch_raddr_2  (_rename_io_arch_rat_out_2),
+    .io_arch_raddr_3  (_rename_io_arch_rat_out_3),
+    .io_arch_raddr_4  (_rename_io_arch_rat_out_4),
+    .io_arch_raddr_5  (_rename_io_arch_rat_out_5),
+    .io_arch_raddr_6  (_rename_io_arch_rat_out_6),
+    .io_arch_raddr_7  (_rename_io_arch_rat_out_7),
+    .io_arch_raddr_8  (_rename_io_arch_rat_out_8),
+    .io_arch_raddr_9  (_rename_io_arch_rat_out_9),
+    .io_arch_raddr_10 (_rename_io_arch_rat_out_10),
+    .io_arch_raddr_11 (_rename_io_arch_rat_out_11),
+    .io_arch_raddr_12 (_rename_io_arch_rat_out_12),
+    .io_arch_raddr_13 (_rename_io_arch_rat_out_13),
+    .io_arch_raddr_14 (_rename_io_arch_rat_out_14),
+    .io_arch_raddr_15 (_rename_io_arch_rat_out_15),
+    .io_arch_raddr_16 (_rename_io_arch_rat_out_16),
+    .io_arch_raddr_17 (_rename_io_arch_rat_out_17),
+    .io_arch_raddr_18 (_rename_io_arch_rat_out_18),
+    .io_arch_raddr_19 (_rename_io_arch_rat_out_19),
+    .io_arch_raddr_20 (_rename_io_arch_rat_out_20),
+    .io_arch_raddr_21 (_rename_io_arch_rat_out_21),
+    .io_arch_raddr_22 (_rename_io_arch_rat_out_22),
+    .io_arch_raddr_23 (_rename_io_arch_rat_out_23),
+    .io_arch_raddr_24 (_rename_io_arch_rat_out_24),
+    .io_arch_raddr_25 (_rename_io_arch_rat_out_25),
+    .io_arch_raddr_26 (_rename_io_arch_rat_out_26),
+    .io_arch_raddr_27 (_rename_io_arch_rat_out_27),
+    .io_arch_raddr_28 (_rename_io_arch_rat_out_28),
+    .io_arch_raddr_29 (_rename_io_arch_rat_out_29),
+    .io_arch_raddr_30 (_rename_io_arch_rat_out_30),
+    .io_arch_raddr_31 (_rename_io_arch_rat_out_31),
+    .io_arch_rdata_1  (io_arch_rdata_1),
+    .io_arch_rdata_2  (io_arch_rdata_2),
+    .io_arch_rdata_3  (io_arch_rdata_3),
+    .io_arch_rdata_4  (io_arch_rdata_4),
+    .io_arch_rdata_5  (io_arch_rdata_5),
+    .io_arch_rdata_6  (io_arch_rdata_6),
+    .io_arch_rdata_7  (io_arch_rdata_7),
+    .io_arch_rdata_8  (io_arch_rdata_8),
+    .io_arch_rdata_9  (io_arch_rdata_9),
+    .io_arch_rdata_10 (io_arch_rdata_10),
+    .io_arch_rdata_11 (io_arch_rdata_11),
+    .io_arch_rdata_12 (io_arch_rdata_12),
+    .io_arch_rdata_13 (io_arch_rdata_13),
+    .io_arch_rdata_14 (io_arch_rdata_14),
+    .io_arch_rdata_15 (io_arch_rdata_15),
+    .io_arch_rdata_16 (io_arch_rdata_16),
+    .io_arch_rdata_17 (io_arch_rdata_17),
+    .io_arch_rdata_18 (io_arch_rdata_18),
+    .io_arch_rdata_19 (io_arch_rdata_19),
+    .io_arch_rdata_20 (io_arch_rdata_20),
+    .io_arch_rdata_21 (io_arch_rdata_21),
+    .io_arch_rdata_22 (io_arch_rdata_22),
+    .io_arch_rdata_23 (io_arch_rdata_23),
+    .io_arch_rdata_24 (io_arch_rdata_24),
+    .io_arch_rdata_25 (io_arch_rdata_25),
+    .io_arch_rdata_26 (io_arch_rdata_26),
+    .io_arch_rdata_27 (io_arch_rdata_27),
+    .io_arch_rdata_28 (io_arch_rdata_28),
+    .io_arch_rdata_29 (io_arch_rdata_29),
+    .io_arch_rdata_30 (io_arch_rdata_30),
+    .io_arch_rdata_31 (io_arch_rdata_31)
   );
   WideBusyTableCompat busy (
     .clock           (clock),
@@ -23481,2692 +23784,2692 @@ module Core(
     .io_free_cnt        (_rename_io_free_cnt),
     .io_cp_full         (_rename_io_cp_full),
     .io_rebuild
-      (_busy_io_rebuild_mask_T | mret_flush_REG | memoryRecoveryWins
-       | branchRecoveryWins),
+      (_busy_io_rebuild_mask_T | mret_flush_REG | memoryRecoveryWins | branchRecoveryWins
+       | retirePathRecoveryWins),
     .io_rebuild_rat_0
-      (take_31 & casez_tmp_191 == 5'h0
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h0
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h0
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h0
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h0
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h0
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h0
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h0
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h0
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h0
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h0
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h0
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h0
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h0
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h0
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h0
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h0
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h0
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h0
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h0
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h0
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h0
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h0
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h0
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h0
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h0
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h0
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h0
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h0
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h0
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h0
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h0
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h0
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h0
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h0
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h0
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h0
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h0
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h0
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h0
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h0
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h0
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h0
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h0
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h0
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h0
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h0
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h0
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h0
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h0
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h0
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h0
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h0
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h0
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h0
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h0
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h0
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h0
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h0
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h0
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h0
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h0
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h0
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h0
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : _rename_io_arch_rat_out_0),
     .io_rebuild_rat_1   (rb_steps_32_1),
     .io_rebuild_rat_2
-      (take_31 & casez_tmp_191 == 5'h2
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h2
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h2
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h2
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h2
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h2
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h2
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h2
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h2
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h2
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h2
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h2
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h2
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h2
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h2
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h2
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h2
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h2
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h2
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h2
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h2
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h2
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h2
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h2
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h2
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h2
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h2
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h2
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h2
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h2
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h2
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h2
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h2
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h2
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h2
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h2
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h2
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h2
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h2
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h2
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h2
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h2
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h2
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h2
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h2
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h2
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h2
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h2
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h2
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h2
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h2
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h2
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h2
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h2
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h2
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h2
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h2
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h2
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h2
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h2
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h2
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h2
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h2
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h2
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_2),
     .io_rebuild_rat_3
-      (take_31 & casez_tmp_191 == 5'h3
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h3
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h3
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h3
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h3
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h3
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h3
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h3
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h3
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h3
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h3
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h3
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h3
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h3
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h3
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h3
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h3
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h3
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h3
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h3
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h3
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h3
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h3
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h3
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h3
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h3
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h3
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h3
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h3
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h3
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h3
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h3
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h3
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h3
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h3
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h3
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h3
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h3
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h3
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h3
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h3
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h3
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h3
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h3
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h3
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h3
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h3
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h3
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h3
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h3
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h3
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h3
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h3
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h3
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h3
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h3
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h3
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h3
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h3
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h3
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h3
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h3
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h3
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h3
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_3),
     .io_rebuild_rat_4
-      (take_31 & casez_tmp_191 == 5'h4
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h4
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h4
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h4
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h4
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h4
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h4
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h4
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h4
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h4
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h4
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h4
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h4
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h4
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h4
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h4
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h4
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h4
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h4
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h4
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h4
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h4
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h4
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h4
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h4
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h4
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h4
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h4
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h4
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h4
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h4
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h4
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h4
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h4
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h4
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h4
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h4
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h4
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h4
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h4
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h4
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h4
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h4
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h4
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h4
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h4
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h4
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h4
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h4
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h4
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h4
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h4
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h4
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h4
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h4
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h4
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h4
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h4
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h4
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h4
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h4
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h4
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h4
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h4
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_4),
     .io_rebuild_rat_5
-      (take_31 & casez_tmp_191 == 5'h5
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h5
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h5
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h5
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h5
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h5
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h5
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h5
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h5
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h5
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h5
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h5
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h5
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h5
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h5
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h5
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h5
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h5
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h5
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h5
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h5
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h5
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h5
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h5
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h5
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h5
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h5
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h5
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h5
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h5
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h5
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h5
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h5
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h5
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h5
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h5
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h5
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h5
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h5
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h5
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h5
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h5
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h5
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h5
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h5
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h5
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h5
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h5
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h5
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h5
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h5
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h5
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h5
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h5
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h5
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h5
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h5
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h5
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h5
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h5
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h5
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h5
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h5
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h5
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_5),
     .io_rebuild_rat_6
-      (take_31 & casez_tmp_191 == 5'h6
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h6
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h6
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h6
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h6
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h6
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h6
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h6
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h6
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h6
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h6
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h6
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h6
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h6
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h6
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h6
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h6
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h6
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h6
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h6
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h6
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h6
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h6
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h6
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h6
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h6
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h6
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h6
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h6
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h6
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h6
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h6
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h6
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h6
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h6
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h6
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h6
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h6
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h6
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h6
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h6
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h6
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h6
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h6
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h6
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h6
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h6
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h6
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h6
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h6
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h6
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h6
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h6
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h6
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h6
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h6
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h6
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h6
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h6
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h6
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h6
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h6
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h6
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h6
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_6),
     .io_rebuild_rat_7
-      (take_31 & casez_tmp_191 == 5'h7
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h7
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h7
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h7
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h7
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h7
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h7
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h7
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h7
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h7
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h7
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h7
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h7
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h7
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h7
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h7
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h7
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h7
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h7
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h7
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h7
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h7
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h7
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h7
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h7
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h7
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h7
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h7
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h7
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h7
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h7
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h7
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h7
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h7
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h7
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h7
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h7
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h7
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h7
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h7
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h7
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h7
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h7
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h7
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h7
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h7
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h7
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h7
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h7
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h7
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h7
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h7
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h7
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h7
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h7
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h7
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h7
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h7
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h7
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h7
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h7
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h7
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h7
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h7
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_7),
     .io_rebuild_rat_8
-      (take_31 & casez_tmp_191 == 5'h8
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h8
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h8
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h8
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h8
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h8
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h8
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h8
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h8
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h8
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h8
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h8
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h8
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h8
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h8
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h8
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h8
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h8
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h8
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h8
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h8
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h8
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h8
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h8
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h8
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h8
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h8
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h8
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h8
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h8
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h8
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h8
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h8
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h8
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h8
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h8
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h8
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h8
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h8
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h8
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h8
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h8
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h8
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h8
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h8
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h8
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h8
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h8
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h8
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h8
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h8
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h8
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h8
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h8
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h8
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h8
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h8
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h8
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h8
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h8
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h8
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h8
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h8
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h8
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_8),
     .io_rebuild_rat_9
-      (take_31 & casez_tmp_191 == 5'h9
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h9
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h9
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h9
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h9
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h9
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h9
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h9
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h9
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h9
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h9
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h9
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h9
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'h9
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'h9
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h9
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h9
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h9
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h9
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h9
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h9
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h9
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h9
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h9
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h9
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h9
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h9
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'h9
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h9
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h9
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h9
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h9
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h9
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h9
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h9
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h9
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h9
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h9
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h9
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h9
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h9
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h9
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h9
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h9
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h9
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h9
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h9
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h9
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h9
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h9
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h9
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h9
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h9
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h9
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h9
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h9
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h9
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h9
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h9
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h9
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h9
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h9
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h9
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h9
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_9),
     .io_rebuild_rat_10
-      (take_31 & casez_tmp_191 == 5'hA
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'hA
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'hA
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'hA
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'hA
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'hA
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'hA
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'hA
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'hA
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'hA
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'hA
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'hA
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'hA
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'hA
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'hA
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'hA
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'hA
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'hA
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'hA
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'hA
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'hA
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'hA
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'hA
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'hA
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'hA
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'hA
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'hA
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'hA
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'hA
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'hA
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'hA
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'hA
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'hA
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'hA
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'hA
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'hA
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'hA
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'hA
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'hA
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'hA
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'hA
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'hA
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'hA
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'hA
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'hA
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'hA
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'hA
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'hA
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'hA
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'hA
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'hA
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'hA
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'hA
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'hA
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'hA
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'hA
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'hA
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'hA
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'hA
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'hA
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'hA
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'hA
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'hA
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'hA
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_10),
     .io_rebuild_rat_11
-      (take_31 & casez_tmp_191 == 5'hB
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'hB
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'hB
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'hB
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'hB
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'hB
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'hB
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'hB
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'hB
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'hB
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'hB
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'hB
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'hB
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'hB
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'hB
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'hB
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'hB
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'hB
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'hB
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'hB
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'hB
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'hB
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'hB
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'hB
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'hB
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'hB
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'hB
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'hB
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'hB
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'hB
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'hB
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'hB
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'hB
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'hB
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'hB
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'hB
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'hB
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'hB
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'hB
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'hB
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'hB
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'hB
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'hB
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'hB
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'hB
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'hB
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'hB
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'hB
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'hB
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'hB
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'hB
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'hB
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'hB
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'hB
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'hB
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'hB
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'hB
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'hB
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'hB
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'hB
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'hB
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'hB
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'hB
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'hB
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_11),
     .io_rebuild_rat_12
-      (take_31 & casez_tmp_191 == 5'hC
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'hC
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'hC
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'hC
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'hC
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'hC
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'hC
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'hC
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'hC
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'hC
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'hC
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'hC
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'hC
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'hC
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'hC
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'hC
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'hC
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'hC
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'hC
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'hC
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'hC
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'hC
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'hC
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'hC
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'hC
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'hC
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'hC
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'hC
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'hC
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'hC
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'hC
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'hC
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'hC
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'hC
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'hC
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'hC
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'hC
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'hC
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'hC
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'hC
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'hC
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'hC
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'hC
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'hC
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'hC
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'hC
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'hC
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'hC
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'hC
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'hC
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'hC
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'hC
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'hC
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'hC
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'hC
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'hC
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'hC
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'hC
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'hC
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'hC
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'hC
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'hC
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'hC
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'hC
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_12),
     .io_rebuild_rat_13
-      (take_31 & casez_tmp_191 == 5'hD
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'hD
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'hD
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'hD
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'hD
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'hD
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'hD
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'hD
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'hD
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'hD
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'hD
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'hD
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'hD
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'hD
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'hD
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'hD
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'hD
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'hD
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'hD
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'hD
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'hD
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'hD
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'hD
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'hD
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'hD
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'hD
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'hD
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'hD
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'hD
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'hD
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'hD
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'hD
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'hD
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'hD
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'hD
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'hD
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'hD
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'hD
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'hD
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'hD
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'hD
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'hD
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'hD
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'hD
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'hD
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'hD
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'hD
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'hD
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'hD
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'hD
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'hD
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'hD
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'hD
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'hD
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'hD
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'hD
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'hD
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'hD
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'hD
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'hD
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'hD
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'hD
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'hD
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'hD
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_13),
     .io_rebuild_rat_14
-      (take_31 & casez_tmp_191 == 5'hE
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'hE
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'hE
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'hE
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'hE
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'hE
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'hE
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'hE
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'hE
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'hE
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'hE
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'hE
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'hE
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'hE
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'hE
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'hE
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'hE
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'hE
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'hE
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'hE
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'hE
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'hE
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'hE
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'hE
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'hE
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'hE
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'hE
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'hE
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'hE
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'hE
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'hE
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'hE
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'hE
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'hE
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'hE
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'hE
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'hE
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'hE
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'hE
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'hE
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'hE
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'hE
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'hE
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'hE
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'hE
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'hE
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'hE
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'hE
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'hE
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'hE
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'hE
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'hE
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'hE
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'hE
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'hE
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'hE
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'hE
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'hE
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'hE
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'hE
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'hE
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'hE
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'hE
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'hE
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_14),
     .io_rebuild_rat_15
-      (take_31 & casez_tmp_191 == 5'hF
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'hF
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'hF
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'hF
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'hF
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'hF
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'hF
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'hF
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'hF
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'hF
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'hF
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'hF
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'hF
-                                                         ? casez_tmp_144
-                                                         : take_18 & casez_tmp_139 == 5'hF
-                                                             ? casez_tmp_140
+      (take_31 & casez_tmp_199 == 5'hF
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'hF
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'hF
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'hF
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'hF
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'hF
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'hF
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'hF
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'hF
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'hF
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'hF
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'hF
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'hF
+                                                         ? casez_tmp_152
+                                                         : take_18 & casez_tmp_147 == 5'hF
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'hF
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'hF
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'hF
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'hF
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'hF
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'hF
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'hF
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'hF
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'hF
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'hF
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'hF
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'hF
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'hF
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'hF
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'hF
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'hF
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'hF
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'hF
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'hF
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'hF
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'hF
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'hF
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'hF
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'hF
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'hF
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'hF
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'hF
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'hF
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'hF
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'hF
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'hF
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'hF
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'hF
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'hF
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'hF
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'hF
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_15),
     .io_rebuild_rat_16
-      (take_31 & casez_tmp_191 == 5'h10
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h10
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h10
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h10
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h10
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h10
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h10
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h10
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h10
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h10
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h10
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h10
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h10
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h10
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h10
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h10
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h10
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h10
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h10
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h10
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h10
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h10
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h10
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h10
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h10
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h10
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h10
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h10
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h10
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h10
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h10
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h10
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h10
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h10
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h10
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h10
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h10
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h10
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h10
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h10
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h10
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h10
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h10
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h10
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h10
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h10
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h10
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h10
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h10
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h10
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h10
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h10
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h10
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h10
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h10
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h10
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h10
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h10
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h10
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h10
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h10
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h10
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h10
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h10
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_16),
     .io_rebuild_rat_17
-      (take_31 & casez_tmp_191 == 5'h11
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h11
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h11
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h11
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h11
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h11
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h11
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h11
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h11
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h11
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h11
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h11
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h11
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h11
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h11
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h11
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h11
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h11
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h11
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h11
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h11
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h11
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h11
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h11
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h11
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h11
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h11
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h11
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h11
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h11
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h11
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h11
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h11
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h11
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h11
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h11
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h11
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h11
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h11
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h11
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h11
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h11
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h11
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h11
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h11
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h11
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h11
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h11
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h11
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h11
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h11
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h11
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h11
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h11
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h11
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h11
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h11
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h11
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h11
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h11
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h11
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h11
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h11
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h11
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_17),
     .io_rebuild_rat_18
-      (take_31 & casez_tmp_191 == 5'h12
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h12
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h12
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h12
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h12
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h12
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h12
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h12
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h12
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h12
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h12
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h12
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h12
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h12
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h12
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h12
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h12
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h12
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h12
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h12
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h12
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h12
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h12
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h12
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h12
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h12
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h12
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h12
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h12
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h12
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h12
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h12
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h12
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h12
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h12
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h12
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h12
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h12
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h12
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h12
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h12
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h12
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h12
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h12
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h12
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h12
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h12
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h12
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h12
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h12
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h12
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h12
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h12
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h12
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h12
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h12
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h12
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h12
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h12
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h12
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h12
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h12
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h12
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h12
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_18),
     .io_rebuild_rat_19
-      (take_31 & casez_tmp_191 == 5'h13
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h13
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h13
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h13
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h13
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h13
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h13
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h13
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h13
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h13
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h13
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h13
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h13
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h13
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h13
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h13
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h13
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h13
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h13
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h13
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h13
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h13
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h13
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h13
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h13
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h13
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h13
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h13
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h13
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h13
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h13
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h13
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h13
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h13
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h13
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h13
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h13
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h13
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h13
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h13
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h13
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h13
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h13
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h13
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h13
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h13
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h13
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h13
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h13
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h13
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h13
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h13
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h13
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h13
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h13
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h13
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h13
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h13
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h13
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h13
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h13
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h13
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h13
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h13
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_19),
     .io_rebuild_rat_20
-      (take_31 & casez_tmp_191 == 5'h14
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h14
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h14
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h14
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h14
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h14
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h14
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h14
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h14
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h14
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h14
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h14
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h14
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h14
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h14
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h14
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h14
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h14
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h14
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h14
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h14
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h14
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h14
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h14
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h14
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h14
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h14
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h14
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h14
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h14
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h14
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h14
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h14
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h14
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h14
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h14
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h14
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h14
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h14
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h14
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h14
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h14
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h14
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h14
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h14
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h14
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h14
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h14
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h14
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h14
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h14
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h14
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h14
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h14
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h14
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h14
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h14
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h14
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h14
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h14
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h14
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h14
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h14
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h14
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_20),
     .io_rebuild_rat_21
-      (take_31 & casez_tmp_191 == 5'h15
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h15
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h15
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h15
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h15
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h15
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h15
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h15
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h15
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h15
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h15
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h15
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h15
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h15
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h15
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h15
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h15
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h15
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h15
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h15
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h15
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h15
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h15
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h15
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h15
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h15
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h15
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h15
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h15
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h15
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h15
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h15
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h15
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h15
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h15
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h15
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h15
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h15
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h15
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h15
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h15
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h15
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h15
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h15
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h15
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h15
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h15
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h15
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h15
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h15
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h15
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h15
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h15
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h15
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h15
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h15
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h15
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h15
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h15
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h15
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h15
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h15
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h15
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h15
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_21),
     .io_rebuild_rat_22
-      (take_31 & casez_tmp_191 == 5'h16
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h16
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h16
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h16
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h16
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h16
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h16
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h16
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h16
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h16
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h16
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h16
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h16
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h16
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h16
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h16
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h16
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h16
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h16
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h16
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h16
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h16
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h16
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h16
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h16
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h16
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h16
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h16
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h16
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h16
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h16
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h16
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h16
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h16
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h16
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h16
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h16
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h16
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h16
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h16
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h16
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h16
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h16
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h16
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h16
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h16
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h16
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h16
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h16
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h16
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h16
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h16
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h16
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h16
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h16
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h16
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h16
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h16
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h16
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h16
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h16
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h16
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h16
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h16
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_22),
     .io_rebuild_rat_23
-      (take_31 & casez_tmp_191 == 5'h17
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h17
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h17
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h17
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h17
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h17
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h17
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h17
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h17
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h17
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h17
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h17
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h17
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h17
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h17
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h17
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h17
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h17
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h17
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h17
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h17
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h17
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h17
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h17
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h17
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h17
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h17
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h17
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h17
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h17
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h17
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h17
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h17
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h17
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h17
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h17
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h17
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h17
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h17
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h17
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h17
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h17
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h17
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h17
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h17
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h17
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h17
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h17
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h17
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h17
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h17
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h17
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h17
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h17
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h17
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h17
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h17
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h17
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h17
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h17
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h17
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h17
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h17
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h17
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_23),
     .io_rebuild_rat_24
-      (take_31 & casez_tmp_191 == 5'h18
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h18
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h18
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h18
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h18
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h18
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h18
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h18
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h18
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h18
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h18
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h18
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h18
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h18
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h18
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h18
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h18
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h18
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h18
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h18
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h18
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h18
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h18
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h18
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h18
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h18
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h18
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h18
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h18
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h18
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h18
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h18
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h18
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h18
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h18
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h18
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h18
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h18
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h18
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h18
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h18
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h18
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h18
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h18
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h18
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h18
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h18
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h18
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h18
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h18
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h18
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h18
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h18
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h18
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h18
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h18
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h18
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h18
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h18
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h18
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h18
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h18
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h18
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h18
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_24),
     .io_rebuild_rat_25
-      (take_31 & casez_tmp_191 == 5'h19
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h19
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h19
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h19
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h19
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h19
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h19
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h19
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h19
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h19
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h19
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h19
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h19
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h19
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h19
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h19
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h19
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h19
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h19
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h19
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h19
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h19
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h19
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h19
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h19
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h19
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h19
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h19
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h19
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h19
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h19
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h19
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h19
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h19
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h19
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h19
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h19
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h19
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h19
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h19
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h19
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h19
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h19
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h19
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h19
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h19
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h19
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h19
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h19
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h19
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h19
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h19
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h19
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h19
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h19
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h19
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h19
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h19
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h19
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h19
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h19
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h19
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h19
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h19
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_25),
     .io_rebuild_rat_26
-      (take_31 & casez_tmp_191 == 5'h1A
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h1A
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h1A
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h1A
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h1A
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h1A
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h1A
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h1A
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h1A
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h1A
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h1A
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h1A
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h1A
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h1A
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h1A
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h1A
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h1A
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h1A
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h1A
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h1A
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h1A
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h1A
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h1A
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h1A
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h1A
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h1A
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h1A
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h1A
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h1A
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h1A
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h1A
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h1A
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h1A
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h1A
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h1A
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h1A
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h1A
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h1A
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h1A
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h1A
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h1A
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h1A
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h1A
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h1A
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h1A
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h1A
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h1A
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h1A
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h1A
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h1A
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h1A
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h1A
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h1A
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h1A
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h1A
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h1A
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h1A
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h1A
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h1A
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h1A
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h1A
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h1A
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h1A
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h1A
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_26),
     .io_rebuild_rat_27
-      (take_31 & casez_tmp_191 == 5'h1B
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h1B
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h1B
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h1B
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h1B
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h1B
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h1B
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h1B
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h1B
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h1B
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h1B
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h1B
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h1B
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h1B
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h1B
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h1B
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h1B
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h1B
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h1B
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h1B
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h1B
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h1B
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h1B
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h1B
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h1B
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h1B
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h1B
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h1B
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h1B
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h1B
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h1B
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h1B
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h1B
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h1B
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h1B
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h1B
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h1B
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h1B
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h1B
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h1B
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h1B
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h1B
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h1B
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h1B
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h1B
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h1B
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h1B
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h1B
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h1B
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h1B
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h1B
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h1B
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h1B
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h1B
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h1B
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h1B
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h1B
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h1B
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h1B
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h1B
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h1B
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h1B
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h1B
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h1B
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_27),
     .io_rebuild_rat_28
-      (take_31 & casez_tmp_191 == 5'h1C
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h1C
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h1C
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h1C
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h1C
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h1C
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h1C
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h1C
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h1C
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h1C
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h1C
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h1C
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h1C
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h1C
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h1C
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h1C
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h1C
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h1C
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h1C
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h1C
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h1C
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h1C
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h1C
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h1C
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h1C
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h1C
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h1C
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h1C
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h1C
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h1C
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h1C
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h1C
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h1C
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h1C
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h1C
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h1C
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h1C
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h1C
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h1C
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h1C
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h1C
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h1C
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h1C
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h1C
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h1C
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h1C
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h1C
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h1C
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h1C
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h1C
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h1C
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h1C
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h1C
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h1C
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h1C
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h1C
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h1C
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h1C
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h1C
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h1C
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h1C
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h1C
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h1C
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h1C
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_28),
     .io_rebuild_rat_29
-      (take_31 & casez_tmp_191 == 5'h1D
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h1D
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h1D
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h1D
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h1D
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h1D
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h1D
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h1D
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h1D
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h1D
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h1D
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h1D
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h1D
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h1D
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h1D
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h1D
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h1D
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h1D
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h1D
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h1D
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h1D
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h1D
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h1D
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h1D
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h1D
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h1D
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h1D
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h1D
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h1D
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h1D
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h1D
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h1D
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h1D
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h1D
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h1D
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h1D
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h1D
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h1D
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h1D
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h1D
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h1D
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h1D
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h1D
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h1D
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h1D
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h1D
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h1D
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h1D
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h1D
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h1D
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h1D
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h1D
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h1D
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h1D
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h1D
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h1D
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h1D
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h1D
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h1D
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h1D
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h1D
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h1D
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h1D
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h1D
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_29),
     .io_rebuild_rat_30
-      (take_31 & casez_tmp_191 == 5'h1E
-         ? casez_tmp_192
-         : take_30 & casez_tmp_187 == 5'h1E
-             ? casez_tmp_188
-             : take_29 & casez_tmp_183 == 5'h1E
-                 ? casez_tmp_184
-                 : take_28 & casez_tmp_179 == 5'h1E
-                     ? casez_tmp_180
-                     : take_27 & casez_tmp_175 == 5'h1E
-                         ? casez_tmp_176
-                         : take_26 & casez_tmp_171 == 5'h1E
-                             ? casez_tmp_172
-                             : take_25 & casez_tmp_167 == 5'h1E
-                                 ? casez_tmp_168
-                                 : take_24 & casez_tmp_163 == 5'h1E
-                                     ? casez_tmp_164
-                                     : take_23 & casez_tmp_159 == 5'h1E
-                                         ? casez_tmp_160
-                                         : take_22 & casez_tmp_155 == 5'h1E
-                                             ? casez_tmp_156
-                                             : take_21 & casez_tmp_151 == 5'h1E
-                                                 ? casez_tmp_152
-                                                 : take_20 & casez_tmp_147 == 5'h1E
-                                                     ? casez_tmp_148
-                                                     : take_19 & casez_tmp_143 == 5'h1E
-                                                         ? casez_tmp_144
+      (take_31 & casez_tmp_199 == 5'h1E
+         ? casez_tmp_200
+         : take_30 & casez_tmp_195 == 5'h1E
+             ? casez_tmp_196
+             : take_29 & casez_tmp_191 == 5'h1E
+                 ? casez_tmp_192
+                 : take_28 & casez_tmp_187 == 5'h1E
+                     ? casez_tmp_188
+                     : take_27 & casez_tmp_183 == 5'h1E
+                         ? casez_tmp_184
+                         : take_26 & casez_tmp_179 == 5'h1E
+                             ? casez_tmp_180
+                             : take_25 & casez_tmp_175 == 5'h1E
+                                 ? casez_tmp_176
+                                 : take_24 & casez_tmp_171 == 5'h1E
+                                     ? casez_tmp_172
+                                     : take_23 & casez_tmp_167 == 5'h1E
+                                         ? casez_tmp_168
+                                         : take_22 & casez_tmp_163 == 5'h1E
+                                             ? casez_tmp_164
+                                             : take_21 & casez_tmp_159 == 5'h1E
+                                                 ? casez_tmp_160
+                                                 : take_20 & casez_tmp_155 == 5'h1E
+                                                     ? casez_tmp_156
+                                                     : take_19 & casez_tmp_151 == 5'h1E
+                                                         ? casez_tmp_152
                                                          : take_18
-                                                           & casez_tmp_139 == 5'h1E
-                                                             ? casez_tmp_140
+                                                           & casez_tmp_147 == 5'h1E
+                                                             ? casez_tmp_148
                                                              : take_17
-                                                               & casez_tmp_135 == 5'h1E
-                                                                 ? casez_tmp_136
+                                                               & casez_tmp_143 == 5'h1E
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & casez_tmp_131 == 5'h1E
-                                                                     ? casez_tmp_132
+                                                                   & casez_tmp_139 == 5'h1E
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & casez_tmp_127 == 5'h1E
-                                                                         ? casez_tmp_128
+                                                                       & casez_tmp_135 == 5'h1E
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & casez_tmp_123 == 5'h1E
-                                                                             ? casez_tmp_124
+                                                                           & casez_tmp_131 == 5'h1E
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & casez_tmp_119 == 5'h1E
-                                                                                 ? casez_tmp_120
+                                                                               & casez_tmp_127 == 5'h1E
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & casez_tmp_115 == 5'h1E
-                                                                                     ? casez_tmp_116
+                                                                                   & casez_tmp_123 == 5'h1E
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & casez_tmp_111 == 5'h1E
-                                                                                         ? casez_tmp_112
+                                                                                       & casez_tmp_119 == 5'h1E
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & casez_tmp_107 == 5'h1E
-                                                                                             ? casez_tmp_108
+                                                                                           & casez_tmp_115 == 5'h1E
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & casez_tmp_103 == 5'h1E
-                                                                                                 ? casez_tmp_104
+                                                                                               & casez_tmp_111 == 5'h1E
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & casez_tmp_99 == 5'h1E
-                                                                                                     ? casez_tmp_100
+                                                                                                   & casez_tmp_107 == 5'h1E
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & casez_tmp_95 == 5'h1E
-                                                                                                         ? casez_tmp_96
+                                                                                                       & casez_tmp_103 == 5'h1E
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & casez_tmp_91 == 5'h1E
-                                                                                                             ? casez_tmp_92
+                                                                                                           & casez_tmp_99 == 5'h1E
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & casez_tmp_87 == 5'h1E
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & casez_tmp_95 == 5'h1E
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & casez_tmp_83 == 5'h1E
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & casez_tmp_91 == 5'h1E
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & casez_tmp_79 == 5'h1E
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & casez_tmp_87 == 5'h1E
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & casez_tmp_75 == 5'h1E
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & casez_tmp_83 == 5'h1E
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & casez_tmp_71 == 5'h1E
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & casez_tmp_79 == 5'h1E
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & casez_tmp_67 == 5'h1E
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & casez_tmp_75 == 5'h1E
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_30),
     .io_rebuild_rat_31
-      (take_31 & (&casez_tmp_191)
-         ? casez_tmp_192
-         : take_30 & (&casez_tmp_187)
-             ? casez_tmp_188
-             : take_29 & (&casez_tmp_183)
-                 ? casez_tmp_184
-                 : take_28 & (&casez_tmp_179)
-                     ? casez_tmp_180
-                     : take_27 & (&casez_tmp_175)
-                         ? casez_tmp_176
-                         : take_26 & (&casez_tmp_171)
-                             ? casez_tmp_172
-                             : take_25 & (&casez_tmp_167)
-                                 ? casez_tmp_168
-                                 : take_24 & (&casez_tmp_163)
-                                     ? casez_tmp_164
-                                     : take_23 & (&casez_tmp_159)
-                                         ? casez_tmp_160
-                                         : take_22 & (&casez_tmp_155)
-                                             ? casez_tmp_156
-                                             : take_21 & (&casez_tmp_151)
-                                                 ? casez_tmp_152
-                                                 : take_20 & (&casez_tmp_147)
-                                                     ? casez_tmp_148
-                                                     : take_19 & (&casez_tmp_143)
-                                                         ? casez_tmp_144
-                                                         : take_18 & (&casez_tmp_139)
-                                                             ? casez_tmp_140
-                                                             : take_17 & (&casez_tmp_135)
-                                                                 ? casez_tmp_136
+      (take_31 & (&casez_tmp_199)
+         ? casez_tmp_200
+         : take_30 & (&casez_tmp_195)
+             ? casez_tmp_196
+             : take_29 & (&casez_tmp_191)
+                 ? casez_tmp_192
+                 : take_28 & (&casez_tmp_187)
+                     ? casez_tmp_188
+                     : take_27 & (&casez_tmp_183)
+                         ? casez_tmp_184
+                         : take_26 & (&casez_tmp_179)
+                             ? casez_tmp_180
+                             : take_25 & (&casez_tmp_175)
+                                 ? casez_tmp_176
+                                 : take_24 & (&casez_tmp_171)
+                                     ? casez_tmp_172
+                                     : take_23 & (&casez_tmp_167)
+                                         ? casez_tmp_168
+                                         : take_22 & (&casez_tmp_163)
+                                             ? casez_tmp_164
+                                             : take_21 & (&casez_tmp_159)
+                                                 ? casez_tmp_160
+                                                 : take_20 & (&casez_tmp_155)
+                                                     ? casez_tmp_156
+                                                     : take_19 & (&casez_tmp_151)
+                                                         ? casez_tmp_152
+                                                         : take_18 & (&casez_tmp_147)
+                                                             ? casez_tmp_148
+                                                             : take_17 & (&casez_tmp_143)
+                                                                 ? casez_tmp_144
                                                                  : take_16
-                                                                   & (&casez_tmp_131)
-                                                                     ? casez_tmp_132
+                                                                   & (&casez_tmp_139)
+                                                                     ? casez_tmp_140
                                                                      : take_15
-                                                                       & (&casez_tmp_127)
-                                                                         ? casez_tmp_128
+                                                                       & (&casez_tmp_135)
+                                                                         ? casez_tmp_136
                                                                          : take_14
-                                                                           & (&casez_tmp_123)
-                                                                             ? casez_tmp_124
+                                                                           & (&casez_tmp_131)
+                                                                             ? casez_tmp_132
                                                                              : take_13
-                                                                               & (&casez_tmp_119)
-                                                                                 ? casez_tmp_120
+                                                                               & (&casez_tmp_127)
+                                                                                 ? casez_tmp_128
                                                                                  : take_12
-                                                                                   & (&casez_tmp_115)
-                                                                                     ? casez_tmp_116
+                                                                                   & (&casez_tmp_123)
+                                                                                     ? casez_tmp_124
                                                                                      : take_11
-                                                                                       & (&casez_tmp_111)
-                                                                                         ? casez_tmp_112
+                                                                                       & (&casez_tmp_119)
+                                                                                         ? casez_tmp_120
                                                                                          : take_10
-                                                                                           & (&casez_tmp_107)
-                                                                                             ? casez_tmp_108
+                                                                                           & (&casez_tmp_115)
+                                                                                             ? casez_tmp_116
                                                                                              : take_9
-                                                                                               & (&casez_tmp_103)
-                                                                                                 ? casez_tmp_104
+                                                                                               & (&casez_tmp_111)
+                                                                                                 ? casez_tmp_112
                                                                                                  : take_8
-                                                                                                   & (&casez_tmp_99)
-                                                                                                     ? casez_tmp_100
+                                                                                                   & (&casez_tmp_107)
+                                                                                                     ? casez_tmp_108
                                                                                                      : take_7
-                                                                                                       & (&casez_tmp_95)
-                                                                                                         ? casez_tmp_96
+                                                                                                       & (&casez_tmp_103)
+                                                                                                         ? casez_tmp_104
                                                                                                          : take_6
-                                                                                                           & (&casez_tmp_91)
-                                                                                                             ? casez_tmp_92
+                                                                                                           & (&casez_tmp_99)
+                                                                                                             ? casez_tmp_100
                                                                                                              : take_5
-                                                                                                               & (&casez_tmp_87)
-                                                                                                                 ? casez_tmp_88
+                                                                                                               & (&casez_tmp_95)
+                                                                                                                 ? casez_tmp_96
                                                                                                                  : take_4
-                                                                                                                   & (&casez_tmp_83)
-                                                                                                                     ? casez_tmp_84
+                                                                                                                   & (&casez_tmp_91)
+                                                                                                                     ? casez_tmp_92
                                                                                                                      : take_3
-                                                                                                                       & (&casez_tmp_79)
-                                                                                                                         ? casez_tmp_80
+                                                                                                                       & (&casez_tmp_87)
+                                                                                                                         ? casez_tmp_88
                                                                                                                          : take_2
-                                                                                                                           & (&casez_tmp_75)
-                                                                                                                             ? casez_tmp_76
+                                                                                                                           & (&casez_tmp_83)
+                                                                                                                             ? casez_tmp_84
                                                                                                                              : take_1
-                                                                                                                               & (&casez_tmp_71)
-                                                                                                                                 ? casez_tmp_72
+                                                                                                                               & (&casez_tmp_79)
+                                                                                                                                 ? casez_tmp_80
                                                                                                                                  : take
-                                                                                                                                   & (&casez_tmp_67)
-                                                                                                                                     ? casez_tmp_68
+                                                                                                                                   & (&casez_tmp_75)
+                                                                                                                                     ? casez_tmp_76
                                                                                                                                      : rb_base_31),
     .io_rebuild_free
-      (({64{~(take_63 & (|casez_tmp_224))}} | ~(_freeSteps_32_T_2[63:0]))
-       & ({64{~(take_63 & (|casez_tmp_192))}} | ~(_f1_T_157[63:0]))
-       & ({64{~(take_62 & (|casez_tmp_223))}} | ~(_freeSteps_31_T_2[63:0]))
-       & ({64{~(take_62 & (|casez_tmp_188))}} | ~(_f1_T_152[63:0]))
-       & ({64{~(take_61 & (|casez_tmp_222))}} | ~(_freeSteps_30_T_2[63:0]))
-       & ({64{~(take_61 & (|casez_tmp_184))}} | ~(_f1_T_147[63:0]))
-       & ({64{~(take_60 & (|casez_tmp_221))}} | ~(_freeSteps_29_T_2[63:0]))
-       & ({64{~(take_60 & (|casez_tmp_180))}} | ~(_f1_T_142[63:0]))
-       & ({64{~(take_59 & (|casez_tmp_220))}} | ~(_freeSteps_28_T_2[63:0]))
-       & ({64{~(take_59 & (|casez_tmp_176))}} | ~(_f1_T_137[63:0]))
-       & ({64{~(take_58 & (|casez_tmp_219))}} | ~(_freeSteps_27_T_2[63:0]))
-       & ({64{~(take_58 & (|casez_tmp_172))}} | ~(_f1_T_132[63:0]))
-       & ({64{~(take_57 & (|casez_tmp_218))}} | ~(_freeSteps_26_T_2[63:0]))
-       & ({64{~(take_57 & (|casez_tmp_168))}} | ~(_f1_T_127[63:0]))
-       & ({64{~(take_56 & (|casez_tmp_217))}} | ~(_freeSteps_25_T_2[63:0]))
-       & ({64{~(take_56 & (|casez_tmp_164))}} | ~(_f1_T_122[63:0]))
-       & ({64{~(take_55 & (|casez_tmp_216))}} | ~(_freeSteps_24_T_2[63:0]))
-       & ({64{~(take_55 & (|casez_tmp_160))}} | ~(_f1_T_117[63:0]))
-       & ({64{~(take_54 & (|casez_tmp_215))}} | ~(_freeSteps_23_T_2[63:0]))
-       & ({64{~(take_54 & (|casez_tmp_156))}} | ~(_f1_T_112[63:0]))
-       & ({64{~(take_53 & (|casez_tmp_214))}} | ~(_freeSteps_22_T_2[63:0]))
-       & ({64{~(take_53 & (|casez_tmp_152))}} | ~(_f1_T_107[63:0]))
-       & ({64{~(take_52 & (|casez_tmp_213))}} | ~(_freeSteps_21_T_2[63:0]))
-       & ({64{~(take_52 & (|casez_tmp_148))}} | ~(_f1_T_102[63:0]))
-       & ({64{~(take_51 & (|casez_tmp_212))}} | ~(_freeSteps_20_T_2[63:0]))
-       & ({64{~(take_51 & (|casez_tmp_144))}} | ~(_f1_T_97[63:0]))
-       & ({64{~(take_50 & (|casez_tmp_211))}} | ~(_freeSteps_19_T_2[63:0]))
-       & ({64{~(take_50 & (|casez_tmp_140))}} | ~(_f1_T_92[63:0]))
-       & ({64{~(take_49 & (|casez_tmp_210))}} | ~(_freeSteps_18_T_2[63:0]))
-       & ({64{~(take_49 & (|casez_tmp_136))}} | ~(_f1_T_87[63:0]))
-       & ({64{~(take_48 & (|casez_tmp_209))}} | ~(_freeSteps_17_T_2[63:0]))
-       & ({64{~(take_48 & (|casez_tmp_132))}} | ~(_f1_T_82[63:0]))
-       & ({64{~(take_47 & (|casez_tmp_208))}} | ~(_freeSteps_16_T_2[63:0]))
-       & ({64{~(take_47 & (|casez_tmp_128))}} | ~(_f1_T_77[63:0]))
-       & ({64{~(take_46 & (|casez_tmp_207))}} | ~(_freeSteps_15_T_2[63:0]))
-       & ({64{~(take_46 & (|casez_tmp_124))}} | ~(_f1_T_72[63:0]))
-       & ({64{~(take_45 & (|casez_tmp_206))}} | ~(_freeSteps_14_T_2[63:0]))
-       & ({64{~(take_45 & (|casez_tmp_120))}} | ~(_f1_T_67[63:0]))
-       & ({64{~(take_44 & (|casez_tmp_205))}} | ~(_freeSteps_13_T_2[63:0]))
-       & ({64{~(take_44 & (|casez_tmp_116))}} | ~(_f1_T_62[63:0]))
-       & ({64{~(take_43 & (|casez_tmp_204))}} | ~(_freeSteps_12_T_2[63:0]))
-       & ({64{~(take_43 & (|casez_tmp_112))}} | ~(_f1_T_57[63:0]))
-       & ({64{~(take_42 & (|casez_tmp_203))}} | ~(_freeSteps_11_T_2[63:0]))
-       & ({64{~(take_42 & (|casez_tmp_108))}} | ~(_f1_T_52[63:0]))
-       & ({64{~(take_41 & (|casez_tmp_202))}} | ~(_freeSteps_10_T_2[63:0]))
-       & ({64{~(take_41 & (|casez_tmp_104))}} | ~(_f1_T_47[63:0]))
-       & ({64{~(take_40 & (|casez_tmp_201))}} | ~(_freeSteps_9_T_2[63:0]))
-       & ({64{~(take_40 & (|casez_tmp_100))}} | ~(_f1_T_42[63:0]))
-       & ({64{~(take_39 & (|casez_tmp_200))}} | ~(_freeSteps_8_T_2[63:0]))
-       & ({64{~(take_39 & (|casez_tmp_96))}} | ~(_f1_T_37[63:0]))
-       & ({64{~(take_38 & (|casez_tmp_199))}} | ~(_freeSteps_7_T_2[63:0]))
-       & ({64{~(take_38 & (|casez_tmp_92))}} | ~(_f1_T_32[63:0]))
-       & ({64{~(take_37 & (|casez_tmp_198))}} | ~(_freeSteps_6_T_2[63:0]))
-       & ({64{~(take_37 & (|casez_tmp_88))}} | ~(_f1_T_27[63:0]))
-       & ({64{~(take_36 & (|casez_tmp_197))}} | ~(_freeSteps_5_T_2[63:0]))
-       & ({64{~(take_36 & (|casez_tmp_84))}} | ~(_f1_T_22[63:0]))
-       & ({64{~(take_35 & (|casez_tmp_196))}} | ~(_freeSteps_4_T_2[63:0]))
-       & ({64{~(take_35 & (|casez_tmp_80))}} | ~(_f1_T_17[63:0]))
-       & ({64{~(take_34 & (|casez_tmp_195))}} | ~(_freeSteps_3_T_2[63:0]))
-       & ({64{~(take_34 & (|casez_tmp_76))}} | ~(_f1_T_12[63:0]))
-       & ({64{~(take_33 & (|casez_tmp_194))}} | ~(_freeSteps_2_T_2[63:0]))
-       & ({64{~(take_33 & (|casez_tmp_72))}} | ~(_f1_T_7[63:0]))
-       & ({64{~(take_32 & (|casez_tmp_193))}} | ~(_freeSteps_1_T_2[63:0]))
-       & ({64{~(take_32 & (|casez_tmp_68))}} | ~(_f1_T_2[63:0]))
+      (({64{~(take_63 & (|casez_tmp_232))}} | ~(_freeSteps_32_T_2[63:0]))
+       & ({64{~(take_63 & (|casez_tmp_200))}} | ~(_f1_T_157[63:0]))
+       & ({64{~(take_62 & (|casez_tmp_231))}} | ~(_freeSteps_31_T_2[63:0]))
+       & ({64{~(take_62 & (|casez_tmp_196))}} | ~(_f1_T_152[63:0]))
+       & ({64{~(take_61 & (|casez_tmp_230))}} | ~(_freeSteps_30_T_2[63:0]))
+       & ({64{~(take_61 & (|casez_tmp_192))}} | ~(_f1_T_147[63:0]))
+       & ({64{~(take_60 & (|casez_tmp_229))}} | ~(_freeSteps_29_T_2[63:0]))
+       & ({64{~(take_60 & (|casez_tmp_188))}} | ~(_f1_T_142[63:0]))
+       & ({64{~(take_59 & (|casez_tmp_228))}} | ~(_freeSteps_28_T_2[63:0]))
+       & ({64{~(take_59 & (|casez_tmp_184))}} | ~(_f1_T_137[63:0]))
+       & ({64{~(take_58 & (|casez_tmp_227))}} | ~(_freeSteps_27_T_2[63:0]))
+       & ({64{~(take_58 & (|casez_tmp_180))}} | ~(_f1_T_132[63:0]))
+       & ({64{~(take_57 & (|casez_tmp_226))}} | ~(_freeSteps_26_T_2[63:0]))
+       & ({64{~(take_57 & (|casez_tmp_176))}} | ~(_f1_T_127[63:0]))
+       & ({64{~(take_56 & (|casez_tmp_225))}} | ~(_freeSteps_25_T_2[63:0]))
+       & ({64{~(take_56 & (|casez_tmp_172))}} | ~(_f1_T_122[63:0]))
+       & ({64{~(take_55 & (|casez_tmp_224))}} | ~(_freeSteps_24_T_2[63:0]))
+       & ({64{~(take_55 & (|casez_tmp_168))}} | ~(_f1_T_117[63:0]))
+       & ({64{~(take_54 & (|casez_tmp_223))}} | ~(_freeSteps_23_T_2[63:0]))
+       & ({64{~(take_54 & (|casez_tmp_164))}} | ~(_f1_T_112[63:0]))
+       & ({64{~(take_53 & (|casez_tmp_222))}} | ~(_freeSteps_22_T_2[63:0]))
+       & ({64{~(take_53 & (|casez_tmp_160))}} | ~(_f1_T_107[63:0]))
+       & ({64{~(take_52 & (|casez_tmp_221))}} | ~(_freeSteps_21_T_2[63:0]))
+       & ({64{~(take_52 & (|casez_tmp_156))}} | ~(_f1_T_102[63:0]))
+       & ({64{~(take_51 & (|casez_tmp_220))}} | ~(_freeSteps_20_T_2[63:0]))
+       & ({64{~(take_51 & (|casez_tmp_152))}} | ~(_f1_T_97[63:0]))
+       & ({64{~(take_50 & (|casez_tmp_219))}} | ~(_freeSteps_19_T_2[63:0]))
+       & ({64{~(take_50 & (|casez_tmp_148))}} | ~(_f1_T_92[63:0]))
+       & ({64{~(take_49 & (|casez_tmp_218))}} | ~(_freeSteps_18_T_2[63:0]))
+       & ({64{~(take_49 & (|casez_tmp_144))}} | ~(_f1_T_87[63:0]))
+       & ({64{~(take_48 & (|casez_tmp_217))}} | ~(_freeSteps_17_T_2[63:0]))
+       & ({64{~(take_48 & (|casez_tmp_140))}} | ~(_f1_T_82[63:0]))
+       & ({64{~(take_47 & (|casez_tmp_216))}} | ~(_freeSteps_16_T_2[63:0]))
+       & ({64{~(take_47 & (|casez_tmp_136))}} | ~(_f1_T_77[63:0]))
+       & ({64{~(take_46 & (|casez_tmp_215))}} | ~(_freeSteps_15_T_2[63:0]))
+       & ({64{~(take_46 & (|casez_tmp_132))}} | ~(_f1_T_72[63:0]))
+       & ({64{~(take_45 & (|casez_tmp_214))}} | ~(_freeSteps_14_T_2[63:0]))
+       & ({64{~(take_45 & (|casez_tmp_128))}} | ~(_f1_T_67[63:0]))
+       & ({64{~(take_44 & (|casez_tmp_213))}} | ~(_freeSteps_13_T_2[63:0]))
+       & ({64{~(take_44 & (|casez_tmp_124))}} | ~(_f1_T_62[63:0]))
+       & ({64{~(take_43 & (|casez_tmp_212))}} | ~(_freeSteps_12_T_2[63:0]))
+       & ({64{~(take_43 & (|casez_tmp_120))}} | ~(_f1_T_57[63:0]))
+       & ({64{~(take_42 & (|casez_tmp_211))}} | ~(_freeSteps_11_T_2[63:0]))
+       & ({64{~(take_42 & (|casez_tmp_116))}} | ~(_f1_T_52[63:0]))
+       & ({64{~(take_41 & (|casez_tmp_210))}} | ~(_freeSteps_10_T_2[63:0]))
+       & ({64{~(take_41 & (|casez_tmp_112))}} | ~(_f1_T_47[63:0]))
+       & ({64{~(take_40 & (|casez_tmp_209))}} | ~(_freeSteps_9_T_2[63:0]))
+       & ({64{~(take_40 & (|casez_tmp_108))}} | ~(_f1_T_42[63:0]))
+       & ({64{~(take_39 & (|casez_tmp_208))}} | ~(_freeSteps_8_T_2[63:0]))
+       & ({64{~(take_39 & (|casez_tmp_104))}} | ~(_f1_T_37[63:0]))
+       & ({64{~(take_38 & (|casez_tmp_207))}} | ~(_freeSteps_7_T_2[63:0]))
+       & ({64{~(take_38 & (|casez_tmp_100))}} | ~(_f1_T_32[63:0]))
+       & ({64{~(take_37 & (|casez_tmp_206))}} | ~(_freeSteps_6_T_2[63:0]))
+       & ({64{~(take_37 & (|casez_tmp_96))}} | ~(_f1_T_27[63:0]))
+       & ({64{~(take_36 & (|casez_tmp_205))}} | ~(_freeSteps_5_T_2[63:0]))
+       & ({64{~(take_36 & (|casez_tmp_92))}} | ~(_f1_T_22[63:0]))
+       & ({64{~(take_35 & (|casez_tmp_204))}} | ~(_freeSteps_4_T_2[63:0]))
+       & ({64{~(take_35 & (|casez_tmp_88))}} | ~(_f1_T_17[63:0]))
+       & ({64{~(take_34 & (|casez_tmp_203))}} | ~(_freeSteps_3_T_2[63:0]))
+       & ({64{~(take_34 & (|casez_tmp_84))}} | ~(_f1_T_12[63:0]))
+       & ({64{~(take_33 & (|casez_tmp_202))}} | ~(_freeSteps_2_T_2[63:0]))
+       & ({64{~(take_33 & (|casez_tmp_80))}} | ~(_f1_T_7[63:0]))
+       & ({64{~(take_32 & (|casez_tmp_201))}} | ~(_freeSteps_1_T_2[63:0]))
+       & ({64{~(take_32 & (|casez_tmp_76))}} | ~(_f1_T_2[63:0]))
        & ~(_archUsed_T[63:0] | _archUsed_T_2[63:0] | _archUsed_T_4[63:0]
            | _archUsed_T_6[63:0] | _archUsed_T_8[63:0] | _archUsed_T_10[63:0]
            | _archUsed_T_12[63:0] | _archUsed_T_14[63:0] | _archUsed_T_16[63:0]
@@ -26517,7 +26820,6 @@ module Core(
     .io_space                       (_rob_io_space),
     .io_wb_fire                     (can_wb),
     .io_wb_idx                      (_wbArb_io_out_0_bits_rob_idx),
-    .io_wb_val                      (_wbu_io_refile_wdata),
     .io_wb_state_state              (_wbArb_io_out_0_bits_state_state),
     .io_wb_state_state_num          (_wbArb_io_out_0_bits_state_state_num),
     .io_wb_mem_addr                 (_wbArb_io_out_0_bits_alu_result),
@@ -26526,7 +26828,6 @@ module Core(
     .io_wb_actual_target            (_wbArb_io_out_0_bits_next_pc),
     .io_wb1_fire                    (can_wb1),
     .io_wb1_idx                     (_wbArb_io_out_1_bits_rob_idx),
-    .io_wb1_val                     (_wbu1_io_refile_wdata),
     .io_wb1_state_state             (_wbArb_io_out_1_bits_state_state),
     .io_wb1_state_state_num         (_wbArb_io_out_1_bits_state_state_num),
     .io_wb1_mem_addr                (_wbArb_io_out_1_bits_alu_result),
@@ -26535,7 +26836,6 @@ module Core(
     .io_wb1_actual_target           (_wbArb_io_out_1_bits_next_pc),
     .io_wb2_fire                    (can_wb2),
     .io_wb2_idx                     (_wbArb_io_out_2_bits_rob_idx),
-    .io_wb2_val                     (_wbu2_io_refile_wdata),
     .io_wb2_state_state             (_wbArb_io_out_2_bits_state_state),
     .io_wb2_state_state_num         (_wbArb_io_out_2_bits_state_state_num),
     .io_wb2_mem_addr                (_wbArb_io_out_2_bits_alu_result),
@@ -26544,7 +26844,6 @@ module Core(
     .io_wb2_actual_target           (_wbArb_io_out_2_bits_next_pc),
     .io_wb3_fire                    (can_wb3),
     .io_wb3_idx                     (_wbArb_io_out_3_bits_rob_idx),
-    .io_wb3_val                     (_wbu3_io_refile_wdata),
     .io_wb3_state_state             (_wbArb_io_out_3_bits_state_state),
     .io_wb3_state_state_num         (_wbArb_io_out_3_bits_state_state_num),
     .io_wb3_mem_addr                (_wbArb_io_out_3_bits_alu_result),
@@ -26565,6 +26864,8 @@ module Core(
     .io_store_wb_mem_wdata          (_lsu_io_storeComplete_bits_store_data),
     .io_commit_valid                (_rob_io_commit_valid),
     .io_commit_idx                  (_rob_io_commit_idx),
+    .io_commit_bits_valid           (_rob_io_commit_bits_valid),
+    .io_commit_bits_done            (_rob_io_commit_bits_done),
     .io_commit_bits_pc              (_rob_io_commit_bits_pc),
     .io_commit_bits_inst            (_rob_io_commit_bits_inst),
     .io_commit_bits_reg_write       (_rob_io_commit_bits_reg_write),
@@ -26578,7 +26879,6 @@ module Core(
     .io_commit_bits_arch_rd         (_rob_io_commit_bits_arch_rd),
     .io_commit_bits_old_phys        (_rob_io_commit_bits_old_phys),
     .io_commit_bits_new_phys        (_rob_io_commit_bits_new_phys),
-    .io_commit_bits_dest_val        (_rob_io_commit_bits_dest_val),
     .io_commit_bits_is_ebreak       (_rob_io_commit_bits_is_ebreak),
     .io_commit_bits_is_fencei       (_rob_io_commit_bits_is_fencei),
     .io_commit_bits_state_state     (_rob_io_commit_bits_state_state),
@@ -26598,6 +26898,8 @@ module Core(
     .io_commit_fire                 (rob_io_commit_fire),
     .io_commit1_valid               (_rob_io_commit1_valid),
     .io_commit1_idx                 (_rob_io_commit1_idx),
+    .io_commit1_bits_valid          (_rob_io_commit1_bits_valid),
+    .io_commit1_bits_done           (_rob_io_commit1_bits_done),
     .io_commit1_bits_pc             (_rob_io_commit1_bits_pc),
     .io_commit1_bits_inst           (_rob_io_commit1_bits_inst),
     .io_commit1_bits_reg_write      (_rob_io_commit1_bits_reg_write),
@@ -26610,7 +26912,6 @@ module Core(
     .io_commit1_bits_arch_rd        (_rob_io_commit1_bits_arch_rd),
     .io_commit1_bits_old_phys       (_rob_io_commit1_bits_old_phys),
     .io_commit1_bits_new_phys       (_rob_io_commit1_bits_new_phys),
-    .io_commit1_bits_dest_val       (_rob_io_commit1_bits_dest_val),
     .io_commit1_bits_is_ebreak      (_rob_io_commit1_bits_is_ebreak),
     .io_commit1_bits_is_fencei      (_rob_io_commit1_bits_is_fencei),
     .io_commit1_bits_state_state    (_rob_io_commit1_bits_state_state),
@@ -26626,6 +26927,8 @@ module Core(
     .io_commit1_fire                (rob_io_commit1_fire),
     .io_commit2_valid               (_rob_io_commit2_valid),
     .io_commit2_idx                 (_rob_io_commit2_idx),
+    .io_commit2_bits_valid          (_rob_io_commit2_bits_valid),
+    .io_commit2_bits_done           (_rob_io_commit2_bits_done),
     .io_commit2_bits_pc             (_rob_io_commit2_bits_pc),
     .io_commit2_bits_inst           (_rob_io_commit2_bits_inst),
     .io_commit2_bits_reg_write      (_rob_io_commit2_bits_reg_write),
@@ -26637,7 +26940,6 @@ module Core(
     .io_commit2_bits_arch_rd        (_rob_io_commit2_bits_arch_rd),
     .io_commit2_bits_old_phys       (_rob_io_commit2_bits_old_phys),
     .io_commit2_bits_new_phys       (_rob_io_commit2_bits_new_phys),
-    .io_commit2_bits_dest_val       (_rob_io_commit2_bits_dest_val),
     .io_commit2_bits_is_ebreak      (_rob_io_commit2_bits_is_ebreak),
     .io_commit2_bits_is_fencei      (_rob_io_commit2_bits_is_fencei),
     .io_commit2_bits_state_state    (_rob_io_commit2_bits_state_state),
@@ -26653,6 +26955,8 @@ module Core(
     .io_commit2_fire                (rob_io_commit2_fire),
     .io_commit3_valid               (_rob_io_commit3_valid),
     .io_commit3_idx                 (_rob_io_commit3_idx),
+    .io_commit3_bits_valid          (_rob_io_commit3_bits_valid),
+    .io_commit3_bits_done           (_rob_io_commit3_bits_done),
     .io_commit3_bits_pc             (_rob_io_commit3_bits_pc),
     .io_commit3_bits_inst           (_rob_io_commit3_bits_inst),
     .io_commit3_bits_reg_write      (_rob_io_commit3_bits_reg_write),
@@ -26664,7 +26968,6 @@ module Core(
     .io_commit3_bits_arch_rd        (_rob_io_commit3_bits_arch_rd),
     .io_commit3_bits_old_phys       (_rob_io_commit3_bits_old_phys),
     .io_commit3_bits_new_phys       (_rob_io_commit3_bits_new_phys),
-    .io_commit3_bits_dest_val       (_rob_io_commit3_bits_dest_val),
     .io_commit3_bits_is_ebreak      (_rob_io_commit3_bits_is_ebreak),
     .io_commit3_bits_is_fencei      (_rob_io_commit3_bits_is_fencei),
     .io_commit3_bits_state_state    (_rob_io_commit3_bits_state_state),
@@ -27951,7 +28254,8 @@ module Core(
     .io_deq3_bits_ftq_generation        (_fq_io_deq3_bits_ftq_generation),
     .io_flush
       (_busy_io_rebuild_mask_T | mret_flush_REG | branchRecoveryWins | memoryRecoveryWins
-       | mis_predict_dbg | irq_commit | fencei_commit | mret_commit | ext_irq_fire),
+       | retirePathRecoveryWins | mis_predict_dbg | irq_commit | fencei_commit
+       | mret_commit | ext_irq_fire),
     .io_count                           (io_debug_fq_count),
     .io_space                           (_fq_io_space),
     .io_enqSpace                        (_fq_io_enqSpace)
@@ -28348,6 +28652,47 @@ module Core(
     .io_out_3_bits_store_data                (_wbArb_io_out_3_bits_store_data),
     .io_robHead                              (_rob_io_head),
     .io_grantIdx_0                           (_wbArb_io_grantIdx_0)
+  );
+  RetirePathGuard retirePathGuard (
+    .io_check_0_valid        (_rob_io_commit_bits_valid & _rob_io_commit_bits_done),
+    .io_check_0_isControl    (cm_is_ctrl & _cm_bpu_update_T),
+    .io_check_0_pc           (_rob_io_commit_bits_pc),
+    .io_check_0_actualTaken  (_rob_io_commit_bits_actual_taken),
+    .io_check_0_actualTarget (_rob_io_commit_bits_actual_target),
+    .io_check_0_nextValid    ((|(_rob_io_count[5:1])) & casez_tmp_61),
+    .io_check_0_nextPc       (casez_tmp_62),
+    .io_check_0_robIdx       (_rob_io_head),
+    .io_check_1_valid        (_rob_io_commit1_bits_valid & _rob_io_commit1_bits_done),
+    .io_check_1_isControl    (cm1_is_ctrl & _cm1_bpu_update_T),
+    .io_check_1_pc           (_rob_io_commit1_bits_pc),
+    .io_check_1_actualTaken  (_rob_io_commit1_bits_actual_taken),
+    .io_check_1_actualTarget (_rob_io_commit1_bits_actual_target),
+    .io_check_1_nextValid    (_rob_io_count > 6'h2 & casez_tmp_63),
+    .io_check_1_nextPc       (casez_tmp_64),
+    .io_check_1_robIdx       (_rob_io_commit1_idx),
+    .io_check_2_valid        (_rob_io_commit2_bits_valid & _rob_io_commit2_bits_done),
+    .io_check_2_isControl    (cm2_is_ctrl & _cm2_bpu_update_T),
+    .io_check_2_pc           (_rob_io_commit2_bits_pc),
+    .io_check_2_actualTaken  (_rob_io_commit2_bits_actual_taken),
+    .io_check_2_actualTarget (_rob_io_commit2_bits_actual_target),
+    .io_check_2_nextValid    ((|(_rob_io_count[5:2])) & casez_tmp_65),
+    .io_check_2_nextPc       (casez_tmp_66),
+    .io_check_2_robIdx       (_rob_io_commit2_idx),
+    .io_check_3_valid        (_rob_io_commit3_bits_valid & _rob_io_commit3_bits_done),
+    .io_check_3_isControl    (cm3_is_ctrl & _cm3_bpu_update_T),
+    .io_check_3_pc           (_rob_io_commit3_bits_pc),
+    .io_check_3_actualTaken  (_rob_io_commit3_bits_actual_taken),
+    .io_check_3_actualTarget (_rob_io_commit3_bits_actual_target),
+    .io_check_3_nextValid    (_rob_io_count > 6'h4 & casez_tmp_67),
+    .io_check_3_nextPc       (casez_tmp_68),
+    .io_check_3_robIdx       (_rob_io_commit3_idx),
+    .io_flush                (_retirePathGuard_io_flush),
+    .io_waitForNext_0        (_retirePathGuard_io_waitForNext_0),
+    .io_waitForNext_1        (_retirePathGuard_io_waitForNext_1),
+    .io_waitForNext_2        (_retirePathGuard_io_waitForNext_2),
+    .io_waitForNext_3        (_retirePathGuard_io_waitForNext_3),
+    .io_flushRobIdx          (_retirePathGuard_io_flushRobIdx),
+    .io_correctPc            (_retirePathGuard_io_correctPc)
   );
   PerfMonitor pm (
     .clock    (clock),
@@ -28785,119 +29130,125 @@ module Core(
   );
   PerfMonitor pm_65 (
     .clock    (clock),
+    .event_id (32'h99),
+    .data     (64'h1),
+    .enable   (retirePathRecoveryWins)
+  );
+  PerfMonitor pm_66 (
+    .clock    (clock),
     .event_id (32'hF),
     .data     (64'h1),
     .enable   (br_resolve & d_bru_bits_bp_valid)
   );
-  PerfMonitor pm_66 (
+  PerfMonitor pm_67 (
     .clock    (clock),
     .event_id (32'h10),
     .data     (64'h1),
     .enable   (_GEN_49)
   );
-  PerfMonitor pm_67 (
+  PerfMonitor pm_68 (
     .clock    (clock),
     .event_id (32'h19),
     .data     (64'h1),
     .enable   (mis_predict_dbg)
   );
-  PerfMonitor pm_68 (
+  PerfMonitor pm_69 (
     .clock    (clock),
     .event_id (32'h24),
     .data     (64'h1),
     .enable   (_GEN_50)
   );
-  PerfMonitor pm_69 (
+  PerfMonitor pm_70 (
     .clock    (clock),
     .event_id (32'h25),
     .data     (64'h1),
     .enable   (_GEN_51)
   );
-  PerfMonitor pm_70 (
+  PerfMonitor pm_71 (
     .clock    (clock),
     .event_id (32'h26),
     .data     (64'h1),
     .enable   (_GEN_52)
   );
-  PcPerfMonitor pm_71 (
+  PcPerfMonitor pm_72 (
     .clock    (clock),
     .event_id (32'h4),
     .pc       (d_bru_bits_pc),
     .enable   (mis_predict_dbg)
   );
-  PcPerfMonitor pm_72 (
+  PcPerfMonitor pm_73 (
     .clock    (clock),
     .event_id (32'h1),
     .pc       (d_bru_bits_pc),
     .enable   (_GEN_50)
   );
-  PcPerfMonitor pm_73 (
+  PcPerfMonitor pm_74 (
     .clock    (clock),
     .event_id (32'h2),
     .pc       (d_bru_bits_pc),
     .enable   (_GEN_51)
   );
-  PcPerfMonitor pm_74 (
+  PcPerfMonitor pm_75 (
     .clock    (clock),
     .event_id (32'h3),
     .pc       (d_bru_bits_pc),
     .enable   (_GEN_52)
   );
-  PerfMonitor pm_75 (
+  PerfMonitor pm_76 (
     .clock    (clock),
     .event_id (32'h4),
     .data     (64'h1),
     .enable   (io_dmem_awvalid_0 & io_dmem_awready)
   );
-  PerfMonitor pm_76 (
+  PerfMonitor pm_77 (
     .clock    (clock),
     .event_id (32'h27),
     .data     ({62'h0, sbEnqCount}),
     .enable   (|sbEnqCount)
   );
-  PerfMonitor pm_77 (
+  PerfMonitor pm_78 (
     .clock    (clock),
     .event_id (32'h4D),
     .data     (64'h1),
     .enable   (dcache_io_store_valid & dcache_io_store2_valid)
   );
-  PerfMonitor pm_78 (
+  PerfMonitor pm_79 (
     .clock    (clock),
     .event_id (32'h67),
     .data     ({62'h0, _stbuf_io_merged}),
     .enable   (|_stbuf_io_merged)
   );
-  PerfMonitor pm_79 (
+  PerfMonitor pm_80 (
     .clock    (clock),
     .event_id (32'h69),
     .data     (64'h1),
     .enable   (_stbuf_io_write_burst)
   );
-  PerfMonitor pm_80 (
+  PerfMonitor pm_81 (
     .clock    (clock),
     .event_id (32'h6A),
     .data     ({60'h0, _stbuf_io_write_beats}),
     .enable   (_stbuf_io_write_burst)
   );
-  PerfMonitor pm_81 (
+  PerfMonitor pm_82 (
     .clock    (clock),
     .event_id (32'h88),
     .data     (64'h1),
     .enable   (_stbuf_io_write_chain)
   );
-  PerfMonitor pm_82 (
+  PerfMonitor pm_83 (
     .clock    (clock),
     .event_id (32'h28),
     .data     ({60'h0, _stbuf_io_deq_count}),
     .enable   (_stbuf_io_deq_valid)
   );
-  PerfMonitor pm_83 (
+  PerfMonitor pm_84 (
     .clock    (clock),
     .event_id (32'h29),
     .data     (64'h1),
     .enable   (_GEN_16 & head_st_is_pmem & _stbuf_io_free == 5'h0)
   );
-  PerfMonitor pm_84 (
+  PerfMonitor pm_85 (
     .clock    (clock),
     .event_id (32'h2A),
     .data     (64'h1),
@@ -28921,7 +29272,9 @@ module Core(
   assign io_commit_mem_addr =
     cm_is_store
       ? head_st_addr
-      : cm_wb_same ? head_wb_bits_alu_result : _rob_io_commit_bits_mem_addr;
+      : rob_io_commit_fire & head_wb_valid
+          ? head_wb_bits_alu_result
+          : _rob_io_commit_bits_mem_addr;
   assign io_commit_is_load = _rob_io_commit_bits_reg_write_sel == 3'h4;
   assign io_commit_valid1 = rob_io_commit1_fire;
   assign io_commit_pc1 = _rob_io_commit1_bits_pc;
@@ -28936,37 +29289,6 @@ module Core(
   assign io_commit_mem_addr3 = cm3_mem_addr;
   assign io_commit_is_load3 = cm3_is_load;
   assign io_arch_rdata_0 = 32'h0;
-  assign io_arch_rdata_1 = arch_rf_1;
-  assign io_arch_rdata_2 = arch_rf_2;
-  assign io_arch_rdata_3 = arch_rf_3;
-  assign io_arch_rdata_4 = arch_rf_4;
-  assign io_arch_rdata_5 = arch_rf_5;
-  assign io_arch_rdata_6 = arch_rf_6;
-  assign io_arch_rdata_7 = arch_rf_7;
-  assign io_arch_rdata_8 = arch_rf_8;
-  assign io_arch_rdata_9 = arch_rf_9;
-  assign io_arch_rdata_10 = arch_rf_10;
-  assign io_arch_rdata_11 = arch_rf_11;
-  assign io_arch_rdata_12 = arch_rf_12;
-  assign io_arch_rdata_13 = arch_rf_13;
-  assign io_arch_rdata_14 = arch_rf_14;
-  assign io_arch_rdata_15 = arch_rf_15;
-  assign io_arch_rdata_16 = arch_rf_16;
-  assign io_arch_rdata_17 = arch_rf_17;
-  assign io_arch_rdata_18 = arch_rf_18;
-  assign io_arch_rdata_19 = arch_rf_19;
-  assign io_arch_rdata_20 = arch_rf_20;
-  assign io_arch_rdata_21 = arch_rf_21;
-  assign io_arch_rdata_22 = arch_rf_22;
-  assign io_arch_rdata_23 = arch_rf_23;
-  assign io_arch_rdata_24 = arch_rf_24;
-  assign io_arch_rdata_25 = arch_rf_25;
-  assign io_arch_rdata_26 = arch_rf_26;
-  assign io_arch_rdata_27 = arch_rf_27;
-  assign io_arch_rdata_28 = arch_rf_28;
-  assign io_arch_rdata_29 = arch_rf_29;
-  assign io_arch_rdata_30 = arch_rf_30;
-  assign io_arch_rdata_31 = arch_rf_31;
   assign io_debug_wb_head_reject_flags = casez_tmp_60;
   assign io_debug_rob_head_pc = casez_tmp_52;
   assign io_debug_rob_head_valid = casez_tmp_50;

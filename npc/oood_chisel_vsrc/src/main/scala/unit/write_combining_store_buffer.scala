@@ -124,10 +124,14 @@ class WriteCombiningStoreBuffer(
   val in1Data = normalizedData(io.enq1.bits)
   val in0Mask = normalizedMask(io.enq.bits)
   val in1Mask = normalizedMask(io.enq1.bits)
+  val residentMatch0 = VecInit((0 until lines).map(i =>
+    valid(i) && lineAddr(i) === in0Line)).asUInt.orR
+  val residentMatch1 = VecInit((0 until lines).map(i =>
+    valid(i) && lineAddr(i) === in1Line)).asUInt.orR
 
-  // Preserve useful same-cycle merges. Pressure picks the oldest line not
-  // touched by either incoming store and defers if every candidate is touched.
-  // An architectural drain may still select any oldest owner.
+  // Preserve useful same-cycle merges under pressure. An architectural drain
+  // instead snapshots the oldest generation even when a younger same-line
+  // store arrives; that store must allocate a distinct generation below.
   val unprotected = VecInit((0 until lines).map(i => valid(i) &&
     !(io.enq.valid && lineAddr(i) === in0Line) &&
     !(io.enq1.valid && lineAddr(i) === in1Line)))
@@ -135,8 +139,9 @@ class WriteCombiningStoreBuffer(
   val oldestUnprotectedOH = oldestOH(unprotected)
   val unprotectedValid = unprotected.asUInt.orR
   val incomingValid = io.enq.valid || io.enq1.valid
-  val victimBits = Mux(unprotectedValid, oldestUnprotectedOH.asUInt,
-    Mux(!incomingValid, oldestAnyOH.asUInt, 0.U(lines.W)))
+  val victimBits = Mux(io.drain_all, oldestAnyOH.asUInt,
+    Mux(unprotectedValid, oldestUnprotectedOH.asUInt,
+      Mux(!incomingValid, oldestAnyOH.asUInt, 0.U(lines.W))))
   val victimValid = victimBits.orR
   val victimIdx = PriorityEncoder(victimBits)
   val drainNeeded = io.drain_all || count >= pressureThreshold.U
@@ -163,9 +168,11 @@ class WriteCombiningStoreBuffer(
   val migrateFire = io.cache_line.fire || ownWritebackFire
 
   val match0OH = VecInit((0 until lines).map(i =>
-    valid(i) && lineAddr(i) === in0Line))
+    valid(i) && lineAddr(i) === in0Line &&
+      !(migrateFire && victimIdx === i.U)))
   val match1OH = VecInit((0 until lines).map(i =>
-    valid(i) && lineAddr(i) === in1Line))
+    valid(i) && lineAddr(i) === in1Line &&
+      !(migrateFire && victimIdx === i.U)))
   val match0 = match0OH.asUInt.orR
   val match1 = match1OH.asUInt.orR
   val match0Idx = PriorityEncoder(match0OH.asUInt)
@@ -173,12 +180,16 @@ class WriteCombiningStoreBuffer(
   val pairSameLine = io.enq.valid && io.enq1.valid && in0Line === in1Line
   writeback.io.probe_line := in0Line
   writeback.io.probe1_line := in1Line
+  val migratingIn0Generation = migrateFire && lineAddr(victimIdx) === in0Line
+  val migratingIn1Generation = migrateFire && lineAddr(victimIdx) === in1Line
   val pairCacheBypass = pairSameLine && io.enq_cache_hit && io.enq1_cache_hit &&
-    !match0 && !writeback.io.probe_pending
+    !match0 && !writeback.io.probe_pending && !migratingIn0Generation
   val bypass0 = Mux(pairSameLine, pairCacheBypass,
-    io.enq.valid && io.enq_cache_hit && !match0 && !writeback.io.probe_pending)
+    io.enq.valid && io.enq_cache_hit && !match0 &&
+      !writeback.io.probe_pending && !migratingIn0Generation)
   val bypass1 = Mux(pairSameLine, pairCacheBypass,
-    io.enq1.valid && io.enq1_cache_hit && !match1 && !writeback.io.probe1_pending)
+    io.enq1.valid && io.enq1_cache_hit && !match1 &&
+      !writeback.io.probe1_pending && !migratingIn1Generation)
   val slot0Needed = io.enq.valid && !bypass0 && !match0
   val slot1Needed = io.enq1.valid && !bypass1 && !pairSameLine && !match1
   val slotsNeeded = PopCount(Seq(slot0Needed, slot1Needed))
@@ -188,8 +199,8 @@ class WriteCombiningStoreBuffer(
   val freeCount = PopCount(freeMask)
   // Cache-hit bypass never creates same-cycle capacity credit. Keeping ready
   // on registered resident state avoids a DCache install/poison feedback loop.
-  val readySlot0Needed = io.enq.valid && !match0
-  val readySlot1Needed = io.enq1.valid && !pairSameLine && !match1
+  val readySlot0Needed = io.enq.valid && !residentMatch0
+  val readySlot1Needed = io.enq1.valid && !pairSameLine && !residentMatch1
   val batchReady = PopCount(Seq(readySlot0Needed, readySlot1Needed)) <= freeCount
   io.enq.ready := batchReady
   io.enq1.ready := batchReady

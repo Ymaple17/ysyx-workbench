@@ -36,3 +36,4 @@ module CommittedTraceCache_Verification_Assert(
     end // always @(posedge)
   `endif // not def SYNTHESIS
 endmodule
+

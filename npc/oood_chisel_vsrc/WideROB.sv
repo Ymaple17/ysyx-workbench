@@ -119,10 +119,6 @@ module WideROB(
                 io_wb_idx_1,
                 io_wb_idx_2,
                 io_wb_idx_3,
-  input  [31:0] io_wb_val_0,
-                io_wb_val_1,
-                io_wb_val_2,
-                io_wb_val_3,
   input         io_wb_state_0_state,
   input  [7:0]  io_wb_state_0_state_num,
   input         io_wb_state_1_state,
@@ -167,6 +163,8 @@ module WideROB(
                 io_commit_idx_1,
                 io_commit_idx_2,
                 io_commit_idx_3,
+  output        io_commit_bits_0_valid,
+                io_commit_bits_0_done,
   output [31:0] io_commit_bits_0_pc,
                 io_commit_bits_0_inst,
   output        io_commit_bits_0_reg_write,
@@ -180,7 +178,6 @@ module WideROB(
   output [4:0]  io_commit_bits_0_arch_rd,
   output [5:0]  io_commit_bits_0_old_phys,
                 io_commit_bits_0_new_phys,
-  output [31:0] io_commit_bits_0_dest_val,
   output        io_commit_bits_0_is_ebreak,
                 io_commit_bits_0_is_fencei,
                 io_commit_bits_0_state_state,
@@ -197,6 +194,8 @@ module WideROB(
                 io_commit_bits_0_mem_addr,
                 io_commit_bits_0_mem_wdata,
   output        io_commit_bits_0_addr_ready,
+                io_commit_bits_1_valid,
+                io_commit_bits_1_done,
   output [31:0] io_commit_bits_1_pc,
                 io_commit_bits_1_inst,
   output        io_commit_bits_1_reg_write,
@@ -209,7 +208,6 @@ module WideROB(
   output [4:0]  io_commit_bits_1_arch_rd,
   output [5:0]  io_commit_bits_1_old_phys,
                 io_commit_bits_1_new_phys,
-  output [31:0] io_commit_bits_1_dest_val,
   output        io_commit_bits_1_is_ebreak,
                 io_commit_bits_1_is_fencei,
                 io_commit_bits_1_state_state,
@@ -222,6 +220,8 @@ module WideROB(
                 io_commit_bits_1_mem_addr,
                 io_commit_bits_1_mem_wdata,
   output        io_commit_bits_1_addr_ready,
+                io_commit_bits_2_valid,
+                io_commit_bits_2_done,
   output [31:0] io_commit_bits_2_pc,
                 io_commit_bits_2_inst,
   output        io_commit_bits_2_reg_write,
@@ -233,7 +233,6 @@ module WideROB(
   output [4:0]  io_commit_bits_2_arch_rd,
   output [5:0]  io_commit_bits_2_old_phys,
                 io_commit_bits_2_new_phys,
-  output [31:0] io_commit_bits_2_dest_val,
   output        io_commit_bits_2_is_ebreak,
                 io_commit_bits_2_is_fencei,
                 io_commit_bits_2_state_state,
@@ -246,6 +245,8 @@ module WideROB(
                 io_commit_bits_2_mem_addr,
                 io_commit_bits_2_mem_wdata,
   output        io_commit_bits_2_addr_ready,
+                io_commit_bits_3_valid,
+                io_commit_bits_3_done,
   output [31:0] io_commit_bits_3_pc,
                 io_commit_bits_3_inst,
   output        io_commit_bits_3_reg_write,
@@ -257,7 +258,6 @@ module WideROB(
   output [4:0]  io_commit_bits_3_arch_rd,
   output [5:0]  io_commit_bits_3_old_phys,
                 io_commit_bits_3_new_phys,
-  output [31:0] io_commit_bits_3_dest_val,
   output        io_commit_bits_3_is_ebreak,
                 io_commit_bits_3_is_fencei,
                 io_commit_bits_3_state_state,
@@ -808,7 +808,6 @@ module WideROB(
   reg  [4:0]  entries_0_arch_rd;
   reg  [5:0]  entries_0_old_phys;
   reg  [5:0]  entries_0_new_phys;
-  reg  [31:0] entries_0_dest_val;
   reg         entries_0_is_ebreak;
   reg         entries_0_is_fencei;
   reg         entries_0_state_state;
@@ -840,7 +839,6 @@ module WideROB(
   reg  [4:0]  entries_1_arch_rd;
   reg  [5:0]  entries_1_old_phys;
   reg  [5:0]  entries_1_new_phys;
-  reg  [31:0] entries_1_dest_val;
   reg         entries_1_is_ebreak;
   reg         entries_1_is_fencei;
   reg         entries_1_state_state;
@@ -872,7 +870,6 @@ module WideROB(
   reg  [4:0]  entries_2_arch_rd;
   reg  [5:0]  entries_2_old_phys;
   reg  [5:0]  entries_2_new_phys;
-  reg  [31:0] entries_2_dest_val;
   reg         entries_2_is_ebreak;
   reg         entries_2_is_fencei;
   reg         entries_2_state_state;
@@ -904,7 +901,6 @@ module WideROB(
   reg  [4:0]  entries_3_arch_rd;
   reg  [5:0]  entries_3_old_phys;
   reg  [5:0]  entries_3_new_phys;
-  reg  [31:0] entries_3_dest_val;
   reg         entries_3_is_ebreak;
   reg         entries_3_is_fencei;
   reg         entries_3_state_state;
@@ -936,7 +932,6 @@ module WideROB(
   reg  [4:0]  entries_4_arch_rd;
   reg  [5:0]  entries_4_old_phys;
   reg  [5:0]  entries_4_new_phys;
-  reg  [31:0] entries_4_dest_val;
   reg         entries_4_is_ebreak;
   reg         entries_4_is_fencei;
   reg         entries_4_state_state;
@@ -968,7 +963,6 @@ module WideROB(
   reg  [4:0]  entries_5_arch_rd;
   reg  [5:0]  entries_5_old_phys;
   reg  [5:0]  entries_5_new_phys;
-  reg  [31:0] entries_5_dest_val;
   reg         entries_5_is_ebreak;
   reg         entries_5_is_fencei;
   reg         entries_5_state_state;
@@ -1000,7 +994,6 @@ module WideROB(
   reg  [4:0]  entries_6_arch_rd;
   reg  [5:0]  entries_6_old_phys;
   reg  [5:0]  entries_6_new_phys;
-  reg  [31:0] entries_6_dest_val;
   reg         entries_6_is_ebreak;
   reg         entries_6_is_fencei;
   reg         entries_6_state_state;
@@ -1032,7 +1025,6 @@ module WideROB(
   reg  [4:0]  entries_7_arch_rd;
   reg  [5:0]  entries_7_old_phys;
   reg  [5:0]  entries_7_new_phys;
-  reg  [31:0] entries_7_dest_val;
   reg         entries_7_is_ebreak;
   reg         entries_7_is_fencei;
   reg         entries_7_state_state;
@@ -1064,7 +1056,6 @@ module WideROB(
   reg  [4:0]  entries_8_arch_rd;
   reg  [5:0]  entries_8_old_phys;
   reg  [5:0]  entries_8_new_phys;
-  reg  [31:0] entries_8_dest_val;
   reg         entries_8_is_ebreak;
   reg         entries_8_is_fencei;
   reg         entries_8_state_state;
@@ -1096,7 +1087,6 @@ module WideROB(
   reg  [4:0]  entries_9_arch_rd;
   reg  [5:0]  entries_9_old_phys;
   reg  [5:0]  entries_9_new_phys;
-  reg  [31:0] entries_9_dest_val;
   reg         entries_9_is_ebreak;
   reg         entries_9_is_fencei;
   reg         entries_9_state_state;
@@ -1128,7 +1118,6 @@ module WideROB(
   reg  [4:0]  entries_10_arch_rd;
   reg  [5:0]  entries_10_old_phys;
   reg  [5:0]  entries_10_new_phys;
-  reg  [31:0] entries_10_dest_val;
   reg         entries_10_is_ebreak;
   reg         entries_10_is_fencei;
   reg         entries_10_state_state;
@@ -1160,7 +1149,6 @@ module WideROB(
   reg  [4:0]  entries_11_arch_rd;
   reg  [5:0]  entries_11_old_phys;
   reg  [5:0]  entries_11_new_phys;
-  reg  [31:0] entries_11_dest_val;
   reg         entries_11_is_ebreak;
   reg         entries_11_is_fencei;
   reg         entries_11_state_state;
@@ -1192,7 +1180,6 @@ module WideROB(
   reg  [4:0]  entries_12_arch_rd;
   reg  [5:0]  entries_12_old_phys;
   reg  [5:0]  entries_12_new_phys;
-  reg  [31:0] entries_12_dest_val;
   reg         entries_12_is_ebreak;
   reg         entries_12_is_fencei;
   reg         entries_12_state_state;
@@ -1224,7 +1211,6 @@ module WideROB(
   reg  [4:0]  entries_13_arch_rd;
   reg  [5:0]  entries_13_old_phys;
   reg  [5:0]  entries_13_new_phys;
-  reg  [31:0] entries_13_dest_val;
   reg         entries_13_is_ebreak;
   reg         entries_13_is_fencei;
   reg         entries_13_state_state;
@@ -1256,7 +1242,6 @@ module WideROB(
   reg  [4:0]  entries_14_arch_rd;
   reg  [5:0]  entries_14_old_phys;
   reg  [5:0]  entries_14_new_phys;
-  reg  [31:0] entries_14_dest_val;
   reg         entries_14_is_ebreak;
   reg         entries_14_is_fencei;
   reg         entries_14_state_state;
@@ -1288,7 +1273,6 @@ module WideROB(
   reg  [4:0]  entries_15_arch_rd;
   reg  [5:0]  entries_15_old_phys;
   reg  [5:0]  entries_15_new_phys;
-  reg  [31:0] entries_15_dest_val;
   reg         entries_15_is_ebreak;
   reg         entries_15_is_fencei;
   reg         entries_15_state_state;
@@ -1320,7 +1304,6 @@ module WideROB(
   reg  [4:0]  entries_16_arch_rd;
   reg  [5:0]  entries_16_old_phys;
   reg  [5:0]  entries_16_new_phys;
-  reg  [31:0] entries_16_dest_val;
   reg         entries_16_is_ebreak;
   reg         entries_16_is_fencei;
   reg         entries_16_state_state;
@@ -1352,7 +1335,6 @@ module WideROB(
   reg  [4:0]  entries_17_arch_rd;
   reg  [5:0]  entries_17_old_phys;
   reg  [5:0]  entries_17_new_phys;
-  reg  [31:0] entries_17_dest_val;
   reg         entries_17_is_ebreak;
   reg         entries_17_is_fencei;
   reg         entries_17_state_state;
@@ -1384,7 +1366,6 @@ module WideROB(
   reg  [4:0]  entries_18_arch_rd;
   reg  [5:0]  entries_18_old_phys;
   reg  [5:0]  entries_18_new_phys;
-  reg  [31:0] entries_18_dest_val;
   reg         entries_18_is_ebreak;
   reg         entries_18_is_fencei;
   reg         entries_18_state_state;
@@ -1416,7 +1397,6 @@ module WideROB(
   reg  [4:0]  entries_19_arch_rd;
   reg  [5:0]  entries_19_old_phys;
   reg  [5:0]  entries_19_new_phys;
-  reg  [31:0] entries_19_dest_val;
   reg         entries_19_is_ebreak;
   reg         entries_19_is_fencei;
   reg         entries_19_state_state;
@@ -1448,7 +1428,6 @@ module WideROB(
   reg  [4:0]  entries_20_arch_rd;
   reg  [5:0]  entries_20_old_phys;
   reg  [5:0]  entries_20_new_phys;
-  reg  [31:0] entries_20_dest_val;
   reg         entries_20_is_ebreak;
   reg         entries_20_is_fencei;
   reg         entries_20_state_state;
@@ -1480,7 +1459,6 @@ module WideROB(
   reg  [4:0]  entries_21_arch_rd;
   reg  [5:0]  entries_21_old_phys;
   reg  [5:0]  entries_21_new_phys;
-  reg  [31:0] entries_21_dest_val;
   reg         entries_21_is_ebreak;
   reg         entries_21_is_fencei;
   reg         entries_21_state_state;
@@ -1512,7 +1490,6 @@ module WideROB(
   reg  [4:0]  entries_22_arch_rd;
   reg  [5:0]  entries_22_old_phys;
   reg  [5:0]  entries_22_new_phys;
-  reg  [31:0] entries_22_dest_val;
   reg         entries_22_is_ebreak;
   reg         entries_22_is_fencei;
   reg         entries_22_state_state;
@@ -1544,7 +1521,6 @@ module WideROB(
   reg  [4:0]  entries_23_arch_rd;
   reg  [5:0]  entries_23_old_phys;
   reg  [5:0]  entries_23_new_phys;
-  reg  [31:0] entries_23_dest_val;
   reg         entries_23_is_ebreak;
   reg         entries_23_is_fencei;
   reg         entries_23_state_state;
@@ -1576,7 +1552,6 @@ module WideROB(
   reg  [4:0]  entries_24_arch_rd;
   reg  [5:0]  entries_24_old_phys;
   reg  [5:0]  entries_24_new_phys;
-  reg  [31:0] entries_24_dest_val;
   reg         entries_24_is_ebreak;
   reg         entries_24_is_fencei;
   reg         entries_24_state_state;
@@ -1608,7 +1583,6 @@ module WideROB(
   reg  [4:0]  entries_25_arch_rd;
   reg  [5:0]  entries_25_old_phys;
   reg  [5:0]  entries_25_new_phys;
-  reg  [31:0] entries_25_dest_val;
   reg         entries_25_is_ebreak;
   reg         entries_25_is_fencei;
   reg         entries_25_state_state;
@@ -1640,7 +1614,6 @@ module WideROB(
   reg  [4:0]  entries_26_arch_rd;
   reg  [5:0]  entries_26_old_phys;
   reg  [5:0]  entries_26_new_phys;
-  reg  [31:0] entries_26_dest_val;
   reg         entries_26_is_ebreak;
   reg         entries_26_is_fencei;
   reg         entries_26_state_state;
@@ -1672,7 +1645,6 @@ module WideROB(
   reg  [4:0]  entries_27_arch_rd;
   reg  [5:0]  entries_27_old_phys;
   reg  [5:0]  entries_27_new_phys;
-  reg  [31:0] entries_27_dest_val;
   reg         entries_27_is_ebreak;
   reg         entries_27_is_fencei;
   reg         entries_27_state_state;
@@ -1704,7 +1676,6 @@ module WideROB(
   reg  [4:0]  entries_28_arch_rd;
   reg  [5:0]  entries_28_old_phys;
   reg  [5:0]  entries_28_new_phys;
-  reg  [31:0] entries_28_dest_val;
   reg         entries_28_is_ebreak;
   reg         entries_28_is_fencei;
   reg         entries_28_state_state;
@@ -1736,7 +1707,6 @@ module WideROB(
   reg  [4:0]  entries_29_arch_rd;
   reg  [5:0]  entries_29_old_phys;
   reg  [5:0]  entries_29_new_phys;
-  reg  [31:0] entries_29_dest_val;
   reg         entries_29_is_ebreak;
   reg         entries_29_is_fencei;
   reg         entries_29_state_state;
@@ -1768,7 +1738,6 @@ module WideROB(
   reg  [4:0]  entries_30_arch_rd;
   reg  [5:0]  entries_30_old_phys;
   reg  [5:0]  entries_30_new_phys;
-  reg  [31:0] entries_30_dest_val;
   reg         entries_30_is_ebreak;
   reg         entries_30_is_fencei;
   reg         entries_30_state_state;
@@ -1800,7 +1769,6 @@ module WideROB(
   reg  [4:0]  entries_31_arch_rd;
   reg  [5:0]  entries_31_old_phys;
   reg  [5:0]  entries_31_new_phys;
-  reg  [31:0] entries_31_dest_val;
   reg         entries_31_is_ebreak;
   reg         entries_31_is_fencei;
   reg         entries_31_state_state;
@@ -2855,1177 +2823,1108 @@ module WideROB(
         casez_tmp_13 = entries_31_new_phys;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_14;
+  reg         casez_tmp_14;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_14 = entries_0_dest_val;
+        casez_tmp_14 = entries_0_is_ebreak;
       5'b00001:
-        casez_tmp_14 = entries_1_dest_val;
+        casez_tmp_14 = entries_1_is_ebreak;
       5'b00010:
-        casez_tmp_14 = entries_2_dest_val;
+        casez_tmp_14 = entries_2_is_ebreak;
       5'b00011:
-        casez_tmp_14 = entries_3_dest_val;
+        casez_tmp_14 = entries_3_is_ebreak;
       5'b00100:
-        casez_tmp_14 = entries_4_dest_val;
+        casez_tmp_14 = entries_4_is_ebreak;
       5'b00101:
-        casez_tmp_14 = entries_5_dest_val;
+        casez_tmp_14 = entries_5_is_ebreak;
       5'b00110:
-        casez_tmp_14 = entries_6_dest_val;
+        casez_tmp_14 = entries_6_is_ebreak;
       5'b00111:
-        casez_tmp_14 = entries_7_dest_val;
+        casez_tmp_14 = entries_7_is_ebreak;
       5'b01000:
-        casez_tmp_14 = entries_8_dest_val;
+        casez_tmp_14 = entries_8_is_ebreak;
       5'b01001:
-        casez_tmp_14 = entries_9_dest_val;
+        casez_tmp_14 = entries_9_is_ebreak;
       5'b01010:
-        casez_tmp_14 = entries_10_dest_val;
+        casez_tmp_14 = entries_10_is_ebreak;
       5'b01011:
-        casez_tmp_14 = entries_11_dest_val;
+        casez_tmp_14 = entries_11_is_ebreak;
       5'b01100:
-        casez_tmp_14 = entries_12_dest_val;
+        casez_tmp_14 = entries_12_is_ebreak;
       5'b01101:
-        casez_tmp_14 = entries_13_dest_val;
+        casez_tmp_14 = entries_13_is_ebreak;
       5'b01110:
-        casez_tmp_14 = entries_14_dest_val;
+        casez_tmp_14 = entries_14_is_ebreak;
       5'b01111:
-        casez_tmp_14 = entries_15_dest_val;
+        casez_tmp_14 = entries_15_is_ebreak;
       5'b10000:
-        casez_tmp_14 = entries_16_dest_val;
+        casez_tmp_14 = entries_16_is_ebreak;
       5'b10001:
-        casez_tmp_14 = entries_17_dest_val;
+        casez_tmp_14 = entries_17_is_ebreak;
       5'b10010:
-        casez_tmp_14 = entries_18_dest_val;
+        casez_tmp_14 = entries_18_is_ebreak;
       5'b10011:
-        casez_tmp_14 = entries_19_dest_val;
+        casez_tmp_14 = entries_19_is_ebreak;
       5'b10100:
-        casez_tmp_14 = entries_20_dest_val;
+        casez_tmp_14 = entries_20_is_ebreak;
       5'b10101:
-        casez_tmp_14 = entries_21_dest_val;
+        casez_tmp_14 = entries_21_is_ebreak;
       5'b10110:
-        casez_tmp_14 = entries_22_dest_val;
+        casez_tmp_14 = entries_22_is_ebreak;
       5'b10111:
-        casez_tmp_14 = entries_23_dest_val;
+        casez_tmp_14 = entries_23_is_ebreak;
       5'b11000:
-        casez_tmp_14 = entries_24_dest_val;
+        casez_tmp_14 = entries_24_is_ebreak;
       5'b11001:
-        casez_tmp_14 = entries_25_dest_val;
+        casez_tmp_14 = entries_25_is_ebreak;
       5'b11010:
-        casez_tmp_14 = entries_26_dest_val;
+        casez_tmp_14 = entries_26_is_ebreak;
       5'b11011:
-        casez_tmp_14 = entries_27_dest_val;
+        casez_tmp_14 = entries_27_is_ebreak;
       5'b11100:
-        casez_tmp_14 = entries_28_dest_val;
+        casez_tmp_14 = entries_28_is_ebreak;
       5'b11101:
-        casez_tmp_14 = entries_29_dest_val;
+        casez_tmp_14 = entries_29_is_ebreak;
       5'b11110:
-        casez_tmp_14 = entries_30_dest_val;
+        casez_tmp_14 = entries_30_is_ebreak;
       default:
-        casez_tmp_14 = entries_31_dest_val;
+        casez_tmp_14 = entries_31_is_ebreak;
     endcase
   end // always_comb
   reg         casez_tmp_15;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_15 = entries_0_is_ebreak;
+        casez_tmp_15 = entries_0_is_fencei;
       5'b00001:
-        casez_tmp_15 = entries_1_is_ebreak;
+        casez_tmp_15 = entries_1_is_fencei;
       5'b00010:
-        casez_tmp_15 = entries_2_is_ebreak;
+        casez_tmp_15 = entries_2_is_fencei;
       5'b00011:
-        casez_tmp_15 = entries_3_is_ebreak;
+        casez_tmp_15 = entries_3_is_fencei;
       5'b00100:
-        casez_tmp_15 = entries_4_is_ebreak;
+        casez_tmp_15 = entries_4_is_fencei;
       5'b00101:
-        casez_tmp_15 = entries_5_is_ebreak;
+        casez_tmp_15 = entries_5_is_fencei;
       5'b00110:
-        casez_tmp_15 = entries_6_is_ebreak;
+        casez_tmp_15 = entries_6_is_fencei;
       5'b00111:
-        casez_tmp_15 = entries_7_is_ebreak;
+        casez_tmp_15 = entries_7_is_fencei;
       5'b01000:
-        casez_tmp_15 = entries_8_is_ebreak;
+        casez_tmp_15 = entries_8_is_fencei;
       5'b01001:
-        casez_tmp_15 = entries_9_is_ebreak;
+        casez_tmp_15 = entries_9_is_fencei;
       5'b01010:
-        casez_tmp_15 = entries_10_is_ebreak;
+        casez_tmp_15 = entries_10_is_fencei;
       5'b01011:
-        casez_tmp_15 = entries_11_is_ebreak;
+        casez_tmp_15 = entries_11_is_fencei;
       5'b01100:
-        casez_tmp_15 = entries_12_is_ebreak;
+        casez_tmp_15 = entries_12_is_fencei;
       5'b01101:
-        casez_tmp_15 = entries_13_is_ebreak;
+        casez_tmp_15 = entries_13_is_fencei;
       5'b01110:
-        casez_tmp_15 = entries_14_is_ebreak;
+        casez_tmp_15 = entries_14_is_fencei;
       5'b01111:
-        casez_tmp_15 = entries_15_is_ebreak;
+        casez_tmp_15 = entries_15_is_fencei;
       5'b10000:
-        casez_tmp_15 = entries_16_is_ebreak;
+        casez_tmp_15 = entries_16_is_fencei;
       5'b10001:
-        casez_tmp_15 = entries_17_is_ebreak;
+        casez_tmp_15 = entries_17_is_fencei;
       5'b10010:
-        casez_tmp_15 = entries_18_is_ebreak;
+        casez_tmp_15 = entries_18_is_fencei;
       5'b10011:
-        casez_tmp_15 = entries_19_is_ebreak;
+        casez_tmp_15 = entries_19_is_fencei;
       5'b10100:
-        casez_tmp_15 = entries_20_is_ebreak;
+        casez_tmp_15 = entries_20_is_fencei;
       5'b10101:
-        casez_tmp_15 = entries_21_is_ebreak;
+        casez_tmp_15 = entries_21_is_fencei;
       5'b10110:
-        casez_tmp_15 = entries_22_is_ebreak;
+        casez_tmp_15 = entries_22_is_fencei;
       5'b10111:
-        casez_tmp_15 = entries_23_is_ebreak;
+        casez_tmp_15 = entries_23_is_fencei;
       5'b11000:
-        casez_tmp_15 = entries_24_is_ebreak;
+        casez_tmp_15 = entries_24_is_fencei;
       5'b11001:
-        casez_tmp_15 = entries_25_is_ebreak;
+        casez_tmp_15 = entries_25_is_fencei;
       5'b11010:
-        casez_tmp_15 = entries_26_is_ebreak;
+        casez_tmp_15 = entries_26_is_fencei;
       5'b11011:
-        casez_tmp_15 = entries_27_is_ebreak;
+        casez_tmp_15 = entries_27_is_fencei;
       5'b11100:
-        casez_tmp_15 = entries_28_is_ebreak;
+        casez_tmp_15 = entries_28_is_fencei;
       5'b11101:
-        casez_tmp_15 = entries_29_is_ebreak;
+        casez_tmp_15 = entries_29_is_fencei;
       5'b11110:
-        casez_tmp_15 = entries_30_is_ebreak;
+        casez_tmp_15 = entries_30_is_fencei;
       default:
-        casez_tmp_15 = entries_31_is_ebreak;
+        casez_tmp_15 = entries_31_is_fencei;
     endcase
   end // always_comb
   reg         casez_tmp_16;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_16 = entries_0_is_fencei;
+        casez_tmp_16 = entries_0_state_state;
       5'b00001:
-        casez_tmp_16 = entries_1_is_fencei;
+        casez_tmp_16 = entries_1_state_state;
       5'b00010:
-        casez_tmp_16 = entries_2_is_fencei;
+        casez_tmp_16 = entries_2_state_state;
       5'b00011:
-        casez_tmp_16 = entries_3_is_fencei;
+        casez_tmp_16 = entries_3_state_state;
       5'b00100:
-        casez_tmp_16 = entries_4_is_fencei;
+        casez_tmp_16 = entries_4_state_state;
       5'b00101:
-        casez_tmp_16 = entries_5_is_fencei;
+        casez_tmp_16 = entries_5_state_state;
       5'b00110:
-        casez_tmp_16 = entries_6_is_fencei;
+        casez_tmp_16 = entries_6_state_state;
       5'b00111:
-        casez_tmp_16 = entries_7_is_fencei;
+        casez_tmp_16 = entries_7_state_state;
       5'b01000:
-        casez_tmp_16 = entries_8_is_fencei;
+        casez_tmp_16 = entries_8_state_state;
       5'b01001:
-        casez_tmp_16 = entries_9_is_fencei;
+        casez_tmp_16 = entries_9_state_state;
       5'b01010:
-        casez_tmp_16 = entries_10_is_fencei;
+        casez_tmp_16 = entries_10_state_state;
       5'b01011:
-        casez_tmp_16 = entries_11_is_fencei;
+        casez_tmp_16 = entries_11_state_state;
       5'b01100:
-        casez_tmp_16 = entries_12_is_fencei;
+        casez_tmp_16 = entries_12_state_state;
       5'b01101:
-        casez_tmp_16 = entries_13_is_fencei;
+        casez_tmp_16 = entries_13_state_state;
       5'b01110:
-        casez_tmp_16 = entries_14_is_fencei;
+        casez_tmp_16 = entries_14_state_state;
       5'b01111:
-        casez_tmp_16 = entries_15_is_fencei;
+        casez_tmp_16 = entries_15_state_state;
       5'b10000:
-        casez_tmp_16 = entries_16_is_fencei;
+        casez_tmp_16 = entries_16_state_state;
       5'b10001:
-        casez_tmp_16 = entries_17_is_fencei;
+        casez_tmp_16 = entries_17_state_state;
       5'b10010:
-        casez_tmp_16 = entries_18_is_fencei;
+        casez_tmp_16 = entries_18_state_state;
       5'b10011:
-        casez_tmp_16 = entries_19_is_fencei;
+        casez_tmp_16 = entries_19_state_state;
       5'b10100:
-        casez_tmp_16 = entries_20_is_fencei;
+        casez_tmp_16 = entries_20_state_state;
       5'b10101:
-        casez_tmp_16 = entries_21_is_fencei;
+        casez_tmp_16 = entries_21_state_state;
       5'b10110:
-        casez_tmp_16 = entries_22_is_fencei;
+        casez_tmp_16 = entries_22_state_state;
       5'b10111:
-        casez_tmp_16 = entries_23_is_fencei;
+        casez_tmp_16 = entries_23_state_state;
       5'b11000:
-        casez_tmp_16 = entries_24_is_fencei;
+        casez_tmp_16 = entries_24_state_state;
       5'b11001:
-        casez_tmp_16 = entries_25_is_fencei;
+        casez_tmp_16 = entries_25_state_state;
       5'b11010:
-        casez_tmp_16 = entries_26_is_fencei;
+        casez_tmp_16 = entries_26_state_state;
       5'b11011:
-        casez_tmp_16 = entries_27_is_fencei;
+        casez_tmp_16 = entries_27_state_state;
       5'b11100:
-        casez_tmp_16 = entries_28_is_fencei;
+        casez_tmp_16 = entries_28_state_state;
       5'b11101:
-        casez_tmp_16 = entries_29_is_fencei;
+        casez_tmp_16 = entries_29_state_state;
       5'b11110:
-        casez_tmp_16 = entries_30_is_fencei;
+        casez_tmp_16 = entries_30_state_state;
       default:
-        casez_tmp_16 = entries_31_is_fencei;
+        casez_tmp_16 = entries_31_state_state;
     endcase
   end // always_comb
-  reg         casez_tmp_17;
+  reg  [7:0]  casez_tmp_17;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_17 = entries_0_state_state;
+        casez_tmp_17 = entries_0_state_state_num;
       5'b00001:
-        casez_tmp_17 = entries_1_state_state;
+        casez_tmp_17 = entries_1_state_state_num;
       5'b00010:
-        casez_tmp_17 = entries_2_state_state;
+        casez_tmp_17 = entries_2_state_state_num;
       5'b00011:
-        casez_tmp_17 = entries_3_state_state;
+        casez_tmp_17 = entries_3_state_state_num;
       5'b00100:
-        casez_tmp_17 = entries_4_state_state;
+        casez_tmp_17 = entries_4_state_state_num;
       5'b00101:
-        casez_tmp_17 = entries_5_state_state;
+        casez_tmp_17 = entries_5_state_state_num;
       5'b00110:
-        casez_tmp_17 = entries_6_state_state;
+        casez_tmp_17 = entries_6_state_state_num;
       5'b00111:
-        casez_tmp_17 = entries_7_state_state;
+        casez_tmp_17 = entries_7_state_state_num;
       5'b01000:
-        casez_tmp_17 = entries_8_state_state;
+        casez_tmp_17 = entries_8_state_state_num;
       5'b01001:
-        casez_tmp_17 = entries_9_state_state;
+        casez_tmp_17 = entries_9_state_state_num;
       5'b01010:
-        casez_tmp_17 = entries_10_state_state;
+        casez_tmp_17 = entries_10_state_state_num;
       5'b01011:
-        casez_tmp_17 = entries_11_state_state;
+        casez_tmp_17 = entries_11_state_state_num;
       5'b01100:
-        casez_tmp_17 = entries_12_state_state;
+        casez_tmp_17 = entries_12_state_state_num;
       5'b01101:
-        casez_tmp_17 = entries_13_state_state;
+        casez_tmp_17 = entries_13_state_state_num;
       5'b01110:
-        casez_tmp_17 = entries_14_state_state;
+        casez_tmp_17 = entries_14_state_state_num;
       5'b01111:
-        casez_tmp_17 = entries_15_state_state;
+        casez_tmp_17 = entries_15_state_state_num;
       5'b10000:
-        casez_tmp_17 = entries_16_state_state;
+        casez_tmp_17 = entries_16_state_state_num;
       5'b10001:
-        casez_tmp_17 = entries_17_state_state;
+        casez_tmp_17 = entries_17_state_state_num;
       5'b10010:
-        casez_tmp_17 = entries_18_state_state;
+        casez_tmp_17 = entries_18_state_state_num;
       5'b10011:
-        casez_tmp_17 = entries_19_state_state;
+        casez_tmp_17 = entries_19_state_state_num;
       5'b10100:
-        casez_tmp_17 = entries_20_state_state;
+        casez_tmp_17 = entries_20_state_state_num;
       5'b10101:
-        casez_tmp_17 = entries_21_state_state;
+        casez_tmp_17 = entries_21_state_state_num;
       5'b10110:
-        casez_tmp_17 = entries_22_state_state;
+        casez_tmp_17 = entries_22_state_state_num;
       5'b10111:
-        casez_tmp_17 = entries_23_state_state;
+        casez_tmp_17 = entries_23_state_state_num;
       5'b11000:
-        casez_tmp_17 = entries_24_state_state;
+        casez_tmp_17 = entries_24_state_state_num;
       5'b11001:
-        casez_tmp_17 = entries_25_state_state;
+        casez_tmp_17 = entries_25_state_state_num;
       5'b11010:
-        casez_tmp_17 = entries_26_state_state;
+        casez_tmp_17 = entries_26_state_state_num;
       5'b11011:
-        casez_tmp_17 = entries_27_state_state;
+        casez_tmp_17 = entries_27_state_state_num;
       5'b11100:
-        casez_tmp_17 = entries_28_state_state;
+        casez_tmp_17 = entries_28_state_state_num;
       5'b11101:
-        casez_tmp_17 = entries_29_state_state;
+        casez_tmp_17 = entries_29_state_state_num;
       5'b11110:
-        casez_tmp_17 = entries_30_state_state;
+        casez_tmp_17 = entries_30_state_state_num;
       default:
-        casez_tmp_17 = entries_31_state_state;
+        casez_tmp_17 = entries_31_state_state_num;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_18;
+  reg  [96:0] casez_tmp_18;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_18 = entries_0_state_state_num;
+        casez_tmp_18 = entries_0_bp_index;
       5'b00001:
-        casez_tmp_18 = entries_1_state_state_num;
+        casez_tmp_18 = entries_1_bp_index;
       5'b00010:
-        casez_tmp_18 = entries_2_state_state_num;
+        casez_tmp_18 = entries_2_bp_index;
       5'b00011:
-        casez_tmp_18 = entries_3_state_state_num;
+        casez_tmp_18 = entries_3_bp_index;
       5'b00100:
-        casez_tmp_18 = entries_4_state_state_num;
+        casez_tmp_18 = entries_4_bp_index;
       5'b00101:
-        casez_tmp_18 = entries_5_state_state_num;
+        casez_tmp_18 = entries_5_bp_index;
       5'b00110:
-        casez_tmp_18 = entries_6_state_state_num;
+        casez_tmp_18 = entries_6_bp_index;
       5'b00111:
-        casez_tmp_18 = entries_7_state_state_num;
+        casez_tmp_18 = entries_7_bp_index;
       5'b01000:
-        casez_tmp_18 = entries_8_state_state_num;
+        casez_tmp_18 = entries_8_bp_index;
       5'b01001:
-        casez_tmp_18 = entries_9_state_state_num;
+        casez_tmp_18 = entries_9_bp_index;
       5'b01010:
-        casez_tmp_18 = entries_10_state_state_num;
+        casez_tmp_18 = entries_10_bp_index;
       5'b01011:
-        casez_tmp_18 = entries_11_state_state_num;
+        casez_tmp_18 = entries_11_bp_index;
       5'b01100:
-        casez_tmp_18 = entries_12_state_state_num;
+        casez_tmp_18 = entries_12_bp_index;
       5'b01101:
-        casez_tmp_18 = entries_13_state_state_num;
+        casez_tmp_18 = entries_13_bp_index;
       5'b01110:
-        casez_tmp_18 = entries_14_state_state_num;
+        casez_tmp_18 = entries_14_bp_index;
       5'b01111:
-        casez_tmp_18 = entries_15_state_state_num;
+        casez_tmp_18 = entries_15_bp_index;
       5'b10000:
-        casez_tmp_18 = entries_16_state_state_num;
+        casez_tmp_18 = entries_16_bp_index;
       5'b10001:
-        casez_tmp_18 = entries_17_state_state_num;
+        casez_tmp_18 = entries_17_bp_index;
       5'b10010:
-        casez_tmp_18 = entries_18_state_state_num;
+        casez_tmp_18 = entries_18_bp_index;
       5'b10011:
-        casez_tmp_18 = entries_19_state_state_num;
+        casez_tmp_18 = entries_19_bp_index;
       5'b10100:
-        casez_tmp_18 = entries_20_state_state_num;
+        casez_tmp_18 = entries_20_bp_index;
       5'b10101:
-        casez_tmp_18 = entries_21_state_state_num;
+        casez_tmp_18 = entries_21_bp_index;
       5'b10110:
-        casez_tmp_18 = entries_22_state_state_num;
+        casez_tmp_18 = entries_22_bp_index;
       5'b10111:
-        casez_tmp_18 = entries_23_state_state_num;
+        casez_tmp_18 = entries_23_bp_index;
       5'b11000:
-        casez_tmp_18 = entries_24_state_state_num;
+        casez_tmp_18 = entries_24_bp_index;
       5'b11001:
-        casez_tmp_18 = entries_25_state_state_num;
+        casez_tmp_18 = entries_25_bp_index;
       5'b11010:
-        casez_tmp_18 = entries_26_state_state_num;
+        casez_tmp_18 = entries_26_bp_index;
       5'b11011:
-        casez_tmp_18 = entries_27_state_state_num;
+        casez_tmp_18 = entries_27_bp_index;
       5'b11100:
-        casez_tmp_18 = entries_28_state_state_num;
+        casez_tmp_18 = entries_28_bp_index;
       5'b11101:
-        casez_tmp_18 = entries_29_state_state_num;
+        casez_tmp_18 = entries_29_bp_index;
       5'b11110:
-        casez_tmp_18 = entries_30_state_state_num;
+        casez_tmp_18 = entries_30_bp_index;
       default:
-        casez_tmp_18 = entries_31_state_state_num;
+        casez_tmp_18 = entries_31_bp_index;
     endcase
   end // always_comb
-  reg  [96:0] casez_tmp_19;
+  reg  [3:0]  casez_tmp_19;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_19 = entries_0_bp_index;
+        casez_tmp_19 = entries_0_ftq_idx;
       5'b00001:
-        casez_tmp_19 = entries_1_bp_index;
+        casez_tmp_19 = entries_1_ftq_idx;
       5'b00010:
-        casez_tmp_19 = entries_2_bp_index;
+        casez_tmp_19 = entries_2_ftq_idx;
       5'b00011:
-        casez_tmp_19 = entries_3_bp_index;
+        casez_tmp_19 = entries_3_ftq_idx;
       5'b00100:
-        casez_tmp_19 = entries_4_bp_index;
+        casez_tmp_19 = entries_4_ftq_idx;
       5'b00101:
-        casez_tmp_19 = entries_5_bp_index;
+        casez_tmp_19 = entries_5_ftq_idx;
       5'b00110:
-        casez_tmp_19 = entries_6_bp_index;
+        casez_tmp_19 = entries_6_ftq_idx;
       5'b00111:
-        casez_tmp_19 = entries_7_bp_index;
+        casez_tmp_19 = entries_7_ftq_idx;
       5'b01000:
-        casez_tmp_19 = entries_8_bp_index;
+        casez_tmp_19 = entries_8_ftq_idx;
       5'b01001:
-        casez_tmp_19 = entries_9_bp_index;
+        casez_tmp_19 = entries_9_ftq_idx;
       5'b01010:
-        casez_tmp_19 = entries_10_bp_index;
+        casez_tmp_19 = entries_10_ftq_idx;
       5'b01011:
-        casez_tmp_19 = entries_11_bp_index;
+        casez_tmp_19 = entries_11_ftq_idx;
       5'b01100:
-        casez_tmp_19 = entries_12_bp_index;
+        casez_tmp_19 = entries_12_ftq_idx;
       5'b01101:
-        casez_tmp_19 = entries_13_bp_index;
+        casez_tmp_19 = entries_13_ftq_idx;
       5'b01110:
-        casez_tmp_19 = entries_14_bp_index;
+        casez_tmp_19 = entries_14_ftq_idx;
       5'b01111:
-        casez_tmp_19 = entries_15_bp_index;
+        casez_tmp_19 = entries_15_ftq_idx;
       5'b10000:
-        casez_tmp_19 = entries_16_bp_index;
+        casez_tmp_19 = entries_16_ftq_idx;
       5'b10001:
-        casez_tmp_19 = entries_17_bp_index;
+        casez_tmp_19 = entries_17_ftq_idx;
       5'b10010:
-        casez_tmp_19 = entries_18_bp_index;
+        casez_tmp_19 = entries_18_ftq_idx;
       5'b10011:
-        casez_tmp_19 = entries_19_bp_index;
+        casez_tmp_19 = entries_19_ftq_idx;
       5'b10100:
-        casez_tmp_19 = entries_20_bp_index;
+        casez_tmp_19 = entries_20_ftq_idx;
       5'b10101:
-        casez_tmp_19 = entries_21_bp_index;
+        casez_tmp_19 = entries_21_ftq_idx;
       5'b10110:
-        casez_tmp_19 = entries_22_bp_index;
+        casez_tmp_19 = entries_22_ftq_idx;
       5'b10111:
-        casez_tmp_19 = entries_23_bp_index;
+        casez_tmp_19 = entries_23_ftq_idx;
       5'b11000:
-        casez_tmp_19 = entries_24_bp_index;
+        casez_tmp_19 = entries_24_ftq_idx;
       5'b11001:
-        casez_tmp_19 = entries_25_bp_index;
+        casez_tmp_19 = entries_25_ftq_idx;
       5'b11010:
-        casez_tmp_19 = entries_26_bp_index;
+        casez_tmp_19 = entries_26_ftq_idx;
       5'b11011:
-        casez_tmp_19 = entries_27_bp_index;
+        casez_tmp_19 = entries_27_ftq_idx;
       5'b11100:
-        casez_tmp_19 = entries_28_bp_index;
+        casez_tmp_19 = entries_28_ftq_idx;
       5'b11101:
-        casez_tmp_19 = entries_29_bp_index;
+        casez_tmp_19 = entries_29_ftq_idx;
       5'b11110:
-        casez_tmp_19 = entries_30_bp_index;
+        casez_tmp_19 = entries_30_ftq_idx;
       default:
-        casez_tmp_19 = entries_31_bp_index;
+        casez_tmp_19 = entries_31_ftq_idx;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_20;
+  reg  [7:0]  casez_tmp_20;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_20 = entries_0_ftq_idx;
+        casez_tmp_20 = entries_0_ftq_generation;
       5'b00001:
-        casez_tmp_20 = entries_1_ftq_idx;
+        casez_tmp_20 = entries_1_ftq_generation;
       5'b00010:
-        casez_tmp_20 = entries_2_ftq_idx;
+        casez_tmp_20 = entries_2_ftq_generation;
       5'b00011:
-        casez_tmp_20 = entries_3_ftq_idx;
+        casez_tmp_20 = entries_3_ftq_generation;
       5'b00100:
-        casez_tmp_20 = entries_4_ftq_idx;
+        casez_tmp_20 = entries_4_ftq_generation;
       5'b00101:
-        casez_tmp_20 = entries_5_ftq_idx;
+        casez_tmp_20 = entries_5_ftq_generation;
       5'b00110:
-        casez_tmp_20 = entries_6_ftq_idx;
+        casez_tmp_20 = entries_6_ftq_generation;
       5'b00111:
-        casez_tmp_20 = entries_7_ftq_idx;
+        casez_tmp_20 = entries_7_ftq_generation;
       5'b01000:
-        casez_tmp_20 = entries_8_ftq_idx;
+        casez_tmp_20 = entries_8_ftq_generation;
       5'b01001:
-        casez_tmp_20 = entries_9_ftq_idx;
+        casez_tmp_20 = entries_9_ftq_generation;
       5'b01010:
-        casez_tmp_20 = entries_10_ftq_idx;
+        casez_tmp_20 = entries_10_ftq_generation;
       5'b01011:
-        casez_tmp_20 = entries_11_ftq_idx;
+        casez_tmp_20 = entries_11_ftq_generation;
       5'b01100:
-        casez_tmp_20 = entries_12_ftq_idx;
+        casez_tmp_20 = entries_12_ftq_generation;
       5'b01101:
-        casez_tmp_20 = entries_13_ftq_idx;
+        casez_tmp_20 = entries_13_ftq_generation;
       5'b01110:
-        casez_tmp_20 = entries_14_ftq_idx;
+        casez_tmp_20 = entries_14_ftq_generation;
       5'b01111:
-        casez_tmp_20 = entries_15_ftq_idx;
+        casez_tmp_20 = entries_15_ftq_generation;
       5'b10000:
-        casez_tmp_20 = entries_16_ftq_idx;
+        casez_tmp_20 = entries_16_ftq_generation;
       5'b10001:
-        casez_tmp_20 = entries_17_ftq_idx;
+        casez_tmp_20 = entries_17_ftq_generation;
       5'b10010:
-        casez_tmp_20 = entries_18_ftq_idx;
+        casez_tmp_20 = entries_18_ftq_generation;
       5'b10011:
-        casez_tmp_20 = entries_19_ftq_idx;
+        casez_tmp_20 = entries_19_ftq_generation;
       5'b10100:
-        casez_tmp_20 = entries_20_ftq_idx;
+        casez_tmp_20 = entries_20_ftq_generation;
       5'b10101:
-        casez_tmp_20 = entries_21_ftq_idx;
+        casez_tmp_20 = entries_21_ftq_generation;
       5'b10110:
-        casez_tmp_20 = entries_22_ftq_idx;
+        casez_tmp_20 = entries_22_ftq_generation;
       5'b10111:
-        casez_tmp_20 = entries_23_ftq_idx;
+        casez_tmp_20 = entries_23_ftq_generation;
       5'b11000:
-        casez_tmp_20 = entries_24_ftq_idx;
+        casez_tmp_20 = entries_24_ftq_generation;
       5'b11001:
-        casez_tmp_20 = entries_25_ftq_idx;
+        casez_tmp_20 = entries_25_ftq_generation;
       5'b11010:
-        casez_tmp_20 = entries_26_ftq_idx;
+        casez_tmp_20 = entries_26_ftq_generation;
       5'b11011:
-        casez_tmp_20 = entries_27_ftq_idx;
+        casez_tmp_20 = entries_27_ftq_generation;
       5'b11100:
-        casez_tmp_20 = entries_28_ftq_idx;
+        casez_tmp_20 = entries_28_ftq_generation;
       5'b11101:
-        casez_tmp_20 = entries_29_ftq_idx;
+        casez_tmp_20 = entries_29_ftq_generation;
       5'b11110:
-        casez_tmp_20 = entries_30_ftq_idx;
+        casez_tmp_20 = entries_30_ftq_generation;
       default:
-        casez_tmp_20 = entries_31_ftq_idx;
+        casez_tmp_20 = entries_31_ftq_generation;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_21;
+  reg  [1:0]  casez_tmp_21;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_21 = entries_0_ftq_generation;
+        casez_tmp_21 = entries_0_cp_idx;
       5'b00001:
-        casez_tmp_21 = entries_1_ftq_generation;
+        casez_tmp_21 = entries_1_cp_idx;
       5'b00010:
-        casez_tmp_21 = entries_2_ftq_generation;
+        casez_tmp_21 = entries_2_cp_idx;
       5'b00011:
-        casez_tmp_21 = entries_3_ftq_generation;
+        casez_tmp_21 = entries_3_cp_idx;
       5'b00100:
-        casez_tmp_21 = entries_4_ftq_generation;
+        casez_tmp_21 = entries_4_cp_idx;
       5'b00101:
-        casez_tmp_21 = entries_5_ftq_generation;
+        casez_tmp_21 = entries_5_cp_idx;
       5'b00110:
-        casez_tmp_21 = entries_6_ftq_generation;
+        casez_tmp_21 = entries_6_cp_idx;
       5'b00111:
-        casez_tmp_21 = entries_7_ftq_generation;
+        casez_tmp_21 = entries_7_cp_idx;
       5'b01000:
-        casez_tmp_21 = entries_8_ftq_generation;
+        casez_tmp_21 = entries_8_cp_idx;
       5'b01001:
-        casez_tmp_21 = entries_9_ftq_generation;
+        casez_tmp_21 = entries_9_cp_idx;
       5'b01010:
-        casez_tmp_21 = entries_10_ftq_generation;
+        casez_tmp_21 = entries_10_cp_idx;
       5'b01011:
-        casez_tmp_21 = entries_11_ftq_generation;
+        casez_tmp_21 = entries_11_cp_idx;
       5'b01100:
-        casez_tmp_21 = entries_12_ftq_generation;
+        casez_tmp_21 = entries_12_cp_idx;
       5'b01101:
-        casez_tmp_21 = entries_13_ftq_generation;
+        casez_tmp_21 = entries_13_cp_idx;
       5'b01110:
-        casez_tmp_21 = entries_14_ftq_generation;
+        casez_tmp_21 = entries_14_cp_idx;
       5'b01111:
-        casez_tmp_21 = entries_15_ftq_generation;
+        casez_tmp_21 = entries_15_cp_idx;
       5'b10000:
-        casez_tmp_21 = entries_16_ftq_generation;
+        casez_tmp_21 = entries_16_cp_idx;
       5'b10001:
-        casez_tmp_21 = entries_17_ftq_generation;
+        casez_tmp_21 = entries_17_cp_idx;
       5'b10010:
-        casez_tmp_21 = entries_18_ftq_generation;
+        casez_tmp_21 = entries_18_cp_idx;
       5'b10011:
-        casez_tmp_21 = entries_19_ftq_generation;
+        casez_tmp_21 = entries_19_cp_idx;
       5'b10100:
-        casez_tmp_21 = entries_20_ftq_generation;
+        casez_tmp_21 = entries_20_cp_idx;
       5'b10101:
-        casez_tmp_21 = entries_21_ftq_generation;
+        casez_tmp_21 = entries_21_cp_idx;
       5'b10110:
-        casez_tmp_21 = entries_22_ftq_generation;
+        casez_tmp_21 = entries_22_cp_idx;
       5'b10111:
-        casez_tmp_21 = entries_23_ftq_generation;
+        casez_tmp_21 = entries_23_cp_idx;
       5'b11000:
-        casez_tmp_21 = entries_24_ftq_generation;
+        casez_tmp_21 = entries_24_cp_idx;
       5'b11001:
-        casez_tmp_21 = entries_25_ftq_generation;
+        casez_tmp_21 = entries_25_cp_idx;
       5'b11010:
-        casez_tmp_21 = entries_26_ftq_generation;
+        casez_tmp_21 = entries_26_cp_idx;
       5'b11011:
-        casez_tmp_21 = entries_27_ftq_generation;
+        casez_tmp_21 = entries_27_cp_idx;
       5'b11100:
-        casez_tmp_21 = entries_28_ftq_generation;
+        casez_tmp_21 = entries_28_cp_idx;
       5'b11101:
-        casez_tmp_21 = entries_29_ftq_generation;
+        casez_tmp_21 = entries_29_cp_idx;
       5'b11110:
-        casez_tmp_21 = entries_30_ftq_generation;
+        casez_tmp_21 = entries_30_cp_idx;
       default:
-        casez_tmp_21 = entries_31_ftq_generation;
+        casez_tmp_21 = entries_31_cp_idx;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_22;
+  reg         casez_tmp_22;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_22 = entries_0_cp_idx;
+        casez_tmp_22 = entries_0_actual_taken;
       5'b00001:
-        casez_tmp_22 = entries_1_cp_idx;
+        casez_tmp_22 = entries_1_actual_taken;
       5'b00010:
-        casez_tmp_22 = entries_2_cp_idx;
+        casez_tmp_22 = entries_2_actual_taken;
       5'b00011:
-        casez_tmp_22 = entries_3_cp_idx;
+        casez_tmp_22 = entries_3_actual_taken;
       5'b00100:
-        casez_tmp_22 = entries_4_cp_idx;
+        casez_tmp_22 = entries_4_actual_taken;
       5'b00101:
-        casez_tmp_22 = entries_5_cp_idx;
+        casez_tmp_22 = entries_5_actual_taken;
       5'b00110:
-        casez_tmp_22 = entries_6_cp_idx;
+        casez_tmp_22 = entries_6_actual_taken;
       5'b00111:
-        casez_tmp_22 = entries_7_cp_idx;
+        casez_tmp_22 = entries_7_actual_taken;
       5'b01000:
-        casez_tmp_22 = entries_8_cp_idx;
+        casez_tmp_22 = entries_8_actual_taken;
       5'b01001:
-        casez_tmp_22 = entries_9_cp_idx;
+        casez_tmp_22 = entries_9_actual_taken;
       5'b01010:
-        casez_tmp_22 = entries_10_cp_idx;
+        casez_tmp_22 = entries_10_actual_taken;
       5'b01011:
-        casez_tmp_22 = entries_11_cp_idx;
+        casez_tmp_22 = entries_11_actual_taken;
       5'b01100:
-        casez_tmp_22 = entries_12_cp_idx;
+        casez_tmp_22 = entries_12_actual_taken;
       5'b01101:
-        casez_tmp_22 = entries_13_cp_idx;
+        casez_tmp_22 = entries_13_actual_taken;
       5'b01110:
-        casez_tmp_22 = entries_14_cp_idx;
+        casez_tmp_22 = entries_14_actual_taken;
       5'b01111:
-        casez_tmp_22 = entries_15_cp_idx;
+        casez_tmp_22 = entries_15_actual_taken;
       5'b10000:
-        casez_tmp_22 = entries_16_cp_idx;
+        casez_tmp_22 = entries_16_actual_taken;
       5'b10001:
-        casez_tmp_22 = entries_17_cp_idx;
+        casez_tmp_22 = entries_17_actual_taken;
       5'b10010:
-        casez_tmp_22 = entries_18_cp_idx;
+        casez_tmp_22 = entries_18_actual_taken;
       5'b10011:
-        casez_tmp_22 = entries_19_cp_idx;
+        casez_tmp_22 = entries_19_actual_taken;
       5'b10100:
-        casez_tmp_22 = entries_20_cp_idx;
+        casez_tmp_22 = entries_20_actual_taken;
       5'b10101:
-        casez_tmp_22 = entries_21_cp_idx;
+        casez_tmp_22 = entries_21_actual_taken;
       5'b10110:
-        casez_tmp_22 = entries_22_cp_idx;
+        casez_tmp_22 = entries_22_actual_taken;
       5'b10111:
-        casez_tmp_22 = entries_23_cp_idx;
+        casez_tmp_22 = entries_23_actual_taken;
       5'b11000:
-        casez_tmp_22 = entries_24_cp_idx;
+        casez_tmp_22 = entries_24_actual_taken;
       5'b11001:
-        casez_tmp_22 = entries_25_cp_idx;
+        casez_tmp_22 = entries_25_actual_taken;
       5'b11010:
-        casez_tmp_22 = entries_26_cp_idx;
+        casez_tmp_22 = entries_26_actual_taken;
       5'b11011:
-        casez_tmp_22 = entries_27_cp_idx;
+        casez_tmp_22 = entries_27_actual_taken;
       5'b11100:
-        casez_tmp_22 = entries_28_cp_idx;
+        casez_tmp_22 = entries_28_actual_taken;
       5'b11101:
-        casez_tmp_22 = entries_29_cp_idx;
+        casez_tmp_22 = entries_29_actual_taken;
       5'b11110:
-        casez_tmp_22 = entries_30_cp_idx;
+        casez_tmp_22 = entries_30_actual_taken;
       default:
-        casez_tmp_22 = entries_31_cp_idx;
+        casez_tmp_22 = entries_31_actual_taken;
     endcase
   end // always_comb
-  reg         casez_tmp_23;
+  reg  [31:0] casez_tmp_23;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_23 = entries_0_actual_taken;
+        casez_tmp_23 = entries_0_actual_target;
       5'b00001:
-        casez_tmp_23 = entries_1_actual_taken;
+        casez_tmp_23 = entries_1_actual_target;
       5'b00010:
-        casez_tmp_23 = entries_2_actual_taken;
+        casez_tmp_23 = entries_2_actual_target;
       5'b00011:
-        casez_tmp_23 = entries_3_actual_taken;
+        casez_tmp_23 = entries_3_actual_target;
       5'b00100:
-        casez_tmp_23 = entries_4_actual_taken;
+        casez_tmp_23 = entries_4_actual_target;
       5'b00101:
-        casez_tmp_23 = entries_5_actual_taken;
+        casez_tmp_23 = entries_5_actual_target;
       5'b00110:
-        casez_tmp_23 = entries_6_actual_taken;
+        casez_tmp_23 = entries_6_actual_target;
       5'b00111:
-        casez_tmp_23 = entries_7_actual_taken;
+        casez_tmp_23 = entries_7_actual_target;
       5'b01000:
-        casez_tmp_23 = entries_8_actual_taken;
+        casez_tmp_23 = entries_8_actual_target;
       5'b01001:
-        casez_tmp_23 = entries_9_actual_taken;
+        casez_tmp_23 = entries_9_actual_target;
       5'b01010:
-        casez_tmp_23 = entries_10_actual_taken;
+        casez_tmp_23 = entries_10_actual_target;
       5'b01011:
-        casez_tmp_23 = entries_11_actual_taken;
+        casez_tmp_23 = entries_11_actual_target;
       5'b01100:
-        casez_tmp_23 = entries_12_actual_taken;
+        casez_tmp_23 = entries_12_actual_target;
       5'b01101:
-        casez_tmp_23 = entries_13_actual_taken;
+        casez_tmp_23 = entries_13_actual_target;
       5'b01110:
-        casez_tmp_23 = entries_14_actual_taken;
+        casez_tmp_23 = entries_14_actual_target;
       5'b01111:
-        casez_tmp_23 = entries_15_actual_taken;
+        casez_tmp_23 = entries_15_actual_target;
       5'b10000:
-        casez_tmp_23 = entries_16_actual_taken;
+        casez_tmp_23 = entries_16_actual_target;
       5'b10001:
-        casez_tmp_23 = entries_17_actual_taken;
+        casez_tmp_23 = entries_17_actual_target;
       5'b10010:
-        casez_tmp_23 = entries_18_actual_taken;
+        casez_tmp_23 = entries_18_actual_target;
       5'b10011:
-        casez_tmp_23 = entries_19_actual_taken;
+        casez_tmp_23 = entries_19_actual_target;
       5'b10100:
-        casez_tmp_23 = entries_20_actual_taken;
+        casez_tmp_23 = entries_20_actual_target;
       5'b10101:
-        casez_tmp_23 = entries_21_actual_taken;
+        casez_tmp_23 = entries_21_actual_target;
       5'b10110:
-        casez_tmp_23 = entries_22_actual_taken;
+        casez_tmp_23 = entries_22_actual_target;
       5'b10111:
-        casez_tmp_23 = entries_23_actual_taken;
+        casez_tmp_23 = entries_23_actual_target;
       5'b11000:
-        casez_tmp_23 = entries_24_actual_taken;
+        casez_tmp_23 = entries_24_actual_target;
       5'b11001:
-        casez_tmp_23 = entries_25_actual_taken;
+        casez_tmp_23 = entries_25_actual_target;
       5'b11010:
-        casez_tmp_23 = entries_26_actual_taken;
+        casez_tmp_23 = entries_26_actual_target;
       5'b11011:
-        casez_tmp_23 = entries_27_actual_taken;
+        casez_tmp_23 = entries_27_actual_target;
       5'b11100:
-        casez_tmp_23 = entries_28_actual_taken;
+        casez_tmp_23 = entries_28_actual_target;
       5'b11101:
-        casez_tmp_23 = entries_29_actual_taken;
+        casez_tmp_23 = entries_29_actual_target;
       5'b11110:
-        casez_tmp_23 = entries_30_actual_taken;
+        casez_tmp_23 = entries_30_actual_target;
       default:
-        casez_tmp_23 = entries_31_actual_taken;
+        casez_tmp_23 = entries_31_actual_target;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_24;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_24 = entries_0_actual_target;
+        casez_tmp_24 = entries_0_rs1_val;
       5'b00001:
-        casez_tmp_24 = entries_1_actual_target;
+        casez_tmp_24 = entries_1_rs1_val;
       5'b00010:
-        casez_tmp_24 = entries_2_actual_target;
+        casez_tmp_24 = entries_2_rs1_val;
       5'b00011:
-        casez_tmp_24 = entries_3_actual_target;
+        casez_tmp_24 = entries_3_rs1_val;
       5'b00100:
-        casez_tmp_24 = entries_4_actual_target;
+        casez_tmp_24 = entries_4_rs1_val;
       5'b00101:
-        casez_tmp_24 = entries_5_actual_target;
+        casez_tmp_24 = entries_5_rs1_val;
       5'b00110:
-        casez_tmp_24 = entries_6_actual_target;
+        casez_tmp_24 = entries_6_rs1_val;
       5'b00111:
-        casez_tmp_24 = entries_7_actual_target;
+        casez_tmp_24 = entries_7_rs1_val;
       5'b01000:
-        casez_tmp_24 = entries_8_actual_target;
+        casez_tmp_24 = entries_8_rs1_val;
       5'b01001:
-        casez_tmp_24 = entries_9_actual_target;
+        casez_tmp_24 = entries_9_rs1_val;
       5'b01010:
-        casez_tmp_24 = entries_10_actual_target;
+        casez_tmp_24 = entries_10_rs1_val;
       5'b01011:
-        casez_tmp_24 = entries_11_actual_target;
+        casez_tmp_24 = entries_11_rs1_val;
       5'b01100:
-        casez_tmp_24 = entries_12_actual_target;
+        casez_tmp_24 = entries_12_rs1_val;
       5'b01101:
-        casez_tmp_24 = entries_13_actual_target;
+        casez_tmp_24 = entries_13_rs1_val;
       5'b01110:
-        casez_tmp_24 = entries_14_actual_target;
+        casez_tmp_24 = entries_14_rs1_val;
       5'b01111:
-        casez_tmp_24 = entries_15_actual_target;
+        casez_tmp_24 = entries_15_rs1_val;
       5'b10000:
-        casez_tmp_24 = entries_16_actual_target;
+        casez_tmp_24 = entries_16_rs1_val;
       5'b10001:
-        casez_tmp_24 = entries_17_actual_target;
+        casez_tmp_24 = entries_17_rs1_val;
       5'b10010:
-        casez_tmp_24 = entries_18_actual_target;
+        casez_tmp_24 = entries_18_rs1_val;
       5'b10011:
-        casez_tmp_24 = entries_19_actual_target;
+        casez_tmp_24 = entries_19_rs1_val;
       5'b10100:
-        casez_tmp_24 = entries_20_actual_target;
+        casez_tmp_24 = entries_20_rs1_val;
       5'b10101:
-        casez_tmp_24 = entries_21_actual_target;
+        casez_tmp_24 = entries_21_rs1_val;
       5'b10110:
-        casez_tmp_24 = entries_22_actual_target;
+        casez_tmp_24 = entries_22_rs1_val;
       5'b10111:
-        casez_tmp_24 = entries_23_actual_target;
+        casez_tmp_24 = entries_23_rs1_val;
       5'b11000:
-        casez_tmp_24 = entries_24_actual_target;
+        casez_tmp_24 = entries_24_rs1_val;
       5'b11001:
-        casez_tmp_24 = entries_25_actual_target;
+        casez_tmp_24 = entries_25_rs1_val;
       5'b11010:
-        casez_tmp_24 = entries_26_actual_target;
+        casez_tmp_24 = entries_26_rs1_val;
       5'b11011:
-        casez_tmp_24 = entries_27_actual_target;
+        casez_tmp_24 = entries_27_rs1_val;
       5'b11100:
-        casez_tmp_24 = entries_28_actual_target;
+        casez_tmp_24 = entries_28_rs1_val;
       5'b11101:
-        casez_tmp_24 = entries_29_actual_target;
+        casez_tmp_24 = entries_29_rs1_val;
       5'b11110:
-        casez_tmp_24 = entries_30_actual_target;
+        casez_tmp_24 = entries_30_rs1_val;
       default:
-        casez_tmp_24 = entries_31_actual_target;
+        casez_tmp_24 = entries_31_rs1_val;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_25;
+  reg  [11:0] casez_tmp_25;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_25 = entries_0_rs1_val;
+        casez_tmp_25 = entries_0_csr_waddr;
       5'b00001:
-        casez_tmp_25 = entries_1_rs1_val;
+        casez_tmp_25 = entries_1_csr_waddr;
       5'b00010:
-        casez_tmp_25 = entries_2_rs1_val;
+        casez_tmp_25 = entries_2_csr_waddr;
       5'b00011:
-        casez_tmp_25 = entries_3_rs1_val;
+        casez_tmp_25 = entries_3_csr_waddr;
       5'b00100:
-        casez_tmp_25 = entries_4_rs1_val;
+        casez_tmp_25 = entries_4_csr_waddr;
       5'b00101:
-        casez_tmp_25 = entries_5_rs1_val;
+        casez_tmp_25 = entries_5_csr_waddr;
       5'b00110:
-        casez_tmp_25 = entries_6_rs1_val;
+        casez_tmp_25 = entries_6_csr_waddr;
       5'b00111:
-        casez_tmp_25 = entries_7_rs1_val;
+        casez_tmp_25 = entries_7_csr_waddr;
       5'b01000:
-        casez_tmp_25 = entries_8_rs1_val;
+        casez_tmp_25 = entries_8_csr_waddr;
       5'b01001:
-        casez_tmp_25 = entries_9_rs1_val;
+        casez_tmp_25 = entries_9_csr_waddr;
       5'b01010:
-        casez_tmp_25 = entries_10_rs1_val;
+        casez_tmp_25 = entries_10_csr_waddr;
       5'b01011:
-        casez_tmp_25 = entries_11_rs1_val;
+        casez_tmp_25 = entries_11_csr_waddr;
       5'b01100:
-        casez_tmp_25 = entries_12_rs1_val;
+        casez_tmp_25 = entries_12_csr_waddr;
       5'b01101:
-        casez_tmp_25 = entries_13_rs1_val;
+        casez_tmp_25 = entries_13_csr_waddr;
       5'b01110:
-        casez_tmp_25 = entries_14_rs1_val;
+        casez_tmp_25 = entries_14_csr_waddr;
       5'b01111:
-        casez_tmp_25 = entries_15_rs1_val;
+        casez_tmp_25 = entries_15_csr_waddr;
       5'b10000:
-        casez_tmp_25 = entries_16_rs1_val;
+        casez_tmp_25 = entries_16_csr_waddr;
       5'b10001:
-        casez_tmp_25 = entries_17_rs1_val;
+        casez_tmp_25 = entries_17_csr_waddr;
       5'b10010:
-        casez_tmp_25 = entries_18_rs1_val;
+        casez_tmp_25 = entries_18_csr_waddr;
       5'b10011:
-        casez_tmp_25 = entries_19_rs1_val;
+        casez_tmp_25 = entries_19_csr_waddr;
       5'b10100:
-        casez_tmp_25 = entries_20_rs1_val;
+        casez_tmp_25 = entries_20_csr_waddr;
       5'b10101:
-        casez_tmp_25 = entries_21_rs1_val;
+        casez_tmp_25 = entries_21_csr_waddr;
       5'b10110:
-        casez_tmp_25 = entries_22_rs1_val;
+        casez_tmp_25 = entries_22_csr_waddr;
       5'b10111:
-        casez_tmp_25 = entries_23_rs1_val;
+        casez_tmp_25 = entries_23_csr_waddr;
       5'b11000:
-        casez_tmp_25 = entries_24_rs1_val;
+        casez_tmp_25 = entries_24_csr_waddr;
       5'b11001:
-        casez_tmp_25 = entries_25_rs1_val;
+        casez_tmp_25 = entries_25_csr_waddr;
       5'b11010:
-        casez_tmp_25 = entries_26_rs1_val;
+        casez_tmp_25 = entries_26_csr_waddr;
       5'b11011:
-        casez_tmp_25 = entries_27_rs1_val;
+        casez_tmp_25 = entries_27_csr_waddr;
       5'b11100:
-        casez_tmp_25 = entries_28_rs1_val;
+        casez_tmp_25 = entries_28_csr_waddr;
       5'b11101:
-        casez_tmp_25 = entries_29_rs1_val;
+        casez_tmp_25 = entries_29_csr_waddr;
       5'b11110:
-        casez_tmp_25 = entries_30_rs1_val;
+        casez_tmp_25 = entries_30_csr_waddr;
       default:
-        casez_tmp_25 = entries_31_rs1_val;
+        casez_tmp_25 = entries_31_csr_waddr;
     endcase
   end // always_comb
-  reg  [11:0] casez_tmp_26;
+  reg  [31:0] casez_tmp_26;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_26 = entries_0_csr_waddr;
+        casez_tmp_26 = entries_0_csr_rd1;
       5'b00001:
-        casez_tmp_26 = entries_1_csr_waddr;
+        casez_tmp_26 = entries_1_csr_rd1;
       5'b00010:
-        casez_tmp_26 = entries_2_csr_waddr;
+        casez_tmp_26 = entries_2_csr_rd1;
       5'b00011:
-        casez_tmp_26 = entries_3_csr_waddr;
+        casez_tmp_26 = entries_3_csr_rd1;
       5'b00100:
-        casez_tmp_26 = entries_4_csr_waddr;
+        casez_tmp_26 = entries_4_csr_rd1;
       5'b00101:
-        casez_tmp_26 = entries_5_csr_waddr;
+        casez_tmp_26 = entries_5_csr_rd1;
       5'b00110:
-        casez_tmp_26 = entries_6_csr_waddr;
+        casez_tmp_26 = entries_6_csr_rd1;
       5'b00111:
-        casez_tmp_26 = entries_7_csr_waddr;
+        casez_tmp_26 = entries_7_csr_rd1;
       5'b01000:
-        casez_tmp_26 = entries_8_csr_waddr;
+        casez_tmp_26 = entries_8_csr_rd1;
       5'b01001:
-        casez_tmp_26 = entries_9_csr_waddr;
+        casez_tmp_26 = entries_9_csr_rd1;
       5'b01010:
-        casez_tmp_26 = entries_10_csr_waddr;
+        casez_tmp_26 = entries_10_csr_rd1;
       5'b01011:
-        casez_tmp_26 = entries_11_csr_waddr;
+        casez_tmp_26 = entries_11_csr_rd1;
       5'b01100:
-        casez_tmp_26 = entries_12_csr_waddr;
+        casez_tmp_26 = entries_12_csr_rd1;
       5'b01101:
-        casez_tmp_26 = entries_13_csr_waddr;
+        casez_tmp_26 = entries_13_csr_rd1;
       5'b01110:
-        casez_tmp_26 = entries_14_csr_waddr;
+        casez_tmp_26 = entries_14_csr_rd1;
       5'b01111:
-        casez_tmp_26 = entries_15_csr_waddr;
+        casez_tmp_26 = entries_15_csr_rd1;
       5'b10000:
-        casez_tmp_26 = entries_16_csr_waddr;
+        casez_tmp_26 = entries_16_csr_rd1;
       5'b10001:
-        casez_tmp_26 = entries_17_csr_waddr;
+        casez_tmp_26 = entries_17_csr_rd1;
       5'b10010:
-        casez_tmp_26 = entries_18_csr_waddr;
+        casez_tmp_26 = entries_18_csr_rd1;
       5'b10011:
-        casez_tmp_26 = entries_19_csr_waddr;
+        casez_tmp_26 = entries_19_csr_rd1;
       5'b10100:
-        casez_tmp_26 = entries_20_csr_waddr;
+        casez_tmp_26 = entries_20_csr_rd1;
       5'b10101:
-        casez_tmp_26 = entries_21_csr_waddr;
+        casez_tmp_26 = entries_21_csr_rd1;
       5'b10110:
-        casez_tmp_26 = entries_22_csr_waddr;
+        casez_tmp_26 = entries_22_csr_rd1;
       5'b10111:
-        casez_tmp_26 = entries_23_csr_waddr;
+        casez_tmp_26 = entries_23_csr_rd1;
       5'b11000:
-        casez_tmp_26 = entries_24_csr_waddr;
+        casez_tmp_26 = entries_24_csr_rd1;
       5'b11001:
-        casez_tmp_26 = entries_25_csr_waddr;
+        casez_tmp_26 = entries_25_csr_rd1;
       5'b11010:
-        casez_tmp_26 = entries_26_csr_waddr;
+        casez_tmp_26 = entries_26_csr_rd1;
       5'b11011:
-        casez_tmp_26 = entries_27_csr_waddr;
+        casez_tmp_26 = entries_27_csr_rd1;
       5'b11100:
-        casez_tmp_26 = entries_28_csr_waddr;
+        casez_tmp_26 = entries_28_csr_rd1;
       5'b11101:
-        casez_tmp_26 = entries_29_csr_waddr;
+        casez_tmp_26 = entries_29_csr_rd1;
       5'b11110:
-        casez_tmp_26 = entries_30_csr_waddr;
+        casez_tmp_26 = entries_30_csr_rd1;
       default:
-        casez_tmp_26 = entries_31_csr_waddr;
+        casez_tmp_26 = entries_31_csr_rd1;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_27;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_27 = entries_0_csr_rd1;
+        casez_tmp_27 = entries_0_mem_addr;
       5'b00001:
-        casez_tmp_27 = entries_1_csr_rd1;
+        casez_tmp_27 = entries_1_mem_addr;
       5'b00010:
-        casez_tmp_27 = entries_2_csr_rd1;
+        casez_tmp_27 = entries_2_mem_addr;
       5'b00011:
-        casez_tmp_27 = entries_3_csr_rd1;
+        casez_tmp_27 = entries_3_mem_addr;
       5'b00100:
-        casez_tmp_27 = entries_4_csr_rd1;
+        casez_tmp_27 = entries_4_mem_addr;
       5'b00101:
-        casez_tmp_27 = entries_5_csr_rd1;
+        casez_tmp_27 = entries_5_mem_addr;
       5'b00110:
-        casez_tmp_27 = entries_6_csr_rd1;
+        casez_tmp_27 = entries_6_mem_addr;
       5'b00111:
-        casez_tmp_27 = entries_7_csr_rd1;
+        casez_tmp_27 = entries_7_mem_addr;
       5'b01000:
-        casez_tmp_27 = entries_8_csr_rd1;
+        casez_tmp_27 = entries_8_mem_addr;
       5'b01001:
-        casez_tmp_27 = entries_9_csr_rd1;
+        casez_tmp_27 = entries_9_mem_addr;
       5'b01010:
-        casez_tmp_27 = entries_10_csr_rd1;
+        casez_tmp_27 = entries_10_mem_addr;
       5'b01011:
-        casez_tmp_27 = entries_11_csr_rd1;
+        casez_tmp_27 = entries_11_mem_addr;
       5'b01100:
-        casez_tmp_27 = entries_12_csr_rd1;
+        casez_tmp_27 = entries_12_mem_addr;
       5'b01101:
-        casez_tmp_27 = entries_13_csr_rd1;
+        casez_tmp_27 = entries_13_mem_addr;
       5'b01110:
-        casez_tmp_27 = entries_14_csr_rd1;
+        casez_tmp_27 = entries_14_mem_addr;
       5'b01111:
-        casez_tmp_27 = entries_15_csr_rd1;
+        casez_tmp_27 = entries_15_mem_addr;
       5'b10000:
-        casez_tmp_27 = entries_16_csr_rd1;
+        casez_tmp_27 = entries_16_mem_addr;
       5'b10001:
-        casez_tmp_27 = entries_17_csr_rd1;
+        casez_tmp_27 = entries_17_mem_addr;
       5'b10010:
-        casez_tmp_27 = entries_18_csr_rd1;
+        casez_tmp_27 = entries_18_mem_addr;
       5'b10011:
-        casez_tmp_27 = entries_19_csr_rd1;
+        casez_tmp_27 = entries_19_mem_addr;
       5'b10100:
-        casez_tmp_27 = entries_20_csr_rd1;
+        casez_tmp_27 = entries_20_mem_addr;
       5'b10101:
-        casez_tmp_27 = entries_21_csr_rd1;
+        casez_tmp_27 = entries_21_mem_addr;
       5'b10110:
-        casez_tmp_27 = entries_22_csr_rd1;
+        casez_tmp_27 = entries_22_mem_addr;
       5'b10111:
-        casez_tmp_27 = entries_23_csr_rd1;
+        casez_tmp_27 = entries_23_mem_addr;
       5'b11000:
-        casez_tmp_27 = entries_24_csr_rd1;
+        casez_tmp_27 = entries_24_mem_addr;
       5'b11001:
-        casez_tmp_27 = entries_25_csr_rd1;
+        casez_tmp_27 = entries_25_mem_addr;
       5'b11010:
-        casez_tmp_27 = entries_26_csr_rd1;
+        casez_tmp_27 = entries_26_mem_addr;
       5'b11011:
-        casez_tmp_27 = entries_27_csr_rd1;
+        casez_tmp_27 = entries_27_mem_addr;
       5'b11100:
-        casez_tmp_27 = entries_28_csr_rd1;
+        casez_tmp_27 = entries_28_mem_addr;
       5'b11101:
-        casez_tmp_27 = entries_29_csr_rd1;
+        casez_tmp_27 = entries_29_mem_addr;
       5'b11110:
-        casez_tmp_27 = entries_30_csr_rd1;
+        casez_tmp_27 = entries_30_mem_addr;
       default:
-        casez_tmp_27 = entries_31_csr_rd1;
+        casez_tmp_27 = entries_31_mem_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_28;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_28 = entries_0_mem_addr;
+        casez_tmp_28 = entries_0_mem_wdata;
       5'b00001:
-        casez_tmp_28 = entries_1_mem_addr;
+        casez_tmp_28 = entries_1_mem_wdata;
       5'b00010:
-        casez_tmp_28 = entries_2_mem_addr;
+        casez_tmp_28 = entries_2_mem_wdata;
       5'b00011:
-        casez_tmp_28 = entries_3_mem_addr;
+        casez_tmp_28 = entries_3_mem_wdata;
       5'b00100:
-        casez_tmp_28 = entries_4_mem_addr;
+        casez_tmp_28 = entries_4_mem_wdata;
       5'b00101:
-        casez_tmp_28 = entries_5_mem_addr;
+        casez_tmp_28 = entries_5_mem_wdata;
       5'b00110:
-        casez_tmp_28 = entries_6_mem_addr;
+        casez_tmp_28 = entries_6_mem_wdata;
       5'b00111:
-        casez_tmp_28 = entries_7_mem_addr;
+        casez_tmp_28 = entries_7_mem_wdata;
       5'b01000:
-        casez_tmp_28 = entries_8_mem_addr;
+        casez_tmp_28 = entries_8_mem_wdata;
       5'b01001:
-        casez_tmp_28 = entries_9_mem_addr;
+        casez_tmp_28 = entries_9_mem_wdata;
       5'b01010:
-        casez_tmp_28 = entries_10_mem_addr;
+        casez_tmp_28 = entries_10_mem_wdata;
       5'b01011:
-        casez_tmp_28 = entries_11_mem_addr;
+        casez_tmp_28 = entries_11_mem_wdata;
       5'b01100:
-        casez_tmp_28 = entries_12_mem_addr;
+        casez_tmp_28 = entries_12_mem_wdata;
       5'b01101:
-        casez_tmp_28 = entries_13_mem_addr;
+        casez_tmp_28 = entries_13_mem_wdata;
       5'b01110:
-        casez_tmp_28 = entries_14_mem_addr;
+        casez_tmp_28 = entries_14_mem_wdata;
       5'b01111:
-        casez_tmp_28 = entries_15_mem_addr;
+        casez_tmp_28 = entries_15_mem_wdata;
       5'b10000:
-        casez_tmp_28 = entries_16_mem_addr;
+        casez_tmp_28 = entries_16_mem_wdata;
       5'b10001:
-        casez_tmp_28 = entries_17_mem_addr;
+        casez_tmp_28 = entries_17_mem_wdata;
       5'b10010:
-        casez_tmp_28 = entries_18_mem_addr;
+        casez_tmp_28 = entries_18_mem_wdata;
       5'b10011:
-        casez_tmp_28 = entries_19_mem_addr;
+        casez_tmp_28 = entries_19_mem_wdata;
       5'b10100:
-        casez_tmp_28 = entries_20_mem_addr;
+        casez_tmp_28 = entries_20_mem_wdata;
       5'b10101:
-        casez_tmp_28 = entries_21_mem_addr;
+        casez_tmp_28 = entries_21_mem_wdata;
       5'b10110:
-        casez_tmp_28 = entries_22_mem_addr;
+        casez_tmp_28 = entries_22_mem_wdata;
       5'b10111:
-        casez_tmp_28 = entries_23_mem_addr;
+        casez_tmp_28 = entries_23_mem_wdata;
       5'b11000:
-        casez_tmp_28 = entries_24_mem_addr;
+        casez_tmp_28 = entries_24_mem_wdata;
       5'b11001:
-        casez_tmp_28 = entries_25_mem_addr;
+        casez_tmp_28 = entries_25_mem_wdata;
       5'b11010:
-        casez_tmp_28 = entries_26_mem_addr;
+        casez_tmp_28 = entries_26_mem_wdata;
       5'b11011:
-        casez_tmp_28 = entries_27_mem_addr;
+        casez_tmp_28 = entries_27_mem_wdata;
       5'b11100:
-        casez_tmp_28 = entries_28_mem_addr;
+        casez_tmp_28 = entries_28_mem_wdata;
       5'b11101:
-        casez_tmp_28 = entries_29_mem_addr;
+        casez_tmp_28 = entries_29_mem_wdata;
       5'b11110:
-        casez_tmp_28 = entries_30_mem_addr;
+        casez_tmp_28 = entries_30_mem_wdata;
       default:
-        casez_tmp_28 = entries_31_mem_addr;
+        casez_tmp_28 = entries_31_mem_wdata;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_29;
+  reg         casez_tmp_29;
   always_comb begin
     casez (idx)
       5'b00000:
-        casez_tmp_29 = entries_0_mem_wdata;
+        casez_tmp_29 = entries_0_addr_ready;
       5'b00001:
-        casez_tmp_29 = entries_1_mem_wdata;
+        casez_tmp_29 = entries_1_addr_ready;
       5'b00010:
-        casez_tmp_29 = entries_2_mem_wdata;
+        casez_tmp_29 = entries_2_addr_ready;
       5'b00011:
-        casez_tmp_29 = entries_3_mem_wdata;
+        casez_tmp_29 = entries_3_addr_ready;
       5'b00100:
-        casez_tmp_29 = entries_4_mem_wdata;
+        casez_tmp_29 = entries_4_addr_ready;
       5'b00101:
-        casez_tmp_29 = entries_5_mem_wdata;
+        casez_tmp_29 = entries_5_addr_ready;
       5'b00110:
-        casez_tmp_29 = entries_6_mem_wdata;
+        casez_tmp_29 = entries_6_addr_ready;
       5'b00111:
-        casez_tmp_29 = entries_7_mem_wdata;
+        casez_tmp_29 = entries_7_addr_ready;
       5'b01000:
-        casez_tmp_29 = entries_8_mem_wdata;
+        casez_tmp_29 = entries_8_addr_ready;
       5'b01001:
-        casez_tmp_29 = entries_9_mem_wdata;
+        casez_tmp_29 = entries_9_addr_ready;
       5'b01010:
-        casez_tmp_29 = entries_10_mem_wdata;
+        casez_tmp_29 = entries_10_addr_ready;
       5'b01011:
-        casez_tmp_29 = entries_11_mem_wdata;
+        casez_tmp_29 = entries_11_addr_ready;
       5'b01100:
-        casez_tmp_29 = entries_12_mem_wdata;
+        casez_tmp_29 = entries_12_addr_ready;
       5'b01101:
-        casez_tmp_29 = entries_13_mem_wdata;
+        casez_tmp_29 = entries_13_addr_ready;
       5'b01110:
-        casez_tmp_29 = entries_14_mem_wdata;
+        casez_tmp_29 = entries_14_addr_ready;
       5'b01111:
-        casez_tmp_29 = entries_15_mem_wdata;
+        casez_tmp_29 = entries_15_addr_ready;
       5'b10000:
-        casez_tmp_29 = entries_16_mem_wdata;
+        casez_tmp_29 = entries_16_addr_ready;
       5'b10001:
-        casez_tmp_29 = entries_17_mem_wdata;
+        casez_tmp_29 = entries_17_addr_ready;
       5'b10010:
-        casez_tmp_29 = entries_18_mem_wdata;
+        casez_tmp_29 = entries_18_addr_ready;
       5'b10011:
-        casez_tmp_29 = entries_19_mem_wdata;
+        casez_tmp_29 = entries_19_addr_ready;
       5'b10100:
-        casez_tmp_29 = entries_20_mem_wdata;
+        casez_tmp_29 = entries_20_addr_ready;
       5'b10101:
-        casez_tmp_29 = entries_21_mem_wdata;
+        casez_tmp_29 = entries_21_addr_ready;
       5'b10110:
-        casez_tmp_29 = entries_22_mem_wdata;
+        casez_tmp_29 = entries_22_addr_ready;
       5'b10111:
-        casez_tmp_29 = entries_23_mem_wdata;
+        casez_tmp_29 = entries_23_addr_ready;
       5'b11000:
-        casez_tmp_29 = entries_24_mem_wdata;
+        casez_tmp_29 = entries_24_addr_ready;
       5'b11001:
-        casez_tmp_29 = entries_25_mem_wdata;
+        casez_tmp_29 = entries_25_addr_ready;
       5'b11010:
-        casez_tmp_29 = entries_26_mem_wdata;
+        casez_tmp_29 = entries_26_addr_ready;
       5'b11011:
-        casez_tmp_29 = entries_27_mem_wdata;
+        casez_tmp_29 = entries_27_addr_ready;
       5'b11100:
-        casez_tmp_29 = entries_28_mem_wdata;
+        casez_tmp_29 = entries_28_addr_ready;
       5'b11101:
-        casez_tmp_29 = entries_29_mem_wdata;
+        casez_tmp_29 = entries_29_addr_ready;
       5'b11110:
-        casez_tmp_29 = entries_30_mem_wdata;
+        casez_tmp_29 = entries_30_addr_ready;
       default:
-        casez_tmp_29 = entries_31_mem_wdata;
-    endcase
-  end // always_comb
-  reg         casez_tmp_30;
-  always_comb begin
-    casez (idx)
-      5'b00000:
-        casez_tmp_30 = entries_0_addr_ready;
-      5'b00001:
-        casez_tmp_30 = entries_1_addr_ready;
-      5'b00010:
-        casez_tmp_30 = entries_2_addr_ready;
-      5'b00011:
-        casez_tmp_30 = entries_3_addr_ready;
-      5'b00100:
-        casez_tmp_30 = entries_4_addr_ready;
-      5'b00101:
-        casez_tmp_30 = entries_5_addr_ready;
-      5'b00110:
-        casez_tmp_30 = entries_6_addr_ready;
-      5'b00111:
-        casez_tmp_30 = entries_7_addr_ready;
-      5'b01000:
-        casez_tmp_30 = entries_8_addr_ready;
-      5'b01001:
-        casez_tmp_30 = entries_9_addr_ready;
-      5'b01010:
-        casez_tmp_30 = entries_10_addr_ready;
-      5'b01011:
-        casez_tmp_30 = entries_11_addr_ready;
-      5'b01100:
-        casez_tmp_30 = entries_12_addr_ready;
-      5'b01101:
-        casez_tmp_30 = entries_13_addr_ready;
-      5'b01110:
-        casez_tmp_30 = entries_14_addr_ready;
-      5'b01111:
-        casez_tmp_30 = entries_15_addr_ready;
-      5'b10000:
-        casez_tmp_30 = entries_16_addr_ready;
-      5'b10001:
-        casez_tmp_30 = entries_17_addr_ready;
-      5'b10010:
-        casez_tmp_30 = entries_18_addr_ready;
-      5'b10011:
-        casez_tmp_30 = entries_19_addr_ready;
-      5'b10100:
-        casez_tmp_30 = entries_20_addr_ready;
-      5'b10101:
-        casez_tmp_30 = entries_21_addr_ready;
-      5'b10110:
-        casez_tmp_30 = entries_22_addr_ready;
-      5'b10111:
-        casez_tmp_30 = entries_23_addr_ready;
-      5'b11000:
-        casez_tmp_30 = entries_24_addr_ready;
-      5'b11001:
-        casez_tmp_30 = entries_25_addr_ready;
-      5'b11010:
-        casez_tmp_30 = entries_26_addr_ready;
-      5'b11011:
-        casez_tmp_30 = entries_27_addr_ready;
-      5'b11100:
-        casez_tmp_30 = entries_28_addr_ready;
-      5'b11101:
-        casez_tmp_30 = entries_29_addr_ready;
-      5'b11110:
-        casez_tmp_30 = entries_30_addr_ready;
-      default:
-        casez_tmp_30 = entries_31_addr_ready;
+        casez_tmp_29 = entries_31_addr_ready;
     endcase
   end // always_comb
   wire        io_commit_valid_0_0 =
@@ -4036,5482 +3935,5551 @@ module WideROB(
        & io_store_wb_idx == idx);
   wire [4:0]  _idx_T_2 = idx + 5'h1;
   wire [4:0]  _io_enq_idx_1_T = tail + 5'h1;
+  reg         casez_tmp_30;
+  always_comb begin
+    casez (_idx_T_2)
+      5'b00000:
+        casez_tmp_30 = entries_0_valid;
+      5'b00001:
+        casez_tmp_30 = entries_1_valid;
+      5'b00010:
+        casez_tmp_30 = entries_2_valid;
+      5'b00011:
+        casez_tmp_30 = entries_3_valid;
+      5'b00100:
+        casez_tmp_30 = entries_4_valid;
+      5'b00101:
+        casez_tmp_30 = entries_5_valid;
+      5'b00110:
+        casez_tmp_30 = entries_6_valid;
+      5'b00111:
+        casez_tmp_30 = entries_7_valid;
+      5'b01000:
+        casez_tmp_30 = entries_8_valid;
+      5'b01001:
+        casez_tmp_30 = entries_9_valid;
+      5'b01010:
+        casez_tmp_30 = entries_10_valid;
+      5'b01011:
+        casez_tmp_30 = entries_11_valid;
+      5'b01100:
+        casez_tmp_30 = entries_12_valid;
+      5'b01101:
+        casez_tmp_30 = entries_13_valid;
+      5'b01110:
+        casez_tmp_30 = entries_14_valid;
+      5'b01111:
+        casez_tmp_30 = entries_15_valid;
+      5'b10000:
+        casez_tmp_30 = entries_16_valid;
+      5'b10001:
+        casez_tmp_30 = entries_17_valid;
+      5'b10010:
+        casez_tmp_30 = entries_18_valid;
+      5'b10011:
+        casez_tmp_30 = entries_19_valid;
+      5'b10100:
+        casez_tmp_30 = entries_20_valid;
+      5'b10101:
+        casez_tmp_30 = entries_21_valid;
+      5'b10110:
+        casez_tmp_30 = entries_22_valid;
+      5'b10111:
+        casez_tmp_30 = entries_23_valid;
+      5'b11000:
+        casez_tmp_30 = entries_24_valid;
+      5'b11001:
+        casez_tmp_30 = entries_25_valid;
+      5'b11010:
+        casez_tmp_30 = entries_26_valid;
+      5'b11011:
+        casez_tmp_30 = entries_27_valid;
+      5'b11100:
+        casez_tmp_30 = entries_28_valid;
+      5'b11101:
+        casez_tmp_30 = entries_29_valid;
+      5'b11110:
+        casez_tmp_30 = entries_30_valid;
+      default:
+        casez_tmp_30 = entries_31_valid;
+    endcase
+  end // always_comb
   reg         casez_tmp_31;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_31 = entries_0_valid;
+        casez_tmp_31 = entries_0_done;
       5'b00001:
-        casez_tmp_31 = entries_1_valid;
+        casez_tmp_31 = entries_1_done;
       5'b00010:
-        casez_tmp_31 = entries_2_valid;
+        casez_tmp_31 = entries_2_done;
       5'b00011:
-        casez_tmp_31 = entries_3_valid;
+        casez_tmp_31 = entries_3_done;
       5'b00100:
-        casez_tmp_31 = entries_4_valid;
+        casez_tmp_31 = entries_4_done;
       5'b00101:
-        casez_tmp_31 = entries_5_valid;
+        casez_tmp_31 = entries_5_done;
       5'b00110:
-        casez_tmp_31 = entries_6_valid;
+        casez_tmp_31 = entries_6_done;
       5'b00111:
-        casez_tmp_31 = entries_7_valid;
+        casez_tmp_31 = entries_7_done;
       5'b01000:
-        casez_tmp_31 = entries_8_valid;
+        casez_tmp_31 = entries_8_done;
       5'b01001:
-        casez_tmp_31 = entries_9_valid;
+        casez_tmp_31 = entries_9_done;
       5'b01010:
-        casez_tmp_31 = entries_10_valid;
+        casez_tmp_31 = entries_10_done;
       5'b01011:
-        casez_tmp_31 = entries_11_valid;
+        casez_tmp_31 = entries_11_done;
       5'b01100:
-        casez_tmp_31 = entries_12_valid;
+        casez_tmp_31 = entries_12_done;
       5'b01101:
-        casez_tmp_31 = entries_13_valid;
+        casez_tmp_31 = entries_13_done;
       5'b01110:
-        casez_tmp_31 = entries_14_valid;
+        casez_tmp_31 = entries_14_done;
       5'b01111:
-        casez_tmp_31 = entries_15_valid;
+        casez_tmp_31 = entries_15_done;
       5'b10000:
-        casez_tmp_31 = entries_16_valid;
+        casez_tmp_31 = entries_16_done;
       5'b10001:
-        casez_tmp_31 = entries_17_valid;
+        casez_tmp_31 = entries_17_done;
       5'b10010:
-        casez_tmp_31 = entries_18_valid;
+        casez_tmp_31 = entries_18_done;
       5'b10011:
-        casez_tmp_31 = entries_19_valid;
+        casez_tmp_31 = entries_19_done;
       5'b10100:
-        casez_tmp_31 = entries_20_valid;
+        casez_tmp_31 = entries_20_done;
       5'b10101:
-        casez_tmp_31 = entries_21_valid;
+        casez_tmp_31 = entries_21_done;
       5'b10110:
-        casez_tmp_31 = entries_22_valid;
+        casez_tmp_31 = entries_22_done;
       5'b10111:
-        casez_tmp_31 = entries_23_valid;
+        casez_tmp_31 = entries_23_done;
       5'b11000:
-        casez_tmp_31 = entries_24_valid;
+        casez_tmp_31 = entries_24_done;
       5'b11001:
-        casez_tmp_31 = entries_25_valid;
+        casez_tmp_31 = entries_25_done;
       5'b11010:
-        casez_tmp_31 = entries_26_valid;
+        casez_tmp_31 = entries_26_done;
       5'b11011:
-        casez_tmp_31 = entries_27_valid;
+        casez_tmp_31 = entries_27_done;
       5'b11100:
-        casez_tmp_31 = entries_28_valid;
+        casez_tmp_31 = entries_28_done;
       5'b11101:
-        casez_tmp_31 = entries_29_valid;
+        casez_tmp_31 = entries_29_done;
       5'b11110:
-        casez_tmp_31 = entries_30_valid;
+        casez_tmp_31 = entries_30_done;
       default:
-        casez_tmp_31 = entries_31_valid;
+        casez_tmp_31 = entries_31_done;
     endcase
   end // always_comb
-  reg         casez_tmp_32;
+  reg  [31:0] casez_tmp_32;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_32 = entries_0_done;
+        casez_tmp_32 = entries_0_pc;
       5'b00001:
-        casez_tmp_32 = entries_1_done;
+        casez_tmp_32 = entries_1_pc;
       5'b00010:
-        casez_tmp_32 = entries_2_done;
+        casez_tmp_32 = entries_2_pc;
       5'b00011:
-        casez_tmp_32 = entries_3_done;
+        casez_tmp_32 = entries_3_pc;
       5'b00100:
-        casez_tmp_32 = entries_4_done;
+        casez_tmp_32 = entries_4_pc;
       5'b00101:
-        casez_tmp_32 = entries_5_done;
+        casez_tmp_32 = entries_5_pc;
       5'b00110:
-        casez_tmp_32 = entries_6_done;
+        casez_tmp_32 = entries_6_pc;
       5'b00111:
-        casez_tmp_32 = entries_7_done;
+        casez_tmp_32 = entries_7_pc;
       5'b01000:
-        casez_tmp_32 = entries_8_done;
+        casez_tmp_32 = entries_8_pc;
       5'b01001:
-        casez_tmp_32 = entries_9_done;
+        casez_tmp_32 = entries_9_pc;
       5'b01010:
-        casez_tmp_32 = entries_10_done;
+        casez_tmp_32 = entries_10_pc;
       5'b01011:
-        casez_tmp_32 = entries_11_done;
+        casez_tmp_32 = entries_11_pc;
       5'b01100:
-        casez_tmp_32 = entries_12_done;
+        casez_tmp_32 = entries_12_pc;
       5'b01101:
-        casez_tmp_32 = entries_13_done;
+        casez_tmp_32 = entries_13_pc;
       5'b01110:
-        casez_tmp_32 = entries_14_done;
+        casez_tmp_32 = entries_14_pc;
       5'b01111:
-        casez_tmp_32 = entries_15_done;
+        casez_tmp_32 = entries_15_pc;
       5'b10000:
-        casez_tmp_32 = entries_16_done;
+        casez_tmp_32 = entries_16_pc;
       5'b10001:
-        casez_tmp_32 = entries_17_done;
+        casez_tmp_32 = entries_17_pc;
       5'b10010:
-        casez_tmp_32 = entries_18_done;
+        casez_tmp_32 = entries_18_pc;
       5'b10011:
-        casez_tmp_32 = entries_19_done;
+        casez_tmp_32 = entries_19_pc;
       5'b10100:
-        casez_tmp_32 = entries_20_done;
+        casez_tmp_32 = entries_20_pc;
       5'b10101:
-        casez_tmp_32 = entries_21_done;
+        casez_tmp_32 = entries_21_pc;
       5'b10110:
-        casez_tmp_32 = entries_22_done;
+        casez_tmp_32 = entries_22_pc;
       5'b10111:
-        casez_tmp_32 = entries_23_done;
+        casez_tmp_32 = entries_23_pc;
       5'b11000:
-        casez_tmp_32 = entries_24_done;
+        casez_tmp_32 = entries_24_pc;
       5'b11001:
-        casez_tmp_32 = entries_25_done;
+        casez_tmp_32 = entries_25_pc;
       5'b11010:
-        casez_tmp_32 = entries_26_done;
+        casez_tmp_32 = entries_26_pc;
       5'b11011:
-        casez_tmp_32 = entries_27_done;
+        casez_tmp_32 = entries_27_pc;
       5'b11100:
-        casez_tmp_32 = entries_28_done;
+        casez_tmp_32 = entries_28_pc;
       5'b11101:
-        casez_tmp_32 = entries_29_done;
+        casez_tmp_32 = entries_29_pc;
       5'b11110:
-        casez_tmp_32 = entries_30_done;
+        casez_tmp_32 = entries_30_pc;
       default:
-        casez_tmp_32 = entries_31_done;
+        casez_tmp_32 = entries_31_pc;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_33;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_33 = entries_0_pc;
+        casez_tmp_33 = entries_0_inst;
       5'b00001:
-        casez_tmp_33 = entries_1_pc;
+        casez_tmp_33 = entries_1_inst;
       5'b00010:
-        casez_tmp_33 = entries_2_pc;
+        casez_tmp_33 = entries_2_inst;
       5'b00011:
-        casez_tmp_33 = entries_3_pc;
+        casez_tmp_33 = entries_3_inst;
       5'b00100:
-        casez_tmp_33 = entries_4_pc;
+        casez_tmp_33 = entries_4_inst;
       5'b00101:
-        casez_tmp_33 = entries_5_pc;
+        casez_tmp_33 = entries_5_inst;
       5'b00110:
-        casez_tmp_33 = entries_6_pc;
+        casez_tmp_33 = entries_6_inst;
       5'b00111:
-        casez_tmp_33 = entries_7_pc;
+        casez_tmp_33 = entries_7_inst;
       5'b01000:
-        casez_tmp_33 = entries_8_pc;
+        casez_tmp_33 = entries_8_inst;
       5'b01001:
-        casez_tmp_33 = entries_9_pc;
+        casez_tmp_33 = entries_9_inst;
       5'b01010:
-        casez_tmp_33 = entries_10_pc;
+        casez_tmp_33 = entries_10_inst;
       5'b01011:
-        casez_tmp_33 = entries_11_pc;
+        casez_tmp_33 = entries_11_inst;
       5'b01100:
-        casez_tmp_33 = entries_12_pc;
+        casez_tmp_33 = entries_12_inst;
       5'b01101:
-        casez_tmp_33 = entries_13_pc;
+        casez_tmp_33 = entries_13_inst;
       5'b01110:
-        casez_tmp_33 = entries_14_pc;
+        casez_tmp_33 = entries_14_inst;
       5'b01111:
-        casez_tmp_33 = entries_15_pc;
+        casez_tmp_33 = entries_15_inst;
       5'b10000:
-        casez_tmp_33 = entries_16_pc;
+        casez_tmp_33 = entries_16_inst;
       5'b10001:
-        casez_tmp_33 = entries_17_pc;
+        casez_tmp_33 = entries_17_inst;
       5'b10010:
-        casez_tmp_33 = entries_18_pc;
+        casez_tmp_33 = entries_18_inst;
       5'b10011:
-        casez_tmp_33 = entries_19_pc;
+        casez_tmp_33 = entries_19_inst;
       5'b10100:
-        casez_tmp_33 = entries_20_pc;
+        casez_tmp_33 = entries_20_inst;
       5'b10101:
-        casez_tmp_33 = entries_21_pc;
+        casez_tmp_33 = entries_21_inst;
       5'b10110:
-        casez_tmp_33 = entries_22_pc;
+        casez_tmp_33 = entries_22_inst;
       5'b10111:
-        casez_tmp_33 = entries_23_pc;
+        casez_tmp_33 = entries_23_inst;
       5'b11000:
-        casez_tmp_33 = entries_24_pc;
+        casez_tmp_33 = entries_24_inst;
       5'b11001:
-        casez_tmp_33 = entries_25_pc;
+        casez_tmp_33 = entries_25_inst;
       5'b11010:
-        casez_tmp_33 = entries_26_pc;
+        casez_tmp_33 = entries_26_inst;
       5'b11011:
-        casez_tmp_33 = entries_27_pc;
+        casez_tmp_33 = entries_27_inst;
       5'b11100:
-        casez_tmp_33 = entries_28_pc;
+        casez_tmp_33 = entries_28_inst;
       5'b11101:
-        casez_tmp_33 = entries_29_pc;
+        casez_tmp_33 = entries_29_inst;
       5'b11110:
-        casez_tmp_33 = entries_30_pc;
+        casez_tmp_33 = entries_30_inst;
       default:
-        casez_tmp_33 = entries_31_pc;
+        casez_tmp_33 = entries_31_inst;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_34;
+  reg         casez_tmp_34;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_34 = entries_0_inst;
+        casez_tmp_34 = entries_0_reg_write;
       5'b00001:
-        casez_tmp_34 = entries_1_inst;
+        casez_tmp_34 = entries_1_reg_write;
       5'b00010:
-        casez_tmp_34 = entries_2_inst;
+        casez_tmp_34 = entries_2_reg_write;
       5'b00011:
-        casez_tmp_34 = entries_3_inst;
+        casez_tmp_34 = entries_3_reg_write;
       5'b00100:
-        casez_tmp_34 = entries_4_inst;
+        casez_tmp_34 = entries_4_reg_write;
       5'b00101:
-        casez_tmp_34 = entries_5_inst;
+        casez_tmp_34 = entries_5_reg_write;
       5'b00110:
-        casez_tmp_34 = entries_6_inst;
+        casez_tmp_34 = entries_6_reg_write;
       5'b00111:
-        casez_tmp_34 = entries_7_inst;
+        casez_tmp_34 = entries_7_reg_write;
       5'b01000:
-        casez_tmp_34 = entries_8_inst;
+        casez_tmp_34 = entries_8_reg_write;
       5'b01001:
-        casez_tmp_34 = entries_9_inst;
+        casez_tmp_34 = entries_9_reg_write;
       5'b01010:
-        casez_tmp_34 = entries_10_inst;
+        casez_tmp_34 = entries_10_reg_write;
       5'b01011:
-        casez_tmp_34 = entries_11_inst;
+        casez_tmp_34 = entries_11_reg_write;
       5'b01100:
-        casez_tmp_34 = entries_12_inst;
+        casez_tmp_34 = entries_12_reg_write;
       5'b01101:
-        casez_tmp_34 = entries_13_inst;
+        casez_tmp_34 = entries_13_reg_write;
       5'b01110:
-        casez_tmp_34 = entries_14_inst;
+        casez_tmp_34 = entries_14_reg_write;
       5'b01111:
-        casez_tmp_34 = entries_15_inst;
+        casez_tmp_34 = entries_15_reg_write;
       5'b10000:
-        casez_tmp_34 = entries_16_inst;
+        casez_tmp_34 = entries_16_reg_write;
       5'b10001:
-        casez_tmp_34 = entries_17_inst;
+        casez_tmp_34 = entries_17_reg_write;
       5'b10010:
-        casez_tmp_34 = entries_18_inst;
+        casez_tmp_34 = entries_18_reg_write;
       5'b10011:
-        casez_tmp_34 = entries_19_inst;
+        casez_tmp_34 = entries_19_reg_write;
       5'b10100:
-        casez_tmp_34 = entries_20_inst;
+        casez_tmp_34 = entries_20_reg_write;
       5'b10101:
-        casez_tmp_34 = entries_21_inst;
+        casez_tmp_34 = entries_21_reg_write;
       5'b10110:
-        casez_tmp_34 = entries_22_inst;
+        casez_tmp_34 = entries_22_reg_write;
       5'b10111:
-        casez_tmp_34 = entries_23_inst;
+        casez_tmp_34 = entries_23_reg_write;
       5'b11000:
-        casez_tmp_34 = entries_24_inst;
+        casez_tmp_34 = entries_24_reg_write;
       5'b11001:
-        casez_tmp_34 = entries_25_inst;
+        casez_tmp_34 = entries_25_reg_write;
       5'b11010:
-        casez_tmp_34 = entries_26_inst;
+        casez_tmp_34 = entries_26_reg_write;
       5'b11011:
-        casez_tmp_34 = entries_27_inst;
+        casez_tmp_34 = entries_27_reg_write;
       5'b11100:
-        casez_tmp_34 = entries_28_inst;
+        casez_tmp_34 = entries_28_reg_write;
       5'b11101:
-        casez_tmp_34 = entries_29_inst;
+        casez_tmp_34 = entries_29_reg_write;
       5'b11110:
-        casez_tmp_34 = entries_30_inst;
+        casez_tmp_34 = entries_30_reg_write;
       default:
-        casez_tmp_34 = entries_31_inst;
+        casez_tmp_34 = entries_31_reg_write;
     endcase
   end // always_comb
-  reg         casez_tmp_35;
+  reg  [2:0]  casez_tmp_35;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_35 = entries_0_reg_write;
+        casez_tmp_35 = entries_0_reg_write_sel;
       5'b00001:
-        casez_tmp_35 = entries_1_reg_write;
+        casez_tmp_35 = entries_1_reg_write_sel;
       5'b00010:
-        casez_tmp_35 = entries_2_reg_write;
+        casez_tmp_35 = entries_2_reg_write_sel;
       5'b00011:
-        casez_tmp_35 = entries_3_reg_write;
+        casez_tmp_35 = entries_3_reg_write_sel;
       5'b00100:
-        casez_tmp_35 = entries_4_reg_write;
+        casez_tmp_35 = entries_4_reg_write_sel;
       5'b00101:
-        casez_tmp_35 = entries_5_reg_write;
+        casez_tmp_35 = entries_5_reg_write_sel;
       5'b00110:
-        casez_tmp_35 = entries_6_reg_write;
+        casez_tmp_35 = entries_6_reg_write_sel;
       5'b00111:
-        casez_tmp_35 = entries_7_reg_write;
+        casez_tmp_35 = entries_7_reg_write_sel;
       5'b01000:
-        casez_tmp_35 = entries_8_reg_write;
+        casez_tmp_35 = entries_8_reg_write_sel;
       5'b01001:
-        casez_tmp_35 = entries_9_reg_write;
+        casez_tmp_35 = entries_9_reg_write_sel;
       5'b01010:
-        casez_tmp_35 = entries_10_reg_write;
+        casez_tmp_35 = entries_10_reg_write_sel;
       5'b01011:
-        casez_tmp_35 = entries_11_reg_write;
+        casez_tmp_35 = entries_11_reg_write_sel;
       5'b01100:
-        casez_tmp_35 = entries_12_reg_write;
+        casez_tmp_35 = entries_12_reg_write_sel;
       5'b01101:
-        casez_tmp_35 = entries_13_reg_write;
+        casez_tmp_35 = entries_13_reg_write_sel;
       5'b01110:
-        casez_tmp_35 = entries_14_reg_write;
+        casez_tmp_35 = entries_14_reg_write_sel;
       5'b01111:
-        casez_tmp_35 = entries_15_reg_write;
+        casez_tmp_35 = entries_15_reg_write_sel;
       5'b10000:
-        casez_tmp_35 = entries_16_reg_write;
+        casez_tmp_35 = entries_16_reg_write_sel;
       5'b10001:
-        casez_tmp_35 = entries_17_reg_write;
+        casez_tmp_35 = entries_17_reg_write_sel;
       5'b10010:
-        casez_tmp_35 = entries_18_reg_write;
+        casez_tmp_35 = entries_18_reg_write_sel;
       5'b10011:
-        casez_tmp_35 = entries_19_reg_write;
+        casez_tmp_35 = entries_19_reg_write_sel;
       5'b10100:
-        casez_tmp_35 = entries_20_reg_write;
+        casez_tmp_35 = entries_20_reg_write_sel;
       5'b10101:
-        casez_tmp_35 = entries_21_reg_write;
+        casez_tmp_35 = entries_21_reg_write_sel;
       5'b10110:
-        casez_tmp_35 = entries_22_reg_write;
+        casez_tmp_35 = entries_22_reg_write_sel;
       5'b10111:
-        casez_tmp_35 = entries_23_reg_write;
+        casez_tmp_35 = entries_23_reg_write_sel;
       5'b11000:
-        casez_tmp_35 = entries_24_reg_write;
+        casez_tmp_35 = entries_24_reg_write_sel;
       5'b11001:
-        casez_tmp_35 = entries_25_reg_write;
+        casez_tmp_35 = entries_25_reg_write_sel;
       5'b11010:
-        casez_tmp_35 = entries_26_reg_write;
+        casez_tmp_35 = entries_26_reg_write_sel;
       5'b11011:
-        casez_tmp_35 = entries_27_reg_write;
+        casez_tmp_35 = entries_27_reg_write_sel;
       5'b11100:
-        casez_tmp_35 = entries_28_reg_write;
+        casez_tmp_35 = entries_28_reg_write_sel;
       5'b11101:
-        casez_tmp_35 = entries_29_reg_write;
+        casez_tmp_35 = entries_29_reg_write_sel;
       5'b11110:
-        casez_tmp_35 = entries_30_reg_write;
+        casez_tmp_35 = entries_30_reg_write_sel;
       default:
-        casez_tmp_35 = entries_31_reg_write;
+        casez_tmp_35 = entries_31_reg_write_sel;
     endcase
   end // always_comb
-  reg  [2:0]  casez_tmp_36;
+  reg         casez_tmp_36;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_36 = entries_0_reg_write_sel;
+        casez_tmp_36 = entries_0_csr_write;
       5'b00001:
-        casez_tmp_36 = entries_1_reg_write_sel;
+        casez_tmp_36 = entries_1_csr_write;
       5'b00010:
-        casez_tmp_36 = entries_2_reg_write_sel;
+        casez_tmp_36 = entries_2_csr_write;
       5'b00011:
-        casez_tmp_36 = entries_3_reg_write_sel;
+        casez_tmp_36 = entries_3_csr_write;
       5'b00100:
-        casez_tmp_36 = entries_4_reg_write_sel;
+        casez_tmp_36 = entries_4_csr_write;
       5'b00101:
-        casez_tmp_36 = entries_5_reg_write_sel;
+        casez_tmp_36 = entries_5_csr_write;
       5'b00110:
-        casez_tmp_36 = entries_6_reg_write_sel;
+        casez_tmp_36 = entries_6_csr_write;
       5'b00111:
-        casez_tmp_36 = entries_7_reg_write_sel;
+        casez_tmp_36 = entries_7_csr_write;
       5'b01000:
-        casez_tmp_36 = entries_8_reg_write_sel;
+        casez_tmp_36 = entries_8_csr_write;
       5'b01001:
-        casez_tmp_36 = entries_9_reg_write_sel;
+        casez_tmp_36 = entries_9_csr_write;
       5'b01010:
-        casez_tmp_36 = entries_10_reg_write_sel;
+        casez_tmp_36 = entries_10_csr_write;
       5'b01011:
-        casez_tmp_36 = entries_11_reg_write_sel;
+        casez_tmp_36 = entries_11_csr_write;
       5'b01100:
-        casez_tmp_36 = entries_12_reg_write_sel;
+        casez_tmp_36 = entries_12_csr_write;
       5'b01101:
-        casez_tmp_36 = entries_13_reg_write_sel;
+        casez_tmp_36 = entries_13_csr_write;
       5'b01110:
-        casez_tmp_36 = entries_14_reg_write_sel;
+        casez_tmp_36 = entries_14_csr_write;
       5'b01111:
-        casez_tmp_36 = entries_15_reg_write_sel;
+        casez_tmp_36 = entries_15_csr_write;
       5'b10000:
-        casez_tmp_36 = entries_16_reg_write_sel;
+        casez_tmp_36 = entries_16_csr_write;
       5'b10001:
-        casez_tmp_36 = entries_17_reg_write_sel;
+        casez_tmp_36 = entries_17_csr_write;
       5'b10010:
-        casez_tmp_36 = entries_18_reg_write_sel;
+        casez_tmp_36 = entries_18_csr_write;
       5'b10011:
-        casez_tmp_36 = entries_19_reg_write_sel;
+        casez_tmp_36 = entries_19_csr_write;
       5'b10100:
-        casez_tmp_36 = entries_20_reg_write_sel;
+        casez_tmp_36 = entries_20_csr_write;
       5'b10101:
-        casez_tmp_36 = entries_21_reg_write_sel;
+        casez_tmp_36 = entries_21_csr_write;
       5'b10110:
-        casez_tmp_36 = entries_22_reg_write_sel;
+        casez_tmp_36 = entries_22_csr_write;
       5'b10111:
-        casez_tmp_36 = entries_23_reg_write_sel;
+        casez_tmp_36 = entries_23_csr_write;
       5'b11000:
-        casez_tmp_36 = entries_24_reg_write_sel;
+        casez_tmp_36 = entries_24_csr_write;
       5'b11001:
-        casez_tmp_36 = entries_25_reg_write_sel;
+        casez_tmp_36 = entries_25_csr_write;
       5'b11010:
-        casez_tmp_36 = entries_26_reg_write_sel;
+        casez_tmp_36 = entries_26_csr_write;
       5'b11011:
-        casez_tmp_36 = entries_27_reg_write_sel;
+        casez_tmp_36 = entries_27_csr_write;
       5'b11100:
-        casez_tmp_36 = entries_28_reg_write_sel;
+        casez_tmp_36 = entries_28_csr_write;
       5'b11101:
-        casez_tmp_36 = entries_29_reg_write_sel;
+        casez_tmp_36 = entries_29_csr_write;
       5'b11110:
-        casez_tmp_36 = entries_30_reg_write_sel;
+        casez_tmp_36 = entries_30_csr_write;
       default:
-        casez_tmp_36 = entries_31_reg_write_sel;
+        casez_tmp_36 = entries_31_csr_write;
     endcase
   end // always_comb
   reg         casez_tmp_37;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_37 = entries_0_csr_write;
+        casez_tmp_37 = entries_0_mem_valid;
       5'b00001:
-        casez_tmp_37 = entries_1_csr_write;
+        casez_tmp_37 = entries_1_mem_valid;
       5'b00010:
-        casez_tmp_37 = entries_2_csr_write;
+        casez_tmp_37 = entries_2_mem_valid;
       5'b00011:
-        casez_tmp_37 = entries_3_csr_write;
+        casez_tmp_37 = entries_3_mem_valid;
       5'b00100:
-        casez_tmp_37 = entries_4_csr_write;
+        casez_tmp_37 = entries_4_mem_valid;
       5'b00101:
-        casez_tmp_37 = entries_5_csr_write;
+        casez_tmp_37 = entries_5_mem_valid;
       5'b00110:
-        casez_tmp_37 = entries_6_csr_write;
+        casez_tmp_37 = entries_6_mem_valid;
       5'b00111:
-        casez_tmp_37 = entries_7_csr_write;
+        casez_tmp_37 = entries_7_mem_valid;
       5'b01000:
-        casez_tmp_37 = entries_8_csr_write;
+        casez_tmp_37 = entries_8_mem_valid;
       5'b01001:
-        casez_tmp_37 = entries_9_csr_write;
+        casez_tmp_37 = entries_9_mem_valid;
       5'b01010:
-        casez_tmp_37 = entries_10_csr_write;
+        casez_tmp_37 = entries_10_mem_valid;
       5'b01011:
-        casez_tmp_37 = entries_11_csr_write;
+        casez_tmp_37 = entries_11_mem_valid;
       5'b01100:
-        casez_tmp_37 = entries_12_csr_write;
+        casez_tmp_37 = entries_12_mem_valid;
       5'b01101:
-        casez_tmp_37 = entries_13_csr_write;
+        casez_tmp_37 = entries_13_mem_valid;
       5'b01110:
-        casez_tmp_37 = entries_14_csr_write;
+        casez_tmp_37 = entries_14_mem_valid;
       5'b01111:
-        casez_tmp_37 = entries_15_csr_write;
+        casez_tmp_37 = entries_15_mem_valid;
       5'b10000:
-        casez_tmp_37 = entries_16_csr_write;
+        casez_tmp_37 = entries_16_mem_valid;
       5'b10001:
-        casez_tmp_37 = entries_17_csr_write;
+        casez_tmp_37 = entries_17_mem_valid;
       5'b10010:
-        casez_tmp_37 = entries_18_csr_write;
+        casez_tmp_37 = entries_18_mem_valid;
       5'b10011:
-        casez_tmp_37 = entries_19_csr_write;
+        casez_tmp_37 = entries_19_mem_valid;
       5'b10100:
-        casez_tmp_37 = entries_20_csr_write;
+        casez_tmp_37 = entries_20_mem_valid;
       5'b10101:
-        casez_tmp_37 = entries_21_csr_write;
+        casez_tmp_37 = entries_21_mem_valid;
       5'b10110:
-        casez_tmp_37 = entries_22_csr_write;
+        casez_tmp_37 = entries_22_mem_valid;
       5'b10111:
-        casez_tmp_37 = entries_23_csr_write;
+        casez_tmp_37 = entries_23_mem_valid;
       5'b11000:
-        casez_tmp_37 = entries_24_csr_write;
+        casez_tmp_37 = entries_24_mem_valid;
       5'b11001:
-        casez_tmp_37 = entries_25_csr_write;
+        casez_tmp_37 = entries_25_mem_valid;
       5'b11010:
-        casez_tmp_37 = entries_26_csr_write;
+        casez_tmp_37 = entries_26_mem_valid;
       5'b11011:
-        casez_tmp_37 = entries_27_csr_write;
+        casez_tmp_37 = entries_27_mem_valid;
       5'b11100:
-        casez_tmp_37 = entries_28_csr_write;
+        casez_tmp_37 = entries_28_mem_valid;
       5'b11101:
-        casez_tmp_37 = entries_29_csr_write;
+        casez_tmp_37 = entries_29_mem_valid;
       5'b11110:
-        casez_tmp_37 = entries_30_csr_write;
+        casez_tmp_37 = entries_30_mem_valid;
       default:
-        casez_tmp_37 = entries_31_csr_write;
+        casez_tmp_37 = entries_31_mem_valid;
     endcase
   end // always_comb
   reg         casez_tmp_38;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_38 = entries_0_mem_valid;
+        casez_tmp_38 = entries_0_mem_write;
       5'b00001:
-        casez_tmp_38 = entries_1_mem_valid;
+        casez_tmp_38 = entries_1_mem_write;
       5'b00010:
-        casez_tmp_38 = entries_2_mem_valid;
+        casez_tmp_38 = entries_2_mem_write;
       5'b00011:
-        casez_tmp_38 = entries_3_mem_valid;
+        casez_tmp_38 = entries_3_mem_write;
       5'b00100:
-        casez_tmp_38 = entries_4_mem_valid;
+        casez_tmp_38 = entries_4_mem_write;
       5'b00101:
-        casez_tmp_38 = entries_5_mem_valid;
+        casez_tmp_38 = entries_5_mem_write;
       5'b00110:
-        casez_tmp_38 = entries_6_mem_valid;
+        casez_tmp_38 = entries_6_mem_write;
       5'b00111:
-        casez_tmp_38 = entries_7_mem_valid;
+        casez_tmp_38 = entries_7_mem_write;
       5'b01000:
-        casez_tmp_38 = entries_8_mem_valid;
+        casez_tmp_38 = entries_8_mem_write;
       5'b01001:
-        casez_tmp_38 = entries_9_mem_valid;
+        casez_tmp_38 = entries_9_mem_write;
       5'b01010:
-        casez_tmp_38 = entries_10_mem_valid;
+        casez_tmp_38 = entries_10_mem_write;
       5'b01011:
-        casez_tmp_38 = entries_11_mem_valid;
+        casez_tmp_38 = entries_11_mem_write;
       5'b01100:
-        casez_tmp_38 = entries_12_mem_valid;
+        casez_tmp_38 = entries_12_mem_write;
       5'b01101:
-        casez_tmp_38 = entries_13_mem_valid;
+        casez_tmp_38 = entries_13_mem_write;
       5'b01110:
-        casez_tmp_38 = entries_14_mem_valid;
+        casez_tmp_38 = entries_14_mem_write;
       5'b01111:
-        casez_tmp_38 = entries_15_mem_valid;
+        casez_tmp_38 = entries_15_mem_write;
       5'b10000:
-        casez_tmp_38 = entries_16_mem_valid;
+        casez_tmp_38 = entries_16_mem_write;
       5'b10001:
-        casez_tmp_38 = entries_17_mem_valid;
+        casez_tmp_38 = entries_17_mem_write;
       5'b10010:
-        casez_tmp_38 = entries_18_mem_valid;
+        casez_tmp_38 = entries_18_mem_write;
       5'b10011:
-        casez_tmp_38 = entries_19_mem_valid;
+        casez_tmp_38 = entries_19_mem_write;
       5'b10100:
-        casez_tmp_38 = entries_20_mem_valid;
+        casez_tmp_38 = entries_20_mem_write;
       5'b10101:
-        casez_tmp_38 = entries_21_mem_valid;
+        casez_tmp_38 = entries_21_mem_write;
       5'b10110:
-        casez_tmp_38 = entries_22_mem_valid;
+        casez_tmp_38 = entries_22_mem_write;
       5'b10111:
-        casez_tmp_38 = entries_23_mem_valid;
+        casez_tmp_38 = entries_23_mem_write;
       5'b11000:
-        casez_tmp_38 = entries_24_mem_valid;
+        casez_tmp_38 = entries_24_mem_write;
       5'b11001:
-        casez_tmp_38 = entries_25_mem_valid;
+        casez_tmp_38 = entries_25_mem_write;
       5'b11010:
-        casez_tmp_38 = entries_26_mem_valid;
+        casez_tmp_38 = entries_26_mem_write;
       5'b11011:
-        casez_tmp_38 = entries_27_mem_valid;
+        casez_tmp_38 = entries_27_mem_write;
       5'b11100:
-        casez_tmp_38 = entries_28_mem_valid;
+        casez_tmp_38 = entries_28_mem_write;
       5'b11101:
-        casez_tmp_38 = entries_29_mem_valid;
+        casez_tmp_38 = entries_29_mem_write;
       5'b11110:
-        casez_tmp_38 = entries_30_mem_valid;
+        casez_tmp_38 = entries_30_mem_write;
       default:
-        casez_tmp_38 = entries_31_mem_valid;
+        casez_tmp_38 = entries_31_mem_write;
     endcase
   end // always_comb
-  reg         casez_tmp_39;
+  reg  [7:0]  casez_tmp_39;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_39 = entries_0_mem_write;
+        casez_tmp_39 = entries_0_mem_wmask;
       5'b00001:
-        casez_tmp_39 = entries_1_mem_write;
+        casez_tmp_39 = entries_1_mem_wmask;
       5'b00010:
-        casez_tmp_39 = entries_2_mem_write;
+        casez_tmp_39 = entries_2_mem_wmask;
       5'b00011:
-        casez_tmp_39 = entries_3_mem_write;
+        casez_tmp_39 = entries_3_mem_wmask;
       5'b00100:
-        casez_tmp_39 = entries_4_mem_write;
+        casez_tmp_39 = entries_4_mem_wmask;
       5'b00101:
-        casez_tmp_39 = entries_5_mem_write;
+        casez_tmp_39 = entries_5_mem_wmask;
       5'b00110:
-        casez_tmp_39 = entries_6_mem_write;
+        casez_tmp_39 = entries_6_mem_wmask;
       5'b00111:
-        casez_tmp_39 = entries_7_mem_write;
+        casez_tmp_39 = entries_7_mem_wmask;
       5'b01000:
-        casez_tmp_39 = entries_8_mem_write;
+        casez_tmp_39 = entries_8_mem_wmask;
       5'b01001:
-        casez_tmp_39 = entries_9_mem_write;
+        casez_tmp_39 = entries_9_mem_wmask;
       5'b01010:
-        casez_tmp_39 = entries_10_mem_write;
+        casez_tmp_39 = entries_10_mem_wmask;
       5'b01011:
-        casez_tmp_39 = entries_11_mem_write;
+        casez_tmp_39 = entries_11_mem_wmask;
       5'b01100:
-        casez_tmp_39 = entries_12_mem_write;
+        casez_tmp_39 = entries_12_mem_wmask;
       5'b01101:
-        casez_tmp_39 = entries_13_mem_write;
+        casez_tmp_39 = entries_13_mem_wmask;
       5'b01110:
-        casez_tmp_39 = entries_14_mem_write;
+        casez_tmp_39 = entries_14_mem_wmask;
       5'b01111:
-        casez_tmp_39 = entries_15_mem_write;
+        casez_tmp_39 = entries_15_mem_wmask;
       5'b10000:
-        casez_tmp_39 = entries_16_mem_write;
+        casez_tmp_39 = entries_16_mem_wmask;
       5'b10001:
-        casez_tmp_39 = entries_17_mem_write;
+        casez_tmp_39 = entries_17_mem_wmask;
       5'b10010:
-        casez_tmp_39 = entries_18_mem_write;
+        casez_tmp_39 = entries_18_mem_wmask;
       5'b10011:
-        casez_tmp_39 = entries_19_mem_write;
+        casez_tmp_39 = entries_19_mem_wmask;
       5'b10100:
-        casez_tmp_39 = entries_20_mem_write;
+        casez_tmp_39 = entries_20_mem_wmask;
       5'b10101:
-        casez_tmp_39 = entries_21_mem_write;
+        casez_tmp_39 = entries_21_mem_wmask;
       5'b10110:
-        casez_tmp_39 = entries_22_mem_write;
+        casez_tmp_39 = entries_22_mem_wmask;
       5'b10111:
-        casez_tmp_39 = entries_23_mem_write;
+        casez_tmp_39 = entries_23_mem_wmask;
       5'b11000:
-        casez_tmp_39 = entries_24_mem_write;
+        casez_tmp_39 = entries_24_mem_wmask;
       5'b11001:
-        casez_tmp_39 = entries_25_mem_write;
+        casez_tmp_39 = entries_25_mem_wmask;
       5'b11010:
-        casez_tmp_39 = entries_26_mem_write;
+        casez_tmp_39 = entries_26_mem_wmask;
       5'b11011:
-        casez_tmp_39 = entries_27_mem_write;
+        casez_tmp_39 = entries_27_mem_wmask;
       5'b11100:
-        casez_tmp_39 = entries_28_mem_write;
+        casez_tmp_39 = entries_28_mem_wmask;
       5'b11101:
-        casez_tmp_39 = entries_29_mem_write;
+        casez_tmp_39 = entries_29_mem_wmask;
       5'b11110:
-        casez_tmp_39 = entries_30_mem_write;
+        casez_tmp_39 = entries_30_mem_wmask;
       default:
-        casez_tmp_39 = entries_31_mem_write;
+        casez_tmp_39 = entries_31_mem_wmask;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_40;
+  reg  [3:0]  casez_tmp_40;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_40 = entries_0_mem_wmask;
+        casez_tmp_40 = entries_0_jump;
       5'b00001:
-        casez_tmp_40 = entries_1_mem_wmask;
+        casez_tmp_40 = entries_1_jump;
       5'b00010:
-        casez_tmp_40 = entries_2_mem_wmask;
+        casez_tmp_40 = entries_2_jump;
       5'b00011:
-        casez_tmp_40 = entries_3_mem_wmask;
+        casez_tmp_40 = entries_3_jump;
       5'b00100:
-        casez_tmp_40 = entries_4_mem_wmask;
+        casez_tmp_40 = entries_4_jump;
       5'b00101:
-        casez_tmp_40 = entries_5_mem_wmask;
+        casez_tmp_40 = entries_5_jump;
       5'b00110:
-        casez_tmp_40 = entries_6_mem_wmask;
+        casez_tmp_40 = entries_6_jump;
       5'b00111:
-        casez_tmp_40 = entries_7_mem_wmask;
+        casez_tmp_40 = entries_7_jump;
       5'b01000:
-        casez_tmp_40 = entries_8_mem_wmask;
+        casez_tmp_40 = entries_8_jump;
       5'b01001:
-        casez_tmp_40 = entries_9_mem_wmask;
+        casez_tmp_40 = entries_9_jump;
       5'b01010:
-        casez_tmp_40 = entries_10_mem_wmask;
+        casez_tmp_40 = entries_10_jump;
       5'b01011:
-        casez_tmp_40 = entries_11_mem_wmask;
+        casez_tmp_40 = entries_11_jump;
       5'b01100:
-        casez_tmp_40 = entries_12_mem_wmask;
+        casez_tmp_40 = entries_12_jump;
       5'b01101:
-        casez_tmp_40 = entries_13_mem_wmask;
+        casez_tmp_40 = entries_13_jump;
       5'b01110:
-        casez_tmp_40 = entries_14_mem_wmask;
+        casez_tmp_40 = entries_14_jump;
       5'b01111:
-        casez_tmp_40 = entries_15_mem_wmask;
+        casez_tmp_40 = entries_15_jump;
       5'b10000:
-        casez_tmp_40 = entries_16_mem_wmask;
+        casez_tmp_40 = entries_16_jump;
       5'b10001:
-        casez_tmp_40 = entries_17_mem_wmask;
+        casez_tmp_40 = entries_17_jump;
       5'b10010:
-        casez_tmp_40 = entries_18_mem_wmask;
+        casez_tmp_40 = entries_18_jump;
       5'b10011:
-        casez_tmp_40 = entries_19_mem_wmask;
+        casez_tmp_40 = entries_19_jump;
       5'b10100:
-        casez_tmp_40 = entries_20_mem_wmask;
+        casez_tmp_40 = entries_20_jump;
       5'b10101:
-        casez_tmp_40 = entries_21_mem_wmask;
+        casez_tmp_40 = entries_21_jump;
       5'b10110:
-        casez_tmp_40 = entries_22_mem_wmask;
+        casez_tmp_40 = entries_22_jump;
       5'b10111:
-        casez_tmp_40 = entries_23_mem_wmask;
+        casez_tmp_40 = entries_23_jump;
       5'b11000:
-        casez_tmp_40 = entries_24_mem_wmask;
+        casez_tmp_40 = entries_24_jump;
       5'b11001:
-        casez_tmp_40 = entries_25_mem_wmask;
+        casez_tmp_40 = entries_25_jump;
       5'b11010:
-        casez_tmp_40 = entries_26_mem_wmask;
+        casez_tmp_40 = entries_26_jump;
       5'b11011:
-        casez_tmp_40 = entries_27_mem_wmask;
+        casez_tmp_40 = entries_27_jump;
       5'b11100:
-        casez_tmp_40 = entries_28_mem_wmask;
+        casez_tmp_40 = entries_28_jump;
       5'b11101:
-        casez_tmp_40 = entries_29_mem_wmask;
+        casez_tmp_40 = entries_29_jump;
       5'b11110:
-        casez_tmp_40 = entries_30_mem_wmask;
+        casez_tmp_40 = entries_30_jump;
       default:
-        casez_tmp_40 = entries_31_mem_wmask;
+        casez_tmp_40 = entries_31_jump;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_41;
+  reg  [4:0]  casez_tmp_41;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_41 = entries_0_jump;
+        casez_tmp_41 = entries_0_arch_rd;
       5'b00001:
-        casez_tmp_41 = entries_1_jump;
+        casez_tmp_41 = entries_1_arch_rd;
       5'b00010:
-        casez_tmp_41 = entries_2_jump;
+        casez_tmp_41 = entries_2_arch_rd;
       5'b00011:
-        casez_tmp_41 = entries_3_jump;
+        casez_tmp_41 = entries_3_arch_rd;
       5'b00100:
-        casez_tmp_41 = entries_4_jump;
+        casez_tmp_41 = entries_4_arch_rd;
       5'b00101:
-        casez_tmp_41 = entries_5_jump;
+        casez_tmp_41 = entries_5_arch_rd;
       5'b00110:
-        casez_tmp_41 = entries_6_jump;
+        casez_tmp_41 = entries_6_arch_rd;
       5'b00111:
-        casez_tmp_41 = entries_7_jump;
+        casez_tmp_41 = entries_7_arch_rd;
       5'b01000:
-        casez_tmp_41 = entries_8_jump;
+        casez_tmp_41 = entries_8_arch_rd;
       5'b01001:
-        casez_tmp_41 = entries_9_jump;
+        casez_tmp_41 = entries_9_arch_rd;
       5'b01010:
-        casez_tmp_41 = entries_10_jump;
+        casez_tmp_41 = entries_10_arch_rd;
       5'b01011:
-        casez_tmp_41 = entries_11_jump;
+        casez_tmp_41 = entries_11_arch_rd;
       5'b01100:
-        casez_tmp_41 = entries_12_jump;
+        casez_tmp_41 = entries_12_arch_rd;
       5'b01101:
-        casez_tmp_41 = entries_13_jump;
+        casez_tmp_41 = entries_13_arch_rd;
       5'b01110:
-        casez_tmp_41 = entries_14_jump;
+        casez_tmp_41 = entries_14_arch_rd;
       5'b01111:
-        casez_tmp_41 = entries_15_jump;
+        casez_tmp_41 = entries_15_arch_rd;
       5'b10000:
-        casez_tmp_41 = entries_16_jump;
+        casez_tmp_41 = entries_16_arch_rd;
       5'b10001:
-        casez_tmp_41 = entries_17_jump;
+        casez_tmp_41 = entries_17_arch_rd;
       5'b10010:
-        casez_tmp_41 = entries_18_jump;
+        casez_tmp_41 = entries_18_arch_rd;
       5'b10011:
-        casez_tmp_41 = entries_19_jump;
+        casez_tmp_41 = entries_19_arch_rd;
       5'b10100:
-        casez_tmp_41 = entries_20_jump;
+        casez_tmp_41 = entries_20_arch_rd;
       5'b10101:
-        casez_tmp_41 = entries_21_jump;
+        casez_tmp_41 = entries_21_arch_rd;
       5'b10110:
-        casez_tmp_41 = entries_22_jump;
+        casez_tmp_41 = entries_22_arch_rd;
       5'b10111:
-        casez_tmp_41 = entries_23_jump;
+        casez_tmp_41 = entries_23_arch_rd;
       5'b11000:
-        casez_tmp_41 = entries_24_jump;
+        casez_tmp_41 = entries_24_arch_rd;
       5'b11001:
-        casez_tmp_41 = entries_25_jump;
+        casez_tmp_41 = entries_25_arch_rd;
       5'b11010:
-        casez_tmp_41 = entries_26_jump;
+        casez_tmp_41 = entries_26_arch_rd;
       5'b11011:
-        casez_tmp_41 = entries_27_jump;
+        casez_tmp_41 = entries_27_arch_rd;
       5'b11100:
-        casez_tmp_41 = entries_28_jump;
+        casez_tmp_41 = entries_28_arch_rd;
       5'b11101:
-        casez_tmp_41 = entries_29_jump;
+        casez_tmp_41 = entries_29_arch_rd;
       5'b11110:
-        casez_tmp_41 = entries_30_jump;
+        casez_tmp_41 = entries_30_arch_rd;
       default:
-        casez_tmp_41 = entries_31_jump;
+        casez_tmp_41 = entries_31_arch_rd;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_42;
+  reg  [5:0]  casez_tmp_42;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_42 = entries_0_arch_rd;
+        casez_tmp_42 = entries_0_old_phys;
       5'b00001:
-        casez_tmp_42 = entries_1_arch_rd;
+        casez_tmp_42 = entries_1_old_phys;
       5'b00010:
-        casez_tmp_42 = entries_2_arch_rd;
+        casez_tmp_42 = entries_2_old_phys;
       5'b00011:
-        casez_tmp_42 = entries_3_arch_rd;
+        casez_tmp_42 = entries_3_old_phys;
       5'b00100:
-        casez_tmp_42 = entries_4_arch_rd;
+        casez_tmp_42 = entries_4_old_phys;
       5'b00101:
-        casez_tmp_42 = entries_5_arch_rd;
+        casez_tmp_42 = entries_5_old_phys;
       5'b00110:
-        casez_tmp_42 = entries_6_arch_rd;
+        casez_tmp_42 = entries_6_old_phys;
       5'b00111:
-        casez_tmp_42 = entries_7_arch_rd;
+        casez_tmp_42 = entries_7_old_phys;
       5'b01000:
-        casez_tmp_42 = entries_8_arch_rd;
+        casez_tmp_42 = entries_8_old_phys;
       5'b01001:
-        casez_tmp_42 = entries_9_arch_rd;
+        casez_tmp_42 = entries_9_old_phys;
       5'b01010:
-        casez_tmp_42 = entries_10_arch_rd;
+        casez_tmp_42 = entries_10_old_phys;
       5'b01011:
-        casez_tmp_42 = entries_11_arch_rd;
+        casez_tmp_42 = entries_11_old_phys;
       5'b01100:
-        casez_tmp_42 = entries_12_arch_rd;
+        casez_tmp_42 = entries_12_old_phys;
       5'b01101:
-        casez_tmp_42 = entries_13_arch_rd;
+        casez_tmp_42 = entries_13_old_phys;
       5'b01110:
-        casez_tmp_42 = entries_14_arch_rd;
+        casez_tmp_42 = entries_14_old_phys;
       5'b01111:
-        casez_tmp_42 = entries_15_arch_rd;
+        casez_tmp_42 = entries_15_old_phys;
       5'b10000:
-        casez_tmp_42 = entries_16_arch_rd;
+        casez_tmp_42 = entries_16_old_phys;
       5'b10001:
-        casez_tmp_42 = entries_17_arch_rd;
+        casez_tmp_42 = entries_17_old_phys;
       5'b10010:
-        casez_tmp_42 = entries_18_arch_rd;
+        casez_tmp_42 = entries_18_old_phys;
       5'b10011:
-        casez_tmp_42 = entries_19_arch_rd;
+        casez_tmp_42 = entries_19_old_phys;
       5'b10100:
-        casez_tmp_42 = entries_20_arch_rd;
+        casez_tmp_42 = entries_20_old_phys;
       5'b10101:
-        casez_tmp_42 = entries_21_arch_rd;
+        casez_tmp_42 = entries_21_old_phys;
       5'b10110:
-        casez_tmp_42 = entries_22_arch_rd;
+        casez_tmp_42 = entries_22_old_phys;
       5'b10111:
-        casez_tmp_42 = entries_23_arch_rd;
+        casez_tmp_42 = entries_23_old_phys;
       5'b11000:
-        casez_tmp_42 = entries_24_arch_rd;
+        casez_tmp_42 = entries_24_old_phys;
       5'b11001:
-        casez_tmp_42 = entries_25_arch_rd;
+        casez_tmp_42 = entries_25_old_phys;
       5'b11010:
-        casez_tmp_42 = entries_26_arch_rd;
+        casez_tmp_42 = entries_26_old_phys;
       5'b11011:
-        casez_tmp_42 = entries_27_arch_rd;
+        casez_tmp_42 = entries_27_old_phys;
       5'b11100:
-        casez_tmp_42 = entries_28_arch_rd;
+        casez_tmp_42 = entries_28_old_phys;
       5'b11101:
-        casez_tmp_42 = entries_29_arch_rd;
+        casez_tmp_42 = entries_29_old_phys;
       5'b11110:
-        casez_tmp_42 = entries_30_arch_rd;
+        casez_tmp_42 = entries_30_old_phys;
       default:
-        casez_tmp_42 = entries_31_arch_rd;
+        casez_tmp_42 = entries_31_old_phys;
     endcase
   end // always_comb
   reg  [5:0]  casez_tmp_43;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_43 = entries_0_old_phys;
+        casez_tmp_43 = entries_0_new_phys;
       5'b00001:
-        casez_tmp_43 = entries_1_old_phys;
+        casez_tmp_43 = entries_1_new_phys;
       5'b00010:
-        casez_tmp_43 = entries_2_old_phys;
+        casez_tmp_43 = entries_2_new_phys;
       5'b00011:
-        casez_tmp_43 = entries_3_old_phys;
+        casez_tmp_43 = entries_3_new_phys;
       5'b00100:
-        casez_tmp_43 = entries_4_old_phys;
+        casez_tmp_43 = entries_4_new_phys;
       5'b00101:
-        casez_tmp_43 = entries_5_old_phys;
+        casez_tmp_43 = entries_5_new_phys;
       5'b00110:
-        casez_tmp_43 = entries_6_old_phys;
+        casez_tmp_43 = entries_6_new_phys;
       5'b00111:
-        casez_tmp_43 = entries_7_old_phys;
+        casez_tmp_43 = entries_7_new_phys;
       5'b01000:
-        casez_tmp_43 = entries_8_old_phys;
+        casez_tmp_43 = entries_8_new_phys;
       5'b01001:
-        casez_tmp_43 = entries_9_old_phys;
+        casez_tmp_43 = entries_9_new_phys;
       5'b01010:
-        casez_tmp_43 = entries_10_old_phys;
+        casez_tmp_43 = entries_10_new_phys;
       5'b01011:
-        casez_tmp_43 = entries_11_old_phys;
+        casez_tmp_43 = entries_11_new_phys;
       5'b01100:
-        casez_tmp_43 = entries_12_old_phys;
+        casez_tmp_43 = entries_12_new_phys;
       5'b01101:
-        casez_tmp_43 = entries_13_old_phys;
+        casez_tmp_43 = entries_13_new_phys;
       5'b01110:
-        casez_tmp_43 = entries_14_old_phys;
+        casez_tmp_43 = entries_14_new_phys;
       5'b01111:
-        casez_tmp_43 = entries_15_old_phys;
+        casez_tmp_43 = entries_15_new_phys;
       5'b10000:
-        casez_tmp_43 = entries_16_old_phys;
+        casez_tmp_43 = entries_16_new_phys;
       5'b10001:
-        casez_tmp_43 = entries_17_old_phys;
+        casez_tmp_43 = entries_17_new_phys;
       5'b10010:
-        casez_tmp_43 = entries_18_old_phys;
+        casez_tmp_43 = entries_18_new_phys;
       5'b10011:
-        casez_tmp_43 = entries_19_old_phys;
+        casez_tmp_43 = entries_19_new_phys;
       5'b10100:
-        casez_tmp_43 = entries_20_old_phys;
+        casez_tmp_43 = entries_20_new_phys;
       5'b10101:
-        casez_tmp_43 = entries_21_old_phys;
+        casez_tmp_43 = entries_21_new_phys;
       5'b10110:
-        casez_tmp_43 = entries_22_old_phys;
+        casez_tmp_43 = entries_22_new_phys;
       5'b10111:
-        casez_tmp_43 = entries_23_old_phys;
+        casez_tmp_43 = entries_23_new_phys;
       5'b11000:
-        casez_tmp_43 = entries_24_old_phys;
+        casez_tmp_43 = entries_24_new_phys;
       5'b11001:
-        casez_tmp_43 = entries_25_old_phys;
+        casez_tmp_43 = entries_25_new_phys;
       5'b11010:
-        casez_tmp_43 = entries_26_old_phys;
+        casez_tmp_43 = entries_26_new_phys;
       5'b11011:
-        casez_tmp_43 = entries_27_old_phys;
+        casez_tmp_43 = entries_27_new_phys;
       5'b11100:
-        casez_tmp_43 = entries_28_old_phys;
+        casez_tmp_43 = entries_28_new_phys;
       5'b11101:
-        casez_tmp_43 = entries_29_old_phys;
+        casez_tmp_43 = entries_29_new_phys;
       5'b11110:
-        casez_tmp_43 = entries_30_old_phys;
+        casez_tmp_43 = entries_30_new_phys;
       default:
-        casez_tmp_43 = entries_31_old_phys;
+        casez_tmp_43 = entries_31_new_phys;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_44;
+  reg         casez_tmp_44;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_44 = entries_0_new_phys;
+        casez_tmp_44 = entries_0_is_ebreak;
       5'b00001:
-        casez_tmp_44 = entries_1_new_phys;
+        casez_tmp_44 = entries_1_is_ebreak;
       5'b00010:
-        casez_tmp_44 = entries_2_new_phys;
+        casez_tmp_44 = entries_2_is_ebreak;
       5'b00011:
-        casez_tmp_44 = entries_3_new_phys;
+        casez_tmp_44 = entries_3_is_ebreak;
       5'b00100:
-        casez_tmp_44 = entries_4_new_phys;
+        casez_tmp_44 = entries_4_is_ebreak;
       5'b00101:
-        casez_tmp_44 = entries_5_new_phys;
+        casez_tmp_44 = entries_5_is_ebreak;
       5'b00110:
-        casez_tmp_44 = entries_6_new_phys;
+        casez_tmp_44 = entries_6_is_ebreak;
       5'b00111:
-        casez_tmp_44 = entries_7_new_phys;
+        casez_tmp_44 = entries_7_is_ebreak;
       5'b01000:
-        casez_tmp_44 = entries_8_new_phys;
+        casez_tmp_44 = entries_8_is_ebreak;
       5'b01001:
-        casez_tmp_44 = entries_9_new_phys;
+        casez_tmp_44 = entries_9_is_ebreak;
       5'b01010:
-        casez_tmp_44 = entries_10_new_phys;
+        casez_tmp_44 = entries_10_is_ebreak;
       5'b01011:
-        casez_tmp_44 = entries_11_new_phys;
+        casez_tmp_44 = entries_11_is_ebreak;
       5'b01100:
-        casez_tmp_44 = entries_12_new_phys;
+        casez_tmp_44 = entries_12_is_ebreak;
       5'b01101:
-        casez_tmp_44 = entries_13_new_phys;
+        casez_tmp_44 = entries_13_is_ebreak;
       5'b01110:
-        casez_tmp_44 = entries_14_new_phys;
+        casez_tmp_44 = entries_14_is_ebreak;
       5'b01111:
-        casez_tmp_44 = entries_15_new_phys;
+        casez_tmp_44 = entries_15_is_ebreak;
       5'b10000:
-        casez_tmp_44 = entries_16_new_phys;
+        casez_tmp_44 = entries_16_is_ebreak;
       5'b10001:
-        casez_tmp_44 = entries_17_new_phys;
+        casez_tmp_44 = entries_17_is_ebreak;
       5'b10010:
-        casez_tmp_44 = entries_18_new_phys;
+        casez_tmp_44 = entries_18_is_ebreak;
       5'b10011:
-        casez_tmp_44 = entries_19_new_phys;
+        casez_tmp_44 = entries_19_is_ebreak;
       5'b10100:
-        casez_tmp_44 = entries_20_new_phys;
+        casez_tmp_44 = entries_20_is_ebreak;
       5'b10101:
-        casez_tmp_44 = entries_21_new_phys;
+        casez_tmp_44 = entries_21_is_ebreak;
       5'b10110:
-        casez_tmp_44 = entries_22_new_phys;
+        casez_tmp_44 = entries_22_is_ebreak;
       5'b10111:
-        casez_tmp_44 = entries_23_new_phys;
+        casez_tmp_44 = entries_23_is_ebreak;
       5'b11000:
-        casez_tmp_44 = entries_24_new_phys;
+        casez_tmp_44 = entries_24_is_ebreak;
       5'b11001:
-        casez_tmp_44 = entries_25_new_phys;
+        casez_tmp_44 = entries_25_is_ebreak;
       5'b11010:
-        casez_tmp_44 = entries_26_new_phys;
+        casez_tmp_44 = entries_26_is_ebreak;
       5'b11011:
-        casez_tmp_44 = entries_27_new_phys;
+        casez_tmp_44 = entries_27_is_ebreak;
       5'b11100:
-        casez_tmp_44 = entries_28_new_phys;
+        casez_tmp_44 = entries_28_is_ebreak;
       5'b11101:
-        casez_tmp_44 = entries_29_new_phys;
+        casez_tmp_44 = entries_29_is_ebreak;
       5'b11110:
-        casez_tmp_44 = entries_30_new_phys;
+        casez_tmp_44 = entries_30_is_ebreak;
       default:
-        casez_tmp_44 = entries_31_new_phys;
+        casez_tmp_44 = entries_31_is_ebreak;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_45;
+  reg         casez_tmp_45;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_45 = entries_0_dest_val;
+        casez_tmp_45 = entries_0_is_fencei;
       5'b00001:
-        casez_tmp_45 = entries_1_dest_val;
+        casez_tmp_45 = entries_1_is_fencei;
       5'b00010:
-        casez_tmp_45 = entries_2_dest_val;
+        casez_tmp_45 = entries_2_is_fencei;
       5'b00011:
-        casez_tmp_45 = entries_3_dest_val;
+        casez_tmp_45 = entries_3_is_fencei;
       5'b00100:
-        casez_tmp_45 = entries_4_dest_val;
+        casez_tmp_45 = entries_4_is_fencei;
       5'b00101:
-        casez_tmp_45 = entries_5_dest_val;
+        casez_tmp_45 = entries_5_is_fencei;
       5'b00110:
-        casez_tmp_45 = entries_6_dest_val;
+        casez_tmp_45 = entries_6_is_fencei;
       5'b00111:
-        casez_tmp_45 = entries_7_dest_val;
+        casez_tmp_45 = entries_7_is_fencei;
       5'b01000:
-        casez_tmp_45 = entries_8_dest_val;
+        casez_tmp_45 = entries_8_is_fencei;
       5'b01001:
-        casez_tmp_45 = entries_9_dest_val;
+        casez_tmp_45 = entries_9_is_fencei;
       5'b01010:
-        casez_tmp_45 = entries_10_dest_val;
+        casez_tmp_45 = entries_10_is_fencei;
       5'b01011:
-        casez_tmp_45 = entries_11_dest_val;
+        casez_tmp_45 = entries_11_is_fencei;
       5'b01100:
-        casez_tmp_45 = entries_12_dest_val;
+        casez_tmp_45 = entries_12_is_fencei;
       5'b01101:
-        casez_tmp_45 = entries_13_dest_val;
+        casez_tmp_45 = entries_13_is_fencei;
       5'b01110:
-        casez_tmp_45 = entries_14_dest_val;
+        casez_tmp_45 = entries_14_is_fencei;
       5'b01111:
-        casez_tmp_45 = entries_15_dest_val;
+        casez_tmp_45 = entries_15_is_fencei;
       5'b10000:
-        casez_tmp_45 = entries_16_dest_val;
+        casez_tmp_45 = entries_16_is_fencei;
       5'b10001:
-        casez_tmp_45 = entries_17_dest_val;
+        casez_tmp_45 = entries_17_is_fencei;
       5'b10010:
-        casez_tmp_45 = entries_18_dest_val;
+        casez_tmp_45 = entries_18_is_fencei;
       5'b10011:
-        casez_tmp_45 = entries_19_dest_val;
+        casez_tmp_45 = entries_19_is_fencei;
       5'b10100:
-        casez_tmp_45 = entries_20_dest_val;
+        casez_tmp_45 = entries_20_is_fencei;
       5'b10101:
-        casez_tmp_45 = entries_21_dest_val;
+        casez_tmp_45 = entries_21_is_fencei;
       5'b10110:
-        casez_tmp_45 = entries_22_dest_val;
+        casez_tmp_45 = entries_22_is_fencei;
       5'b10111:
-        casez_tmp_45 = entries_23_dest_val;
+        casez_tmp_45 = entries_23_is_fencei;
       5'b11000:
-        casez_tmp_45 = entries_24_dest_val;
+        casez_tmp_45 = entries_24_is_fencei;
       5'b11001:
-        casez_tmp_45 = entries_25_dest_val;
+        casez_tmp_45 = entries_25_is_fencei;
       5'b11010:
-        casez_tmp_45 = entries_26_dest_val;
+        casez_tmp_45 = entries_26_is_fencei;
       5'b11011:
-        casez_tmp_45 = entries_27_dest_val;
+        casez_tmp_45 = entries_27_is_fencei;
       5'b11100:
-        casez_tmp_45 = entries_28_dest_val;
+        casez_tmp_45 = entries_28_is_fencei;
       5'b11101:
-        casez_tmp_45 = entries_29_dest_val;
+        casez_tmp_45 = entries_29_is_fencei;
       5'b11110:
-        casez_tmp_45 = entries_30_dest_val;
+        casez_tmp_45 = entries_30_is_fencei;
       default:
-        casez_tmp_45 = entries_31_dest_val;
+        casez_tmp_45 = entries_31_is_fencei;
     endcase
   end // always_comb
   reg         casez_tmp_46;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_46 = entries_0_is_ebreak;
+        casez_tmp_46 = entries_0_state_state;
       5'b00001:
-        casez_tmp_46 = entries_1_is_ebreak;
+        casez_tmp_46 = entries_1_state_state;
       5'b00010:
-        casez_tmp_46 = entries_2_is_ebreak;
+        casez_tmp_46 = entries_2_state_state;
       5'b00011:
-        casez_tmp_46 = entries_3_is_ebreak;
+        casez_tmp_46 = entries_3_state_state;
       5'b00100:
-        casez_tmp_46 = entries_4_is_ebreak;
+        casez_tmp_46 = entries_4_state_state;
       5'b00101:
-        casez_tmp_46 = entries_5_is_ebreak;
+        casez_tmp_46 = entries_5_state_state;
       5'b00110:
-        casez_tmp_46 = entries_6_is_ebreak;
+        casez_tmp_46 = entries_6_state_state;
       5'b00111:
-        casez_tmp_46 = entries_7_is_ebreak;
+        casez_tmp_46 = entries_7_state_state;
       5'b01000:
-        casez_tmp_46 = entries_8_is_ebreak;
+        casez_tmp_46 = entries_8_state_state;
       5'b01001:
-        casez_tmp_46 = entries_9_is_ebreak;
+        casez_tmp_46 = entries_9_state_state;
       5'b01010:
-        casez_tmp_46 = entries_10_is_ebreak;
+        casez_tmp_46 = entries_10_state_state;
       5'b01011:
-        casez_tmp_46 = entries_11_is_ebreak;
+        casez_tmp_46 = entries_11_state_state;
       5'b01100:
-        casez_tmp_46 = entries_12_is_ebreak;
+        casez_tmp_46 = entries_12_state_state;
       5'b01101:
-        casez_tmp_46 = entries_13_is_ebreak;
+        casez_tmp_46 = entries_13_state_state;
       5'b01110:
-        casez_tmp_46 = entries_14_is_ebreak;
+        casez_tmp_46 = entries_14_state_state;
       5'b01111:
-        casez_tmp_46 = entries_15_is_ebreak;
+        casez_tmp_46 = entries_15_state_state;
       5'b10000:
-        casez_tmp_46 = entries_16_is_ebreak;
+        casez_tmp_46 = entries_16_state_state;
       5'b10001:
-        casez_tmp_46 = entries_17_is_ebreak;
+        casez_tmp_46 = entries_17_state_state;
       5'b10010:
-        casez_tmp_46 = entries_18_is_ebreak;
+        casez_tmp_46 = entries_18_state_state;
       5'b10011:
-        casez_tmp_46 = entries_19_is_ebreak;
+        casez_tmp_46 = entries_19_state_state;
       5'b10100:
-        casez_tmp_46 = entries_20_is_ebreak;
+        casez_tmp_46 = entries_20_state_state;
       5'b10101:
-        casez_tmp_46 = entries_21_is_ebreak;
+        casez_tmp_46 = entries_21_state_state;
       5'b10110:
-        casez_tmp_46 = entries_22_is_ebreak;
+        casez_tmp_46 = entries_22_state_state;
       5'b10111:
-        casez_tmp_46 = entries_23_is_ebreak;
+        casez_tmp_46 = entries_23_state_state;
       5'b11000:
-        casez_tmp_46 = entries_24_is_ebreak;
+        casez_tmp_46 = entries_24_state_state;
       5'b11001:
-        casez_tmp_46 = entries_25_is_ebreak;
+        casez_tmp_46 = entries_25_state_state;
       5'b11010:
-        casez_tmp_46 = entries_26_is_ebreak;
+        casez_tmp_46 = entries_26_state_state;
       5'b11011:
-        casez_tmp_46 = entries_27_is_ebreak;
+        casez_tmp_46 = entries_27_state_state;
       5'b11100:
-        casez_tmp_46 = entries_28_is_ebreak;
+        casez_tmp_46 = entries_28_state_state;
       5'b11101:
-        casez_tmp_46 = entries_29_is_ebreak;
+        casez_tmp_46 = entries_29_state_state;
       5'b11110:
-        casez_tmp_46 = entries_30_is_ebreak;
+        casez_tmp_46 = entries_30_state_state;
       default:
-        casez_tmp_46 = entries_31_is_ebreak;
+        casez_tmp_46 = entries_31_state_state;
     endcase
   end // always_comb
-  reg         casez_tmp_47;
+  reg  [96:0] casez_tmp_47;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_47 = entries_0_is_fencei;
+        casez_tmp_47 = entries_0_bp_index;
       5'b00001:
-        casez_tmp_47 = entries_1_is_fencei;
+        casez_tmp_47 = entries_1_bp_index;
       5'b00010:
-        casez_tmp_47 = entries_2_is_fencei;
+        casez_tmp_47 = entries_2_bp_index;
       5'b00011:
-        casez_tmp_47 = entries_3_is_fencei;
+        casez_tmp_47 = entries_3_bp_index;
       5'b00100:
-        casez_tmp_47 = entries_4_is_fencei;
+        casez_tmp_47 = entries_4_bp_index;
       5'b00101:
-        casez_tmp_47 = entries_5_is_fencei;
+        casez_tmp_47 = entries_5_bp_index;
       5'b00110:
-        casez_tmp_47 = entries_6_is_fencei;
+        casez_tmp_47 = entries_6_bp_index;
       5'b00111:
-        casez_tmp_47 = entries_7_is_fencei;
+        casez_tmp_47 = entries_7_bp_index;
       5'b01000:
-        casez_tmp_47 = entries_8_is_fencei;
+        casez_tmp_47 = entries_8_bp_index;
       5'b01001:
-        casez_tmp_47 = entries_9_is_fencei;
+        casez_tmp_47 = entries_9_bp_index;
       5'b01010:
-        casez_tmp_47 = entries_10_is_fencei;
+        casez_tmp_47 = entries_10_bp_index;
       5'b01011:
-        casez_tmp_47 = entries_11_is_fencei;
+        casez_tmp_47 = entries_11_bp_index;
       5'b01100:
-        casez_tmp_47 = entries_12_is_fencei;
+        casez_tmp_47 = entries_12_bp_index;
       5'b01101:
-        casez_tmp_47 = entries_13_is_fencei;
+        casez_tmp_47 = entries_13_bp_index;
       5'b01110:
-        casez_tmp_47 = entries_14_is_fencei;
+        casez_tmp_47 = entries_14_bp_index;
       5'b01111:
-        casez_tmp_47 = entries_15_is_fencei;
+        casez_tmp_47 = entries_15_bp_index;
       5'b10000:
-        casez_tmp_47 = entries_16_is_fencei;
+        casez_tmp_47 = entries_16_bp_index;
       5'b10001:
-        casez_tmp_47 = entries_17_is_fencei;
+        casez_tmp_47 = entries_17_bp_index;
       5'b10010:
-        casez_tmp_47 = entries_18_is_fencei;
+        casez_tmp_47 = entries_18_bp_index;
       5'b10011:
-        casez_tmp_47 = entries_19_is_fencei;
+        casez_tmp_47 = entries_19_bp_index;
       5'b10100:
-        casez_tmp_47 = entries_20_is_fencei;
+        casez_tmp_47 = entries_20_bp_index;
       5'b10101:
-        casez_tmp_47 = entries_21_is_fencei;
+        casez_tmp_47 = entries_21_bp_index;
       5'b10110:
-        casez_tmp_47 = entries_22_is_fencei;
+        casez_tmp_47 = entries_22_bp_index;
       5'b10111:
-        casez_tmp_47 = entries_23_is_fencei;
+        casez_tmp_47 = entries_23_bp_index;
       5'b11000:
-        casez_tmp_47 = entries_24_is_fencei;
+        casez_tmp_47 = entries_24_bp_index;
       5'b11001:
-        casez_tmp_47 = entries_25_is_fencei;
+        casez_tmp_47 = entries_25_bp_index;
       5'b11010:
-        casez_tmp_47 = entries_26_is_fencei;
+        casez_tmp_47 = entries_26_bp_index;
       5'b11011:
-        casez_tmp_47 = entries_27_is_fencei;
+        casez_tmp_47 = entries_27_bp_index;
       5'b11100:
-        casez_tmp_47 = entries_28_is_fencei;
+        casez_tmp_47 = entries_28_bp_index;
       5'b11101:
-        casez_tmp_47 = entries_29_is_fencei;
+        casez_tmp_47 = entries_29_bp_index;
       5'b11110:
-        casez_tmp_47 = entries_30_is_fencei;
+        casez_tmp_47 = entries_30_bp_index;
       default:
-        casez_tmp_47 = entries_31_is_fencei;
+        casez_tmp_47 = entries_31_bp_index;
     endcase
   end // always_comb
-  reg         casez_tmp_48;
+  reg  [3:0]  casez_tmp_48;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_48 = entries_0_state_state;
+        casez_tmp_48 = entries_0_ftq_idx;
       5'b00001:
-        casez_tmp_48 = entries_1_state_state;
+        casez_tmp_48 = entries_1_ftq_idx;
       5'b00010:
-        casez_tmp_48 = entries_2_state_state;
+        casez_tmp_48 = entries_2_ftq_idx;
       5'b00011:
-        casez_tmp_48 = entries_3_state_state;
+        casez_tmp_48 = entries_3_ftq_idx;
       5'b00100:
-        casez_tmp_48 = entries_4_state_state;
+        casez_tmp_48 = entries_4_ftq_idx;
       5'b00101:
-        casez_tmp_48 = entries_5_state_state;
+        casez_tmp_48 = entries_5_ftq_idx;
       5'b00110:
-        casez_tmp_48 = entries_6_state_state;
+        casez_tmp_48 = entries_6_ftq_idx;
       5'b00111:
-        casez_tmp_48 = entries_7_state_state;
+        casez_tmp_48 = entries_7_ftq_idx;
       5'b01000:
-        casez_tmp_48 = entries_8_state_state;
+        casez_tmp_48 = entries_8_ftq_idx;
       5'b01001:
-        casez_tmp_48 = entries_9_state_state;
+        casez_tmp_48 = entries_9_ftq_idx;
       5'b01010:
-        casez_tmp_48 = entries_10_state_state;
+        casez_tmp_48 = entries_10_ftq_idx;
       5'b01011:
-        casez_tmp_48 = entries_11_state_state;
+        casez_tmp_48 = entries_11_ftq_idx;
       5'b01100:
-        casez_tmp_48 = entries_12_state_state;
+        casez_tmp_48 = entries_12_ftq_idx;
       5'b01101:
-        casez_tmp_48 = entries_13_state_state;
+        casez_tmp_48 = entries_13_ftq_idx;
       5'b01110:
-        casez_tmp_48 = entries_14_state_state;
+        casez_tmp_48 = entries_14_ftq_idx;
       5'b01111:
-        casez_tmp_48 = entries_15_state_state;
+        casez_tmp_48 = entries_15_ftq_idx;
       5'b10000:
-        casez_tmp_48 = entries_16_state_state;
+        casez_tmp_48 = entries_16_ftq_idx;
       5'b10001:
-        casez_tmp_48 = entries_17_state_state;
+        casez_tmp_48 = entries_17_ftq_idx;
       5'b10010:
-        casez_tmp_48 = entries_18_state_state;
+        casez_tmp_48 = entries_18_ftq_idx;
       5'b10011:
-        casez_tmp_48 = entries_19_state_state;
+        casez_tmp_48 = entries_19_ftq_idx;
       5'b10100:
-        casez_tmp_48 = entries_20_state_state;
+        casez_tmp_48 = entries_20_ftq_idx;
       5'b10101:
-        casez_tmp_48 = entries_21_state_state;
+        casez_tmp_48 = entries_21_ftq_idx;
       5'b10110:
-        casez_tmp_48 = entries_22_state_state;
+        casez_tmp_48 = entries_22_ftq_idx;
       5'b10111:
-        casez_tmp_48 = entries_23_state_state;
+        casez_tmp_48 = entries_23_ftq_idx;
       5'b11000:
-        casez_tmp_48 = entries_24_state_state;
+        casez_tmp_48 = entries_24_ftq_idx;
       5'b11001:
-        casez_tmp_48 = entries_25_state_state;
+        casez_tmp_48 = entries_25_ftq_idx;
       5'b11010:
-        casez_tmp_48 = entries_26_state_state;
+        casez_tmp_48 = entries_26_ftq_idx;
       5'b11011:
-        casez_tmp_48 = entries_27_state_state;
+        casez_tmp_48 = entries_27_ftq_idx;
       5'b11100:
-        casez_tmp_48 = entries_28_state_state;
+        casez_tmp_48 = entries_28_ftq_idx;
       5'b11101:
-        casez_tmp_48 = entries_29_state_state;
+        casez_tmp_48 = entries_29_ftq_idx;
       5'b11110:
-        casez_tmp_48 = entries_30_state_state;
+        casez_tmp_48 = entries_30_ftq_idx;
       default:
-        casez_tmp_48 = entries_31_state_state;
+        casez_tmp_48 = entries_31_ftq_idx;
     endcase
   end // always_comb
-  reg  [96:0] casez_tmp_49;
+  reg  [7:0]  casez_tmp_49;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_49 = entries_0_bp_index;
+        casez_tmp_49 = entries_0_ftq_generation;
       5'b00001:
-        casez_tmp_49 = entries_1_bp_index;
+        casez_tmp_49 = entries_1_ftq_generation;
       5'b00010:
-        casez_tmp_49 = entries_2_bp_index;
+        casez_tmp_49 = entries_2_ftq_generation;
       5'b00011:
-        casez_tmp_49 = entries_3_bp_index;
+        casez_tmp_49 = entries_3_ftq_generation;
       5'b00100:
-        casez_tmp_49 = entries_4_bp_index;
+        casez_tmp_49 = entries_4_ftq_generation;
       5'b00101:
-        casez_tmp_49 = entries_5_bp_index;
+        casez_tmp_49 = entries_5_ftq_generation;
       5'b00110:
-        casez_tmp_49 = entries_6_bp_index;
+        casez_tmp_49 = entries_6_ftq_generation;
       5'b00111:
-        casez_tmp_49 = entries_7_bp_index;
+        casez_tmp_49 = entries_7_ftq_generation;
       5'b01000:
-        casez_tmp_49 = entries_8_bp_index;
+        casez_tmp_49 = entries_8_ftq_generation;
       5'b01001:
-        casez_tmp_49 = entries_9_bp_index;
+        casez_tmp_49 = entries_9_ftq_generation;
       5'b01010:
-        casez_tmp_49 = entries_10_bp_index;
+        casez_tmp_49 = entries_10_ftq_generation;
       5'b01011:
-        casez_tmp_49 = entries_11_bp_index;
+        casez_tmp_49 = entries_11_ftq_generation;
       5'b01100:
-        casez_tmp_49 = entries_12_bp_index;
+        casez_tmp_49 = entries_12_ftq_generation;
       5'b01101:
-        casez_tmp_49 = entries_13_bp_index;
+        casez_tmp_49 = entries_13_ftq_generation;
       5'b01110:
-        casez_tmp_49 = entries_14_bp_index;
+        casez_tmp_49 = entries_14_ftq_generation;
       5'b01111:
-        casez_tmp_49 = entries_15_bp_index;
+        casez_tmp_49 = entries_15_ftq_generation;
       5'b10000:
-        casez_tmp_49 = entries_16_bp_index;
+        casez_tmp_49 = entries_16_ftq_generation;
       5'b10001:
-        casez_tmp_49 = entries_17_bp_index;
+        casez_tmp_49 = entries_17_ftq_generation;
       5'b10010:
-        casez_tmp_49 = entries_18_bp_index;
+        casez_tmp_49 = entries_18_ftq_generation;
       5'b10011:
-        casez_tmp_49 = entries_19_bp_index;
+        casez_tmp_49 = entries_19_ftq_generation;
       5'b10100:
-        casez_tmp_49 = entries_20_bp_index;
+        casez_tmp_49 = entries_20_ftq_generation;
       5'b10101:
-        casez_tmp_49 = entries_21_bp_index;
+        casez_tmp_49 = entries_21_ftq_generation;
       5'b10110:
-        casez_tmp_49 = entries_22_bp_index;
+        casez_tmp_49 = entries_22_ftq_generation;
       5'b10111:
-        casez_tmp_49 = entries_23_bp_index;
+        casez_tmp_49 = entries_23_ftq_generation;
       5'b11000:
-        casez_tmp_49 = entries_24_bp_index;
+        casez_tmp_49 = entries_24_ftq_generation;
       5'b11001:
-        casez_tmp_49 = entries_25_bp_index;
+        casez_tmp_49 = entries_25_ftq_generation;
       5'b11010:
-        casez_tmp_49 = entries_26_bp_index;
+        casez_tmp_49 = entries_26_ftq_generation;
       5'b11011:
-        casez_tmp_49 = entries_27_bp_index;
+        casez_tmp_49 = entries_27_ftq_generation;
       5'b11100:
-        casez_tmp_49 = entries_28_bp_index;
+        casez_tmp_49 = entries_28_ftq_generation;
       5'b11101:
-        casez_tmp_49 = entries_29_bp_index;
+        casez_tmp_49 = entries_29_ftq_generation;
       5'b11110:
-        casez_tmp_49 = entries_30_bp_index;
+        casez_tmp_49 = entries_30_ftq_generation;
       default:
-        casez_tmp_49 = entries_31_bp_index;
+        casez_tmp_49 = entries_31_ftq_generation;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_50;
+  reg  [1:0]  casez_tmp_50;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_50 = entries_0_ftq_idx;
+        casez_tmp_50 = entries_0_cp_idx;
       5'b00001:
-        casez_tmp_50 = entries_1_ftq_idx;
+        casez_tmp_50 = entries_1_cp_idx;
       5'b00010:
-        casez_tmp_50 = entries_2_ftq_idx;
+        casez_tmp_50 = entries_2_cp_idx;
       5'b00011:
-        casez_tmp_50 = entries_3_ftq_idx;
+        casez_tmp_50 = entries_3_cp_idx;
       5'b00100:
-        casez_tmp_50 = entries_4_ftq_idx;
+        casez_tmp_50 = entries_4_cp_idx;
       5'b00101:
-        casez_tmp_50 = entries_5_ftq_idx;
+        casez_tmp_50 = entries_5_cp_idx;
       5'b00110:
-        casez_tmp_50 = entries_6_ftq_idx;
+        casez_tmp_50 = entries_6_cp_idx;
       5'b00111:
-        casez_tmp_50 = entries_7_ftq_idx;
+        casez_tmp_50 = entries_7_cp_idx;
       5'b01000:
-        casez_tmp_50 = entries_8_ftq_idx;
+        casez_tmp_50 = entries_8_cp_idx;
       5'b01001:
-        casez_tmp_50 = entries_9_ftq_idx;
+        casez_tmp_50 = entries_9_cp_idx;
       5'b01010:
-        casez_tmp_50 = entries_10_ftq_idx;
+        casez_tmp_50 = entries_10_cp_idx;
       5'b01011:
-        casez_tmp_50 = entries_11_ftq_idx;
+        casez_tmp_50 = entries_11_cp_idx;
       5'b01100:
-        casez_tmp_50 = entries_12_ftq_idx;
+        casez_tmp_50 = entries_12_cp_idx;
       5'b01101:
-        casez_tmp_50 = entries_13_ftq_idx;
+        casez_tmp_50 = entries_13_cp_idx;
       5'b01110:
-        casez_tmp_50 = entries_14_ftq_idx;
+        casez_tmp_50 = entries_14_cp_idx;
       5'b01111:
-        casez_tmp_50 = entries_15_ftq_idx;
+        casez_tmp_50 = entries_15_cp_idx;
       5'b10000:
-        casez_tmp_50 = entries_16_ftq_idx;
+        casez_tmp_50 = entries_16_cp_idx;
       5'b10001:
-        casez_tmp_50 = entries_17_ftq_idx;
+        casez_tmp_50 = entries_17_cp_idx;
       5'b10010:
-        casez_tmp_50 = entries_18_ftq_idx;
+        casez_tmp_50 = entries_18_cp_idx;
       5'b10011:
-        casez_tmp_50 = entries_19_ftq_idx;
+        casez_tmp_50 = entries_19_cp_idx;
       5'b10100:
-        casez_tmp_50 = entries_20_ftq_idx;
+        casez_tmp_50 = entries_20_cp_idx;
       5'b10101:
-        casez_tmp_50 = entries_21_ftq_idx;
+        casez_tmp_50 = entries_21_cp_idx;
       5'b10110:
-        casez_tmp_50 = entries_22_ftq_idx;
+        casez_tmp_50 = entries_22_cp_idx;
       5'b10111:
-        casez_tmp_50 = entries_23_ftq_idx;
+        casez_tmp_50 = entries_23_cp_idx;
       5'b11000:
-        casez_tmp_50 = entries_24_ftq_idx;
+        casez_tmp_50 = entries_24_cp_idx;
       5'b11001:
-        casez_tmp_50 = entries_25_ftq_idx;
+        casez_tmp_50 = entries_25_cp_idx;
       5'b11010:
-        casez_tmp_50 = entries_26_ftq_idx;
+        casez_tmp_50 = entries_26_cp_idx;
       5'b11011:
-        casez_tmp_50 = entries_27_ftq_idx;
+        casez_tmp_50 = entries_27_cp_idx;
       5'b11100:
-        casez_tmp_50 = entries_28_ftq_idx;
+        casez_tmp_50 = entries_28_cp_idx;
       5'b11101:
-        casez_tmp_50 = entries_29_ftq_idx;
+        casez_tmp_50 = entries_29_cp_idx;
       5'b11110:
-        casez_tmp_50 = entries_30_ftq_idx;
+        casez_tmp_50 = entries_30_cp_idx;
       default:
-        casez_tmp_50 = entries_31_ftq_idx;
+        casez_tmp_50 = entries_31_cp_idx;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_51;
+  reg         casez_tmp_51;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_51 = entries_0_ftq_generation;
+        casez_tmp_51 = entries_0_actual_taken;
       5'b00001:
-        casez_tmp_51 = entries_1_ftq_generation;
+        casez_tmp_51 = entries_1_actual_taken;
       5'b00010:
-        casez_tmp_51 = entries_2_ftq_generation;
+        casez_tmp_51 = entries_2_actual_taken;
       5'b00011:
-        casez_tmp_51 = entries_3_ftq_generation;
+        casez_tmp_51 = entries_3_actual_taken;
       5'b00100:
-        casez_tmp_51 = entries_4_ftq_generation;
+        casez_tmp_51 = entries_4_actual_taken;
       5'b00101:
-        casez_tmp_51 = entries_5_ftq_generation;
+        casez_tmp_51 = entries_5_actual_taken;
       5'b00110:
-        casez_tmp_51 = entries_6_ftq_generation;
+        casez_tmp_51 = entries_6_actual_taken;
       5'b00111:
-        casez_tmp_51 = entries_7_ftq_generation;
+        casez_tmp_51 = entries_7_actual_taken;
       5'b01000:
-        casez_tmp_51 = entries_8_ftq_generation;
+        casez_tmp_51 = entries_8_actual_taken;
       5'b01001:
-        casez_tmp_51 = entries_9_ftq_generation;
+        casez_tmp_51 = entries_9_actual_taken;
       5'b01010:
-        casez_tmp_51 = entries_10_ftq_generation;
+        casez_tmp_51 = entries_10_actual_taken;
       5'b01011:
-        casez_tmp_51 = entries_11_ftq_generation;
+        casez_tmp_51 = entries_11_actual_taken;
       5'b01100:
-        casez_tmp_51 = entries_12_ftq_generation;
+        casez_tmp_51 = entries_12_actual_taken;
       5'b01101:
-        casez_tmp_51 = entries_13_ftq_generation;
+        casez_tmp_51 = entries_13_actual_taken;
       5'b01110:
-        casez_tmp_51 = entries_14_ftq_generation;
+        casez_tmp_51 = entries_14_actual_taken;
       5'b01111:
-        casez_tmp_51 = entries_15_ftq_generation;
+        casez_tmp_51 = entries_15_actual_taken;
       5'b10000:
-        casez_tmp_51 = entries_16_ftq_generation;
+        casez_tmp_51 = entries_16_actual_taken;
       5'b10001:
-        casez_tmp_51 = entries_17_ftq_generation;
+        casez_tmp_51 = entries_17_actual_taken;
       5'b10010:
-        casez_tmp_51 = entries_18_ftq_generation;
+        casez_tmp_51 = entries_18_actual_taken;
       5'b10011:
-        casez_tmp_51 = entries_19_ftq_generation;
+        casez_tmp_51 = entries_19_actual_taken;
       5'b10100:
-        casez_tmp_51 = entries_20_ftq_generation;
+        casez_tmp_51 = entries_20_actual_taken;
       5'b10101:
-        casez_tmp_51 = entries_21_ftq_generation;
+        casez_tmp_51 = entries_21_actual_taken;
       5'b10110:
-        casez_tmp_51 = entries_22_ftq_generation;
+        casez_tmp_51 = entries_22_actual_taken;
       5'b10111:
-        casez_tmp_51 = entries_23_ftq_generation;
+        casez_tmp_51 = entries_23_actual_taken;
       5'b11000:
-        casez_tmp_51 = entries_24_ftq_generation;
+        casez_tmp_51 = entries_24_actual_taken;
       5'b11001:
-        casez_tmp_51 = entries_25_ftq_generation;
+        casez_tmp_51 = entries_25_actual_taken;
       5'b11010:
-        casez_tmp_51 = entries_26_ftq_generation;
+        casez_tmp_51 = entries_26_actual_taken;
       5'b11011:
-        casez_tmp_51 = entries_27_ftq_generation;
+        casez_tmp_51 = entries_27_actual_taken;
       5'b11100:
-        casez_tmp_51 = entries_28_ftq_generation;
+        casez_tmp_51 = entries_28_actual_taken;
       5'b11101:
-        casez_tmp_51 = entries_29_ftq_generation;
+        casez_tmp_51 = entries_29_actual_taken;
       5'b11110:
-        casez_tmp_51 = entries_30_ftq_generation;
+        casez_tmp_51 = entries_30_actual_taken;
       default:
-        casez_tmp_51 = entries_31_ftq_generation;
+        casez_tmp_51 = entries_31_actual_taken;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_52;
+  reg  [31:0] casez_tmp_52;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_52 = entries_0_cp_idx;
+        casez_tmp_52 = entries_0_actual_target;
       5'b00001:
-        casez_tmp_52 = entries_1_cp_idx;
+        casez_tmp_52 = entries_1_actual_target;
       5'b00010:
-        casez_tmp_52 = entries_2_cp_idx;
+        casez_tmp_52 = entries_2_actual_target;
       5'b00011:
-        casez_tmp_52 = entries_3_cp_idx;
+        casez_tmp_52 = entries_3_actual_target;
       5'b00100:
-        casez_tmp_52 = entries_4_cp_idx;
+        casez_tmp_52 = entries_4_actual_target;
       5'b00101:
-        casez_tmp_52 = entries_5_cp_idx;
+        casez_tmp_52 = entries_5_actual_target;
       5'b00110:
-        casez_tmp_52 = entries_6_cp_idx;
+        casez_tmp_52 = entries_6_actual_target;
       5'b00111:
-        casez_tmp_52 = entries_7_cp_idx;
+        casez_tmp_52 = entries_7_actual_target;
       5'b01000:
-        casez_tmp_52 = entries_8_cp_idx;
+        casez_tmp_52 = entries_8_actual_target;
       5'b01001:
-        casez_tmp_52 = entries_9_cp_idx;
+        casez_tmp_52 = entries_9_actual_target;
       5'b01010:
-        casez_tmp_52 = entries_10_cp_idx;
+        casez_tmp_52 = entries_10_actual_target;
       5'b01011:
-        casez_tmp_52 = entries_11_cp_idx;
+        casez_tmp_52 = entries_11_actual_target;
       5'b01100:
-        casez_tmp_52 = entries_12_cp_idx;
+        casez_tmp_52 = entries_12_actual_target;
       5'b01101:
-        casez_tmp_52 = entries_13_cp_idx;
+        casez_tmp_52 = entries_13_actual_target;
       5'b01110:
-        casez_tmp_52 = entries_14_cp_idx;
+        casez_tmp_52 = entries_14_actual_target;
       5'b01111:
-        casez_tmp_52 = entries_15_cp_idx;
+        casez_tmp_52 = entries_15_actual_target;
       5'b10000:
-        casez_tmp_52 = entries_16_cp_idx;
+        casez_tmp_52 = entries_16_actual_target;
       5'b10001:
-        casez_tmp_52 = entries_17_cp_idx;
+        casez_tmp_52 = entries_17_actual_target;
       5'b10010:
-        casez_tmp_52 = entries_18_cp_idx;
+        casez_tmp_52 = entries_18_actual_target;
       5'b10011:
-        casez_tmp_52 = entries_19_cp_idx;
+        casez_tmp_52 = entries_19_actual_target;
       5'b10100:
-        casez_tmp_52 = entries_20_cp_idx;
+        casez_tmp_52 = entries_20_actual_target;
       5'b10101:
-        casez_tmp_52 = entries_21_cp_idx;
+        casez_tmp_52 = entries_21_actual_target;
       5'b10110:
-        casez_tmp_52 = entries_22_cp_idx;
+        casez_tmp_52 = entries_22_actual_target;
       5'b10111:
-        casez_tmp_52 = entries_23_cp_idx;
+        casez_tmp_52 = entries_23_actual_target;
       5'b11000:
-        casez_tmp_52 = entries_24_cp_idx;
+        casez_tmp_52 = entries_24_actual_target;
       5'b11001:
-        casez_tmp_52 = entries_25_cp_idx;
+        casez_tmp_52 = entries_25_actual_target;
       5'b11010:
-        casez_tmp_52 = entries_26_cp_idx;
+        casez_tmp_52 = entries_26_actual_target;
       5'b11011:
-        casez_tmp_52 = entries_27_cp_idx;
+        casez_tmp_52 = entries_27_actual_target;
       5'b11100:
-        casez_tmp_52 = entries_28_cp_idx;
+        casez_tmp_52 = entries_28_actual_target;
       5'b11101:
-        casez_tmp_52 = entries_29_cp_idx;
+        casez_tmp_52 = entries_29_actual_target;
       5'b11110:
-        casez_tmp_52 = entries_30_cp_idx;
+        casez_tmp_52 = entries_30_actual_target;
       default:
-        casez_tmp_52 = entries_31_cp_idx;
+        casez_tmp_52 = entries_31_actual_target;
     endcase
   end // always_comb
-  reg         casez_tmp_53;
+  reg  [31:0] casez_tmp_53;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_53 = entries_0_actual_taken;
+        casez_tmp_53 = entries_0_mem_addr;
       5'b00001:
-        casez_tmp_53 = entries_1_actual_taken;
+        casez_tmp_53 = entries_1_mem_addr;
       5'b00010:
-        casez_tmp_53 = entries_2_actual_taken;
+        casez_tmp_53 = entries_2_mem_addr;
       5'b00011:
-        casez_tmp_53 = entries_3_actual_taken;
+        casez_tmp_53 = entries_3_mem_addr;
       5'b00100:
-        casez_tmp_53 = entries_4_actual_taken;
+        casez_tmp_53 = entries_4_mem_addr;
       5'b00101:
-        casez_tmp_53 = entries_5_actual_taken;
+        casez_tmp_53 = entries_5_mem_addr;
       5'b00110:
-        casez_tmp_53 = entries_6_actual_taken;
+        casez_tmp_53 = entries_6_mem_addr;
       5'b00111:
-        casez_tmp_53 = entries_7_actual_taken;
+        casez_tmp_53 = entries_7_mem_addr;
       5'b01000:
-        casez_tmp_53 = entries_8_actual_taken;
+        casez_tmp_53 = entries_8_mem_addr;
       5'b01001:
-        casez_tmp_53 = entries_9_actual_taken;
+        casez_tmp_53 = entries_9_mem_addr;
       5'b01010:
-        casez_tmp_53 = entries_10_actual_taken;
+        casez_tmp_53 = entries_10_mem_addr;
       5'b01011:
-        casez_tmp_53 = entries_11_actual_taken;
+        casez_tmp_53 = entries_11_mem_addr;
       5'b01100:
-        casez_tmp_53 = entries_12_actual_taken;
+        casez_tmp_53 = entries_12_mem_addr;
       5'b01101:
-        casez_tmp_53 = entries_13_actual_taken;
+        casez_tmp_53 = entries_13_mem_addr;
       5'b01110:
-        casez_tmp_53 = entries_14_actual_taken;
+        casez_tmp_53 = entries_14_mem_addr;
       5'b01111:
-        casez_tmp_53 = entries_15_actual_taken;
+        casez_tmp_53 = entries_15_mem_addr;
       5'b10000:
-        casez_tmp_53 = entries_16_actual_taken;
+        casez_tmp_53 = entries_16_mem_addr;
       5'b10001:
-        casez_tmp_53 = entries_17_actual_taken;
+        casez_tmp_53 = entries_17_mem_addr;
       5'b10010:
-        casez_tmp_53 = entries_18_actual_taken;
+        casez_tmp_53 = entries_18_mem_addr;
       5'b10011:
-        casez_tmp_53 = entries_19_actual_taken;
+        casez_tmp_53 = entries_19_mem_addr;
       5'b10100:
-        casez_tmp_53 = entries_20_actual_taken;
+        casez_tmp_53 = entries_20_mem_addr;
       5'b10101:
-        casez_tmp_53 = entries_21_actual_taken;
+        casez_tmp_53 = entries_21_mem_addr;
       5'b10110:
-        casez_tmp_53 = entries_22_actual_taken;
+        casez_tmp_53 = entries_22_mem_addr;
       5'b10111:
-        casez_tmp_53 = entries_23_actual_taken;
+        casez_tmp_53 = entries_23_mem_addr;
       5'b11000:
-        casez_tmp_53 = entries_24_actual_taken;
+        casez_tmp_53 = entries_24_mem_addr;
       5'b11001:
-        casez_tmp_53 = entries_25_actual_taken;
+        casez_tmp_53 = entries_25_mem_addr;
       5'b11010:
-        casez_tmp_53 = entries_26_actual_taken;
+        casez_tmp_53 = entries_26_mem_addr;
       5'b11011:
-        casez_tmp_53 = entries_27_actual_taken;
+        casez_tmp_53 = entries_27_mem_addr;
       5'b11100:
-        casez_tmp_53 = entries_28_actual_taken;
+        casez_tmp_53 = entries_28_mem_addr;
       5'b11101:
-        casez_tmp_53 = entries_29_actual_taken;
+        casez_tmp_53 = entries_29_mem_addr;
       5'b11110:
-        casez_tmp_53 = entries_30_actual_taken;
+        casez_tmp_53 = entries_30_mem_addr;
       default:
-        casez_tmp_53 = entries_31_actual_taken;
+        casez_tmp_53 = entries_31_mem_addr;
     endcase
   end // always_comb
   reg  [31:0] casez_tmp_54;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_54 = entries_0_actual_target;
+        casez_tmp_54 = entries_0_mem_wdata;
       5'b00001:
-        casez_tmp_54 = entries_1_actual_target;
+        casez_tmp_54 = entries_1_mem_wdata;
       5'b00010:
-        casez_tmp_54 = entries_2_actual_target;
+        casez_tmp_54 = entries_2_mem_wdata;
       5'b00011:
-        casez_tmp_54 = entries_3_actual_target;
+        casez_tmp_54 = entries_3_mem_wdata;
       5'b00100:
-        casez_tmp_54 = entries_4_actual_target;
+        casez_tmp_54 = entries_4_mem_wdata;
       5'b00101:
-        casez_tmp_54 = entries_5_actual_target;
+        casez_tmp_54 = entries_5_mem_wdata;
       5'b00110:
-        casez_tmp_54 = entries_6_actual_target;
+        casez_tmp_54 = entries_6_mem_wdata;
       5'b00111:
-        casez_tmp_54 = entries_7_actual_target;
+        casez_tmp_54 = entries_7_mem_wdata;
       5'b01000:
-        casez_tmp_54 = entries_8_actual_target;
+        casez_tmp_54 = entries_8_mem_wdata;
       5'b01001:
-        casez_tmp_54 = entries_9_actual_target;
+        casez_tmp_54 = entries_9_mem_wdata;
       5'b01010:
-        casez_tmp_54 = entries_10_actual_target;
+        casez_tmp_54 = entries_10_mem_wdata;
       5'b01011:
-        casez_tmp_54 = entries_11_actual_target;
+        casez_tmp_54 = entries_11_mem_wdata;
       5'b01100:
-        casez_tmp_54 = entries_12_actual_target;
+        casez_tmp_54 = entries_12_mem_wdata;
       5'b01101:
-        casez_tmp_54 = entries_13_actual_target;
+        casez_tmp_54 = entries_13_mem_wdata;
       5'b01110:
-        casez_tmp_54 = entries_14_actual_target;
+        casez_tmp_54 = entries_14_mem_wdata;
       5'b01111:
-        casez_tmp_54 = entries_15_actual_target;
+        casez_tmp_54 = entries_15_mem_wdata;
       5'b10000:
-        casez_tmp_54 = entries_16_actual_target;
+        casez_tmp_54 = entries_16_mem_wdata;
       5'b10001:
-        casez_tmp_54 = entries_17_actual_target;
+        casez_tmp_54 = entries_17_mem_wdata;
       5'b10010:
-        casez_tmp_54 = entries_18_actual_target;
+        casez_tmp_54 = entries_18_mem_wdata;
       5'b10011:
-        casez_tmp_54 = entries_19_actual_target;
+        casez_tmp_54 = entries_19_mem_wdata;
       5'b10100:
-        casez_tmp_54 = entries_20_actual_target;
+        casez_tmp_54 = entries_20_mem_wdata;
       5'b10101:
-        casez_tmp_54 = entries_21_actual_target;
+        casez_tmp_54 = entries_21_mem_wdata;
       5'b10110:
-        casez_tmp_54 = entries_22_actual_target;
+        casez_tmp_54 = entries_22_mem_wdata;
       5'b10111:
-        casez_tmp_54 = entries_23_actual_target;
+        casez_tmp_54 = entries_23_mem_wdata;
       5'b11000:
-        casez_tmp_54 = entries_24_actual_target;
+        casez_tmp_54 = entries_24_mem_wdata;
       5'b11001:
-        casez_tmp_54 = entries_25_actual_target;
+        casez_tmp_54 = entries_25_mem_wdata;
       5'b11010:
-        casez_tmp_54 = entries_26_actual_target;
+        casez_tmp_54 = entries_26_mem_wdata;
       5'b11011:
-        casez_tmp_54 = entries_27_actual_target;
+        casez_tmp_54 = entries_27_mem_wdata;
       5'b11100:
-        casez_tmp_54 = entries_28_actual_target;
+        casez_tmp_54 = entries_28_mem_wdata;
       5'b11101:
-        casez_tmp_54 = entries_29_actual_target;
+        casez_tmp_54 = entries_29_mem_wdata;
       5'b11110:
-        casez_tmp_54 = entries_30_actual_target;
+        casez_tmp_54 = entries_30_mem_wdata;
       default:
-        casez_tmp_54 = entries_31_actual_target;
+        casez_tmp_54 = entries_31_mem_wdata;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_55;
+  reg         casez_tmp_55;
   always_comb begin
     casez (_idx_T_2)
       5'b00000:
-        casez_tmp_55 = entries_0_mem_addr;
+        casez_tmp_55 = entries_0_addr_ready;
       5'b00001:
-        casez_tmp_55 = entries_1_mem_addr;
+        casez_tmp_55 = entries_1_addr_ready;
       5'b00010:
-        casez_tmp_55 = entries_2_mem_addr;
+        casez_tmp_55 = entries_2_addr_ready;
       5'b00011:
-        casez_tmp_55 = entries_3_mem_addr;
+        casez_tmp_55 = entries_3_addr_ready;
       5'b00100:
-        casez_tmp_55 = entries_4_mem_addr;
+        casez_tmp_55 = entries_4_addr_ready;
       5'b00101:
-        casez_tmp_55 = entries_5_mem_addr;
+        casez_tmp_55 = entries_5_addr_ready;
       5'b00110:
-        casez_tmp_55 = entries_6_mem_addr;
+        casez_tmp_55 = entries_6_addr_ready;
       5'b00111:
-        casez_tmp_55 = entries_7_mem_addr;
+        casez_tmp_55 = entries_7_addr_ready;
       5'b01000:
-        casez_tmp_55 = entries_8_mem_addr;
+        casez_tmp_55 = entries_8_addr_ready;
       5'b01001:
-        casez_tmp_55 = entries_9_mem_addr;
+        casez_tmp_55 = entries_9_addr_ready;
       5'b01010:
-        casez_tmp_55 = entries_10_mem_addr;
+        casez_tmp_55 = entries_10_addr_ready;
       5'b01011:
-        casez_tmp_55 = entries_11_mem_addr;
+        casez_tmp_55 = entries_11_addr_ready;
       5'b01100:
-        casez_tmp_55 = entries_12_mem_addr;
+        casez_tmp_55 = entries_12_addr_ready;
       5'b01101:
-        casez_tmp_55 = entries_13_mem_addr;
+        casez_tmp_55 = entries_13_addr_ready;
       5'b01110:
-        casez_tmp_55 = entries_14_mem_addr;
+        casez_tmp_55 = entries_14_addr_ready;
       5'b01111:
-        casez_tmp_55 = entries_15_mem_addr;
+        casez_tmp_55 = entries_15_addr_ready;
       5'b10000:
-        casez_tmp_55 = entries_16_mem_addr;
+        casez_tmp_55 = entries_16_addr_ready;
       5'b10001:
-        casez_tmp_55 = entries_17_mem_addr;
+        casez_tmp_55 = entries_17_addr_ready;
       5'b10010:
-        casez_tmp_55 = entries_18_mem_addr;
+        casez_tmp_55 = entries_18_addr_ready;
       5'b10011:
-        casez_tmp_55 = entries_19_mem_addr;
+        casez_tmp_55 = entries_19_addr_ready;
       5'b10100:
-        casez_tmp_55 = entries_20_mem_addr;
+        casez_tmp_55 = entries_20_addr_ready;
       5'b10101:
-        casez_tmp_55 = entries_21_mem_addr;
+        casez_tmp_55 = entries_21_addr_ready;
       5'b10110:
-        casez_tmp_55 = entries_22_mem_addr;
+        casez_tmp_55 = entries_22_addr_ready;
       5'b10111:
-        casez_tmp_55 = entries_23_mem_addr;
+        casez_tmp_55 = entries_23_addr_ready;
       5'b11000:
-        casez_tmp_55 = entries_24_mem_addr;
+        casez_tmp_55 = entries_24_addr_ready;
       5'b11001:
-        casez_tmp_55 = entries_25_mem_addr;
+        casez_tmp_55 = entries_25_addr_ready;
       5'b11010:
-        casez_tmp_55 = entries_26_mem_addr;
+        casez_tmp_55 = entries_26_addr_ready;
       5'b11011:
-        casez_tmp_55 = entries_27_mem_addr;
+        casez_tmp_55 = entries_27_addr_ready;
       5'b11100:
-        casez_tmp_55 = entries_28_mem_addr;
+        casez_tmp_55 = entries_28_addr_ready;
       5'b11101:
-        casez_tmp_55 = entries_29_mem_addr;
+        casez_tmp_55 = entries_29_addr_ready;
       5'b11110:
-        casez_tmp_55 = entries_30_mem_addr;
+        casez_tmp_55 = entries_30_addr_ready;
       default:
-        casez_tmp_55 = entries_31_mem_addr;
-    endcase
-  end // always_comb
-  reg  [31:0] casez_tmp_56;
-  always_comb begin
-    casez (_idx_T_2)
-      5'b00000:
-        casez_tmp_56 = entries_0_mem_wdata;
-      5'b00001:
-        casez_tmp_56 = entries_1_mem_wdata;
-      5'b00010:
-        casez_tmp_56 = entries_2_mem_wdata;
-      5'b00011:
-        casez_tmp_56 = entries_3_mem_wdata;
-      5'b00100:
-        casez_tmp_56 = entries_4_mem_wdata;
-      5'b00101:
-        casez_tmp_56 = entries_5_mem_wdata;
-      5'b00110:
-        casez_tmp_56 = entries_6_mem_wdata;
-      5'b00111:
-        casez_tmp_56 = entries_7_mem_wdata;
-      5'b01000:
-        casez_tmp_56 = entries_8_mem_wdata;
-      5'b01001:
-        casez_tmp_56 = entries_9_mem_wdata;
-      5'b01010:
-        casez_tmp_56 = entries_10_mem_wdata;
-      5'b01011:
-        casez_tmp_56 = entries_11_mem_wdata;
-      5'b01100:
-        casez_tmp_56 = entries_12_mem_wdata;
-      5'b01101:
-        casez_tmp_56 = entries_13_mem_wdata;
-      5'b01110:
-        casez_tmp_56 = entries_14_mem_wdata;
-      5'b01111:
-        casez_tmp_56 = entries_15_mem_wdata;
-      5'b10000:
-        casez_tmp_56 = entries_16_mem_wdata;
-      5'b10001:
-        casez_tmp_56 = entries_17_mem_wdata;
-      5'b10010:
-        casez_tmp_56 = entries_18_mem_wdata;
-      5'b10011:
-        casez_tmp_56 = entries_19_mem_wdata;
-      5'b10100:
-        casez_tmp_56 = entries_20_mem_wdata;
-      5'b10101:
-        casez_tmp_56 = entries_21_mem_wdata;
-      5'b10110:
-        casez_tmp_56 = entries_22_mem_wdata;
-      5'b10111:
-        casez_tmp_56 = entries_23_mem_wdata;
-      5'b11000:
-        casez_tmp_56 = entries_24_mem_wdata;
-      5'b11001:
-        casez_tmp_56 = entries_25_mem_wdata;
-      5'b11010:
-        casez_tmp_56 = entries_26_mem_wdata;
-      5'b11011:
-        casez_tmp_56 = entries_27_mem_wdata;
-      5'b11100:
-        casez_tmp_56 = entries_28_mem_wdata;
-      5'b11101:
-        casez_tmp_56 = entries_29_mem_wdata;
-      5'b11110:
-        casez_tmp_56 = entries_30_mem_wdata;
-      default:
-        casez_tmp_56 = entries_31_mem_wdata;
-    endcase
-  end // always_comb
-  reg         casez_tmp_57;
-  always_comb begin
-    casez (_idx_T_2)
-      5'b00000:
-        casez_tmp_57 = entries_0_addr_ready;
-      5'b00001:
-        casez_tmp_57 = entries_1_addr_ready;
-      5'b00010:
-        casez_tmp_57 = entries_2_addr_ready;
-      5'b00011:
-        casez_tmp_57 = entries_3_addr_ready;
-      5'b00100:
-        casez_tmp_57 = entries_4_addr_ready;
-      5'b00101:
-        casez_tmp_57 = entries_5_addr_ready;
-      5'b00110:
-        casez_tmp_57 = entries_6_addr_ready;
-      5'b00111:
-        casez_tmp_57 = entries_7_addr_ready;
-      5'b01000:
-        casez_tmp_57 = entries_8_addr_ready;
-      5'b01001:
-        casez_tmp_57 = entries_9_addr_ready;
-      5'b01010:
-        casez_tmp_57 = entries_10_addr_ready;
-      5'b01011:
-        casez_tmp_57 = entries_11_addr_ready;
-      5'b01100:
-        casez_tmp_57 = entries_12_addr_ready;
-      5'b01101:
-        casez_tmp_57 = entries_13_addr_ready;
-      5'b01110:
-        casez_tmp_57 = entries_14_addr_ready;
-      5'b01111:
-        casez_tmp_57 = entries_15_addr_ready;
-      5'b10000:
-        casez_tmp_57 = entries_16_addr_ready;
-      5'b10001:
-        casez_tmp_57 = entries_17_addr_ready;
-      5'b10010:
-        casez_tmp_57 = entries_18_addr_ready;
-      5'b10011:
-        casez_tmp_57 = entries_19_addr_ready;
-      5'b10100:
-        casez_tmp_57 = entries_20_addr_ready;
-      5'b10101:
-        casez_tmp_57 = entries_21_addr_ready;
-      5'b10110:
-        casez_tmp_57 = entries_22_addr_ready;
-      5'b10111:
-        casez_tmp_57 = entries_23_addr_ready;
-      5'b11000:
-        casez_tmp_57 = entries_24_addr_ready;
-      5'b11001:
-        casez_tmp_57 = entries_25_addr_ready;
-      5'b11010:
-        casez_tmp_57 = entries_26_addr_ready;
-      5'b11011:
-        casez_tmp_57 = entries_27_addr_ready;
-      5'b11100:
-        casez_tmp_57 = entries_28_addr_ready;
-      5'b11101:
-        casez_tmp_57 = entries_29_addr_ready;
-      5'b11110:
-        casez_tmp_57 = entries_30_addr_ready;
-      default:
-        casez_tmp_57 = entries_31_addr_ready;
+        casez_tmp_55 = entries_31_addr_ready;
     endcase
   end // always_comb
   wire        io_commit_valid_1_0 =
-    (|(count[5:1])) & casez_tmp_31
-    & (casez_tmp_32 | io_wb_fire_0 & io_wb_idx_0 == _idx_T_2 | io_wb_fire_1
+    (|(count[5:1])) & casez_tmp_30
+    & (casez_tmp_31 | io_wb_fire_0 & io_wb_idx_0 == _idx_T_2 | io_wb_fire_1
        & io_wb_idx_1 == _idx_T_2 | io_wb_fire_2 & io_wb_idx_2 == _idx_T_2 | io_wb_fire_3
        & io_wb_idx_3 == _idx_T_2 | io_ctrl_wb_fire & io_ctrl_wb_idx == _idx_T_2
        | io_store_wb_fire & io_store_wb_idx == _idx_T_2);
   wire [4:0]  _idx_T_4 = idx + 5'h2;
   wire [4:0]  _io_enq_idx_2_T = tail + 5'h2;
-  reg         casez_tmp_58;
+  reg         casez_tmp_56;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_58 = entries_0_valid;
+        casez_tmp_56 = entries_0_valid;
       5'b00001:
-        casez_tmp_58 = entries_1_valid;
+        casez_tmp_56 = entries_1_valid;
       5'b00010:
-        casez_tmp_58 = entries_2_valid;
+        casez_tmp_56 = entries_2_valid;
       5'b00011:
-        casez_tmp_58 = entries_3_valid;
+        casez_tmp_56 = entries_3_valid;
       5'b00100:
-        casez_tmp_58 = entries_4_valid;
+        casez_tmp_56 = entries_4_valid;
       5'b00101:
-        casez_tmp_58 = entries_5_valid;
+        casez_tmp_56 = entries_5_valid;
       5'b00110:
-        casez_tmp_58 = entries_6_valid;
+        casez_tmp_56 = entries_6_valid;
       5'b00111:
-        casez_tmp_58 = entries_7_valid;
+        casez_tmp_56 = entries_7_valid;
       5'b01000:
-        casez_tmp_58 = entries_8_valid;
+        casez_tmp_56 = entries_8_valid;
       5'b01001:
-        casez_tmp_58 = entries_9_valid;
+        casez_tmp_56 = entries_9_valid;
       5'b01010:
-        casez_tmp_58 = entries_10_valid;
+        casez_tmp_56 = entries_10_valid;
       5'b01011:
-        casez_tmp_58 = entries_11_valid;
+        casez_tmp_56 = entries_11_valid;
       5'b01100:
-        casez_tmp_58 = entries_12_valid;
+        casez_tmp_56 = entries_12_valid;
       5'b01101:
-        casez_tmp_58 = entries_13_valid;
+        casez_tmp_56 = entries_13_valid;
       5'b01110:
-        casez_tmp_58 = entries_14_valid;
+        casez_tmp_56 = entries_14_valid;
       5'b01111:
-        casez_tmp_58 = entries_15_valid;
+        casez_tmp_56 = entries_15_valid;
       5'b10000:
-        casez_tmp_58 = entries_16_valid;
+        casez_tmp_56 = entries_16_valid;
       5'b10001:
-        casez_tmp_58 = entries_17_valid;
+        casez_tmp_56 = entries_17_valid;
       5'b10010:
-        casez_tmp_58 = entries_18_valid;
+        casez_tmp_56 = entries_18_valid;
       5'b10011:
-        casez_tmp_58 = entries_19_valid;
+        casez_tmp_56 = entries_19_valid;
       5'b10100:
-        casez_tmp_58 = entries_20_valid;
+        casez_tmp_56 = entries_20_valid;
       5'b10101:
-        casez_tmp_58 = entries_21_valid;
+        casez_tmp_56 = entries_21_valid;
       5'b10110:
-        casez_tmp_58 = entries_22_valid;
+        casez_tmp_56 = entries_22_valid;
       5'b10111:
-        casez_tmp_58 = entries_23_valid;
+        casez_tmp_56 = entries_23_valid;
       5'b11000:
-        casez_tmp_58 = entries_24_valid;
+        casez_tmp_56 = entries_24_valid;
       5'b11001:
-        casez_tmp_58 = entries_25_valid;
+        casez_tmp_56 = entries_25_valid;
       5'b11010:
-        casez_tmp_58 = entries_26_valid;
+        casez_tmp_56 = entries_26_valid;
       5'b11011:
-        casez_tmp_58 = entries_27_valid;
+        casez_tmp_56 = entries_27_valid;
       5'b11100:
-        casez_tmp_58 = entries_28_valid;
+        casez_tmp_56 = entries_28_valid;
       5'b11101:
-        casez_tmp_58 = entries_29_valid;
+        casez_tmp_56 = entries_29_valid;
       5'b11110:
-        casez_tmp_58 = entries_30_valid;
+        casez_tmp_56 = entries_30_valid;
       default:
-        casez_tmp_58 = entries_31_valid;
+        casez_tmp_56 = entries_31_valid;
     endcase
   end // always_comb
-  reg         casez_tmp_59;
+  reg         casez_tmp_57;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_59 = entries_0_done;
+        casez_tmp_57 = entries_0_done;
       5'b00001:
-        casez_tmp_59 = entries_1_done;
+        casez_tmp_57 = entries_1_done;
       5'b00010:
-        casez_tmp_59 = entries_2_done;
+        casez_tmp_57 = entries_2_done;
       5'b00011:
-        casez_tmp_59 = entries_3_done;
+        casez_tmp_57 = entries_3_done;
       5'b00100:
-        casez_tmp_59 = entries_4_done;
+        casez_tmp_57 = entries_4_done;
       5'b00101:
-        casez_tmp_59 = entries_5_done;
+        casez_tmp_57 = entries_5_done;
       5'b00110:
-        casez_tmp_59 = entries_6_done;
+        casez_tmp_57 = entries_6_done;
       5'b00111:
-        casez_tmp_59 = entries_7_done;
+        casez_tmp_57 = entries_7_done;
       5'b01000:
-        casez_tmp_59 = entries_8_done;
+        casez_tmp_57 = entries_8_done;
       5'b01001:
-        casez_tmp_59 = entries_9_done;
+        casez_tmp_57 = entries_9_done;
       5'b01010:
-        casez_tmp_59 = entries_10_done;
+        casez_tmp_57 = entries_10_done;
       5'b01011:
-        casez_tmp_59 = entries_11_done;
+        casez_tmp_57 = entries_11_done;
       5'b01100:
-        casez_tmp_59 = entries_12_done;
+        casez_tmp_57 = entries_12_done;
       5'b01101:
-        casez_tmp_59 = entries_13_done;
+        casez_tmp_57 = entries_13_done;
       5'b01110:
-        casez_tmp_59 = entries_14_done;
+        casez_tmp_57 = entries_14_done;
       5'b01111:
-        casez_tmp_59 = entries_15_done;
+        casez_tmp_57 = entries_15_done;
       5'b10000:
-        casez_tmp_59 = entries_16_done;
+        casez_tmp_57 = entries_16_done;
       5'b10001:
-        casez_tmp_59 = entries_17_done;
+        casez_tmp_57 = entries_17_done;
       5'b10010:
-        casez_tmp_59 = entries_18_done;
+        casez_tmp_57 = entries_18_done;
       5'b10011:
-        casez_tmp_59 = entries_19_done;
+        casez_tmp_57 = entries_19_done;
       5'b10100:
-        casez_tmp_59 = entries_20_done;
+        casez_tmp_57 = entries_20_done;
       5'b10101:
-        casez_tmp_59 = entries_21_done;
+        casez_tmp_57 = entries_21_done;
       5'b10110:
-        casez_tmp_59 = entries_22_done;
+        casez_tmp_57 = entries_22_done;
       5'b10111:
-        casez_tmp_59 = entries_23_done;
+        casez_tmp_57 = entries_23_done;
       5'b11000:
-        casez_tmp_59 = entries_24_done;
+        casez_tmp_57 = entries_24_done;
       5'b11001:
-        casez_tmp_59 = entries_25_done;
+        casez_tmp_57 = entries_25_done;
       5'b11010:
-        casez_tmp_59 = entries_26_done;
+        casez_tmp_57 = entries_26_done;
       5'b11011:
-        casez_tmp_59 = entries_27_done;
+        casez_tmp_57 = entries_27_done;
       5'b11100:
-        casez_tmp_59 = entries_28_done;
+        casez_tmp_57 = entries_28_done;
       5'b11101:
-        casez_tmp_59 = entries_29_done;
+        casez_tmp_57 = entries_29_done;
       5'b11110:
-        casez_tmp_59 = entries_30_done;
+        casez_tmp_57 = entries_30_done;
       default:
-        casez_tmp_59 = entries_31_done;
+        casez_tmp_57 = entries_31_done;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_60;
+  reg  [31:0] casez_tmp_58;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_60 = entries_0_pc;
+        casez_tmp_58 = entries_0_pc;
       5'b00001:
-        casez_tmp_60 = entries_1_pc;
+        casez_tmp_58 = entries_1_pc;
       5'b00010:
-        casez_tmp_60 = entries_2_pc;
+        casez_tmp_58 = entries_2_pc;
       5'b00011:
-        casez_tmp_60 = entries_3_pc;
+        casez_tmp_58 = entries_3_pc;
       5'b00100:
-        casez_tmp_60 = entries_4_pc;
+        casez_tmp_58 = entries_4_pc;
       5'b00101:
-        casez_tmp_60 = entries_5_pc;
+        casez_tmp_58 = entries_5_pc;
       5'b00110:
-        casez_tmp_60 = entries_6_pc;
+        casez_tmp_58 = entries_6_pc;
       5'b00111:
-        casez_tmp_60 = entries_7_pc;
+        casez_tmp_58 = entries_7_pc;
       5'b01000:
-        casez_tmp_60 = entries_8_pc;
+        casez_tmp_58 = entries_8_pc;
       5'b01001:
-        casez_tmp_60 = entries_9_pc;
+        casez_tmp_58 = entries_9_pc;
       5'b01010:
-        casez_tmp_60 = entries_10_pc;
+        casez_tmp_58 = entries_10_pc;
       5'b01011:
-        casez_tmp_60 = entries_11_pc;
+        casez_tmp_58 = entries_11_pc;
       5'b01100:
-        casez_tmp_60 = entries_12_pc;
+        casez_tmp_58 = entries_12_pc;
       5'b01101:
-        casez_tmp_60 = entries_13_pc;
+        casez_tmp_58 = entries_13_pc;
       5'b01110:
-        casez_tmp_60 = entries_14_pc;
+        casez_tmp_58 = entries_14_pc;
       5'b01111:
-        casez_tmp_60 = entries_15_pc;
+        casez_tmp_58 = entries_15_pc;
       5'b10000:
-        casez_tmp_60 = entries_16_pc;
+        casez_tmp_58 = entries_16_pc;
       5'b10001:
-        casez_tmp_60 = entries_17_pc;
+        casez_tmp_58 = entries_17_pc;
       5'b10010:
-        casez_tmp_60 = entries_18_pc;
+        casez_tmp_58 = entries_18_pc;
       5'b10011:
-        casez_tmp_60 = entries_19_pc;
+        casez_tmp_58 = entries_19_pc;
       5'b10100:
-        casez_tmp_60 = entries_20_pc;
+        casez_tmp_58 = entries_20_pc;
       5'b10101:
-        casez_tmp_60 = entries_21_pc;
+        casez_tmp_58 = entries_21_pc;
       5'b10110:
-        casez_tmp_60 = entries_22_pc;
+        casez_tmp_58 = entries_22_pc;
       5'b10111:
-        casez_tmp_60 = entries_23_pc;
+        casez_tmp_58 = entries_23_pc;
       5'b11000:
-        casez_tmp_60 = entries_24_pc;
+        casez_tmp_58 = entries_24_pc;
       5'b11001:
-        casez_tmp_60 = entries_25_pc;
+        casez_tmp_58 = entries_25_pc;
       5'b11010:
-        casez_tmp_60 = entries_26_pc;
+        casez_tmp_58 = entries_26_pc;
       5'b11011:
-        casez_tmp_60 = entries_27_pc;
+        casez_tmp_58 = entries_27_pc;
       5'b11100:
-        casez_tmp_60 = entries_28_pc;
+        casez_tmp_58 = entries_28_pc;
       5'b11101:
-        casez_tmp_60 = entries_29_pc;
+        casez_tmp_58 = entries_29_pc;
       5'b11110:
-        casez_tmp_60 = entries_30_pc;
+        casez_tmp_58 = entries_30_pc;
       default:
-        casez_tmp_60 = entries_31_pc;
+        casez_tmp_58 = entries_31_pc;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_61;
+  reg  [31:0] casez_tmp_59;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_61 = entries_0_inst;
+        casez_tmp_59 = entries_0_inst;
       5'b00001:
-        casez_tmp_61 = entries_1_inst;
+        casez_tmp_59 = entries_1_inst;
       5'b00010:
-        casez_tmp_61 = entries_2_inst;
+        casez_tmp_59 = entries_2_inst;
       5'b00011:
-        casez_tmp_61 = entries_3_inst;
+        casez_tmp_59 = entries_3_inst;
       5'b00100:
-        casez_tmp_61 = entries_4_inst;
+        casez_tmp_59 = entries_4_inst;
       5'b00101:
-        casez_tmp_61 = entries_5_inst;
+        casez_tmp_59 = entries_5_inst;
       5'b00110:
-        casez_tmp_61 = entries_6_inst;
+        casez_tmp_59 = entries_6_inst;
       5'b00111:
-        casez_tmp_61 = entries_7_inst;
+        casez_tmp_59 = entries_7_inst;
       5'b01000:
-        casez_tmp_61 = entries_8_inst;
+        casez_tmp_59 = entries_8_inst;
       5'b01001:
-        casez_tmp_61 = entries_9_inst;
+        casez_tmp_59 = entries_9_inst;
       5'b01010:
-        casez_tmp_61 = entries_10_inst;
+        casez_tmp_59 = entries_10_inst;
       5'b01011:
-        casez_tmp_61 = entries_11_inst;
+        casez_tmp_59 = entries_11_inst;
       5'b01100:
-        casez_tmp_61 = entries_12_inst;
+        casez_tmp_59 = entries_12_inst;
       5'b01101:
-        casez_tmp_61 = entries_13_inst;
+        casez_tmp_59 = entries_13_inst;
       5'b01110:
-        casez_tmp_61 = entries_14_inst;
+        casez_tmp_59 = entries_14_inst;
       5'b01111:
-        casez_tmp_61 = entries_15_inst;
+        casez_tmp_59 = entries_15_inst;
       5'b10000:
-        casez_tmp_61 = entries_16_inst;
+        casez_tmp_59 = entries_16_inst;
       5'b10001:
-        casez_tmp_61 = entries_17_inst;
+        casez_tmp_59 = entries_17_inst;
       5'b10010:
-        casez_tmp_61 = entries_18_inst;
+        casez_tmp_59 = entries_18_inst;
       5'b10011:
-        casez_tmp_61 = entries_19_inst;
+        casez_tmp_59 = entries_19_inst;
       5'b10100:
-        casez_tmp_61 = entries_20_inst;
+        casez_tmp_59 = entries_20_inst;
       5'b10101:
-        casez_tmp_61 = entries_21_inst;
+        casez_tmp_59 = entries_21_inst;
       5'b10110:
-        casez_tmp_61 = entries_22_inst;
+        casez_tmp_59 = entries_22_inst;
       5'b10111:
-        casez_tmp_61 = entries_23_inst;
+        casez_tmp_59 = entries_23_inst;
       5'b11000:
-        casez_tmp_61 = entries_24_inst;
+        casez_tmp_59 = entries_24_inst;
       5'b11001:
-        casez_tmp_61 = entries_25_inst;
+        casez_tmp_59 = entries_25_inst;
       5'b11010:
-        casez_tmp_61 = entries_26_inst;
+        casez_tmp_59 = entries_26_inst;
       5'b11011:
-        casez_tmp_61 = entries_27_inst;
+        casez_tmp_59 = entries_27_inst;
       5'b11100:
-        casez_tmp_61 = entries_28_inst;
+        casez_tmp_59 = entries_28_inst;
       5'b11101:
-        casez_tmp_61 = entries_29_inst;
+        casez_tmp_59 = entries_29_inst;
       5'b11110:
-        casez_tmp_61 = entries_30_inst;
+        casez_tmp_59 = entries_30_inst;
       default:
-        casez_tmp_61 = entries_31_inst;
+        casez_tmp_59 = entries_31_inst;
+    endcase
+  end // always_comb
+  reg         casez_tmp_60;
+  always_comb begin
+    casez (_idx_T_4)
+      5'b00000:
+        casez_tmp_60 = entries_0_reg_write;
+      5'b00001:
+        casez_tmp_60 = entries_1_reg_write;
+      5'b00010:
+        casez_tmp_60 = entries_2_reg_write;
+      5'b00011:
+        casez_tmp_60 = entries_3_reg_write;
+      5'b00100:
+        casez_tmp_60 = entries_4_reg_write;
+      5'b00101:
+        casez_tmp_60 = entries_5_reg_write;
+      5'b00110:
+        casez_tmp_60 = entries_6_reg_write;
+      5'b00111:
+        casez_tmp_60 = entries_7_reg_write;
+      5'b01000:
+        casez_tmp_60 = entries_8_reg_write;
+      5'b01001:
+        casez_tmp_60 = entries_9_reg_write;
+      5'b01010:
+        casez_tmp_60 = entries_10_reg_write;
+      5'b01011:
+        casez_tmp_60 = entries_11_reg_write;
+      5'b01100:
+        casez_tmp_60 = entries_12_reg_write;
+      5'b01101:
+        casez_tmp_60 = entries_13_reg_write;
+      5'b01110:
+        casez_tmp_60 = entries_14_reg_write;
+      5'b01111:
+        casez_tmp_60 = entries_15_reg_write;
+      5'b10000:
+        casez_tmp_60 = entries_16_reg_write;
+      5'b10001:
+        casez_tmp_60 = entries_17_reg_write;
+      5'b10010:
+        casez_tmp_60 = entries_18_reg_write;
+      5'b10011:
+        casez_tmp_60 = entries_19_reg_write;
+      5'b10100:
+        casez_tmp_60 = entries_20_reg_write;
+      5'b10101:
+        casez_tmp_60 = entries_21_reg_write;
+      5'b10110:
+        casez_tmp_60 = entries_22_reg_write;
+      5'b10111:
+        casez_tmp_60 = entries_23_reg_write;
+      5'b11000:
+        casez_tmp_60 = entries_24_reg_write;
+      5'b11001:
+        casez_tmp_60 = entries_25_reg_write;
+      5'b11010:
+        casez_tmp_60 = entries_26_reg_write;
+      5'b11011:
+        casez_tmp_60 = entries_27_reg_write;
+      5'b11100:
+        casez_tmp_60 = entries_28_reg_write;
+      5'b11101:
+        casez_tmp_60 = entries_29_reg_write;
+      5'b11110:
+        casez_tmp_60 = entries_30_reg_write;
+      default:
+        casez_tmp_60 = entries_31_reg_write;
+    endcase
+  end // always_comb
+  reg         casez_tmp_61;
+  always_comb begin
+    casez (_idx_T_4)
+      5'b00000:
+        casez_tmp_61 = entries_0_csr_write;
+      5'b00001:
+        casez_tmp_61 = entries_1_csr_write;
+      5'b00010:
+        casez_tmp_61 = entries_2_csr_write;
+      5'b00011:
+        casez_tmp_61 = entries_3_csr_write;
+      5'b00100:
+        casez_tmp_61 = entries_4_csr_write;
+      5'b00101:
+        casez_tmp_61 = entries_5_csr_write;
+      5'b00110:
+        casez_tmp_61 = entries_6_csr_write;
+      5'b00111:
+        casez_tmp_61 = entries_7_csr_write;
+      5'b01000:
+        casez_tmp_61 = entries_8_csr_write;
+      5'b01001:
+        casez_tmp_61 = entries_9_csr_write;
+      5'b01010:
+        casez_tmp_61 = entries_10_csr_write;
+      5'b01011:
+        casez_tmp_61 = entries_11_csr_write;
+      5'b01100:
+        casez_tmp_61 = entries_12_csr_write;
+      5'b01101:
+        casez_tmp_61 = entries_13_csr_write;
+      5'b01110:
+        casez_tmp_61 = entries_14_csr_write;
+      5'b01111:
+        casez_tmp_61 = entries_15_csr_write;
+      5'b10000:
+        casez_tmp_61 = entries_16_csr_write;
+      5'b10001:
+        casez_tmp_61 = entries_17_csr_write;
+      5'b10010:
+        casez_tmp_61 = entries_18_csr_write;
+      5'b10011:
+        casez_tmp_61 = entries_19_csr_write;
+      5'b10100:
+        casez_tmp_61 = entries_20_csr_write;
+      5'b10101:
+        casez_tmp_61 = entries_21_csr_write;
+      5'b10110:
+        casez_tmp_61 = entries_22_csr_write;
+      5'b10111:
+        casez_tmp_61 = entries_23_csr_write;
+      5'b11000:
+        casez_tmp_61 = entries_24_csr_write;
+      5'b11001:
+        casez_tmp_61 = entries_25_csr_write;
+      5'b11010:
+        casez_tmp_61 = entries_26_csr_write;
+      5'b11011:
+        casez_tmp_61 = entries_27_csr_write;
+      5'b11100:
+        casez_tmp_61 = entries_28_csr_write;
+      5'b11101:
+        casez_tmp_61 = entries_29_csr_write;
+      5'b11110:
+        casez_tmp_61 = entries_30_csr_write;
+      default:
+        casez_tmp_61 = entries_31_csr_write;
     endcase
   end // always_comb
   reg         casez_tmp_62;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_62 = entries_0_reg_write;
+        casez_tmp_62 = entries_0_mem_valid;
       5'b00001:
-        casez_tmp_62 = entries_1_reg_write;
+        casez_tmp_62 = entries_1_mem_valid;
       5'b00010:
-        casez_tmp_62 = entries_2_reg_write;
+        casez_tmp_62 = entries_2_mem_valid;
       5'b00011:
-        casez_tmp_62 = entries_3_reg_write;
+        casez_tmp_62 = entries_3_mem_valid;
       5'b00100:
-        casez_tmp_62 = entries_4_reg_write;
+        casez_tmp_62 = entries_4_mem_valid;
       5'b00101:
-        casez_tmp_62 = entries_5_reg_write;
+        casez_tmp_62 = entries_5_mem_valid;
       5'b00110:
-        casez_tmp_62 = entries_6_reg_write;
+        casez_tmp_62 = entries_6_mem_valid;
       5'b00111:
-        casez_tmp_62 = entries_7_reg_write;
+        casez_tmp_62 = entries_7_mem_valid;
       5'b01000:
-        casez_tmp_62 = entries_8_reg_write;
+        casez_tmp_62 = entries_8_mem_valid;
       5'b01001:
-        casez_tmp_62 = entries_9_reg_write;
+        casez_tmp_62 = entries_9_mem_valid;
       5'b01010:
-        casez_tmp_62 = entries_10_reg_write;
+        casez_tmp_62 = entries_10_mem_valid;
       5'b01011:
-        casez_tmp_62 = entries_11_reg_write;
+        casez_tmp_62 = entries_11_mem_valid;
       5'b01100:
-        casez_tmp_62 = entries_12_reg_write;
+        casez_tmp_62 = entries_12_mem_valid;
       5'b01101:
-        casez_tmp_62 = entries_13_reg_write;
+        casez_tmp_62 = entries_13_mem_valid;
       5'b01110:
-        casez_tmp_62 = entries_14_reg_write;
+        casez_tmp_62 = entries_14_mem_valid;
       5'b01111:
-        casez_tmp_62 = entries_15_reg_write;
+        casez_tmp_62 = entries_15_mem_valid;
       5'b10000:
-        casez_tmp_62 = entries_16_reg_write;
+        casez_tmp_62 = entries_16_mem_valid;
       5'b10001:
-        casez_tmp_62 = entries_17_reg_write;
+        casez_tmp_62 = entries_17_mem_valid;
       5'b10010:
-        casez_tmp_62 = entries_18_reg_write;
+        casez_tmp_62 = entries_18_mem_valid;
       5'b10011:
-        casez_tmp_62 = entries_19_reg_write;
+        casez_tmp_62 = entries_19_mem_valid;
       5'b10100:
-        casez_tmp_62 = entries_20_reg_write;
+        casez_tmp_62 = entries_20_mem_valid;
       5'b10101:
-        casez_tmp_62 = entries_21_reg_write;
+        casez_tmp_62 = entries_21_mem_valid;
       5'b10110:
-        casez_tmp_62 = entries_22_reg_write;
+        casez_tmp_62 = entries_22_mem_valid;
       5'b10111:
-        casez_tmp_62 = entries_23_reg_write;
+        casez_tmp_62 = entries_23_mem_valid;
       5'b11000:
-        casez_tmp_62 = entries_24_reg_write;
+        casez_tmp_62 = entries_24_mem_valid;
       5'b11001:
-        casez_tmp_62 = entries_25_reg_write;
+        casez_tmp_62 = entries_25_mem_valid;
       5'b11010:
-        casez_tmp_62 = entries_26_reg_write;
+        casez_tmp_62 = entries_26_mem_valid;
       5'b11011:
-        casez_tmp_62 = entries_27_reg_write;
+        casez_tmp_62 = entries_27_mem_valid;
       5'b11100:
-        casez_tmp_62 = entries_28_reg_write;
+        casez_tmp_62 = entries_28_mem_valid;
       5'b11101:
-        casez_tmp_62 = entries_29_reg_write;
+        casez_tmp_62 = entries_29_mem_valid;
       5'b11110:
-        casez_tmp_62 = entries_30_reg_write;
+        casez_tmp_62 = entries_30_mem_valid;
       default:
-        casez_tmp_62 = entries_31_reg_write;
+        casez_tmp_62 = entries_31_mem_valid;
     endcase
   end // always_comb
   reg         casez_tmp_63;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_63 = entries_0_csr_write;
+        casez_tmp_63 = entries_0_mem_write;
       5'b00001:
-        casez_tmp_63 = entries_1_csr_write;
+        casez_tmp_63 = entries_1_mem_write;
       5'b00010:
-        casez_tmp_63 = entries_2_csr_write;
+        casez_tmp_63 = entries_2_mem_write;
       5'b00011:
-        casez_tmp_63 = entries_3_csr_write;
+        casez_tmp_63 = entries_3_mem_write;
       5'b00100:
-        casez_tmp_63 = entries_4_csr_write;
+        casez_tmp_63 = entries_4_mem_write;
       5'b00101:
-        casez_tmp_63 = entries_5_csr_write;
+        casez_tmp_63 = entries_5_mem_write;
       5'b00110:
-        casez_tmp_63 = entries_6_csr_write;
+        casez_tmp_63 = entries_6_mem_write;
       5'b00111:
-        casez_tmp_63 = entries_7_csr_write;
+        casez_tmp_63 = entries_7_mem_write;
       5'b01000:
-        casez_tmp_63 = entries_8_csr_write;
+        casez_tmp_63 = entries_8_mem_write;
       5'b01001:
-        casez_tmp_63 = entries_9_csr_write;
+        casez_tmp_63 = entries_9_mem_write;
       5'b01010:
-        casez_tmp_63 = entries_10_csr_write;
+        casez_tmp_63 = entries_10_mem_write;
       5'b01011:
-        casez_tmp_63 = entries_11_csr_write;
+        casez_tmp_63 = entries_11_mem_write;
       5'b01100:
-        casez_tmp_63 = entries_12_csr_write;
+        casez_tmp_63 = entries_12_mem_write;
       5'b01101:
-        casez_tmp_63 = entries_13_csr_write;
+        casez_tmp_63 = entries_13_mem_write;
       5'b01110:
-        casez_tmp_63 = entries_14_csr_write;
+        casez_tmp_63 = entries_14_mem_write;
       5'b01111:
-        casez_tmp_63 = entries_15_csr_write;
+        casez_tmp_63 = entries_15_mem_write;
       5'b10000:
-        casez_tmp_63 = entries_16_csr_write;
+        casez_tmp_63 = entries_16_mem_write;
       5'b10001:
-        casez_tmp_63 = entries_17_csr_write;
+        casez_tmp_63 = entries_17_mem_write;
       5'b10010:
-        casez_tmp_63 = entries_18_csr_write;
+        casez_tmp_63 = entries_18_mem_write;
       5'b10011:
-        casez_tmp_63 = entries_19_csr_write;
+        casez_tmp_63 = entries_19_mem_write;
       5'b10100:
-        casez_tmp_63 = entries_20_csr_write;
+        casez_tmp_63 = entries_20_mem_write;
       5'b10101:
-        casez_tmp_63 = entries_21_csr_write;
+        casez_tmp_63 = entries_21_mem_write;
       5'b10110:
-        casez_tmp_63 = entries_22_csr_write;
+        casez_tmp_63 = entries_22_mem_write;
       5'b10111:
-        casez_tmp_63 = entries_23_csr_write;
+        casez_tmp_63 = entries_23_mem_write;
       5'b11000:
-        casez_tmp_63 = entries_24_csr_write;
+        casez_tmp_63 = entries_24_mem_write;
       5'b11001:
-        casez_tmp_63 = entries_25_csr_write;
+        casez_tmp_63 = entries_25_mem_write;
       5'b11010:
-        casez_tmp_63 = entries_26_csr_write;
+        casez_tmp_63 = entries_26_mem_write;
       5'b11011:
-        casez_tmp_63 = entries_27_csr_write;
+        casez_tmp_63 = entries_27_mem_write;
       5'b11100:
-        casez_tmp_63 = entries_28_csr_write;
+        casez_tmp_63 = entries_28_mem_write;
       5'b11101:
-        casez_tmp_63 = entries_29_csr_write;
+        casez_tmp_63 = entries_29_mem_write;
       5'b11110:
-        casez_tmp_63 = entries_30_csr_write;
+        casez_tmp_63 = entries_30_mem_write;
       default:
-        casez_tmp_63 = entries_31_csr_write;
+        casez_tmp_63 = entries_31_mem_write;
     endcase
   end // always_comb
-  reg         casez_tmp_64;
+  reg  [7:0]  casez_tmp_64;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_64 = entries_0_mem_valid;
+        casez_tmp_64 = entries_0_mem_wmask;
       5'b00001:
-        casez_tmp_64 = entries_1_mem_valid;
+        casez_tmp_64 = entries_1_mem_wmask;
       5'b00010:
-        casez_tmp_64 = entries_2_mem_valid;
+        casez_tmp_64 = entries_2_mem_wmask;
       5'b00011:
-        casez_tmp_64 = entries_3_mem_valid;
+        casez_tmp_64 = entries_3_mem_wmask;
       5'b00100:
-        casez_tmp_64 = entries_4_mem_valid;
+        casez_tmp_64 = entries_4_mem_wmask;
       5'b00101:
-        casez_tmp_64 = entries_5_mem_valid;
+        casez_tmp_64 = entries_5_mem_wmask;
       5'b00110:
-        casez_tmp_64 = entries_6_mem_valid;
+        casez_tmp_64 = entries_6_mem_wmask;
       5'b00111:
-        casez_tmp_64 = entries_7_mem_valid;
+        casez_tmp_64 = entries_7_mem_wmask;
       5'b01000:
-        casez_tmp_64 = entries_8_mem_valid;
+        casez_tmp_64 = entries_8_mem_wmask;
       5'b01001:
-        casez_tmp_64 = entries_9_mem_valid;
+        casez_tmp_64 = entries_9_mem_wmask;
       5'b01010:
-        casez_tmp_64 = entries_10_mem_valid;
+        casez_tmp_64 = entries_10_mem_wmask;
       5'b01011:
-        casez_tmp_64 = entries_11_mem_valid;
+        casez_tmp_64 = entries_11_mem_wmask;
       5'b01100:
-        casez_tmp_64 = entries_12_mem_valid;
+        casez_tmp_64 = entries_12_mem_wmask;
       5'b01101:
-        casez_tmp_64 = entries_13_mem_valid;
+        casez_tmp_64 = entries_13_mem_wmask;
       5'b01110:
-        casez_tmp_64 = entries_14_mem_valid;
+        casez_tmp_64 = entries_14_mem_wmask;
       5'b01111:
-        casez_tmp_64 = entries_15_mem_valid;
+        casez_tmp_64 = entries_15_mem_wmask;
       5'b10000:
-        casez_tmp_64 = entries_16_mem_valid;
+        casez_tmp_64 = entries_16_mem_wmask;
       5'b10001:
-        casez_tmp_64 = entries_17_mem_valid;
+        casez_tmp_64 = entries_17_mem_wmask;
       5'b10010:
-        casez_tmp_64 = entries_18_mem_valid;
+        casez_tmp_64 = entries_18_mem_wmask;
       5'b10011:
-        casez_tmp_64 = entries_19_mem_valid;
+        casez_tmp_64 = entries_19_mem_wmask;
       5'b10100:
-        casez_tmp_64 = entries_20_mem_valid;
+        casez_tmp_64 = entries_20_mem_wmask;
       5'b10101:
-        casez_tmp_64 = entries_21_mem_valid;
+        casez_tmp_64 = entries_21_mem_wmask;
       5'b10110:
-        casez_tmp_64 = entries_22_mem_valid;
+        casez_tmp_64 = entries_22_mem_wmask;
       5'b10111:
-        casez_tmp_64 = entries_23_mem_valid;
+        casez_tmp_64 = entries_23_mem_wmask;
       5'b11000:
-        casez_tmp_64 = entries_24_mem_valid;
+        casez_tmp_64 = entries_24_mem_wmask;
       5'b11001:
-        casez_tmp_64 = entries_25_mem_valid;
+        casez_tmp_64 = entries_25_mem_wmask;
       5'b11010:
-        casez_tmp_64 = entries_26_mem_valid;
+        casez_tmp_64 = entries_26_mem_wmask;
       5'b11011:
-        casez_tmp_64 = entries_27_mem_valid;
+        casez_tmp_64 = entries_27_mem_wmask;
       5'b11100:
-        casez_tmp_64 = entries_28_mem_valid;
+        casez_tmp_64 = entries_28_mem_wmask;
       5'b11101:
-        casez_tmp_64 = entries_29_mem_valid;
+        casez_tmp_64 = entries_29_mem_wmask;
       5'b11110:
-        casez_tmp_64 = entries_30_mem_valid;
+        casez_tmp_64 = entries_30_mem_wmask;
       default:
-        casez_tmp_64 = entries_31_mem_valid;
+        casez_tmp_64 = entries_31_mem_wmask;
     endcase
   end // always_comb
-  reg         casez_tmp_65;
+  reg  [3:0]  casez_tmp_65;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_65 = entries_0_mem_write;
+        casez_tmp_65 = entries_0_jump;
       5'b00001:
-        casez_tmp_65 = entries_1_mem_write;
+        casez_tmp_65 = entries_1_jump;
       5'b00010:
-        casez_tmp_65 = entries_2_mem_write;
+        casez_tmp_65 = entries_2_jump;
       5'b00011:
-        casez_tmp_65 = entries_3_mem_write;
+        casez_tmp_65 = entries_3_jump;
       5'b00100:
-        casez_tmp_65 = entries_4_mem_write;
+        casez_tmp_65 = entries_4_jump;
       5'b00101:
-        casez_tmp_65 = entries_5_mem_write;
+        casez_tmp_65 = entries_5_jump;
       5'b00110:
-        casez_tmp_65 = entries_6_mem_write;
+        casez_tmp_65 = entries_6_jump;
       5'b00111:
-        casez_tmp_65 = entries_7_mem_write;
+        casez_tmp_65 = entries_7_jump;
       5'b01000:
-        casez_tmp_65 = entries_8_mem_write;
+        casez_tmp_65 = entries_8_jump;
       5'b01001:
-        casez_tmp_65 = entries_9_mem_write;
+        casez_tmp_65 = entries_9_jump;
       5'b01010:
-        casez_tmp_65 = entries_10_mem_write;
+        casez_tmp_65 = entries_10_jump;
       5'b01011:
-        casez_tmp_65 = entries_11_mem_write;
+        casez_tmp_65 = entries_11_jump;
       5'b01100:
-        casez_tmp_65 = entries_12_mem_write;
+        casez_tmp_65 = entries_12_jump;
       5'b01101:
-        casez_tmp_65 = entries_13_mem_write;
+        casez_tmp_65 = entries_13_jump;
       5'b01110:
-        casez_tmp_65 = entries_14_mem_write;
+        casez_tmp_65 = entries_14_jump;
       5'b01111:
-        casez_tmp_65 = entries_15_mem_write;
+        casez_tmp_65 = entries_15_jump;
       5'b10000:
-        casez_tmp_65 = entries_16_mem_write;
+        casez_tmp_65 = entries_16_jump;
       5'b10001:
-        casez_tmp_65 = entries_17_mem_write;
+        casez_tmp_65 = entries_17_jump;
       5'b10010:
-        casez_tmp_65 = entries_18_mem_write;
+        casez_tmp_65 = entries_18_jump;
       5'b10011:
-        casez_tmp_65 = entries_19_mem_write;
+        casez_tmp_65 = entries_19_jump;
       5'b10100:
-        casez_tmp_65 = entries_20_mem_write;
+        casez_tmp_65 = entries_20_jump;
       5'b10101:
-        casez_tmp_65 = entries_21_mem_write;
+        casez_tmp_65 = entries_21_jump;
       5'b10110:
-        casez_tmp_65 = entries_22_mem_write;
+        casez_tmp_65 = entries_22_jump;
       5'b10111:
-        casez_tmp_65 = entries_23_mem_write;
+        casez_tmp_65 = entries_23_jump;
       5'b11000:
-        casez_tmp_65 = entries_24_mem_write;
+        casez_tmp_65 = entries_24_jump;
       5'b11001:
-        casez_tmp_65 = entries_25_mem_write;
+        casez_tmp_65 = entries_25_jump;
       5'b11010:
-        casez_tmp_65 = entries_26_mem_write;
+        casez_tmp_65 = entries_26_jump;
       5'b11011:
-        casez_tmp_65 = entries_27_mem_write;
+        casez_tmp_65 = entries_27_jump;
       5'b11100:
-        casez_tmp_65 = entries_28_mem_write;
+        casez_tmp_65 = entries_28_jump;
       5'b11101:
-        casez_tmp_65 = entries_29_mem_write;
+        casez_tmp_65 = entries_29_jump;
       5'b11110:
-        casez_tmp_65 = entries_30_mem_write;
+        casez_tmp_65 = entries_30_jump;
       default:
-        casez_tmp_65 = entries_31_mem_write;
+        casez_tmp_65 = entries_31_jump;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_66;
+  reg  [4:0]  casez_tmp_66;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_66 = entries_0_mem_wmask;
+        casez_tmp_66 = entries_0_arch_rd;
       5'b00001:
-        casez_tmp_66 = entries_1_mem_wmask;
+        casez_tmp_66 = entries_1_arch_rd;
       5'b00010:
-        casez_tmp_66 = entries_2_mem_wmask;
+        casez_tmp_66 = entries_2_arch_rd;
       5'b00011:
-        casez_tmp_66 = entries_3_mem_wmask;
+        casez_tmp_66 = entries_3_arch_rd;
       5'b00100:
-        casez_tmp_66 = entries_4_mem_wmask;
+        casez_tmp_66 = entries_4_arch_rd;
       5'b00101:
-        casez_tmp_66 = entries_5_mem_wmask;
+        casez_tmp_66 = entries_5_arch_rd;
       5'b00110:
-        casez_tmp_66 = entries_6_mem_wmask;
+        casez_tmp_66 = entries_6_arch_rd;
       5'b00111:
-        casez_tmp_66 = entries_7_mem_wmask;
+        casez_tmp_66 = entries_7_arch_rd;
       5'b01000:
-        casez_tmp_66 = entries_8_mem_wmask;
+        casez_tmp_66 = entries_8_arch_rd;
       5'b01001:
-        casez_tmp_66 = entries_9_mem_wmask;
+        casez_tmp_66 = entries_9_arch_rd;
       5'b01010:
-        casez_tmp_66 = entries_10_mem_wmask;
+        casez_tmp_66 = entries_10_arch_rd;
       5'b01011:
-        casez_tmp_66 = entries_11_mem_wmask;
+        casez_tmp_66 = entries_11_arch_rd;
       5'b01100:
-        casez_tmp_66 = entries_12_mem_wmask;
+        casez_tmp_66 = entries_12_arch_rd;
       5'b01101:
-        casez_tmp_66 = entries_13_mem_wmask;
+        casez_tmp_66 = entries_13_arch_rd;
       5'b01110:
-        casez_tmp_66 = entries_14_mem_wmask;
+        casez_tmp_66 = entries_14_arch_rd;
       5'b01111:
-        casez_tmp_66 = entries_15_mem_wmask;
+        casez_tmp_66 = entries_15_arch_rd;
       5'b10000:
-        casez_tmp_66 = entries_16_mem_wmask;
+        casez_tmp_66 = entries_16_arch_rd;
       5'b10001:
-        casez_tmp_66 = entries_17_mem_wmask;
+        casez_tmp_66 = entries_17_arch_rd;
       5'b10010:
-        casez_tmp_66 = entries_18_mem_wmask;
+        casez_tmp_66 = entries_18_arch_rd;
       5'b10011:
-        casez_tmp_66 = entries_19_mem_wmask;
+        casez_tmp_66 = entries_19_arch_rd;
       5'b10100:
-        casez_tmp_66 = entries_20_mem_wmask;
+        casez_tmp_66 = entries_20_arch_rd;
       5'b10101:
-        casez_tmp_66 = entries_21_mem_wmask;
+        casez_tmp_66 = entries_21_arch_rd;
       5'b10110:
-        casez_tmp_66 = entries_22_mem_wmask;
+        casez_tmp_66 = entries_22_arch_rd;
       5'b10111:
-        casez_tmp_66 = entries_23_mem_wmask;
+        casez_tmp_66 = entries_23_arch_rd;
       5'b11000:
-        casez_tmp_66 = entries_24_mem_wmask;
+        casez_tmp_66 = entries_24_arch_rd;
       5'b11001:
-        casez_tmp_66 = entries_25_mem_wmask;
+        casez_tmp_66 = entries_25_arch_rd;
       5'b11010:
-        casez_tmp_66 = entries_26_mem_wmask;
+        casez_tmp_66 = entries_26_arch_rd;
       5'b11011:
-        casez_tmp_66 = entries_27_mem_wmask;
+        casez_tmp_66 = entries_27_arch_rd;
       5'b11100:
-        casez_tmp_66 = entries_28_mem_wmask;
+        casez_tmp_66 = entries_28_arch_rd;
       5'b11101:
-        casez_tmp_66 = entries_29_mem_wmask;
+        casez_tmp_66 = entries_29_arch_rd;
       5'b11110:
-        casez_tmp_66 = entries_30_mem_wmask;
+        casez_tmp_66 = entries_30_arch_rd;
       default:
-        casez_tmp_66 = entries_31_mem_wmask;
+        casez_tmp_66 = entries_31_arch_rd;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_67;
+  reg  [5:0]  casez_tmp_67;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_67 = entries_0_jump;
+        casez_tmp_67 = entries_0_old_phys;
       5'b00001:
-        casez_tmp_67 = entries_1_jump;
+        casez_tmp_67 = entries_1_old_phys;
       5'b00010:
-        casez_tmp_67 = entries_2_jump;
+        casez_tmp_67 = entries_2_old_phys;
       5'b00011:
-        casez_tmp_67 = entries_3_jump;
+        casez_tmp_67 = entries_3_old_phys;
       5'b00100:
-        casez_tmp_67 = entries_4_jump;
+        casez_tmp_67 = entries_4_old_phys;
       5'b00101:
-        casez_tmp_67 = entries_5_jump;
+        casez_tmp_67 = entries_5_old_phys;
       5'b00110:
-        casez_tmp_67 = entries_6_jump;
+        casez_tmp_67 = entries_6_old_phys;
       5'b00111:
-        casez_tmp_67 = entries_7_jump;
+        casez_tmp_67 = entries_7_old_phys;
       5'b01000:
-        casez_tmp_67 = entries_8_jump;
+        casez_tmp_67 = entries_8_old_phys;
       5'b01001:
-        casez_tmp_67 = entries_9_jump;
+        casez_tmp_67 = entries_9_old_phys;
       5'b01010:
-        casez_tmp_67 = entries_10_jump;
+        casez_tmp_67 = entries_10_old_phys;
       5'b01011:
-        casez_tmp_67 = entries_11_jump;
+        casez_tmp_67 = entries_11_old_phys;
       5'b01100:
-        casez_tmp_67 = entries_12_jump;
+        casez_tmp_67 = entries_12_old_phys;
       5'b01101:
-        casez_tmp_67 = entries_13_jump;
+        casez_tmp_67 = entries_13_old_phys;
       5'b01110:
-        casez_tmp_67 = entries_14_jump;
+        casez_tmp_67 = entries_14_old_phys;
       5'b01111:
-        casez_tmp_67 = entries_15_jump;
+        casez_tmp_67 = entries_15_old_phys;
       5'b10000:
-        casez_tmp_67 = entries_16_jump;
+        casez_tmp_67 = entries_16_old_phys;
       5'b10001:
-        casez_tmp_67 = entries_17_jump;
+        casez_tmp_67 = entries_17_old_phys;
       5'b10010:
-        casez_tmp_67 = entries_18_jump;
+        casez_tmp_67 = entries_18_old_phys;
       5'b10011:
-        casez_tmp_67 = entries_19_jump;
+        casez_tmp_67 = entries_19_old_phys;
       5'b10100:
-        casez_tmp_67 = entries_20_jump;
+        casez_tmp_67 = entries_20_old_phys;
       5'b10101:
-        casez_tmp_67 = entries_21_jump;
+        casez_tmp_67 = entries_21_old_phys;
       5'b10110:
-        casez_tmp_67 = entries_22_jump;
+        casez_tmp_67 = entries_22_old_phys;
       5'b10111:
-        casez_tmp_67 = entries_23_jump;
+        casez_tmp_67 = entries_23_old_phys;
       5'b11000:
-        casez_tmp_67 = entries_24_jump;
+        casez_tmp_67 = entries_24_old_phys;
       5'b11001:
-        casez_tmp_67 = entries_25_jump;
+        casez_tmp_67 = entries_25_old_phys;
       5'b11010:
-        casez_tmp_67 = entries_26_jump;
+        casez_tmp_67 = entries_26_old_phys;
       5'b11011:
-        casez_tmp_67 = entries_27_jump;
+        casez_tmp_67 = entries_27_old_phys;
       5'b11100:
-        casez_tmp_67 = entries_28_jump;
+        casez_tmp_67 = entries_28_old_phys;
       5'b11101:
-        casez_tmp_67 = entries_29_jump;
+        casez_tmp_67 = entries_29_old_phys;
       5'b11110:
-        casez_tmp_67 = entries_30_jump;
+        casez_tmp_67 = entries_30_old_phys;
       default:
-        casez_tmp_67 = entries_31_jump;
+        casez_tmp_67 = entries_31_old_phys;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_68;
+  reg  [5:0]  casez_tmp_68;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_68 = entries_0_arch_rd;
+        casez_tmp_68 = entries_0_new_phys;
       5'b00001:
-        casez_tmp_68 = entries_1_arch_rd;
+        casez_tmp_68 = entries_1_new_phys;
       5'b00010:
-        casez_tmp_68 = entries_2_arch_rd;
+        casez_tmp_68 = entries_2_new_phys;
       5'b00011:
-        casez_tmp_68 = entries_3_arch_rd;
+        casez_tmp_68 = entries_3_new_phys;
       5'b00100:
-        casez_tmp_68 = entries_4_arch_rd;
+        casez_tmp_68 = entries_4_new_phys;
       5'b00101:
-        casez_tmp_68 = entries_5_arch_rd;
+        casez_tmp_68 = entries_5_new_phys;
       5'b00110:
-        casez_tmp_68 = entries_6_arch_rd;
+        casez_tmp_68 = entries_6_new_phys;
       5'b00111:
-        casez_tmp_68 = entries_7_arch_rd;
+        casez_tmp_68 = entries_7_new_phys;
       5'b01000:
-        casez_tmp_68 = entries_8_arch_rd;
+        casez_tmp_68 = entries_8_new_phys;
       5'b01001:
-        casez_tmp_68 = entries_9_arch_rd;
+        casez_tmp_68 = entries_9_new_phys;
       5'b01010:
-        casez_tmp_68 = entries_10_arch_rd;
+        casez_tmp_68 = entries_10_new_phys;
       5'b01011:
-        casez_tmp_68 = entries_11_arch_rd;
+        casez_tmp_68 = entries_11_new_phys;
       5'b01100:
-        casez_tmp_68 = entries_12_arch_rd;
+        casez_tmp_68 = entries_12_new_phys;
       5'b01101:
-        casez_tmp_68 = entries_13_arch_rd;
+        casez_tmp_68 = entries_13_new_phys;
       5'b01110:
-        casez_tmp_68 = entries_14_arch_rd;
+        casez_tmp_68 = entries_14_new_phys;
       5'b01111:
-        casez_tmp_68 = entries_15_arch_rd;
+        casez_tmp_68 = entries_15_new_phys;
       5'b10000:
-        casez_tmp_68 = entries_16_arch_rd;
+        casez_tmp_68 = entries_16_new_phys;
       5'b10001:
-        casez_tmp_68 = entries_17_arch_rd;
+        casez_tmp_68 = entries_17_new_phys;
       5'b10010:
-        casez_tmp_68 = entries_18_arch_rd;
+        casez_tmp_68 = entries_18_new_phys;
       5'b10011:
-        casez_tmp_68 = entries_19_arch_rd;
+        casez_tmp_68 = entries_19_new_phys;
       5'b10100:
-        casez_tmp_68 = entries_20_arch_rd;
+        casez_tmp_68 = entries_20_new_phys;
       5'b10101:
-        casez_tmp_68 = entries_21_arch_rd;
+        casez_tmp_68 = entries_21_new_phys;
       5'b10110:
-        casez_tmp_68 = entries_22_arch_rd;
+        casez_tmp_68 = entries_22_new_phys;
       5'b10111:
-        casez_tmp_68 = entries_23_arch_rd;
+        casez_tmp_68 = entries_23_new_phys;
       5'b11000:
-        casez_tmp_68 = entries_24_arch_rd;
+        casez_tmp_68 = entries_24_new_phys;
       5'b11001:
-        casez_tmp_68 = entries_25_arch_rd;
+        casez_tmp_68 = entries_25_new_phys;
       5'b11010:
-        casez_tmp_68 = entries_26_arch_rd;
+        casez_tmp_68 = entries_26_new_phys;
       5'b11011:
-        casez_tmp_68 = entries_27_arch_rd;
+        casez_tmp_68 = entries_27_new_phys;
       5'b11100:
-        casez_tmp_68 = entries_28_arch_rd;
+        casez_tmp_68 = entries_28_new_phys;
       5'b11101:
-        casez_tmp_68 = entries_29_arch_rd;
+        casez_tmp_68 = entries_29_new_phys;
       5'b11110:
-        casez_tmp_68 = entries_30_arch_rd;
+        casez_tmp_68 = entries_30_new_phys;
       default:
-        casez_tmp_68 = entries_31_arch_rd;
+        casez_tmp_68 = entries_31_new_phys;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_69;
+  reg         casez_tmp_69;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_69 = entries_0_old_phys;
+        casez_tmp_69 = entries_0_is_ebreak;
       5'b00001:
-        casez_tmp_69 = entries_1_old_phys;
+        casez_tmp_69 = entries_1_is_ebreak;
       5'b00010:
-        casez_tmp_69 = entries_2_old_phys;
+        casez_tmp_69 = entries_2_is_ebreak;
       5'b00011:
-        casez_tmp_69 = entries_3_old_phys;
+        casez_tmp_69 = entries_3_is_ebreak;
       5'b00100:
-        casez_tmp_69 = entries_4_old_phys;
+        casez_tmp_69 = entries_4_is_ebreak;
       5'b00101:
-        casez_tmp_69 = entries_5_old_phys;
+        casez_tmp_69 = entries_5_is_ebreak;
       5'b00110:
-        casez_tmp_69 = entries_6_old_phys;
+        casez_tmp_69 = entries_6_is_ebreak;
       5'b00111:
-        casez_tmp_69 = entries_7_old_phys;
+        casez_tmp_69 = entries_7_is_ebreak;
       5'b01000:
-        casez_tmp_69 = entries_8_old_phys;
+        casez_tmp_69 = entries_8_is_ebreak;
       5'b01001:
-        casez_tmp_69 = entries_9_old_phys;
+        casez_tmp_69 = entries_9_is_ebreak;
       5'b01010:
-        casez_tmp_69 = entries_10_old_phys;
+        casez_tmp_69 = entries_10_is_ebreak;
       5'b01011:
-        casez_tmp_69 = entries_11_old_phys;
+        casez_tmp_69 = entries_11_is_ebreak;
       5'b01100:
-        casez_tmp_69 = entries_12_old_phys;
+        casez_tmp_69 = entries_12_is_ebreak;
       5'b01101:
-        casez_tmp_69 = entries_13_old_phys;
+        casez_tmp_69 = entries_13_is_ebreak;
       5'b01110:
-        casez_tmp_69 = entries_14_old_phys;
+        casez_tmp_69 = entries_14_is_ebreak;
       5'b01111:
-        casez_tmp_69 = entries_15_old_phys;
+        casez_tmp_69 = entries_15_is_ebreak;
       5'b10000:
-        casez_tmp_69 = entries_16_old_phys;
+        casez_tmp_69 = entries_16_is_ebreak;
       5'b10001:
-        casez_tmp_69 = entries_17_old_phys;
+        casez_tmp_69 = entries_17_is_ebreak;
       5'b10010:
-        casez_tmp_69 = entries_18_old_phys;
+        casez_tmp_69 = entries_18_is_ebreak;
       5'b10011:
-        casez_tmp_69 = entries_19_old_phys;
+        casez_tmp_69 = entries_19_is_ebreak;
       5'b10100:
-        casez_tmp_69 = entries_20_old_phys;
+        casez_tmp_69 = entries_20_is_ebreak;
       5'b10101:
-        casez_tmp_69 = entries_21_old_phys;
+        casez_tmp_69 = entries_21_is_ebreak;
       5'b10110:
-        casez_tmp_69 = entries_22_old_phys;
+        casez_tmp_69 = entries_22_is_ebreak;
       5'b10111:
-        casez_tmp_69 = entries_23_old_phys;
+        casez_tmp_69 = entries_23_is_ebreak;
       5'b11000:
-        casez_tmp_69 = entries_24_old_phys;
+        casez_tmp_69 = entries_24_is_ebreak;
       5'b11001:
-        casez_tmp_69 = entries_25_old_phys;
+        casez_tmp_69 = entries_25_is_ebreak;
       5'b11010:
-        casez_tmp_69 = entries_26_old_phys;
+        casez_tmp_69 = entries_26_is_ebreak;
       5'b11011:
-        casez_tmp_69 = entries_27_old_phys;
+        casez_tmp_69 = entries_27_is_ebreak;
       5'b11100:
-        casez_tmp_69 = entries_28_old_phys;
+        casez_tmp_69 = entries_28_is_ebreak;
       5'b11101:
-        casez_tmp_69 = entries_29_old_phys;
+        casez_tmp_69 = entries_29_is_ebreak;
       5'b11110:
-        casez_tmp_69 = entries_30_old_phys;
+        casez_tmp_69 = entries_30_is_ebreak;
       default:
-        casez_tmp_69 = entries_31_old_phys;
+        casez_tmp_69 = entries_31_is_ebreak;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_70;
+  reg         casez_tmp_70;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_70 = entries_0_new_phys;
+        casez_tmp_70 = entries_0_is_fencei;
       5'b00001:
-        casez_tmp_70 = entries_1_new_phys;
+        casez_tmp_70 = entries_1_is_fencei;
       5'b00010:
-        casez_tmp_70 = entries_2_new_phys;
+        casez_tmp_70 = entries_2_is_fencei;
       5'b00011:
-        casez_tmp_70 = entries_3_new_phys;
+        casez_tmp_70 = entries_3_is_fencei;
       5'b00100:
-        casez_tmp_70 = entries_4_new_phys;
+        casez_tmp_70 = entries_4_is_fencei;
       5'b00101:
-        casez_tmp_70 = entries_5_new_phys;
+        casez_tmp_70 = entries_5_is_fencei;
       5'b00110:
-        casez_tmp_70 = entries_6_new_phys;
+        casez_tmp_70 = entries_6_is_fencei;
       5'b00111:
-        casez_tmp_70 = entries_7_new_phys;
+        casez_tmp_70 = entries_7_is_fencei;
       5'b01000:
-        casez_tmp_70 = entries_8_new_phys;
+        casez_tmp_70 = entries_8_is_fencei;
       5'b01001:
-        casez_tmp_70 = entries_9_new_phys;
+        casez_tmp_70 = entries_9_is_fencei;
       5'b01010:
-        casez_tmp_70 = entries_10_new_phys;
+        casez_tmp_70 = entries_10_is_fencei;
       5'b01011:
-        casez_tmp_70 = entries_11_new_phys;
+        casez_tmp_70 = entries_11_is_fencei;
       5'b01100:
-        casez_tmp_70 = entries_12_new_phys;
+        casez_tmp_70 = entries_12_is_fencei;
       5'b01101:
-        casez_tmp_70 = entries_13_new_phys;
+        casez_tmp_70 = entries_13_is_fencei;
       5'b01110:
-        casez_tmp_70 = entries_14_new_phys;
+        casez_tmp_70 = entries_14_is_fencei;
       5'b01111:
-        casez_tmp_70 = entries_15_new_phys;
+        casez_tmp_70 = entries_15_is_fencei;
       5'b10000:
-        casez_tmp_70 = entries_16_new_phys;
+        casez_tmp_70 = entries_16_is_fencei;
       5'b10001:
-        casez_tmp_70 = entries_17_new_phys;
+        casez_tmp_70 = entries_17_is_fencei;
       5'b10010:
-        casez_tmp_70 = entries_18_new_phys;
+        casez_tmp_70 = entries_18_is_fencei;
       5'b10011:
-        casez_tmp_70 = entries_19_new_phys;
+        casez_tmp_70 = entries_19_is_fencei;
       5'b10100:
-        casez_tmp_70 = entries_20_new_phys;
+        casez_tmp_70 = entries_20_is_fencei;
       5'b10101:
-        casez_tmp_70 = entries_21_new_phys;
+        casez_tmp_70 = entries_21_is_fencei;
       5'b10110:
-        casez_tmp_70 = entries_22_new_phys;
+        casez_tmp_70 = entries_22_is_fencei;
       5'b10111:
-        casez_tmp_70 = entries_23_new_phys;
+        casez_tmp_70 = entries_23_is_fencei;
       5'b11000:
-        casez_tmp_70 = entries_24_new_phys;
+        casez_tmp_70 = entries_24_is_fencei;
       5'b11001:
-        casez_tmp_70 = entries_25_new_phys;
+        casez_tmp_70 = entries_25_is_fencei;
       5'b11010:
-        casez_tmp_70 = entries_26_new_phys;
+        casez_tmp_70 = entries_26_is_fencei;
       5'b11011:
-        casez_tmp_70 = entries_27_new_phys;
+        casez_tmp_70 = entries_27_is_fencei;
       5'b11100:
-        casez_tmp_70 = entries_28_new_phys;
+        casez_tmp_70 = entries_28_is_fencei;
       5'b11101:
-        casez_tmp_70 = entries_29_new_phys;
+        casez_tmp_70 = entries_29_is_fencei;
       5'b11110:
-        casez_tmp_70 = entries_30_new_phys;
+        casez_tmp_70 = entries_30_is_fencei;
       default:
-        casez_tmp_70 = entries_31_new_phys;
+        casez_tmp_70 = entries_31_is_fencei;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_71;
+  reg         casez_tmp_71;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_71 = entries_0_dest_val;
+        casez_tmp_71 = entries_0_state_state;
       5'b00001:
-        casez_tmp_71 = entries_1_dest_val;
+        casez_tmp_71 = entries_1_state_state;
       5'b00010:
-        casez_tmp_71 = entries_2_dest_val;
+        casez_tmp_71 = entries_2_state_state;
       5'b00011:
-        casez_tmp_71 = entries_3_dest_val;
+        casez_tmp_71 = entries_3_state_state;
       5'b00100:
-        casez_tmp_71 = entries_4_dest_val;
+        casez_tmp_71 = entries_4_state_state;
       5'b00101:
-        casez_tmp_71 = entries_5_dest_val;
+        casez_tmp_71 = entries_5_state_state;
       5'b00110:
-        casez_tmp_71 = entries_6_dest_val;
+        casez_tmp_71 = entries_6_state_state;
       5'b00111:
-        casez_tmp_71 = entries_7_dest_val;
+        casez_tmp_71 = entries_7_state_state;
       5'b01000:
-        casez_tmp_71 = entries_8_dest_val;
+        casez_tmp_71 = entries_8_state_state;
       5'b01001:
-        casez_tmp_71 = entries_9_dest_val;
+        casez_tmp_71 = entries_9_state_state;
       5'b01010:
-        casez_tmp_71 = entries_10_dest_val;
+        casez_tmp_71 = entries_10_state_state;
       5'b01011:
-        casez_tmp_71 = entries_11_dest_val;
+        casez_tmp_71 = entries_11_state_state;
       5'b01100:
-        casez_tmp_71 = entries_12_dest_val;
+        casez_tmp_71 = entries_12_state_state;
       5'b01101:
-        casez_tmp_71 = entries_13_dest_val;
+        casez_tmp_71 = entries_13_state_state;
       5'b01110:
-        casez_tmp_71 = entries_14_dest_val;
+        casez_tmp_71 = entries_14_state_state;
       5'b01111:
-        casez_tmp_71 = entries_15_dest_val;
+        casez_tmp_71 = entries_15_state_state;
       5'b10000:
-        casez_tmp_71 = entries_16_dest_val;
+        casez_tmp_71 = entries_16_state_state;
       5'b10001:
-        casez_tmp_71 = entries_17_dest_val;
+        casez_tmp_71 = entries_17_state_state;
       5'b10010:
-        casez_tmp_71 = entries_18_dest_val;
+        casez_tmp_71 = entries_18_state_state;
       5'b10011:
-        casez_tmp_71 = entries_19_dest_val;
+        casez_tmp_71 = entries_19_state_state;
       5'b10100:
-        casez_tmp_71 = entries_20_dest_val;
+        casez_tmp_71 = entries_20_state_state;
       5'b10101:
-        casez_tmp_71 = entries_21_dest_val;
+        casez_tmp_71 = entries_21_state_state;
       5'b10110:
-        casez_tmp_71 = entries_22_dest_val;
+        casez_tmp_71 = entries_22_state_state;
       5'b10111:
-        casez_tmp_71 = entries_23_dest_val;
+        casez_tmp_71 = entries_23_state_state;
       5'b11000:
-        casez_tmp_71 = entries_24_dest_val;
+        casez_tmp_71 = entries_24_state_state;
       5'b11001:
-        casez_tmp_71 = entries_25_dest_val;
+        casez_tmp_71 = entries_25_state_state;
       5'b11010:
-        casez_tmp_71 = entries_26_dest_val;
+        casez_tmp_71 = entries_26_state_state;
       5'b11011:
-        casez_tmp_71 = entries_27_dest_val;
+        casez_tmp_71 = entries_27_state_state;
       5'b11100:
-        casez_tmp_71 = entries_28_dest_val;
+        casez_tmp_71 = entries_28_state_state;
       5'b11101:
-        casez_tmp_71 = entries_29_dest_val;
+        casez_tmp_71 = entries_29_state_state;
       5'b11110:
-        casez_tmp_71 = entries_30_dest_val;
+        casez_tmp_71 = entries_30_state_state;
       default:
-        casez_tmp_71 = entries_31_dest_val;
+        casez_tmp_71 = entries_31_state_state;
     endcase
   end // always_comb
-  reg         casez_tmp_72;
+  reg  [96:0] casez_tmp_72;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_72 = entries_0_is_ebreak;
+        casez_tmp_72 = entries_0_bp_index;
       5'b00001:
-        casez_tmp_72 = entries_1_is_ebreak;
+        casez_tmp_72 = entries_1_bp_index;
       5'b00010:
-        casez_tmp_72 = entries_2_is_ebreak;
+        casez_tmp_72 = entries_2_bp_index;
       5'b00011:
-        casez_tmp_72 = entries_3_is_ebreak;
+        casez_tmp_72 = entries_3_bp_index;
       5'b00100:
-        casez_tmp_72 = entries_4_is_ebreak;
+        casez_tmp_72 = entries_4_bp_index;
       5'b00101:
-        casez_tmp_72 = entries_5_is_ebreak;
+        casez_tmp_72 = entries_5_bp_index;
       5'b00110:
-        casez_tmp_72 = entries_6_is_ebreak;
+        casez_tmp_72 = entries_6_bp_index;
       5'b00111:
-        casez_tmp_72 = entries_7_is_ebreak;
+        casez_tmp_72 = entries_7_bp_index;
       5'b01000:
-        casez_tmp_72 = entries_8_is_ebreak;
+        casez_tmp_72 = entries_8_bp_index;
       5'b01001:
-        casez_tmp_72 = entries_9_is_ebreak;
+        casez_tmp_72 = entries_9_bp_index;
       5'b01010:
-        casez_tmp_72 = entries_10_is_ebreak;
+        casez_tmp_72 = entries_10_bp_index;
       5'b01011:
-        casez_tmp_72 = entries_11_is_ebreak;
+        casez_tmp_72 = entries_11_bp_index;
       5'b01100:
-        casez_tmp_72 = entries_12_is_ebreak;
+        casez_tmp_72 = entries_12_bp_index;
       5'b01101:
-        casez_tmp_72 = entries_13_is_ebreak;
+        casez_tmp_72 = entries_13_bp_index;
       5'b01110:
-        casez_tmp_72 = entries_14_is_ebreak;
+        casez_tmp_72 = entries_14_bp_index;
       5'b01111:
-        casez_tmp_72 = entries_15_is_ebreak;
+        casez_tmp_72 = entries_15_bp_index;
       5'b10000:
-        casez_tmp_72 = entries_16_is_ebreak;
+        casez_tmp_72 = entries_16_bp_index;
       5'b10001:
-        casez_tmp_72 = entries_17_is_ebreak;
+        casez_tmp_72 = entries_17_bp_index;
       5'b10010:
-        casez_tmp_72 = entries_18_is_ebreak;
+        casez_tmp_72 = entries_18_bp_index;
       5'b10011:
-        casez_tmp_72 = entries_19_is_ebreak;
+        casez_tmp_72 = entries_19_bp_index;
       5'b10100:
-        casez_tmp_72 = entries_20_is_ebreak;
+        casez_tmp_72 = entries_20_bp_index;
       5'b10101:
-        casez_tmp_72 = entries_21_is_ebreak;
+        casez_tmp_72 = entries_21_bp_index;
       5'b10110:
-        casez_tmp_72 = entries_22_is_ebreak;
+        casez_tmp_72 = entries_22_bp_index;
       5'b10111:
-        casez_tmp_72 = entries_23_is_ebreak;
+        casez_tmp_72 = entries_23_bp_index;
       5'b11000:
-        casez_tmp_72 = entries_24_is_ebreak;
+        casez_tmp_72 = entries_24_bp_index;
       5'b11001:
-        casez_tmp_72 = entries_25_is_ebreak;
+        casez_tmp_72 = entries_25_bp_index;
       5'b11010:
-        casez_tmp_72 = entries_26_is_ebreak;
+        casez_tmp_72 = entries_26_bp_index;
       5'b11011:
-        casez_tmp_72 = entries_27_is_ebreak;
+        casez_tmp_72 = entries_27_bp_index;
       5'b11100:
-        casez_tmp_72 = entries_28_is_ebreak;
+        casez_tmp_72 = entries_28_bp_index;
       5'b11101:
-        casez_tmp_72 = entries_29_is_ebreak;
+        casez_tmp_72 = entries_29_bp_index;
       5'b11110:
-        casez_tmp_72 = entries_30_is_ebreak;
+        casez_tmp_72 = entries_30_bp_index;
       default:
-        casez_tmp_72 = entries_31_is_ebreak;
+        casez_tmp_72 = entries_31_bp_index;
     endcase
   end // always_comb
-  reg         casez_tmp_73;
+  reg  [3:0]  casez_tmp_73;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_73 = entries_0_is_fencei;
+        casez_tmp_73 = entries_0_ftq_idx;
       5'b00001:
-        casez_tmp_73 = entries_1_is_fencei;
+        casez_tmp_73 = entries_1_ftq_idx;
       5'b00010:
-        casez_tmp_73 = entries_2_is_fencei;
+        casez_tmp_73 = entries_2_ftq_idx;
       5'b00011:
-        casez_tmp_73 = entries_3_is_fencei;
+        casez_tmp_73 = entries_3_ftq_idx;
       5'b00100:
-        casez_tmp_73 = entries_4_is_fencei;
+        casez_tmp_73 = entries_4_ftq_idx;
       5'b00101:
-        casez_tmp_73 = entries_5_is_fencei;
+        casez_tmp_73 = entries_5_ftq_idx;
       5'b00110:
-        casez_tmp_73 = entries_6_is_fencei;
+        casez_tmp_73 = entries_6_ftq_idx;
       5'b00111:
-        casez_tmp_73 = entries_7_is_fencei;
+        casez_tmp_73 = entries_7_ftq_idx;
       5'b01000:
-        casez_tmp_73 = entries_8_is_fencei;
+        casez_tmp_73 = entries_8_ftq_idx;
       5'b01001:
-        casez_tmp_73 = entries_9_is_fencei;
+        casez_tmp_73 = entries_9_ftq_idx;
       5'b01010:
-        casez_tmp_73 = entries_10_is_fencei;
+        casez_tmp_73 = entries_10_ftq_idx;
       5'b01011:
-        casez_tmp_73 = entries_11_is_fencei;
+        casez_tmp_73 = entries_11_ftq_idx;
       5'b01100:
-        casez_tmp_73 = entries_12_is_fencei;
+        casez_tmp_73 = entries_12_ftq_idx;
       5'b01101:
-        casez_tmp_73 = entries_13_is_fencei;
+        casez_tmp_73 = entries_13_ftq_idx;
       5'b01110:
-        casez_tmp_73 = entries_14_is_fencei;
+        casez_tmp_73 = entries_14_ftq_idx;
       5'b01111:
-        casez_tmp_73 = entries_15_is_fencei;
+        casez_tmp_73 = entries_15_ftq_idx;
       5'b10000:
-        casez_tmp_73 = entries_16_is_fencei;
+        casez_tmp_73 = entries_16_ftq_idx;
       5'b10001:
-        casez_tmp_73 = entries_17_is_fencei;
+        casez_tmp_73 = entries_17_ftq_idx;
       5'b10010:
-        casez_tmp_73 = entries_18_is_fencei;
+        casez_tmp_73 = entries_18_ftq_idx;
       5'b10011:
-        casez_tmp_73 = entries_19_is_fencei;
+        casez_tmp_73 = entries_19_ftq_idx;
       5'b10100:
-        casez_tmp_73 = entries_20_is_fencei;
+        casez_tmp_73 = entries_20_ftq_idx;
       5'b10101:
-        casez_tmp_73 = entries_21_is_fencei;
+        casez_tmp_73 = entries_21_ftq_idx;
       5'b10110:
-        casez_tmp_73 = entries_22_is_fencei;
+        casez_tmp_73 = entries_22_ftq_idx;
       5'b10111:
-        casez_tmp_73 = entries_23_is_fencei;
+        casez_tmp_73 = entries_23_ftq_idx;
       5'b11000:
-        casez_tmp_73 = entries_24_is_fencei;
+        casez_tmp_73 = entries_24_ftq_idx;
       5'b11001:
-        casez_tmp_73 = entries_25_is_fencei;
+        casez_tmp_73 = entries_25_ftq_idx;
       5'b11010:
-        casez_tmp_73 = entries_26_is_fencei;
+        casez_tmp_73 = entries_26_ftq_idx;
       5'b11011:
-        casez_tmp_73 = entries_27_is_fencei;
+        casez_tmp_73 = entries_27_ftq_idx;
       5'b11100:
-        casez_tmp_73 = entries_28_is_fencei;
+        casez_tmp_73 = entries_28_ftq_idx;
       5'b11101:
-        casez_tmp_73 = entries_29_is_fencei;
+        casez_tmp_73 = entries_29_ftq_idx;
       5'b11110:
-        casez_tmp_73 = entries_30_is_fencei;
+        casez_tmp_73 = entries_30_ftq_idx;
       default:
-        casez_tmp_73 = entries_31_is_fencei;
+        casez_tmp_73 = entries_31_ftq_idx;
     endcase
   end // always_comb
-  reg         casez_tmp_74;
+  reg  [7:0]  casez_tmp_74;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_74 = entries_0_state_state;
+        casez_tmp_74 = entries_0_ftq_generation;
       5'b00001:
-        casez_tmp_74 = entries_1_state_state;
+        casez_tmp_74 = entries_1_ftq_generation;
       5'b00010:
-        casez_tmp_74 = entries_2_state_state;
+        casez_tmp_74 = entries_2_ftq_generation;
       5'b00011:
-        casez_tmp_74 = entries_3_state_state;
+        casez_tmp_74 = entries_3_ftq_generation;
       5'b00100:
-        casez_tmp_74 = entries_4_state_state;
+        casez_tmp_74 = entries_4_ftq_generation;
       5'b00101:
-        casez_tmp_74 = entries_5_state_state;
+        casez_tmp_74 = entries_5_ftq_generation;
       5'b00110:
-        casez_tmp_74 = entries_6_state_state;
+        casez_tmp_74 = entries_6_ftq_generation;
       5'b00111:
-        casez_tmp_74 = entries_7_state_state;
+        casez_tmp_74 = entries_7_ftq_generation;
       5'b01000:
-        casez_tmp_74 = entries_8_state_state;
+        casez_tmp_74 = entries_8_ftq_generation;
       5'b01001:
-        casez_tmp_74 = entries_9_state_state;
+        casez_tmp_74 = entries_9_ftq_generation;
       5'b01010:
-        casez_tmp_74 = entries_10_state_state;
+        casez_tmp_74 = entries_10_ftq_generation;
       5'b01011:
-        casez_tmp_74 = entries_11_state_state;
+        casez_tmp_74 = entries_11_ftq_generation;
       5'b01100:
-        casez_tmp_74 = entries_12_state_state;
+        casez_tmp_74 = entries_12_ftq_generation;
       5'b01101:
-        casez_tmp_74 = entries_13_state_state;
+        casez_tmp_74 = entries_13_ftq_generation;
       5'b01110:
-        casez_tmp_74 = entries_14_state_state;
+        casez_tmp_74 = entries_14_ftq_generation;
       5'b01111:
-        casez_tmp_74 = entries_15_state_state;
+        casez_tmp_74 = entries_15_ftq_generation;
       5'b10000:
-        casez_tmp_74 = entries_16_state_state;
+        casez_tmp_74 = entries_16_ftq_generation;
       5'b10001:
-        casez_tmp_74 = entries_17_state_state;
+        casez_tmp_74 = entries_17_ftq_generation;
       5'b10010:
-        casez_tmp_74 = entries_18_state_state;
+        casez_tmp_74 = entries_18_ftq_generation;
       5'b10011:
-        casez_tmp_74 = entries_19_state_state;
+        casez_tmp_74 = entries_19_ftq_generation;
       5'b10100:
-        casez_tmp_74 = entries_20_state_state;
+        casez_tmp_74 = entries_20_ftq_generation;
       5'b10101:
-        casez_tmp_74 = entries_21_state_state;
+        casez_tmp_74 = entries_21_ftq_generation;
       5'b10110:
-        casez_tmp_74 = entries_22_state_state;
+        casez_tmp_74 = entries_22_ftq_generation;
       5'b10111:
-        casez_tmp_74 = entries_23_state_state;
+        casez_tmp_74 = entries_23_ftq_generation;
       5'b11000:
-        casez_tmp_74 = entries_24_state_state;
+        casez_tmp_74 = entries_24_ftq_generation;
       5'b11001:
-        casez_tmp_74 = entries_25_state_state;
+        casez_tmp_74 = entries_25_ftq_generation;
       5'b11010:
-        casez_tmp_74 = entries_26_state_state;
+        casez_tmp_74 = entries_26_ftq_generation;
       5'b11011:
-        casez_tmp_74 = entries_27_state_state;
+        casez_tmp_74 = entries_27_ftq_generation;
       5'b11100:
-        casez_tmp_74 = entries_28_state_state;
+        casez_tmp_74 = entries_28_ftq_generation;
       5'b11101:
-        casez_tmp_74 = entries_29_state_state;
+        casez_tmp_74 = entries_29_ftq_generation;
       5'b11110:
-        casez_tmp_74 = entries_30_state_state;
+        casez_tmp_74 = entries_30_ftq_generation;
       default:
-        casez_tmp_74 = entries_31_state_state;
+        casez_tmp_74 = entries_31_ftq_generation;
     endcase
   end // always_comb
-  reg  [96:0] casez_tmp_75;
+  reg  [1:0]  casez_tmp_75;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_75 = entries_0_bp_index;
+        casez_tmp_75 = entries_0_cp_idx;
       5'b00001:
-        casez_tmp_75 = entries_1_bp_index;
+        casez_tmp_75 = entries_1_cp_idx;
       5'b00010:
-        casez_tmp_75 = entries_2_bp_index;
+        casez_tmp_75 = entries_2_cp_idx;
       5'b00011:
-        casez_tmp_75 = entries_3_bp_index;
+        casez_tmp_75 = entries_3_cp_idx;
       5'b00100:
-        casez_tmp_75 = entries_4_bp_index;
+        casez_tmp_75 = entries_4_cp_idx;
       5'b00101:
-        casez_tmp_75 = entries_5_bp_index;
+        casez_tmp_75 = entries_5_cp_idx;
       5'b00110:
-        casez_tmp_75 = entries_6_bp_index;
+        casez_tmp_75 = entries_6_cp_idx;
       5'b00111:
-        casez_tmp_75 = entries_7_bp_index;
+        casez_tmp_75 = entries_7_cp_idx;
       5'b01000:
-        casez_tmp_75 = entries_8_bp_index;
+        casez_tmp_75 = entries_8_cp_idx;
       5'b01001:
-        casez_tmp_75 = entries_9_bp_index;
+        casez_tmp_75 = entries_9_cp_idx;
       5'b01010:
-        casez_tmp_75 = entries_10_bp_index;
+        casez_tmp_75 = entries_10_cp_idx;
       5'b01011:
-        casez_tmp_75 = entries_11_bp_index;
+        casez_tmp_75 = entries_11_cp_idx;
       5'b01100:
-        casez_tmp_75 = entries_12_bp_index;
+        casez_tmp_75 = entries_12_cp_idx;
       5'b01101:
-        casez_tmp_75 = entries_13_bp_index;
+        casez_tmp_75 = entries_13_cp_idx;
       5'b01110:
-        casez_tmp_75 = entries_14_bp_index;
+        casez_tmp_75 = entries_14_cp_idx;
       5'b01111:
-        casez_tmp_75 = entries_15_bp_index;
+        casez_tmp_75 = entries_15_cp_idx;
       5'b10000:
-        casez_tmp_75 = entries_16_bp_index;
+        casez_tmp_75 = entries_16_cp_idx;
       5'b10001:
-        casez_tmp_75 = entries_17_bp_index;
+        casez_tmp_75 = entries_17_cp_idx;
       5'b10010:
-        casez_tmp_75 = entries_18_bp_index;
+        casez_tmp_75 = entries_18_cp_idx;
       5'b10011:
-        casez_tmp_75 = entries_19_bp_index;
+        casez_tmp_75 = entries_19_cp_idx;
       5'b10100:
-        casez_tmp_75 = entries_20_bp_index;
+        casez_tmp_75 = entries_20_cp_idx;
       5'b10101:
-        casez_tmp_75 = entries_21_bp_index;
+        casez_tmp_75 = entries_21_cp_idx;
       5'b10110:
-        casez_tmp_75 = entries_22_bp_index;
+        casez_tmp_75 = entries_22_cp_idx;
       5'b10111:
-        casez_tmp_75 = entries_23_bp_index;
+        casez_tmp_75 = entries_23_cp_idx;
       5'b11000:
-        casez_tmp_75 = entries_24_bp_index;
+        casez_tmp_75 = entries_24_cp_idx;
       5'b11001:
-        casez_tmp_75 = entries_25_bp_index;
+        casez_tmp_75 = entries_25_cp_idx;
       5'b11010:
-        casez_tmp_75 = entries_26_bp_index;
+        casez_tmp_75 = entries_26_cp_idx;
       5'b11011:
-        casez_tmp_75 = entries_27_bp_index;
+        casez_tmp_75 = entries_27_cp_idx;
       5'b11100:
-        casez_tmp_75 = entries_28_bp_index;
+        casez_tmp_75 = entries_28_cp_idx;
       5'b11101:
-        casez_tmp_75 = entries_29_bp_index;
+        casez_tmp_75 = entries_29_cp_idx;
       5'b11110:
-        casez_tmp_75 = entries_30_bp_index;
+        casez_tmp_75 = entries_30_cp_idx;
       default:
-        casez_tmp_75 = entries_31_bp_index;
+        casez_tmp_75 = entries_31_cp_idx;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_76;
+  reg         casez_tmp_76;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_76 = entries_0_ftq_idx;
+        casez_tmp_76 = entries_0_actual_taken;
       5'b00001:
-        casez_tmp_76 = entries_1_ftq_idx;
+        casez_tmp_76 = entries_1_actual_taken;
       5'b00010:
-        casez_tmp_76 = entries_2_ftq_idx;
+        casez_tmp_76 = entries_2_actual_taken;
       5'b00011:
-        casez_tmp_76 = entries_3_ftq_idx;
+        casez_tmp_76 = entries_3_actual_taken;
       5'b00100:
-        casez_tmp_76 = entries_4_ftq_idx;
+        casez_tmp_76 = entries_4_actual_taken;
       5'b00101:
-        casez_tmp_76 = entries_5_ftq_idx;
+        casez_tmp_76 = entries_5_actual_taken;
       5'b00110:
-        casez_tmp_76 = entries_6_ftq_idx;
+        casez_tmp_76 = entries_6_actual_taken;
       5'b00111:
-        casez_tmp_76 = entries_7_ftq_idx;
+        casez_tmp_76 = entries_7_actual_taken;
       5'b01000:
-        casez_tmp_76 = entries_8_ftq_idx;
+        casez_tmp_76 = entries_8_actual_taken;
       5'b01001:
-        casez_tmp_76 = entries_9_ftq_idx;
+        casez_tmp_76 = entries_9_actual_taken;
       5'b01010:
-        casez_tmp_76 = entries_10_ftq_idx;
+        casez_tmp_76 = entries_10_actual_taken;
       5'b01011:
-        casez_tmp_76 = entries_11_ftq_idx;
+        casez_tmp_76 = entries_11_actual_taken;
       5'b01100:
-        casez_tmp_76 = entries_12_ftq_idx;
+        casez_tmp_76 = entries_12_actual_taken;
       5'b01101:
-        casez_tmp_76 = entries_13_ftq_idx;
+        casez_tmp_76 = entries_13_actual_taken;
       5'b01110:
-        casez_tmp_76 = entries_14_ftq_idx;
+        casez_tmp_76 = entries_14_actual_taken;
       5'b01111:
-        casez_tmp_76 = entries_15_ftq_idx;
+        casez_tmp_76 = entries_15_actual_taken;
       5'b10000:
-        casez_tmp_76 = entries_16_ftq_idx;
+        casez_tmp_76 = entries_16_actual_taken;
       5'b10001:
-        casez_tmp_76 = entries_17_ftq_idx;
+        casez_tmp_76 = entries_17_actual_taken;
       5'b10010:
-        casez_tmp_76 = entries_18_ftq_idx;
+        casez_tmp_76 = entries_18_actual_taken;
       5'b10011:
-        casez_tmp_76 = entries_19_ftq_idx;
+        casez_tmp_76 = entries_19_actual_taken;
       5'b10100:
-        casez_tmp_76 = entries_20_ftq_idx;
+        casez_tmp_76 = entries_20_actual_taken;
       5'b10101:
-        casez_tmp_76 = entries_21_ftq_idx;
+        casez_tmp_76 = entries_21_actual_taken;
       5'b10110:
-        casez_tmp_76 = entries_22_ftq_idx;
+        casez_tmp_76 = entries_22_actual_taken;
       5'b10111:
-        casez_tmp_76 = entries_23_ftq_idx;
+        casez_tmp_76 = entries_23_actual_taken;
       5'b11000:
-        casez_tmp_76 = entries_24_ftq_idx;
+        casez_tmp_76 = entries_24_actual_taken;
       5'b11001:
-        casez_tmp_76 = entries_25_ftq_idx;
+        casez_tmp_76 = entries_25_actual_taken;
       5'b11010:
-        casez_tmp_76 = entries_26_ftq_idx;
+        casez_tmp_76 = entries_26_actual_taken;
       5'b11011:
-        casez_tmp_76 = entries_27_ftq_idx;
+        casez_tmp_76 = entries_27_actual_taken;
       5'b11100:
-        casez_tmp_76 = entries_28_ftq_idx;
+        casez_tmp_76 = entries_28_actual_taken;
       5'b11101:
-        casez_tmp_76 = entries_29_ftq_idx;
+        casez_tmp_76 = entries_29_actual_taken;
       5'b11110:
-        casez_tmp_76 = entries_30_ftq_idx;
+        casez_tmp_76 = entries_30_actual_taken;
       default:
-        casez_tmp_76 = entries_31_ftq_idx;
+        casez_tmp_76 = entries_31_actual_taken;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_77;
+  reg  [31:0] casez_tmp_77;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_77 = entries_0_ftq_generation;
+        casez_tmp_77 = entries_0_actual_target;
       5'b00001:
-        casez_tmp_77 = entries_1_ftq_generation;
+        casez_tmp_77 = entries_1_actual_target;
       5'b00010:
-        casez_tmp_77 = entries_2_ftq_generation;
+        casez_tmp_77 = entries_2_actual_target;
       5'b00011:
-        casez_tmp_77 = entries_3_ftq_generation;
+        casez_tmp_77 = entries_3_actual_target;
       5'b00100:
-        casez_tmp_77 = entries_4_ftq_generation;
+        casez_tmp_77 = entries_4_actual_target;
       5'b00101:
-        casez_tmp_77 = entries_5_ftq_generation;
+        casez_tmp_77 = entries_5_actual_target;
       5'b00110:
-        casez_tmp_77 = entries_6_ftq_generation;
+        casez_tmp_77 = entries_6_actual_target;
       5'b00111:
-        casez_tmp_77 = entries_7_ftq_generation;
+        casez_tmp_77 = entries_7_actual_target;
       5'b01000:
-        casez_tmp_77 = entries_8_ftq_generation;
+        casez_tmp_77 = entries_8_actual_target;
       5'b01001:
-        casez_tmp_77 = entries_9_ftq_generation;
+        casez_tmp_77 = entries_9_actual_target;
       5'b01010:
-        casez_tmp_77 = entries_10_ftq_generation;
+        casez_tmp_77 = entries_10_actual_target;
       5'b01011:
-        casez_tmp_77 = entries_11_ftq_generation;
+        casez_tmp_77 = entries_11_actual_target;
       5'b01100:
-        casez_tmp_77 = entries_12_ftq_generation;
+        casez_tmp_77 = entries_12_actual_target;
       5'b01101:
-        casez_tmp_77 = entries_13_ftq_generation;
+        casez_tmp_77 = entries_13_actual_target;
       5'b01110:
-        casez_tmp_77 = entries_14_ftq_generation;
+        casez_tmp_77 = entries_14_actual_target;
       5'b01111:
-        casez_tmp_77 = entries_15_ftq_generation;
+        casez_tmp_77 = entries_15_actual_target;
       5'b10000:
-        casez_tmp_77 = entries_16_ftq_generation;
+        casez_tmp_77 = entries_16_actual_target;
       5'b10001:
-        casez_tmp_77 = entries_17_ftq_generation;
+        casez_tmp_77 = entries_17_actual_target;
       5'b10010:
-        casez_tmp_77 = entries_18_ftq_generation;
+        casez_tmp_77 = entries_18_actual_target;
       5'b10011:
-        casez_tmp_77 = entries_19_ftq_generation;
+        casez_tmp_77 = entries_19_actual_target;
       5'b10100:
-        casez_tmp_77 = entries_20_ftq_generation;
+        casez_tmp_77 = entries_20_actual_target;
       5'b10101:
-        casez_tmp_77 = entries_21_ftq_generation;
+        casez_tmp_77 = entries_21_actual_target;
       5'b10110:
-        casez_tmp_77 = entries_22_ftq_generation;
+        casez_tmp_77 = entries_22_actual_target;
       5'b10111:
-        casez_tmp_77 = entries_23_ftq_generation;
+        casez_tmp_77 = entries_23_actual_target;
       5'b11000:
-        casez_tmp_77 = entries_24_ftq_generation;
+        casez_tmp_77 = entries_24_actual_target;
       5'b11001:
-        casez_tmp_77 = entries_25_ftq_generation;
+        casez_tmp_77 = entries_25_actual_target;
       5'b11010:
-        casez_tmp_77 = entries_26_ftq_generation;
+        casez_tmp_77 = entries_26_actual_target;
       5'b11011:
-        casez_tmp_77 = entries_27_ftq_generation;
+        casez_tmp_77 = entries_27_actual_target;
       5'b11100:
-        casez_tmp_77 = entries_28_ftq_generation;
+        casez_tmp_77 = entries_28_actual_target;
       5'b11101:
-        casez_tmp_77 = entries_29_ftq_generation;
+        casez_tmp_77 = entries_29_actual_target;
       5'b11110:
-        casez_tmp_77 = entries_30_ftq_generation;
+        casez_tmp_77 = entries_30_actual_target;
       default:
-        casez_tmp_77 = entries_31_ftq_generation;
+        casez_tmp_77 = entries_31_actual_target;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_78;
+  reg  [31:0] casez_tmp_78;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_78 = entries_0_cp_idx;
+        casez_tmp_78 = entries_0_mem_addr;
       5'b00001:
-        casez_tmp_78 = entries_1_cp_idx;
+        casez_tmp_78 = entries_1_mem_addr;
       5'b00010:
-        casez_tmp_78 = entries_2_cp_idx;
+        casez_tmp_78 = entries_2_mem_addr;
       5'b00011:
-        casez_tmp_78 = entries_3_cp_idx;
+        casez_tmp_78 = entries_3_mem_addr;
       5'b00100:
-        casez_tmp_78 = entries_4_cp_idx;
+        casez_tmp_78 = entries_4_mem_addr;
       5'b00101:
-        casez_tmp_78 = entries_5_cp_idx;
+        casez_tmp_78 = entries_5_mem_addr;
       5'b00110:
-        casez_tmp_78 = entries_6_cp_idx;
+        casez_tmp_78 = entries_6_mem_addr;
       5'b00111:
-        casez_tmp_78 = entries_7_cp_idx;
+        casez_tmp_78 = entries_7_mem_addr;
       5'b01000:
-        casez_tmp_78 = entries_8_cp_idx;
+        casez_tmp_78 = entries_8_mem_addr;
       5'b01001:
-        casez_tmp_78 = entries_9_cp_idx;
+        casez_tmp_78 = entries_9_mem_addr;
       5'b01010:
-        casez_tmp_78 = entries_10_cp_idx;
+        casez_tmp_78 = entries_10_mem_addr;
       5'b01011:
-        casez_tmp_78 = entries_11_cp_idx;
+        casez_tmp_78 = entries_11_mem_addr;
       5'b01100:
-        casez_tmp_78 = entries_12_cp_idx;
+        casez_tmp_78 = entries_12_mem_addr;
       5'b01101:
-        casez_tmp_78 = entries_13_cp_idx;
+        casez_tmp_78 = entries_13_mem_addr;
       5'b01110:
-        casez_tmp_78 = entries_14_cp_idx;
+        casez_tmp_78 = entries_14_mem_addr;
       5'b01111:
-        casez_tmp_78 = entries_15_cp_idx;
+        casez_tmp_78 = entries_15_mem_addr;
       5'b10000:
-        casez_tmp_78 = entries_16_cp_idx;
+        casez_tmp_78 = entries_16_mem_addr;
       5'b10001:
-        casez_tmp_78 = entries_17_cp_idx;
+        casez_tmp_78 = entries_17_mem_addr;
       5'b10010:
-        casez_tmp_78 = entries_18_cp_idx;
+        casez_tmp_78 = entries_18_mem_addr;
       5'b10011:
-        casez_tmp_78 = entries_19_cp_idx;
+        casez_tmp_78 = entries_19_mem_addr;
       5'b10100:
-        casez_tmp_78 = entries_20_cp_idx;
+        casez_tmp_78 = entries_20_mem_addr;
       5'b10101:
-        casez_tmp_78 = entries_21_cp_idx;
+        casez_tmp_78 = entries_21_mem_addr;
       5'b10110:
-        casez_tmp_78 = entries_22_cp_idx;
+        casez_tmp_78 = entries_22_mem_addr;
       5'b10111:
-        casez_tmp_78 = entries_23_cp_idx;
+        casez_tmp_78 = entries_23_mem_addr;
       5'b11000:
-        casez_tmp_78 = entries_24_cp_idx;
+        casez_tmp_78 = entries_24_mem_addr;
       5'b11001:
-        casez_tmp_78 = entries_25_cp_idx;
+        casez_tmp_78 = entries_25_mem_addr;
       5'b11010:
-        casez_tmp_78 = entries_26_cp_idx;
+        casez_tmp_78 = entries_26_mem_addr;
       5'b11011:
-        casez_tmp_78 = entries_27_cp_idx;
+        casez_tmp_78 = entries_27_mem_addr;
       5'b11100:
-        casez_tmp_78 = entries_28_cp_idx;
+        casez_tmp_78 = entries_28_mem_addr;
       5'b11101:
-        casez_tmp_78 = entries_29_cp_idx;
+        casez_tmp_78 = entries_29_mem_addr;
       5'b11110:
-        casez_tmp_78 = entries_30_cp_idx;
+        casez_tmp_78 = entries_30_mem_addr;
       default:
-        casez_tmp_78 = entries_31_cp_idx;
+        casez_tmp_78 = entries_31_mem_addr;
     endcase
   end // always_comb
-  reg         casez_tmp_79;
+  reg  [31:0] casez_tmp_79;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_79 = entries_0_actual_taken;
+        casez_tmp_79 = entries_0_mem_wdata;
       5'b00001:
-        casez_tmp_79 = entries_1_actual_taken;
+        casez_tmp_79 = entries_1_mem_wdata;
       5'b00010:
-        casez_tmp_79 = entries_2_actual_taken;
+        casez_tmp_79 = entries_2_mem_wdata;
       5'b00011:
-        casez_tmp_79 = entries_3_actual_taken;
+        casez_tmp_79 = entries_3_mem_wdata;
       5'b00100:
-        casez_tmp_79 = entries_4_actual_taken;
+        casez_tmp_79 = entries_4_mem_wdata;
       5'b00101:
-        casez_tmp_79 = entries_5_actual_taken;
+        casez_tmp_79 = entries_5_mem_wdata;
       5'b00110:
-        casez_tmp_79 = entries_6_actual_taken;
+        casez_tmp_79 = entries_6_mem_wdata;
       5'b00111:
-        casez_tmp_79 = entries_7_actual_taken;
+        casez_tmp_79 = entries_7_mem_wdata;
       5'b01000:
-        casez_tmp_79 = entries_8_actual_taken;
+        casez_tmp_79 = entries_8_mem_wdata;
       5'b01001:
-        casez_tmp_79 = entries_9_actual_taken;
+        casez_tmp_79 = entries_9_mem_wdata;
       5'b01010:
-        casez_tmp_79 = entries_10_actual_taken;
+        casez_tmp_79 = entries_10_mem_wdata;
       5'b01011:
-        casez_tmp_79 = entries_11_actual_taken;
+        casez_tmp_79 = entries_11_mem_wdata;
       5'b01100:
-        casez_tmp_79 = entries_12_actual_taken;
+        casez_tmp_79 = entries_12_mem_wdata;
       5'b01101:
-        casez_tmp_79 = entries_13_actual_taken;
+        casez_tmp_79 = entries_13_mem_wdata;
       5'b01110:
-        casez_tmp_79 = entries_14_actual_taken;
+        casez_tmp_79 = entries_14_mem_wdata;
       5'b01111:
-        casez_tmp_79 = entries_15_actual_taken;
+        casez_tmp_79 = entries_15_mem_wdata;
       5'b10000:
-        casez_tmp_79 = entries_16_actual_taken;
+        casez_tmp_79 = entries_16_mem_wdata;
       5'b10001:
-        casez_tmp_79 = entries_17_actual_taken;
+        casez_tmp_79 = entries_17_mem_wdata;
       5'b10010:
-        casez_tmp_79 = entries_18_actual_taken;
+        casez_tmp_79 = entries_18_mem_wdata;
       5'b10011:
-        casez_tmp_79 = entries_19_actual_taken;
+        casez_tmp_79 = entries_19_mem_wdata;
       5'b10100:
-        casez_tmp_79 = entries_20_actual_taken;
+        casez_tmp_79 = entries_20_mem_wdata;
       5'b10101:
-        casez_tmp_79 = entries_21_actual_taken;
+        casez_tmp_79 = entries_21_mem_wdata;
       5'b10110:
-        casez_tmp_79 = entries_22_actual_taken;
+        casez_tmp_79 = entries_22_mem_wdata;
       5'b10111:
-        casez_tmp_79 = entries_23_actual_taken;
+        casez_tmp_79 = entries_23_mem_wdata;
       5'b11000:
-        casez_tmp_79 = entries_24_actual_taken;
+        casez_tmp_79 = entries_24_mem_wdata;
       5'b11001:
-        casez_tmp_79 = entries_25_actual_taken;
+        casez_tmp_79 = entries_25_mem_wdata;
       5'b11010:
-        casez_tmp_79 = entries_26_actual_taken;
+        casez_tmp_79 = entries_26_mem_wdata;
       5'b11011:
-        casez_tmp_79 = entries_27_actual_taken;
+        casez_tmp_79 = entries_27_mem_wdata;
       5'b11100:
-        casez_tmp_79 = entries_28_actual_taken;
+        casez_tmp_79 = entries_28_mem_wdata;
       5'b11101:
-        casez_tmp_79 = entries_29_actual_taken;
+        casez_tmp_79 = entries_29_mem_wdata;
       5'b11110:
-        casez_tmp_79 = entries_30_actual_taken;
+        casez_tmp_79 = entries_30_mem_wdata;
       default:
-        casez_tmp_79 = entries_31_actual_taken;
+        casez_tmp_79 = entries_31_mem_wdata;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_80;
+  reg         casez_tmp_80;
   always_comb begin
     casez (_idx_T_4)
       5'b00000:
-        casez_tmp_80 = entries_0_actual_target;
+        casez_tmp_80 = entries_0_addr_ready;
       5'b00001:
-        casez_tmp_80 = entries_1_actual_target;
+        casez_tmp_80 = entries_1_addr_ready;
       5'b00010:
-        casez_tmp_80 = entries_2_actual_target;
+        casez_tmp_80 = entries_2_addr_ready;
       5'b00011:
-        casez_tmp_80 = entries_3_actual_target;
+        casez_tmp_80 = entries_3_addr_ready;
       5'b00100:
-        casez_tmp_80 = entries_4_actual_target;
+        casez_tmp_80 = entries_4_addr_ready;
       5'b00101:
-        casez_tmp_80 = entries_5_actual_target;
+        casez_tmp_80 = entries_5_addr_ready;
       5'b00110:
-        casez_tmp_80 = entries_6_actual_target;
+        casez_tmp_80 = entries_6_addr_ready;
       5'b00111:
-        casez_tmp_80 = entries_7_actual_target;
+        casez_tmp_80 = entries_7_addr_ready;
       5'b01000:
-        casez_tmp_80 = entries_8_actual_target;
+        casez_tmp_80 = entries_8_addr_ready;
       5'b01001:
-        casez_tmp_80 = entries_9_actual_target;
+        casez_tmp_80 = entries_9_addr_ready;
       5'b01010:
-        casez_tmp_80 = entries_10_actual_target;
+        casez_tmp_80 = entries_10_addr_ready;
       5'b01011:
-        casez_tmp_80 = entries_11_actual_target;
+        casez_tmp_80 = entries_11_addr_ready;
       5'b01100:
-        casez_tmp_80 = entries_12_actual_target;
+        casez_tmp_80 = entries_12_addr_ready;
       5'b01101:
-        casez_tmp_80 = entries_13_actual_target;
+        casez_tmp_80 = entries_13_addr_ready;
       5'b01110:
-        casez_tmp_80 = entries_14_actual_target;
+        casez_tmp_80 = entries_14_addr_ready;
       5'b01111:
-        casez_tmp_80 = entries_15_actual_target;
+        casez_tmp_80 = entries_15_addr_ready;
       5'b10000:
-        casez_tmp_80 = entries_16_actual_target;
+        casez_tmp_80 = entries_16_addr_ready;
       5'b10001:
-        casez_tmp_80 = entries_17_actual_target;
+        casez_tmp_80 = entries_17_addr_ready;
       5'b10010:
-        casez_tmp_80 = entries_18_actual_target;
+        casez_tmp_80 = entries_18_addr_ready;
       5'b10011:
-        casez_tmp_80 = entries_19_actual_target;
+        casez_tmp_80 = entries_19_addr_ready;
       5'b10100:
-        casez_tmp_80 = entries_20_actual_target;
+        casez_tmp_80 = entries_20_addr_ready;
       5'b10101:
-        casez_tmp_80 = entries_21_actual_target;
+        casez_tmp_80 = entries_21_addr_ready;
       5'b10110:
-        casez_tmp_80 = entries_22_actual_target;
+        casez_tmp_80 = entries_22_addr_ready;
       5'b10111:
-        casez_tmp_80 = entries_23_actual_target;
+        casez_tmp_80 = entries_23_addr_ready;
       5'b11000:
-        casez_tmp_80 = entries_24_actual_target;
+        casez_tmp_80 = entries_24_addr_ready;
       5'b11001:
-        casez_tmp_80 = entries_25_actual_target;
+        casez_tmp_80 = entries_25_addr_ready;
       5'b11010:
-        casez_tmp_80 = entries_26_actual_target;
+        casez_tmp_80 = entries_26_addr_ready;
       5'b11011:
-        casez_tmp_80 = entries_27_actual_target;
+        casez_tmp_80 = entries_27_addr_ready;
       5'b11100:
-        casez_tmp_80 = entries_28_actual_target;
+        casez_tmp_80 = entries_28_addr_ready;
       5'b11101:
-        casez_tmp_80 = entries_29_actual_target;
+        casez_tmp_80 = entries_29_addr_ready;
       5'b11110:
-        casez_tmp_80 = entries_30_actual_target;
+        casez_tmp_80 = entries_30_addr_ready;
       default:
-        casez_tmp_80 = entries_31_actual_target;
-    endcase
-  end // always_comb
-  reg  [31:0] casez_tmp_81;
-  always_comb begin
-    casez (_idx_T_4)
-      5'b00000:
-        casez_tmp_81 = entries_0_mem_addr;
-      5'b00001:
-        casez_tmp_81 = entries_1_mem_addr;
-      5'b00010:
-        casez_tmp_81 = entries_2_mem_addr;
-      5'b00011:
-        casez_tmp_81 = entries_3_mem_addr;
-      5'b00100:
-        casez_tmp_81 = entries_4_mem_addr;
-      5'b00101:
-        casez_tmp_81 = entries_5_mem_addr;
-      5'b00110:
-        casez_tmp_81 = entries_6_mem_addr;
-      5'b00111:
-        casez_tmp_81 = entries_7_mem_addr;
-      5'b01000:
-        casez_tmp_81 = entries_8_mem_addr;
-      5'b01001:
-        casez_tmp_81 = entries_9_mem_addr;
-      5'b01010:
-        casez_tmp_81 = entries_10_mem_addr;
-      5'b01011:
-        casez_tmp_81 = entries_11_mem_addr;
-      5'b01100:
-        casez_tmp_81 = entries_12_mem_addr;
-      5'b01101:
-        casez_tmp_81 = entries_13_mem_addr;
-      5'b01110:
-        casez_tmp_81 = entries_14_mem_addr;
-      5'b01111:
-        casez_tmp_81 = entries_15_mem_addr;
-      5'b10000:
-        casez_tmp_81 = entries_16_mem_addr;
-      5'b10001:
-        casez_tmp_81 = entries_17_mem_addr;
-      5'b10010:
-        casez_tmp_81 = entries_18_mem_addr;
-      5'b10011:
-        casez_tmp_81 = entries_19_mem_addr;
-      5'b10100:
-        casez_tmp_81 = entries_20_mem_addr;
-      5'b10101:
-        casez_tmp_81 = entries_21_mem_addr;
-      5'b10110:
-        casez_tmp_81 = entries_22_mem_addr;
-      5'b10111:
-        casez_tmp_81 = entries_23_mem_addr;
-      5'b11000:
-        casez_tmp_81 = entries_24_mem_addr;
-      5'b11001:
-        casez_tmp_81 = entries_25_mem_addr;
-      5'b11010:
-        casez_tmp_81 = entries_26_mem_addr;
-      5'b11011:
-        casez_tmp_81 = entries_27_mem_addr;
-      5'b11100:
-        casez_tmp_81 = entries_28_mem_addr;
-      5'b11101:
-        casez_tmp_81 = entries_29_mem_addr;
-      5'b11110:
-        casez_tmp_81 = entries_30_mem_addr;
-      default:
-        casez_tmp_81 = entries_31_mem_addr;
-    endcase
-  end // always_comb
-  reg  [31:0] casez_tmp_82;
-  always_comb begin
-    casez (_idx_T_4)
-      5'b00000:
-        casez_tmp_82 = entries_0_mem_wdata;
-      5'b00001:
-        casez_tmp_82 = entries_1_mem_wdata;
-      5'b00010:
-        casez_tmp_82 = entries_2_mem_wdata;
-      5'b00011:
-        casez_tmp_82 = entries_3_mem_wdata;
-      5'b00100:
-        casez_tmp_82 = entries_4_mem_wdata;
-      5'b00101:
-        casez_tmp_82 = entries_5_mem_wdata;
-      5'b00110:
-        casez_tmp_82 = entries_6_mem_wdata;
-      5'b00111:
-        casez_tmp_82 = entries_7_mem_wdata;
-      5'b01000:
-        casez_tmp_82 = entries_8_mem_wdata;
-      5'b01001:
-        casez_tmp_82 = entries_9_mem_wdata;
-      5'b01010:
-        casez_tmp_82 = entries_10_mem_wdata;
-      5'b01011:
-        casez_tmp_82 = entries_11_mem_wdata;
-      5'b01100:
-        casez_tmp_82 = entries_12_mem_wdata;
-      5'b01101:
-        casez_tmp_82 = entries_13_mem_wdata;
-      5'b01110:
-        casez_tmp_82 = entries_14_mem_wdata;
-      5'b01111:
-        casez_tmp_82 = entries_15_mem_wdata;
-      5'b10000:
-        casez_tmp_82 = entries_16_mem_wdata;
-      5'b10001:
-        casez_tmp_82 = entries_17_mem_wdata;
-      5'b10010:
-        casez_tmp_82 = entries_18_mem_wdata;
-      5'b10011:
-        casez_tmp_82 = entries_19_mem_wdata;
-      5'b10100:
-        casez_tmp_82 = entries_20_mem_wdata;
-      5'b10101:
-        casez_tmp_82 = entries_21_mem_wdata;
-      5'b10110:
-        casez_tmp_82 = entries_22_mem_wdata;
-      5'b10111:
-        casez_tmp_82 = entries_23_mem_wdata;
-      5'b11000:
-        casez_tmp_82 = entries_24_mem_wdata;
-      5'b11001:
-        casez_tmp_82 = entries_25_mem_wdata;
-      5'b11010:
-        casez_tmp_82 = entries_26_mem_wdata;
-      5'b11011:
-        casez_tmp_82 = entries_27_mem_wdata;
-      5'b11100:
-        casez_tmp_82 = entries_28_mem_wdata;
-      5'b11101:
-        casez_tmp_82 = entries_29_mem_wdata;
-      5'b11110:
-        casez_tmp_82 = entries_30_mem_wdata;
-      default:
-        casez_tmp_82 = entries_31_mem_wdata;
-    endcase
-  end // always_comb
-  reg         casez_tmp_83;
-  always_comb begin
-    casez (_idx_T_4)
-      5'b00000:
-        casez_tmp_83 = entries_0_addr_ready;
-      5'b00001:
-        casez_tmp_83 = entries_1_addr_ready;
-      5'b00010:
-        casez_tmp_83 = entries_2_addr_ready;
-      5'b00011:
-        casez_tmp_83 = entries_3_addr_ready;
-      5'b00100:
-        casez_tmp_83 = entries_4_addr_ready;
-      5'b00101:
-        casez_tmp_83 = entries_5_addr_ready;
-      5'b00110:
-        casez_tmp_83 = entries_6_addr_ready;
-      5'b00111:
-        casez_tmp_83 = entries_7_addr_ready;
-      5'b01000:
-        casez_tmp_83 = entries_8_addr_ready;
-      5'b01001:
-        casez_tmp_83 = entries_9_addr_ready;
-      5'b01010:
-        casez_tmp_83 = entries_10_addr_ready;
-      5'b01011:
-        casez_tmp_83 = entries_11_addr_ready;
-      5'b01100:
-        casez_tmp_83 = entries_12_addr_ready;
-      5'b01101:
-        casez_tmp_83 = entries_13_addr_ready;
-      5'b01110:
-        casez_tmp_83 = entries_14_addr_ready;
-      5'b01111:
-        casez_tmp_83 = entries_15_addr_ready;
-      5'b10000:
-        casez_tmp_83 = entries_16_addr_ready;
-      5'b10001:
-        casez_tmp_83 = entries_17_addr_ready;
-      5'b10010:
-        casez_tmp_83 = entries_18_addr_ready;
-      5'b10011:
-        casez_tmp_83 = entries_19_addr_ready;
-      5'b10100:
-        casez_tmp_83 = entries_20_addr_ready;
-      5'b10101:
-        casez_tmp_83 = entries_21_addr_ready;
-      5'b10110:
-        casez_tmp_83 = entries_22_addr_ready;
-      5'b10111:
-        casez_tmp_83 = entries_23_addr_ready;
-      5'b11000:
-        casez_tmp_83 = entries_24_addr_ready;
-      5'b11001:
-        casez_tmp_83 = entries_25_addr_ready;
-      5'b11010:
-        casez_tmp_83 = entries_26_addr_ready;
-      5'b11011:
-        casez_tmp_83 = entries_27_addr_ready;
-      5'b11100:
-        casez_tmp_83 = entries_28_addr_ready;
-      5'b11101:
-        casez_tmp_83 = entries_29_addr_ready;
-      5'b11110:
-        casez_tmp_83 = entries_30_addr_ready;
-      default:
-        casez_tmp_83 = entries_31_addr_ready;
+        casez_tmp_80 = entries_31_addr_ready;
     endcase
   end // always_comb
   wire        io_commit_valid_2_0 =
-    count > 6'h2 & casez_tmp_58
-    & (casez_tmp_59 | io_wb_fire_0 & io_wb_idx_0 == _idx_T_4 | io_wb_fire_1
+    count > 6'h2 & casez_tmp_56
+    & (casez_tmp_57 | io_wb_fire_0 & io_wb_idx_0 == _idx_T_4 | io_wb_fire_1
        & io_wb_idx_1 == _idx_T_4 | io_wb_fire_2 & io_wb_idx_2 == _idx_T_4 | io_wb_fire_3
        & io_wb_idx_3 == _idx_T_4 | io_ctrl_wb_fire & io_ctrl_wb_idx == _idx_T_4
        | io_store_wb_fire & io_store_wb_idx == _idx_T_4);
   wire [4:0]  _idx_T_6 = idx + 5'h3;
   wire [4:0]  _io_enq_idx_3_T = tail + 5'h3;
-  reg         casez_tmp_84;
+  reg         casez_tmp_81;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_84 = entries_0_valid;
+        casez_tmp_81 = entries_0_valid;
       5'b00001:
-        casez_tmp_84 = entries_1_valid;
+        casez_tmp_81 = entries_1_valid;
       5'b00010:
-        casez_tmp_84 = entries_2_valid;
+        casez_tmp_81 = entries_2_valid;
       5'b00011:
-        casez_tmp_84 = entries_3_valid;
+        casez_tmp_81 = entries_3_valid;
       5'b00100:
-        casez_tmp_84 = entries_4_valid;
+        casez_tmp_81 = entries_4_valid;
       5'b00101:
-        casez_tmp_84 = entries_5_valid;
+        casez_tmp_81 = entries_5_valid;
       5'b00110:
-        casez_tmp_84 = entries_6_valid;
+        casez_tmp_81 = entries_6_valid;
       5'b00111:
-        casez_tmp_84 = entries_7_valid;
+        casez_tmp_81 = entries_7_valid;
       5'b01000:
-        casez_tmp_84 = entries_8_valid;
+        casez_tmp_81 = entries_8_valid;
       5'b01001:
-        casez_tmp_84 = entries_9_valid;
+        casez_tmp_81 = entries_9_valid;
       5'b01010:
-        casez_tmp_84 = entries_10_valid;
+        casez_tmp_81 = entries_10_valid;
       5'b01011:
-        casez_tmp_84 = entries_11_valid;
+        casez_tmp_81 = entries_11_valid;
       5'b01100:
-        casez_tmp_84 = entries_12_valid;
+        casez_tmp_81 = entries_12_valid;
       5'b01101:
-        casez_tmp_84 = entries_13_valid;
+        casez_tmp_81 = entries_13_valid;
       5'b01110:
-        casez_tmp_84 = entries_14_valid;
+        casez_tmp_81 = entries_14_valid;
       5'b01111:
-        casez_tmp_84 = entries_15_valid;
+        casez_tmp_81 = entries_15_valid;
       5'b10000:
-        casez_tmp_84 = entries_16_valid;
+        casez_tmp_81 = entries_16_valid;
       5'b10001:
-        casez_tmp_84 = entries_17_valid;
+        casez_tmp_81 = entries_17_valid;
       5'b10010:
-        casez_tmp_84 = entries_18_valid;
+        casez_tmp_81 = entries_18_valid;
       5'b10011:
-        casez_tmp_84 = entries_19_valid;
+        casez_tmp_81 = entries_19_valid;
       5'b10100:
-        casez_tmp_84 = entries_20_valid;
+        casez_tmp_81 = entries_20_valid;
       5'b10101:
-        casez_tmp_84 = entries_21_valid;
+        casez_tmp_81 = entries_21_valid;
       5'b10110:
-        casez_tmp_84 = entries_22_valid;
+        casez_tmp_81 = entries_22_valid;
       5'b10111:
-        casez_tmp_84 = entries_23_valid;
+        casez_tmp_81 = entries_23_valid;
       5'b11000:
-        casez_tmp_84 = entries_24_valid;
+        casez_tmp_81 = entries_24_valid;
       5'b11001:
-        casez_tmp_84 = entries_25_valid;
+        casez_tmp_81 = entries_25_valid;
       5'b11010:
-        casez_tmp_84 = entries_26_valid;
+        casez_tmp_81 = entries_26_valid;
       5'b11011:
-        casez_tmp_84 = entries_27_valid;
+        casez_tmp_81 = entries_27_valid;
       5'b11100:
-        casez_tmp_84 = entries_28_valid;
+        casez_tmp_81 = entries_28_valid;
       5'b11101:
-        casez_tmp_84 = entries_29_valid;
+        casez_tmp_81 = entries_29_valid;
       5'b11110:
-        casez_tmp_84 = entries_30_valid;
+        casez_tmp_81 = entries_30_valid;
       default:
-        casez_tmp_84 = entries_31_valid;
+        casez_tmp_81 = entries_31_valid;
+    endcase
+  end // always_comb
+  reg         casez_tmp_82;
+  always_comb begin
+    casez (_idx_T_6)
+      5'b00000:
+        casez_tmp_82 = entries_0_done;
+      5'b00001:
+        casez_tmp_82 = entries_1_done;
+      5'b00010:
+        casez_tmp_82 = entries_2_done;
+      5'b00011:
+        casez_tmp_82 = entries_3_done;
+      5'b00100:
+        casez_tmp_82 = entries_4_done;
+      5'b00101:
+        casez_tmp_82 = entries_5_done;
+      5'b00110:
+        casez_tmp_82 = entries_6_done;
+      5'b00111:
+        casez_tmp_82 = entries_7_done;
+      5'b01000:
+        casez_tmp_82 = entries_8_done;
+      5'b01001:
+        casez_tmp_82 = entries_9_done;
+      5'b01010:
+        casez_tmp_82 = entries_10_done;
+      5'b01011:
+        casez_tmp_82 = entries_11_done;
+      5'b01100:
+        casez_tmp_82 = entries_12_done;
+      5'b01101:
+        casez_tmp_82 = entries_13_done;
+      5'b01110:
+        casez_tmp_82 = entries_14_done;
+      5'b01111:
+        casez_tmp_82 = entries_15_done;
+      5'b10000:
+        casez_tmp_82 = entries_16_done;
+      5'b10001:
+        casez_tmp_82 = entries_17_done;
+      5'b10010:
+        casez_tmp_82 = entries_18_done;
+      5'b10011:
+        casez_tmp_82 = entries_19_done;
+      5'b10100:
+        casez_tmp_82 = entries_20_done;
+      5'b10101:
+        casez_tmp_82 = entries_21_done;
+      5'b10110:
+        casez_tmp_82 = entries_22_done;
+      5'b10111:
+        casez_tmp_82 = entries_23_done;
+      5'b11000:
+        casez_tmp_82 = entries_24_done;
+      5'b11001:
+        casez_tmp_82 = entries_25_done;
+      5'b11010:
+        casez_tmp_82 = entries_26_done;
+      5'b11011:
+        casez_tmp_82 = entries_27_done;
+      5'b11100:
+        casez_tmp_82 = entries_28_done;
+      5'b11101:
+        casez_tmp_82 = entries_29_done;
+      5'b11110:
+        casez_tmp_82 = entries_30_done;
+      default:
+        casez_tmp_82 = entries_31_done;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_83;
+  always_comb begin
+    casez (_idx_T_6)
+      5'b00000:
+        casez_tmp_83 = entries_0_pc;
+      5'b00001:
+        casez_tmp_83 = entries_1_pc;
+      5'b00010:
+        casez_tmp_83 = entries_2_pc;
+      5'b00011:
+        casez_tmp_83 = entries_3_pc;
+      5'b00100:
+        casez_tmp_83 = entries_4_pc;
+      5'b00101:
+        casez_tmp_83 = entries_5_pc;
+      5'b00110:
+        casez_tmp_83 = entries_6_pc;
+      5'b00111:
+        casez_tmp_83 = entries_7_pc;
+      5'b01000:
+        casez_tmp_83 = entries_8_pc;
+      5'b01001:
+        casez_tmp_83 = entries_9_pc;
+      5'b01010:
+        casez_tmp_83 = entries_10_pc;
+      5'b01011:
+        casez_tmp_83 = entries_11_pc;
+      5'b01100:
+        casez_tmp_83 = entries_12_pc;
+      5'b01101:
+        casez_tmp_83 = entries_13_pc;
+      5'b01110:
+        casez_tmp_83 = entries_14_pc;
+      5'b01111:
+        casez_tmp_83 = entries_15_pc;
+      5'b10000:
+        casez_tmp_83 = entries_16_pc;
+      5'b10001:
+        casez_tmp_83 = entries_17_pc;
+      5'b10010:
+        casez_tmp_83 = entries_18_pc;
+      5'b10011:
+        casez_tmp_83 = entries_19_pc;
+      5'b10100:
+        casez_tmp_83 = entries_20_pc;
+      5'b10101:
+        casez_tmp_83 = entries_21_pc;
+      5'b10110:
+        casez_tmp_83 = entries_22_pc;
+      5'b10111:
+        casez_tmp_83 = entries_23_pc;
+      5'b11000:
+        casez_tmp_83 = entries_24_pc;
+      5'b11001:
+        casez_tmp_83 = entries_25_pc;
+      5'b11010:
+        casez_tmp_83 = entries_26_pc;
+      5'b11011:
+        casez_tmp_83 = entries_27_pc;
+      5'b11100:
+        casez_tmp_83 = entries_28_pc;
+      5'b11101:
+        casez_tmp_83 = entries_29_pc;
+      5'b11110:
+        casez_tmp_83 = entries_30_pc;
+      default:
+        casez_tmp_83 = entries_31_pc;
+    endcase
+  end // always_comb
+  reg  [31:0] casez_tmp_84;
+  always_comb begin
+    casez (_idx_T_6)
+      5'b00000:
+        casez_tmp_84 = entries_0_inst;
+      5'b00001:
+        casez_tmp_84 = entries_1_inst;
+      5'b00010:
+        casez_tmp_84 = entries_2_inst;
+      5'b00011:
+        casez_tmp_84 = entries_3_inst;
+      5'b00100:
+        casez_tmp_84 = entries_4_inst;
+      5'b00101:
+        casez_tmp_84 = entries_5_inst;
+      5'b00110:
+        casez_tmp_84 = entries_6_inst;
+      5'b00111:
+        casez_tmp_84 = entries_7_inst;
+      5'b01000:
+        casez_tmp_84 = entries_8_inst;
+      5'b01001:
+        casez_tmp_84 = entries_9_inst;
+      5'b01010:
+        casez_tmp_84 = entries_10_inst;
+      5'b01011:
+        casez_tmp_84 = entries_11_inst;
+      5'b01100:
+        casez_tmp_84 = entries_12_inst;
+      5'b01101:
+        casez_tmp_84 = entries_13_inst;
+      5'b01110:
+        casez_tmp_84 = entries_14_inst;
+      5'b01111:
+        casez_tmp_84 = entries_15_inst;
+      5'b10000:
+        casez_tmp_84 = entries_16_inst;
+      5'b10001:
+        casez_tmp_84 = entries_17_inst;
+      5'b10010:
+        casez_tmp_84 = entries_18_inst;
+      5'b10011:
+        casez_tmp_84 = entries_19_inst;
+      5'b10100:
+        casez_tmp_84 = entries_20_inst;
+      5'b10101:
+        casez_tmp_84 = entries_21_inst;
+      5'b10110:
+        casez_tmp_84 = entries_22_inst;
+      5'b10111:
+        casez_tmp_84 = entries_23_inst;
+      5'b11000:
+        casez_tmp_84 = entries_24_inst;
+      5'b11001:
+        casez_tmp_84 = entries_25_inst;
+      5'b11010:
+        casez_tmp_84 = entries_26_inst;
+      5'b11011:
+        casez_tmp_84 = entries_27_inst;
+      5'b11100:
+        casez_tmp_84 = entries_28_inst;
+      5'b11101:
+        casez_tmp_84 = entries_29_inst;
+      5'b11110:
+        casez_tmp_84 = entries_30_inst;
+      default:
+        casez_tmp_84 = entries_31_inst;
     endcase
   end // always_comb
   reg         casez_tmp_85;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_85 = entries_0_done;
+        casez_tmp_85 = entries_0_reg_write;
       5'b00001:
-        casez_tmp_85 = entries_1_done;
+        casez_tmp_85 = entries_1_reg_write;
       5'b00010:
-        casez_tmp_85 = entries_2_done;
+        casez_tmp_85 = entries_2_reg_write;
       5'b00011:
-        casez_tmp_85 = entries_3_done;
+        casez_tmp_85 = entries_3_reg_write;
       5'b00100:
-        casez_tmp_85 = entries_4_done;
+        casez_tmp_85 = entries_4_reg_write;
       5'b00101:
-        casez_tmp_85 = entries_5_done;
+        casez_tmp_85 = entries_5_reg_write;
       5'b00110:
-        casez_tmp_85 = entries_6_done;
+        casez_tmp_85 = entries_6_reg_write;
       5'b00111:
-        casez_tmp_85 = entries_7_done;
+        casez_tmp_85 = entries_7_reg_write;
       5'b01000:
-        casez_tmp_85 = entries_8_done;
+        casez_tmp_85 = entries_8_reg_write;
       5'b01001:
-        casez_tmp_85 = entries_9_done;
+        casez_tmp_85 = entries_9_reg_write;
       5'b01010:
-        casez_tmp_85 = entries_10_done;
+        casez_tmp_85 = entries_10_reg_write;
       5'b01011:
-        casez_tmp_85 = entries_11_done;
+        casez_tmp_85 = entries_11_reg_write;
       5'b01100:
-        casez_tmp_85 = entries_12_done;
+        casez_tmp_85 = entries_12_reg_write;
       5'b01101:
-        casez_tmp_85 = entries_13_done;
+        casez_tmp_85 = entries_13_reg_write;
       5'b01110:
-        casez_tmp_85 = entries_14_done;
+        casez_tmp_85 = entries_14_reg_write;
       5'b01111:
-        casez_tmp_85 = entries_15_done;
+        casez_tmp_85 = entries_15_reg_write;
       5'b10000:
-        casez_tmp_85 = entries_16_done;
+        casez_tmp_85 = entries_16_reg_write;
       5'b10001:
-        casez_tmp_85 = entries_17_done;
+        casez_tmp_85 = entries_17_reg_write;
       5'b10010:
-        casez_tmp_85 = entries_18_done;
+        casez_tmp_85 = entries_18_reg_write;
       5'b10011:
-        casez_tmp_85 = entries_19_done;
+        casez_tmp_85 = entries_19_reg_write;
       5'b10100:
-        casez_tmp_85 = entries_20_done;
+        casez_tmp_85 = entries_20_reg_write;
       5'b10101:
-        casez_tmp_85 = entries_21_done;
+        casez_tmp_85 = entries_21_reg_write;
       5'b10110:
-        casez_tmp_85 = entries_22_done;
+        casez_tmp_85 = entries_22_reg_write;
       5'b10111:
-        casez_tmp_85 = entries_23_done;
+        casez_tmp_85 = entries_23_reg_write;
       5'b11000:
-        casez_tmp_85 = entries_24_done;
+        casez_tmp_85 = entries_24_reg_write;
       5'b11001:
-        casez_tmp_85 = entries_25_done;
+        casez_tmp_85 = entries_25_reg_write;
       5'b11010:
-        casez_tmp_85 = entries_26_done;
+        casez_tmp_85 = entries_26_reg_write;
       5'b11011:
-        casez_tmp_85 = entries_27_done;
+        casez_tmp_85 = entries_27_reg_write;
       5'b11100:
-        casez_tmp_85 = entries_28_done;
+        casez_tmp_85 = entries_28_reg_write;
       5'b11101:
-        casez_tmp_85 = entries_29_done;
+        casez_tmp_85 = entries_29_reg_write;
       5'b11110:
-        casez_tmp_85 = entries_30_done;
+        casez_tmp_85 = entries_30_reg_write;
       default:
-        casez_tmp_85 = entries_31_done;
+        casez_tmp_85 = entries_31_reg_write;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_86;
+  reg         casez_tmp_86;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_86 = entries_0_pc;
+        casez_tmp_86 = entries_0_csr_write;
       5'b00001:
-        casez_tmp_86 = entries_1_pc;
+        casez_tmp_86 = entries_1_csr_write;
       5'b00010:
-        casez_tmp_86 = entries_2_pc;
+        casez_tmp_86 = entries_2_csr_write;
       5'b00011:
-        casez_tmp_86 = entries_3_pc;
+        casez_tmp_86 = entries_3_csr_write;
       5'b00100:
-        casez_tmp_86 = entries_4_pc;
+        casez_tmp_86 = entries_4_csr_write;
       5'b00101:
-        casez_tmp_86 = entries_5_pc;
+        casez_tmp_86 = entries_5_csr_write;
       5'b00110:
-        casez_tmp_86 = entries_6_pc;
+        casez_tmp_86 = entries_6_csr_write;
       5'b00111:
-        casez_tmp_86 = entries_7_pc;
+        casez_tmp_86 = entries_7_csr_write;
       5'b01000:
-        casez_tmp_86 = entries_8_pc;
+        casez_tmp_86 = entries_8_csr_write;
       5'b01001:
-        casez_tmp_86 = entries_9_pc;
+        casez_tmp_86 = entries_9_csr_write;
       5'b01010:
-        casez_tmp_86 = entries_10_pc;
+        casez_tmp_86 = entries_10_csr_write;
       5'b01011:
-        casez_tmp_86 = entries_11_pc;
+        casez_tmp_86 = entries_11_csr_write;
       5'b01100:
-        casez_tmp_86 = entries_12_pc;
+        casez_tmp_86 = entries_12_csr_write;
       5'b01101:
-        casez_tmp_86 = entries_13_pc;
+        casez_tmp_86 = entries_13_csr_write;
       5'b01110:
-        casez_tmp_86 = entries_14_pc;
+        casez_tmp_86 = entries_14_csr_write;
       5'b01111:
-        casez_tmp_86 = entries_15_pc;
+        casez_tmp_86 = entries_15_csr_write;
       5'b10000:
-        casez_tmp_86 = entries_16_pc;
+        casez_tmp_86 = entries_16_csr_write;
       5'b10001:
-        casez_tmp_86 = entries_17_pc;
+        casez_tmp_86 = entries_17_csr_write;
       5'b10010:
-        casez_tmp_86 = entries_18_pc;
+        casez_tmp_86 = entries_18_csr_write;
       5'b10011:
-        casez_tmp_86 = entries_19_pc;
+        casez_tmp_86 = entries_19_csr_write;
       5'b10100:
-        casez_tmp_86 = entries_20_pc;
+        casez_tmp_86 = entries_20_csr_write;
       5'b10101:
-        casez_tmp_86 = entries_21_pc;
+        casez_tmp_86 = entries_21_csr_write;
       5'b10110:
-        casez_tmp_86 = entries_22_pc;
+        casez_tmp_86 = entries_22_csr_write;
       5'b10111:
-        casez_tmp_86 = entries_23_pc;
+        casez_tmp_86 = entries_23_csr_write;
       5'b11000:
-        casez_tmp_86 = entries_24_pc;
+        casez_tmp_86 = entries_24_csr_write;
       5'b11001:
-        casez_tmp_86 = entries_25_pc;
+        casez_tmp_86 = entries_25_csr_write;
       5'b11010:
-        casez_tmp_86 = entries_26_pc;
+        casez_tmp_86 = entries_26_csr_write;
       5'b11011:
-        casez_tmp_86 = entries_27_pc;
+        casez_tmp_86 = entries_27_csr_write;
       5'b11100:
-        casez_tmp_86 = entries_28_pc;
+        casez_tmp_86 = entries_28_csr_write;
       5'b11101:
-        casez_tmp_86 = entries_29_pc;
+        casez_tmp_86 = entries_29_csr_write;
       5'b11110:
-        casez_tmp_86 = entries_30_pc;
+        casez_tmp_86 = entries_30_csr_write;
       default:
-        casez_tmp_86 = entries_31_pc;
+        casez_tmp_86 = entries_31_csr_write;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_87;
+  reg         casez_tmp_87;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_87 = entries_0_inst;
+        casez_tmp_87 = entries_0_mem_valid;
       5'b00001:
-        casez_tmp_87 = entries_1_inst;
+        casez_tmp_87 = entries_1_mem_valid;
       5'b00010:
-        casez_tmp_87 = entries_2_inst;
+        casez_tmp_87 = entries_2_mem_valid;
       5'b00011:
-        casez_tmp_87 = entries_3_inst;
+        casez_tmp_87 = entries_3_mem_valid;
       5'b00100:
-        casez_tmp_87 = entries_4_inst;
+        casez_tmp_87 = entries_4_mem_valid;
       5'b00101:
-        casez_tmp_87 = entries_5_inst;
+        casez_tmp_87 = entries_5_mem_valid;
       5'b00110:
-        casez_tmp_87 = entries_6_inst;
+        casez_tmp_87 = entries_6_mem_valid;
       5'b00111:
-        casez_tmp_87 = entries_7_inst;
+        casez_tmp_87 = entries_7_mem_valid;
       5'b01000:
-        casez_tmp_87 = entries_8_inst;
+        casez_tmp_87 = entries_8_mem_valid;
       5'b01001:
-        casez_tmp_87 = entries_9_inst;
+        casez_tmp_87 = entries_9_mem_valid;
       5'b01010:
-        casez_tmp_87 = entries_10_inst;
+        casez_tmp_87 = entries_10_mem_valid;
       5'b01011:
-        casez_tmp_87 = entries_11_inst;
+        casez_tmp_87 = entries_11_mem_valid;
       5'b01100:
-        casez_tmp_87 = entries_12_inst;
+        casez_tmp_87 = entries_12_mem_valid;
       5'b01101:
-        casez_tmp_87 = entries_13_inst;
+        casez_tmp_87 = entries_13_mem_valid;
       5'b01110:
-        casez_tmp_87 = entries_14_inst;
+        casez_tmp_87 = entries_14_mem_valid;
       5'b01111:
-        casez_tmp_87 = entries_15_inst;
+        casez_tmp_87 = entries_15_mem_valid;
       5'b10000:
-        casez_tmp_87 = entries_16_inst;
+        casez_tmp_87 = entries_16_mem_valid;
       5'b10001:
-        casez_tmp_87 = entries_17_inst;
+        casez_tmp_87 = entries_17_mem_valid;
       5'b10010:
-        casez_tmp_87 = entries_18_inst;
+        casez_tmp_87 = entries_18_mem_valid;
       5'b10011:
-        casez_tmp_87 = entries_19_inst;
+        casez_tmp_87 = entries_19_mem_valid;
       5'b10100:
-        casez_tmp_87 = entries_20_inst;
+        casez_tmp_87 = entries_20_mem_valid;
       5'b10101:
-        casez_tmp_87 = entries_21_inst;
+        casez_tmp_87 = entries_21_mem_valid;
       5'b10110:
-        casez_tmp_87 = entries_22_inst;
+        casez_tmp_87 = entries_22_mem_valid;
       5'b10111:
-        casez_tmp_87 = entries_23_inst;
+        casez_tmp_87 = entries_23_mem_valid;
       5'b11000:
-        casez_tmp_87 = entries_24_inst;
+        casez_tmp_87 = entries_24_mem_valid;
       5'b11001:
-        casez_tmp_87 = entries_25_inst;
+        casez_tmp_87 = entries_25_mem_valid;
       5'b11010:
-        casez_tmp_87 = entries_26_inst;
+        casez_tmp_87 = entries_26_mem_valid;
       5'b11011:
-        casez_tmp_87 = entries_27_inst;
+        casez_tmp_87 = entries_27_mem_valid;
       5'b11100:
-        casez_tmp_87 = entries_28_inst;
+        casez_tmp_87 = entries_28_mem_valid;
       5'b11101:
-        casez_tmp_87 = entries_29_inst;
+        casez_tmp_87 = entries_29_mem_valid;
       5'b11110:
-        casez_tmp_87 = entries_30_inst;
+        casez_tmp_87 = entries_30_mem_valid;
       default:
-        casez_tmp_87 = entries_31_inst;
+        casez_tmp_87 = entries_31_mem_valid;
     endcase
   end // always_comb
   reg         casez_tmp_88;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_88 = entries_0_reg_write;
+        casez_tmp_88 = entries_0_mem_write;
       5'b00001:
-        casez_tmp_88 = entries_1_reg_write;
+        casez_tmp_88 = entries_1_mem_write;
       5'b00010:
-        casez_tmp_88 = entries_2_reg_write;
+        casez_tmp_88 = entries_2_mem_write;
       5'b00011:
-        casez_tmp_88 = entries_3_reg_write;
+        casez_tmp_88 = entries_3_mem_write;
       5'b00100:
-        casez_tmp_88 = entries_4_reg_write;
+        casez_tmp_88 = entries_4_mem_write;
       5'b00101:
-        casez_tmp_88 = entries_5_reg_write;
+        casez_tmp_88 = entries_5_mem_write;
       5'b00110:
-        casez_tmp_88 = entries_6_reg_write;
+        casez_tmp_88 = entries_6_mem_write;
       5'b00111:
-        casez_tmp_88 = entries_7_reg_write;
+        casez_tmp_88 = entries_7_mem_write;
       5'b01000:
-        casez_tmp_88 = entries_8_reg_write;
+        casez_tmp_88 = entries_8_mem_write;
       5'b01001:
-        casez_tmp_88 = entries_9_reg_write;
+        casez_tmp_88 = entries_9_mem_write;
       5'b01010:
-        casez_tmp_88 = entries_10_reg_write;
+        casez_tmp_88 = entries_10_mem_write;
       5'b01011:
-        casez_tmp_88 = entries_11_reg_write;
+        casez_tmp_88 = entries_11_mem_write;
       5'b01100:
-        casez_tmp_88 = entries_12_reg_write;
+        casez_tmp_88 = entries_12_mem_write;
       5'b01101:
-        casez_tmp_88 = entries_13_reg_write;
+        casez_tmp_88 = entries_13_mem_write;
       5'b01110:
-        casez_tmp_88 = entries_14_reg_write;
+        casez_tmp_88 = entries_14_mem_write;
       5'b01111:
-        casez_tmp_88 = entries_15_reg_write;
+        casez_tmp_88 = entries_15_mem_write;
       5'b10000:
-        casez_tmp_88 = entries_16_reg_write;
+        casez_tmp_88 = entries_16_mem_write;
       5'b10001:
-        casez_tmp_88 = entries_17_reg_write;
+        casez_tmp_88 = entries_17_mem_write;
       5'b10010:
-        casez_tmp_88 = entries_18_reg_write;
+        casez_tmp_88 = entries_18_mem_write;
       5'b10011:
-        casez_tmp_88 = entries_19_reg_write;
+        casez_tmp_88 = entries_19_mem_write;
       5'b10100:
-        casez_tmp_88 = entries_20_reg_write;
+        casez_tmp_88 = entries_20_mem_write;
       5'b10101:
-        casez_tmp_88 = entries_21_reg_write;
+        casez_tmp_88 = entries_21_mem_write;
       5'b10110:
-        casez_tmp_88 = entries_22_reg_write;
+        casez_tmp_88 = entries_22_mem_write;
       5'b10111:
-        casez_tmp_88 = entries_23_reg_write;
+        casez_tmp_88 = entries_23_mem_write;
       5'b11000:
-        casez_tmp_88 = entries_24_reg_write;
+        casez_tmp_88 = entries_24_mem_write;
       5'b11001:
-        casez_tmp_88 = entries_25_reg_write;
+        casez_tmp_88 = entries_25_mem_write;
       5'b11010:
-        casez_tmp_88 = entries_26_reg_write;
+        casez_tmp_88 = entries_26_mem_write;
       5'b11011:
-        casez_tmp_88 = entries_27_reg_write;
+        casez_tmp_88 = entries_27_mem_write;
       5'b11100:
-        casez_tmp_88 = entries_28_reg_write;
+        casez_tmp_88 = entries_28_mem_write;
       5'b11101:
-        casez_tmp_88 = entries_29_reg_write;
+        casez_tmp_88 = entries_29_mem_write;
       5'b11110:
-        casez_tmp_88 = entries_30_reg_write;
+        casez_tmp_88 = entries_30_mem_write;
       default:
-        casez_tmp_88 = entries_31_reg_write;
+        casez_tmp_88 = entries_31_mem_write;
     endcase
   end // always_comb
-  reg         casez_tmp_89;
+  reg  [7:0]  casez_tmp_89;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_89 = entries_0_csr_write;
+        casez_tmp_89 = entries_0_mem_wmask;
       5'b00001:
-        casez_tmp_89 = entries_1_csr_write;
+        casez_tmp_89 = entries_1_mem_wmask;
       5'b00010:
-        casez_tmp_89 = entries_2_csr_write;
+        casez_tmp_89 = entries_2_mem_wmask;
       5'b00011:
-        casez_tmp_89 = entries_3_csr_write;
+        casez_tmp_89 = entries_3_mem_wmask;
       5'b00100:
-        casez_tmp_89 = entries_4_csr_write;
+        casez_tmp_89 = entries_4_mem_wmask;
       5'b00101:
-        casez_tmp_89 = entries_5_csr_write;
+        casez_tmp_89 = entries_5_mem_wmask;
       5'b00110:
-        casez_tmp_89 = entries_6_csr_write;
+        casez_tmp_89 = entries_6_mem_wmask;
       5'b00111:
-        casez_tmp_89 = entries_7_csr_write;
+        casez_tmp_89 = entries_7_mem_wmask;
       5'b01000:
-        casez_tmp_89 = entries_8_csr_write;
+        casez_tmp_89 = entries_8_mem_wmask;
       5'b01001:
-        casez_tmp_89 = entries_9_csr_write;
+        casez_tmp_89 = entries_9_mem_wmask;
       5'b01010:
-        casez_tmp_89 = entries_10_csr_write;
+        casez_tmp_89 = entries_10_mem_wmask;
       5'b01011:
-        casez_tmp_89 = entries_11_csr_write;
+        casez_tmp_89 = entries_11_mem_wmask;
       5'b01100:
-        casez_tmp_89 = entries_12_csr_write;
+        casez_tmp_89 = entries_12_mem_wmask;
       5'b01101:
-        casez_tmp_89 = entries_13_csr_write;
+        casez_tmp_89 = entries_13_mem_wmask;
       5'b01110:
-        casez_tmp_89 = entries_14_csr_write;
+        casez_tmp_89 = entries_14_mem_wmask;
       5'b01111:
-        casez_tmp_89 = entries_15_csr_write;
+        casez_tmp_89 = entries_15_mem_wmask;
       5'b10000:
-        casez_tmp_89 = entries_16_csr_write;
+        casez_tmp_89 = entries_16_mem_wmask;
       5'b10001:
-        casez_tmp_89 = entries_17_csr_write;
+        casez_tmp_89 = entries_17_mem_wmask;
       5'b10010:
-        casez_tmp_89 = entries_18_csr_write;
+        casez_tmp_89 = entries_18_mem_wmask;
       5'b10011:
-        casez_tmp_89 = entries_19_csr_write;
+        casez_tmp_89 = entries_19_mem_wmask;
       5'b10100:
-        casez_tmp_89 = entries_20_csr_write;
+        casez_tmp_89 = entries_20_mem_wmask;
       5'b10101:
-        casez_tmp_89 = entries_21_csr_write;
+        casez_tmp_89 = entries_21_mem_wmask;
       5'b10110:
-        casez_tmp_89 = entries_22_csr_write;
+        casez_tmp_89 = entries_22_mem_wmask;
       5'b10111:
-        casez_tmp_89 = entries_23_csr_write;
+        casez_tmp_89 = entries_23_mem_wmask;
       5'b11000:
-        casez_tmp_89 = entries_24_csr_write;
+        casez_tmp_89 = entries_24_mem_wmask;
       5'b11001:
-        casez_tmp_89 = entries_25_csr_write;
+        casez_tmp_89 = entries_25_mem_wmask;
       5'b11010:
-        casez_tmp_89 = entries_26_csr_write;
+        casez_tmp_89 = entries_26_mem_wmask;
       5'b11011:
-        casez_tmp_89 = entries_27_csr_write;
+        casez_tmp_89 = entries_27_mem_wmask;
       5'b11100:
-        casez_tmp_89 = entries_28_csr_write;
+        casez_tmp_89 = entries_28_mem_wmask;
       5'b11101:
-        casez_tmp_89 = entries_29_csr_write;
+        casez_tmp_89 = entries_29_mem_wmask;
       5'b11110:
-        casez_tmp_89 = entries_30_csr_write;
+        casez_tmp_89 = entries_30_mem_wmask;
       default:
-        casez_tmp_89 = entries_31_csr_write;
+        casez_tmp_89 = entries_31_mem_wmask;
     endcase
   end // always_comb
-  reg         casez_tmp_90;
+  reg  [3:0]  casez_tmp_90;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_90 = entries_0_mem_valid;
+        casez_tmp_90 = entries_0_jump;
       5'b00001:
-        casez_tmp_90 = entries_1_mem_valid;
+        casez_tmp_90 = entries_1_jump;
       5'b00010:
-        casez_tmp_90 = entries_2_mem_valid;
+        casez_tmp_90 = entries_2_jump;
       5'b00011:
-        casez_tmp_90 = entries_3_mem_valid;
+        casez_tmp_90 = entries_3_jump;
       5'b00100:
-        casez_tmp_90 = entries_4_mem_valid;
+        casez_tmp_90 = entries_4_jump;
       5'b00101:
-        casez_tmp_90 = entries_5_mem_valid;
+        casez_tmp_90 = entries_5_jump;
       5'b00110:
-        casez_tmp_90 = entries_6_mem_valid;
+        casez_tmp_90 = entries_6_jump;
       5'b00111:
-        casez_tmp_90 = entries_7_mem_valid;
+        casez_tmp_90 = entries_7_jump;
       5'b01000:
-        casez_tmp_90 = entries_8_mem_valid;
+        casez_tmp_90 = entries_8_jump;
       5'b01001:
-        casez_tmp_90 = entries_9_mem_valid;
+        casez_tmp_90 = entries_9_jump;
       5'b01010:
-        casez_tmp_90 = entries_10_mem_valid;
+        casez_tmp_90 = entries_10_jump;
       5'b01011:
-        casez_tmp_90 = entries_11_mem_valid;
+        casez_tmp_90 = entries_11_jump;
       5'b01100:
-        casez_tmp_90 = entries_12_mem_valid;
+        casez_tmp_90 = entries_12_jump;
       5'b01101:
-        casez_tmp_90 = entries_13_mem_valid;
+        casez_tmp_90 = entries_13_jump;
       5'b01110:
-        casez_tmp_90 = entries_14_mem_valid;
+        casez_tmp_90 = entries_14_jump;
       5'b01111:
-        casez_tmp_90 = entries_15_mem_valid;
+        casez_tmp_90 = entries_15_jump;
       5'b10000:
-        casez_tmp_90 = entries_16_mem_valid;
+        casez_tmp_90 = entries_16_jump;
       5'b10001:
-        casez_tmp_90 = entries_17_mem_valid;
+        casez_tmp_90 = entries_17_jump;
       5'b10010:
-        casez_tmp_90 = entries_18_mem_valid;
+        casez_tmp_90 = entries_18_jump;
       5'b10011:
-        casez_tmp_90 = entries_19_mem_valid;
+        casez_tmp_90 = entries_19_jump;
       5'b10100:
-        casez_tmp_90 = entries_20_mem_valid;
+        casez_tmp_90 = entries_20_jump;
       5'b10101:
-        casez_tmp_90 = entries_21_mem_valid;
+        casez_tmp_90 = entries_21_jump;
       5'b10110:
-        casez_tmp_90 = entries_22_mem_valid;
+        casez_tmp_90 = entries_22_jump;
       5'b10111:
-        casez_tmp_90 = entries_23_mem_valid;
+        casez_tmp_90 = entries_23_jump;
       5'b11000:
-        casez_tmp_90 = entries_24_mem_valid;
+        casez_tmp_90 = entries_24_jump;
       5'b11001:
-        casez_tmp_90 = entries_25_mem_valid;
+        casez_tmp_90 = entries_25_jump;
       5'b11010:
-        casez_tmp_90 = entries_26_mem_valid;
+        casez_tmp_90 = entries_26_jump;
       5'b11011:
-        casez_tmp_90 = entries_27_mem_valid;
+        casez_tmp_90 = entries_27_jump;
       5'b11100:
-        casez_tmp_90 = entries_28_mem_valid;
+        casez_tmp_90 = entries_28_jump;
       5'b11101:
-        casez_tmp_90 = entries_29_mem_valid;
+        casez_tmp_90 = entries_29_jump;
       5'b11110:
-        casez_tmp_90 = entries_30_mem_valid;
+        casez_tmp_90 = entries_30_jump;
       default:
-        casez_tmp_90 = entries_31_mem_valid;
+        casez_tmp_90 = entries_31_jump;
     endcase
   end // always_comb
-  reg         casez_tmp_91;
+  reg  [4:0]  casez_tmp_91;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_91 = entries_0_mem_write;
+        casez_tmp_91 = entries_0_arch_rd;
       5'b00001:
-        casez_tmp_91 = entries_1_mem_write;
+        casez_tmp_91 = entries_1_arch_rd;
       5'b00010:
-        casez_tmp_91 = entries_2_mem_write;
+        casez_tmp_91 = entries_2_arch_rd;
       5'b00011:
-        casez_tmp_91 = entries_3_mem_write;
+        casez_tmp_91 = entries_3_arch_rd;
       5'b00100:
-        casez_tmp_91 = entries_4_mem_write;
+        casez_tmp_91 = entries_4_arch_rd;
       5'b00101:
-        casez_tmp_91 = entries_5_mem_write;
+        casez_tmp_91 = entries_5_arch_rd;
       5'b00110:
-        casez_tmp_91 = entries_6_mem_write;
+        casez_tmp_91 = entries_6_arch_rd;
       5'b00111:
-        casez_tmp_91 = entries_7_mem_write;
+        casez_tmp_91 = entries_7_arch_rd;
       5'b01000:
-        casez_tmp_91 = entries_8_mem_write;
+        casez_tmp_91 = entries_8_arch_rd;
       5'b01001:
-        casez_tmp_91 = entries_9_mem_write;
+        casez_tmp_91 = entries_9_arch_rd;
       5'b01010:
-        casez_tmp_91 = entries_10_mem_write;
+        casez_tmp_91 = entries_10_arch_rd;
       5'b01011:
-        casez_tmp_91 = entries_11_mem_write;
+        casez_tmp_91 = entries_11_arch_rd;
       5'b01100:
-        casez_tmp_91 = entries_12_mem_write;
+        casez_tmp_91 = entries_12_arch_rd;
       5'b01101:
-        casez_tmp_91 = entries_13_mem_write;
+        casez_tmp_91 = entries_13_arch_rd;
       5'b01110:
-        casez_tmp_91 = entries_14_mem_write;
+        casez_tmp_91 = entries_14_arch_rd;
       5'b01111:
-        casez_tmp_91 = entries_15_mem_write;
+        casez_tmp_91 = entries_15_arch_rd;
       5'b10000:
-        casez_tmp_91 = entries_16_mem_write;
+        casez_tmp_91 = entries_16_arch_rd;
       5'b10001:
-        casez_tmp_91 = entries_17_mem_write;
+        casez_tmp_91 = entries_17_arch_rd;
       5'b10010:
-        casez_tmp_91 = entries_18_mem_write;
+        casez_tmp_91 = entries_18_arch_rd;
       5'b10011:
-        casez_tmp_91 = entries_19_mem_write;
+        casez_tmp_91 = entries_19_arch_rd;
       5'b10100:
-        casez_tmp_91 = entries_20_mem_write;
+        casez_tmp_91 = entries_20_arch_rd;
       5'b10101:
-        casez_tmp_91 = entries_21_mem_write;
+        casez_tmp_91 = entries_21_arch_rd;
       5'b10110:
-        casez_tmp_91 = entries_22_mem_write;
+        casez_tmp_91 = entries_22_arch_rd;
       5'b10111:
-        casez_tmp_91 = entries_23_mem_write;
+        casez_tmp_91 = entries_23_arch_rd;
       5'b11000:
-        casez_tmp_91 = entries_24_mem_write;
+        casez_tmp_91 = entries_24_arch_rd;
       5'b11001:
-        casez_tmp_91 = entries_25_mem_write;
+        casez_tmp_91 = entries_25_arch_rd;
       5'b11010:
-        casez_tmp_91 = entries_26_mem_write;
+        casez_tmp_91 = entries_26_arch_rd;
       5'b11011:
-        casez_tmp_91 = entries_27_mem_write;
+        casez_tmp_91 = entries_27_arch_rd;
       5'b11100:
-        casez_tmp_91 = entries_28_mem_write;
+        casez_tmp_91 = entries_28_arch_rd;
       5'b11101:
-        casez_tmp_91 = entries_29_mem_write;
+        casez_tmp_91 = entries_29_arch_rd;
       5'b11110:
-        casez_tmp_91 = entries_30_mem_write;
+        casez_tmp_91 = entries_30_arch_rd;
       default:
-        casez_tmp_91 = entries_31_mem_write;
+        casez_tmp_91 = entries_31_arch_rd;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_92;
+  reg  [5:0]  casez_tmp_92;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_92 = entries_0_mem_wmask;
+        casez_tmp_92 = entries_0_old_phys;
       5'b00001:
-        casez_tmp_92 = entries_1_mem_wmask;
+        casez_tmp_92 = entries_1_old_phys;
       5'b00010:
-        casez_tmp_92 = entries_2_mem_wmask;
+        casez_tmp_92 = entries_2_old_phys;
       5'b00011:
-        casez_tmp_92 = entries_3_mem_wmask;
+        casez_tmp_92 = entries_3_old_phys;
       5'b00100:
-        casez_tmp_92 = entries_4_mem_wmask;
+        casez_tmp_92 = entries_4_old_phys;
       5'b00101:
-        casez_tmp_92 = entries_5_mem_wmask;
+        casez_tmp_92 = entries_5_old_phys;
       5'b00110:
-        casez_tmp_92 = entries_6_mem_wmask;
+        casez_tmp_92 = entries_6_old_phys;
       5'b00111:
-        casez_tmp_92 = entries_7_mem_wmask;
+        casez_tmp_92 = entries_7_old_phys;
       5'b01000:
-        casez_tmp_92 = entries_8_mem_wmask;
+        casez_tmp_92 = entries_8_old_phys;
       5'b01001:
-        casez_tmp_92 = entries_9_mem_wmask;
+        casez_tmp_92 = entries_9_old_phys;
       5'b01010:
-        casez_tmp_92 = entries_10_mem_wmask;
+        casez_tmp_92 = entries_10_old_phys;
       5'b01011:
-        casez_tmp_92 = entries_11_mem_wmask;
+        casez_tmp_92 = entries_11_old_phys;
       5'b01100:
-        casez_tmp_92 = entries_12_mem_wmask;
+        casez_tmp_92 = entries_12_old_phys;
       5'b01101:
-        casez_tmp_92 = entries_13_mem_wmask;
+        casez_tmp_92 = entries_13_old_phys;
       5'b01110:
-        casez_tmp_92 = entries_14_mem_wmask;
+        casez_tmp_92 = entries_14_old_phys;
       5'b01111:
-        casez_tmp_92 = entries_15_mem_wmask;
+        casez_tmp_92 = entries_15_old_phys;
       5'b10000:
-        casez_tmp_92 = entries_16_mem_wmask;
+        casez_tmp_92 = entries_16_old_phys;
       5'b10001:
-        casez_tmp_92 = entries_17_mem_wmask;
+        casez_tmp_92 = entries_17_old_phys;
       5'b10010:
-        casez_tmp_92 = entries_18_mem_wmask;
+        casez_tmp_92 = entries_18_old_phys;
       5'b10011:
-        casez_tmp_92 = entries_19_mem_wmask;
+        casez_tmp_92 = entries_19_old_phys;
       5'b10100:
-        casez_tmp_92 = entries_20_mem_wmask;
+        casez_tmp_92 = entries_20_old_phys;
       5'b10101:
-        casez_tmp_92 = entries_21_mem_wmask;
+        casez_tmp_92 = entries_21_old_phys;
       5'b10110:
-        casez_tmp_92 = entries_22_mem_wmask;
+        casez_tmp_92 = entries_22_old_phys;
       5'b10111:
-        casez_tmp_92 = entries_23_mem_wmask;
+        casez_tmp_92 = entries_23_old_phys;
       5'b11000:
-        casez_tmp_92 = entries_24_mem_wmask;
+        casez_tmp_92 = entries_24_old_phys;
       5'b11001:
-        casez_tmp_92 = entries_25_mem_wmask;
+        casez_tmp_92 = entries_25_old_phys;
       5'b11010:
-        casez_tmp_92 = entries_26_mem_wmask;
+        casez_tmp_92 = entries_26_old_phys;
       5'b11011:
-        casez_tmp_92 = entries_27_mem_wmask;
+        casez_tmp_92 = entries_27_old_phys;
       5'b11100:
-        casez_tmp_92 = entries_28_mem_wmask;
+        casez_tmp_92 = entries_28_old_phys;
       5'b11101:
-        casez_tmp_92 = entries_29_mem_wmask;
+        casez_tmp_92 = entries_29_old_phys;
       5'b11110:
-        casez_tmp_92 = entries_30_mem_wmask;
+        casez_tmp_92 = entries_30_old_phys;
       default:
-        casez_tmp_92 = entries_31_mem_wmask;
+        casez_tmp_92 = entries_31_old_phys;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_93;
+  reg  [5:0]  casez_tmp_93;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_93 = entries_0_jump;
+        casez_tmp_93 = entries_0_new_phys;
       5'b00001:
-        casez_tmp_93 = entries_1_jump;
+        casez_tmp_93 = entries_1_new_phys;
       5'b00010:
-        casez_tmp_93 = entries_2_jump;
+        casez_tmp_93 = entries_2_new_phys;
       5'b00011:
-        casez_tmp_93 = entries_3_jump;
+        casez_tmp_93 = entries_3_new_phys;
       5'b00100:
-        casez_tmp_93 = entries_4_jump;
+        casez_tmp_93 = entries_4_new_phys;
       5'b00101:
-        casez_tmp_93 = entries_5_jump;
+        casez_tmp_93 = entries_5_new_phys;
       5'b00110:
-        casez_tmp_93 = entries_6_jump;
+        casez_tmp_93 = entries_6_new_phys;
       5'b00111:
-        casez_tmp_93 = entries_7_jump;
+        casez_tmp_93 = entries_7_new_phys;
       5'b01000:
-        casez_tmp_93 = entries_8_jump;
+        casez_tmp_93 = entries_8_new_phys;
       5'b01001:
-        casez_tmp_93 = entries_9_jump;
+        casez_tmp_93 = entries_9_new_phys;
       5'b01010:
-        casez_tmp_93 = entries_10_jump;
+        casez_tmp_93 = entries_10_new_phys;
       5'b01011:
-        casez_tmp_93 = entries_11_jump;
+        casez_tmp_93 = entries_11_new_phys;
       5'b01100:
-        casez_tmp_93 = entries_12_jump;
+        casez_tmp_93 = entries_12_new_phys;
       5'b01101:
-        casez_tmp_93 = entries_13_jump;
+        casez_tmp_93 = entries_13_new_phys;
       5'b01110:
-        casez_tmp_93 = entries_14_jump;
+        casez_tmp_93 = entries_14_new_phys;
       5'b01111:
-        casez_tmp_93 = entries_15_jump;
+        casez_tmp_93 = entries_15_new_phys;
       5'b10000:
-        casez_tmp_93 = entries_16_jump;
+        casez_tmp_93 = entries_16_new_phys;
       5'b10001:
-        casez_tmp_93 = entries_17_jump;
+        casez_tmp_93 = entries_17_new_phys;
       5'b10010:
-        casez_tmp_93 = entries_18_jump;
+        casez_tmp_93 = entries_18_new_phys;
       5'b10011:
-        casez_tmp_93 = entries_19_jump;
+        casez_tmp_93 = entries_19_new_phys;
       5'b10100:
-        casez_tmp_93 = entries_20_jump;
+        casez_tmp_93 = entries_20_new_phys;
       5'b10101:
-        casez_tmp_93 = entries_21_jump;
+        casez_tmp_93 = entries_21_new_phys;
       5'b10110:
-        casez_tmp_93 = entries_22_jump;
+        casez_tmp_93 = entries_22_new_phys;
       5'b10111:
-        casez_tmp_93 = entries_23_jump;
+        casez_tmp_93 = entries_23_new_phys;
       5'b11000:
-        casez_tmp_93 = entries_24_jump;
+        casez_tmp_93 = entries_24_new_phys;
       5'b11001:
-        casez_tmp_93 = entries_25_jump;
+        casez_tmp_93 = entries_25_new_phys;
       5'b11010:
-        casez_tmp_93 = entries_26_jump;
+        casez_tmp_93 = entries_26_new_phys;
       5'b11011:
-        casez_tmp_93 = entries_27_jump;
+        casez_tmp_93 = entries_27_new_phys;
       5'b11100:
-        casez_tmp_93 = entries_28_jump;
+        casez_tmp_93 = entries_28_new_phys;
       5'b11101:
-        casez_tmp_93 = entries_29_jump;
+        casez_tmp_93 = entries_29_new_phys;
       5'b11110:
-        casez_tmp_93 = entries_30_jump;
+        casez_tmp_93 = entries_30_new_phys;
       default:
-        casez_tmp_93 = entries_31_jump;
+        casez_tmp_93 = entries_31_new_phys;
     endcase
   end // always_comb
-  reg  [4:0]  casez_tmp_94;
+  reg         casez_tmp_94;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_94 = entries_0_arch_rd;
+        casez_tmp_94 = entries_0_is_ebreak;
       5'b00001:
-        casez_tmp_94 = entries_1_arch_rd;
+        casez_tmp_94 = entries_1_is_ebreak;
       5'b00010:
-        casez_tmp_94 = entries_2_arch_rd;
+        casez_tmp_94 = entries_2_is_ebreak;
       5'b00011:
-        casez_tmp_94 = entries_3_arch_rd;
+        casez_tmp_94 = entries_3_is_ebreak;
       5'b00100:
-        casez_tmp_94 = entries_4_arch_rd;
+        casez_tmp_94 = entries_4_is_ebreak;
       5'b00101:
-        casez_tmp_94 = entries_5_arch_rd;
+        casez_tmp_94 = entries_5_is_ebreak;
       5'b00110:
-        casez_tmp_94 = entries_6_arch_rd;
+        casez_tmp_94 = entries_6_is_ebreak;
       5'b00111:
-        casez_tmp_94 = entries_7_arch_rd;
+        casez_tmp_94 = entries_7_is_ebreak;
       5'b01000:
-        casez_tmp_94 = entries_8_arch_rd;
+        casez_tmp_94 = entries_8_is_ebreak;
       5'b01001:
-        casez_tmp_94 = entries_9_arch_rd;
+        casez_tmp_94 = entries_9_is_ebreak;
       5'b01010:
-        casez_tmp_94 = entries_10_arch_rd;
+        casez_tmp_94 = entries_10_is_ebreak;
       5'b01011:
-        casez_tmp_94 = entries_11_arch_rd;
+        casez_tmp_94 = entries_11_is_ebreak;
       5'b01100:
-        casez_tmp_94 = entries_12_arch_rd;
+        casez_tmp_94 = entries_12_is_ebreak;
       5'b01101:
-        casez_tmp_94 = entries_13_arch_rd;
+        casez_tmp_94 = entries_13_is_ebreak;
       5'b01110:
-        casez_tmp_94 = entries_14_arch_rd;
+        casez_tmp_94 = entries_14_is_ebreak;
       5'b01111:
-        casez_tmp_94 = entries_15_arch_rd;
+        casez_tmp_94 = entries_15_is_ebreak;
       5'b10000:
-        casez_tmp_94 = entries_16_arch_rd;
+        casez_tmp_94 = entries_16_is_ebreak;
       5'b10001:
-        casez_tmp_94 = entries_17_arch_rd;
+        casez_tmp_94 = entries_17_is_ebreak;
       5'b10010:
-        casez_tmp_94 = entries_18_arch_rd;
+        casez_tmp_94 = entries_18_is_ebreak;
       5'b10011:
-        casez_tmp_94 = entries_19_arch_rd;
+        casez_tmp_94 = entries_19_is_ebreak;
       5'b10100:
-        casez_tmp_94 = entries_20_arch_rd;
+        casez_tmp_94 = entries_20_is_ebreak;
       5'b10101:
-        casez_tmp_94 = entries_21_arch_rd;
+        casez_tmp_94 = entries_21_is_ebreak;
       5'b10110:
-        casez_tmp_94 = entries_22_arch_rd;
+        casez_tmp_94 = entries_22_is_ebreak;
       5'b10111:
-        casez_tmp_94 = entries_23_arch_rd;
+        casez_tmp_94 = entries_23_is_ebreak;
       5'b11000:
-        casez_tmp_94 = entries_24_arch_rd;
+        casez_tmp_94 = entries_24_is_ebreak;
       5'b11001:
-        casez_tmp_94 = entries_25_arch_rd;
+        casez_tmp_94 = entries_25_is_ebreak;
       5'b11010:
-        casez_tmp_94 = entries_26_arch_rd;
+        casez_tmp_94 = entries_26_is_ebreak;
       5'b11011:
-        casez_tmp_94 = entries_27_arch_rd;
+        casez_tmp_94 = entries_27_is_ebreak;
       5'b11100:
-        casez_tmp_94 = entries_28_arch_rd;
+        casez_tmp_94 = entries_28_is_ebreak;
       5'b11101:
-        casez_tmp_94 = entries_29_arch_rd;
+        casez_tmp_94 = entries_29_is_ebreak;
       5'b11110:
-        casez_tmp_94 = entries_30_arch_rd;
+        casez_tmp_94 = entries_30_is_ebreak;
       default:
-        casez_tmp_94 = entries_31_arch_rd;
+        casez_tmp_94 = entries_31_is_ebreak;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_95;
+  reg         casez_tmp_95;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_95 = entries_0_old_phys;
+        casez_tmp_95 = entries_0_is_fencei;
       5'b00001:
-        casez_tmp_95 = entries_1_old_phys;
+        casez_tmp_95 = entries_1_is_fencei;
       5'b00010:
-        casez_tmp_95 = entries_2_old_phys;
+        casez_tmp_95 = entries_2_is_fencei;
       5'b00011:
-        casez_tmp_95 = entries_3_old_phys;
+        casez_tmp_95 = entries_3_is_fencei;
       5'b00100:
-        casez_tmp_95 = entries_4_old_phys;
+        casez_tmp_95 = entries_4_is_fencei;
       5'b00101:
-        casez_tmp_95 = entries_5_old_phys;
+        casez_tmp_95 = entries_5_is_fencei;
       5'b00110:
-        casez_tmp_95 = entries_6_old_phys;
+        casez_tmp_95 = entries_6_is_fencei;
       5'b00111:
-        casez_tmp_95 = entries_7_old_phys;
+        casez_tmp_95 = entries_7_is_fencei;
       5'b01000:
-        casez_tmp_95 = entries_8_old_phys;
+        casez_tmp_95 = entries_8_is_fencei;
       5'b01001:
-        casez_tmp_95 = entries_9_old_phys;
+        casez_tmp_95 = entries_9_is_fencei;
       5'b01010:
-        casez_tmp_95 = entries_10_old_phys;
+        casez_tmp_95 = entries_10_is_fencei;
       5'b01011:
-        casez_tmp_95 = entries_11_old_phys;
+        casez_tmp_95 = entries_11_is_fencei;
       5'b01100:
-        casez_tmp_95 = entries_12_old_phys;
+        casez_tmp_95 = entries_12_is_fencei;
       5'b01101:
-        casez_tmp_95 = entries_13_old_phys;
+        casez_tmp_95 = entries_13_is_fencei;
       5'b01110:
-        casez_tmp_95 = entries_14_old_phys;
+        casez_tmp_95 = entries_14_is_fencei;
       5'b01111:
-        casez_tmp_95 = entries_15_old_phys;
+        casez_tmp_95 = entries_15_is_fencei;
       5'b10000:
-        casez_tmp_95 = entries_16_old_phys;
+        casez_tmp_95 = entries_16_is_fencei;
       5'b10001:
-        casez_tmp_95 = entries_17_old_phys;
+        casez_tmp_95 = entries_17_is_fencei;
       5'b10010:
-        casez_tmp_95 = entries_18_old_phys;
+        casez_tmp_95 = entries_18_is_fencei;
       5'b10011:
-        casez_tmp_95 = entries_19_old_phys;
+        casez_tmp_95 = entries_19_is_fencei;
       5'b10100:
-        casez_tmp_95 = entries_20_old_phys;
+        casez_tmp_95 = entries_20_is_fencei;
       5'b10101:
-        casez_tmp_95 = entries_21_old_phys;
+        casez_tmp_95 = entries_21_is_fencei;
       5'b10110:
-        casez_tmp_95 = entries_22_old_phys;
+        casez_tmp_95 = entries_22_is_fencei;
       5'b10111:
-        casez_tmp_95 = entries_23_old_phys;
+        casez_tmp_95 = entries_23_is_fencei;
       5'b11000:
-        casez_tmp_95 = entries_24_old_phys;
+        casez_tmp_95 = entries_24_is_fencei;
       5'b11001:
-        casez_tmp_95 = entries_25_old_phys;
+        casez_tmp_95 = entries_25_is_fencei;
       5'b11010:
-        casez_tmp_95 = entries_26_old_phys;
+        casez_tmp_95 = entries_26_is_fencei;
       5'b11011:
-        casez_tmp_95 = entries_27_old_phys;
+        casez_tmp_95 = entries_27_is_fencei;
       5'b11100:
-        casez_tmp_95 = entries_28_old_phys;
+        casez_tmp_95 = entries_28_is_fencei;
       5'b11101:
-        casez_tmp_95 = entries_29_old_phys;
+        casez_tmp_95 = entries_29_is_fencei;
       5'b11110:
-        casez_tmp_95 = entries_30_old_phys;
+        casez_tmp_95 = entries_30_is_fencei;
       default:
-        casez_tmp_95 = entries_31_old_phys;
+        casez_tmp_95 = entries_31_is_fencei;
     endcase
   end // always_comb
-  reg  [5:0]  casez_tmp_96;
+  reg         casez_tmp_96;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_96 = entries_0_new_phys;
+        casez_tmp_96 = entries_0_state_state;
       5'b00001:
-        casez_tmp_96 = entries_1_new_phys;
+        casez_tmp_96 = entries_1_state_state;
       5'b00010:
-        casez_tmp_96 = entries_2_new_phys;
+        casez_tmp_96 = entries_2_state_state;
       5'b00011:
-        casez_tmp_96 = entries_3_new_phys;
+        casez_tmp_96 = entries_3_state_state;
       5'b00100:
-        casez_tmp_96 = entries_4_new_phys;
+        casez_tmp_96 = entries_4_state_state;
       5'b00101:
-        casez_tmp_96 = entries_5_new_phys;
+        casez_tmp_96 = entries_5_state_state;
       5'b00110:
-        casez_tmp_96 = entries_6_new_phys;
+        casez_tmp_96 = entries_6_state_state;
       5'b00111:
-        casez_tmp_96 = entries_7_new_phys;
+        casez_tmp_96 = entries_7_state_state;
       5'b01000:
-        casez_tmp_96 = entries_8_new_phys;
+        casez_tmp_96 = entries_8_state_state;
       5'b01001:
-        casez_tmp_96 = entries_9_new_phys;
+        casez_tmp_96 = entries_9_state_state;
       5'b01010:
-        casez_tmp_96 = entries_10_new_phys;
+        casez_tmp_96 = entries_10_state_state;
       5'b01011:
-        casez_tmp_96 = entries_11_new_phys;
+        casez_tmp_96 = entries_11_state_state;
       5'b01100:
-        casez_tmp_96 = entries_12_new_phys;
+        casez_tmp_96 = entries_12_state_state;
       5'b01101:
-        casez_tmp_96 = entries_13_new_phys;
+        casez_tmp_96 = entries_13_state_state;
       5'b01110:
-        casez_tmp_96 = entries_14_new_phys;
+        casez_tmp_96 = entries_14_state_state;
       5'b01111:
-        casez_tmp_96 = entries_15_new_phys;
+        casez_tmp_96 = entries_15_state_state;
       5'b10000:
-        casez_tmp_96 = entries_16_new_phys;
+        casez_tmp_96 = entries_16_state_state;
       5'b10001:
-        casez_tmp_96 = entries_17_new_phys;
+        casez_tmp_96 = entries_17_state_state;
       5'b10010:
-        casez_tmp_96 = entries_18_new_phys;
+        casez_tmp_96 = entries_18_state_state;
       5'b10011:
-        casez_tmp_96 = entries_19_new_phys;
+        casez_tmp_96 = entries_19_state_state;
       5'b10100:
-        casez_tmp_96 = entries_20_new_phys;
+        casez_tmp_96 = entries_20_state_state;
       5'b10101:
-        casez_tmp_96 = entries_21_new_phys;
+        casez_tmp_96 = entries_21_state_state;
       5'b10110:
-        casez_tmp_96 = entries_22_new_phys;
+        casez_tmp_96 = entries_22_state_state;
       5'b10111:
-        casez_tmp_96 = entries_23_new_phys;
+        casez_tmp_96 = entries_23_state_state;
       5'b11000:
-        casez_tmp_96 = entries_24_new_phys;
+        casez_tmp_96 = entries_24_state_state;
       5'b11001:
-        casez_tmp_96 = entries_25_new_phys;
+        casez_tmp_96 = entries_25_state_state;
       5'b11010:
-        casez_tmp_96 = entries_26_new_phys;
+        casez_tmp_96 = entries_26_state_state;
       5'b11011:
-        casez_tmp_96 = entries_27_new_phys;
+        casez_tmp_96 = entries_27_state_state;
       5'b11100:
-        casez_tmp_96 = entries_28_new_phys;
+        casez_tmp_96 = entries_28_state_state;
       5'b11101:
-        casez_tmp_96 = entries_29_new_phys;
+        casez_tmp_96 = entries_29_state_state;
       5'b11110:
-        casez_tmp_96 = entries_30_new_phys;
+        casez_tmp_96 = entries_30_state_state;
       default:
-        casez_tmp_96 = entries_31_new_phys;
+        casez_tmp_96 = entries_31_state_state;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_97;
+  reg  [96:0] casez_tmp_97;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_97 = entries_0_dest_val;
+        casez_tmp_97 = entries_0_bp_index;
       5'b00001:
-        casez_tmp_97 = entries_1_dest_val;
+        casez_tmp_97 = entries_1_bp_index;
       5'b00010:
-        casez_tmp_97 = entries_2_dest_val;
+        casez_tmp_97 = entries_2_bp_index;
       5'b00011:
-        casez_tmp_97 = entries_3_dest_val;
+        casez_tmp_97 = entries_3_bp_index;
       5'b00100:
-        casez_tmp_97 = entries_4_dest_val;
+        casez_tmp_97 = entries_4_bp_index;
       5'b00101:
-        casez_tmp_97 = entries_5_dest_val;
+        casez_tmp_97 = entries_5_bp_index;
       5'b00110:
-        casez_tmp_97 = entries_6_dest_val;
+        casez_tmp_97 = entries_6_bp_index;
       5'b00111:
-        casez_tmp_97 = entries_7_dest_val;
+        casez_tmp_97 = entries_7_bp_index;
       5'b01000:
-        casez_tmp_97 = entries_8_dest_val;
+        casez_tmp_97 = entries_8_bp_index;
       5'b01001:
-        casez_tmp_97 = entries_9_dest_val;
+        casez_tmp_97 = entries_9_bp_index;
       5'b01010:
-        casez_tmp_97 = entries_10_dest_val;
+        casez_tmp_97 = entries_10_bp_index;
       5'b01011:
-        casez_tmp_97 = entries_11_dest_val;
+        casez_tmp_97 = entries_11_bp_index;
       5'b01100:
-        casez_tmp_97 = entries_12_dest_val;
+        casez_tmp_97 = entries_12_bp_index;
       5'b01101:
-        casez_tmp_97 = entries_13_dest_val;
+        casez_tmp_97 = entries_13_bp_index;
       5'b01110:
-        casez_tmp_97 = entries_14_dest_val;
+        casez_tmp_97 = entries_14_bp_index;
       5'b01111:
-        casez_tmp_97 = entries_15_dest_val;
+        casez_tmp_97 = entries_15_bp_index;
       5'b10000:
-        casez_tmp_97 = entries_16_dest_val;
+        casez_tmp_97 = entries_16_bp_index;
       5'b10001:
-        casez_tmp_97 = entries_17_dest_val;
+        casez_tmp_97 = entries_17_bp_index;
       5'b10010:
-        casez_tmp_97 = entries_18_dest_val;
+        casez_tmp_97 = entries_18_bp_index;
       5'b10011:
-        casez_tmp_97 = entries_19_dest_val;
+        casez_tmp_97 = entries_19_bp_index;
       5'b10100:
-        casez_tmp_97 = entries_20_dest_val;
+        casez_tmp_97 = entries_20_bp_index;
       5'b10101:
-        casez_tmp_97 = entries_21_dest_val;
+        casez_tmp_97 = entries_21_bp_index;
       5'b10110:
-        casez_tmp_97 = entries_22_dest_val;
+        casez_tmp_97 = entries_22_bp_index;
       5'b10111:
-        casez_tmp_97 = entries_23_dest_val;
+        casez_tmp_97 = entries_23_bp_index;
       5'b11000:
-        casez_tmp_97 = entries_24_dest_val;
+        casez_tmp_97 = entries_24_bp_index;
       5'b11001:
-        casez_tmp_97 = entries_25_dest_val;
+        casez_tmp_97 = entries_25_bp_index;
       5'b11010:
-        casez_tmp_97 = entries_26_dest_val;
+        casez_tmp_97 = entries_26_bp_index;
       5'b11011:
-        casez_tmp_97 = entries_27_dest_val;
+        casez_tmp_97 = entries_27_bp_index;
       5'b11100:
-        casez_tmp_97 = entries_28_dest_val;
+        casez_tmp_97 = entries_28_bp_index;
       5'b11101:
-        casez_tmp_97 = entries_29_dest_val;
+        casez_tmp_97 = entries_29_bp_index;
       5'b11110:
-        casez_tmp_97 = entries_30_dest_val;
+        casez_tmp_97 = entries_30_bp_index;
       default:
-        casez_tmp_97 = entries_31_dest_val;
+        casez_tmp_97 = entries_31_bp_index;
     endcase
   end // always_comb
-  reg         casez_tmp_98;
+  reg  [3:0]  casez_tmp_98;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_98 = entries_0_is_ebreak;
+        casez_tmp_98 = entries_0_ftq_idx;
       5'b00001:
-        casez_tmp_98 = entries_1_is_ebreak;
+        casez_tmp_98 = entries_1_ftq_idx;
       5'b00010:
-        casez_tmp_98 = entries_2_is_ebreak;
+        casez_tmp_98 = entries_2_ftq_idx;
       5'b00011:
-        casez_tmp_98 = entries_3_is_ebreak;
+        casez_tmp_98 = entries_3_ftq_idx;
       5'b00100:
-        casez_tmp_98 = entries_4_is_ebreak;
+        casez_tmp_98 = entries_4_ftq_idx;
       5'b00101:
-        casez_tmp_98 = entries_5_is_ebreak;
+        casez_tmp_98 = entries_5_ftq_idx;
       5'b00110:
-        casez_tmp_98 = entries_6_is_ebreak;
+        casez_tmp_98 = entries_6_ftq_idx;
       5'b00111:
-        casez_tmp_98 = entries_7_is_ebreak;
+        casez_tmp_98 = entries_7_ftq_idx;
       5'b01000:
-        casez_tmp_98 = entries_8_is_ebreak;
+        casez_tmp_98 = entries_8_ftq_idx;
       5'b01001:
-        casez_tmp_98 = entries_9_is_ebreak;
+        casez_tmp_98 = entries_9_ftq_idx;
       5'b01010:
-        casez_tmp_98 = entries_10_is_ebreak;
+        casez_tmp_98 = entries_10_ftq_idx;
       5'b01011:
-        casez_tmp_98 = entries_11_is_ebreak;
+        casez_tmp_98 = entries_11_ftq_idx;
       5'b01100:
-        casez_tmp_98 = entries_12_is_ebreak;
+        casez_tmp_98 = entries_12_ftq_idx;
       5'b01101:
-        casez_tmp_98 = entries_13_is_ebreak;
+        casez_tmp_98 = entries_13_ftq_idx;
       5'b01110:
-        casez_tmp_98 = entries_14_is_ebreak;
+        casez_tmp_98 = entries_14_ftq_idx;
       5'b01111:
-        casez_tmp_98 = entries_15_is_ebreak;
+        casez_tmp_98 = entries_15_ftq_idx;
       5'b10000:
-        casez_tmp_98 = entries_16_is_ebreak;
+        casez_tmp_98 = entries_16_ftq_idx;
       5'b10001:
-        casez_tmp_98 = entries_17_is_ebreak;
+        casez_tmp_98 = entries_17_ftq_idx;
       5'b10010:
-        casez_tmp_98 = entries_18_is_ebreak;
+        casez_tmp_98 = entries_18_ftq_idx;
       5'b10011:
-        casez_tmp_98 = entries_19_is_ebreak;
+        casez_tmp_98 = entries_19_ftq_idx;
       5'b10100:
-        casez_tmp_98 = entries_20_is_ebreak;
+        casez_tmp_98 = entries_20_ftq_idx;
       5'b10101:
-        casez_tmp_98 = entries_21_is_ebreak;
+        casez_tmp_98 = entries_21_ftq_idx;
       5'b10110:
-        casez_tmp_98 = entries_22_is_ebreak;
+        casez_tmp_98 = entries_22_ftq_idx;
       5'b10111:
-        casez_tmp_98 = entries_23_is_ebreak;
+        casez_tmp_98 = entries_23_ftq_idx;
       5'b11000:
-        casez_tmp_98 = entries_24_is_ebreak;
+        casez_tmp_98 = entries_24_ftq_idx;
       5'b11001:
-        casez_tmp_98 = entries_25_is_ebreak;
+        casez_tmp_98 = entries_25_ftq_idx;
       5'b11010:
-        casez_tmp_98 = entries_26_is_ebreak;
+        casez_tmp_98 = entries_26_ftq_idx;
       5'b11011:
-        casez_tmp_98 = entries_27_is_ebreak;
+        casez_tmp_98 = entries_27_ftq_idx;
       5'b11100:
-        casez_tmp_98 = entries_28_is_ebreak;
+        casez_tmp_98 = entries_28_ftq_idx;
       5'b11101:
-        casez_tmp_98 = entries_29_is_ebreak;
+        casez_tmp_98 = entries_29_ftq_idx;
       5'b11110:
-        casez_tmp_98 = entries_30_is_ebreak;
+        casez_tmp_98 = entries_30_ftq_idx;
       default:
-        casez_tmp_98 = entries_31_is_ebreak;
+        casez_tmp_98 = entries_31_ftq_idx;
     endcase
   end // always_comb
-  reg         casez_tmp_99;
+  reg  [7:0]  casez_tmp_99;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_99 = entries_0_is_fencei;
+        casez_tmp_99 = entries_0_ftq_generation;
       5'b00001:
-        casez_tmp_99 = entries_1_is_fencei;
+        casez_tmp_99 = entries_1_ftq_generation;
       5'b00010:
-        casez_tmp_99 = entries_2_is_fencei;
+        casez_tmp_99 = entries_2_ftq_generation;
       5'b00011:
-        casez_tmp_99 = entries_3_is_fencei;
+        casez_tmp_99 = entries_3_ftq_generation;
       5'b00100:
-        casez_tmp_99 = entries_4_is_fencei;
+        casez_tmp_99 = entries_4_ftq_generation;
       5'b00101:
-        casez_tmp_99 = entries_5_is_fencei;
+        casez_tmp_99 = entries_5_ftq_generation;
       5'b00110:
-        casez_tmp_99 = entries_6_is_fencei;
+        casez_tmp_99 = entries_6_ftq_generation;
       5'b00111:
-        casez_tmp_99 = entries_7_is_fencei;
+        casez_tmp_99 = entries_7_ftq_generation;
       5'b01000:
-        casez_tmp_99 = entries_8_is_fencei;
+        casez_tmp_99 = entries_8_ftq_generation;
       5'b01001:
-        casez_tmp_99 = entries_9_is_fencei;
+        casez_tmp_99 = entries_9_ftq_generation;
       5'b01010:
-        casez_tmp_99 = entries_10_is_fencei;
+        casez_tmp_99 = entries_10_ftq_generation;
       5'b01011:
-        casez_tmp_99 = entries_11_is_fencei;
+        casez_tmp_99 = entries_11_ftq_generation;
       5'b01100:
-        casez_tmp_99 = entries_12_is_fencei;
+        casez_tmp_99 = entries_12_ftq_generation;
       5'b01101:
-        casez_tmp_99 = entries_13_is_fencei;
+        casez_tmp_99 = entries_13_ftq_generation;
       5'b01110:
-        casez_tmp_99 = entries_14_is_fencei;
+        casez_tmp_99 = entries_14_ftq_generation;
       5'b01111:
-        casez_tmp_99 = entries_15_is_fencei;
+        casez_tmp_99 = entries_15_ftq_generation;
       5'b10000:
-        casez_tmp_99 = entries_16_is_fencei;
+        casez_tmp_99 = entries_16_ftq_generation;
       5'b10001:
-        casez_tmp_99 = entries_17_is_fencei;
+        casez_tmp_99 = entries_17_ftq_generation;
       5'b10010:
-        casez_tmp_99 = entries_18_is_fencei;
+        casez_tmp_99 = entries_18_ftq_generation;
       5'b10011:
-        casez_tmp_99 = entries_19_is_fencei;
+        casez_tmp_99 = entries_19_ftq_generation;
       5'b10100:
-        casez_tmp_99 = entries_20_is_fencei;
+        casez_tmp_99 = entries_20_ftq_generation;
       5'b10101:
-        casez_tmp_99 = entries_21_is_fencei;
+        casez_tmp_99 = entries_21_ftq_generation;
       5'b10110:
-        casez_tmp_99 = entries_22_is_fencei;
+        casez_tmp_99 = entries_22_ftq_generation;
       5'b10111:
-        casez_tmp_99 = entries_23_is_fencei;
+        casez_tmp_99 = entries_23_ftq_generation;
       5'b11000:
-        casez_tmp_99 = entries_24_is_fencei;
+        casez_tmp_99 = entries_24_ftq_generation;
       5'b11001:
-        casez_tmp_99 = entries_25_is_fencei;
+        casez_tmp_99 = entries_25_ftq_generation;
       5'b11010:
-        casez_tmp_99 = entries_26_is_fencei;
+        casez_tmp_99 = entries_26_ftq_generation;
       5'b11011:
-        casez_tmp_99 = entries_27_is_fencei;
+        casez_tmp_99 = entries_27_ftq_generation;
       5'b11100:
-        casez_tmp_99 = entries_28_is_fencei;
+        casez_tmp_99 = entries_28_ftq_generation;
       5'b11101:
-        casez_tmp_99 = entries_29_is_fencei;
+        casez_tmp_99 = entries_29_ftq_generation;
       5'b11110:
-        casez_tmp_99 = entries_30_is_fencei;
+        casez_tmp_99 = entries_30_ftq_generation;
       default:
-        casez_tmp_99 = entries_31_is_fencei;
+        casez_tmp_99 = entries_31_ftq_generation;
     endcase
   end // always_comb
-  reg         casez_tmp_100;
+  reg  [1:0]  casez_tmp_100;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_100 = entries_0_state_state;
+        casez_tmp_100 = entries_0_cp_idx;
       5'b00001:
-        casez_tmp_100 = entries_1_state_state;
+        casez_tmp_100 = entries_1_cp_idx;
       5'b00010:
-        casez_tmp_100 = entries_2_state_state;
+        casez_tmp_100 = entries_2_cp_idx;
       5'b00011:
-        casez_tmp_100 = entries_3_state_state;
+        casez_tmp_100 = entries_3_cp_idx;
       5'b00100:
-        casez_tmp_100 = entries_4_state_state;
+        casez_tmp_100 = entries_4_cp_idx;
       5'b00101:
-        casez_tmp_100 = entries_5_state_state;
+        casez_tmp_100 = entries_5_cp_idx;
       5'b00110:
-        casez_tmp_100 = entries_6_state_state;
+        casez_tmp_100 = entries_6_cp_idx;
       5'b00111:
-        casez_tmp_100 = entries_7_state_state;
+        casez_tmp_100 = entries_7_cp_idx;
       5'b01000:
-        casez_tmp_100 = entries_8_state_state;
+        casez_tmp_100 = entries_8_cp_idx;
       5'b01001:
-        casez_tmp_100 = entries_9_state_state;
+        casez_tmp_100 = entries_9_cp_idx;
       5'b01010:
-        casez_tmp_100 = entries_10_state_state;
+        casez_tmp_100 = entries_10_cp_idx;
       5'b01011:
-        casez_tmp_100 = entries_11_state_state;
+        casez_tmp_100 = entries_11_cp_idx;
       5'b01100:
-        casez_tmp_100 = entries_12_state_state;
+        casez_tmp_100 = entries_12_cp_idx;
       5'b01101:
-        casez_tmp_100 = entries_13_state_state;
+        casez_tmp_100 = entries_13_cp_idx;
       5'b01110:
-        casez_tmp_100 = entries_14_state_state;
+        casez_tmp_100 = entries_14_cp_idx;
       5'b01111:
-        casez_tmp_100 = entries_15_state_state;
+        casez_tmp_100 = entries_15_cp_idx;
       5'b10000:
-        casez_tmp_100 = entries_16_state_state;
+        casez_tmp_100 = entries_16_cp_idx;
       5'b10001:
-        casez_tmp_100 = entries_17_state_state;
+        casez_tmp_100 = entries_17_cp_idx;
       5'b10010:
-        casez_tmp_100 = entries_18_state_state;
+        casez_tmp_100 = entries_18_cp_idx;
       5'b10011:
-        casez_tmp_100 = entries_19_state_state;
+        casez_tmp_100 = entries_19_cp_idx;
       5'b10100:
-        casez_tmp_100 = entries_20_state_state;
+        casez_tmp_100 = entries_20_cp_idx;
       5'b10101:
-        casez_tmp_100 = entries_21_state_state;
+        casez_tmp_100 = entries_21_cp_idx;
       5'b10110:
-        casez_tmp_100 = entries_22_state_state;
+        casez_tmp_100 = entries_22_cp_idx;
       5'b10111:
-        casez_tmp_100 = entries_23_state_state;
+        casez_tmp_100 = entries_23_cp_idx;
       5'b11000:
-        casez_tmp_100 = entries_24_state_state;
+        casez_tmp_100 = entries_24_cp_idx;
       5'b11001:
-        casez_tmp_100 = entries_25_state_state;
+        casez_tmp_100 = entries_25_cp_idx;
       5'b11010:
-        casez_tmp_100 = entries_26_state_state;
+        casez_tmp_100 = entries_26_cp_idx;
       5'b11011:
-        casez_tmp_100 = entries_27_state_state;
+        casez_tmp_100 = entries_27_cp_idx;
       5'b11100:
-        casez_tmp_100 = entries_28_state_state;
+        casez_tmp_100 = entries_28_cp_idx;
       5'b11101:
-        casez_tmp_100 = entries_29_state_state;
+        casez_tmp_100 = entries_29_cp_idx;
       5'b11110:
-        casez_tmp_100 = entries_30_state_state;
+        casez_tmp_100 = entries_30_cp_idx;
       default:
-        casez_tmp_100 = entries_31_state_state;
+        casez_tmp_100 = entries_31_cp_idx;
     endcase
   end // always_comb
-  reg  [96:0] casez_tmp_101;
+  reg         casez_tmp_101;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_101 = entries_0_bp_index;
+        casez_tmp_101 = entries_0_actual_taken;
       5'b00001:
-        casez_tmp_101 = entries_1_bp_index;
+        casez_tmp_101 = entries_1_actual_taken;
       5'b00010:
-        casez_tmp_101 = entries_2_bp_index;
+        casez_tmp_101 = entries_2_actual_taken;
       5'b00011:
-        casez_tmp_101 = entries_3_bp_index;
+        casez_tmp_101 = entries_3_actual_taken;
       5'b00100:
-        casez_tmp_101 = entries_4_bp_index;
+        casez_tmp_101 = entries_4_actual_taken;
       5'b00101:
-        casez_tmp_101 = entries_5_bp_index;
+        casez_tmp_101 = entries_5_actual_taken;
       5'b00110:
-        casez_tmp_101 = entries_6_bp_index;
+        casez_tmp_101 = entries_6_actual_taken;
       5'b00111:
-        casez_tmp_101 = entries_7_bp_index;
+        casez_tmp_101 = entries_7_actual_taken;
       5'b01000:
-        casez_tmp_101 = entries_8_bp_index;
+        casez_tmp_101 = entries_8_actual_taken;
       5'b01001:
-        casez_tmp_101 = entries_9_bp_index;
+        casez_tmp_101 = entries_9_actual_taken;
       5'b01010:
-        casez_tmp_101 = entries_10_bp_index;
+        casez_tmp_101 = entries_10_actual_taken;
       5'b01011:
-        casez_tmp_101 = entries_11_bp_index;
+        casez_tmp_101 = entries_11_actual_taken;
       5'b01100:
-        casez_tmp_101 = entries_12_bp_index;
+        casez_tmp_101 = entries_12_actual_taken;
       5'b01101:
-        casez_tmp_101 = entries_13_bp_index;
+        casez_tmp_101 = entries_13_actual_taken;
       5'b01110:
-        casez_tmp_101 = entries_14_bp_index;
+        casez_tmp_101 = entries_14_actual_taken;
       5'b01111:
-        casez_tmp_101 = entries_15_bp_index;
+        casez_tmp_101 = entries_15_actual_taken;
       5'b10000:
-        casez_tmp_101 = entries_16_bp_index;
+        casez_tmp_101 = entries_16_actual_taken;
       5'b10001:
-        casez_tmp_101 = entries_17_bp_index;
+        casez_tmp_101 = entries_17_actual_taken;
       5'b10010:
-        casez_tmp_101 = entries_18_bp_index;
+        casez_tmp_101 = entries_18_actual_taken;
       5'b10011:
-        casez_tmp_101 = entries_19_bp_index;
+        casez_tmp_101 = entries_19_actual_taken;
       5'b10100:
-        casez_tmp_101 = entries_20_bp_index;
+        casez_tmp_101 = entries_20_actual_taken;
       5'b10101:
-        casez_tmp_101 = entries_21_bp_index;
+        casez_tmp_101 = entries_21_actual_taken;
       5'b10110:
-        casez_tmp_101 = entries_22_bp_index;
+        casez_tmp_101 = entries_22_actual_taken;
       5'b10111:
-        casez_tmp_101 = entries_23_bp_index;
+        casez_tmp_101 = entries_23_actual_taken;
       5'b11000:
-        casez_tmp_101 = entries_24_bp_index;
+        casez_tmp_101 = entries_24_actual_taken;
       5'b11001:
-        casez_tmp_101 = entries_25_bp_index;
+        casez_tmp_101 = entries_25_actual_taken;
       5'b11010:
-        casez_tmp_101 = entries_26_bp_index;
+        casez_tmp_101 = entries_26_actual_taken;
       5'b11011:
-        casez_tmp_101 = entries_27_bp_index;
+        casez_tmp_101 = entries_27_actual_taken;
       5'b11100:
-        casez_tmp_101 = entries_28_bp_index;
+        casez_tmp_101 = entries_28_actual_taken;
       5'b11101:
-        casez_tmp_101 = entries_29_bp_index;
+        casez_tmp_101 = entries_29_actual_taken;
       5'b11110:
-        casez_tmp_101 = entries_30_bp_index;
+        casez_tmp_101 = entries_30_actual_taken;
       default:
-        casez_tmp_101 = entries_31_bp_index;
+        casez_tmp_101 = entries_31_actual_taken;
     endcase
   end // always_comb
-  reg  [3:0]  casez_tmp_102;
+  reg  [31:0] casez_tmp_102;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_102 = entries_0_ftq_idx;
+        casez_tmp_102 = entries_0_actual_target;
       5'b00001:
-        casez_tmp_102 = entries_1_ftq_idx;
+        casez_tmp_102 = entries_1_actual_target;
       5'b00010:
-        casez_tmp_102 = entries_2_ftq_idx;
+        casez_tmp_102 = entries_2_actual_target;
       5'b00011:
-        casez_tmp_102 = entries_3_ftq_idx;
+        casez_tmp_102 = entries_3_actual_target;
       5'b00100:
-        casez_tmp_102 = entries_4_ftq_idx;
+        casez_tmp_102 = entries_4_actual_target;
       5'b00101:
-        casez_tmp_102 = entries_5_ftq_idx;
+        casez_tmp_102 = entries_5_actual_target;
       5'b00110:
-        casez_tmp_102 = entries_6_ftq_idx;
+        casez_tmp_102 = entries_6_actual_target;
       5'b00111:
-        casez_tmp_102 = entries_7_ftq_idx;
+        casez_tmp_102 = entries_7_actual_target;
       5'b01000:
-        casez_tmp_102 = entries_8_ftq_idx;
+        casez_tmp_102 = entries_8_actual_target;
       5'b01001:
-        casez_tmp_102 = entries_9_ftq_idx;
+        casez_tmp_102 = entries_9_actual_target;
       5'b01010:
-        casez_tmp_102 = entries_10_ftq_idx;
+        casez_tmp_102 = entries_10_actual_target;
       5'b01011:
-        casez_tmp_102 = entries_11_ftq_idx;
+        casez_tmp_102 = entries_11_actual_target;
       5'b01100:
-        casez_tmp_102 = entries_12_ftq_idx;
+        casez_tmp_102 = entries_12_actual_target;
       5'b01101:
-        casez_tmp_102 = entries_13_ftq_idx;
+        casez_tmp_102 = entries_13_actual_target;
       5'b01110:
-        casez_tmp_102 = entries_14_ftq_idx;
+        casez_tmp_102 = entries_14_actual_target;
       5'b01111:
-        casez_tmp_102 = entries_15_ftq_idx;
+        casez_tmp_102 = entries_15_actual_target;
       5'b10000:
-        casez_tmp_102 = entries_16_ftq_idx;
+        casez_tmp_102 = entries_16_actual_target;
       5'b10001:
-        casez_tmp_102 = entries_17_ftq_idx;
+        casez_tmp_102 = entries_17_actual_target;
       5'b10010:
-        casez_tmp_102 = entries_18_ftq_idx;
+        casez_tmp_102 = entries_18_actual_target;
       5'b10011:
-        casez_tmp_102 = entries_19_ftq_idx;
+        casez_tmp_102 = entries_19_actual_target;
       5'b10100:
-        casez_tmp_102 = entries_20_ftq_idx;
+        casez_tmp_102 = entries_20_actual_target;
       5'b10101:
-        casez_tmp_102 = entries_21_ftq_idx;
+        casez_tmp_102 = entries_21_actual_target;
       5'b10110:
-        casez_tmp_102 = entries_22_ftq_idx;
+        casez_tmp_102 = entries_22_actual_target;
       5'b10111:
-        casez_tmp_102 = entries_23_ftq_idx;
+        casez_tmp_102 = entries_23_actual_target;
       5'b11000:
-        casez_tmp_102 = entries_24_ftq_idx;
+        casez_tmp_102 = entries_24_actual_target;
       5'b11001:
-        casez_tmp_102 = entries_25_ftq_idx;
+        casez_tmp_102 = entries_25_actual_target;
       5'b11010:
-        casez_tmp_102 = entries_26_ftq_idx;
+        casez_tmp_102 = entries_26_actual_target;
       5'b11011:
-        casez_tmp_102 = entries_27_ftq_idx;
+        casez_tmp_102 = entries_27_actual_target;
       5'b11100:
-        casez_tmp_102 = entries_28_ftq_idx;
+        casez_tmp_102 = entries_28_actual_target;
       5'b11101:
-        casez_tmp_102 = entries_29_ftq_idx;
+        casez_tmp_102 = entries_29_actual_target;
       5'b11110:
-        casez_tmp_102 = entries_30_ftq_idx;
+        casez_tmp_102 = entries_30_actual_target;
       default:
-        casez_tmp_102 = entries_31_ftq_idx;
+        casez_tmp_102 = entries_31_actual_target;
     endcase
   end // always_comb
-  reg  [7:0]  casez_tmp_103;
+  reg  [31:0] casez_tmp_103;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_103 = entries_0_ftq_generation;
+        casez_tmp_103 = entries_0_mem_addr;
       5'b00001:
-        casez_tmp_103 = entries_1_ftq_generation;
+        casez_tmp_103 = entries_1_mem_addr;
       5'b00010:
-        casez_tmp_103 = entries_2_ftq_generation;
+        casez_tmp_103 = entries_2_mem_addr;
       5'b00011:
-        casez_tmp_103 = entries_3_ftq_generation;
+        casez_tmp_103 = entries_3_mem_addr;
       5'b00100:
-        casez_tmp_103 = entries_4_ftq_generation;
+        casez_tmp_103 = entries_4_mem_addr;
       5'b00101:
-        casez_tmp_103 = entries_5_ftq_generation;
+        casez_tmp_103 = entries_5_mem_addr;
       5'b00110:
-        casez_tmp_103 = entries_6_ftq_generation;
+        casez_tmp_103 = entries_6_mem_addr;
       5'b00111:
-        casez_tmp_103 = entries_7_ftq_generation;
+        casez_tmp_103 = entries_7_mem_addr;
       5'b01000:
-        casez_tmp_103 = entries_8_ftq_generation;
+        casez_tmp_103 = entries_8_mem_addr;
       5'b01001:
-        casez_tmp_103 = entries_9_ftq_generation;
+        casez_tmp_103 = entries_9_mem_addr;
       5'b01010:
-        casez_tmp_103 = entries_10_ftq_generation;
+        casez_tmp_103 = entries_10_mem_addr;
       5'b01011:
-        casez_tmp_103 = entries_11_ftq_generation;
+        casez_tmp_103 = entries_11_mem_addr;
       5'b01100:
-        casez_tmp_103 = entries_12_ftq_generation;
+        casez_tmp_103 = entries_12_mem_addr;
       5'b01101:
-        casez_tmp_103 = entries_13_ftq_generation;
+        casez_tmp_103 = entries_13_mem_addr;
       5'b01110:
-        casez_tmp_103 = entries_14_ftq_generation;
+        casez_tmp_103 = entries_14_mem_addr;
       5'b01111:
-        casez_tmp_103 = entries_15_ftq_generation;
+        casez_tmp_103 = entries_15_mem_addr;
       5'b10000:
-        casez_tmp_103 = entries_16_ftq_generation;
+        casez_tmp_103 = entries_16_mem_addr;
       5'b10001:
-        casez_tmp_103 = entries_17_ftq_generation;
+        casez_tmp_103 = entries_17_mem_addr;
       5'b10010:
-        casez_tmp_103 = entries_18_ftq_generation;
+        casez_tmp_103 = entries_18_mem_addr;
       5'b10011:
-        casez_tmp_103 = entries_19_ftq_generation;
+        casez_tmp_103 = entries_19_mem_addr;
       5'b10100:
-        casez_tmp_103 = entries_20_ftq_generation;
+        casez_tmp_103 = entries_20_mem_addr;
       5'b10101:
-        casez_tmp_103 = entries_21_ftq_generation;
+        casez_tmp_103 = entries_21_mem_addr;
       5'b10110:
-        casez_tmp_103 = entries_22_ftq_generation;
+        casez_tmp_103 = entries_22_mem_addr;
       5'b10111:
-        casez_tmp_103 = entries_23_ftq_generation;
+        casez_tmp_103 = entries_23_mem_addr;
       5'b11000:
-        casez_tmp_103 = entries_24_ftq_generation;
+        casez_tmp_103 = entries_24_mem_addr;
       5'b11001:
-        casez_tmp_103 = entries_25_ftq_generation;
+        casez_tmp_103 = entries_25_mem_addr;
       5'b11010:
-        casez_tmp_103 = entries_26_ftq_generation;
+        casez_tmp_103 = entries_26_mem_addr;
       5'b11011:
-        casez_tmp_103 = entries_27_ftq_generation;
+        casez_tmp_103 = entries_27_mem_addr;
       5'b11100:
-        casez_tmp_103 = entries_28_ftq_generation;
+        casez_tmp_103 = entries_28_mem_addr;
       5'b11101:
-        casez_tmp_103 = entries_29_ftq_generation;
+        casez_tmp_103 = entries_29_mem_addr;
       5'b11110:
-        casez_tmp_103 = entries_30_ftq_generation;
+        casez_tmp_103 = entries_30_mem_addr;
       default:
-        casez_tmp_103 = entries_31_ftq_generation;
+        casez_tmp_103 = entries_31_mem_addr;
     endcase
   end // always_comb
-  reg  [1:0]  casez_tmp_104;
+  reg  [31:0] casez_tmp_104;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_104 = entries_0_cp_idx;
+        casez_tmp_104 = entries_0_mem_wdata;
       5'b00001:
-        casez_tmp_104 = entries_1_cp_idx;
+        casez_tmp_104 = entries_1_mem_wdata;
       5'b00010:
-        casez_tmp_104 = entries_2_cp_idx;
+        casez_tmp_104 = entries_2_mem_wdata;
       5'b00011:
-        casez_tmp_104 = entries_3_cp_idx;
+        casez_tmp_104 = entries_3_mem_wdata;
       5'b00100:
-        casez_tmp_104 = entries_4_cp_idx;
+        casez_tmp_104 = entries_4_mem_wdata;
       5'b00101:
-        casez_tmp_104 = entries_5_cp_idx;
+        casez_tmp_104 = entries_5_mem_wdata;
       5'b00110:
-        casez_tmp_104 = entries_6_cp_idx;
+        casez_tmp_104 = entries_6_mem_wdata;
       5'b00111:
-        casez_tmp_104 = entries_7_cp_idx;
+        casez_tmp_104 = entries_7_mem_wdata;
       5'b01000:
-        casez_tmp_104 = entries_8_cp_idx;
+        casez_tmp_104 = entries_8_mem_wdata;
       5'b01001:
-        casez_tmp_104 = entries_9_cp_idx;
+        casez_tmp_104 = entries_9_mem_wdata;
       5'b01010:
-        casez_tmp_104 = entries_10_cp_idx;
+        casez_tmp_104 = entries_10_mem_wdata;
       5'b01011:
-        casez_tmp_104 = entries_11_cp_idx;
+        casez_tmp_104 = entries_11_mem_wdata;
       5'b01100:
-        casez_tmp_104 = entries_12_cp_idx;
+        casez_tmp_104 = entries_12_mem_wdata;
       5'b01101:
-        casez_tmp_104 = entries_13_cp_idx;
+        casez_tmp_104 = entries_13_mem_wdata;
       5'b01110:
-        casez_tmp_104 = entries_14_cp_idx;
+        casez_tmp_104 = entries_14_mem_wdata;
       5'b01111:
-        casez_tmp_104 = entries_15_cp_idx;
+        casez_tmp_104 = entries_15_mem_wdata;
       5'b10000:
-        casez_tmp_104 = entries_16_cp_idx;
+        casez_tmp_104 = entries_16_mem_wdata;
       5'b10001:
-        casez_tmp_104 = entries_17_cp_idx;
+        casez_tmp_104 = entries_17_mem_wdata;
       5'b10010:
-        casez_tmp_104 = entries_18_cp_idx;
+        casez_tmp_104 = entries_18_mem_wdata;
       5'b10011:
-        casez_tmp_104 = entries_19_cp_idx;
+        casez_tmp_104 = entries_19_mem_wdata;
       5'b10100:
-        casez_tmp_104 = entries_20_cp_idx;
+        casez_tmp_104 = entries_20_mem_wdata;
       5'b10101:
-        casez_tmp_104 = entries_21_cp_idx;
+        casez_tmp_104 = entries_21_mem_wdata;
       5'b10110:
-        casez_tmp_104 = entries_22_cp_idx;
+        casez_tmp_104 = entries_22_mem_wdata;
       5'b10111:
-        casez_tmp_104 = entries_23_cp_idx;
+        casez_tmp_104 = entries_23_mem_wdata;
       5'b11000:
-        casez_tmp_104 = entries_24_cp_idx;
+        casez_tmp_104 = entries_24_mem_wdata;
       5'b11001:
-        casez_tmp_104 = entries_25_cp_idx;
+        casez_tmp_104 = entries_25_mem_wdata;
       5'b11010:
-        casez_tmp_104 = entries_26_cp_idx;
+        casez_tmp_104 = entries_26_mem_wdata;
       5'b11011:
-        casez_tmp_104 = entries_27_cp_idx;
+        casez_tmp_104 = entries_27_mem_wdata;
       5'b11100:
-        casez_tmp_104 = entries_28_cp_idx;
+        casez_tmp_104 = entries_28_mem_wdata;
       5'b11101:
-        casez_tmp_104 = entries_29_cp_idx;
+        casez_tmp_104 = entries_29_mem_wdata;
       5'b11110:
-        casez_tmp_104 = entries_30_cp_idx;
+        casez_tmp_104 = entries_30_mem_wdata;
       default:
-        casez_tmp_104 = entries_31_cp_idx;
+        casez_tmp_104 = entries_31_mem_wdata;
     endcase
   end // always_comb
   reg         casez_tmp_105;
   always_comb begin
     casez (_idx_T_6)
       5'b00000:
-        casez_tmp_105 = entries_0_actual_taken;
+        casez_tmp_105 = entries_0_addr_ready;
       5'b00001:
-        casez_tmp_105 = entries_1_actual_taken;
+        casez_tmp_105 = entries_1_addr_ready;
       5'b00010:
-        casez_tmp_105 = entries_2_actual_taken;
+        casez_tmp_105 = entries_2_addr_ready;
       5'b00011:
-        casez_tmp_105 = entries_3_actual_taken;
+        casez_tmp_105 = entries_3_addr_ready;
       5'b00100:
-        casez_tmp_105 = entries_4_actual_taken;
+        casez_tmp_105 = entries_4_addr_ready;
       5'b00101:
-        casez_tmp_105 = entries_5_actual_taken;
+        casez_tmp_105 = entries_5_addr_ready;
       5'b00110:
-        casez_tmp_105 = entries_6_actual_taken;
+        casez_tmp_105 = entries_6_addr_ready;
       5'b00111:
-        casez_tmp_105 = entries_7_actual_taken;
+        casez_tmp_105 = entries_7_addr_ready;
       5'b01000:
-        casez_tmp_105 = entries_8_actual_taken;
+        casez_tmp_105 = entries_8_addr_ready;
       5'b01001:
-        casez_tmp_105 = entries_9_actual_taken;
+        casez_tmp_105 = entries_9_addr_ready;
       5'b01010:
-        casez_tmp_105 = entries_10_actual_taken;
+        casez_tmp_105 = entries_10_addr_ready;
       5'b01011:
-        casez_tmp_105 = entries_11_actual_taken;
+        casez_tmp_105 = entries_11_addr_ready;
       5'b01100:
-        casez_tmp_105 = entries_12_actual_taken;
+        casez_tmp_105 = entries_12_addr_ready;
       5'b01101:
-        casez_tmp_105 = entries_13_actual_taken;
+        casez_tmp_105 = entries_13_addr_ready;
       5'b01110:
-        casez_tmp_105 = entries_14_actual_taken;
+        casez_tmp_105 = entries_14_addr_ready;
       5'b01111:
-        casez_tmp_105 = entries_15_actual_taken;
+        casez_tmp_105 = entries_15_addr_ready;
       5'b10000:
-        casez_tmp_105 = entries_16_actual_taken;
+        casez_tmp_105 = entries_16_addr_ready;
       5'b10001:
-        casez_tmp_105 = entries_17_actual_taken;
+        casez_tmp_105 = entries_17_addr_ready;
       5'b10010:
-        casez_tmp_105 = entries_18_actual_taken;
+        casez_tmp_105 = entries_18_addr_ready;
       5'b10011:
-        casez_tmp_105 = entries_19_actual_taken;
+        casez_tmp_105 = entries_19_addr_ready;
       5'b10100:
-        casez_tmp_105 = entries_20_actual_taken;
+        casez_tmp_105 = entries_20_addr_ready;
       5'b10101:
-        casez_tmp_105 = entries_21_actual_taken;
+        casez_tmp_105 = entries_21_addr_ready;
       5'b10110:
-        casez_tmp_105 = entries_22_actual_taken;
+        casez_tmp_105 = entries_22_addr_ready;
       5'b10111:
-        casez_tmp_105 = entries_23_actual_taken;
+        casez_tmp_105 = entries_23_addr_ready;
       5'b11000:
-        casez_tmp_105 = entries_24_actual_taken;
+        casez_tmp_105 = entries_24_addr_ready;
       5'b11001:
-        casez_tmp_105 = entries_25_actual_taken;
+        casez_tmp_105 = entries_25_addr_ready;
       5'b11010:
-        casez_tmp_105 = entries_26_actual_taken;
+        casez_tmp_105 = entries_26_addr_ready;
       5'b11011:
-        casez_tmp_105 = entries_27_actual_taken;
+        casez_tmp_105 = entries_27_addr_ready;
       5'b11100:
-        casez_tmp_105 = entries_28_actual_taken;
+        casez_tmp_105 = entries_28_addr_ready;
       5'b11101:
-        casez_tmp_105 = entries_29_actual_taken;
+        casez_tmp_105 = entries_29_addr_ready;
       5'b11110:
-        casez_tmp_105 = entries_30_actual_taken;
+        casez_tmp_105 = entries_30_addr_ready;
       default:
-        casez_tmp_105 = entries_31_actual_taken;
+        casez_tmp_105 = entries_31_addr_ready;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_106;
+  wire        io_commit_valid_3_0 =
+    (|(count[5:2])) & casez_tmp_81
+    & (casez_tmp_82 | io_wb_fire_0 & io_wb_idx_0 == _idx_T_6 | io_wb_fire_1
+       & io_wb_idx_1 == _idx_T_6 | io_wb_fire_2 & io_wb_idx_2 == _idx_T_6 | io_wb_fire_3
+       & io_wb_idx_3 == _idx_T_6 | io_ctrl_wb_fire & io_ctrl_wb_idx == _idx_T_6
+       | io_store_wb_fire & io_store_wb_idx == _idx_T_6);
+  reg         casez_tmp_106;
   always_comb begin
-    casez (_idx_T_6)
+    casez (io_wb_idx_0)
       5'b00000:
-        casez_tmp_106 = entries_0_actual_target;
+        casez_tmp_106 = entries_0_valid;
       5'b00001:
-        casez_tmp_106 = entries_1_actual_target;
+        casez_tmp_106 = entries_1_valid;
       5'b00010:
-        casez_tmp_106 = entries_2_actual_target;
+        casez_tmp_106 = entries_2_valid;
       5'b00011:
-        casez_tmp_106 = entries_3_actual_target;
+        casez_tmp_106 = entries_3_valid;
       5'b00100:
-        casez_tmp_106 = entries_4_actual_target;
+        casez_tmp_106 = entries_4_valid;
       5'b00101:
-        casez_tmp_106 = entries_5_actual_target;
+        casez_tmp_106 = entries_5_valid;
       5'b00110:
-        casez_tmp_106 = entries_6_actual_target;
+        casez_tmp_106 = entries_6_valid;
       5'b00111:
-        casez_tmp_106 = entries_7_actual_target;
+        casez_tmp_106 = entries_7_valid;
       5'b01000:
-        casez_tmp_106 = entries_8_actual_target;
+        casez_tmp_106 = entries_8_valid;
       5'b01001:
-        casez_tmp_106 = entries_9_actual_target;
+        casez_tmp_106 = entries_9_valid;
       5'b01010:
-        casez_tmp_106 = entries_10_actual_target;
+        casez_tmp_106 = entries_10_valid;
       5'b01011:
-        casez_tmp_106 = entries_11_actual_target;
+        casez_tmp_106 = entries_11_valid;
       5'b01100:
-        casez_tmp_106 = entries_12_actual_target;
+        casez_tmp_106 = entries_12_valid;
       5'b01101:
-        casez_tmp_106 = entries_13_actual_target;
+        casez_tmp_106 = entries_13_valid;
       5'b01110:
-        casez_tmp_106 = entries_14_actual_target;
+        casez_tmp_106 = entries_14_valid;
       5'b01111:
-        casez_tmp_106 = entries_15_actual_target;
+        casez_tmp_106 = entries_15_valid;
       5'b10000:
-        casez_tmp_106 = entries_16_actual_target;
+        casez_tmp_106 = entries_16_valid;
       5'b10001:
-        casez_tmp_106 = entries_17_actual_target;
+        casez_tmp_106 = entries_17_valid;
       5'b10010:
-        casez_tmp_106 = entries_18_actual_target;
+        casez_tmp_106 = entries_18_valid;
       5'b10011:
-        casez_tmp_106 = entries_19_actual_target;
+        casez_tmp_106 = entries_19_valid;
       5'b10100:
-        casez_tmp_106 = entries_20_actual_target;
+        casez_tmp_106 = entries_20_valid;
       5'b10101:
-        casez_tmp_106 = entries_21_actual_target;
+        casez_tmp_106 = entries_21_valid;
       5'b10110:
-        casez_tmp_106 = entries_22_actual_target;
+        casez_tmp_106 = entries_22_valid;
       5'b10111:
-        casez_tmp_106 = entries_23_actual_target;
+        casez_tmp_106 = entries_23_valid;
       5'b11000:
-        casez_tmp_106 = entries_24_actual_target;
+        casez_tmp_106 = entries_24_valid;
       5'b11001:
-        casez_tmp_106 = entries_25_actual_target;
+        casez_tmp_106 = entries_25_valid;
       5'b11010:
-        casez_tmp_106 = entries_26_actual_target;
+        casez_tmp_106 = entries_26_valid;
       5'b11011:
-        casez_tmp_106 = entries_27_actual_target;
+        casez_tmp_106 = entries_27_valid;
       5'b11100:
-        casez_tmp_106 = entries_28_actual_target;
+        casez_tmp_106 = entries_28_valid;
       5'b11101:
-        casez_tmp_106 = entries_29_actual_target;
+        casez_tmp_106 = entries_29_valid;
       5'b11110:
-        casez_tmp_106 = entries_30_actual_target;
+        casez_tmp_106 = entries_30_valid;
       default:
-        casez_tmp_106 = entries_31_actual_target;
+        casez_tmp_106 = entries_31_valid;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_107;
+  reg         casez_tmp_107;
   always_comb begin
-    casez (_idx_T_6)
+    casez (io_wb_idx_1)
       5'b00000:
-        casez_tmp_107 = entries_0_mem_addr;
+        casez_tmp_107 = entries_0_valid;
       5'b00001:
-        casez_tmp_107 = entries_1_mem_addr;
+        casez_tmp_107 = entries_1_valid;
       5'b00010:
-        casez_tmp_107 = entries_2_mem_addr;
+        casez_tmp_107 = entries_2_valid;
       5'b00011:
-        casez_tmp_107 = entries_3_mem_addr;
+        casez_tmp_107 = entries_3_valid;
       5'b00100:
-        casez_tmp_107 = entries_4_mem_addr;
+        casez_tmp_107 = entries_4_valid;
       5'b00101:
-        casez_tmp_107 = entries_5_mem_addr;
+        casez_tmp_107 = entries_5_valid;
       5'b00110:
-        casez_tmp_107 = entries_6_mem_addr;
+        casez_tmp_107 = entries_6_valid;
       5'b00111:
-        casez_tmp_107 = entries_7_mem_addr;
+        casez_tmp_107 = entries_7_valid;
       5'b01000:
-        casez_tmp_107 = entries_8_mem_addr;
+        casez_tmp_107 = entries_8_valid;
       5'b01001:
-        casez_tmp_107 = entries_9_mem_addr;
+        casez_tmp_107 = entries_9_valid;
       5'b01010:
-        casez_tmp_107 = entries_10_mem_addr;
+        casez_tmp_107 = entries_10_valid;
       5'b01011:
-        casez_tmp_107 = entries_11_mem_addr;
+        casez_tmp_107 = entries_11_valid;
       5'b01100:
-        casez_tmp_107 = entries_12_mem_addr;
+        casez_tmp_107 = entries_12_valid;
       5'b01101:
-        casez_tmp_107 = entries_13_mem_addr;
+        casez_tmp_107 = entries_13_valid;
       5'b01110:
-        casez_tmp_107 = entries_14_mem_addr;
+        casez_tmp_107 = entries_14_valid;
       5'b01111:
-        casez_tmp_107 = entries_15_mem_addr;
+        casez_tmp_107 = entries_15_valid;
       5'b10000:
-        casez_tmp_107 = entries_16_mem_addr;
+        casez_tmp_107 = entries_16_valid;
       5'b10001:
-        casez_tmp_107 = entries_17_mem_addr;
+        casez_tmp_107 = entries_17_valid;
       5'b10010:
-        casez_tmp_107 = entries_18_mem_addr;
+        casez_tmp_107 = entries_18_valid;
       5'b10011:
-        casez_tmp_107 = entries_19_mem_addr;
+        casez_tmp_107 = entries_19_valid;
       5'b10100:
-        casez_tmp_107 = entries_20_mem_addr;
+        casez_tmp_107 = entries_20_valid;
       5'b10101:
-        casez_tmp_107 = entries_21_mem_addr;
+        casez_tmp_107 = entries_21_valid;
       5'b10110:
-        casez_tmp_107 = entries_22_mem_addr;
+        casez_tmp_107 = entries_22_valid;
       5'b10111:
-        casez_tmp_107 = entries_23_mem_addr;
+        casez_tmp_107 = entries_23_valid;
       5'b11000:
-        casez_tmp_107 = entries_24_mem_addr;
+        casez_tmp_107 = entries_24_valid;
       5'b11001:
-        casez_tmp_107 = entries_25_mem_addr;
+        casez_tmp_107 = entries_25_valid;
       5'b11010:
-        casez_tmp_107 = entries_26_mem_addr;
+        casez_tmp_107 = entries_26_valid;
       5'b11011:
-        casez_tmp_107 = entries_27_mem_addr;
+        casez_tmp_107 = entries_27_valid;
       5'b11100:
-        casez_tmp_107 = entries_28_mem_addr;
+        casez_tmp_107 = entries_28_valid;
       5'b11101:
-        casez_tmp_107 = entries_29_mem_addr;
+        casez_tmp_107 = entries_29_valid;
       5'b11110:
-        casez_tmp_107 = entries_30_mem_addr;
+        casez_tmp_107 = entries_30_valid;
       default:
-        casez_tmp_107 = entries_31_mem_addr;
+        casez_tmp_107 = entries_31_valid;
     endcase
   end // always_comb
-  reg  [31:0] casez_tmp_108;
+  reg         casez_tmp_108;
   always_comb begin
-    casez (_idx_T_6)
+    casez (io_wb_idx_2)
       5'b00000:
-        casez_tmp_108 = entries_0_mem_wdata;
+        casez_tmp_108 = entries_0_valid;
       5'b00001:
-        casez_tmp_108 = entries_1_mem_wdata;
+        casez_tmp_108 = entries_1_valid;
       5'b00010:
-        casez_tmp_108 = entries_2_mem_wdata;
+        casez_tmp_108 = entries_2_valid;
       5'b00011:
-        casez_tmp_108 = entries_3_mem_wdata;
+        casez_tmp_108 = entries_3_valid;
       5'b00100:
-        casez_tmp_108 = entries_4_mem_wdata;
+        casez_tmp_108 = entries_4_valid;
       5'b00101:
-        casez_tmp_108 = entries_5_mem_wdata;
+        casez_tmp_108 = entries_5_valid;
       5'b00110:
-        casez_tmp_108 = entries_6_mem_wdata;
+        casez_tmp_108 = entries_6_valid;
       5'b00111:
-        casez_tmp_108 = entries_7_mem_wdata;
+        casez_tmp_108 = entries_7_valid;
       5'b01000:
-        casez_tmp_108 = entries_8_mem_wdata;
+        casez_tmp_108 = entries_8_valid;
       5'b01001:
-        casez_tmp_108 = entries_9_mem_wdata;
+        casez_tmp_108 = entries_9_valid;
       5'b01010:
-        casez_tmp_108 = entries_10_mem_wdata;
+        casez_tmp_108 = entries_10_valid;
       5'b01011:
-        casez_tmp_108 = entries_11_mem_wdata;
+        casez_tmp_108 = entries_11_valid;
       5'b01100:
-        casez_tmp_108 = entries_12_mem_wdata;
+        casez_tmp_108 = entries_12_valid;
       5'b01101:
-        casez_tmp_108 = entries_13_mem_wdata;
+        casez_tmp_108 = entries_13_valid;
       5'b01110:
-        casez_tmp_108 = entries_14_mem_wdata;
+        casez_tmp_108 = entries_14_valid;
       5'b01111:
-        casez_tmp_108 = entries_15_mem_wdata;
+        casez_tmp_108 = entries_15_valid;
       5'b10000:
-        casez_tmp_108 = entries_16_mem_wdata;
+        casez_tmp_108 = entries_16_valid;
       5'b10001:
-        casez_tmp_108 = entries_17_mem_wdata;
+        casez_tmp_108 = entries_17_valid;
       5'b10010:
-        casez_tmp_108 = entries_18_mem_wdata;
+        casez_tmp_108 = entries_18_valid;
       5'b10011:
-        casez_tmp_108 = entries_19_mem_wdata;
+        casez_tmp_108 = entries_19_valid;
       5'b10100:
-        casez_tmp_108 = entries_20_mem_wdata;
+        casez_tmp_108 = entries_20_valid;
       5'b10101:
-        casez_tmp_108 = entries_21_mem_wdata;
+        casez_tmp_108 = entries_21_valid;
       5'b10110:
-        casez_tmp_108 = entries_22_mem_wdata;
+        casez_tmp_108 = entries_22_valid;
       5'b10111:
-        casez_tmp_108 = entries_23_mem_wdata;
+        casez_tmp_108 = entries_23_valid;
       5'b11000:
-        casez_tmp_108 = entries_24_mem_wdata;
+        casez_tmp_108 = entries_24_valid;
       5'b11001:
-        casez_tmp_108 = entries_25_mem_wdata;
+        casez_tmp_108 = entries_25_valid;
       5'b11010:
-        casez_tmp_108 = entries_26_mem_wdata;
+        casez_tmp_108 = entries_26_valid;
       5'b11011:
-        casez_tmp_108 = entries_27_mem_wdata;
+        casez_tmp_108 = entries_27_valid;
       5'b11100:
-        casez_tmp_108 = entries_28_mem_wdata;
+        casez_tmp_108 = entries_28_valid;
       5'b11101:
-        casez_tmp_108 = entries_29_mem_wdata;
+        casez_tmp_108 = entries_29_valid;
       5'b11110:
-        casez_tmp_108 = entries_30_mem_wdata;
+        casez_tmp_108 = entries_30_valid;
       default:
-        casez_tmp_108 = entries_31_mem_wdata;
+        casez_tmp_108 = entries_31_valid;
     endcase
   end // always_comb
   reg         casez_tmp_109;
   always_comb begin
-    casez (_idx_T_6)
+    casez (io_wb_idx_3)
       5'b00000:
-        casez_tmp_109 = entries_0_addr_ready;
+        casez_tmp_109 = entries_0_valid;
       5'b00001:
-        casez_tmp_109 = entries_1_addr_ready;
+        casez_tmp_109 = entries_1_valid;
       5'b00010:
-        casez_tmp_109 = entries_2_addr_ready;
+        casez_tmp_109 = entries_2_valid;
       5'b00011:
-        casez_tmp_109 = entries_3_addr_ready;
+        casez_tmp_109 = entries_3_valid;
       5'b00100:
-        casez_tmp_109 = entries_4_addr_ready;
+        casez_tmp_109 = entries_4_valid;
       5'b00101:
-        casez_tmp_109 = entries_5_addr_ready;
+        casez_tmp_109 = entries_5_valid;
       5'b00110:
-        casez_tmp_109 = entries_6_addr_ready;
+        casez_tmp_109 = entries_6_valid;
       5'b00111:
-        casez_tmp_109 = entries_7_addr_ready;
+        casez_tmp_109 = entries_7_valid;
       5'b01000:
-        casez_tmp_109 = entries_8_addr_ready;
+        casez_tmp_109 = entries_8_valid;
       5'b01001:
-        casez_tmp_109 = entries_9_addr_ready;
+        casez_tmp_109 = entries_9_valid;
       5'b01010:
-        casez_tmp_109 = entries_10_addr_ready;
+        casez_tmp_109 = entries_10_valid;
       5'b01011:
-        casez_tmp_109 = entries_11_addr_ready;
+        casez_tmp_109 = entries_11_valid;
       5'b01100:
-        casez_tmp_109 = entries_12_addr_ready;
+        casez_tmp_109 = entries_12_valid;
       5'b01101:
-        casez_tmp_109 = entries_13_addr_ready;
+        casez_tmp_109 = entries_13_valid;
       5'b01110:
-        casez_tmp_109 = entries_14_addr_ready;
+        casez_tmp_109 = entries_14_valid;
       5'b01111:
-        casez_tmp_109 = entries_15_addr_ready;
+        casez_tmp_109 = entries_15_valid;
       5'b10000:
-        casez_tmp_109 = entries_16_addr_ready;
+        casez_tmp_109 = entries_16_valid;
       5'b10001:
-        casez_tmp_109 = entries_17_addr_ready;
+        casez_tmp_109 = entries_17_valid;
       5'b10010:
-        casez_tmp_109 = entries_18_addr_ready;
+        casez_tmp_109 = entries_18_valid;
       5'b10011:
-        casez_tmp_109 = entries_19_addr_ready;
+        casez_tmp_109 = entries_19_valid;
       5'b10100:
-        casez_tmp_109 = entries_20_addr_ready;
+        casez_tmp_109 = entries_20_valid;
       5'b10101:
-        casez_tmp_109 = entries_21_addr_ready;
+        casez_tmp_109 = entries_21_valid;
       5'b10110:
-        casez_tmp_109 = entries_22_addr_ready;
+        casez_tmp_109 = entries_22_valid;
       5'b10111:
-        casez_tmp_109 = entries_23_addr_ready;
+        casez_tmp_109 = entries_23_valid;
       5'b11000:
-        casez_tmp_109 = entries_24_addr_ready;
+        casez_tmp_109 = entries_24_valid;
       5'b11001:
-        casez_tmp_109 = entries_25_addr_ready;
+        casez_tmp_109 = entries_25_valid;
       5'b11010:
-        casez_tmp_109 = entries_26_addr_ready;
+        casez_tmp_109 = entries_26_valid;
       5'b11011:
-        casez_tmp_109 = entries_27_addr_ready;
+        casez_tmp_109 = entries_27_valid;
       5'b11100:
-        casez_tmp_109 = entries_28_addr_ready;
+        casez_tmp_109 = entries_28_valid;
       5'b11101:
-        casez_tmp_109 = entries_29_addr_ready;
+        casez_tmp_109 = entries_29_valid;
       5'b11110:
-        casez_tmp_109 = entries_30_addr_ready;
+        casez_tmp_109 = entries_30_valid;
       default:
-        casez_tmp_109 = entries_31_addr_ready;
+        casez_tmp_109 = entries_31_valid;
     endcase
   end // always_comb
-  wire        io_commit_valid_3_0 =
-    (|(count[5:2])) & casez_tmp_84
-    & (casez_tmp_85 | io_wb_fire_0 & io_wb_idx_0 == _idx_T_6 | io_wb_fire_1
-       & io_wb_idx_1 == _idx_T_6 | io_wb_fire_2 & io_wb_idx_2 == _idx_T_6 | io_wb_fire_3
-       & io_wb_idx_3 == _idx_T_6 | io_ctrl_wb_fire & io_ctrl_wb_idx == _idx_T_6
-       | io_store_wb_fire & io_store_wb_idx == _idx_T_6);
   reg         casez_tmp_110;
   always_comb begin
-    casez (io_wb_idx_0)
+    casez (io_ctrl_wb_idx)
       5'b00000:
         casez_tmp_110 = entries_0_valid;
       5'b00001:
@@ -9580,7 +9548,7 @@ module WideROB(
   end // always_comb
   reg         casez_tmp_111;
   always_comb begin
-    casez (io_wb_idx_1)
+    casez (io_store_wb_idx)
       5'b00000:
         casez_tmp_111 = entries_0_valid;
       5'b00001:
@@ -9647,283 +9615,7 @@ module WideROB(
         casez_tmp_111 = entries_31_valid;
     endcase
   end // always_comb
-  reg         casez_tmp_112;
-  always_comb begin
-    casez (io_wb_idx_2)
-      5'b00000:
-        casez_tmp_112 = entries_0_valid;
-      5'b00001:
-        casez_tmp_112 = entries_1_valid;
-      5'b00010:
-        casez_tmp_112 = entries_2_valid;
-      5'b00011:
-        casez_tmp_112 = entries_3_valid;
-      5'b00100:
-        casez_tmp_112 = entries_4_valid;
-      5'b00101:
-        casez_tmp_112 = entries_5_valid;
-      5'b00110:
-        casez_tmp_112 = entries_6_valid;
-      5'b00111:
-        casez_tmp_112 = entries_7_valid;
-      5'b01000:
-        casez_tmp_112 = entries_8_valid;
-      5'b01001:
-        casez_tmp_112 = entries_9_valid;
-      5'b01010:
-        casez_tmp_112 = entries_10_valid;
-      5'b01011:
-        casez_tmp_112 = entries_11_valid;
-      5'b01100:
-        casez_tmp_112 = entries_12_valid;
-      5'b01101:
-        casez_tmp_112 = entries_13_valid;
-      5'b01110:
-        casez_tmp_112 = entries_14_valid;
-      5'b01111:
-        casez_tmp_112 = entries_15_valid;
-      5'b10000:
-        casez_tmp_112 = entries_16_valid;
-      5'b10001:
-        casez_tmp_112 = entries_17_valid;
-      5'b10010:
-        casez_tmp_112 = entries_18_valid;
-      5'b10011:
-        casez_tmp_112 = entries_19_valid;
-      5'b10100:
-        casez_tmp_112 = entries_20_valid;
-      5'b10101:
-        casez_tmp_112 = entries_21_valid;
-      5'b10110:
-        casez_tmp_112 = entries_22_valid;
-      5'b10111:
-        casez_tmp_112 = entries_23_valid;
-      5'b11000:
-        casez_tmp_112 = entries_24_valid;
-      5'b11001:
-        casez_tmp_112 = entries_25_valid;
-      5'b11010:
-        casez_tmp_112 = entries_26_valid;
-      5'b11011:
-        casez_tmp_112 = entries_27_valid;
-      5'b11100:
-        casez_tmp_112 = entries_28_valid;
-      5'b11101:
-        casez_tmp_112 = entries_29_valid;
-      5'b11110:
-        casez_tmp_112 = entries_30_valid;
-      default:
-        casez_tmp_112 = entries_31_valid;
-    endcase
-  end // always_comb
-  reg         casez_tmp_113;
-  always_comb begin
-    casez (io_wb_idx_3)
-      5'b00000:
-        casez_tmp_113 = entries_0_valid;
-      5'b00001:
-        casez_tmp_113 = entries_1_valid;
-      5'b00010:
-        casez_tmp_113 = entries_2_valid;
-      5'b00011:
-        casez_tmp_113 = entries_3_valid;
-      5'b00100:
-        casez_tmp_113 = entries_4_valid;
-      5'b00101:
-        casez_tmp_113 = entries_5_valid;
-      5'b00110:
-        casez_tmp_113 = entries_6_valid;
-      5'b00111:
-        casez_tmp_113 = entries_7_valid;
-      5'b01000:
-        casez_tmp_113 = entries_8_valid;
-      5'b01001:
-        casez_tmp_113 = entries_9_valid;
-      5'b01010:
-        casez_tmp_113 = entries_10_valid;
-      5'b01011:
-        casez_tmp_113 = entries_11_valid;
-      5'b01100:
-        casez_tmp_113 = entries_12_valid;
-      5'b01101:
-        casez_tmp_113 = entries_13_valid;
-      5'b01110:
-        casez_tmp_113 = entries_14_valid;
-      5'b01111:
-        casez_tmp_113 = entries_15_valid;
-      5'b10000:
-        casez_tmp_113 = entries_16_valid;
-      5'b10001:
-        casez_tmp_113 = entries_17_valid;
-      5'b10010:
-        casez_tmp_113 = entries_18_valid;
-      5'b10011:
-        casez_tmp_113 = entries_19_valid;
-      5'b10100:
-        casez_tmp_113 = entries_20_valid;
-      5'b10101:
-        casez_tmp_113 = entries_21_valid;
-      5'b10110:
-        casez_tmp_113 = entries_22_valid;
-      5'b10111:
-        casez_tmp_113 = entries_23_valid;
-      5'b11000:
-        casez_tmp_113 = entries_24_valid;
-      5'b11001:
-        casez_tmp_113 = entries_25_valid;
-      5'b11010:
-        casez_tmp_113 = entries_26_valid;
-      5'b11011:
-        casez_tmp_113 = entries_27_valid;
-      5'b11100:
-        casez_tmp_113 = entries_28_valid;
-      5'b11101:
-        casez_tmp_113 = entries_29_valid;
-      5'b11110:
-        casez_tmp_113 = entries_30_valid;
-      default:
-        casez_tmp_113 = entries_31_valid;
-    endcase
-  end // always_comb
-  reg         casez_tmp_114;
-  always_comb begin
-    casez (io_ctrl_wb_idx)
-      5'b00000:
-        casez_tmp_114 = entries_0_valid;
-      5'b00001:
-        casez_tmp_114 = entries_1_valid;
-      5'b00010:
-        casez_tmp_114 = entries_2_valid;
-      5'b00011:
-        casez_tmp_114 = entries_3_valid;
-      5'b00100:
-        casez_tmp_114 = entries_4_valid;
-      5'b00101:
-        casez_tmp_114 = entries_5_valid;
-      5'b00110:
-        casez_tmp_114 = entries_6_valid;
-      5'b00111:
-        casez_tmp_114 = entries_7_valid;
-      5'b01000:
-        casez_tmp_114 = entries_8_valid;
-      5'b01001:
-        casez_tmp_114 = entries_9_valid;
-      5'b01010:
-        casez_tmp_114 = entries_10_valid;
-      5'b01011:
-        casez_tmp_114 = entries_11_valid;
-      5'b01100:
-        casez_tmp_114 = entries_12_valid;
-      5'b01101:
-        casez_tmp_114 = entries_13_valid;
-      5'b01110:
-        casez_tmp_114 = entries_14_valid;
-      5'b01111:
-        casez_tmp_114 = entries_15_valid;
-      5'b10000:
-        casez_tmp_114 = entries_16_valid;
-      5'b10001:
-        casez_tmp_114 = entries_17_valid;
-      5'b10010:
-        casez_tmp_114 = entries_18_valid;
-      5'b10011:
-        casez_tmp_114 = entries_19_valid;
-      5'b10100:
-        casez_tmp_114 = entries_20_valid;
-      5'b10101:
-        casez_tmp_114 = entries_21_valid;
-      5'b10110:
-        casez_tmp_114 = entries_22_valid;
-      5'b10111:
-        casez_tmp_114 = entries_23_valid;
-      5'b11000:
-        casez_tmp_114 = entries_24_valid;
-      5'b11001:
-        casez_tmp_114 = entries_25_valid;
-      5'b11010:
-        casez_tmp_114 = entries_26_valid;
-      5'b11011:
-        casez_tmp_114 = entries_27_valid;
-      5'b11100:
-        casez_tmp_114 = entries_28_valid;
-      5'b11101:
-        casez_tmp_114 = entries_29_valid;
-      5'b11110:
-        casez_tmp_114 = entries_30_valid;
-      default:
-        casez_tmp_114 = entries_31_valid;
-    endcase
-  end // always_comb
-  reg         casez_tmp_115;
-  always_comb begin
-    casez (io_store_wb_idx)
-      5'b00000:
-        casez_tmp_115 = entries_0_valid;
-      5'b00001:
-        casez_tmp_115 = entries_1_valid;
-      5'b00010:
-        casez_tmp_115 = entries_2_valid;
-      5'b00011:
-        casez_tmp_115 = entries_3_valid;
-      5'b00100:
-        casez_tmp_115 = entries_4_valid;
-      5'b00101:
-        casez_tmp_115 = entries_5_valid;
-      5'b00110:
-        casez_tmp_115 = entries_6_valid;
-      5'b00111:
-        casez_tmp_115 = entries_7_valid;
-      5'b01000:
-        casez_tmp_115 = entries_8_valid;
-      5'b01001:
-        casez_tmp_115 = entries_9_valid;
-      5'b01010:
-        casez_tmp_115 = entries_10_valid;
-      5'b01011:
-        casez_tmp_115 = entries_11_valid;
-      5'b01100:
-        casez_tmp_115 = entries_12_valid;
-      5'b01101:
-        casez_tmp_115 = entries_13_valid;
-      5'b01110:
-        casez_tmp_115 = entries_14_valid;
-      5'b01111:
-        casez_tmp_115 = entries_15_valid;
-      5'b10000:
-        casez_tmp_115 = entries_16_valid;
-      5'b10001:
-        casez_tmp_115 = entries_17_valid;
-      5'b10010:
-        casez_tmp_115 = entries_18_valid;
-      5'b10011:
-        casez_tmp_115 = entries_19_valid;
-      5'b10100:
-        casez_tmp_115 = entries_20_valid;
-      5'b10101:
-        casez_tmp_115 = entries_21_valid;
-      5'b10110:
-        casez_tmp_115 = entries_22_valid;
-      5'b10111:
-        casez_tmp_115 = entries_23_valid;
-      5'b11000:
-        casez_tmp_115 = entries_24_valid;
-      5'b11001:
-        casez_tmp_115 = entries_25_valid;
-      5'b11010:
-        casez_tmp_115 = entries_26_valid;
-      5'b11011:
-        casez_tmp_115 = entries_27_valid;
-      5'b11100:
-        casez_tmp_115 = entries_28_valid;
-      5'b11101:
-        casez_tmp_115 = entries_29_valid;
-      5'b11110:
-        casez_tmp_115 = entries_30_valid;
-      default:
-        casez_tmp_115 = entries_31_valid;
-    endcase
-  end // always_comb
-  wire        _GEN = io_wb_fire_0 & casez_tmp_110;
+  wire        _GEN = io_wb_fire_0 & casez_tmp_106;
   wire        _GEN_0 = _GEN & io_wb_idx_0 == 5'h0;
   wire        _GEN_1 = _GEN & io_wb_idx_0 == 5'h1;
   wire        _GEN_2 = _GEN & io_wb_idx_0 == 5'h2;
@@ -9956,7 +9648,7 @@ module WideROB(
   wire        _GEN_29 = _GEN & io_wb_idx_0 == 5'h1D;
   wire        _GEN_30 = _GEN & io_wb_idx_0 == 5'h1E;
   wire        _GEN_31 = _GEN & (&io_wb_idx_0);
-  wire        _GEN_32 = io_wb_fire_1 & casez_tmp_111;
+  wire        _GEN_32 = io_wb_fire_1 & casez_tmp_107;
   wire        _GEN_33 = io_wb_idx_1 == 5'h0;
   wire        _GEN_34 = _GEN_33 | _GEN_0;
   wire        _GEN_35 = _GEN_32 ? _GEN_34 | entries_0_done : _GEN_0 | entries_0_done;
@@ -10148,7 +9840,7 @@ module WideROB(
     _GEN_32 ? _GEN_124 | entries_30_addr_ready : _GEN_30 | entries_30_addr_ready;
   wire        _GEN_191 =
     _GEN_32 ? _GEN_126 | entries_31_addr_ready : _GEN_31 | entries_31_addr_ready;
-  wire        _GEN_192 = io_wb_fire_2 & casez_tmp_112;
+  wire        _GEN_192 = io_wb_fire_2 & casez_tmp_108;
   wire        _GEN_193 = _GEN_192 & io_wb_idx_2 == 5'h0;
   wire        _GEN_194 = _GEN_192 & io_wb_idx_2 == 5'h1;
   wire        _GEN_195 = _GEN_192 & io_wb_idx_2 == 5'h2;
@@ -10181,7 +9873,7 @@ module WideROB(
   wire        _GEN_222 = _GEN_192 & io_wb_idx_2 == 5'h1D;
   wire        _GEN_223 = _GEN_192 & io_wb_idx_2 == 5'h1E;
   wire        _GEN_224 = _GEN_192 & (&io_wb_idx_2);
-  wire        _GEN_225 = io_wb_fire_3 & casez_tmp_113;
+  wire        _GEN_225 = io_wb_fire_3 & casez_tmp_109;
   wire        _GEN_226 = io_wb_idx_3 == 5'h0;
   wire        _GEN_227 = _GEN_226 | _GEN_193;
   wire        _GEN_228 = _GEN_225 ? _GEN_227 | _GEN_35 : _GEN_193 | _GEN_35;
@@ -10309,7 +10001,7 @@ module WideROB(
   wire        _GEN_350 = _GEN_225 & _GEN_313;
   wire        _GEN_351 = _GEN_225 & _GEN_316;
   wire        _GEN_352 = _GEN_225 & (&io_wb_idx_3);
-  wire        _GEN_353 = io_ctrl_wb_fire & casez_tmp_114;
+  wire        _GEN_353 = io_ctrl_wb_fire & casez_tmp_110;
   wire        _GEN_354 = _GEN_353 & io_ctrl_wb_idx == 5'h0;
   wire        _GEN_355 = _GEN_353 & io_ctrl_wb_idx == 5'h1;
   wire        _GEN_356 = _GEN_353 & io_ctrl_wb_idx == 5'h2;
@@ -10342,7 +10034,7 @@ module WideROB(
   wire        _GEN_383 = _GEN_353 & io_ctrl_wb_idx == 5'h1D;
   wire        _GEN_384 = _GEN_353 & io_ctrl_wb_idx == 5'h1E;
   wire        _GEN_385 = _GEN_353 & (&io_ctrl_wb_idx);
-  wire        _GEN_386 = io_store_wb_fire & casez_tmp_115;
+  wire        _GEN_386 = io_store_wb_fire & casez_tmp_111;
   wire        _GEN_387 = io_store_wb_idx == 5'h0;
   wire        _GEN_388 = _GEN_386 ? _GEN_387 | _GEN_354 | _GEN_228 : _GEN_354 | _GEN_228;
   wire        _GEN_389 = io_store_wb_idx == 5'h1;
@@ -10782,7 +10474,6 @@ module WideROB(
       entries_0_arch_rd <= 5'h0;
       entries_0_old_phys <= 6'h0;
       entries_0_new_phys <= 6'h0;
-      entries_0_dest_val <= 32'h0;
       entries_0_is_ebreak <= 1'h0;
       entries_0_is_fencei <= 1'h0;
       entries_0_state_state <= 1'h0;
@@ -10814,7 +10505,6 @@ module WideROB(
       entries_1_arch_rd <= 5'h0;
       entries_1_old_phys <= 6'h0;
       entries_1_new_phys <= 6'h0;
-      entries_1_dest_val <= 32'h0;
       entries_1_is_ebreak <= 1'h0;
       entries_1_is_fencei <= 1'h0;
       entries_1_state_state <= 1'h0;
@@ -10846,7 +10536,6 @@ module WideROB(
       entries_2_arch_rd <= 5'h0;
       entries_2_old_phys <= 6'h0;
       entries_2_new_phys <= 6'h0;
-      entries_2_dest_val <= 32'h0;
       entries_2_is_ebreak <= 1'h0;
       entries_2_is_fencei <= 1'h0;
       entries_2_state_state <= 1'h0;
@@ -10878,7 +10567,6 @@ module WideROB(
       entries_3_arch_rd <= 5'h0;
       entries_3_old_phys <= 6'h0;
       entries_3_new_phys <= 6'h0;
-      entries_3_dest_val <= 32'h0;
       entries_3_is_ebreak <= 1'h0;
       entries_3_is_fencei <= 1'h0;
       entries_3_state_state <= 1'h0;
@@ -10910,7 +10598,6 @@ module WideROB(
       entries_4_arch_rd <= 5'h0;
       entries_4_old_phys <= 6'h0;
       entries_4_new_phys <= 6'h0;
-      entries_4_dest_val <= 32'h0;
       entries_4_is_ebreak <= 1'h0;
       entries_4_is_fencei <= 1'h0;
       entries_4_state_state <= 1'h0;
@@ -10942,7 +10629,6 @@ module WideROB(
       entries_5_arch_rd <= 5'h0;
       entries_5_old_phys <= 6'h0;
       entries_5_new_phys <= 6'h0;
-      entries_5_dest_val <= 32'h0;
       entries_5_is_ebreak <= 1'h0;
       entries_5_is_fencei <= 1'h0;
       entries_5_state_state <= 1'h0;
@@ -10974,7 +10660,6 @@ module WideROB(
       entries_6_arch_rd <= 5'h0;
       entries_6_old_phys <= 6'h0;
       entries_6_new_phys <= 6'h0;
-      entries_6_dest_val <= 32'h0;
       entries_6_is_ebreak <= 1'h0;
       entries_6_is_fencei <= 1'h0;
       entries_6_state_state <= 1'h0;
@@ -11006,7 +10691,6 @@ module WideROB(
       entries_7_arch_rd <= 5'h0;
       entries_7_old_phys <= 6'h0;
       entries_7_new_phys <= 6'h0;
-      entries_7_dest_val <= 32'h0;
       entries_7_is_ebreak <= 1'h0;
       entries_7_is_fencei <= 1'h0;
       entries_7_state_state <= 1'h0;
@@ -11038,7 +10722,6 @@ module WideROB(
       entries_8_arch_rd <= 5'h0;
       entries_8_old_phys <= 6'h0;
       entries_8_new_phys <= 6'h0;
-      entries_8_dest_val <= 32'h0;
       entries_8_is_ebreak <= 1'h0;
       entries_8_is_fencei <= 1'h0;
       entries_8_state_state <= 1'h0;
@@ -11070,7 +10753,6 @@ module WideROB(
       entries_9_arch_rd <= 5'h0;
       entries_9_old_phys <= 6'h0;
       entries_9_new_phys <= 6'h0;
-      entries_9_dest_val <= 32'h0;
       entries_9_is_ebreak <= 1'h0;
       entries_9_is_fencei <= 1'h0;
       entries_9_state_state <= 1'h0;
@@ -11102,7 +10784,6 @@ module WideROB(
       entries_10_arch_rd <= 5'h0;
       entries_10_old_phys <= 6'h0;
       entries_10_new_phys <= 6'h0;
-      entries_10_dest_val <= 32'h0;
       entries_10_is_ebreak <= 1'h0;
       entries_10_is_fencei <= 1'h0;
       entries_10_state_state <= 1'h0;
@@ -11134,7 +10815,6 @@ module WideROB(
       entries_11_arch_rd <= 5'h0;
       entries_11_old_phys <= 6'h0;
       entries_11_new_phys <= 6'h0;
-      entries_11_dest_val <= 32'h0;
       entries_11_is_ebreak <= 1'h0;
       entries_11_is_fencei <= 1'h0;
       entries_11_state_state <= 1'h0;
@@ -11166,7 +10846,6 @@ module WideROB(
       entries_12_arch_rd <= 5'h0;
       entries_12_old_phys <= 6'h0;
       entries_12_new_phys <= 6'h0;
-      entries_12_dest_val <= 32'h0;
       entries_12_is_ebreak <= 1'h0;
       entries_12_is_fencei <= 1'h0;
       entries_12_state_state <= 1'h0;
@@ -11198,7 +10877,6 @@ module WideROB(
       entries_13_arch_rd <= 5'h0;
       entries_13_old_phys <= 6'h0;
       entries_13_new_phys <= 6'h0;
-      entries_13_dest_val <= 32'h0;
       entries_13_is_ebreak <= 1'h0;
       entries_13_is_fencei <= 1'h0;
       entries_13_state_state <= 1'h0;
@@ -11230,7 +10908,6 @@ module WideROB(
       entries_14_arch_rd <= 5'h0;
       entries_14_old_phys <= 6'h0;
       entries_14_new_phys <= 6'h0;
-      entries_14_dest_val <= 32'h0;
       entries_14_is_ebreak <= 1'h0;
       entries_14_is_fencei <= 1'h0;
       entries_14_state_state <= 1'h0;
@@ -11262,7 +10939,6 @@ module WideROB(
       entries_15_arch_rd <= 5'h0;
       entries_15_old_phys <= 6'h0;
       entries_15_new_phys <= 6'h0;
-      entries_15_dest_val <= 32'h0;
       entries_15_is_ebreak <= 1'h0;
       entries_15_is_fencei <= 1'h0;
       entries_15_state_state <= 1'h0;
@@ -11294,7 +10970,6 @@ module WideROB(
       entries_16_arch_rd <= 5'h0;
       entries_16_old_phys <= 6'h0;
       entries_16_new_phys <= 6'h0;
-      entries_16_dest_val <= 32'h0;
       entries_16_is_ebreak <= 1'h0;
       entries_16_is_fencei <= 1'h0;
       entries_16_state_state <= 1'h0;
@@ -11326,7 +11001,6 @@ module WideROB(
       entries_17_arch_rd <= 5'h0;
       entries_17_old_phys <= 6'h0;
       entries_17_new_phys <= 6'h0;
-      entries_17_dest_val <= 32'h0;
       entries_17_is_ebreak <= 1'h0;
       entries_17_is_fencei <= 1'h0;
       entries_17_state_state <= 1'h0;
@@ -11358,7 +11032,6 @@ module WideROB(
       entries_18_arch_rd <= 5'h0;
       entries_18_old_phys <= 6'h0;
       entries_18_new_phys <= 6'h0;
-      entries_18_dest_val <= 32'h0;
       entries_18_is_ebreak <= 1'h0;
       entries_18_is_fencei <= 1'h0;
       entries_18_state_state <= 1'h0;
@@ -11390,7 +11063,6 @@ module WideROB(
       entries_19_arch_rd <= 5'h0;
       entries_19_old_phys <= 6'h0;
       entries_19_new_phys <= 6'h0;
-      entries_19_dest_val <= 32'h0;
       entries_19_is_ebreak <= 1'h0;
       entries_19_is_fencei <= 1'h0;
       entries_19_state_state <= 1'h0;
@@ -11422,7 +11094,6 @@ module WideROB(
       entries_20_arch_rd <= 5'h0;
       entries_20_old_phys <= 6'h0;
       entries_20_new_phys <= 6'h0;
-      entries_20_dest_val <= 32'h0;
       entries_20_is_ebreak <= 1'h0;
       entries_20_is_fencei <= 1'h0;
       entries_20_state_state <= 1'h0;
@@ -11454,7 +11125,6 @@ module WideROB(
       entries_21_arch_rd <= 5'h0;
       entries_21_old_phys <= 6'h0;
       entries_21_new_phys <= 6'h0;
-      entries_21_dest_val <= 32'h0;
       entries_21_is_ebreak <= 1'h0;
       entries_21_is_fencei <= 1'h0;
       entries_21_state_state <= 1'h0;
@@ -11486,7 +11156,6 @@ module WideROB(
       entries_22_arch_rd <= 5'h0;
       entries_22_old_phys <= 6'h0;
       entries_22_new_phys <= 6'h0;
-      entries_22_dest_val <= 32'h0;
       entries_22_is_ebreak <= 1'h0;
       entries_22_is_fencei <= 1'h0;
       entries_22_state_state <= 1'h0;
@@ -11518,7 +11187,6 @@ module WideROB(
       entries_23_arch_rd <= 5'h0;
       entries_23_old_phys <= 6'h0;
       entries_23_new_phys <= 6'h0;
-      entries_23_dest_val <= 32'h0;
       entries_23_is_ebreak <= 1'h0;
       entries_23_is_fencei <= 1'h0;
       entries_23_state_state <= 1'h0;
@@ -11550,7 +11218,6 @@ module WideROB(
       entries_24_arch_rd <= 5'h0;
       entries_24_old_phys <= 6'h0;
       entries_24_new_phys <= 6'h0;
-      entries_24_dest_val <= 32'h0;
       entries_24_is_ebreak <= 1'h0;
       entries_24_is_fencei <= 1'h0;
       entries_24_state_state <= 1'h0;
@@ -11582,7 +11249,6 @@ module WideROB(
       entries_25_arch_rd <= 5'h0;
       entries_25_old_phys <= 6'h0;
       entries_25_new_phys <= 6'h0;
-      entries_25_dest_val <= 32'h0;
       entries_25_is_ebreak <= 1'h0;
       entries_25_is_fencei <= 1'h0;
       entries_25_state_state <= 1'h0;
@@ -11614,7 +11280,6 @@ module WideROB(
       entries_26_arch_rd <= 5'h0;
       entries_26_old_phys <= 6'h0;
       entries_26_new_phys <= 6'h0;
-      entries_26_dest_val <= 32'h0;
       entries_26_is_ebreak <= 1'h0;
       entries_26_is_fencei <= 1'h0;
       entries_26_state_state <= 1'h0;
@@ -11646,7 +11311,6 @@ module WideROB(
       entries_27_arch_rd <= 5'h0;
       entries_27_old_phys <= 6'h0;
       entries_27_new_phys <= 6'h0;
-      entries_27_dest_val <= 32'h0;
       entries_27_is_ebreak <= 1'h0;
       entries_27_is_fencei <= 1'h0;
       entries_27_state_state <= 1'h0;
@@ -11678,7 +11342,6 @@ module WideROB(
       entries_28_arch_rd <= 5'h0;
       entries_28_old_phys <= 6'h0;
       entries_28_new_phys <= 6'h0;
-      entries_28_dest_val <= 32'h0;
       entries_28_is_ebreak <= 1'h0;
       entries_28_is_fencei <= 1'h0;
       entries_28_state_state <= 1'h0;
@@ -11710,7 +11373,6 @@ module WideROB(
       entries_29_arch_rd <= 5'h0;
       entries_29_old_phys <= 6'h0;
       entries_29_new_phys <= 6'h0;
-      entries_29_dest_val <= 32'h0;
       entries_29_is_ebreak <= 1'h0;
       entries_29_is_fencei <= 1'h0;
       entries_29_state_state <= 1'h0;
@@ -11742,7 +11404,6 @@ module WideROB(
       entries_30_arch_rd <= 5'h0;
       entries_30_old_phys <= 6'h0;
       entries_30_new_phys <= 6'h0;
-      entries_30_dest_val <= 32'h0;
       entries_30_is_ebreak <= 1'h0;
       entries_30_is_fencei <= 1'h0;
       entries_30_state_state <= 1'h0;
@@ -11774,7 +11435,6 @@ module WideROB(
       entries_31_arch_rd <= 5'h0;
       entries_31_old_phys <= 6'h0;
       entries_31_new_phys <= 6'h0;
-      entries_31_dest_val <= 32'h0;
       entries_31_is_ebreak <= 1'h0;
       entries_31_is_fencei <= 1'h0;
       entries_31_state_state <= 1'h0;
@@ -17510,18 +17170,6 @@ module WideROB(
             entries_31_actual_target <= io_wb_actual_target_0;
         end
       end
-      if (_GEN_676) begin
-        if (_GEN_321)
-          entries_0_dest_val <= io_wb_val_3;
-        else if (_GEN_193)
-          entries_0_dest_val <= io_wb_val_2;
-        else if (_GEN_128)
-          entries_0_dest_val <= io_wb_val_1;
-        else if (_GEN_0)
-          entries_0_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_0_dest_val <= 32'h0;
       entries_0_actual_taken <=
         _GEN_676
         & (_GEN_354
@@ -17575,18 +17223,6 @@ module WideROB(
         _GEN_675
           ? _GEN_390
           : io_enq_fire_3 ? ~(_GEN_677 | _GEN_642) & _GEN_551 : ~_GEN_642 & _GEN_551;
-      if (_GEN_679) begin
-        if (_GEN_322)
-          entries_1_dest_val <= io_wb_val_3;
-        else if (_GEN_194)
-          entries_1_dest_val <= io_wb_val_2;
-        else if (_GEN_129)
-          entries_1_dest_val <= io_wb_val_1;
-        else if (_GEN_1)
-          entries_1_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_1_dest_val <= 32'h0;
       entries_1_actual_taken <=
         _GEN_679
         & (_GEN_355
@@ -17640,18 +17276,6 @@ module WideROB(
         _GEN_675
           ? _GEN_392
           : io_enq_fire_3 ? ~(_GEN_680 | _GEN_643) & _GEN_554 : ~_GEN_643 & _GEN_554;
-      if (_GEN_682) begin
-        if (_GEN_323)
-          entries_2_dest_val <= io_wb_val_3;
-        else if (_GEN_195)
-          entries_2_dest_val <= io_wb_val_2;
-        else if (_GEN_130)
-          entries_2_dest_val <= io_wb_val_1;
-        else if (_GEN_2)
-          entries_2_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_2_dest_val <= 32'h0;
       entries_2_actual_taken <=
         _GEN_682
         & (_GEN_356
@@ -17705,18 +17329,6 @@ module WideROB(
         _GEN_675
           ? _GEN_394
           : io_enq_fire_3 ? ~(_GEN_683 | _GEN_644) & _GEN_557 : ~_GEN_644 & _GEN_557;
-      if (_GEN_685) begin
-        if (_GEN_324)
-          entries_3_dest_val <= io_wb_val_3;
-        else if (_GEN_196)
-          entries_3_dest_val <= io_wb_val_2;
-        else if (_GEN_131)
-          entries_3_dest_val <= io_wb_val_1;
-        else if (_GEN_3)
-          entries_3_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_3_dest_val <= 32'h0;
       entries_3_actual_taken <=
         _GEN_685
         & (_GEN_357
@@ -17770,18 +17382,6 @@ module WideROB(
         _GEN_675
           ? _GEN_396
           : io_enq_fire_3 ? ~(_GEN_686 | _GEN_645) & _GEN_560 : ~_GEN_645 & _GEN_560;
-      if (_GEN_688) begin
-        if (_GEN_325)
-          entries_4_dest_val <= io_wb_val_3;
-        else if (_GEN_197)
-          entries_4_dest_val <= io_wb_val_2;
-        else if (_GEN_132)
-          entries_4_dest_val <= io_wb_val_1;
-        else if (_GEN_4)
-          entries_4_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_4_dest_val <= 32'h0;
       entries_4_actual_taken <=
         _GEN_688
         & (_GEN_358
@@ -17835,18 +17435,6 @@ module WideROB(
         _GEN_675
           ? _GEN_398
           : io_enq_fire_3 ? ~(_GEN_689 | _GEN_646) & _GEN_563 : ~_GEN_646 & _GEN_563;
-      if (_GEN_691) begin
-        if (_GEN_326)
-          entries_5_dest_val <= io_wb_val_3;
-        else if (_GEN_198)
-          entries_5_dest_val <= io_wb_val_2;
-        else if (_GEN_133)
-          entries_5_dest_val <= io_wb_val_1;
-        else if (_GEN_5)
-          entries_5_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_5_dest_val <= 32'h0;
       entries_5_actual_taken <=
         _GEN_691
         & (_GEN_359
@@ -17900,18 +17488,6 @@ module WideROB(
         _GEN_675
           ? _GEN_400
           : io_enq_fire_3 ? ~(_GEN_692 | _GEN_647) & _GEN_566 : ~_GEN_647 & _GEN_566;
-      if (_GEN_694) begin
-        if (_GEN_327)
-          entries_6_dest_val <= io_wb_val_3;
-        else if (_GEN_199)
-          entries_6_dest_val <= io_wb_val_2;
-        else if (_GEN_134)
-          entries_6_dest_val <= io_wb_val_1;
-        else if (_GEN_6)
-          entries_6_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_6_dest_val <= 32'h0;
       entries_6_actual_taken <=
         _GEN_694
         & (_GEN_360
@@ -17965,18 +17541,6 @@ module WideROB(
         _GEN_675
           ? _GEN_402
           : io_enq_fire_3 ? ~(_GEN_695 | _GEN_648) & _GEN_569 : ~_GEN_648 & _GEN_569;
-      if (_GEN_697) begin
-        if (_GEN_328)
-          entries_7_dest_val <= io_wb_val_3;
-        else if (_GEN_200)
-          entries_7_dest_val <= io_wb_val_2;
-        else if (_GEN_135)
-          entries_7_dest_val <= io_wb_val_1;
-        else if (_GEN_7)
-          entries_7_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_7_dest_val <= 32'h0;
       entries_7_actual_taken <=
         _GEN_697
         & (_GEN_361
@@ -18030,18 +17594,6 @@ module WideROB(
         _GEN_675
           ? _GEN_404
           : io_enq_fire_3 ? ~(_GEN_698 | _GEN_649) & _GEN_572 : ~_GEN_649 & _GEN_572;
-      if (_GEN_700) begin
-        if (_GEN_329)
-          entries_8_dest_val <= io_wb_val_3;
-        else if (_GEN_201)
-          entries_8_dest_val <= io_wb_val_2;
-        else if (_GEN_136)
-          entries_8_dest_val <= io_wb_val_1;
-        else if (_GEN_8)
-          entries_8_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_8_dest_val <= 32'h0;
       entries_8_actual_taken <=
         _GEN_700
         & (_GEN_362
@@ -18095,18 +17647,6 @@ module WideROB(
         _GEN_675
           ? _GEN_406
           : io_enq_fire_3 ? ~(_GEN_701 | _GEN_650) & _GEN_575 : ~_GEN_650 & _GEN_575;
-      if (_GEN_703) begin
-        if (_GEN_330)
-          entries_9_dest_val <= io_wb_val_3;
-        else if (_GEN_202)
-          entries_9_dest_val <= io_wb_val_2;
-        else if (_GEN_137)
-          entries_9_dest_val <= io_wb_val_1;
-        else if (_GEN_9)
-          entries_9_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_9_dest_val <= 32'h0;
       entries_9_actual_taken <=
         _GEN_703
         & (_GEN_363
@@ -18160,18 +17700,6 @@ module WideROB(
         _GEN_675
           ? _GEN_408
           : io_enq_fire_3 ? ~(_GEN_704 | _GEN_651) & _GEN_578 : ~_GEN_651 & _GEN_578;
-      if (_GEN_706) begin
-        if (_GEN_331)
-          entries_10_dest_val <= io_wb_val_3;
-        else if (_GEN_203)
-          entries_10_dest_val <= io_wb_val_2;
-        else if (_GEN_138)
-          entries_10_dest_val <= io_wb_val_1;
-        else if (_GEN_10)
-          entries_10_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_10_dest_val <= 32'h0;
       entries_10_actual_taken <=
         _GEN_706
         & (_GEN_364
@@ -18225,18 +17753,6 @@ module WideROB(
         _GEN_675
           ? _GEN_410
           : io_enq_fire_3 ? ~(_GEN_707 | _GEN_652) & _GEN_581 : ~_GEN_652 & _GEN_581;
-      if (_GEN_709) begin
-        if (_GEN_332)
-          entries_11_dest_val <= io_wb_val_3;
-        else if (_GEN_204)
-          entries_11_dest_val <= io_wb_val_2;
-        else if (_GEN_139)
-          entries_11_dest_val <= io_wb_val_1;
-        else if (_GEN_11)
-          entries_11_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_11_dest_val <= 32'h0;
       entries_11_actual_taken <=
         _GEN_709
         & (_GEN_365
@@ -18290,18 +17806,6 @@ module WideROB(
         _GEN_675
           ? _GEN_412
           : io_enq_fire_3 ? ~(_GEN_710 | _GEN_653) & _GEN_584 : ~_GEN_653 & _GEN_584;
-      if (_GEN_712) begin
-        if (_GEN_333)
-          entries_12_dest_val <= io_wb_val_3;
-        else if (_GEN_205)
-          entries_12_dest_val <= io_wb_val_2;
-        else if (_GEN_140)
-          entries_12_dest_val <= io_wb_val_1;
-        else if (_GEN_12)
-          entries_12_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_12_dest_val <= 32'h0;
       entries_12_actual_taken <=
         _GEN_712
         & (_GEN_366
@@ -18355,18 +17859,6 @@ module WideROB(
         _GEN_675
           ? _GEN_414
           : io_enq_fire_3 ? ~(_GEN_713 | _GEN_654) & _GEN_587 : ~_GEN_654 & _GEN_587;
-      if (_GEN_715) begin
-        if (_GEN_334)
-          entries_13_dest_val <= io_wb_val_3;
-        else if (_GEN_206)
-          entries_13_dest_val <= io_wb_val_2;
-        else if (_GEN_141)
-          entries_13_dest_val <= io_wb_val_1;
-        else if (_GEN_13)
-          entries_13_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_13_dest_val <= 32'h0;
       entries_13_actual_taken <=
         _GEN_715
         & (_GEN_367
@@ -18420,18 +17912,6 @@ module WideROB(
         _GEN_675
           ? _GEN_416
           : io_enq_fire_3 ? ~(_GEN_716 | _GEN_655) & _GEN_590 : ~_GEN_655 & _GEN_590;
-      if (_GEN_718) begin
-        if (_GEN_335)
-          entries_14_dest_val <= io_wb_val_3;
-        else if (_GEN_207)
-          entries_14_dest_val <= io_wb_val_2;
-        else if (_GEN_142)
-          entries_14_dest_val <= io_wb_val_1;
-        else if (_GEN_14)
-          entries_14_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_14_dest_val <= 32'h0;
       entries_14_actual_taken <=
         _GEN_718
         & (_GEN_368
@@ -18485,18 +17965,6 @@ module WideROB(
         _GEN_675
           ? _GEN_418
           : io_enq_fire_3 ? ~(_GEN_719 | _GEN_656) & _GEN_593 : ~_GEN_656 & _GEN_593;
-      if (_GEN_721) begin
-        if (_GEN_336)
-          entries_15_dest_val <= io_wb_val_3;
-        else if (_GEN_208)
-          entries_15_dest_val <= io_wb_val_2;
-        else if (_GEN_143)
-          entries_15_dest_val <= io_wb_val_1;
-        else if (_GEN_15)
-          entries_15_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_15_dest_val <= 32'h0;
       entries_15_actual_taken <=
         _GEN_721
         & (_GEN_369
@@ -18550,18 +18018,6 @@ module WideROB(
         _GEN_675
           ? _GEN_420
           : io_enq_fire_3 ? ~(_GEN_722 | _GEN_657) & _GEN_596 : ~_GEN_657 & _GEN_596;
-      if (_GEN_724) begin
-        if (_GEN_337)
-          entries_16_dest_val <= io_wb_val_3;
-        else if (_GEN_209)
-          entries_16_dest_val <= io_wb_val_2;
-        else if (_GEN_144)
-          entries_16_dest_val <= io_wb_val_1;
-        else if (_GEN_16)
-          entries_16_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_16_dest_val <= 32'h0;
       entries_16_actual_taken <=
         _GEN_724
         & (_GEN_370
@@ -18615,18 +18071,6 @@ module WideROB(
         _GEN_675
           ? _GEN_422
           : io_enq_fire_3 ? ~(_GEN_725 | _GEN_658) & _GEN_599 : ~_GEN_658 & _GEN_599;
-      if (_GEN_727) begin
-        if (_GEN_338)
-          entries_17_dest_val <= io_wb_val_3;
-        else if (_GEN_210)
-          entries_17_dest_val <= io_wb_val_2;
-        else if (_GEN_145)
-          entries_17_dest_val <= io_wb_val_1;
-        else if (_GEN_17)
-          entries_17_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_17_dest_val <= 32'h0;
       entries_17_actual_taken <=
         _GEN_727
         & (_GEN_371
@@ -18680,18 +18124,6 @@ module WideROB(
         _GEN_675
           ? _GEN_424
           : io_enq_fire_3 ? ~(_GEN_728 | _GEN_659) & _GEN_602 : ~_GEN_659 & _GEN_602;
-      if (_GEN_730) begin
-        if (_GEN_339)
-          entries_18_dest_val <= io_wb_val_3;
-        else if (_GEN_211)
-          entries_18_dest_val <= io_wb_val_2;
-        else if (_GEN_146)
-          entries_18_dest_val <= io_wb_val_1;
-        else if (_GEN_18)
-          entries_18_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_18_dest_val <= 32'h0;
       entries_18_actual_taken <=
         _GEN_730
         & (_GEN_372
@@ -18745,18 +18177,6 @@ module WideROB(
         _GEN_675
           ? _GEN_426
           : io_enq_fire_3 ? ~(_GEN_731 | _GEN_660) & _GEN_605 : ~_GEN_660 & _GEN_605;
-      if (_GEN_733) begin
-        if (_GEN_340)
-          entries_19_dest_val <= io_wb_val_3;
-        else if (_GEN_212)
-          entries_19_dest_val <= io_wb_val_2;
-        else if (_GEN_147)
-          entries_19_dest_val <= io_wb_val_1;
-        else if (_GEN_19)
-          entries_19_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_19_dest_val <= 32'h0;
       entries_19_actual_taken <=
         _GEN_733
         & (_GEN_373
@@ -18810,18 +18230,6 @@ module WideROB(
         _GEN_675
           ? _GEN_428
           : io_enq_fire_3 ? ~(_GEN_734 | _GEN_661) & _GEN_608 : ~_GEN_661 & _GEN_608;
-      if (_GEN_736) begin
-        if (_GEN_341)
-          entries_20_dest_val <= io_wb_val_3;
-        else if (_GEN_213)
-          entries_20_dest_val <= io_wb_val_2;
-        else if (_GEN_148)
-          entries_20_dest_val <= io_wb_val_1;
-        else if (_GEN_20)
-          entries_20_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_20_dest_val <= 32'h0;
       entries_20_actual_taken <=
         _GEN_736
         & (_GEN_374
@@ -18875,18 +18283,6 @@ module WideROB(
         _GEN_675
           ? _GEN_430
           : io_enq_fire_3 ? ~(_GEN_737 | _GEN_662) & _GEN_611 : ~_GEN_662 & _GEN_611;
-      if (_GEN_739) begin
-        if (_GEN_342)
-          entries_21_dest_val <= io_wb_val_3;
-        else if (_GEN_214)
-          entries_21_dest_val <= io_wb_val_2;
-        else if (_GEN_149)
-          entries_21_dest_val <= io_wb_val_1;
-        else if (_GEN_21)
-          entries_21_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_21_dest_val <= 32'h0;
       entries_21_actual_taken <=
         _GEN_739
         & (_GEN_375
@@ -18940,18 +18336,6 @@ module WideROB(
         _GEN_675
           ? _GEN_432
           : io_enq_fire_3 ? ~(_GEN_740 | _GEN_663) & _GEN_614 : ~_GEN_663 & _GEN_614;
-      if (_GEN_742) begin
-        if (_GEN_343)
-          entries_22_dest_val <= io_wb_val_3;
-        else if (_GEN_215)
-          entries_22_dest_val <= io_wb_val_2;
-        else if (_GEN_150)
-          entries_22_dest_val <= io_wb_val_1;
-        else if (_GEN_22)
-          entries_22_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_22_dest_val <= 32'h0;
       entries_22_actual_taken <=
         _GEN_742
         & (_GEN_376
@@ -19005,18 +18389,6 @@ module WideROB(
         _GEN_675
           ? _GEN_434
           : io_enq_fire_3 ? ~(_GEN_743 | _GEN_664) & _GEN_617 : ~_GEN_664 & _GEN_617;
-      if (_GEN_745) begin
-        if (_GEN_344)
-          entries_23_dest_val <= io_wb_val_3;
-        else if (_GEN_216)
-          entries_23_dest_val <= io_wb_val_2;
-        else if (_GEN_151)
-          entries_23_dest_val <= io_wb_val_1;
-        else if (_GEN_23)
-          entries_23_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_23_dest_val <= 32'h0;
       entries_23_actual_taken <=
         _GEN_745
         & (_GEN_377
@@ -19070,18 +18442,6 @@ module WideROB(
         _GEN_675
           ? _GEN_436
           : io_enq_fire_3 ? ~(_GEN_746 | _GEN_665) & _GEN_620 : ~_GEN_665 & _GEN_620;
-      if (_GEN_748) begin
-        if (_GEN_345)
-          entries_24_dest_val <= io_wb_val_3;
-        else if (_GEN_217)
-          entries_24_dest_val <= io_wb_val_2;
-        else if (_GEN_152)
-          entries_24_dest_val <= io_wb_val_1;
-        else if (_GEN_24)
-          entries_24_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_24_dest_val <= 32'h0;
       entries_24_actual_taken <=
         _GEN_748
         & (_GEN_378
@@ -19135,18 +18495,6 @@ module WideROB(
         _GEN_675
           ? _GEN_438
           : io_enq_fire_3 ? ~(_GEN_749 | _GEN_666) & _GEN_623 : ~_GEN_666 & _GEN_623;
-      if (_GEN_751) begin
-        if (_GEN_346)
-          entries_25_dest_val <= io_wb_val_3;
-        else if (_GEN_218)
-          entries_25_dest_val <= io_wb_val_2;
-        else if (_GEN_153)
-          entries_25_dest_val <= io_wb_val_1;
-        else if (_GEN_25)
-          entries_25_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_25_dest_val <= 32'h0;
       entries_25_actual_taken <=
         _GEN_751
         & (_GEN_379
@@ -19200,18 +18548,6 @@ module WideROB(
         _GEN_675
           ? _GEN_440
           : io_enq_fire_3 ? ~(_GEN_752 | _GEN_667) & _GEN_626 : ~_GEN_667 & _GEN_626;
-      if (_GEN_754) begin
-        if (_GEN_347)
-          entries_26_dest_val <= io_wb_val_3;
-        else if (_GEN_219)
-          entries_26_dest_val <= io_wb_val_2;
-        else if (_GEN_154)
-          entries_26_dest_val <= io_wb_val_1;
-        else if (_GEN_26)
-          entries_26_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_26_dest_val <= 32'h0;
       entries_26_actual_taken <=
         _GEN_754
         & (_GEN_380
@@ -19265,18 +18601,6 @@ module WideROB(
         _GEN_675
           ? _GEN_442
           : io_enq_fire_3 ? ~(_GEN_755 | _GEN_668) & _GEN_629 : ~_GEN_668 & _GEN_629;
-      if (_GEN_757) begin
-        if (_GEN_348)
-          entries_27_dest_val <= io_wb_val_3;
-        else if (_GEN_220)
-          entries_27_dest_val <= io_wb_val_2;
-        else if (_GEN_155)
-          entries_27_dest_val <= io_wb_val_1;
-        else if (_GEN_27)
-          entries_27_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_27_dest_val <= 32'h0;
       entries_27_actual_taken <=
         _GEN_757
         & (_GEN_381
@@ -19330,18 +18654,6 @@ module WideROB(
         _GEN_675
           ? _GEN_444
           : io_enq_fire_3 ? ~(_GEN_758 | _GEN_669) & _GEN_632 : ~_GEN_669 & _GEN_632;
-      if (_GEN_760) begin
-        if (_GEN_349)
-          entries_28_dest_val <= io_wb_val_3;
-        else if (_GEN_221)
-          entries_28_dest_val <= io_wb_val_2;
-        else if (_GEN_156)
-          entries_28_dest_val <= io_wb_val_1;
-        else if (_GEN_28)
-          entries_28_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_28_dest_val <= 32'h0;
       entries_28_actual_taken <=
         _GEN_760
         & (_GEN_382
@@ -19395,18 +18707,6 @@ module WideROB(
         _GEN_675
           ? _GEN_446
           : io_enq_fire_3 ? ~(_GEN_761 | _GEN_670) & _GEN_635 : ~_GEN_670 & _GEN_635;
-      if (_GEN_763) begin
-        if (_GEN_350)
-          entries_29_dest_val <= io_wb_val_3;
-        else if (_GEN_222)
-          entries_29_dest_val <= io_wb_val_2;
-        else if (_GEN_157)
-          entries_29_dest_val <= io_wb_val_1;
-        else if (_GEN_29)
-          entries_29_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_29_dest_val <= 32'h0;
       entries_29_actual_taken <=
         _GEN_763
         & (_GEN_383
@@ -19460,18 +18760,6 @@ module WideROB(
         _GEN_675
           ? _GEN_448
           : io_enq_fire_3 ? ~(_GEN_764 | _GEN_671) & _GEN_638 : ~_GEN_671 & _GEN_638;
-      if (_GEN_766) begin
-        if (_GEN_351)
-          entries_30_dest_val <= io_wb_val_3;
-        else if (_GEN_223)
-          entries_30_dest_val <= io_wb_val_2;
-        else if (_GEN_158)
-          entries_30_dest_val <= io_wb_val_1;
-        else if (_GEN_30)
-          entries_30_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_30_dest_val <= 32'h0;
       entries_30_actual_taken <=
         _GEN_766
         & (_GEN_384
@@ -19526,18 +18814,6 @@ module WideROB(
           : io_enq_fire_3
               ? ~((&_io_enq_idx_3_T) | _GEN_672) & _GEN_640
               : ~_GEN_672 & _GEN_640;
-      if (_GEN_768) begin
-        if (_GEN_352)
-          entries_31_dest_val <= io_wb_val_3;
-        else if (_GEN_224)
-          entries_31_dest_val <= io_wb_val_2;
-        else if (_GEN_159)
-          entries_31_dest_val <= io_wb_val_1;
-        else if (_GEN_31)
-          entries_31_dest_val <= io_wb_val_0;
-      end
-      else
-        entries_31_dest_val <= 32'h0;
       entries_31_actual_taken <=
         _GEN_768
         & (_GEN_385
@@ -19610,6 +18886,8 @@ module WideROB(
   assign io_commit_idx_1 = _idx_T_2;
   assign io_commit_idx_2 = _idx_T_4;
   assign io_commit_idx_3 = _idx_T_6;
+  assign io_commit_bits_0_valid = casez_tmp;
+  assign io_commit_bits_0_done = casez_tmp_0;
   assign io_commit_bits_0_pc = casez_tmp_1;
   assign io_commit_bits_0_inst = casez_tmp_2;
   assign io_commit_bits_0_reg_write = casez_tmp_3;
@@ -19623,96 +18901,98 @@ module WideROB(
   assign io_commit_bits_0_arch_rd = casez_tmp_11;
   assign io_commit_bits_0_old_phys = casez_tmp_12;
   assign io_commit_bits_0_new_phys = casez_tmp_13;
-  assign io_commit_bits_0_dest_val = casez_tmp_14;
-  assign io_commit_bits_0_is_ebreak = casez_tmp_15;
-  assign io_commit_bits_0_is_fencei = casez_tmp_16;
-  assign io_commit_bits_0_state_state = casez_tmp_17;
-  assign io_commit_bits_0_state_state_num = casez_tmp_18;
-  assign io_commit_bits_0_bp_index = casez_tmp_19;
-  assign io_commit_bits_0_ftq_idx = casez_tmp_20;
-  assign io_commit_bits_0_ftq_generation = casez_tmp_21;
-  assign io_commit_bits_0_cp_idx = casez_tmp_22;
-  assign io_commit_bits_0_actual_taken = casez_tmp_23;
-  assign io_commit_bits_0_actual_target = casez_tmp_24;
-  assign io_commit_bits_0_rs1_val = casez_tmp_25;
-  assign io_commit_bits_0_csr_waddr = casez_tmp_26;
-  assign io_commit_bits_0_csr_rd1 = casez_tmp_27;
-  assign io_commit_bits_0_mem_addr = casez_tmp_28;
-  assign io_commit_bits_0_mem_wdata = casez_tmp_29;
-  assign io_commit_bits_0_addr_ready = casez_tmp_30;
-  assign io_commit_bits_1_pc = casez_tmp_33;
-  assign io_commit_bits_1_inst = casez_tmp_34;
-  assign io_commit_bits_1_reg_write = casez_tmp_35;
-  assign io_commit_bits_1_reg_write_sel = casez_tmp_36;
-  assign io_commit_bits_1_csr_write = casez_tmp_37;
-  assign io_commit_bits_1_mem_valid = casez_tmp_38;
-  assign io_commit_bits_1_mem_write = casez_tmp_39;
-  assign io_commit_bits_1_mem_wmask = casez_tmp_40;
-  assign io_commit_bits_1_jump = casez_tmp_41;
-  assign io_commit_bits_1_arch_rd = casez_tmp_42;
-  assign io_commit_bits_1_old_phys = casez_tmp_43;
-  assign io_commit_bits_1_new_phys = casez_tmp_44;
-  assign io_commit_bits_1_dest_val = casez_tmp_45;
-  assign io_commit_bits_1_is_ebreak = casez_tmp_46;
-  assign io_commit_bits_1_is_fencei = casez_tmp_47;
-  assign io_commit_bits_1_state_state = casez_tmp_48;
-  assign io_commit_bits_1_bp_index = casez_tmp_49;
-  assign io_commit_bits_1_ftq_idx = casez_tmp_50;
-  assign io_commit_bits_1_ftq_generation = casez_tmp_51;
-  assign io_commit_bits_1_cp_idx = casez_tmp_52;
-  assign io_commit_bits_1_actual_taken = casez_tmp_53;
-  assign io_commit_bits_1_actual_target = casez_tmp_54;
-  assign io_commit_bits_1_mem_addr = casez_tmp_55;
-  assign io_commit_bits_1_mem_wdata = casez_tmp_56;
-  assign io_commit_bits_1_addr_ready = casez_tmp_57;
-  assign io_commit_bits_2_pc = casez_tmp_60;
-  assign io_commit_bits_2_inst = casez_tmp_61;
-  assign io_commit_bits_2_reg_write = casez_tmp_62;
-  assign io_commit_bits_2_csr_write = casez_tmp_63;
-  assign io_commit_bits_2_mem_valid = casez_tmp_64;
-  assign io_commit_bits_2_mem_write = casez_tmp_65;
-  assign io_commit_bits_2_mem_wmask = casez_tmp_66;
-  assign io_commit_bits_2_jump = casez_tmp_67;
-  assign io_commit_bits_2_arch_rd = casez_tmp_68;
-  assign io_commit_bits_2_old_phys = casez_tmp_69;
-  assign io_commit_bits_2_new_phys = casez_tmp_70;
-  assign io_commit_bits_2_dest_val = casez_tmp_71;
-  assign io_commit_bits_2_is_ebreak = casez_tmp_72;
-  assign io_commit_bits_2_is_fencei = casez_tmp_73;
-  assign io_commit_bits_2_state_state = casez_tmp_74;
-  assign io_commit_bits_2_bp_index = casez_tmp_75;
-  assign io_commit_bits_2_ftq_idx = casez_tmp_76;
-  assign io_commit_bits_2_ftq_generation = casez_tmp_77;
-  assign io_commit_bits_2_cp_idx = casez_tmp_78;
-  assign io_commit_bits_2_actual_taken = casez_tmp_79;
-  assign io_commit_bits_2_actual_target = casez_tmp_80;
-  assign io_commit_bits_2_mem_addr = casez_tmp_81;
-  assign io_commit_bits_2_mem_wdata = casez_tmp_82;
-  assign io_commit_bits_2_addr_ready = casez_tmp_83;
-  assign io_commit_bits_3_pc = casez_tmp_86;
-  assign io_commit_bits_3_inst = casez_tmp_87;
-  assign io_commit_bits_3_reg_write = casez_tmp_88;
-  assign io_commit_bits_3_csr_write = casez_tmp_89;
-  assign io_commit_bits_3_mem_valid = casez_tmp_90;
-  assign io_commit_bits_3_mem_write = casez_tmp_91;
-  assign io_commit_bits_3_mem_wmask = casez_tmp_92;
-  assign io_commit_bits_3_jump = casez_tmp_93;
-  assign io_commit_bits_3_arch_rd = casez_tmp_94;
-  assign io_commit_bits_3_old_phys = casez_tmp_95;
-  assign io_commit_bits_3_new_phys = casez_tmp_96;
-  assign io_commit_bits_3_dest_val = casez_tmp_97;
-  assign io_commit_bits_3_is_ebreak = casez_tmp_98;
-  assign io_commit_bits_3_is_fencei = casez_tmp_99;
-  assign io_commit_bits_3_state_state = casez_tmp_100;
-  assign io_commit_bits_3_bp_index = casez_tmp_101;
-  assign io_commit_bits_3_ftq_idx = casez_tmp_102;
-  assign io_commit_bits_3_ftq_generation = casez_tmp_103;
-  assign io_commit_bits_3_cp_idx = casez_tmp_104;
-  assign io_commit_bits_3_actual_taken = casez_tmp_105;
-  assign io_commit_bits_3_actual_target = casez_tmp_106;
-  assign io_commit_bits_3_mem_addr = casez_tmp_107;
-  assign io_commit_bits_3_mem_wdata = casez_tmp_108;
-  assign io_commit_bits_3_addr_ready = casez_tmp_109;
+  assign io_commit_bits_0_is_ebreak = casez_tmp_14;
+  assign io_commit_bits_0_is_fencei = casez_tmp_15;
+  assign io_commit_bits_0_state_state = casez_tmp_16;
+  assign io_commit_bits_0_state_state_num = casez_tmp_17;
+  assign io_commit_bits_0_bp_index = casez_tmp_18;
+  assign io_commit_bits_0_ftq_idx = casez_tmp_19;
+  assign io_commit_bits_0_ftq_generation = casez_tmp_20;
+  assign io_commit_bits_0_cp_idx = casez_tmp_21;
+  assign io_commit_bits_0_actual_taken = casez_tmp_22;
+  assign io_commit_bits_0_actual_target = casez_tmp_23;
+  assign io_commit_bits_0_rs1_val = casez_tmp_24;
+  assign io_commit_bits_0_csr_waddr = casez_tmp_25;
+  assign io_commit_bits_0_csr_rd1 = casez_tmp_26;
+  assign io_commit_bits_0_mem_addr = casez_tmp_27;
+  assign io_commit_bits_0_mem_wdata = casez_tmp_28;
+  assign io_commit_bits_0_addr_ready = casez_tmp_29;
+  assign io_commit_bits_1_valid = casez_tmp_30;
+  assign io_commit_bits_1_done = casez_tmp_31;
+  assign io_commit_bits_1_pc = casez_tmp_32;
+  assign io_commit_bits_1_inst = casez_tmp_33;
+  assign io_commit_bits_1_reg_write = casez_tmp_34;
+  assign io_commit_bits_1_reg_write_sel = casez_tmp_35;
+  assign io_commit_bits_1_csr_write = casez_tmp_36;
+  assign io_commit_bits_1_mem_valid = casez_tmp_37;
+  assign io_commit_bits_1_mem_write = casez_tmp_38;
+  assign io_commit_bits_1_mem_wmask = casez_tmp_39;
+  assign io_commit_bits_1_jump = casez_tmp_40;
+  assign io_commit_bits_1_arch_rd = casez_tmp_41;
+  assign io_commit_bits_1_old_phys = casez_tmp_42;
+  assign io_commit_bits_1_new_phys = casez_tmp_43;
+  assign io_commit_bits_1_is_ebreak = casez_tmp_44;
+  assign io_commit_bits_1_is_fencei = casez_tmp_45;
+  assign io_commit_bits_1_state_state = casez_tmp_46;
+  assign io_commit_bits_1_bp_index = casez_tmp_47;
+  assign io_commit_bits_1_ftq_idx = casez_tmp_48;
+  assign io_commit_bits_1_ftq_generation = casez_tmp_49;
+  assign io_commit_bits_1_cp_idx = casez_tmp_50;
+  assign io_commit_bits_1_actual_taken = casez_tmp_51;
+  assign io_commit_bits_1_actual_target = casez_tmp_52;
+  assign io_commit_bits_1_mem_addr = casez_tmp_53;
+  assign io_commit_bits_1_mem_wdata = casez_tmp_54;
+  assign io_commit_bits_1_addr_ready = casez_tmp_55;
+  assign io_commit_bits_2_valid = casez_tmp_56;
+  assign io_commit_bits_2_done = casez_tmp_57;
+  assign io_commit_bits_2_pc = casez_tmp_58;
+  assign io_commit_bits_2_inst = casez_tmp_59;
+  assign io_commit_bits_2_reg_write = casez_tmp_60;
+  assign io_commit_bits_2_csr_write = casez_tmp_61;
+  assign io_commit_bits_2_mem_valid = casez_tmp_62;
+  assign io_commit_bits_2_mem_write = casez_tmp_63;
+  assign io_commit_bits_2_mem_wmask = casez_tmp_64;
+  assign io_commit_bits_2_jump = casez_tmp_65;
+  assign io_commit_bits_2_arch_rd = casez_tmp_66;
+  assign io_commit_bits_2_old_phys = casez_tmp_67;
+  assign io_commit_bits_2_new_phys = casez_tmp_68;
+  assign io_commit_bits_2_is_ebreak = casez_tmp_69;
+  assign io_commit_bits_2_is_fencei = casez_tmp_70;
+  assign io_commit_bits_2_state_state = casez_tmp_71;
+  assign io_commit_bits_2_bp_index = casez_tmp_72;
+  assign io_commit_bits_2_ftq_idx = casez_tmp_73;
+  assign io_commit_bits_2_ftq_generation = casez_tmp_74;
+  assign io_commit_bits_2_cp_idx = casez_tmp_75;
+  assign io_commit_bits_2_actual_taken = casez_tmp_76;
+  assign io_commit_bits_2_actual_target = casez_tmp_77;
+  assign io_commit_bits_2_mem_addr = casez_tmp_78;
+  assign io_commit_bits_2_mem_wdata = casez_tmp_79;
+  assign io_commit_bits_2_addr_ready = casez_tmp_80;
+  assign io_commit_bits_3_valid = casez_tmp_81;
+  assign io_commit_bits_3_done = casez_tmp_82;
+  assign io_commit_bits_3_pc = casez_tmp_83;
+  assign io_commit_bits_3_inst = casez_tmp_84;
+  assign io_commit_bits_3_reg_write = casez_tmp_85;
+  assign io_commit_bits_3_csr_write = casez_tmp_86;
+  assign io_commit_bits_3_mem_valid = casez_tmp_87;
+  assign io_commit_bits_3_mem_write = casez_tmp_88;
+  assign io_commit_bits_3_mem_wmask = casez_tmp_89;
+  assign io_commit_bits_3_jump = casez_tmp_90;
+  assign io_commit_bits_3_arch_rd = casez_tmp_91;
+  assign io_commit_bits_3_old_phys = casez_tmp_92;
+  assign io_commit_bits_3_new_phys = casez_tmp_93;
+  assign io_commit_bits_3_is_ebreak = casez_tmp_94;
+  assign io_commit_bits_3_is_fencei = casez_tmp_95;
+  assign io_commit_bits_3_state_state = casez_tmp_96;
+  assign io_commit_bits_3_bp_index = casez_tmp_97;
+  assign io_commit_bits_3_ftq_idx = casez_tmp_98;
+  assign io_commit_bits_3_ftq_generation = casez_tmp_99;
+  assign io_commit_bits_3_cp_idx = casez_tmp_100;
+  assign io_commit_bits_3_actual_taken = casez_tmp_101;
+  assign io_commit_bits_3_actual_target = casez_tmp_102;
+  assign io_commit_bits_3_mem_addr = casez_tmp_103;
+  assign io_commit_bits_3_mem_wdata = casez_tmp_104;
+  assign io_commit_bits_3_addr_ready = casez_tmp_105;
   assign io_entries_0_valid = entries_0_valid;
   assign io_entries_0_done = entries_0_done;
   assign io_entries_0_pc = entries_0_pc;

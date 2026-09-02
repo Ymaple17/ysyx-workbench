@@ -171,7 +171,8 @@ class WideUnitTest extends AnyFlatSpec {
         dut.io.clr_addr(i).poke((32 + i).U)
       }
       dut.clock.step()
-      for (i <- 0 until width) dut.io.ready(i).expect(true.B)
+      dut.io.ready(0).expect(false.B)
+      for (i <- 1 until width) dut.io.ready(i).expect(true.B)
     }
   }
 

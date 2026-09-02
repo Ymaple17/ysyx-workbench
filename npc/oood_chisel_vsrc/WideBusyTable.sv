@@ -1236,570 +1236,569 @@ module WideBusyTable(
       busy_1 <=
         io_rebuild
           ? io_rebuild_mask[1]
-          : ~(io_clr_mask[1] | io_clr_valid_0 & io_clr_addr_0 == 6'h1 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h1 | io_clr_valid_2 & io_clr_addr_2 == 6'h1
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h1)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h1 | io_set_valid_1
-               & io_set_addr_1 == 6'h1 | io_set_valid_2 & io_set_addr_2 == 6'h1
-               | io_set_valid_3 & io_set_addr_3 == 6'h1 | busy_1);
+          : io_set_valid_0 & io_set_addr_0 == 6'h1 | io_set_valid_1
+            & io_set_addr_1 == 6'h1 | io_set_valid_2 & io_set_addr_2 == 6'h1
+            | io_set_valid_3 & io_set_addr_3 == 6'h1
+            | ~(io_clr_mask[1] | io_clr_valid_0 & io_clr_addr_0 == 6'h1 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h1 | io_clr_valid_2 & io_clr_addr_2 == 6'h1
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h1) & busy_1;
       busy_2 <=
         io_rebuild
           ? io_rebuild_mask[2]
-          : ~(io_clr_mask[2] | io_clr_valid_0 & io_clr_addr_0 == 6'h2 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h2 | io_clr_valid_2 & io_clr_addr_2 == 6'h2
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h2)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h2 | io_set_valid_1
-               & io_set_addr_1 == 6'h2 | io_set_valid_2 & io_set_addr_2 == 6'h2
-               | io_set_valid_3 & io_set_addr_3 == 6'h2 | busy_2);
+          : io_set_valid_0 & io_set_addr_0 == 6'h2 | io_set_valid_1
+            & io_set_addr_1 == 6'h2 | io_set_valid_2 & io_set_addr_2 == 6'h2
+            | io_set_valid_3 & io_set_addr_3 == 6'h2
+            | ~(io_clr_mask[2] | io_clr_valid_0 & io_clr_addr_0 == 6'h2 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h2 | io_clr_valid_2 & io_clr_addr_2 == 6'h2
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h2) & busy_2;
       busy_3 <=
         io_rebuild
           ? io_rebuild_mask[3]
-          : ~(io_clr_mask[3] | io_clr_valid_0 & io_clr_addr_0 == 6'h3 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h3 | io_clr_valid_2 & io_clr_addr_2 == 6'h3
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h3)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h3 | io_set_valid_1
-               & io_set_addr_1 == 6'h3 | io_set_valid_2 & io_set_addr_2 == 6'h3
-               | io_set_valid_3 & io_set_addr_3 == 6'h3 | busy_3);
+          : io_set_valid_0 & io_set_addr_0 == 6'h3 | io_set_valid_1
+            & io_set_addr_1 == 6'h3 | io_set_valid_2 & io_set_addr_2 == 6'h3
+            | io_set_valid_3 & io_set_addr_3 == 6'h3
+            | ~(io_clr_mask[3] | io_clr_valid_0 & io_clr_addr_0 == 6'h3 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h3 | io_clr_valid_2 & io_clr_addr_2 == 6'h3
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h3) & busy_3;
       busy_4 <=
         io_rebuild
           ? io_rebuild_mask[4]
-          : ~(io_clr_mask[4] | io_clr_valid_0 & io_clr_addr_0 == 6'h4 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h4 | io_clr_valid_2 & io_clr_addr_2 == 6'h4
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h4)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h4 | io_set_valid_1
-               & io_set_addr_1 == 6'h4 | io_set_valid_2 & io_set_addr_2 == 6'h4
-               | io_set_valid_3 & io_set_addr_3 == 6'h4 | busy_4);
+          : io_set_valid_0 & io_set_addr_0 == 6'h4 | io_set_valid_1
+            & io_set_addr_1 == 6'h4 | io_set_valid_2 & io_set_addr_2 == 6'h4
+            | io_set_valid_3 & io_set_addr_3 == 6'h4
+            | ~(io_clr_mask[4] | io_clr_valid_0 & io_clr_addr_0 == 6'h4 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h4 | io_clr_valid_2 & io_clr_addr_2 == 6'h4
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h4) & busy_4;
       busy_5 <=
         io_rebuild
           ? io_rebuild_mask[5]
-          : ~(io_clr_mask[5] | io_clr_valid_0 & io_clr_addr_0 == 6'h5 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h5 | io_clr_valid_2 & io_clr_addr_2 == 6'h5
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h5)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h5 | io_set_valid_1
-               & io_set_addr_1 == 6'h5 | io_set_valid_2 & io_set_addr_2 == 6'h5
-               | io_set_valid_3 & io_set_addr_3 == 6'h5 | busy_5);
+          : io_set_valid_0 & io_set_addr_0 == 6'h5 | io_set_valid_1
+            & io_set_addr_1 == 6'h5 | io_set_valid_2 & io_set_addr_2 == 6'h5
+            | io_set_valid_3 & io_set_addr_3 == 6'h5
+            | ~(io_clr_mask[5] | io_clr_valid_0 & io_clr_addr_0 == 6'h5 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h5 | io_clr_valid_2 & io_clr_addr_2 == 6'h5
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h5) & busy_5;
       busy_6 <=
         io_rebuild
           ? io_rebuild_mask[6]
-          : ~(io_clr_mask[6] | io_clr_valid_0 & io_clr_addr_0 == 6'h6 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h6 | io_clr_valid_2 & io_clr_addr_2 == 6'h6
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h6)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h6 | io_set_valid_1
-               & io_set_addr_1 == 6'h6 | io_set_valid_2 & io_set_addr_2 == 6'h6
-               | io_set_valid_3 & io_set_addr_3 == 6'h6 | busy_6);
+          : io_set_valid_0 & io_set_addr_0 == 6'h6 | io_set_valid_1
+            & io_set_addr_1 == 6'h6 | io_set_valid_2 & io_set_addr_2 == 6'h6
+            | io_set_valid_3 & io_set_addr_3 == 6'h6
+            | ~(io_clr_mask[6] | io_clr_valid_0 & io_clr_addr_0 == 6'h6 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h6 | io_clr_valid_2 & io_clr_addr_2 == 6'h6
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h6) & busy_6;
       busy_7 <=
         io_rebuild
           ? io_rebuild_mask[7]
-          : ~(io_clr_mask[7] | io_clr_valid_0 & io_clr_addr_0 == 6'h7 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h7 | io_clr_valid_2 & io_clr_addr_2 == 6'h7
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h7)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h7 | io_set_valid_1
-               & io_set_addr_1 == 6'h7 | io_set_valid_2 & io_set_addr_2 == 6'h7
-               | io_set_valid_3 & io_set_addr_3 == 6'h7 | busy_7);
+          : io_set_valid_0 & io_set_addr_0 == 6'h7 | io_set_valid_1
+            & io_set_addr_1 == 6'h7 | io_set_valid_2 & io_set_addr_2 == 6'h7
+            | io_set_valid_3 & io_set_addr_3 == 6'h7
+            | ~(io_clr_mask[7] | io_clr_valid_0 & io_clr_addr_0 == 6'h7 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h7 | io_clr_valid_2 & io_clr_addr_2 == 6'h7
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h7) & busy_7;
       busy_8 <=
         io_rebuild
           ? io_rebuild_mask[8]
-          : ~(io_clr_mask[8] | io_clr_valid_0 & io_clr_addr_0 == 6'h8 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h8 | io_clr_valid_2 & io_clr_addr_2 == 6'h8
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h8)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h8 | io_set_valid_1
-               & io_set_addr_1 == 6'h8 | io_set_valid_2 & io_set_addr_2 == 6'h8
-               | io_set_valid_3 & io_set_addr_3 == 6'h8 | busy_8);
+          : io_set_valid_0 & io_set_addr_0 == 6'h8 | io_set_valid_1
+            & io_set_addr_1 == 6'h8 | io_set_valid_2 & io_set_addr_2 == 6'h8
+            | io_set_valid_3 & io_set_addr_3 == 6'h8
+            | ~(io_clr_mask[8] | io_clr_valid_0 & io_clr_addr_0 == 6'h8 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h8 | io_clr_valid_2 & io_clr_addr_2 == 6'h8
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h8) & busy_8;
       busy_9 <=
         io_rebuild
           ? io_rebuild_mask[9]
-          : ~(io_clr_mask[9] | io_clr_valid_0 & io_clr_addr_0 == 6'h9 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h9 | io_clr_valid_2 & io_clr_addr_2 == 6'h9
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h9)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h9 | io_set_valid_1
-               & io_set_addr_1 == 6'h9 | io_set_valid_2 & io_set_addr_2 == 6'h9
-               | io_set_valid_3 & io_set_addr_3 == 6'h9 | busy_9);
+          : io_set_valid_0 & io_set_addr_0 == 6'h9 | io_set_valid_1
+            & io_set_addr_1 == 6'h9 | io_set_valid_2 & io_set_addr_2 == 6'h9
+            | io_set_valid_3 & io_set_addr_3 == 6'h9
+            | ~(io_clr_mask[9] | io_clr_valid_0 & io_clr_addr_0 == 6'h9 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h9 | io_clr_valid_2 & io_clr_addr_2 == 6'h9
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h9) & busy_9;
       busy_10 <=
         io_rebuild
           ? io_rebuild_mask[10]
-          : ~(io_clr_mask[10] | io_clr_valid_0 & io_clr_addr_0 == 6'hA | io_clr_valid_1
-              & io_clr_addr_1 == 6'hA | io_clr_valid_2 & io_clr_addr_2 == 6'hA
-              | io_clr_valid_3 & io_clr_addr_3 == 6'hA)
-            & (io_set_valid_0 & io_set_addr_0 == 6'hA | io_set_valid_1
-               & io_set_addr_1 == 6'hA | io_set_valid_2 & io_set_addr_2 == 6'hA
-               | io_set_valid_3 & io_set_addr_3 == 6'hA | busy_10);
+          : io_set_valid_0 & io_set_addr_0 == 6'hA | io_set_valid_1
+            & io_set_addr_1 == 6'hA | io_set_valid_2 & io_set_addr_2 == 6'hA
+            | io_set_valid_3 & io_set_addr_3 == 6'hA
+            | ~(io_clr_mask[10] | io_clr_valid_0 & io_clr_addr_0 == 6'hA | io_clr_valid_1
+                & io_clr_addr_1 == 6'hA | io_clr_valid_2 & io_clr_addr_2 == 6'hA
+                | io_clr_valid_3 & io_clr_addr_3 == 6'hA) & busy_10;
       busy_11 <=
         io_rebuild
           ? io_rebuild_mask[11]
-          : ~(io_clr_mask[11] | io_clr_valid_0 & io_clr_addr_0 == 6'hB | io_clr_valid_1
-              & io_clr_addr_1 == 6'hB | io_clr_valid_2 & io_clr_addr_2 == 6'hB
-              | io_clr_valid_3 & io_clr_addr_3 == 6'hB)
-            & (io_set_valid_0 & io_set_addr_0 == 6'hB | io_set_valid_1
-               & io_set_addr_1 == 6'hB | io_set_valid_2 & io_set_addr_2 == 6'hB
-               | io_set_valid_3 & io_set_addr_3 == 6'hB | busy_11);
+          : io_set_valid_0 & io_set_addr_0 == 6'hB | io_set_valid_1
+            & io_set_addr_1 == 6'hB | io_set_valid_2 & io_set_addr_2 == 6'hB
+            | io_set_valid_3 & io_set_addr_3 == 6'hB
+            | ~(io_clr_mask[11] | io_clr_valid_0 & io_clr_addr_0 == 6'hB | io_clr_valid_1
+                & io_clr_addr_1 == 6'hB | io_clr_valid_2 & io_clr_addr_2 == 6'hB
+                | io_clr_valid_3 & io_clr_addr_3 == 6'hB) & busy_11;
       busy_12 <=
         io_rebuild
           ? io_rebuild_mask[12]
-          : ~(io_clr_mask[12] | io_clr_valid_0 & io_clr_addr_0 == 6'hC | io_clr_valid_1
-              & io_clr_addr_1 == 6'hC | io_clr_valid_2 & io_clr_addr_2 == 6'hC
-              | io_clr_valid_3 & io_clr_addr_3 == 6'hC)
-            & (io_set_valid_0 & io_set_addr_0 == 6'hC | io_set_valid_1
-               & io_set_addr_1 == 6'hC | io_set_valid_2 & io_set_addr_2 == 6'hC
-               | io_set_valid_3 & io_set_addr_3 == 6'hC | busy_12);
+          : io_set_valid_0 & io_set_addr_0 == 6'hC | io_set_valid_1
+            & io_set_addr_1 == 6'hC | io_set_valid_2 & io_set_addr_2 == 6'hC
+            | io_set_valid_3 & io_set_addr_3 == 6'hC
+            | ~(io_clr_mask[12] | io_clr_valid_0 & io_clr_addr_0 == 6'hC | io_clr_valid_1
+                & io_clr_addr_1 == 6'hC | io_clr_valid_2 & io_clr_addr_2 == 6'hC
+                | io_clr_valid_3 & io_clr_addr_3 == 6'hC) & busy_12;
       busy_13 <=
         io_rebuild
           ? io_rebuild_mask[13]
-          : ~(io_clr_mask[13] | io_clr_valid_0 & io_clr_addr_0 == 6'hD | io_clr_valid_1
-              & io_clr_addr_1 == 6'hD | io_clr_valid_2 & io_clr_addr_2 == 6'hD
-              | io_clr_valid_3 & io_clr_addr_3 == 6'hD)
-            & (io_set_valid_0 & io_set_addr_0 == 6'hD | io_set_valid_1
-               & io_set_addr_1 == 6'hD | io_set_valid_2 & io_set_addr_2 == 6'hD
-               | io_set_valid_3 & io_set_addr_3 == 6'hD | busy_13);
+          : io_set_valid_0 & io_set_addr_0 == 6'hD | io_set_valid_1
+            & io_set_addr_1 == 6'hD | io_set_valid_2 & io_set_addr_2 == 6'hD
+            | io_set_valid_3 & io_set_addr_3 == 6'hD
+            | ~(io_clr_mask[13] | io_clr_valid_0 & io_clr_addr_0 == 6'hD | io_clr_valid_1
+                & io_clr_addr_1 == 6'hD | io_clr_valid_2 & io_clr_addr_2 == 6'hD
+                | io_clr_valid_3 & io_clr_addr_3 == 6'hD) & busy_13;
       busy_14 <=
         io_rebuild
           ? io_rebuild_mask[14]
-          : ~(io_clr_mask[14] | io_clr_valid_0 & io_clr_addr_0 == 6'hE | io_clr_valid_1
-              & io_clr_addr_1 == 6'hE | io_clr_valid_2 & io_clr_addr_2 == 6'hE
-              | io_clr_valid_3 & io_clr_addr_3 == 6'hE)
-            & (io_set_valid_0 & io_set_addr_0 == 6'hE | io_set_valid_1
-               & io_set_addr_1 == 6'hE | io_set_valid_2 & io_set_addr_2 == 6'hE
-               | io_set_valid_3 & io_set_addr_3 == 6'hE | busy_14);
+          : io_set_valid_0 & io_set_addr_0 == 6'hE | io_set_valid_1
+            & io_set_addr_1 == 6'hE | io_set_valid_2 & io_set_addr_2 == 6'hE
+            | io_set_valid_3 & io_set_addr_3 == 6'hE
+            | ~(io_clr_mask[14] | io_clr_valid_0 & io_clr_addr_0 == 6'hE | io_clr_valid_1
+                & io_clr_addr_1 == 6'hE | io_clr_valid_2 & io_clr_addr_2 == 6'hE
+                | io_clr_valid_3 & io_clr_addr_3 == 6'hE) & busy_14;
       busy_15 <=
         io_rebuild
           ? io_rebuild_mask[15]
-          : ~(io_clr_mask[15] | io_clr_valid_0 & io_clr_addr_0 == 6'hF | io_clr_valid_1
-              & io_clr_addr_1 == 6'hF | io_clr_valid_2 & io_clr_addr_2 == 6'hF
-              | io_clr_valid_3 & io_clr_addr_3 == 6'hF)
-            & (io_set_valid_0 & io_set_addr_0 == 6'hF | io_set_valid_1
-               & io_set_addr_1 == 6'hF | io_set_valid_2 & io_set_addr_2 == 6'hF
-               | io_set_valid_3 & io_set_addr_3 == 6'hF | busy_15);
+          : io_set_valid_0 & io_set_addr_0 == 6'hF | io_set_valid_1
+            & io_set_addr_1 == 6'hF | io_set_valid_2 & io_set_addr_2 == 6'hF
+            | io_set_valid_3 & io_set_addr_3 == 6'hF
+            | ~(io_clr_mask[15] | io_clr_valid_0 & io_clr_addr_0 == 6'hF | io_clr_valid_1
+                & io_clr_addr_1 == 6'hF | io_clr_valid_2 & io_clr_addr_2 == 6'hF
+                | io_clr_valid_3 & io_clr_addr_3 == 6'hF) & busy_15;
       busy_16 <=
         io_rebuild
           ? io_rebuild_mask[16]
-          : ~(io_clr_mask[16] | io_clr_valid_0 & io_clr_addr_0 == 6'h10 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h10 | io_clr_valid_2 & io_clr_addr_2 == 6'h10
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h10)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h10 | io_set_valid_1
-               & io_set_addr_1 == 6'h10 | io_set_valid_2 & io_set_addr_2 == 6'h10
-               | io_set_valid_3 & io_set_addr_3 == 6'h10 | busy_16);
+          : io_set_valid_0 & io_set_addr_0 == 6'h10 | io_set_valid_1
+            & io_set_addr_1 == 6'h10 | io_set_valid_2 & io_set_addr_2 == 6'h10
+            | io_set_valid_3 & io_set_addr_3 == 6'h10
+            | ~(io_clr_mask[16] | io_clr_valid_0 & io_clr_addr_0 == 6'h10 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h10 | io_clr_valid_2 & io_clr_addr_2 == 6'h10
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h10) & busy_16;
       busy_17 <=
         io_rebuild
           ? io_rebuild_mask[17]
-          : ~(io_clr_mask[17] | io_clr_valid_0 & io_clr_addr_0 == 6'h11 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h11 | io_clr_valid_2 & io_clr_addr_2 == 6'h11
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h11)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h11 | io_set_valid_1
-               & io_set_addr_1 == 6'h11 | io_set_valid_2 & io_set_addr_2 == 6'h11
-               | io_set_valid_3 & io_set_addr_3 == 6'h11 | busy_17);
+          : io_set_valid_0 & io_set_addr_0 == 6'h11 | io_set_valid_1
+            & io_set_addr_1 == 6'h11 | io_set_valid_2 & io_set_addr_2 == 6'h11
+            | io_set_valid_3 & io_set_addr_3 == 6'h11
+            | ~(io_clr_mask[17] | io_clr_valid_0 & io_clr_addr_0 == 6'h11 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h11 | io_clr_valid_2 & io_clr_addr_2 == 6'h11
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h11) & busy_17;
       busy_18 <=
         io_rebuild
           ? io_rebuild_mask[18]
-          : ~(io_clr_mask[18] | io_clr_valid_0 & io_clr_addr_0 == 6'h12 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h12 | io_clr_valid_2 & io_clr_addr_2 == 6'h12
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h12)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h12 | io_set_valid_1
-               & io_set_addr_1 == 6'h12 | io_set_valid_2 & io_set_addr_2 == 6'h12
-               | io_set_valid_3 & io_set_addr_3 == 6'h12 | busy_18);
+          : io_set_valid_0 & io_set_addr_0 == 6'h12 | io_set_valid_1
+            & io_set_addr_1 == 6'h12 | io_set_valid_2 & io_set_addr_2 == 6'h12
+            | io_set_valid_3 & io_set_addr_3 == 6'h12
+            | ~(io_clr_mask[18] | io_clr_valid_0 & io_clr_addr_0 == 6'h12 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h12 | io_clr_valid_2 & io_clr_addr_2 == 6'h12
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h12) & busy_18;
       busy_19 <=
         io_rebuild
           ? io_rebuild_mask[19]
-          : ~(io_clr_mask[19] | io_clr_valid_0 & io_clr_addr_0 == 6'h13 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h13 | io_clr_valid_2 & io_clr_addr_2 == 6'h13
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h13)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h13 | io_set_valid_1
-               & io_set_addr_1 == 6'h13 | io_set_valid_2 & io_set_addr_2 == 6'h13
-               | io_set_valid_3 & io_set_addr_3 == 6'h13 | busy_19);
+          : io_set_valid_0 & io_set_addr_0 == 6'h13 | io_set_valid_1
+            & io_set_addr_1 == 6'h13 | io_set_valid_2 & io_set_addr_2 == 6'h13
+            | io_set_valid_3 & io_set_addr_3 == 6'h13
+            | ~(io_clr_mask[19] | io_clr_valid_0 & io_clr_addr_0 == 6'h13 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h13 | io_clr_valid_2 & io_clr_addr_2 == 6'h13
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h13) & busy_19;
       busy_20 <=
         io_rebuild
           ? io_rebuild_mask[20]
-          : ~(io_clr_mask[20] | io_clr_valid_0 & io_clr_addr_0 == 6'h14 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h14 | io_clr_valid_2 & io_clr_addr_2 == 6'h14
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h14)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h14 | io_set_valid_1
-               & io_set_addr_1 == 6'h14 | io_set_valid_2 & io_set_addr_2 == 6'h14
-               | io_set_valid_3 & io_set_addr_3 == 6'h14 | busy_20);
+          : io_set_valid_0 & io_set_addr_0 == 6'h14 | io_set_valid_1
+            & io_set_addr_1 == 6'h14 | io_set_valid_2 & io_set_addr_2 == 6'h14
+            | io_set_valid_3 & io_set_addr_3 == 6'h14
+            | ~(io_clr_mask[20] | io_clr_valid_0 & io_clr_addr_0 == 6'h14 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h14 | io_clr_valid_2 & io_clr_addr_2 == 6'h14
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h14) & busy_20;
       busy_21 <=
         io_rebuild
           ? io_rebuild_mask[21]
-          : ~(io_clr_mask[21] | io_clr_valid_0 & io_clr_addr_0 == 6'h15 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h15 | io_clr_valid_2 & io_clr_addr_2 == 6'h15
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h15)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h15 | io_set_valid_1
-               & io_set_addr_1 == 6'h15 | io_set_valid_2 & io_set_addr_2 == 6'h15
-               | io_set_valid_3 & io_set_addr_3 == 6'h15 | busy_21);
+          : io_set_valid_0 & io_set_addr_0 == 6'h15 | io_set_valid_1
+            & io_set_addr_1 == 6'h15 | io_set_valid_2 & io_set_addr_2 == 6'h15
+            | io_set_valid_3 & io_set_addr_3 == 6'h15
+            | ~(io_clr_mask[21] | io_clr_valid_0 & io_clr_addr_0 == 6'h15 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h15 | io_clr_valid_2 & io_clr_addr_2 == 6'h15
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h15) & busy_21;
       busy_22 <=
         io_rebuild
           ? io_rebuild_mask[22]
-          : ~(io_clr_mask[22] | io_clr_valid_0 & io_clr_addr_0 == 6'h16 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h16 | io_clr_valid_2 & io_clr_addr_2 == 6'h16
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h16)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h16 | io_set_valid_1
-               & io_set_addr_1 == 6'h16 | io_set_valid_2 & io_set_addr_2 == 6'h16
-               | io_set_valid_3 & io_set_addr_3 == 6'h16 | busy_22);
+          : io_set_valid_0 & io_set_addr_0 == 6'h16 | io_set_valid_1
+            & io_set_addr_1 == 6'h16 | io_set_valid_2 & io_set_addr_2 == 6'h16
+            | io_set_valid_3 & io_set_addr_3 == 6'h16
+            | ~(io_clr_mask[22] | io_clr_valid_0 & io_clr_addr_0 == 6'h16 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h16 | io_clr_valid_2 & io_clr_addr_2 == 6'h16
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h16) & busy_22;
       busy_23 <=
         io_rebuild
           ? io_rebuild_mask[23]
-          : ~(io_clr_mask[23] | io_clr_valid_0 & io_clr_addr_0 == 6'h17 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h17 | io_clr_valid_2 & io_clr_addr_2 == 6'h17
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h17)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h17 | io_set_valid_1
-               & io_set_addr_1 == 6'h17 | io_set_valid_2 & io_set_addr_2 == 6'h17
-               | io_set_valid_3 & io_set_addr_3 == 6'h17 | busy_23);
+          : io_set_valid_0 & io_set_addr_0 == 6'h17 | io_set_valid_1
+            & io_set_addr_1 == 6'h17 | io_set_valid_2 & io_set_addr_2 == 6'h17
+            | io_set_valid_3 & io_set_addr_3 == 6'h17
+            | ~(io_clr_mask[23] | io_clr_valid_0 & io_clr_addr_0 == 6'h17 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h17 | io_clr_valid_2 & io_clr_addr_2 == 6'h17
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h17) & busy_23;
       busy_24 <=
         io_rebuild
           ? io_rebuild_mask[24]
-          : ~(io_clr_mask[24] | io_clr_valid_0 & io_clr_addr_0 == 6'h18 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h18 | io_clr_valid_2 & io_clr_addr_2 == 6'h18
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h18)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h18 | io_set_valid_1
-               & io_set_addr_1 == 6'h18 | io_set_valid_2 & io_set_addr_2 == 6'h18
-               | io_set_valid_3 & io_set_addr_3 == 6'h18 | busy_24);
+          : io_set_valid_0 & io_set_addr_0 == 6'h18 | io_set_valid_1
+            & io_set_addr_1 == 6'h18 | io_set_valid_2 & io_set_addr_2 == 6'h18
+            | io_set_valid_3 & io_set_addr_3 == 6'h18
+            | ~(io_clr_mask[24] | io_clr_valid_0 & io_clr_addr_0 == 6'h18 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h18 | io_clr_valid_2 & io_clr_addr_2 == 6'h18
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h18) & busy_24;
       busy_25 <=
         io_rebuild
           ? io_rebuild_mask[25]
-          : ~(io_clr_mask[25] | io_clr_valid_0 & io_clr_addr_0 == 6'h19 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h19 | io_clr_valid_2 & io_clr_addr_2 == 6'h19
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h19)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h19 | io_set_valid_1
-               & io_set_addr_1 == 6'h19 | io_set_valid_2 & io_set_addr_2 == 6'h19
-               | io_set_valid_3 & io_set_addr_3 == 6'h19 | busy_25);
+          : io_set_valid_0 & io_set_addr_0 == 6'h19 | io_set_valid_1
+            & io_set_addr_1 == 6'h19 | io_set_valid_2 & io_set_addr_2 == 6'h19
+            | io_set_valid_3 & io_set_addr_3 == 6'h19
+            | ~(io_clr_mask[25] | io_clr_valid_0 & io_clr_addr_0 == 6'h19 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h19 | io_clr_valid_2 & io_clr_addr_2 == 6'h19
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h19) & busy_25;
       busy_26 <=
         io_rebuild
           ? io_rebuild_mask[26]
-          : ~(io_clr_mask[26] | io_clr_valid_0 & io_clr_addr_0 == 6'h1A | io_clr_valid_1
-              & io_clr_addr_1 == 6'h1A | io_clr_valid_2 & io_clr_addr_2 == 6'h1A
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h1A)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h1A | io_set_valid_1
-               & io_set_addr_1 == 6'h1A | io_set_valid_2 & io_set_addr_2 == 6'h1A
-               | io_set_valid_3 & io_set_addr_3 == 6'h1A | busy_26);
+          : io_set_valid_0 & io_set_addr_0 == 6'h1A | io_set_valid_1
+            & io_set_addr_1 == 6'h1A | io_set_valid_2 & io_set_addr_2 == 6'h1A
+            | io_set_valid_3 & io_set_addr_3 == 6'h1A
+            | ~(io_clr_mask[26] | io_clr_valid_0 & io_clr_addr_0 == 6'h1A | io_clr_valid_1
+                & io_clr_addr_1 == 6'h1A | io_clr_valid_2 & io_clr_addr_2 == 6'h1A
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h1A) & busy_26;
       busy_27 <=
         io_rebuild
           ? io_rebuild_mask[27]
-          : ~(io_clr_mask[27] | io_clr_valid_0 & io_clr_addr_0 == 6'h1B | io_clr_valid_1
-              & io_clr_addr_1 == 6'h1B | io_clr_valid_2 & io_clr_addr_2 == 6'h1B
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h1B)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h1B | io_set_valid_1
-               & io_set_addr_1 == 6'h1B | io_set_valid_2 & io_set_addr_2 == 6'h1B
-               | io_set_valid_3 & io_set_addr_3 == 6'h1B | busy_27);
+          : io_set_valid_0 & io_set_addr_0 == 6'h1B | io_set_valid_1
+            & io_set_addr_1 == 6'h1B | io_set_valid_2 & io_set_addr_2 == 6'h1B
+            | io_set_valid_3 & io_set_addr_3 == 6'h1B
+            | ~(io_clr_mask[27] | io_clr_valid_0 & io_clr_addr_0 == 6'h1B | io_clr_valid_1
+                & io_clr_addr_1 == 6'h1B | io_clr_valid_2 & io_clr_addr_2 == 6'h1B
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h1B) & busy_27;
       busy_28 <=
         io_rebuild
           ? io_rebuild_mask[28]
-          : ~(io_clr_mask[28] | io_clr_valid_0 & io_clr_addr_0 == 6'h1C | io_clr_valid_1
-              & io_clr_addr_1 == 6'h1C | io_clr_valid_2 & io_clr_addr_2 == 6'h1C
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h1C)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h1C | io_set_valid_1
-               & io_set_addr_1 == 6'h1C | io_set_valid_2 & io_set_addr_2 == 6'h1C
-               | io_set_valid_3 & io_set_addr_3 == 6'h1C | busy_28);
+          : io_set_valid_0 & io_set_addr_0 == 6'h1C | io_set_valid_1
+            & io_set_addr_1 == 6'h1C | io_set_valid_2 & io_set_addr_2 == 6'h1C
+            | io_set_valid_3 & io_set_addr_3 == 6'h1C
+            | ~(io_clr_mask[28] | io_clr_valid_0 & io_clr_addr_0 == 6'h1C | io_clr_valid_1
+                & io_clr_addr_1 == 6'h1C | io_clr_valid_2 & io_clr_addr_2 == 6'h1C
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h1C) & busy_28;
       busy_29 <=
         io_rebuild
           ? io_rebuild_mask[29]
-          : ~(io_clr_mask[29] | io_clr_valid_0 & io_clr_addr_0 == 6'h1D | io_clr_valid_1
-              & io_clr_addr_1 == 6'h1D | io_clr_valid_2 & io_clr_addr_2 == 6'h1D
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h1D)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h1D | io_set_valid_1
-               & io_set_addr_1 == 6'h1D | io_set_valid_2 & io_set_addr_2 == 6'h1D
-               | io_set_valid_3 & io_set_addr_3 == 6'h1D | busy_29);
+          : io_set_valid_0 & io_set_addr_0 == 6'h1D | io_set_valid_1
+            & io_set_addr_1 == 6'h1D | io_set_valid_2 & io_set_addr_2 == 6'h1D
+            | io_set_valid_3 & io_set_addr_3 == 6'h1D
+            | ~(io_clr_mask[29] | io_clr_valid_0 & io_clr_addr_0 == 6'h1D | io_clr_valid_1
+                & io_clr_addr_1 == 6'h1D | io_clr_valid_2 & io_clr_addr_2 == 6'h1D
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h1D) & busy_29;
       busy_30 <=
         io_rebuild
           ? io_rebuild_mask[30]
-          : ~(io_clr_mask[30] | io_clr_valid_0 & io_clr_addr_0 == 6'h1E | io_clr_valid_1
-              & io_clr_addr_1 == 6'h1E | io_clr_valid_2 & io_clr_addr_2 == 6'h1E
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h1E)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h1E | io_set_valid_1
-               & io_set_addr_1 == 6'h1E | io_set_valid_2 & io_set_addr_2 == 6'h1E
-               | io_set_valid_3 & io_set_addr_3 == 6'h1E | busy_30);
+          : io_set_valid_0 & io_set_addr_0 == 6'h1E | io_set_valid_1
+            & io_set_addr_1 == 6'h1E | io_set_valid_2 & io_set_addr_2 == 6'h1E
+            | io_set_valid_3 & io_set_addr_3 == 6'h1E
+            | ~(io_clr_mask[30] | io_clr_valid_0 & io_clr_addr_0 == 6'h1E | io_clr_valid_1
+                & io_clr_addr_1 == 6'h1E | io_clr_valid_2 & io_clr_addr_2 == 6'h1E
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h1E) & busy_30;
       busy_31 <=
         io_rebuild
           ? io_rebuild_mask[31]
-          : ~(io_clr_mask[31] | io_clr_valid_0 & io_clr_addr_0 == 6'h1F | io_clr_valid_1
-              & io_clr_addr_1 == 6'h1F | io_clr_valid_2 & io_clr_addr_2 == 6'h1F
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h1F)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h1F | io_set_valid_1
-               & io_set_addr_1 == 6'h1F | io_set_valid_2 & io_set_addr_2 == 6'h1F
-               | io_set_valid_3 & io_set_addr_3 == 6'h1F | busy_31);
+          : io_set_valid_0 & io_set_addr_0 == 6'h1F | io_set_valid_1
+            & io_set_addr_1 == 6'h1F | io_set_valid_2 & io_set_addr_2 == 6'h1F
+            | io_set_valid_3 & io_set_addr_3 == 6'h1F
+            | ~(io_clr_mask[31] | io_clr_valid_0 & io_clr_addr_0 == 6'h1F | io_clr_valid_1
+                & io_clr_addr_1 == 6'h1F | io_clr_valid_2 & io_clr_addr_2 == 6'h1F
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h1F) & busy_31;
       busy_32 <=
         io_rebuild
           ? io_rebuild_mask[32]
-          : ~(io_clr_mask[32] | io_clr_valid_0 & io_clr_addr_0 == 6'h20 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h20 | io_clr_valid_2 & io_clr_addr_2 == 6'h20
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h20)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h20 | io_set_valid_1
-               & io_set_addr_1 == 6'h20 | io_set_valid_2 & io_set_addr_2 == 6'h20
-               | io_set_valid_3 & io_set_addr_3 == 6'h20 | busy_32);
+          : io_set_valid_0 & io_set_addr_0 == 6'h20 | io_set_valid_1
+            & io_set_addr_1 == 6'h20 | io_set_valid_2 & io_set_addr_2 == 6'h20
+            | io_set_valid_3 & io_set_addr_3 == 6'h20
+            | ~(io_clr_mask[32] | io_clr_valid_0 & io_clr_addr_0 == 6'h20 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h20 | io_clr_valid_2 & io_clr_addr_2 == 6'h20
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h20) & busy_32;
       busy_33 <=
         io_rebuild
           ? io_rebuild_mask[33]
-          : ~(io_clr_mask[33] | io_clr_valid_0 & io_clr_addr_0 == 6'h21 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h21 | io_clr_valid_2 & io_clr_addr_2 == 6'h21
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h21)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h21 | io_set_valid_1
-               & io_set_addr_1 == 6'h21 | io_set_valid_2 & io_set_addr_2 == 6'h21
-               | io_set_valid_3 & io_set_addr_3 == 6'h21 | busy_33);
+          : io_set_valid_0 & io_set_addr_0 == 6'h21 | io_set_valid_1
+            & io_set_addr_1 == 6'h21 | io_set_valid_2 & io_set_addr_2 == 6'h21
+            | io_set_valid_3 & io_set_addr_3 == 6'h21
+            | ~(io_clr_mask[33] | io_clr_valid_0 & io_clr_addr_0 == 6'h21 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h21 | io_clr_valid_2 & io_clr_addr_2 == 6'h21
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h21) & busy_33;
       busy_34 <=
         io_rebuild
           ? io_rebuild_mask[34]
-          : ~(io_clr_mask[34] | io_clr_valid_0 & io_clr_addr_0 == 6'h22 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h22 | io_clr_valid_2 & io_clr_addr_2 == 6'h22
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h22)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h22 | io_set_valid_1
-               & io_set_addr_1 == 6'h22 | io_set_valid_2 & io_set_addr_2 == 6'h22
-               | io_set_valid_3 & io_set_addr_3 == 6'h22 | busy_34);
+          : io_set_valid_0 & io_set_addr_0 == 6'h22 | io_set_valid_1
+            & io_set_addr_1 == 6'h22 | io_set_valid_2 & io_set_addr_2 == 6'h22
+            | io_set_valid_3 & io_set_addr_3 == 6'h22
+            | ~(io_clr_mask[34] | io_clr_valid_0 & io_clr_addr_0 == 6'h22 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h22 | io_clr_valid_2 & io_clr_addr_2 == 6'h22
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h22) & busy_34;
       busy_35 <=
         io_rebuild
           ? io_rebuild_mask[35]
-          : ~(io_clr_mask[35] | io_clr_valid_0 & io_clr_addr_0 == 6'h23 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h23 | io_clr_valid_2 & io_clr_addr_2 == 6'h23
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h23)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h23 | io_set_valid_1
-               & io_set_addr_1 == 6'h23 | io_set_valid_2 & io_set_addr_2 == 6'h23
-               | io_set_valid_3 & io_set_addr_3 == 6'h23 | busy_35);
+          : io_set_valid_0 & io_set_addr_0 == 6'h23 | io_set_valid_1
+            & io_set_addr_1 == 6'h23 | io_set_valid_2 & io_set_addr_2 == 6'h23
+            | io_set_valid_3 & io_set_addr_3 == 6'h23
+            | ~(io_clr_mask[35] | io_clr_valid_0 & io_clr_addr_0 == 6'h23 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h23 | io_clr_valid_2 & io_clr_addr_2 == 6'h23
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h23) & busy_35;
       busy_36 <=
         io_rebuild
           ? io_rebuild_mask[36]
-          : ~(io_clr_mask[36] | io_clr_valid_0 & io_clr_addr_0 == 6'h24 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h24 | io_clr_valid_2 & io_clr_addr_2 == 6'h24
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h24)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h24 | io_set_valid_1
-               & io_set_addr_1 == 6'h24 | io_set_valid_2 & io_set_addr_2 == 6'h24
-               | io_set_valid_3 & io_set_addr_3 == 6'h24 | busy_36);
+          : io_set_valid_0 & io_set_addr_0 == 6'h24 | io_set_valid_1
+            & io_set_addr_1 == 6'h24 | io_set_valid_2 & io_set_addr_2 == 6'h24
+            | io_set_valid_3 & io_set_addr_3 == 6'h24
+            | ~(io_clr_mask[36] | io_clr_valid_0 & io_clr_addr_0 == 6'h24 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h24 | io_clr_valid_2 & io_clr_addr_2 == 6'h24
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h24) & busy_36;
       busy_37 <=
         io_rebuild
           ? io_rebuild_mask[37]
-          : ~(io_clr_mask[37] | io_clr_valid_0 & io_clr_addr_0 == 6'h25 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h25 | io_clr_valid_2 & io_clr_addr_2 == 6'h25
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h25)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h25 | io_set_valid_1
-               & io_set_addr_1 == 6'h25 | io_set_valid_2 & io_set_addr_2 == 6'h25
-               | io_set_valid_3 & io_set_addr_3 == 6'h25 | busy_37);
+          : io_set_valid_0 & io_set_addr_0 == 6'h25 | io_set_valid_1
+            & io_set_addr_1 == 6'h25 | io_set_valid_2 & io_set_addr_2 == 6'h25
+            | io_set_valid_3 & io_set_addr_3 == 6'h25
+            | ~(io_clr_mask[37] | io_clr_valid_0 & io_clr_addr_0 == 6'h25 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h25 | io_clr_valid_2 & io_clr_addr_2 == 6'h25
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h25) & busy_37;
       busy_38 <=
         io_rebuild
           ? io_rebuild_mask[38]
-          : ~(io_clr_mask[38] | io_clr_valid_0 & io_clr_addr_0 == 6'h26 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h26 | io_clr_valid_2 & io_clr_addr_2 == 6'h26
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h26)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h26 | io_set_valid_1
-               & io_set_addr_1 == 6'h26 | io_set_valid_2 & io_set_addr_2 == 6'h26
-               | io_set_valid_3 & io_set_addr_3 == 6'h26 | busy_38);
+          : io_set_valid_0 & io_set_addr_0 == 6'h26 | io_set_valid_1
+            & io_set_addr_1 == 6'h26 | io_set_valid_2 & io_set_addr_2 == 6'h26
+            | io_set_valid_3 & io_set_addr_3 == 6'h26
+            | ~(io_clr_mask[38] | io_clr_valid_0 & io_clr_addr_0 == 6'h26 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h26 | io_clr_valid_2 & io_clr_addr_2 == 6'h26
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h26) & busy_38;
       busy_39 <=
         io_rebuild
           ? io_rebuild_mask[39]
-          : ~(io_clr_mask[39] | io_clr_valid_0 & io_clr_addr_0 == 6'h27 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h27 | io_clr_valid_2 & io_clr_addr_2 == 6'h27
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h27)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h27 | io_set_valid_1
-               & io_set_addr_1 == 6'h27 | io_set_valid_2 & io_set_addr_2 == 6'h27
-               | io_set_valid_3 & io_set_addr_3 == 6'h27 | busy_39);
+          : io_set_valid_0 & io_set_addr_0 == 6'h27 | io_set_valid_1
+            & io_set_addr_1 == 6'h27 | io_set_valid_2 & io_set_addr_2 == 6'h27
+            | io_set_valid_3 & io_set_addr_3 == 6'h27
+            | ~(io_clr_mask[39] | io_clr_valid_0 & io_clr_addr_0 == 6'h27 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h27 | io_clr_valid_2 & io_clr_addr_2 == 6'h27
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h27) & busy_39;
       busy_40 <=
         io_rebuild
           ? io_rebuild_mask[40]
-          : ~(io_clr_mask[40] | io_clr_valid_0 & io_clr_addr_0 == 6'h28 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h28 | io_clr_valid_2 & io_clr_addr_2 == 6'h28
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h28)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h28 | io_set_valid_1
-               & io_set_addr_1 == 6'h28 | io_set_valid_2 & io_set_addr_2 == 6'h28
-               | io_set_valid_3 & io_set_addr_3 == 6'h28 | busy_40);
+          : io_set_valid_0 & io_set_addr_0 == 6'h28 | io_set_valid_1
+            & io_set_addr_1 == 6'h28 | io_set_valid_2 & io_set_addr_2 == 6'h28
+            | io_set_valid_3 & io_set_addr_3 == 6'h28
+            | ~(io_clr_mask[40] | io_clr_valid_0 & io_clr_addr_0 == 6'h28 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h28 | io_clr_valid_2 & io_clr_addr_2 == 6'h28
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h28) & busy_40;
       busy_41 <=
         io_rebuild
           ? io_rebuild_mask[41]
-          : ~(io_clr_mask[41] | io_clr_valid_0 & io_clr_addr_0 == 6'h29 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h29 | io_clr_valid_2 & io_clr_addr_2 == 6'h29
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h29)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h29 | io_set_valid_1
-               & io_set_addr_1 == 6'h29 | io_set_valid_2 & io_set_addr_2 == 6'h29
-               | io_set_valid_3 & io_set_addr_3 == 6'h29 | busy_41);
+          : io_set_valid_0 & io_set_addr_0 == 6'h29 | io_set_valid_1
+            & io_set_addr_1 == 6'h29 | io_set_valid_2 & io_set_addr_2 == 6'h29
+            | io_set_valid_3 & io_set_addr_3 == 6'h29
+            | ~(io_clr_mask[41] | io_clr_valid_0 & io_clr_addr_0 == 6'h29 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h29 | io_clr_valid_2 & io_clr_addr_2 == 6'h29
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h29) & busy_41;
       busy_42 <=
         io_rebuild
           ? io_rebuild_mask[42]
-          : ~(io_clr_mask[42] | io_clr_valid_0 & io_clr_addr_0 == 6'h2A | io_clr_valid_1
-              & io_clr_addr_1 == 6'h2A | io_clr_valid_2 & io_clr_addr_2 == 6'h2A
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h2A)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h2A | io_set_valid_1
-               & io_set_addr_1 == 6'h2A | io_set_valid_2 & io_set_addr_2 == 6'h2A
-               | io_set_valid_3 & io_set_addr_3 == 6'h2A | busy_42);
+          : io_set_valid_0 & io_set_addr_0 == 6'h2A | io_set_valid_1
+            & io_set_addr_1 == 6'h2A | io_set_valid_2 & io_set_addr_2 == 6'h2A
+            | io_set_valid_3 & io_set_addr_3 == 6'h2A
+            | ~(io_clr_mask[42] | io_clr_valid_0 & io_clr_addr_0 == 6'h2A | io_clr_valid_1
+                & io_clr_addr_1 == 6'h2A | io_clr_valid_2 & io_clr_addr_2 == 6'h2A
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h2A) & busy_42;
       busy_43 <=
         io_rebuild
           ? io_rebuild_mask[43]
-          : ~(io_clr_mask[43] | io_clr_valid_0 & io_clr_addr_0 == 6'h2B | io_clr_valid_1
-              & io_clr_addr_1 == 6'h2B | io_clr_valid_2 & io_clr_addr_2 == 6'h2B
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h2B)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h2B | io_set_valid_1
-               & io_set_addr_1 == 6'h2B | io_set_valid_2 & io_set_addr_2 == 6'h2B
-               | io_set_valid_3 & io_set_addr_3 == 6'h2B | busy_43);
+          : io_set_valid_0 & io_set_addr_0 == 6'h2B | io_set_valid_1
+            & io_set_addr_1 == 6'h2B | io_set_valid_2 & io_set_addr_2 == 6'h2B
+            | io_set_valid_3 & io_set_addr_3 == 6'h2B
+            | ~(io_clr_mask[43] | io_clr_valid_0 & io_clr_addr_0 == 6'h2B | io_clr_valid_1
+                & io_clr_addr_1 == 6'h2B | io_clr_valid_2 & io_clr_addr_2 == 6'h2B
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h2B) & busy_43;
       busy_44 <=
         io_rebuild
           ? io_rebuild_mask[44]
-          : ~(io_clr_mask[44] | io_clr_valid_0 & io_clr_addr_0 == 6'h2C | io_clr_valid_1
-              & io_clr_addr_1 == 6'h2C | io_clr_valid_2 & io_clr_addr_2 == 6'h2C
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h2C)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h2C | io_set_valid_1
-               & io_set_addr_1 == 6'h2C | io_set_valid_2 & io_set_addr_2 == 6'h2C
-               | io_set_valid_3 & io_set_addr_3 == 6'h2C | busy_44);
+          : io_set_valid_0 & io_set_addr_0 == 6'h2C | io_set_valid_1
+            & io_set_addr_1 == 6'h2C | io_set_valid_2 & io_set_addr_2 == 6'h2C
+            | io_set_valid_3 & io_set_addr_3 == 6'h2C
+            | ~(io_clr_mask[44] | io_clr_valid_0 & io_clr_addr_0 == 6'h2C | io_clr_valid_1
+                & io_clr_addr_1 == 6'h2C | io_clr_valid_2 & io_clr_addr_2 == 6'h2C
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h2C) & busy_44;
       busy_45 <=
         io_rebuild
           ? io_rebuild_mask[45]
-          : ~(io_clr_mask[45] | io_clr_valid_0 & io_clr_addr_0 == 6'h2D | io_clr_valid_1
-              & io_clr_addr_1 == 6'h2D | io_clr_valid_2 & io_clr_addr_2 == 6'h2D
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h2D)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h2D | io_set_valid_1
-               & io_set_addr_1 == 6'h2D | io_set_valid_2 & io_set_addr_2 == 6'h2D
-               | io_set_valid_3 & io_set_addr_3 == 6'h2D | busy_45);
+          : io_set_valid_0 & io_set_addr_0 == 6'h2D | io_set_valid_1
+            & io_set_addr_1 == 6'h2D | io_set_valid_2 & io_set_addr_2 == 6'h2D
+            | io_set_valid_3 & io_set_addr_3 == 6'h2D
+            | ~(io_clr_mask[45] | io_clr_valid_0 & io_clr_addr_0 == 6'h2D | io_clr_valid_1
+                & io_clr_addr_1 == 6'h2D | io_clr_valid_2 & io_clr_addr_2 == 6'h2D
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h2D) & busy_45;
       busy_46 <=
         io_rebuild
           ? io_rebuild_mask[46]
-          : ~(io_clr_mask[46] | io_clr_valid_0 & io_clr_addr_0 == 6'h2E | io_clr_valid_1
-              & io_clr_addr_1 == 6'h2E | io_clr_valid_2 & io_clr_addr_2 == 6'h2E
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h2E)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h2E | io_set_valid_1
-               & io_set_addr_1 == 6'h2E | io_set_valid_2 & io_set_addr_2 == 6'h2E
-               | io_set_valid_3 & io_set_addr_3 == 6'h2E | busy_46);
+          : io_set_valid_0 & io_set_addr_0 == 6'h2E | io_set_valid_1
+            & io_set_addr_1 == 6'h2E | io_set_valid_2 & io_set_addr_2 == 6'h2E
+            | io_set_valid_3 & io_set_addr_3 == 6'h2E
+            | ~(io_clr_mask[46] | io_clr_valid_0 & io_clr_addr_0 == 6'h2E | io_clr_valid_1
+                & io_clr_addr_1 == 6'h2E | io_clr_valid_2 & io_clr_addr_2 == 6'h2E
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h2E) & busy_46;
       busy_47 <=
         io_rebuild
           ? io_rebuild_mask[47]
-          : ~(io_clr_mask[47] | io_clr_valid_0 & io_clr_addr_0 == 6'h2F | io_clr_valid_1
-              & io_clr_addr_1 == 6'h2F | io_clr_valid_2 & io_clr_addr_2 == 6'h2F
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h2F)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h2F | io_set_valid_1
-               & io_set_addr_1 == 6'h2F | io_set_valid_2 & io_set_addr_2 == 6'h2F
-               | io_set_valid_3 & io_set_addr_3 == 6'h2F | busy_47);
+          : io_set_valid_0 & io_set_addr_0 == 6'h2F | io_set_valid_1
+            & io_set_addr_1 == 6'h2F | io_set_valid_2 & io_set_addr_2 == 6'h2F
+            | io_set_valid_3 & io_set_addr_3 == 6'h2F
+            | ~(io_clr_mask[47] | io_clr_valid_0 & io_clr_addr_0 == 6'h2F | io_clr_valid_1
+                & io_clr_addr_1 == 6'h2F | io_clr_valid_2 & io_clr_addr_2 == 6'h2F
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h2F) & busy_47;
       busy_48 <=
         io_rebuild
           ? io_rebuild_mask[48]
-          : ~(io_clr_mask[48] | io_clr_valid_0 & io_clr_addr_0 == 6'h30 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h30 | io_clr_valid_2 & io_clr_addr_2 == 6'h30
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h30)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h30 | io_set_valid_1
-               & io_set_addr_1 == 6'h30 | io_set_valid_2 & io_set_addr_2 == 6'h30
-               | io_set_valid_3 & io_set_addr_3 == 6'h30 | busy_48);
+          : io_set_valid_0 & io_set_addr_0 == 6'h30 | io_set_valid_1
+            & io_set_addr_1 == 6'h30 | io_set_valid_2 & io_set_addr_2 == 6'h30
+            | io_set_valid_3 & io_set_addr_3 == 6'h30
+            | ~(io_clr_mask[48] | io_clr_valid_0 & io_clr_addr_0 == 6'h30 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h30 | io_clr_valid_2 & io_clr_addr_2 == 6'h30
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h30) & busy_48;
       busy_49 <=
         io_rebuild
           ? io_rebuild_mask[49]
-          : ~(io_clr_mask[49] | io_clr_valid_0 & io_clr_addr_0 == 6'h31 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h31 | io_clr_valid_2 & io_clr_addr_2 == 6'h31
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h31)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h31 | io_set_valid_1
-               & io_set_addr_1 == 6'h31 | io_set_valid_2 & io_set_addr_2 == 6'h31
-               | io_set_valid_3 & io_set_addr_3 == 6'h31 | busy_49);
+          : io_set_valid_0 & io_set_addr_0 == 6'h31 | io_set_valid_1
+            & io_set_addr_1 == 6'h31 | io_set_valid_2 & io_set_addr_2 == 6'h31
+            | io_set_valid_3 & io_set_addr_3 == 6'h31
+            | ~(io_clr_mask[49] | io_clr_valid_0 & io_clr_addr_0 == 6'h31 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h31 | io_clr_valid_2 & io_clr_addr_2 == 6'h31
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h31) & busy_49;
       busy_50 <=
         io_rebuild
           ? io_rebuild_mask[50]
-          : ~(io_clr_mask[50] | io_clr_valid_0 & io_clr_addr_0 == 6'h32 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h32 | io_clr_valid_2 & io_clr_addr_2 == 6'h32
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h32)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h32 | io_set_valid_1
-               & io_set_addr_1 == 6'h32 | io_set_valid_2 & io_set_addr_2 == 6'h32
-               | io_set_valid_3 & io_set_addr_3 == 6'h32 | busy_50);
+          : io_set_valid_0 & io_set_addr_0 == 6'h32 | io_set_valid_1
+            & io_set_addr_1 == 6'h32 | io_set_valid_2 & io_set_addr_2 == 6'h32
+            | io_set_valid_3 & io_set_addr_3 == 6'h32
+            | ~(io_clr_mask[50] | io_clr_valid_0 & io_clr_addr_0 == 6'h32 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h32 | io_clr_valid_2 & io_clr_addr_2 == 6'h32
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h32) & busy_50;
       busy_51 <=
         io_rebuild
           ? io_rebuild_mask[51]
-          : ~(io_clr_mask[51] | io_clr_valid_0 & io_clr_addr_0 == 6'h33 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h33 | io_clr_valid_2 & io_clr_addr_2 == 6'h33
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h33)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h33 | io_set_valid_1
-               & io_set_addr_1 == 6'h33 | io_set_valid_2 & io_set_addr_2 == 6'h33
-               | io_set_valid_3 & io_set_addr_3 == 6'h33 | busy_51);
+          : io_set_valid_0 & io_set_addr_0 == 6'h33 | io_set_valid_1
+            & io_set_addr_1 == 6'h33 | io_set_valid_2 & io_set_addr_2 == 6'h33
+            | io_set_valid_3 & io_set_addr_3 == 6'h33
+            | ~(io_clr_mask[51] | io_clr_valid_0 & io_clr_addr_0 == 6'h33 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h33 | io_clr_valid_2 & io_clr_addr_2 == 6'h33
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h33) & busy_51;
       busy_52 <=
         io_rebuild
           ? io_rebuild_mask[52]
-          : ~(io_clr_mask[52] | io_clr_valid_0 & io_clr_addr_0 == 6'h34 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h34 | io_clr_valid_2 & io_clr_addr_2 == 6'h34
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h34)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h34 | io_set_valid_1
-               & io_set_addr_1 == 6'h34 | io_set_valid_2 & io_set_addr_2 == 6'h34
-               | io_set_valid_3 & io_set_addr_3 == 6'h34 | busy_52);
+          : io_set_valid_0 & io_set_addr_0 == 6'h34 | io_set_valid_1
+            & io_set_addr_1 == 6'h34 | io_set_valid_2 & io_set_addr_2 == 6'h34
+            | io_set_valid_3 & io_set_addr_3 == 6'h34
+            | ~(io_clr_mask[52] | io_clr_valid_0 & io_clr_addr_0 == 6'h34 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h34 | io_clr_valid_2 & io_clr_addr_2 == 6'h34
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h34) & busy_52;
       busy_53 <=
         io_rebuild
           ? io_rebuild_mask[53]
-          : ~(io_clr_mask[53] | io_clr_valid_0 & io_clr_addr_0 == 6'h35 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h35 | io_clr_valid_2 & io_clr_addr_2 == 6'h35
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h35)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h35 | io_set_valid_1
-               & io_set_addr_1 == 6'h35 | io_set_valid_2 & io_set_addr_2 == 6'h35
-               | io_set_valid_3 & io_set_addr_3 == 6'h35 | busy_53);
+          : io_set_valid_0 & io_set_addr_0 == 6'h35 | io_set_valid_1
+            & io_set_addr_1 == 6'h35 | io_set_valid_2 & io_set_addr_2 == 6'h35
+            | io_set_valid_3 & io_set_addr_3 == 6'h35
+            | ~(io_clr_mask[53] | io_clr_valid_0 & io_clr_addr_0 == 6'h35 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h35 | io_clr_valid_2 & io_clr_addr_2 == 6'h35
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h35) & busy_53;
       busy_54 <=
         io_rebuild
           ? io_rebuild_mask[54]
-          : ~(io_clr_mask[54] | io_clr_valid_0 & io_clr_addr_0 == 6'h36 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h36 | io_clr_valid_2 & io_clr_addr_2 == 6'h36
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h36)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h36 | io_set_valid_1
-               & io_set_addr_1 == 6'h36 | io_set_valid_2 & io_set_addr_2 == 6'h36
-               | io_set_valid_3 & io_set_addr_3 == 6'h36 | busy_54);
+          : io_set_valid_0 & io_set_addr_0 == 6'h36 | io_set_valid_1
+            & io_set_addr_1 == 6'h36 | io_set_valid_2 & io_set_addr_2 == 6'h36
+            | io_set_valid_3 & io_set_addr_3 == 6'h36
+            | ~(io_clr_mask[54] | io_clr_valid_0 & io_clr_addr_0 == 6'h36 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h36 | io_clr_valid_2 & io_clr_addr_2 == 6'h36
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h36) & busy_54;
       busy_55 <=
         io_rebuild
           ? io_rebuild_mask[55]
-          : ~(io_clr_mask[55] | io_clr_valid_0 & io_clr_addr_0 == 6'h37 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h37 | io_clr_valid_2 & io_clr_addr_2 == 6'h37
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h37)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h37 | io_set_valid_1
-               & io_set_addr_1 == 6'h37 | io_set_valid_2 & io_set_addr_2 == 6'h37
-               | io_set_valid_3 & io_set_addr_3 == 6'h37 | busy_55);
+          : io_set_valid_0 & io_set_addr_0 == 6'h37 | io_set_valid_1
+            & io_set_addr_1 == 6'h37 | io_set_valid_2 & io_set_addr_2 == 6'h37
+            | io_set_valid_3 & io_set_addr_3 == 6'h37
+            | ~(io_clr_mask[55] | io_clr_valid_0 & io_clr_addr_0 == 6'h37 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h37 | io_clr_valid_2 & io_clr_addr_2 == 6'h37
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h37) & busy_55;
       busy_56 <=
         io_rebuild
           ? io_rebuild_mask[56]
-          : ~(io_clr_mask[56] | io_clr_valid_0 & io_clr_addr_0 == 6'h38 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h38 | io_clr_valid_2 & io_clr_addr_2 == 6'h38
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h38)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h38 | io_set_valid_1
-               & io_set_addr_1 == 6'h38 | io_set_valid_2 & io_set_addr_2 == 6'h38
-               | io_set_valid_3 & io_set_addr_3 == 6'h38 | busy_56);
+          : io_set_valid_0 & io_set_addr_0 == 6'h38 | io_set_valid_1
+            & io_set_addr_1 == 6'h38 | io_set_valid_2 & io_set_addr_2 == 6'h38
+            | io_set_valid_3 & io_set_addr_3 == 6'h38
+            | ~(io_clr_mask[56] | io_clr_valid_0 & io_clr_addr_0 == 6'h38 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h38 | io_clr_valid_2 & io_clr_addr_2 == 6'h38
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h38) & busy_56;
       busy_57 <=
         io_rebuild
           ? io_rebuild_mask[57]
-          : ~(io_clr_mask[57] | io_clr_valid_0 & io_clr_addr_0 == 6'h39 | io_clr_valid_1
-              & io_clr_addr_1 == 6'h39 | io_clr_valid_2 & io_clr_addr_2 == 6'h39
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h39)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h39 | io_set_valid_1
-               & io_set_addr_1 == 6'h39 | io_set_valid_2 & io_set_addr_2 == 6'h39
-               | io_set_valid_3 & io_set_addr_3 == 6'h39 | busy_57);
+          : io_set_valid_0 & io_set_addr_0 == 6'h39 | io_set_valid_1
+            & io_set_addr_1 == 6'h39 | io_set_valid_2 & io_set_addr_2 == 6'h39
+            | io_set_valid_3 & io_set_addr_3 == 6'h39
+            | ~(io_clr_mask[57] | io_clr_valid_0 & io_clr_addr_0 == 6'h39 | io_clr_valid_1
+                & io_clr_addr_1 == 6'h39 | io_clr_valid_2 & io_clr_addr_2 == 6'h39
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h39) & busy_57;
       busy_58 <=
         io_rebuild
           ? io_rebuild_mask[58]
-          : ~(io_clr_mask[58] | io_clr_valid_0 & io_clr_addr_0 == 6'h3A | io_clr_valid_1
-              & io_clr_addr_1 == 6'h3A | io_clr_valid_2 & io_clr_addr_2 == 6'h3A
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h3A)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h3A | io_set_valid_1
-               & io_set_addr_1 == 6'h3A | io_set_valid_2 & io_set_addr_2 == 6'h3A
-               | io_set_valid_3 & io_set_addr_3 == 6'h3A | busy_58);
+          : io_set_valid_0 & io_set_addr_0 == 6'h3A | io_set_valid_1
+            & io_set_addr_1 == 6'h3A | io_set_valid_2 & io_set_addr_2 == 6'h3A
+            | io_set_valid_3 & io_set_addr_3 == 6'h3A
+            | ~(io_clr_mask[58] | io_clr_valid_0 & io_clr_addr_0 == 6'h3A | io_clr_valid_1
+                & io_clr_addr_1 == 6'h3A | io_clr_valid_2 & io_clr_addr_2 == 6'h3A
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h3A) & busy_58;
       busy_59 <=
         io_rebuild
           ? io_rebuild_mask[59]
-          : ~(io_clr_mask[59] | io_clr_valid_0 & io_clr_addr_0 == 6'h3B | io_clr_valid_1
-              & io_clr_addr_1 == 6'h3B | io_clr_valid_2 & io_clr_addr_2 == 6'h3B
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h3B)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h3B | io_set_valid_1
-               & io_set_addr_1 == 6'h3B | io_set_valid_2 & io_set_addr_2 == 6'h3B
-               | io_set_valid_3 & io_set_addr_3 == 6'h3B | busy_59);
+          : io_set_valid_0 & io_set_addr_0 == 6'h3B | io_set_valid_1
+            & io_set_addr_1 == 6'h3B | io_set_valid_2 & io_set_addr_2 == 6'h3B
+            | io_set_valid_3 & io_set_addr_3 == 6'h3B
+            | ~(io_clr_mask[59] | io_clr_valid_0 & io_clr_addr_0 == 6'h3B | io_clr_valid_1
+                & io_clr_addr_1 == 6'h3B | io_clr_valid_2 & io_clr_addr_2 == 6'h3B
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h3B) & busy_59;
       busy_60 <=
         io_rebuild
           ? io_rebuild_mask[60]
-          : ~(io_clr_mask[60] | io_clr_valid_0 & io_clr_addr_0 == 6'h3C | io_clr_valid_1
-              & io_clr_addr_1 == 6'h3C | io_clr_valid_2 & io_clr_addr_2 == 6'h3C
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h3C)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h3C | io_set_valid_1
-               & io_set_addr_1 == 6'h3C | io_set_valid_2 & io_set_addr_2 == 6'h3C
-               | io_set_valid_3 & io_set_addr_3 == 6'h3C | busy_60);
+          : io_set_valid_0 & io_set_addr_0 == 6'h3C | io_set_valid_1
+            & io_set_addr_1 == 6'h3C | io_set_valid_2 & io_set_addr_2 == 6'h3C
+            | io_set_valid_3 & io_set_addr_3 == 6'h3C
+            | ~(io_clr_mask[60] | io_clr_valid_0 & io_clr_addr_0 == 6'h3C | io_clr_valid_1
+                & io_clr_addr_1 == 6'h3C | io_clr_valid_2 & io_clr_addr_2 == 6'h3C
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h3C) & busy_60;
       busy_61 <=
         io_rebuild
           ? io_rebuild_mask[61]
-          : ~(io_clr_mask[61] | io_clr_valid_0 & io_clr_addr_0 == 6'h3D | io_clr_valid_1
-              & io_clr_addr_1 == 6'h3D | io_clr_valid_2 & io_clr_addr_2 == 6'h3D
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h3D)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h3D | io_set_valid_1
-               & io_set_addr_1 == 6'h3D | io_set_valid_2 & io_set_addr_2 == 6'h3D
-               | io_set_valid_3 & io_set_addr_3 == 6'h3D | busy_61);
+          : io_set_valid_0 & io_set_addr_0 == 6'h3D | io_set_valid_1
+            & io_set_addr_1 == 6'h3D | io_set_valid_2 & io_set_addr_2 == 6'h3D
+            | io_set_valid_3 & io_set_addr_3 == 6'h3D
+            | ~(io_clr_mask[61] | io_clr_valid_0 & io_clr_addr_0 == 6'h3D | io_clr_valid_1
+                & io_clr_addr_1 == 6'h3D | io_clr_valid_2 & io_clr_addr_2 == 6'h3D
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h3D) & busy_61;
       busy_62 <=
         io_rebuild
           ? io_rebuild_mask[62]
-          : ~(io_clr_mask[62] | io_clr_valid_0 & io_clr_addr_0 == 6'h3E | io_clr_valid_1
-              & io_clr_addr_1 == 6'h3E | io_clr_valid_2 & io_clr_addr_2 == 6'h3E
-              | io_clr_valid_3 & io_clr_addr_3 == 6'h3E)
-            & (io_set_valid_0 & io_set_addr_0 == 6'h3E | io_set_valid_1
-               & io_set_addr_1 == 6'h3E | io_set_valid_2 & io_set_addr_2 == 6'h3E
-               | io_set_valid_3 & io_set_addr_3 == 6'h3E | busy_62);
+          : io_set_valid_0 & io_set_addr_0 == 6'h3E | io_set_valid_1
+            & io_set_addr_1 == 6'h3E | io_set_valid_2 & io_set_addr_2 == 6'h3E
+            | io_set_valid_3 & io_set_addr_3 == 6'h3E
+            | ~(io_clr_mask[62] | io_clr_valid_0 & io_clr_addr_0 == 6'h3E | io_clr_valid_1
+                & io_clr_addr_1 == 6'h3E | io_clr_valid_2 & io_clr_addr_2 == 6'h3E
+                | io_clr_valid_3 & io_clr_addr_3 == 6'h3E) & busy_62;
       busy_63 <=
         io_rebuild
           ? io_rebuild_mask[63]
-          : ~(io_clr_mask[63] | io_clr_valid_0 & (&io_clr_addr_0) | io_clr_valid_1
-              & (&io_clr_addr_1) | io_clr_valid_2 & (&io_clr_addr_2) | io_clr_valid_3
-              & (&io_clr_addr_3))
-            & (io_set_valid_0 & (&io_set_addr_0) | io_set_valid_1 & (&io_set_addr_1)
-               | io_set_valid_2 & (&io_set_addr_2) | io_set_valid_3 & (&io_set_addr_3)
-               | busy_63);
+          : io_set_valid_0 & (&io_set_addr_0) | io_set_valid_1 & (&io_set_addr_1)
+            | io_set_valid_2 & (&io_set_addr_2) | io_set_valid_3 & (&io_set_addr_3)
+            | ~(io_clr_mask[63] | io_clr_valid_0 & (&io_clr_addr_0) | io_clr_valid_1
+                & (&io_clr_addr_1) | io_clr_valid_2 & (&io_clr_addr_2) | io_clr_valid_3
+                & (&io_clr_addr_3)) & busy_63;
     end
   end // always @(posedge)
   assign io_ready_0 = io_raddr_0 == 6'h0 | ~casez_tmp;

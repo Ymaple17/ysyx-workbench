@@ -196,6 +196,10 @@ class Core(val conf: CoreConfig) extends Module {
     RegEnable(ifu.io.pc.valid, false.B, ifu.io.in.ready))
   val is_bp_flush   = Wire(Bool())
   val is_mem_flush  = Wire(Bool())
+  val retire_path_flush_request = Wire(Bool())
+  val is_retire_path_flush = Wire(Bool())
+  val retire_path_flush_idx = Wire(UInt(OoOParams.ROB_PTR_W.W))
+  val retire_path_correct_pc = Wire(UInt(32.W))
   val mis_predict_w = Wire(Bool())
   val mis_rob_w     = Wire(UInt(OoOParams.ROB_PTR_W.W))
   // A memory-order violation at ROB head has no older live instruction to
@@ -946,21 +950,21 @@ class Core(val conf: CoreConfig) extends Module {
   val lsu_stage_bits = RegInit(0.U.asTypeOf(new EXU_LSU_IO))
   val lsu_stage1_valid = RegInit(false.B)
   val lsu_stage1_bits = RegInit(0.U.asTypeOf(new EXU_LSU_IO))
-  val flush_lsu_stage = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) &&
+  val flush_lsu_stage = is_irq_w || ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) &&
     lsu_stage_valid && (robAge(lsu_stage_bits.rob_idx, rob.io.head) > robAge(flush_idx, rob.io.head)))
-  val flush_lsu1_stage = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) &&
+  val flush_lsu1_stage = is_irq_w || ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) &&
     lsu_stage1_valid && (robAge(lsu_stage1_bits.rob_idx, rob.io.head) > robAge(flush_idx, rob.io.head)))
 
-  val flush_alu = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_alu_valid, d_alu_bits))
-  val flush_alu1 = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_alu1_valid, d_alu1_bits))
-  val flush_alu2 = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_alu2_valid, d_alu2_bits))
-  val flush_alu3 = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_alu3_valid, d_alu3_bits))
-  val flush_bru = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_bru_valid, d_bru_bits))
-  val flush_div = is_irq_w || ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_div_valid, d_div_bits))
+  val flush_alu = is_irq_w || ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) && laneFlush(d_alu_valid, d_alu_bits))
+  val flush_alu1 = is_irq_w || ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) && laneFlush(d_alu1_valid, d_alu1_bits))
+  val flush_alu2 = is_irq_w || ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) && laneFlush(d_alu2_valid, d_alu2_bits))
+  val flush_alu3 = is_irq_w || ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) && laneFlush(d_alu3_valid, d_alu3_bits))
+  val flush_bru = is_irq_w || ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) && laneFlush(d_bru_valid, d_bru_bits))
+  val flush_div = is_irq_w || ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) && laneFlush(d_div_valid, d_div_bits))
   val flush_lsu_d = is_irq_w ||
-    ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_lsu_valid, d_lsu_bits))
+    ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) && laneFlush(d_lsu_valid, d_lsu_bits))
   val flush_lsu1_d = is_irq_w ||
-    ((is_bp_flush || is_mem_flush || fencei_flush || mret_flush) && laneFlush(d_lsu1_valid, d_lsu1_bits))
+    ((is_bp_flush || is_mem_flush || is_retire_path_flush || fencei_flush || mret_flush) && laneFlush(d_lsu1_valid, d_lsu1_bits))
 
   val hold_alu = d_alu_valid && !flush_alu
   val hold_alu1 = d_alu1_valid && !flush_alu1
@@ -1253,7 +1257,10 @@ class Core(val conf: CoreConfig) extends Module {
   val storeAddrResultKilled = is_irq_w || fencei_flush || mret_flush ||
     (mis_predict_w &&
       robAge(storeAddrSidecar.io.result.bits.rob_idx, rob.io.head) >
-        robAge(bru_resolve_bits.rob_idx, rob.io.head))
+        robAge(bru_resolve_bits.rob_idx, rob.io.head)) ||
+    (retire_path_flush_request &&
+      robAge(storeAddrSidecar.io.result.bits.rob_idx, rob.io.head) >
+        robAge(retire_path_flush_idx, rob.io.head))
   val storeAddrResultValid = storeAddrSidecar.io.result.valid &&
     !storeAddrResultKilled && storeAddrResultEntry.valid &&
     storeAddrResultEntry.pc === storeAddrSidecar.io.result.bits.pc &&
@@ -1848,6 +1855,35 @@ class Core(val conf: CoreConfig) extends Module {
     Mux(cm3_wb_valid, cm3_wb_bits.br_taken, cm3_bits.actual_taken))
   val cm3_actual_target = Mux(cm3_ctrl_wb, bru_resolve_result.next_pc,
     Mux(cm3_wb_valid, cm3_wb_bits.next_pc, cm3_bits.actual_target))
+  private def buildRetirePathGuard(): RetirePathGuard = {
+    val guard = Module(new RetirePathGuard())
+    val retireEntries = Seq(cm_bits, cm1_bits, cm2_bits, cm3_bits)
+    val retireDone = retireEntries.map(e => e.valid && e.done)
+    val retireControl = Seq(
+      cm_is_ctrl && !cm_is_mret,
+      cm1_is_ctrl && !cm1_is_mret,
+      cm2_is_ctrl && !cm2_is_mret,
+      cm3_is_ctrl && !cm3_is_mret)
+    val retireRobIdx = Seq(rob.io.head, rob.io.commit1_idx,
+      rob.io.commit2_idx, rob.io.commit3_idx)
+    for (lane <- 0 until OoOParams.COMMIT_WIDTH) {
+      val nextIdx = (rob.io.head + (lane + 1).U)(OoOParams.ROB_PTR_W - 1, 0)
+      val nextEntry = rob.io.entries(nextIdx)
+      guard.io.check(lane).valid := retireDone(lane)
+      guard.io.check(lane).isControl := retireControl(lane)
+      guard.io.check(lane).pc := retireEntries(lane).pc
+      guard.io.check(lane).actualTaken := retireEntries(lane).actual_taken
+      guard.io.check(lane).actualTarget := retireEntries(lane).actual_target
+      guard.io.check(lane).nextValid := rob.io.count > (lane + 1).U && nextEntry.valid
+      guard.io.check(lane).nextPc := nextEntry.pc
+      guard.io.check(lane).robIdx := retireRobIdx(lane)
+    }
+    guard
+  }
+  val retirePathGuard = buildRetirePathGuard()
+  retire_path_flush_request := retirePathGuard.io.flush
+  retire_path_flush_idx := retirePathGuard.io.flushRobIdx
+  retire_path_correct_pc := retirePathGuard.io.correctPc
   val cm_mmio_mem = cm_bits.mem_valid && !isPmem(cm_mem_addr)
   val cm1_mmio_mem = cm1_bits.mem_valid && !isPmem(cm1_mem_addr)
   val cm2_mmio_mem = cm2_bits.mem_valid && !isPmem(cm2_mem_addr)
@@ -1903,7 +1939,8 @@ class Core(val conf: CoreConfig) extends Module {
     (!cm3_is_store || cm3_store_addr_ready)
   // fencei/mret/ext_irq flush 拍禁止提交后继（否则会在冲刷前多提交 jal 等，difftest PC 错位）
   rob.io.commit_fire := rob.io.commit_valid && !is_irq_early && !fencei_flush && !mret_flush &&
-    !ext_irq_flush && !is_bp_flush && !is_mem_flush && !bp_commit_block &&
+    !ext_irq_flush && !is_bp_flush && !is_mem_flush && !is_retire_path_flush && !bp_commit_block &&
+    !retirePathGuard.io.waitForNext(0) &&
     cm_bpu_ready &&
     (!cm_is_load || !lsu.io.load_commit_wait0) &&
     (!cm_is_store || store_commit_ready) &&
@@ -1912,18 +1949,21 @@ class Core(val conf: CoreConfig) extends Module {
   val cm_fire   = rob.io.commit_fire
   rob.io.commit1_fire := cm_fire && rob.io.commit1_valid && !cm_exclusive && !cm1_exclusive &&
     !bp_commit1_block && pair_bpu_ready && pair_store_ready && pair_control_path_ok &&
+    !retirePathGuard.io.waitForNext(1) &&
     (!cm1_is_load || !lsu.io.load_commit_wait1)
   val cm1_fire = rob.io.commit1_fire
   val cm1_arch_next_pc = Mux(cm1_actual_taken, cm1_actual_target, cm1_bits.pc + 4.U)
   val cm2_path_ok = !cm1_bpu_update || (cm2_bits.pc === cm1_arch_next_pc)
   rob.io.commit2_fire := cm1_fire && rob.io.commit2_valid && !cm2_exclusive &&
     !bp_commit2_block && cm2_path_ok && triple_bpu_ready && triple_store_ready &&
+    !retirePathGuard.io.waitForNext(2) &&
     (!cm2_is_load || !lsu.io.load_commit_wait2)
   val cm2_fire = rob.io.commit2_fire
   val cm2_arch_next_pc = Mux(cm2_actual_taken, cm2_actual_target, cm2_bits.pc + 4.U)
   val cm3_path_ok = !cm2_bpu_update || (cm3_bits.pc === cm2_arch_next_pc)
   rob.io.commit3_fire := cm2_fire && rob.io.commit3_valid && !cm3_exclusive &&
     !bp_commit3_block && cm3_path_ok && quad_bpu_ready && quad_store_ready &&
+    !retirePathGuard.io.waitForNext(3) &&
     (!cm3_is_load || !lsu.io.load_commit_wait3)
   val cm3_fire = rob.io.commit3_fire
   IFUCommitWiring.connect(ifu.io,
@@ -2119,6 +2159,7 @@ class Core(val conf: CoreConfig) extends Module {
         take_lsu1_issue)
     PM(conf, clock, EVENT_STORE_ADDR_SIDECAR_ISSUE, 1.U, take_store_addr_issue)
     PM(conf, clock, EVENT_STORE_ADDR_SIDECAR_RESOLVE, 1.U, storeAddrResultValid)
+    PM(conf, clock, EVENT_RETIRE_PATH_FLUSH, 1.U, is_retire_path_flush)
   }
   }
   connectPerformanceCounters()
@@ -2235,12 +2276,21 @@ class Core(val conf: CoreConfig) extends Module {
   mis_predict_w := mis_predict
   mis_rob_w     := bru_resolve_bits.rob_idx
 
+  val branchRecoveryAge = robAge(bru_resolve_bits.rob_idx, rob.io.head)
+  val memoryRecoveryAge = robAge(mem_violation_rob_w, rob.io.head)
+  val retirePathRecoveryAge = robAge(retire_path_flush_idx, rob.io.head)
   val branchRecoveryWins = mis_predict_dbg &&
-    (!mem_violation_w || (robAge(bru_resolve_bits.rob_idx, rob.io.head) < robAge(mem_violation_rob_w, rob.io.head)))
+    (!mem_violation_w || branchRecoveryAge < memoryRecoveryAge) &&
+    (!retire_path_flush_request || branchRecoveryAge <= retirePathRecoveryAge)
   val memoryRecoveryWins = mem_violation_w &&
-    (!mis_predict_dbg || (robAge(mem_violation_rob_w, rob.io.head) <= robAge(bru_resolve_bits.rob_idx, rob.io.head)))
+    (!mis_predict_dbg || memoryRecoveryAge <= branchRecoveryAge) &&
+    (!retire_path_flush_request || memoryRecoveryAge <= retirePathRecoveryAge)
+  val retirePathRecoveryWins = retire_path_flush_request &&
+    (!mis_predict_dbg || retirePathRecoveryAge < branchRecoveryAge) &&
+    (!mem_violation_w || retirePathRecoveryAge < memoryRecoveryAge)
   is_bp_flush := branchRecoveryWins
   is_mem_flush := memoryRecoveryWins
+  is_retire_path_flush := retirePathRecoveryWins
   mem_flush_all := is_mem_flush && (rob.io.head === mem_violation_rob_w)
   val recoverJump = bru_resolve_bits.signals.exu.jump
   val recoverIsBranch = recoverJump === JUMP_BEQ || recoverJump === JUMP_BNE ||
@@ -2304,22 +2354,28 @@ class Core(val conf: CoreConfig) extends Module {
   ifu.io.correct_pc := Mux(is_irq, irq_mtvec_r,
     Mux(is_mem_flush, mem_violation_pc_w,
       Mux(is_bp_flush, correct_pc,
-      Mux(fencei_flush, fencei_pc_r + 4.U,
-        Mux(mret_flush, mret_mepc_r, 0.U)))))
+        Mux(is_retire_path_flush, retire_path_correct_pc,
+          Mux(fencei_flush, fencei_pc_r + 4.U,
+            Mux(mret_flush, mret_mepc_r, 0.U))))))
   // ROB/RS 注册拍结构冲刷；组合 mispred/irq/fencei/mret/ext_irq commit 停 issue
-  flush_now := is_bp_flush || is_mem_flush || is_irq || fencei_flush || mret_flush
+  flush_now := is_bp_flush || is_mem_flush || is_retire_path_flush ||
+    is_irq || fencei_flush || mret_flush
   stop_issue := flush_now || mis_predict || mem_violation_w || irq_commit || fencei_commit || mret_commit ||
     ext_irq_fire
-  fwd_ok := !mis_predict && !mis_predict_r && !mem_violation_w && !is_irq && !irq_commit &&
+  fwd_ok := !mis_predict && !mis_predict_r && !mem_violation_w && !is_retire_path_flush &&
+    !is_irq && !irq_commit &&
     !fencei_commit && !fencei_flush && !mret_commit && !mret_flush &&
     !ext_irq_fire && !ext_irq_flush
   val mem_violation_keep_idx = (mem_violation_rob_w - 1.U)(OoOParams.ROB_PTR_W - 1, 0)
   flush_idx := Mux(is_irq, irq_rob_r,
     Mux(is_mem_flush, mem_violation_keep_idx,
-      Mux(is_bp_flush, bru_resolve_bits.rob_idx, mis_rob_r)))
+      Mux(is_bp_flush, bru_resolve_bits.rob_idx,
+        Mux(is_retire_path_flush, retire_path_flush_idx, mis_rob_r))))
 
-  ifu.io.is_flush := is_irq || fencei_flush || mret_flush || is_bp_flush || is_mem_flush
-  idu.io.is_flush := is_irq || fencei_flush || mret_flush || is_bp_flush || is_mem_flush || mis_predict ||
+  ifu.io.is_flush := is_irq || fencei_flush || mret_flush || is_bp_flush ||
+    is_mem_flush || is_retire_path_flush
+  idu.io.is_flush := is_irq || fencei_flush || mret_flush || is_bp_flush ||
+    is_mem_flush || is_retire_path_flush || mis_predict ||
     irq_commit || fencei_commit || mret_commit || ext_irq_fire
   idu1.io.is_flush := idu.io.is_flush
   idu2.io.is_flush := idu.io.is_flush
@@ -2356,9 +2412,7 @@ class Core(val conf: CoreConfig) extends Module {
     (cm1_this && (rob.io.commit1_idx === flush_idx)) ||
     (cm2_this && (rob.io.commit2_idx === flush_idx)) ||
     (cm3_this && (rob.io.commit3_idx === flush_idx))
-  val kept_n = Mux(rb_empty, 0.U, Mux(flush_idx >= rb_head,
-    (flush_idx - rb_head) + 1.U,
-    (OoOParams.ROB_SIZE.U - rb_head) + flush_idx + 1.U))
+  val kept_n = RenameRecoveryMath.keptCount(rb_head, flush_idx, rb_empty)
   dontTouch(rb_head)
   dontTouch(kept_n)
 
@@ -2422,7 +2476,8 @@ class Core(val conf: CoreConfig) extends Module {
   // exceptions.  A checkpoint can carry a younger physical mapping when a
   // four-wide packet crosses a redirect boundary; the live ROB is the source
   // of truth for the instructions that must survive the flush.
-  rename.io.rebuild      := is_irq || fencei_flush || mret_flush || is_mem_flush || is_bp_flush
+  rename.io.rebuild      := is_irq || fencei_flush || mret_flush || is_mem_flush ||
+    is_bp_flush || is_retire_path_flush
   rename.io.rebuild_rat  := rb_rat
   rename.io.rebuild_free := rb_free
   rename.io.restore_cp   := false.B
@@ -2821,7 +2876,10 @@ class Core(val conf: CoreConfig) extends Module {
   io.commit_mem_addr3 := cm3_mem_addr
   io.commit_is_load3  := cm3_is_load
   for (i <- 0 until 32) {
-    io.arch_rdata(i) := Mux(i.U === 0.U, 0.U, arch_rf(i.U))
+    // Difftest must observe the same committed RAT + PRF state used by the
+    // core. The separate arch_rf is only a retirement diagnostic shadow and
+    // can lag a result that completes in the same cycle it retires.
+    io.arch_rdata(i) := Mux(i.U === 0.U, 0.U, prf.io.arch_rdata(i))
   }
   prf.io.arch_raddr := rename.io.arch_rat_out
   dontTouch(io.commit_valid)

@@ -916,3 +916,4 @@ module CommittedTraceBuilder(
   assign io_fill_3_bits_inst_3 = historyStep_3_3_inst;
   assign io_fill_3_bits_nextPc = io_commit_3_bits_pc;
 endmodule
+

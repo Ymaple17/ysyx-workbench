@@ -48,3 +48,4 @@ module StoreAddressSidecar(
   assign io_result_bits_addr = resultBits_addr;
   assign io_result_bits_mask = resultBits_mask;
 endmodule
+

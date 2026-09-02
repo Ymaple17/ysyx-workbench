@@ -5989,3 +5989,4 @@ module CommittedTraceCache(
         newData_3_nextPc})
   );
 endmodule
+

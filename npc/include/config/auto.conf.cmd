@@ -1,5 +1,5 @@
 deps_config := \
-	/home/qiu/ysyx-workbench/npc/Kconfig
+	Kconfig
 
 include/config/auto.conf: \
 	$(deps_config)

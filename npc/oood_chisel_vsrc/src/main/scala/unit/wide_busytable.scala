@@ -35,10 +35,14 @@ class WideBusyTable(nPhys: Int = OoOParams.N_PHYS) extends Module {
         io.set_valid(i) && io.set_addr(i) === p.U).foldLeft(false.B)(_ || _)
       val clear = io.clr_mask(p) || (0 until width).map(i =>
         io.clr_valid(i) && io.clr_addr(i) === p.U).foldLeft(false.B)(_ || _)
-      when(clear) {
-        busy(p) := false.B
-      }.elsewhen(set) {
+      // A physical register can be reallocated after its previous mapping is
+      // retired.  If an old completion and the new allocation meet here, the
+      // new owner must remain busy; otherwise dispatch can capture stale PRF
+      // data before the new producer writes it.
+      when(set) {
         busy(p) := true.B
+      }.elsewhen(clear) {
+        busy(p) := false.B
       }
     }
     busy(0) := false.B

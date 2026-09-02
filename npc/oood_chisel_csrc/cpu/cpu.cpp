@@ -158,6 +158,40 @@ static word_t last_wbu_pc = 0;
 #define PC_STUCK_COMMITS 20000
 
 static void execute(uint64_t n) {
+  struct DivTraceEntry {
+    uint64_t cycle;
+    uint32_t pc;
+    uint32_t src1;
+    uint32_t src2;
+    unsigned rob;
+    unsigned pdest;
+    unsigned op;
+  };
+  struct RsDivTraceEntry {
+    uint64_t cycle;
+    uint32_t value;
+    unsigned slot;
+    unsigned rob;
+    unsigned psrc;
+    unsigned ready;
+    unsigned issued;
+  };
+  struct P2TraceEntry {
+    uint64_t cycle;
+    uint32_t pc;
+    uint32_t value;
+    unsigned kind;
+    unsigned slot;
+    unsigned rob;
+    unsigned pdest;
+    unsigned psrc;
+    unsigned ready;
+    unsigned issued;
+    unsigned busy;
+    unsigned free;
+    unsigned rat15;
+    uint32_t prf2;
+  };
   uint64_t hang_counter = 0;
   static word_t stuck_pc = 0;
   static int stuck_cnt = 0;
@@ -175,6 +209,31 @@ static void execute(uint64_t n) {
   static unsigned recent_commit_pos = 0;
   static bool commit_trace_initialized = false;
   static FILE *commit_trace_file = nullptr;
+  static bool div_trace_initialized = false;
+  static bool div_trace_enabled = false;
+  static DivTraceEntry div_trace[256] = {};
+  static unsigned div_trace_pos = 0;
+  static RsDivTraceEntry rs_div_trace[512] = {};
+  static unsigned rs_div_trace_pos = 0;
+  static bool last_div_valid = false;
+  static DivTraceEntry last_div = {};
+  static bool p2_trace_initialized = false;
+  static bool p2_trace_enabled = false;
+  static P2TraceEntry p2_trace[4096] = {};
+  static unsigned p2_trace_pos = 0;
+  static bool p2_state_initialized = false;
+  static bool last_p2_busy = false;
+  static bool last_p2_free = false;
+  static unsigned last_p2_rat15 = 0;
+  static uint32_t last_p2_prf = 0;
+  static bool last_p2_rs_valid[16] = {};
+  static bool last_p2_rs_issued[16] = {};
+  static bool last_p2_rs_ready[16] = {};
+  static unsigned last_p2_rs_rob[16] = {};
+  static unsigned last_p2_rs_pdest[16] = {};
+  static unsigned last_p2_rs_psrc[16] = {};
+  static uint32_t last_p2_rs_pc[16] = {};
+  static uint32_t last_p2_rs_value[16] = {};
   if (!commit_trace_initialized) {
     commit_trace_initialized = true;
     const char *path = getenv("NPC_COMMIT_TRACE");
@@ -184,6 +243,66 @@ static void execute(uint64_t n) {
     recent_commit_pc[recent_commit_pos & 31u] = pc;
     recent_commit_pos++;
     if (commit_trace_file != nullptr) fprintf(commit_trace_file, "%08x\n", pc);
+  };
+  if (!div_trace_initialized) {
+    div_trace_initialized = true;
+    div_trace_enabled = getenv("NPC_DIV_TRACE") != nullptr;
+  }
+  if (!p2_trace_initialized) {
+    p2_trace_initialized = true;
+    p2_trace_enabled = getenv("NPC_P2_TRACE") != nullptr;
+  }
+  auto record_p2_trace = [&](unsigned kind, unsigned slot, unsigned rob,
+                             uint32_t pc, unsigned pdest, unsigned psrc,
+                             unsigned ready, unsigned issued, uint32_t value) {
+    if (!p2_trace_enabled) return;
+    auto *r = top->rootp;
+    p2_trace[p2_trace_pos & 4095u] = {
+      main_time / 2, pc, value, kind, slot, rob, pdest, psrc, ready, issued,
+      (unsigned)r->ysyx_25020039__DOT__core__DOT__busy__DOT__impl__DOT__busy_2,
+      (unsigned)((r->ysyx_25020039__DOT__core__DOT__rename__DOT__impl__DOT__freeBits >> 2) & 1u),
+      (unsigned)r->ysyx_25020039__DOT__core__DOT__rename__DOT__impl__DOT__rat_15,
+      (uint32_t)r->ysyx_25020039__DOT__core__DOT__prf__DOT__impl__DOT__rf_2
+    };
+    p2_trace_pos++;
+  };
+  auto dump_div_trace = [&]() {
+    if (!div_trace_enabled) return;
+    const unsigned count = div_trace_pos < 64 ? div_trace_pos : 64;
+    printf("[DIVTRACE] last %u issued DIV/REM operations:\n", count);
+    for (unsigned n = count; n > 0; n--) {
+      const DivTraceEntry &e = div_trace[(div_trace_pos - n) & 255u];
+      printf("[DIVTRACE] cycle=%llu pc=%08x rob=%u pdest=%u op=%u src=%08x/%08x\n",
+             (unsigned long long)e.cycle, e.pc, e.rob, e.pdest, e.op,
+             e.src1, e.src2);
+    }
+    const unsigned rs_count = rs_div_trace_pos < 128 ? rs_div_trace_pos : 128;
+    printf("[DIVTRACE] last %u resident target-DIV RS observations:\n", rs_count);
+    for (unsigned n = rs_count; n > 0; n--) {
+      const RsDivTraceEntry &e = rs_div_trace[(rs_div_trace_pos - n) & 511u];
+      printf("[DIVTRACE-RS] cycle=%llu slot=%u rob=%u psrc=%u ready=%u "
+             "issued=%u value=%08x\n",
+             (unsigned long long)e.cycle, e.slot, e.rob, e.psrc,
+             e.ready, e.issued, e.value);
+    }
+  };
+  auto dump_p2_trace = [&]() {
+    if (!p2_trace_enabled) return;
+    const unsigned count = p2_trace_pos < 512 ? p2_trace_pos : 512;
+    printf("[P2TRACE] last %u p2 ownership events:\n", count);
+    for (unsigned n = count; n > 0; n--) {
+      const P2TraceEntry &e = p2_trace[(p2_trace_pos - n) & 4095u];
+      const char *kind = e.kind == 0 ? "STATE" :
+        (e.kind >= 1 && e.kind <= 4 ? "CDB" :
+         (e.kind == 5 ? "LSU" : (e.kind == 6 ? "FLUSH" : "RS")));
+      printf("[P2TRACE] cycle=%llu kind=%s%u slot=%u pc=%08x rob=%u "
+             "pd=%u ps=%u ready=%u issued=%u value=%08x busy=%u free=%u "
+             "rat15=%u prf2=%08x\n",
+             (unsigned long long)e.cycle, kind,
+             e.kind >= 1 && e.kind <= 4 ? e.kind - 1 : 0,
+             e.slot, e.pc, e.rob, e.pdest, e.psrc, e.ready, e.issued,
+             e.value, e.busy, e.free, e.rat15, e.prf2);
+    }
   };
   if (!pipe_trace_initialized) {
     pipe_trace_initialized = true;
@@ -201,6 +320,231 @@ static void execute(uint64_t n) {
   for (; n > 0; n--) {
     if (!Verilated::gotFinish()) {
       exec_once();
+
+      if (div_trace_enabled && rst_done && !top->reset) {
+        auto *r = top->rootp;
+        DivTraceEntry current = {
+          main_time / 2,
+          (uint32_t)r->ysyx_25020039__DOT__core__DOT__d_div_bits_pc,
+          (uint32_t)r->ysyx_25020039__DOT__core__DOT__d_div_bits_rd1,
+          (uint32_t)r->ysyx_25020039__DOT__core__DOT__d_div_bits_rd2,
+          (unsigned)r->ysyx_25020039__DOT__core__DOT__d_div_bits_rob_idx,
+          (unsigned)r->ysyx_25020039__DOT__core__DOT__d_div_bits_pdest,
+          (unsigned)r->ysyx_25020039__DOT__core__DOT__d_div_bits_signals_exu_alu_control,
+        };
+        const bool valid = r->ysyx_25020039__DOT__core__DOT__d_div_valid;
+        const bool changed = !last_div_valid || current.pc != last_div.pc ||
+          current.rob != last_div.rob || current.pdest != last_div.pdest ||
+          current.src1 != last_div.src1 || current.src2 != last_div.src2 ||
+          current.op != last_div.op;
+        if (valid && changed) {
+          div_trace[div_trace_pos & 255u] = current;
+          div_trace_pos++;
+          last_div = current;
+        }
+        last_div_valid = valid;
+
+#define RS_ENTRY(field, index) \
+        r->ysyx_25020039__DOT__core__DOT__rs__DOT__impl__DOT__entries_##index##_##field
+#define RS_ENTRY_LIST(field) \
+        RS_ENTRY(field, 0), RS_ENTRY(field, 1), RS_ENTRY(field, 2), RS_ENTRY(field, 3), \
+        RS_ENTRY(field, 4), RS_ENTRY(field, 5), RS_ENTRY(field, 6), RS_ENTRY(field, 7), \
+        RS_ENTRY(field, 8), RS_ENTRY(field, 9), RS_ENTRY(field, 10), RS_ENTRY(field, 11), \
+        RS_ENTRY(field, 12), RS_ENTRY(field, 13), RS_ENTRY(field, 14), RS_ENTRY(field, 15)
+        const CData rs_valid[16] = {RS_ENTRY_LIST(valid)};
+        const CData rs_issued[16] = {RS_ENTRY_LIST(issued)};
+        const CData rs_rob[16] = {RS_ENTRY_LIST(rob_idx)};
+        const CData rs_ready[16] = {RS_ENTRY_LIST(src1_ready)};
+        const CData rs_psrc[16] = {RS_ENTRY_LIST(src1_phys)};
+        const IData rs_value[16] = {RS_ENTRY_LIST(src1_val)};
+        const IData rs_pc[16] = {RS_ENTRY_LIST(pc)};
+#undef RS_ENTRY_LIST
+#undef RS_ENTRY
+        for (unsigned slot = 0; slot < 16; slot++) {
+          if (rs_valid[slot] && rs_pc[slot] == 0x80000308u) {
+            rs_div_trace[rs_div_trace_pos & 511u] = {
+              main_time / 2, (uint32_t)rs_value[slot], slot,
+              (unsigned)rs_rob[slot], (unsigned)rs_psrc[slot],
+              (unsigned)rs_ready[slot], (unsigned)rs_issued[slot]
+            };
+            rs_div_trace_pos++;
+          }
+        }
+      }
+
+      if (p2_trace_enabled && rst_done && !top->reset) {
+        auto *r = top->rootp;
+#define P2_RS_ENTRY(field, index) \
+        r->ysyx_25020039__DOT__core__DOT__rs__DOT__impl__DOT__entries_##index##_##field
+#define P2_RS_ENTRY_LIST(field) \
+        P2_RS_ENTRY(field, 0), P2_RS_ENTRY(field, 1), P2_RS_ENTRY(field, 2), P2_RS_ENTRY(field, 3), \
+        P2_RS_ENTRY(field, 4), P2_RS_ENTRY(field, 5), P2_RS_ENTRY(field, 6), P2_RS_ENTRY(field, 7), \
+        P2_RS_ENTRY(field, 8), P2_RS_ENTRY(field, 9), P2_RS_ENTRY(field, 10), P2_RS_ENTRY(field, 11), \
+        P2_RS_ENTRY(field, 12), P2_RS_ENTRY(field, 13), P2_RS_ENTRY(field, 14), P2_RS_ENTRY(field, 15)
+        const CData rs_valid[16] = {P2_RS_ENTRY_LIST(valid)};
+        const CData rs_issued[16] = {P2_RS_ENTRY_LIST(issued)};
+        const CData rs_rob[16] = {P2_RS_ENTRY_LIST(rob_idx)};
+        const CData rs_ready[16] = {P2_RS_ENTRY_LIST(src1_ready)};
+        const CData rs_psrc[16] = {P2_RS_ENTRY_LIST(src1_phys)};
+        const CData rs_pdest[16] = {P2_RS_ENTRY_LIST(pdest)};
+        const IData rs_value[16] = {P2_RS_ENTRY_LIST(src1_val)};
+        const IData rs_pc[16] = {P2_RS_ENTRY_LIST(pc)};
+#undef P2_RS_ENTRY_LIST
+#undef P2_RS_ENTRY
+
+#define P2_ROB_ENTRY(field, index) \
+        r->ysyx_25020039__DOT__core__DOT__rob__DOT__impl__DOT__entries_##index##_##field
+#define P2_ROB_ENTRY_LIST(field) \
+        P2_ROB_ENTRY(field, 0), P2_ROB_ENTRY(field, 1), P2_ROB_ENTRY(field, 2), P2_ROB_ENTRY(field, 3), \
+        P2_ROB_ENTRY(field, 4), P2_ROB_ENTRY(field, 5), P2_ROB_ENTRY(field, 6), P2_ROB_ENTRY(field, 7), \
+        P2_ROB_ENTRY(field, 8), P2_ROB_ENTRY(field, 9), P2_ROB_ENTRY(field, 10), P2_ROB_ENTRY(field, 11), \
+        P2_ROB_ENTRY(field, 12), P2_ROB_ENTRY(field, 13), P2_ROB_ENTRY(field, 14), P2_ROB_ENTRY(field, 15), \
+        P2_ROB_ENTRY(field, 16), P2_ROB_ENTRY(field, 17), P2_ROB_ENTRY(field, 18), P2_ROB_ENTRY(field, 19), \
+        P2_ROB_ENTRY(field, 20), P2_ROB_ENTRY(field, 21), P2_ROB_ENTRY(field, 22), P2_ROB_ENTRY(field, 23), \
+        P2_ROB_ENTRY(field, 24), P2_ROB_ENTRY(field, 25), P2_ROB_ENTRY(field, 26), P2_ROB_ENTRY(field, 27), \
+        P2_ROB_ENTRY(field, 28), P2_ROB_ENTRY(field, 29), P2_ROB_ENTRY(field, 30), P2_ROB_ENTRY(field, 31)
+        const IData rob_pc[32] = {P2_ROB_ENTRY_LIST(pc)};
+        const CData rob_valid[32] = {P2_ROB_ENTRY_LIST(valid)};
+        const CData rob_done[32] = {P2_ROB_ENTRY_LIST(done)};
+        const CData rob_reg_write[32] = {P2_ROB_ENTRY_LIST(reg_write)};
+        const CData rob_arch_rd[32] = {P2_ROB_ENTRY_LIST(arch_rd)};
+        const CData rob_old_phys[32] = {P2_ROB_ENTRY_LIST(old_phys)};
+        const CData rob_new_phys[32] = {P2_ROB_ENTRY_LIST(new_phys)};
+#undef P2_ROB_ENTRY_LIST
+#undef P2_ROB_ENTRY
+
+        for (unsigned slot = 0; slot < 16; slot++) {
+          const bool relevant = rs_valid[slot] &&
+            (rs_pc[slot] == 0x80000330u || rs_pc[slot] == 0x80000308u ||
+             rs_pdest[slot] == 2u || rs_psrc[slot] == 2u);
+          const bool changed = rs_valid[slot] != last_p2_rs_valid[slot] ||
+            rs_issued[slot] != last_p2_rs_issued[slot] ||
+            rs_ready[slot] != last_p2_rs_ready[slot] ||
+            rs_rob[slot] != last_p2_rs_rob[slot] ||
+            rs_pdest[slot] != last_p2_rs_pdest[slot] ||
+            rs_psrc[slot] != last_p2_rs_psrc[slot] ||
+            rs_pc[slot] != last_p2_rs_pc[slot] ||
+            rs_value[slot] != last_p2_rs_value[slot];
+          if (relevant && changed) {
+            record_p2_trace(7, slot, rs_rob[slot], rs_pc[slot], rs_pdest[slot],
+                            rs_psrc[slot], rs_ready[slot], rs_issued[slot],
+                            rs_value[slot]);
+          }
+          last_p2_rs_valid[slot] = rs_valid[slot];
+          last_p2_rs_issued[slot] = rs_issued[slot];
+          last_p2_rs_ready[slot] = rs_ready[slot];
+          last_p2_rs_rob[slot] = rs_rob[slot];
+          last_p2_rs_pdest[slot] = rs_pdest[slot];
+          last_p2_rs_psrc[slot] = rs_psrc[slot];
+          last_p2_rs_pc[slot] = rs_pc[slot];
+          last_p2_rs_value[slot] = rs_value[slot];
+        }
+
+        const bool can_wb[4] = {
+          (bool)r->ysyx_25020039__DOT__core__DOT__can_wb,
+          (bool)r->ysyx_25020039__DOT__core__DOT__can_wb1,
+          (bool)r->ysyx_25020039__DOT__core__DOT__can_wb2,
+          (bool)r->ysyx_25020039__DOT__core__DOT__can_wb3
+        };
+        const CData wb_rob[4] = {
+          r->ysyx_25020039__DOT__core__DOT___wbArb_io_out_0_bits_rob_idx,
+          r->ysyx_25020039__DOT__core__DOT___wbArb_io_out_1_bits_rob_idx,
+          r->ysyx_25020039__DOT__core__DOT___wbArb_io_out_2_bits_rob_idx,
+          r->ysyx_25020039__DOT__core__DOT___wbArb_io_out_3_bits_rob_idx
+        };
+        const CData wb_pdest[4] = {
+          r->ysyx_25020039__DOT__core__DOT___wbArb_io_out_0_bits_pdest,
+          r->ysyx_25020039__DOT__core__DOT___wbArb_io_out_1_bits_pdest,
+          r->ysyx_25020039__DOT__core__DOT___wbArb_io_out_2_bits_pdest,
+          r->ysyx_25020039__DOT__core__DOT___wbArb_io_out_3_bits_pdest
+        };
+        const IData wb_value[4] = {
+          r->ysyx_25020039__DOT__core__DOT___wbu_io_refile_wdata,
+          r->ysyx_25020039__DOT__core__DOT___wbu1_io_refile_wdata,
+          r->ysyx_25020039__DOT__core__DOT___wbu2_io_refile_wdata,
+          r->ysyx_25020039__DOT__core__DOT___wbu3_io_refile_wdata
+        };
+        for (unsigned port = 0; port < 4; port++) {
+          if (can_wb[port] && wb_pdest[port] == 2u) {
+            record_p2_trace(1 + port, port, wb_rob[port], rob_pc[wb_rob[port]],
+                            wb_pdest[port], 0, 1, 1, wb_value[port]);
+          }
+        }
+
+        if (r->ysyx_25020039__DOT__core__DOT___lsu_io_out_valid &&
+            r->ysyx_25020039__DOT__core__DOT___lsu_io_out_bits_pdest == 2u) {
+          record_p2_trace(5, 0,
+            r->ysyx_25020039__DOT__core__DOT___lsu_io_out_bits_rob_idx,
+            r->ysyx_25020039__DOT__core__DOT___lsu_io_out_bits_pc, 2, 0, 1, 1,
+            r->ysyx_25020039__DOT__core__DOT___lsu_io_out_bits_mem_read);
+        }
+        if (r->ysyx_25020039__DOT__core__DOT__flush_now) {
+          record_p2_trace(6, 0, 0, 0, 0, 0, 0, 0, 0);
+          if (main_time / 2 >= 548500) {
+            const unsigned tail =
+              r->ysyx_25020039__DOT__core__DOT__rob__DOT__impl__DOT__tail;
+            const unsigned count =
+              r->ysyx_25020039__DOT__core__DOT__rob__DOT__impl__DOT__count;
+            const unsigned head = (tail + 32u - (count & 31u)) & 31u;
+            const unsigned flush_idx = r->ysyx_25020039__DOT__core__DOT__flush_idx;
+            const unsigned flush_age = (flush_idx + 32u - head) & 31u;
+            const unsigned arch15 =
+              r->ysyx_25020039__DOT__core__DOT__rename__DOT__impl__DOT__archRat_15;
+            unsigned replay15 = arch15;
+            for (unsigned off = 0; off < count && off <= flush_age; off++) {
+              const unsigned idx = (head + off) & 31u;
+              if (rob_valid[idx] && rob_reg_write[idx] && rob_arch_rd[idx] == 15u) {
+                replay15 = rob_new_phys[idx];
+              }
+            }
+            printf("[RATFLUSH] cycle=%llu idx=%u head=%u tail=%u count=%u age=%u "
+                   "mis=%u mem=%u retire=%u irq=%u all=%u rat15=%u arch15=%u "
+                   "base15=%u replay15=%u\n",
+                   (unsigned long long)(main_time / 2), flush_idx, head, tail, count,
+                   flush_age,
+                   (unsigned)r->ysyx_25020039__DOT__core__DOT__mis_predict_dbg,
+                   (unsigned)r->ysyx_25020039__DOT__core__DOT__mem_violation_w,
+                   (unsigned)r->ysyx_25020039__DOT__core__DOT__retirePathRecoveryWins,
+                   (unsigned)r->ysyx_25020039__DOT__core__DOT__is_irq,
+                   (unsigned)r->ysyx_25020039__DOT__core__DOT__mem_flush_all,
+                   (unsigned)r->ysyx_25020039__DOT__core__DOT__rename__DOT__impl__DOT__rat_15,
+                   arch15,
+                   (unsigned)r->ysyx_25020039__DOT__core__DOT__rb_base_15,
+                   replay15);
+            for (unsigned off = 0; off < count; off++) {
+              const unsigned idx = (head + off) & 31u;
+              if (idx == flush_idx ||
+                  (rob_valid[idx] && rob_reg_write[idx] && rob_arch_rd[idx] == 15u)) {
+                printf("[RATFLUSH-ROB] age=%u idx=%u keep=%u valid=%u done=%u "
+                       "pc=%08x rd=%u old=%u new=%u\n",
+                       off, idx, (unsigned)(off <= flush_age),
+                       (unsigned)rob_valid[idx], (unsigned)rob_done[idx], rob_pc[idx],
+                       (unsigned)rob_arch_rd[idx], (unsigned)rob_old_phys[idx],
+                       (unsigned)rob_new_phys[idx]);
+              }
+            }
+          }
+        }
+
+        const bool p2_busy =
+          r->ysyx_25020039__DOT__core__DOT__busy__DOT__impl__DOT__busy_2;
+        const bool p2_free =
+          (r->ysyx_25020039__DOT__core__DOT__rename__DOT__impl__DOT__freeBits >> 2) & 1u;
+        const unsigned p2_rat15 =
+          r->ysyx_25020039__DOT__core__DOT__rename__DOT__impl__DOT__rat_15;
+        const uint32_t p2_prf =
+          r->ysyx_25020039__DOT__core__DOT__prf__DOT__impl__DOT__rf_2;
+        if (!p2_state_initialized || p2_busy != last_p2_busy ||
+            p2_free != last_p2_free || p2_rat15 != last_p2_rat15 ||
+            p2_prf != last_p2_prf) {
+          record_p2_trace(0, 0, 0, 0, 2, p2_rat15, !p2_busy, 0, p2_prf);
+          p2_state_initialized = true;
+          last_p2_busy = p2_busy;
+          last_p2_free = p2_free;
+          last_p2_rat15 = p2_rat15;
+          last_p2_prf = p2_prf;
+        }
+      }
 
       // Temporary pipeline tracing used during Stage14 bring-up.
 #if 0
@@ -1325,6 +1669,8 @@ static void execute(uint64_t n) {
                        regs[i], ref_state.gpr[i], cpu.gpr[i]);
               }
             }
+            dump_div_trace();
+            dump_p2_trace();
             printf("[difftest] =========================================\n\n");
             npc_state.state = NPC_ABORT;
             break;
@@ -1375,7 +1721,6 @@ static void execute(uint64_t n) {
             printf("\n[difftest] ========== PC MISMATCH lane%d ==========\n", lane);
             printf("[difftest] PC: REF = 0x%08x, DUT(commit%d) = 0x%08x\n",
                    ref_state_lane.pc, lane, commit_pc_lane);
-            auto *r = top->rootp;
             printf("[debug] bundle p0=0x%08x p1=%s0x%08x p2=%s0x%08x p3=%s0x%08x\n",
                    (unsigned)top->rootp->io_commit_pc,
                    top->rootp->io_commit_valid1 ? "" : "-",
@@ -1384,18 +1729,6 @@ static void execute(uint64_t n) {
                    (unsigned)top->rootp->io_commit_pc2,
                    top->rootp->io_commit_valid3 ? "" : "-",
                    (unsigned)top->rootp->io_commit_pc3);
-            printf("[debug] cm2_taken=%u cm2_target=0x%08x cm2_bpu=%u cm2_ctrl_wb=%u "
-                   "d_bru_v=%u d_bru_rob=%u bru_out_v=%u bru_taken=%u mis=%u commit2_idx=%u\n",
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__cm2_actual_taken,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__cm2_actual_target,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__cm2_bpu_update,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__cm2_ctrl_wb,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__d_bru_valid,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__d_bru_bits_rob_idx,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT___exu_bru_io_out_valid,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT___exu_bru_io_out_bits_br_taken,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT__mis_predict_dbg,
-                   (unsigned)r->ysyx_25020039__DOT__core__DOT___rob_io_commit2_idx);
             printf("[debug] recent commits:");
             const unsigned recent_count = recent_commit_pos < 32 ? recent_commit_pos : 32;
             for (unsigned i = 0; i < recent_count; i++) {

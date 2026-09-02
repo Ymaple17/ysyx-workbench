@@ -56,3 +56,4 @@ module Queue4_DCacheReadResp(
   assign io_deq_bits_resp = empty ? io_enq_bits_resp : _ram_ext_R0_data[5:4];
   assign io_deq_bits_id = empty ? io_enq_bits_id : _ram_ext_R0_data[3:0];
 endmodule
+

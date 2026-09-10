@@ -23,11 +23,13 @@ module ysyx_25020039_Sim_Uart(
     input [31:0] waddr,
     input [7:0]  wdata
 );
+`ifndef YOSYS
     always @(posedge clk) begin
         if (wen && waddr >= 32'ha00003f8 && waddr <= 32'ha00003ff) begin
             $write("%c", wdata);
         end
     end
+`endif
 endmodule
 
 module ysyx_25020039_Pmem(

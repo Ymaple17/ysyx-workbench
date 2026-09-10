@@ -34,44 +34,34 @@ class Pmem extends BlackBox with HasBlackBoxInline {
       |);
       |
       |`ifdef __ICARUS__
-      |  reg [7:0] mem [0:128*1024-1];
+      |  localparam int MEM_BYTES = 128*1024;
+      |  reg [7:0]  bytes [0:MEM_BYTES-1];
+      |  reg [31:0] mem   [0:MEM_BYTES/4-1];
+      |  integer i;
       |  initial begin
-      |    $readmemh("mem.hex", mem);
+      |    for (i = 0; i < MEM_BYTES; i = i + 1)
+      |      bytes[i] = 8'h0;
+      |    $readmemh("mem.hex", bytes);
+      |    for (i = 0; i < MEM_BYTES/4; i = i + 1)
+      |      mem[i] = {bytes[4*i+3], bytes[4*i+2], bytes[4*i+1], bytes[4*i]};
       |  end
-      |
-      |  reg [31:0] rdata_reg;
-      |
-      |  always @(*) begin
-      |     if (ren) begin
-      |        if (raddr >= 32'h80000000 && raddr < 32'h80000000 +128*1024) begin
-      |            rdata_reg[7:0]   = mem[(raddr - 32'h80000000)];
-      |            rdata_reg[15:8]  = mem[(raddr - 32'h80000000) + 1];
-      |            rdata_reg[23:16] = mem[(raddr - 32'h80000000) + 2];
-      |            rdata_reg[31:24] = mem[(raddr - 32'h80000000) + 3];
-      |        end else begin
-      |            rdata_reg = 32'h0;
-      |        end
-      |     end else begin
-      |        rdata_reg = 32'h0;
-      |     end
-      |  end
-      |
+      |  wire [16:0] roff = raddr - 32'h80000000;
+      |  wire [16:0] woff = waddr - 32'h80000000;
+      |  assign rdata = (ren && raddr >= 32'h80000000 && raddr < 32'h80000000 + MEM_BYTES)
+      |                   ? mem[roff[16:2]] : 32'h0;
       |  always @(posedge clk) begin
       |     if (wen) begin
       |        if (waddr == 32'ha00003f8) begin
       |            $write("%c", wdata[7:0]);
       |        end
-      |
-      |        else if (waddr >= 32'h80000000 && waddr < 32'h80000000 + 128*1024) begin
-      |            if (wmask[0]) mem[(waddr - 32'h80000000)]     <= wdata[7:0];
-      |            if (wmask[1]) mem[(waddr - 32'h80000000) + 1] <= wdata[15:8];
-      |            if (wmask[2]) mem[(waddr - 32'h80000000) + 2] <= wdata[23:16];
-      |            if (wmask[3]) mem[(waddr - 32'h80000000) + 3] <= wdata[31:24];
+      |        else if (waddr >= 32'h80000000 && waddr < 32'h80000000 + MEM_BYTES) begin
+      |            if (wmask[0]) mem[woff[16:2]][7:0]   <= wdata[7:0];
+      |            if (wmask[1]) mem[woff[16:2]][15:8]  <= wdata[15:8];
+      |            if (wmask[2]) mem[woff[16:2]][23:16] <= wdata[23:16];
+      |            if (wmask[3]) mem[woff[16:2]][31:24] <= wdata[31:24];
       |        end
       |     end
       |  end
-
-      |  assign rdata = rdata_reg;
       |
       |`else
       |
@@ -139,7 +129,7 @@ class SRAM extends Module{
   val r_state = RegInit(s_R_IDLE)
   val r_next_state = WireDefault(s_R_IDLE)
 
-  val r_delay_cnt = Reg(UInt(32.W))
+  val r_delay_cnt = RegInit(0.U(32.W))
   val araddr_reg = RegInit(0.U(32.W))
   val arid_reg = RegInit(0.U(4.W))
   val rdata_reg = RegInit(0.U(32.W))
@@ -184,7 +174,7 @@ class SRAM extends Module{
   val s_W_IDLE :: s_W_WAIT :: s_W_DATA :: s_W_RESP :: Nil = Enum(4)
   val w_state = RegInit(s_W_IDLE)
   val w_next_state = WireDefault(s_W_IDLE)
-  val w_delay_cnt = Reg(UInt(32.W))
+  val w_delay_cnt = RegInit(0.U(32.W))
 
   val awaddr_reg = RegInit(0.U(32.W))
   val awid_reg = RegInit(0.U(4.W))

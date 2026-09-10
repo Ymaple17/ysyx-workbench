@@ -15,7 +15,7 @@ class Clint(coreConfig: CoreConfig) extends Module{
 
     val ADDR = if(coreConfig.npc) "ha0000048".U else "h02000000".U
 
-    val mtime = RegInit(0.U(64.W))
+    val mtime = RegInit(0.U(32.W))
     mtime := mtime + 1.U
 
     val s_IDLE :: s_WAIT :: Nil = Enum(2)
@@ -27,8 +27,8 @@ class Clint(coreConfig: CoreConfig) extends Module{
         s_WAIT   -> Mux(io.rready, s_IDLE, s_WAIT)
     ))
     state := next_state
-    
-    rdata := Mux(io.araddr === ADDR, mtime(31, 0), mtime(63, 32))
+
+    rdata := Mux(io.araddr === ADDR, mtime, 0.U)
 
 
     switch(state){

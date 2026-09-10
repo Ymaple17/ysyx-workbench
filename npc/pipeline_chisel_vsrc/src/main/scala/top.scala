@@ -14,6 +14,7 @@ object GenUtil {
       .filterNot(_.trim.startsWith("`include \"verification/"))
       .filterNot(l => l.trim.matches("^[./][\\w./\\-]+\\.(v|f|sv)$"))
       .mkString("\n")
+      .replace("always_comb", "always @(*)")
   }
 }
 

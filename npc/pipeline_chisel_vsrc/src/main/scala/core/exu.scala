@@ -6,6 +6,8 @@ import unit._
 import common.ALU_SRCA._
 import common.ALU_SRCB._
 import common.PC_SEL._
+import common.REG_WRITE_SEL._
+import common.CSR_SEL._
 import core.PerfEvents._
 
 
@@ -23,14 +25,12 @@ class EXU_LSU_IO extends Bundle{
   }
   val alu_result = Output(UInt(32.W))
   val pc = Output(UInt(32.W))
-  val next_pc = Output(UInt(32.W))
-  val imm_ext = Output(UInt(32.W))
-  val rd1 = Output(UInt(32.W))
   val rd2 = Output(UInt(32.W))
   val waddr = Output(UInt(5.W))
   val is_ebreak = Output(Bool())
 
-  val csr_rd1 = Output(UInt(32.W))
+  val wb_data   = Output(UInt(32.W))
+  val csr_wdata = Output(UInt(32.W))
   val csr_waddr = Output(UInt(12.W))
 
   val state = Output(new State)
@@ -90,21 +90,24 @@ class EXU(val conf: CoreConfig) extends Module{
     io.out.bits.signals := io.in.bits.signals
     io.out.bits.alu_result := alu.io.result
     io.out.bits.pc := io.in.bits.pc
-
-    io.out.bits.next_pc := MuxLookup(exu_pc.io.pc_src, io.in.bits.pc + 4.U)(Seq(
-      PC_PLUS4 -> (io.in.bits.pc + 4.U),
-      PC_IMM   -> jump_pc.next_pc,
-      PC_RS2   -> (alu.io.result & (~1.U(32.W)))
-    ))
-
-    io.out.bits.imm_ext := io.in.bits.imm_ext
-    io.out.bits.rd1 := io.in.bits.rd1
     io.out.bits.rd2 := io.in.bits.rd2
     io.out.bits.waddr := io.in.bits.waddr
     io.out.bits.is_ebreak := io.in.bits.is_ebreak
 
-    //csr 
-    io.out.bits.csr_rd1 := io.in.bits.csr_rd1
+    //writeback 数据提前选择，后面级只传一个 32 位
+    io.out.bits.wb_data := MuxLookup(io.in.bits.signals.wbu.reg_write_sel, alu.io.result)(Seq(
+      ALU_SEL  -> alu.io.result,
+      IMM_SEL  -> io.in.bits.imm_ext,
+      PC4_SEL  -> (io.in.bits.pc + 4.U),
+      CSR_DATA -> io.in.bits.csr_rd1
+    ))
+
+    //csr
+    io.out.bits.csr_wdata := MuxLookup(io.in.bits.signals.wbu.csr_sel, 0.U)(Seq(
+      CSR_RD1 -> io.in.bits.rd1,
+      CSR_XOR -> (io.in.bits.rd1 | io.in.bits.csr_rd1),
+      CSR_PC  -> io.in.bits.pc
+    ))
     io.out.bits.csr_waddr := io.in.bits.csr_waddr
 
     //state

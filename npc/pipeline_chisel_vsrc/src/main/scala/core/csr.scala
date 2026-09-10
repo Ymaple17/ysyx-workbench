@@ -47,19 +47,22 @@ class CSR(conf: CoreConfig) extends Module{
     val io = IO(new CSR_IO(conf.xlen))
     val xlen = conf.xlen
 
-    val rf = RegInit(VecInit(Seq(
-        0x1800.U(xlen.W),       // mstatus 初始值 MIE=1
-        0.U(xlen.W),            // mtvec
-        0.U(xlen.W),            // mepc
-        0.U(xlen.W),            // mcause
-        "h79737978".U(xlen.W),  // mvendorid 只读
-        0x25020039.U(xlen.W)    // marchid 只读
-    )))
+    val mstatus   = WireDefault(0x1800.U(xlen.W))
+    val mvendorid = WireDefault("h79737978".U(xlen.W))
+    val marchid   = WireDefault(0x25020039.U(xlen.W))
+    val mtvec     = RegInit(0.U(xlen.W))
+    val mepc      = RegInit(0.U(xlen.W))
+    val mcause    = RegInit(0.U(xlen.W))
 
-    val in_waddr = Wire(UInt(3.W))
-    val in_raddr = Wire(UInt(3.W))
-
-    in_waddr := MuxLookup(io.write.waddr, csr_none)(Seq(
+    val in_waddr = MuxLookup(io.write.waddr, csr_none)(Seq(
+        MSTATUS   -> csr_mstatus,
+        MTVEC     -> csr_mtvec,
+        MEPC      -> csr_mepc,
+        MCAUSE    -> csr_mcause,
+        MVENDORID -> csr_mvendorid,
+        MARCHID   -> csr_marchid
+    ))
+    val in_raddr = MuxLookup(io.read.raddr, csr_none)(Seq(
         MSTATUS   -> csr_mstatus,
         MTVEC     -> csr_mtvec,
         MEPC      -> csr_mepc,
@@ -68,25 +71,24 @@ class CSR(conf: CoreConfig) extends Module{
         MARCHID   -> csr_marchid
     ))
 
-    in_raddr := MuxLookup(io.read.raddr, csr_none)(Seq(
-        MSTATUS   -> csr_mstatus,
-        MTVEC     -> csr_mtvec,
-        MEPC      -> csr_mepc,
-        MCAUSE    -> csr_mcause,
-        MVENDORID -> csr_mvendorid,
-        MARCHID   -> csr_marchid
+    io.read.rdata := MuxLookup(in_raddr, 0.U)(Seq(
+        csr_mstatus   -> mstatus,
+        csr_mtvec     -> mtvec,
+        csr_mepc      -> mepc,
+        csr_mcause    -> mcause,
+        csr_mvendorid -> mvendorid,
+        csr_marchid   -> marchid
     ))
+    io.read.mtvec := mtvec
+    io.read.mepc  := mepc
 
-    io.read.rdata := rf(in_raddr)
-    io.read.mtvec := rf(csr_mtvec)
-    io.read.mepc  := rf(csr_mepc)
-
-    val is_ro_csr = (in_waddr === csr_mvendorid) || (in_waddr === csr_marchid)
     when(io.write.wen && !io.irq) {
-        rf(in_waddr) := io.write.wdata
+        when(in_waddr === csr_mtvec)  { mtvec  := io.write.wdata }
+        when(in_waddr === csr_mepc)   { mepc   := io.write.wdata }
+        when(in_waddr === csr_mcause) { mcause := io.write.wdata }
     }
     when(io.irq) {
-        rf(csr_mcause) := io.irq_no
-        rf(csr_mepc) := io.irq_pc
+        mcause := io.irq_no
+        mepc   := io.irq_pc
     }
 }

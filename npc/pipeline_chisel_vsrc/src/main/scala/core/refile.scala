@@ -25,10 +25,10 @@ class Refile(conf: CoreConfig) extends Module{
     override def desiredName = "ysyx_25020039_Refile"
 
   val io = IO(new Refile_IO(conf.xlen))
-  val rf = Mem(32, UInt(conf.xlen.W))
-  io.read.rdata1 := Mux(io.read.raddr1=/=0.U, rf(io.read.raddr1), 0.U)
-  io.read.rdata2 := Mux(io.read.raddr2=/=0.U, rf(io.read.raddr2), 0.U)
-  when(io.write.wen & io.write.waddr=/=0.U){
-    rf(io.write.waddr) := io.write.wdata
+  val rf = RegInit(VecInit(Seq.fill(16)(0.U(conf.xlen.W))))
+  io.read.rdata1 := Mux(io.read.raddr1 === 0.U, 0.U, rf(io.read.raddr1(3, 0)))
+  io.read.rdata2 := Mux(io.read.raddr2 === 0.U, 0.U, rf(io.read.raddr2(3, 0)))
+  when(io.write.wen && io.write.waddr =/= 0.U) {
+    rf(io.write.waddr(3, 0)) := io.write.wdata
   }
 }

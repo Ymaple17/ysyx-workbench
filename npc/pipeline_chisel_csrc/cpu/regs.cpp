@@ -11,8 +11,24 @@ uint32_t cpu_gpr[32] = {0};
 uint32_t cpu_pc = 0x80000000;
 
 uint32_t read_gpr_from_top(int idx) {
-    if (idx == 0) return 0;
-    return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_ext__DOT__Memory[idx];
+    switch (idx) {
+      case 1:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_1;
+      case 2:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_2;
+      case 3:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_3;
+      case 4:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_4;
+      case 5:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_5;
+      case 6:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_6;
+      case 7:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_7;
+      case 8:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_8;
+      case 9:  return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_9;
+      case 10: return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_10;
+      case 11: return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_11;
+      case 12: return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_12;
+      case 13: return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_13;
+      case 14: return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_14;
+      case 15: return top->rootp->ysyx_25020039__DOT__core__DOT__refile__DOT__rf_15;
+      default: return 0;
+    }
 }
 
 uint32_t read_pc_from_top() {
@@ -39,8 +55,8 @@ const char *regs[] = {
 
 void print_register_values() {
   refresh_cpu_regs();
-  printf("The 32 General-Purpose Register is:\n");
-  for(int i = 0; i < 32; i++){
+  printf("The 16 General-Purpose Register is:\n");
+  for(int i = 0; i < 16; i++){
     printf(ANSI_FG_GREEN "%-4s: " ANSI_FG_BLUE "0x%08x" " " ANSI_NONE, regs[i], cpu_gpr[i]);
     if(i%5 == 4)
       printf("\n");
@@ -52,13 +68,13 @@ void print_register_values() {
 
 uint32_t isa_reg_str2val(const char *s, bool *success) {
   int i;
-  for(i = 0; i<=31; i++){
+  for(i = 0; i <= 15; i++){
     if(strcmp(regs[i], s) == 0){
       *success = true;
       break;
     }
   }
-  if (i > 31) {
+  if (i > 15) {
     *success = false;
     return 0;
   }

@@ -33,7 +33,7 @@ class Core(val conf: CoreConfig) extends Module {
 
   val refile = Module(new Refile(conf))
   val csr = Module(new CSR(conf))
-  val icache = Module(new ICache(set = 32, way = 4, block_size = 32, conf = conf))
+  val icache = Module(new ICache(set = 2, way = 1, block_size = 4, conf = conf))
 
   def StageConnect[T <: Data](prev: DecoupledIO[T], next: DecoupledIO[T], flush: Bool): Unit = {
     prev.ready := next.ready
@@ -54,16 +54,6 @@ class Core(val conf: CoreConfig) extends Module {
   StageConnect(lsu.io.out, wbu.io.in, wbu.io.is_flush)
 
   //data raw :前递 + load-use hazard
-  def DataForward(signal: WBU_signals,alu_result: UInt, imm: UInt, pc4: UInt,csr: UInt, mem_read: UInt): UInt = {
-    MuxLookup(signal.reg_write_sel, 0.U)(Seq(
-      ALU_SEL -> alu_result,
-      IMM_SEL -> imm,
-      PC4_SEL -> pc4,
-      CSR_DATA -> csr,
-      MEM_SEL -> mem_read
-    ))
-  }
-
   val exu_wen = exu.io.in.bits.signals.wbu.reg_write && exu.io.in.valid
   val lsu_wen = lsu.io.in.bits.signals.wbu.reg_write && lsu.io.in.valid
   val wbu_wen = wbu.io.in.bits.signals.wbu.reg_write && wbu.io.in.valid
@@ -72,8 +62,8 @@ class Core(val conf: CoreConfig) extends Module {
   val exu_is_load = exu.io.in.bits.signals.wbu.reg_write_sel === MEM_SEL
   val lsu_is_load = lsu.io.in.bits.signals.wbu.reg_write_sel === MEM_SEL
 
-  val exu_wdata = DataForward(exu.io.in.bits.signals.wbu, exu.io.out.bits.alu_result, exu.io.out.bits.imm_ext, exu.io.out.bits.pc + 4.U, exu.io.out.bits.csr_rd1, 0.U)
-  val lsu_wdata = DataForward(lsu.io.in.bits.signals.wbu, lsu.io.out.bits.alu_result, lsu.io.out.bits.imm_ext, lsu.io.out.bits.pc + 4.U, lsu.io.out.bits.csr_rd1, lsu.io.out.bits.mem_read)
+  val exu_wdata = exu.io.out.bits.wb_data
+  val lsu_wdata = lsu.io.out.bits.wb_data
 
   def RsForward(rs: UInt,ren: Bool, fallback: UInt): UInt = {
     val exu_hit = exu_wen && ren && rs =/= 0.U && rs === exu.io.in.bits.waddr && !exu_is_load
@@ -148,7 +138,7 @@ class Core(val conf: CoreConfig) extends Module {
   wbu.io.csr <> csr.io.write
 
   if (!conf.useDPIC) {
-    io.ebreak.get := idu.io.out.bits.is_ebreak && idu.io.in.valid
+    io.ebreak.get := wbu.io.ebreak.get
   }
   
 }

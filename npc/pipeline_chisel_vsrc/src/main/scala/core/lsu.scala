@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import common.MEM_READ._
 import common.MEM_WMASK._
+import common.REG_WRITE_SEL._
 import common.IRQ_CTRL._
 import unit.WBU_signals
 import bus._
@@ -14,16 +15,12 @@ class LSU_WBU_IO extends Bundle{
     val wbu = new WBU_signals
   }
 
-  val rd1 = UInt(32.W)
-  val alu_result = UInt(32.W)
   val pc = UInt(32.W)
-  val next_pc = UInt(32.W)
-  val imm_ext = UInt(32.W)
-  val mem_read = UInt(32.W)
   val waddr = UInt(5.W)
   val is_ebreak = Bool()
 
-  val csr_rd1 = UInt(32.W)
+  val wb_data   = UInt(32.W)
+  val csr_wdata = UInt(32.W)
   val csr_waddr = UInt(12.W)
 
   val state = new State
@@ -143,17 +140,9 @@ class LSU(val conf: CoreConfig) extends Module{
 
   //WBU
   io.out.bits.signals := io.in.bits.signals
-  io.out.bits.rd1 := io.in.bits.rd1
-  io.out.bits.alu_result := io.in.bits.alu_result
   io.out.bits.pc := io.in.bits.pc
-  io.out.bits.next_pc := io.in.bits.next_pc
-  io.out.bits.imm_ext := io.in.bits.imm_ext
   io.out.bits.waddr := io.in.bits.waddr
   io.out.bits.is_ebreak := io.in.bits.is_ebreak
-
-  //csr
-  io.out.bits.csr_rd1 := io.in.bits.csr_rd1
-  io.out.bits.csr_waddr := io.in.bits.csr_waddr
 
   val rbyte   = rd_offset(7, 0).asSInt.pad(32).asUInt
   val rhalf   = rd_offset(15, 0).asSInt.pad(32).asUInt
@@ -161,13 +150,18 @@ class LSU(val conf: CoreConfig) extends Module{
   val rbyteu  = rd_offset(7, 0)
   val rhalfu  = rd_offset(15, 0)
 
-  io.out.bits.mem_read := MuxLookup(io.in.bits.signals.lsu.mem_rd, rbyte)(Seq(
+  val mem_read_data = MuxLookup(io.in.bits.signals.lsu.mem_rd, rbyte)(Seq(
       RBYTE  -> rbyte,
       RHALF  -> rhalf,
       RWORD  -> rword,
       RBYTEU -> rbyteu,
       RHALFU -> rhalfu
   ))
+
+  //load 结果在 LSU 折进写回数据
+  io.out.bits.wb_data := Mux(io.in.bits.signals.wbu.reg_write_sel === MEM_SEL, mem_read_data, io.in.bits.wb_data)
+  io.out.bits.csr_wdata := io.in.bits.csr_wdata
+  io.out.bits.csr_waddr := io.in.bits.csr_waddr
 
   //state（LAF/SAF）
   val has_laf = io.dmem.rvalid && io.dmem.rresp =/= 0.U

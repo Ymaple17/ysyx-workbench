@@ -46,6 +46,10 @@ if __name__ == "__main__":
             "ysyx_25020039_Pmem",
             "ysyx_25020039_Sim_Uart",
             "ysyx_25020039_PerfMonitor",
+            "ysyx_25020039_SRAM",
+            "ysyx_25020039_UART",
+            "ysyx_25020039_Clint",
+            "ysyx_25020039_Xbar",
         ],
         sys.argv[2],
     )

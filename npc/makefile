@@ -272,7 +272,8 @@ verilog:
 		echo "[ERROR] $(VSRC_CACHE_NPC) does not exist. Please run 'make npc' locally and commit the result."; \
 		exit 1; \
 	fi
-	@cat $(VSRC_CACHE_NPC) > $(VERILOG_OUT)
+	@sed -E 's/^module (ysyx_25020039_(Xbar|Clint|UART|SRAM))\(/(* blackbox *) module \1(/' \
+		$(VSRC_CACHE_NPC) > $(VERILOG_OUT)
 	@echo "[INFO] Generated verilog: $(VERILOG_OUT)"
 
 $(MEM_HEX): $(IMG)

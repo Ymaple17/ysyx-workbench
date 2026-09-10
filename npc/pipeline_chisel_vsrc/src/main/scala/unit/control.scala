@@ -111,7 +111,7 @@ class EXU_signals extends Bundle{
 }
 
 class LSU_signals extends Bundle{
-    val mem_wmask = Output(UInt(8.W))
+    val mem_wmask = Output(UInt(4.W))
     val mem_rd    = Output(UInt(3.W))
     val mem_write = Output(Bool())
     val mem_valid = Output(Bool())
@@ -122,8 +122,6 @@ class WBU_signals extends Bundle{
     val reg_write_sel = Output(UInt(3.W))
     val csr_write = Output(Bool())
     val csr_sel   = Output(UInt(2.W))
-    val irq = Output(Bool())
-    val irq_num = Output(UInt(8.W))
 }
 
 class Signals extends Bundle{
@@ -177,8 +175,6 @@ class Control extends Module{
     io.signals.wbu.reg_write_sel := control(11).asUInt
     io.signals.wbu.csr_write := control(3).asBool
     io.signals.wbu.csr_sel := control(12).asUInt
-    io.signals.wbu.irq := control(13).asBool
-    io.signals.wbu.irq_num := control(14).asUInt
 
     //IRQ
     io.irq := control(13).asBool

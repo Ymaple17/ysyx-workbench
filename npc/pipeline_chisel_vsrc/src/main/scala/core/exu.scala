@@ -31,7 +31,7 @@ class EXU_LSU_IO extends Bundle{
 
   val wb_data   = Output(UInt(32.W))
   val csr_wdata = Output(UInt(32.W))
-  val csr_waddr = Output(UInt(12.W))
+  val csr_waddr = Output(UInt(3.W))
 
   val state = Output(new State)
 }

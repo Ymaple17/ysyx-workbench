@@ -21,7 +21,7 @@ class LSU_WBU_IO extends Bundle{
 
   val wb_data   = UInt(32.W)
   val csr_wdata = UInt(32.W)
-  val csr_waddr = UInt(12.W)
+  val csr_waddr = UInt(3.W)
 
   val state = new State
 }

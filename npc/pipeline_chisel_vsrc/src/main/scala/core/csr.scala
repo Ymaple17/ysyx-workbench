@@ -29,7 +29,7 @@ class CSR_READ_IO(xlen: Int) extends Bundle{
 
 class CSR_WRITE_IO(xlen: Int) extends Bundle{
     val wdata = Input(UInt(xlen.W))
-    val waddr = Input(UInt(12.W))
+    val waddr = Input(UInt(3.W))
     val wen   = Input(Bool())
 }
 
@@ -52,16 +52,9 @@ class CSR(conf: CoreConfig) extends Module{
     val marchid   = WireDefault(0x25020039.U(xlen.W))
     val mtvec     = RegInit(0.U(xlen.W))
     val mepc      = RegInit(0.U(xlen.W))
-    val mcause    = RegInit(0.U(xlen.W))
+    val mcause    = RegInit(0.U(8.W))
 
-    val in_waddr = MuxLookup(io.write.waddr, csr_none)(Seq(
-        MSTATUS   -> csr_mstatus,
-        MTVEC     -> csr_mtvec,
-        MEPC      -> csr_mepc,
-        MCAUSE    -> csr_mcause,
-        MVENDORID -> csr_mvendorid,
-        MARCHID   -> csr_marchid
-    ))
+    val in_waddr = io.write.waddr
     val in_raddr = MuxLookup(io.read.raddr, csr_none)(Seq(
         MSTATUS   -> csr_mstatus,
         MTVEC     -> csr_mtvec,
@@ -75,7 +68,7 @@ class CSR(conf: CoreConfig) extends Module{
         csr_mstatus   -> mstatus,
         csr_mtvec     -> mtvec,
         csr_mepc      -> mepc,
-        csr_mcause    -> mcause,
+        csr_mcause    -> mcause.pad(xlen),
         csr_mvendorid -> mvendorid,
         csr_marchid   -> marchid
     ))
@@ -85,7 +78,7 @@ class CSR(conf: CoreConfig) extends Module{
     when(io.write.wen && !io.irq) {
         when(in_waddr === csr_mtvec)  { mtvec  := io.write.wdata }
         when(in_waddr === csr_mepc)   { mepc   := io.write.wdata }
-        when(in_waddr === csr_mcause) { mcause := io.write.wdata }
+        when(in_waddr === csr_mcause) { mcause := io.write.wdata(7, 0) }
     }
     when(io.irq) {
         mcause := io.irq_no

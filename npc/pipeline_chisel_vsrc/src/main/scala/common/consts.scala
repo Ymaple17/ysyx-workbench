@@ -27,10 +27,10 @@ object MEM_READ{
 }
 
 object MEM_WMASK{
-    val WNONE = "b00000001".U(8.W)
-    val WBYTE = "b00000001".U(8.W)
-    val WHALF = "b00000011".U(8.W)
-    val WWORD = "b00001111".U(8.W)
+    val WNONE = "b0001".U(4.W)
+    val WBYTE = "b0001".U(4.W)
+    val WHALF = "b0011".U(4.W)
+    val WWORD = "b1111".U(4.W)
 }
 
 object MEM_WRITE_CTRL{

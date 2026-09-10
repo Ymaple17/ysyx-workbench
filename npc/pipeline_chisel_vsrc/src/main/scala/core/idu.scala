@@ -5,6 +5,7 @@ import chisel3.util._
 import unit._
 import common.JUMP_TYPE._
 import core.PerfEvents._
+import CSR_REG._
 
 class IDU_EXU_IO extends Bundle{
   val signals = new Bundle{
@@ -20,7 +21,7 @@ class IDU_EXU_IO extends Bundle{
   val is_ebreak = Output(Bool())
 
   val csr_rd1 = Output(UInt(32.W))
-  val csr_waddr = Output(UInt(12.W))
+  val csr_waddr = Output(UInt(3.W))
 
   val state = Output(new State)
 }
@@ -69,7 +70,14 @@ class IDU(val conf: CoreConfig) extends Module{
     io.out.bits.is_ebreak := (io.in.bits.inst === "h00100073".U(32.W))
 
     io.out.bits.csr_rd1 := io.csr.rdata
-    io.out.bits.csr_waddr := io.in.bits.inst(31,20)
+    io.out.bits.csr_waddr := MuxLookup(io.in.bits.inst(31,20), csr_none)(Seq(
+      MSTATUS   -> csr_mstatus,
+      MTVEC     -> csr_mtvec,
+      MEPC      -> csr_mepc,
+      MCAUSE    -> csr_mcause,
+      MVENDORID -> csr_mvendorid,
+      MARCHID   -> csr_marchid
+    ))
     io.csr.raddr := io.in.bits.inst(31,20)
 
     //ifu signals

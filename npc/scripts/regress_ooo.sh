@@ -10,7 +10,7 @@ FAIL=0
 run_mill_case() {
   local name="$1"
   echo "-- ${name}"
-  if ( cd "${NPC_HOME}/oood_chisel_vsrc" && ./mill -i mychisel.test -z "${name}" ); then
+  if ( cd "${NPC_HOME}/oood_chisel_4_issue_vsrc" && ./mill -i mychisel.test -z "${name}" ); then
     echo "PASS ${name}"
   else
     echo "FAIL ${name}"

@@ -24,9 +24,12 @@ VSRC_BOARD_PIPELINE = $(shell find board_pipeline_vsrc -maxdepth 1 -name "*.v" -
 CSRC_BOARD_PIPELINE = $(shell find board_pipeline_csrc -name "*.cpp" -o -name "*.c")#board_pipeline
 CSRC_BOARD_PIPELINE_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find board_pipeline_soc_csrc -name "*.cpp" -o -name "*.c"))#board_pipeline_soc
 
-VSRC_OOOD_CHISEL = $(shell find oood_chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")
-CSRC_OOOD_CHISEL = $(shell find oood_chisel_csrc -name "*.cpp" -o -name "*.c")#oood_chisel
-CSRC_OOOD_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find oood_chisel_soc_csrc -name "*.cpp" -o -name "*.c"))#oood_chisel_soc
+VSRC_OOOD_CHISEL = $(shell find oood_chisel_4_issue_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#oood_chisel_4_issue
+CSRC_OOOD_CHISEL = $(shell find oood_chisel_4_issue_csrc -name "*.cpp" -o -name "*.c")#oood_chisel_4_issue
+CSRC_OOOD_CHISEL_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find oood_chisel_4_issue_soc_csrc -name "*.cpp" -o -name "*.c"))#oood_chisel_4_issue_soc
+VSRC_OOOD_CHISEL_2 = $(shell find oood_chisel_2_issue_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#oood_chisel_2_issue
+CSRC_OOOD_CHISEL_2 = $(shell find oood_chisel_2_issue_csrc -name "*.cpp" -o -name "*.c")#oood_chisel_2_issue
+CSRC_OOOD_CHISEL_2_SOC = $(filter-out %/ref_so.cpp %/ref.cpp, $(shell find oood_chisel_2_issue_soc_csrc -name "*.cpp" -o -name "*.c"))#oood_chisel_2_issue_soc
 
 VSRC_CHISEL_RISCV32E = $(shell find chisel_vsrc -maxdepth 1 -name "*.v" -o -name "*.sv")#chisel
 CSRC_CHISEL_RISCV32E = $(shell find chisel_csrc -name "*.cpp" -o -name "*.c")#chisel
@@ -62,6 +65,9 @@ CONFIG_BOARD_PIPELINE_CHISEL_NPC_VAL := $(shell grep -w CONFIG_BOARD_PIPELINE_CH
 CONFIG_OOOD_CHISEL_VAL := $(shell grep -w CONFIG_OOOD_CHISEL .config | cut -d'=' -f2)
 CONFIG_OOOD_CHISEL_SOC_VAL := $(shell grep -w CONFIG_OOOD_CHISEL_SOC .config | cut -d'=' -f2)
 CONFIG_OOOD_CHISEL_NPC_VAL := $(shell grep -w CONFIG_OOOD_CHISEL_NPC .config | cut -d'=' -f2)
+CONFIG_OOOD_CHISEL_2_VAL := $(shell grep -w CONFIG_OOOD_CHISEL_2 .config | cut -d'=' -f2)
+CONFIG_OOOD_CHISEL_2_SOC_VAL := $(shell grep -w CONFIG_OOOD_CHISEL_2_SOC .config | cut -d'=' -f2)
+CONFIG_OOOD_CHISEL_2_NPC_VAL := $(shell grep -w CONFIG_OOOD_CHISEL_2_NPC .config | cut -d'=' -f2)
 
 VSRC_MINIRV_PERIP = $(shell find ../ysyxSoC/perip -name "*.v" -o -name "*.sv")
 VSRC_MINIRV_TOP = ../ysyxSoC/ready-to-run/D-stage/ysyxSoCFull.v
@@ -150,25 +156,45 @@ else ifeq ($(CONFIG_BOARD_PIPELINE_CHISEL_VAL),y)
     TOP_MODULE = ysyx_25020039
     $(info [INFO] Using board_pipeline NPC Mode)
   endif
-else ifeq ($(CONFIG_OOOD_CHISEL_VAL),y)
-  ifeq ($(CONFIG_OOOD_CHISEL_SOC_VAL),y)
-    VSRC = $(VSRC_OOOD_CHISEL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
-    CSRC = $(CSRC_OOOD_CHISEL_SOC)
-    CHISEL_WORK_DIR := oood_chisel_vsrc
+else ifeq ($(CONFIG_OOOD_CHISEL_2_VAL),y)
+  ifeq ($(CONFIG_OOOD_CHISEL_2_SOC_VAL),y)
+    VSRC = $(VSRC_OOOD_CHISEL_2) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
+    CSRC = $(CSRC_OOOD_CHISEL_2_SOC)
+    CHISEL_WORK_DIR := oood_chisel_2_issue_vsrc
     CHISEL_BUILD_TOOL := mill
     CHISEL_MAIN := TopMainSoC
     TOP_MODULE = ysyxSoCFull
     VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
     CFLAGS += -std=c++17
-    $(info [INFO] Using oood_chisel SOC Mode)
+    $(info [INFO] Using oood_chisel_2_issue SOC Mode)
   else
-    VSRC = $(VSRC_OOOD_CHISEL)
-    CSRC = $(CSRC_OOOD_CHISEL)
-    CHISEL_WORK_DIR := oood_chisel_vsrc
+    VSRC = $(VSRC_OOOD_CHISEL_2)
+    CSRC = $(CSRC_OOOD_CHISEL_2)
+    CHISEL_WORK_DIR := oood_chisel_2_issue_vsrc
     CHISEL_BUILD_TOOL := mill
     CHISEL_MAIN := TopMain
     TOP_MODULE = ysyx_25020039
-    $(info [INFO] Using oood_chisel NPC Mode)
+    $(info [INFO] Using oood_chisel_2_issue NPC Mode)
+  endif
+else ifeq ($(CONFIG_OOOD_CHISEL_VAL),y)
+  ifeq ($(CONFIG_OOOD_CHISEL_SOC_VAL),y)
+    VSRC = $(VSRC_OOOD_CHISEL) $(VSRC_MINIRV_PERIP) $(VSRC_SOC_TOP)
+    CSRC = $(CSRC_OOOD_CHISEL_SOC)
+    CHISEL_WORK_DIR := oood_chisel_4_issue_vsrc
+    CHISEL_BUILD_TOOL := mill
+    CHISEL_MAIN := TopMainSoC
+    TOP_MODULE = ysyxSoCFull
+    VERILATOR_FLAGS += --no-timing --timescale "1ns/1ns" --timescale-override "1ns/1ns"
+    CFLAGS += -std=c++17
+    $(info [INFO] Using oood_chisel_4_issue SOC Mode)
+  else
+    VSRC = $(VSRC_OOOD_CHISEL)
+    CSRC = $(CSRC_OOOD_CHISEL)
+    CHISEL_WORK_DIR := oood_chisel_4_issue_vsrc
+    CHISEL_BUILD_TOOL := mill
+    CHISEL_MAIN := TopMain
+    TOP_MODULE = ysyx_25020039
+    $(info [INFO] Using oood_chisel_4_issue NPC Mode)
   endif
 else ifeq ($(CONFIG_CHISEL_RISCV32E_VAL),y)
   VSRC = $(VSRC_CHISEL_RISCV32E)
@@ -277,15 +303,25 @@ else ifeq ($(CONFIG_BOARD_PIPELINE_CHISEL_VAL),y)
     -Iboard_pipeline_csrc \
     -I$(NPC_HOME)/board_pipeline_csrc/include \
     -I$(NPC_HOME)/include
+else ifeq ($(CONFIG_OOOD_CHISEL_2_SOC_VAL),y)
+  C_INCLUDE_DIRS += \
+    -Ioood_chisel_2_issue_soc_csrc \
+    -I$(NPC_HOME)/oood_chisel_2_issue_soc_csrc/include \
+    -I$(NPC_HOME)/include
+else ifeq ($(CONFIG_OOOD_CHISEL_2_VAL),y)
+  C_INCLUDE_DIRS += \
+    -Ioood_chisel_2_issue_csrc \
+    -I$(NPC_HOME)/oood_chisel_2_issue_csrc/include \
+    -I$(NPC_HOME)/include
 else ifeq ($(CONFIG_OOOD_CHISEL_SOC_VAL),y)
   C_INCLUDE_DIRS += \
-    -Ioood_chisel_soc_csrc \
-    -I$(NPC_HOME)/oood_chisel_soc_csrc/include \
+    -Ioood_chisel_4_issue_soc_csrc \
+    -I$(NPC_HOME)/oood_chisel_4_issue_soc_csrc/include \
     -I$(NPC_HOME)/include
 else ifeq ($(CONFIG_OOOD_CHISEL_VAL),y)
   C_INCLUDE_DIRS += \
-    -Ioood_chisel_csrc \
-    -I$(NPC_HOME)/oood_chisel_csrc/include \
+    -Ioood_chisel_4_issue_csrc \
+    -I$(NPC_HOME)/oood_chisel_4_issue_csrc/include \
     -I$(NPC_HOME)/include
 else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
   C_INCLUDE_DIRS += \
@@ -350,13 +386,20 @@ else ifeq ($(CONFIG_BOARD_PIPELINE_CHISEL_SOC_VAL),y)
                     -I../ysyxSoC/perip/spi/rtl
 else ifeq ($(CONFIG_BOARD_PIPELINE_CHISEL_VAL),y)
   V_INCLUDE_DIRS += -Iboard_pipeline_vsrc
+else ifeq ($(CONFIG_OOOD_CHISEL_2_SOC_VAL),y)
+  V_INCLUDE_DIRS += -Ioood_chisel_2_issue_vsrc \
+                    -I../ortl \
+                    -I../ysyxSoC/perip/uart16550/rtl \
+                    -I../ysyxSoC/perip/spi/rtl
+else ifeq ($(CONFIG_OOOD_CHISEL_2_VAL),y)
+  V_INCLUDE_DIRS += -Ioood_chisel_2_issue_vsrc
 else ifeq ($(CONFIG_OOOD_CHISEL_SOC_VAL),y)
-  V_INCLUDE_DIRS += -Ioood_chisel_vsrc \
+  V_INCLUDE_DIRS += -Ioood_chisel_4_issue_vsrc \
                     -I../ortl \
                     -I../ysyxSoC/perip/uart16550/rtl \
                     -I../ysyxSoC/perip/spi/rtl
 else ifeq ($(CONFIG_OOOD_CHISEL_VAL),y)
-  V_INCLUDE_DIRS += -Ioood_chisel_vsrc
+  V_INCLUDE_DIRS += -Ioood_chisel_4_issue_vsrc
 else ifeq ($(CONFIG_PIPELINE_SOC_VAL),y)
   V_INCLUDE_DIRS += -Ipipeline_soc_vsrc \
                     -Ipipeline_soc_vsrc/include \

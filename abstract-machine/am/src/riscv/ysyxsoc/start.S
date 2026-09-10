@@ -4,6 +4,10 @@
 _start:
   mv s0, zero
 
+#ifdef YSYXSOC_SIM_PRELOADED
+  la ra, _do_bl_ss
+  jalr ra
+#else
   la a0, _bl_s
   la a1, _bl_s_load_lma
   la a2, _ebl_s
@@ -27,11 +31,13 @@ _start:
   mv t2, zero
   la ra, _do_bl_ss
   jalr ra
+#endif
 
 .section .bl.s, "ax"      
 .globl _do_bl_ss
 .type _do_bl_ss, @function
 _do_bl_ss:
+#ifndef YSYXSOC_SIM_PRELOADED
   la a0, _text_start
   la a1, _text_load_lma
   la a2, _text_end
@@ -54,6 +60,7 @@ _do_bl_ss:
   addi t0, t0, 4
   j 0b
 1:
+#endif
   fence.i
 
   mv a0, zero

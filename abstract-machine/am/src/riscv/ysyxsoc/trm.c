@@ -14,17 +14,25 @@ Area heap = RANGE(&_heap_start, &_psram_end);
 // Area heap = RANGE(&_heap_start, &_heap_end);
 static const char mainargs[MAINARGS_MAX_LEN] = TOSTRING(MAINARGS_PLACEHOLDER); // defined in CFLAGS
 
+#ifdef YSYXSOC_SIM_PRELOADED
+void putch(char ch) {
+  (void)ch;
+}
+#else
 void putch(char ch) {
   while ((inb(UART_LSR) & 0x20) == 0);
   outb(UART_TX, ch);
 }
+#endif
 
+#ifndef YSYXSOC_SIM_PRELOADED
 static void uart_init(){
 	outb(UART_LCR, inb(UART_LCR) | 0x80); //LCR寄存器最高位，使能分频系数寄存器
 	outb(UART_LSB, 0x01);
 	outb(UART_LCR, inb(UART_LCR) & 0x7f); //恢复LCR寄存器的值，关闭分频系数寄存器，可正常收发数据
 	outb(UART_IER, 0xc7);
 }
+#endif
 
 void halt(int code) {
   soc_trap(code);
@@ -94,11 +102,15 @@ void ysyx_show(){
 }
 
 void _trm_init() {
+#ifndef YSYXSOC_SIM_PRELOADED
   uart_init();
+#endif
   
   // 执行 bootloader：将程序从 FLASH 加载到 SRAM
   //bootloader_load();
+#ifndef YSYXSOC_SIM_PRELOADED
   ysyx_show();
+#endif
   // 跳转到 SRAM 中执行 main 函数
   int ret = main(mainargs);
   halt(ret);

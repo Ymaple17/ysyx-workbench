@@ -1,0 +1,7 @@
+set_property -dict {PACKAGE_PIN U18 IOSTANDARD LVCMOS33} [get_ports clk_50m]
+create_clock -period 20.000 -name clk_50m -waveform {0.000 10.000} [get_ports clk_50m]
+set_property -dict {PACKAGE_PIN N16 IOSTANDARD LVCMOS33} [get_ports sys_rst_n]
+set_property -dict {PACKAGE_PIN H15 IOSTANDARD LVCMOS33} [get_ports {led[0]}]
+set_property -dict {PACKAGE_PIN L15 IOSTANDARD LVCMOS33} [get_ports {led[1]}]
+set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports uart_txd]
+set_property is_enabled false [get_drc_checks ZPS7-1]

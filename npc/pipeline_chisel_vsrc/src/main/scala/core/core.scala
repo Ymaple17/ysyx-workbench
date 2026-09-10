@@ -111,15 +111,14 @@ class Core(val conf: CoreConfig) extends Module {
       MEPC -> csr.io.read.mepc
   ))
 
-  val is_jump = exu.io.in.bits.signals.exu.jump =/= JUMP_NONE && exu.io.pc.valid
+  val is_jump = exu.io.in.bits.signals.exu.jump =/= JUMP_NONE && exu.io.out.valid
   val is_ch = is_jump && pc_src =/= PC_PLUS4
-  val is_ch_r = RegNext(is_ch, false.B)
   val is_fencei = RegNext(icache.io.fencei.valid & icache.io.fencei.ready, false.B)
-  ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(is_ch_r, RegNext(correct_pc, 0.U), Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
-  
-  ifu.io.is_flush := is_ch_r || is_irq || is_fencei
-  idu.io.is_flush := is_ch_r || is_irq
-  exu.io.is_flush := is_ch_r || is_irq
+  ifu.io.correct_pc := Mux(is_irq, csr.io.read.mtvec, Mux(is_ch, correct_pc, Mux(is_fencei, ifu.io.in.bits.next_pc, 0.U)))
+
+  ifu.io.is_flush := is_ch || is_irq || is_fencei
+  idu.io.is_flush := is_ch || is_irq
+  exu.io.is_flush := is_irq
   lsu.io.is_flush := is_irq
   wbu.io.is_flush := is_irq
 

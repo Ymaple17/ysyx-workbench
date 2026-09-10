@@ -62,7 +62,7 @@ class IFU(val conf: CoreConfig) extends Module{
 
     next_state := MuxLookup(state, s_IDLE)(Seq(
         s_IDLE   -> Mux(idle, Mux(work, s_IDLE, s_WORK), s_IDLE),
-        s_WORK   -> Mux(io.is_flush, s_FLUSH, Mux(work, s_IDLE, s_WORK)),
+        s_WORK   -> Mux(work, s_IDLE, Mux(io.is_flush, s_FLUSH, s_WORK)),
         s_FLUSH  -> Mux(io.imem.rvalid, s_IDLE, s_FLUSH)
     ))
     state := next_state

@@ -24,6 +24,7 @@ class Sim_Uart extends BlackBox with HasBlackBoxInline {
         |    always @(posedge clk) begin
         |        if (wen && waddr >= 32'ha00003f8 && waddr <= 32'ha00003ff) begin
         |            $write("%c", wdata);
+            $fflush();
         |        end
         |    end
         |`endif

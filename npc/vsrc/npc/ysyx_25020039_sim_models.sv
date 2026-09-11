@@ -510,6 +510,7 @@ module ysyx_25020039_Sim_Uart(
     always @(posedge clk) begin
         if (wen && waddr >= 32'ha00003f8 && waddr <= 32'ha00003ff) begin
             $write("%c", wdata);
+            $fflush();
         end
     end
 `endif
@@ -547,6 +548,7 @@ module ysyx_25020039_Pmem(
      if (wen) begin
         if (waddr == 32'ha00003f8) begin
             $write("%c", wdata[7:0]);
+            $fflush();
         end
         else if (waddr >= 32'h80000000 && waddr < 32'h80000000 + MEM_BYTES) begin
             if (wmask[0]) mem[woff[16:2]][7:0]   <= wdata[7:0];

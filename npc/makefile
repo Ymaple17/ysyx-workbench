@@ -252,8 +252,8 @@ iverilog: build-microbench
 #   make sim-iverilog-netlist IMG=xxx NETLIST=yyy CELLS=zzz
 #   make syn-netlist            -> regenerate vsrc/npc/ysyx_25020039.netlist.syn.v
 #
-# NOTE: CI has no mill/sbt. The RTL/netlist in vsrc/npc is committed
-# and used directly; regenerate RTL with 'make npc' / 'make soc'.
+# NOTE: CI has no mill/sbt. The RTL in vsrc/soc is committed
+# and used directly; regenerate RTL with 'make soc'.
 # -----------------------------------------------------------------------
 
 VERILOG_OUT = $(BUILD_DIR)/ysyx_25020039.sv
@@ -269,15 +269,14 @@ IMG   ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 
 $(shell mkdir -p $(BUILD_DIR) $(BUILD_DIR)/iverilog)
 
-# generate the single-file verilog for CI synthesis / netlist simulation
+# generate the single-file verilog for CI SoC / synthesis
 verilog:
 	@mkdir -p $(BUILD_DIR)
-	@if [ ! -f "$(VSRC_CACHE_NPC)" ]; then \
-		echo "[ERROR] $(VSRC_CACHE_NPC) does not exist. Please run 'make npc' locally and commit the result."; \
+	@if [ ! -f "$(VSRC_CACHE_SOC)" ]; then \
+		echo "[ERROR] $(VSRC_CACHE_SOC) does not exist. Please run 'make soc' locally and commit the result."; \
 		exit 1; \
 	fi
-	@sed -E 's/^module (ysyx_25020039_(Xbar|Clint|UART|SRAM))\(/(* blackbox *) module \1(/' \
-		$(VSRC_CACHE_NPC) > $(VERILOG_OUT)
+	@cp $(VSRC_CACHE_SOC) $(VERILOG_OUT)
 	@echo "[INFO] Generated verilog: $(VERILOG_OUT)"
 
 $(MEM_HEX): $(IMG)

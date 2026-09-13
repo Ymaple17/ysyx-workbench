@@ -270,13 +270,14 @@ IMG   ?= ../am-kernels/tests/cpu-tests/build/dummy-riscv32e-npc.bin
 $(shell mkdir -p $(BUILD_DIR) $(BUILD_DIR)/iverilog)
 
 # generate the single-file verilog for CI SoC / synthesis
+# `define YOSYS so Ebreak's `ifndef YOSYS skips DPI-C (DC cannot parse it)
 verilog:
 	@mkdir -p $(BUILD_DIR)
 	@if [ ! -f "$(VSRC_CACHE_SOC)" ]; then \
 		echo "[ERROR] $(VSRC_CACHE_SOC) does not exist. Please run 'make soc' locally and commit the result."; \
 		exit 1; \
 	fi
-	@cp $(VSRC_CACHE_SOC) $(VERILOG_OUT)
+	@sed '1i`define YOSYS' $(VSRC_CACHE_SOC) > $(VERILOG_OUT)
 	@echo "[INFO] Generated verilog: $(VERILOG_OUT)"
 
 $(MEM_HEX): $(IMG)

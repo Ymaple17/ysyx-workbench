@@ -7,7 +7,7 @@ import common.ALU_OP._
 class ALU_IO(width: Int) extends Bundle {
     val A = Input(UInt(width.W))
     val B = Input(UInt(width.W))
-    val alu_control = Input(UInt(4.W))
+    val alu_control = Input(UInt(5.W))
     val result = Output(UInt(width.W))
     val overflow_flag = Output(Bool())
     val zero_flag = Output(Bool())
@@ -29,7 +29,13 @@ class ALU(val width: Int) extends Module{
         ALU_SRL -> (io.A >> io.B(4, 0)),
         ALU_SRA -> (io.A.asSInt >> io.B(4, 0)).asUInt,
         ALU_CMP -> (io.A.asSInt < io.B.asSInt).asUInt,
-        ALU_CMPU-> (io.A < io.B).asUInt
+        ALU_CMPU-> (io.A < io.B).asUInt,
+
+        //MUL
+        ALU_MUL -> (io.A * io.B)(31, 0),
+        ALU_MULH -> (io.A.asSInt * io.B.asSInt)(63, 32).asUInt,
+        ALU_MULHSU -> (io.A.asSInt * io.B.asUInt)(63, 32).asUInt,
+        ALU_MULHU -> (io.A.asUInt * io.B.asUInt)(63, 32).asUInt
     ))
 
     io.zero_flag := (io.result === 0.U)

@@ -95,14 +95,15 @@ cd /home/qiu/ysyx-workbench/npc
 make menuconfig
 ```
 
-选择 `IOID_CHISEL_NPC` 或你实际维护的 pipeline Chisel NPC 配置。当前
+选择 `CHISEL_NPC`、`BOARD_PIPELINE_CHISEL_NPC` 或你实际维护的 OoO NPC 配置。当前
 Makefile 的 Chisel NPC 路径约定如下：
 
 ```text
 配置             Chisel 目录       生成入口
-PIPELINE_CHISEL  pipeline_chisel_vsrc  ./mill -i mychisel.runMain TopMain
-IOID_CHISEL      ioid_chisel_vsrc       ./mill -i mychisel.runMain TopMain
-OOOD_CHISEL      oood_chisel_vsrc       ./mill -i mychisel.runMain TopMain
+CHISEL                    chisel_vsrc                  ./mill -i mychisel.runMain TopMain
+BOARD_PIPELINE_CHISEL     board_pipeline_vsrc          ./mill -i mychisel.runMain TopMain
+OOOD_CHISEL_2             oood_chisel_2_issue_vsrc     ./mill -i mychisel.runMain TopMain
+OOOD_CHISEL               oood_chisel_4_issue_vsrc     ./mill -i mychisel.runMain TopMain
 ```
 
 最稳妥的生成命令是直接使用 Makefile 目标，因为它会根据 `.config` 选对
@@ -115,7 +116,7 @@ make chisel-gen
 如果要手动生成当前 pipeline 快照：
 
 ```fish
-cd /home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc
+cd /home/qiu/ysyx-workbench/npc/board_pipeline_vsrc
 ./mill -i mychisel.runMain TopMain
 ```
 
@@ -138,7 +139,7 @@ cd /home/qiu/ysyx-workbench/npc/pipeline_chisel_vsrc
 
 ```powershell
 Remove-Item .\rtl\cpu\*.sv -Force
-Copy-Item C:\path\to\pipeline_chisel_vsrc\*.sv .\rtl\cpu\ -Force
+Copy-Item C:\path\to\board_pipeline_vsrc\*.sv .\rtl\cpu\ -Force
 ```
 
 复制后先做语法检查，再启动 Vivado。不要把 OOOD 四发射版本接入这个

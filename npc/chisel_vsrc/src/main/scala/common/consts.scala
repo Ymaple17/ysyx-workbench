@@ -4,17 +4,27 @@ import chisel3._
 import chisel3.util._
 
 object ALU_OP{
-  val ALU_ADD = 0.U(4.W)
-  val ALU_SUB = 1.U(4.W)
-  val ALU_AND = 2.U(4.W)
-  val ALU_CMP = 3.U(4.W)
-  val ALU_XOR = 4.U(4.W)
-  val ALU_CMPU= 5.U(4.W)
-  val ALU_OR  = 6.U(4.W)
-  val ALU_SRA = 7.U(4.W)
-  val ALU_SRL = 8.U(4.W)
-  val ALU_SLL = 9.U(4.W)
-  val ALU_NONE =10.U(4.W)
+  val ALU_ADD = 0.U(5.W)
+  val ALU_SUB = 1.U(5.W)
+  val ALU_AND = 2.U(5.W)
+  val ALU_CMP = 3.U(5.W)
+  val ALU_XOR = 4.U(5.W)
+  val ALU_CMPU= 5.U(5.W)
+  val ALU_OR  = 6.U(5.W)
+  val ALU_SRA = 7.U(5.W)
+  val ALU_SRL = 8.U(5.W)
+  val ALU_SLL = 9.U(5.W)
+
+  val ALU_MUL = 10.U(5.W)
+  val ALU_MULH = 11.U(5.W)
+  val ALU_MULHSU = 12.U(5.W)
+  val ALU_MULHU = 13.U(5.W)
+  val ALU_DIV = 14.U(5.W)
+  val ALU_DIVU = 15.U(5.W)
+  val ALU_REM = 16.U(5.W)
+  val ALU_REMU = 17.U(5.W)
+
+  val ALU_NONE =18.U(5.W)
 }
 
 object MEM_READ{
@@ -136,4 +146,9 @@ object IRQ_CTRL{
 object FENCEI_CTRL{
     val IS_FENCEI = 1.U(1.W)
     val NONE_FENCEI = 0.U(1.W)
+}
+
+object BPU_Config{
+    val BHT_SIZE = 1024 //BHT 条目数（BPU/IFU/IDU 的索引宽度共用）
+    val RAS_SIZE = 16 //返回地址栈深度
 }

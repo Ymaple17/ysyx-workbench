@@ -3,6 +3,9 @@ package core
 import chisel3._
 import chisel3.util._
 import unit._
+import common.BPU_Config._
+import common.JUMP_TYPE._
+import core.PerfEvents._
 
 class IDU_EXU_IO extends Bundle{
   val signals = new Bundle{
@@ -19,6 +22,15 @@ class IDU_EXU_IO extends Bundle{
 
   val csr_rd1 = Output(UInt(32.W))
   val csr_waddr = Output(UInt(12.W))
+
+  val state = Output(new State)
+
+  val bp_valid = Output(Bool())
+  val bp_taken = Output(Bool())
+  val bp_target = Output(UInt(32.W))
+  val bp_index = Output(UInt(log2Ceil(BHT_SIZE).W))
+
+  val inst = Output(UInt(32.W))
 }
 
 class IDU_IO(xlen: Int) extends Bundle{
@@ -29,6 +41,12 @@ class IDU_IO(xlen: Int) extends Bundle{
   val csr = Flipped(new CSR_READ_IO(xlen))
   val rs1_ren = Output(Bool())
   val rs2_ren = Output(Bool())
+
+  val is_stall = Input(Bool())
+  val is_flush = Input(Bool())
+  val is_fencei = Output(Bool())
+
+  val state = Input(new State)
 }
 
 class IDU(val conf: CoreConfig) extends Module{
@@ -62,11 +80,55 @@ class IDU(val conf: CoreConfig) extends Module{
     io.csr.raddr := io.in.bits.inst(31,20)
 
     //ifu signals
-    io.ifu_signals.valid := control.io.signals.ifu.valid
+    io.is_fencei := control.io.signals.ifu.bits.is_fencei && io.in.valid
+    io.ifu_signals.valid := io.in.valid && control.io.signals.ifu.valid
     io.ifu_signals.bits := control.io.signals.ifu.bits
     control.io.signals.ifu.ready := io.ifu_signals.ready
 
-    //single control
-    io.in.ready := true.B
-    io.out.valid := true.B
+    //state
+    io.out.bits.state := io.state
+    io.out.bits.state.state := control.io.irq || io.in.bits.state.state
+    io.out.bits.state.state_num := Mux(control.io.irq, control.io.irq_num, io.in.bits.state.state_num)
+
+    //pipeline control
+    // FENCE.I：Irrevocable 握手完成前停在 IDU，避免 valid 中途掉导致 icache 冲刷无完成/无 flush
+    val fencei_hold = control.io.signals.ifu.bits.is_fencei && io.in.valid && !io.ifu_signals.ready
+    val send = !io.is_stall && !fencei_hold
+
+    io.in.ready := !io.in.valid || (send && io.out.ready)
+    io.out.valid := io.in.valid && send
+
+    //bpu
+    io.out.bits.bp_valid := io.in.bits.bp_valid
+    io.out.bits.bp_taken := io.in.bits.bp_taken
+    io.out.bits.bp_target := io.in.bits.bp_target
+    io.out.bits.bp_index := io.in.bits.bp_index
+
+    io.out.bits.inst := io.in.bits.inst
+
+  if(conf.statistics){
+    // Performance Counters
+    val sigs = control.io.signals
+    val fire = io.out.valid && io.out.ready 
+      
+    val is_load = sigs.lsu.mem_valid && !sigs.lsu.mem_write
+    val is_store = sigs.lsu.mem_valid && sigs.lsu.mem_write
+    val is_csr = sigs.wbu.csr_write
+    val jump = sigs.exu.jump
+    
+    val is_branch = (jump === JUMP_BEQ || jump === JUMP_BNE || jump === JUMP_BLT || jump === JUMP_BGE || jump === JUMP_BLTU || jump === JUMP_BGEU)
+    val is_jump = (jump === JUMP_JAL || jump === JUMP_JALR)
+      
+    val is_other = (jump === JUMP_MERT) || (io.is_fencei) || (io.out.bits.is_ebreak)
+
+    val is_compute = !is_load && !is_store && !is_csr && !is_branch && !is_jump && !is_other
+      
+    PM(conf, clock, EVENT_INST_TYPE_LOAD, 1.U, fire && is_load)
+    PM(conf, clock, EVENT_INST_TYPE_STORE, 1.U, fire && is_store)
+    PM(conf, clock, EVENT_INST_TYPE_CSR, 1.U, fire && is_csr)
+    PM(conf, clock, EVENT_INST_TYPE_BRANCH, 1.U, fire && is_branch)
+    PM(conf, clock, EVENT_INST_TYPE_JUMP, 1.U, fire && is_jump) 
+    PM(conf, clock, EVENT_INST_TYPE_OTHER, 1.U, fire && is_other)
+    PM(conf, clock, EVENT_INST_TYPE_COMPUTE, 1.U, fire && is_compute)
+  }    
 }

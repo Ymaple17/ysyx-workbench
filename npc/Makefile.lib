@@ -6,10 +6,14 @@
 # Sources for the shared object: Exclude DUT-specific files
 CSRC_LIB = $(filter-out %/sim_cpu.cpp %/sim_main.cpp %/trace_diff.cpp %/difftest.cpp %/ref.cpp, $(CSRC)) 
 # Add the reference wrapper
-ifeq ($(CONFIG_MUL_CHISEL_SOC_VAL),y)
-CSRC_LIB += $(CHISEL_WORK_DIR)/../mul_chisel_soc_csrc/difftest/ref_so.cpp
-else ifeq ($(CONFIG_PIPELINE_CHISEL_SOC_VAL),y)
-CSRC_LIB += $(CHISEL_WORK_DIR)/../pipeline_chisel_soc_csrc/difftest/ref_so.cpp
+ifeq ($(CONFIG_CHISEL_SOC_VAL),y)
+CSRC_LIB += chisel_soc_csrc/difftest/ref_so.cpp
+else ifeq ($(CONFIG_BOARD_PIPELINE_CHISEL_SOC_VAL),y)
+CSRC_LIB += board_pipeline_soc_csrc/difftest/ref_so.cpp
+else ifeq ($(CONFIG_OOOD_CHISEL_2_SOC_VAL),y)
+CSRC_LIB += oood_chisel_2_issue_soc_csrc/difftest/ref_so.cpp
+else ifeq ($(CONFIG_OOOD_CHISEL_SOC_VAL),y)
+CSRC_LIB += oood_chisel_4_issue_soc_csrc/difftest/ref_so.cpp
 endif
 
 NPC_SO = $(BUILD_DIR)/npc-ref.so

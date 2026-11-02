@@ -1,7 +1,7 @@
 # ioid 五级流水核：FPGA 上板与改核计划（良好档）
 
 > 平台：正点原子领航者 **Zynq-7020（xc7z020clg400-1）**  
-> 代码基线：`npc/ioid_chisel_vsrc`  
+> 代码基线：`npc/chisel_vsrc`  
 > 目标口径：**良好档（B）** —— CoreMark + 游戏兼顾  
 > 主频：**100MHz**  
 > 文档用途：后面改核 / 上板时按阶段勾选执行，不依赖口头记忆
@@ -45,7 +45,7 @@
 
 | 模块 | 路径 | 现状要点 |
 |---|---|---|
-| 顶层 SoC | `ioid_chisel_vsrc/src/main/scala/soc.scala` | `ysyx_25020039`，AXI master/slave |
+| 顶层 SoC | `chisel_vsrc/src/main/scala/soc.scala` | `ysyx_25020039`，AXI master/slave |
 | Core | `.../core/core.scala` | IF-ID-EX-MEM-WB；前递；load-use stall；BPU 更新；误预测 `RegNext` 冲刷 |
 | IFU | `.../core/ifu.scala` | 取指 FSM + BPU |
 | IDU | `.../core/idu.scala` | 译码 / RF / fencei hold |
@@ -121,7 +121,7 @@ PC
 ## 3. 改核实施计划（按提交粒度）
 
 > 原则：**每步可仿真回归 → 再综合看资源/时序 → 再上板**。  
-> 仿真优先用现有 `ioid` NPC/SoC 流程（`make menuconfig` 选 IOID）。
+> 仿真优先用现有 `ioid` NPC/SoC 流程（`make menuconfig` 选 CHISEL）。
 
 ---
 
@@ -376,7 +376,7 @@ DIV            = iterative
 
 ```text
 npc/
-  ioid_chisel_vsrc/          # Chisel 源码
+  chisel_vsrc/          # Chisel 源码
   ioid_fpga/                 # （建议新建）上板工程脚本与包装
     rtl/                     # 导出的 SV + 包装层
     constr/                  # XDC
@@ -400,7 +400,7 @@ npc/
 
 ### 4.3 ① 生成 Verilog
 
-在 `npc/ioid_chisel_vsrc`：
+在 `npc/chisel_vsrc`：
 
 ```bash
 # 视你现有习惯：sbt 或 mill
@@ -548,7 +548,7 @@ set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 
 ```bash
 cd npc
-make menuconfig   # 选择 CONFIG_IOID_CHISEL / SOC 版本按需要
+make menuconfig   # 选择 CONFIG_CHISEL / SOC 版本按需要
 make              # 按你现有流程
 ```
 

@@ -2,19 +2,12 @@
 # Automatically generated file; DO NOT EDIT.
 # NPC Configuration
 #
-# CONFIG_MUL is not set
-# CONFIG_CHISEL_MUL is not set
-# CONFIG_PIPELINE_CHISEL is not set
-# CONFIG_IOID_CHISEL is not set
+# CONFIG_CHISEL is not set
 # CONFIG_BOARD_PIPELINE_CHISEL is not set
 CONFIG_OOOD_CHISEL=y
-# CONFIG_OOOD_CHISEL_2 is not set
-# CONFIG_CHISEL_RISCV32E is not set
-# CONFIG_PIPELINE_SOC is not set
-# CONFIG_SINGLE is not set
-# CONFIG_MINIRV is not set
 # CONFIG_OOOD_CHISEL_SOC is not set
 CONFIG_OOOD_CHISEL_NPC=y
+# CONFIG_OOOD_CHISEL_2 is not set
 CONFIG_BATCH_MODE=y
 CONFIG_DIFFTEST=y
 # CONFIG_WAVEFORM is not set

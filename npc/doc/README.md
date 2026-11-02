@@ -1,7 +1,7 @@
 # 乱序超标量 CPU（OoO）设计文档
 
 **工程**：`npc/oood_chisel_vsrc` + `npc/oood_chisel_csrc`  
-**顺序基线（对照）**：`npc/ioid_chisel_vsrc` + `ioid_chisel_csrc`
+**顺序基线（对照）**：`npc/chisel_vsrc` + `chisel_csrc`
 
 ## 文档怎么组织
 

@@ -2,19 +2,10 @@ mainmenu "NPC Configuration"
 
 choice
     prompt "Architecture Selection"
-    default MUL
+    default CHISEL
 
-config MUL
-    bool "Enable riscv32_mul implementation"
-
-config CHISEL_MUL
-    bool "Enable Chisel riscv32_mul implementation"
-
-config PIPELINE_CHISEL
-    bool "Enable Pipeline Chisel implementation"
-
-config IOID_CHISEL
-    bool "Enable IOID Chisel implementation"
+config CHISEL
+    bool "Enable Chisel in-order implementation"
 
 config BOARD_PIPELINE_CHISEL
     bool "Enable Board Pipeline Chisel implementation"
@@ -25,69 +16,18 @@ config OOOD_CHISEL
 config OOOD_CHISEL_2
     bool "Enable OOOD Chisel (OoO 2-issue) implementation"
 
-config CHISEL_RISCV32E
-    bool "Enable Chisel riscv32e implementation"
-
-config PIPELINE_SOC
-    bool "Enable pipeline_soc implementation"
-
-config SINGLE
-    bool "Enable riscv32e_vsrc implementation"
-
-config MINIRV
-    bool "Enable Mini-RV32I"
-
 endchoice
 
 
-if MUL
+if CHISEL
     choice
-        prompt "Mul Run Mode"
-        default MUL_SOC
+        prompt "Chisel Run Mode"
+        default CHISEL_NPC
 
-        config MUL_SOC
+        config CHISEL_SOC
             bool "SOC Mode"
 
-        config MUL_NPC
-            bool "NPC Mode"
-    endchoice
-endif
-
-if CHISEL_MUL
-    choice
-        prompt "Mul Chisel Run Mode"
-        default MUL_CHISEL_SOC
-
-        config MUL_CHISEL_SOC
-            bool "SOC Mode"
-
-        config MUL_CHISEL_NPC
-            bool "NPC Mode"
-    endchoice
-endif
-
-if PIPELINE_CHISEL
-    choice
-        prompt "Pipeline Chisel Run Mode"
-        default PIPELINE_CHISEL_SOC
-
-        config PIPELINE_CHISEL_SOC
-            bool "SOC Mode"
-
-        config PIPELINE_CHISEL_NPC
-            bool "NPC Mode"
-    endchoice
-endif
-
-if IOID_CHISEL
-    choice
-        prompt "IOID Chisel Run Mode"
-        default IOID_CHISEL_NPC
-
-        config IOID_CHISEL_SOC
-            bool "SOC Mode"
-
-        config IOID_CHISEL_NPC
+        config CHISEL_NPC
             bool "NPC Mode"
     endchoice
 endif

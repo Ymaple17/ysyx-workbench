@@ -3,9 +3,11 @@ package core
 import chisel3._
 import chisel3.util._
 import unit._
+import common.ALU_OP._
 import common.ALU_SRCA._
 import common.ALU_SRCB._
 import common.PC_SEL._
+import core.PerfEvents._
 
 
 class EXU_PC_IO extends Bundle{
@@ -31,12 +33,16 @@ class EXU_LSU_IO extends Bundle{
 
   val csr_rd1 = Output(UInt(32.W))
   val csr_waddr = Output(UInt(12.W))
+
+  val state = Output(new State)
 }
 
 class EXU_IO extends Bundle{
   val in = Flipped(Decoupled(new IDU_EXU_IO))
   val out = Decoupled(new EXU_LSU_IO)
   val pc = Decoupled(new EXU_PC_IO)
+
+  val is_flush = Input(Bool())
 }
 
 class JUMP_PC_IO extends Bundle{
@@ -82,7 +88,7 @@ class EXU(val conf: CoreConfig) extends Module{
 
     //LSU
     io.out.bits.signals := io.in.bits.signals
-    io.out.bits.alu_result := alu.io.result
+    
     io.out.bits.pc := io.in.bits.pc
 
     io.out.bits.next_pc := MuxLookup(exu_pc.io.pc_src, io.in.bits.pc + 4.U)(Seq(
@@ -97,11 +103,39 @@ class EXU(val conf: CoreConfig) extends Module{
     io.out.bits.waddr := io.in.bits.waddr
     io.out.bits.is_ebreak := io.in.bits.is_ebreak
 
+    //csr 
     io.out.bits.csr_rd1 := io.in.bits.csr_rd1
     io.out.bits.csr_waddr := io.in.bits.csr_waddr
 
-    //single control
-    io.in.ready := true.B
-    io.out.valid := true.B
+    //state
+    io.out.bits.state := io.in.bits.state
+
+    //DIV
+    val is_div = io.in.valid && (io.in.bits.signals.exu.alu_control === ALU_DIV || io.in.bits.signals.exu.alu_control === ALU_DIVU || io.in.bits.signals.exu.alu_control === ALU_REM || io.in.bits.signals.exu.alu_control === ALU_REMU)
+    val is_mul = io.in.valid && (io.in.bits.signals.exu.alu_control === ALU_MUL || io.in.bits.signals.exu.alu_control === ALU_MULH || io.in.bits.signals.exu.alu_control === ALU_MULHSU || io.in.bits.signals.exu.alu_control === ALU_MULHU)
+
+    val div = Module(new DIV)
+    div.io.req_valid := io.in.valid && is_div && div.io.req_ready && !io.is_flush
+    div.io.a := io.in.bits.rd1
+    div.io.b := io.in.bits.rd2
+    div.io.op := io.in.bits.signals.exu.alu_control
+    div.io.kill := io.is_flush
+
+    // busy 用 DIV 内部状态：冲刷后 is_div 变 0 时仍挡住新指令，直到 kill 生效
+    // 结果拍 result_valid=1 释放，允许下一条同拍进入
+    val div_done = div.io.result_valid
+    val div_busy = (is_div && !div_done) || (div.io.busy && !div_done)
+
+    //pipeline control
+    io.in.ready := (!io.in.valid || io.out.ready) && !div_busy
+    io.out.valid := io.in.valid && (!is_div || div_done) && !io.is_flush
     io.pc.valid := io.out.valid && io.in.ready
+    //ALU / DIV
+    io.out.bits.alu_result := Mux(is_div, div.io.result, alu.io.result)
+
+    if(conf.statistics){
+      PM(conf, clock, EVENT_EXU_COMP, 1.U, io.out.valid && io.out.ready)
+      PM(conf, clock, EVENT_MUL, 1.U, io.out.valid && io.out.ready && is_mul)
+      PM(conf, clock, EVENT_DIV, 1.U, io.out.valid && io.out.ready && is_div)
+    }
 }
